@@ -22,7 +22,7 @@
     ns2 <- shiny::NS(id)
 
     reactive_analyses_info <- shiny::reactiveVal(info(reactive_analyses()))
-    data_type_details <- DataTypeObjects("MassSpec")
+    project_details <- ProjectClasses(class(reactive_analyses())[1])
 
     # Register shinyFileChoose once (must be outside renderUI) -----
     shinyFiles::shinyFileChoose(
@@ -31,7 +31,7 @@
       roots = reactive_volumes(),
       defaultRoot = "wd",
       session = session,
-      filetypes = data_type_details$formats
+      filetypes = project_details$formats
     )
     shinyFiles::shinyFileChoose(
       input,
@@ -313,3 +313,35 @@
     })
   })
 }
+
+##' @noRd
+##' @export
+.mod_Analyses_UI.ProjectMassSpec <- .mod_Analyses_UI.MassSpecAnalyses
+
+##' @noRd
+##' @export
+.mod_Analyses_Server.ProjectMassSpec <- .mod_Analyses_Server.MassSpecAnalyses
+
+##' @noRd
+##' @export
+.mod_Analyses_UI.ProjectNonTargetAnalysis <- .mod_Analyses_UI.MassSpecAnalyses
+
+##' @noRd
+##' @export
+.mod_Analyses_Server.ProjectNonTargetAnalysis <- .mod_Analyses_Server.MassSpecAnalyses
+
+##' @noRd
+##' @export
+.mod_Analyses_UI.ProjectMassSpecSpectra <- .mod_Analyses_UI.MassSpecAnalyses
+
+##' @noRd
+##' @export
+.mod_Analyses_Server.ProjectMassSpecSpectra <- .mod_Analyses_Server.MassSpecAnalyses
+
+##' @noRd
+##' @export
+.mod_Analyses_UI.ProjectMassSpecChromatograms <- .mod_Analyses_UI.MassSpecAnalyses
+
+##' @noRd
+##' @export
+.mod_Analyses_Server.ProjectMassSpecChromatograms <- .mod_Analyses_Server.MassSpecAnalyses

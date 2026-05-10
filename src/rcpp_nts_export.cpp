@@ -3,10 +3,190 @@
 #include <cstdlib>
 #include <cmath>
 #include <Rcpp.h>
+#include "mass_spec/targets.h"
 #include "nts/nts.h"
+#include "nts/project_non_target_analysis.h"
+#include "project/project.h"
+
+using namespace Rcpp;
 
 namespace
 {
+  std::vector<double> doubles_from_numeric_vector(const NumericVector& values)
+  {
+    std::vector<double> out(values.size());
+    for (R_xlen_t i = 0; i < values.size(); ++i)
+    {
+      out[static_cast<std::size_t>(i)] = NumericVector::is_na(values[i]) ? 0.0 : static_cast<double>(values[i]);
+    }
+    return out;
+  }
+
+  std::vector<std::string> strings_from_character_vector(const CharacterVector& values)
+  {
+    std::vector<std::string> out(values.size());
+    for (R_xlen_t i = 0; i < values.size(); ++i)
+    {
+      out[static_cast<std::size_t>(i)] = CharacterVector::is_na(values[i]) ? std::string() : as<std::string>(values[i]);
+    }
+    return out;
+  }
+
+  template <typename T>
+  void assign_if_present(DataFrame df, const char* name, T& target);
+
+  template <>
+  void assign_if_present(DataFrame df, const char* name, std::vector<double>& target)
+  {
+    if (df.containsElementNamed(name))
+    {
+      target = doubles_from_numeric_vector(df[name]);
+    }
+  }
+
+  template <>
+  void assign_if_present(DataFrame df, const char* name, std::vector<std::string>& target)
+  {
+    if (df.containsElementNamed(name))
+    {
+      target = strings_from_character_vector(df[name]);
+    }
+  }
+
+  mass_spec::MS_TARGETS_INPUT ms_targets_input_from_df(DataFrame df)
+  {
+    mass_spec::MS_TARGETS_INPUT out;
+    out.size = static_cast<std::size_t>(df.nrows());
+    if (out.size == 0)
+    {
+      return out;
+    }
+    assign_if_present(df, "id", out.id);
+    assign_if_present(df, "analysis", out.analysis);
+    assign_if_present(df, "polarity", out.polarity);
+    assign_if_present(df, "mass", out.mass);
+    assign_if_present(df, "min", out.mass_min);
+    assign_if_present(df, "max", out.mass_max);
+    assign_if_present(df, "mz", out.mz);
+    assign_if_present(df, "mzmin", out.mzmin);
+    assign_if_present(df, "mzmax", out.mzmax);
+    assign_if_present(df, "rt", out.rt);
+    assign_if_present(df, "rtmin", out.rtmin);
+    assign_if_present(df, "rtmax", out.rtmax);
+    assign_if_present(df, "mobility", out.mobility);
+    assign_if_present(df, "mobilitymin", out.mobilitymin);
+    assign_if_present(df, "mobilitymax", out.mobilitymax);
+    if (df.containsElementNamed("name") && out.id.empty())
+    {
+      out.id = strings_from_character_vector(df["name"]);
+    }
+    return out;
+  }
+
+  mass_spec::MS_TARGETS_INPUT ms_targets_input_from_object(SEXP value)
+  {
+    if (Rf_isNull(value))
+    {
+      return {};
+    }
+    if (Rf_isNumeric(value) && !Rf_isMatrix(value))
+    {
+      DataFrame df = DataFrame::create(Named("mz") = NumericVector(value));
+      return ms_targets_input_from_df(df);
+    }
+    if (Rf_isString(value) && !Rf_isObject(value))
+    {
+      return {};
+    }
+    if (Rf_inherits(value, "data.frame"))
+    {
+      return ms_targets_input_from_df(as<DataFrame>(value));
+    }
+    return {};
+  }
+
+  std::vector<std::string> as_character_selection(SEXP value, const std::string &column_a, const std::string &column_b = "")
+  {
+    if (Rf_isNull(value))
+    {
+      return {};
+    }
+    if (Rf_inherits(value, "data.frame"))
+    {
+      Rcpp::DataFrame df = Rcpp::as<Rcpp::DataFrame>(value);
+      if (df.containsElementNamed(column_a.c_str()))
+      {
+        return Rcpp::as<std::vector<std::string>>(df[column_a]);
+      }
+      if (!column_b.empty() && df.containsElementNamed(column_b.c_str()))
+      {
+        return Rcpp::as<std::vector<std::string>>(df[column_b]);
+      }
+      Rcpp::stop("Selection data.frame must contain '%s'%s%s",
+                 column_a.c_str(),
+                 column_b.empty() ? "" : " or '",
+                 column_b.empty() ? "" : column_b.c_str());
+    }
+    return Rcpp::as<std::vector<std::string>>(Rcpp::as<Rcpp::CharacterVector>(value));
+  }
+
+  std::string project_error_code_to_string(project::ERROR_CODE code)
+  {
+    switch (code)
+    {
+    case project::ERROR_CODE::DuckDB:
+      return "DuckDB";
+    case project::ERROR_CODE::InvalidArgument:
+      return "InvalidArgument";
+    case project::ERROR_CODE::SchemaMismatch:
+      return "SchemaMismatch";
+    case project::ERROR_CODE::NotFound:
+      return "NotFound";
+    case project::ERROR_CODE::Io:
+      return "Io";
+    case project::ERROR_CODE::Unknown:
+    default:
+      return "Unknown";
+    }
+  }
+
+  template <typename Fn>
+  auto project_call(Fn &&fn)
+  {
+    try
+    {
+      return fn();
+    }
+    catch (const project::ERROR &e)
+    {
+      stop("Project error [" + project_error_code_to_string(e.code()) + "]: " + e.what());
+    }
+    catch (const std::exception &e)
+    {
+      stop(std::string("Project error [Unknown]: ") + e.what());
+    }
+  }
+
+  project::PROJECT &project_from_xptr(SEXP extptr)
+  {
+    Rcpp::XPtr<project::PROJECT> ptr(extptr);
+    if (ptr.get() == nullptr)
+    {
+      stop("Project pointer is null");
+    }
+    return *ptr;
+  }
+
+  nts::PROJECT_NON_TARGET_ANALYSIS &project_non_target_analysis_from_xptr(SEXP extptr)
+  {
+    Rcpp::XPtr<nts::PROJECT_NON_TARGET_ANALYSIS> ptr(extptr);
+    if (ptr.get() == nullptr)
+    {
+      stop("Project Non-Target Analysis pointer is null");
+    }
+    return *ptr;
+  }
+
   std::string trim_copy(const std::string &s)
   {
     size_t start = 0;
@@ -574,6 +754,409 @@ namespace
     return out;
   }
 
+  Rcpp::List nts_feature_rows_to_dt(const std::vector<nts::NTS_FEATURE_ROW> &rows)
+  {
+    const std::size_t n = rows.size();
+    if (n == 0)
+    {
+      return get_empty_dt();
+    }
+
+    Rcpp::CharacterVector project_id(n);
+    Rcpp::CharacterVector analysis(n);
+    Rcpp::CharacterVector feature(n);
+    Rcpp::CharacterVector feature_component(n);
+    Rcpp::CharacterVector feature_group(n);
+    Rcpp::CharacterVector adduct(n);
+    Rcpp::NumericVector rt(n);
+    Rcpp::NumericVector mz(n);
+    Rcpp::NumericVector mass(n);
+    Rcpp::NumericVector intensity(n);
+    Rcpp::NumericVector noise(n);
+    Rcpp::NumericVector sn(n);
+    Rcpp::NumericVector area(n);
+    Rcpp::NumericVector rtmin(n);
+    Rcpp::NumericVector rtmax(n);
+    Rcpp::NumericVector width(n);
+    Rcpp::NumericVector mzmin(n);
+    Rcpp::NumericVector mzmax(n);
+    Rcpp::NumericVector ppm(n);
+    Rcpp::NumericVector fwhm_rt(n);
+    Rcpp::NumericVector fwhm_mz(n);
+    Rcpp::NumericVector gaussian_A(n);
+    Rcpp::NumericVector gaussian_mu(n);
+    Rcpp::NumericVector gaussian_sigma(n);
+    Rcpp::NumericVector gaussian_r2(n);
+    Rcpp::NumericVector jaggedness(n);
+    Rcpp::NumericVector sharpness(n);
+    Rcpp::NumericVector asymmetry(n);
+    Rcpp::IntegerVector modality(n);
+    Rcpp::NumericVector plates(n);
+    Rcpp::IntegerVector polarity(n);
+    Rcpp::LogicalVector filtered(n);
+    Rcpp::CharacterVector filter(n);
+    Rcpp::LogicalVector filled(n);
+    Rcpp::NumericVector correction(n);
+    Rcpp::IntegerVector eic_size(n);
+    Rcpp::CharacterVector eic_rt(n);
+    Rcpp::CharacterVector eic_mz(n);
+    Rcpp::CharacterVector eic_intensity(n);
+    Rcpp::CharacterVector eic_baseline(n);
+    Rcpp::CharacterVector eic_smoothed(n);
+    Rcpp::IntegerVector ms1_size(n);
+    Rcpp::CharacterVector ms1_mz(n);
+    Rcpp::CharacterVector ms1_intensity(n);
+    Rcpp::IntegerVector ms2_size(n);
+    Rcpp::CharacterVector ms2_mz(n);
+    Rcpp::CharacterVector ms2_intensity(n);
+    Rcpp::CharacterVector created_at(n);
+
+    for (std::size_t i = 0; i < n; ++i)
+    {
+      const auto &row = rows[i];
+      project_id[i] = row.project_id;
+      analysis[i] = row.analysis;
+      feature[i] = row.feature;
+      feature_component[i] = row.feature_component.empty() ? NA_STRING : Rcpp::String(row.feature_component);
+      feature_group[i] = row.feature_group.empty() ? NA_STRING : Rcpp::String(row.feature_group);
+      adduct[i] = row.adduct.empty() ? NA_STRING : Rcpp::String(row.adduct);
+      rt[i] = row.rt;
+      mz[i] = row.mz;
+      mass[i] = row.mass;
+      intensity[i] = row.intensity;
+      noise[i] = row.noise;
+      sn[i] = row.sn;
+      area[i] = row.area;
+      rtmin[i] = row.rtmin;
+      rtmax[i] = row.rtmax;
+      width[i] = row.width;
+      mzmin[i] = row.mzmin;
+      mzmax[i] = row.mzmax;
+      ppm[i] = row.ppm;
+      fwhm_rt[i] = row.fwhm_rt;
+      fwhm_mz[i] = row.fwhm_mz;
+      gaussian_A[i] = row.gaussian_A;
+      gaussian_mu[i] = row.gaussian_mu;
+      gaussian_sigma[i] = row.gaussian_sigma;
+      gaussian_r2[i] = row.gaussian_r2;
+      jaggedness[i] = row.jaggedness;
+      sharpness[i] = row.sharpness;
+      asymmetry[i] = row.asymmetry;
+      modality[i] = row.modality;
+      plates[i] = row.plates;
+      polarity[i] = row.polarity;
+      filtered[i] = row.filtered;
+      filter[i] = row.filter.empty() ? NA_STRING : Rcpp::String(row.filter);
+      filled[i] = row.filled;
+      correction[i] = row.correction;
+      eic_size[i] = row.eic_size;
+      eic_rt[i] = row.eic_rt.empty() ? NA_STRING : Rcpp::String(row.eic_rt);
+      eic_mz[i] = row.eic_mz.empty() ? NA_STRING : Rcpp::String(row.eic_mz);
+      eic_intensity[i] = row.eic_intensity.empty() ? NA_STRING : Rcpp::String(row.eic_intensity);
+      eic_baseline[i] = row.eic_baseline.empty() ? NA_STRING : Rcpp::String(row.eic_baseline);
+      eic_smoothed[i] = row.eic_smoothed.empty() ? NA_STRING : Rcpp::String(row.eic_smoothed);
+      ms1_size[i] = row.ms1_size;
+      ms1_mz[i] = row.ms1_mz.empty() ? NA_STRING : Rcpp::String(row.ms1_mz);
+      ms1_intensity[i] = row.ms1_intensity.empty() ? NA_STRING : Rcpp::String(row.ms1_intensity);
+      ms2_size[i] = row.ms2_size;
+      ms2_mz[i] = row.ms2_mz.empty() ? NA_STRING : Rcpp::String(row.ms2_mz);
+      ms2_intensity[i] = row.ms2_intensity.empty() ? NA_STRING : Rcpp::String(row.ms2_intensity);
+      created_at[i] = row.created_at.empty() ? NA_STRING : Rcpp::String(row.created_at);
+    }
+
+    Rcpp::List out = Rcpp::List::create(
+        Rcpp::Named("project_id") = project_id,
+        Rcpp::Named("analysis") = analysis,
+        Rcpp::Named("feature") = feature,
+        Rcpp::Named("feature_component") = feature_component,
+        Rcpp::Named("feature_group") = feature_group,
+        Rcpp::Named("adduct") = adduct,
+        Rcpp::Named("rt") = rt,
+        Rcpp::Named("mz") = mz,
+        Rcpp::Named("mass") = mass,
+        Rcpp::Named("intensity") = intensity,
+        Rcpp::Named("noise") = noise,
+        Rcpp::Named("sn") = sn,
+        Rcpp::Named("area") = area,
+        Rcpp::Named("rtmin") = rtmin,
+        Rcpp::Named("rtmax") = rtmax,
+        Rcpp::Named("width") = width,
+        Rcpp::Named("mzmin") = mzmin,
+        Rcpp::Named("mzmax") = mzmax,
+        Rcpp::Named("ppm") = ppm,
+        Rcpp::Named("fwhm_rt") = fwhm_rt,
+        Rcpp::Named("fwhm_mz") = fwhm_mz,
+        Rcpp::Named("gaussian_A") = gaussian_A,
+        Rcpp::Named("gaussian_mu") = gaussian_mu,
+        Rcpp::Named("gaussian_sigma") = gaussian_sigma,
+        Rcpp::Named("gaussian_r2") = gaussian_r2,
+        Rcpp::Named("jaggedness") = jaggedness,
+        Rcpp::Named("sharpness") = sharpness,
+        Rcpp::Named("asymmetry") = asymmetry,
+        Rcpp::Named("modality") = modality,
+        Rcpp::Named("plates") = plates,
+        Rcpp::Named("polarity") = polarity,
+        Rcpp::Named("filtered") = filtered,
+        Rcpp::Named("filter") = filter,
+        Rcpp::Named("filled") = filled,
+        Rcpp::Named("correction") = correction,
+        Rcpp::Named("eic_size") = eic_size,
+        Rcpp::Named("eic_rt") = eic_rt,
+        Rcpp::Named("eic_mz") = eic_mz,
+        Rcpp::Named("eic_intensity") = eic_intensity,
+        Rcpp::Named("eic_baseline") = eic_baseline,
+        Rcpp::Named("eic_smoothed") = eic_smoothed,
+        Rcpp::Named("ms1_size") = ms1_size,
+        Rcpp::Named("ms1_mz") = ms1_mz,
+        Rcpp::Named("ms1_intensity") = ms1_intensity,
+        Rcpp::Named("ms2_size") = ms2_size,
+        Rcpp::Named("ms2_mz") = ms2_mz,
+        Rcpp::Named("ms2_intensity") = ms2_intensity,
+        Rcpp::Named("created_at") = created_at);
+    out.attr("class") = Rcpp::CharacterVector::create("data.table", "data.frame");
+    return out;
+  }
+
+  Rcpp::List nts_feature_count_rows_to_dt(const std::vector<nts::NTS_FEATURE_COUNT_ROW> &rows)
+  {
+    const std::size_t n = rows.size();
+    if (n == 0)
+    {
+      return get_empty_dt();
+    }
+    Rcpp::CharacterVector analysis(n);
+    Rcpp::IntegerVector total(n);
+    Rcpp::IntegerVector filtered(n);
+    Rcpp::IntegerVector groups(n);
+    Rcpp::IntegerVector components(n);
+    for (std::size_t i = 0; i < n; ++i)
+    {
+      analysis[i] = rows[i].analysis;
+      total[i] = rows[i].total;
+      filtered[i] = rows[i].filtered;
+      groups[i] = rows[i].groups;
+      components[i] = rows[i].components;
+    }
+    Rcpp::List out = Rcpp::List::create(Rcpp::Named("analysis") = analysis,
+                                        Rcpp::Named("total") = total,
+                                        Rcpp::Named("filtered") = filtered,
+                                        Rcpp::Named("groups") = groups,
+                                        Rcpp::Named("components") = components);
+    out.attr("class") = Rcpp::CharacterVector::create("data.table", "data.frame");
+    return out;
+  }
+
+  Rcpp::List nts_suspect_rows_to_dt(const std::vector<nts::NTS_SUSPECT_ROW> &rows)
+  {
+    const std::size_t n = rows.size();
+    if (n == 0)
+    {
+      return get_empty_dt();
+    }
+    Rcpp::CharacterVector project_id(n), analysis(n), feature(n), name(n), formula(n), smiles(n), inchi(n), inchikey(n), database_id(n), db_ms2_mz(n), db_ms2_intensity(n), db_ms2_formula(n), exp_ms2_mz(n), exp_ms2_intensity(n), created_at(n);
+    Rcpp::IntegerVector candidate_rank(n), polarity(n), id_level(n), shared_fragments(n), db_ms2_size(n), exp_ms2_size(n);
+    Rcpp::NumericVector db_mass(n), exp_mass(n), error_mass(n), db_rt(n), exp_rt(n), error_rt(n), intensity(n), area(n), score(n), cosine_similarity(n), xLogP(n);
+    for (std::size_t i = 0; i < n; ++i)
+    {
+      const auto &row = rows[i];
+      project_id[i] = row.project_id;
+      analysis[i] = row.analysis;
+      feature[i] = row.feature;
+      candidate_rank[i] = row.candidate_rank;
+      name[i] = row.name;
+      polarity[i] = row.polarity;
+      db_mass[i] = row.db_mass;
+      exp_mass[i] = row.exp_mass;
+      error_mass[i] = row.error_mass;
+      db_rt[i] = row.db_rt;
+      exp_rt[i] = row.exp_rt;
+      error_rt[i] = row.error_rt;
+      intensity[i] = row.intensity;
+      area[i] = row.area;
+      id_level[i] = row.id_level;
+      score[i] = row.score;
+      shared_fragments[i] = row.shared_fragments;
+      cosine_similarity[i] = row.cosine_similarity;
+      formula[i] = row.formula.empty() ? NA_STRING : Rcpp::String(row.formula);
+      smiles[i] = row.SMILES.empty() ? NA_STRING : Rcpp::String(row.SMILES);
+      inchi[i] = row.InChI.empty() ? NA_STRING : Rcpp::String(row.InChI);
+      inchikey[i] = row.InChIKey.empty() ? NA_STRING : Rcpp::String(row.InChIKey);
+      xLogP[i] = row.xLogP;
+      database_id[i] = row.database_id.empty() ? NA_STRING : Rcpp::String(row.database_id);
+      db_ms2_size[i] = row.db_ms2_size;
+      db_ms2_mz[i] = row.db_ms2_mz.empty() ? NA_STRING : Rcpp::String(row.db_ms2_mz);
+      db_ms2_intensity[i] = row.db_ms2_intensity.empty() ? NA_STRING : Rcpp::String(row.db_ms2_intensity);
+      db_ms2_formula[i] = row.db_ms2_formula.empty() ? NA_STRING : Rcpp::String(row.db_ms2_formula);
+      exp_ms2_size[i] = row.exp_ms2_size;
+      exp_ms2_mz[i] = row.exp_ms2_mz.empty() ? NA_STRING : Rcpp::String(row.exp_ms2_mz);
+      exp_ms2_intensity[i] = row.exp_ms2_intensity.empty() ? NA_STRING : Rcpp::String(row.exp_ms2_intensity);
+      created_at[i] = row.created_at.empty() ? NA_STRING : Rcpp::String(row.created_at);
+    }
+    Rcpp::List out = Rcpp::List::create(
+        Rcpp::Named("project_id") = project_id,
+        Rcpp::Named("analysis") = analysis,
+        Rcpp::Named("feature") = feature,
+        Rcpp::Named("candidate_rank") = candidate_rank,
+        Rcpp::Named("name") = name,
+        Rcpp::Named("polarity") = polarity,
+        Rcpp::Named("db_mass") = db_mass,
+        Rcpp::Named("exp_mass") = exp_mass,
+        Rcpp::Named("error_mass") = error_mass,
+        Rcpp::Named("db_rt") = db_rt,
+        Rcpp::Named("exp_rt") = exp_rt,
+        Rcpp::Named("error_rt") = error_rt,
+        Rcpp::Named("intensity") = intensity,
+        Rcpp::Named("area") = area,
+        Rcpp::Named("id_level") = id_level,
+        Rcpp::Named("score") = score,
+        Rcpp::Named("shared_fragments") = shared_fragments,
+        Rcpp::Named("cosine_similarity") = cosine_similarity,
+        Rcpp::Named("formula") = formula,
+        Rcpp::Named("SMILES") = smiles,
+        Rcpp::Named("InChI") = inchi,
+        Rcpp::Named("InChIKey") = inchikey,
+        Rcpp::Named("xLogP") = xLogP,
+        Rcpp::Named("database_id") = database_id,
+        Rcpp::Named("db_ms2_size") = db_ms2_size,
+        Rcpp::Named("db_ms2_mz") = db_ms2_mz,
+        Rcpp::Named("db_ms2_intensity") = db_ms2_intensity,
+        Rcpp::Named("db_ms2_formula") = db_ms2_formula,
+        Rcpp::Named("exp_ms2_size") = exp_ms2_size,
+        Rcpp::Named("exp_ms2_mz") = exp_ms2_mz,
+        Rcpp::Named("exp_ms2_intensity") = exp_ms2_intensity,
+        Rcpp::Named("created_at") = created_at);
+    out.attr("class") = Rcpp::CharacterVector::create("data.table", "data.frame");
+    return out;
+  }
+
+  Rcpp::List nts_internal_standard_rows_to_dt(const std::vector<nts::NTS_INTERNAL_STANDARD_ROW> &rows)
+  {
+    if (rows.empty())
+    {
+      return get_empty_dt();
+    }
+    std::vector<nts::NTS_SUSPECT_ROW> suspect_rows;
+    suspect_rows.reserve(rows.size());
+    for (const auto &row : rows)
+    {
+      nts::NTS_SUSPECT_ROW value;
+      value.project_id = row.project_id;
+      value.analysis = row.analysis;
+      value.feature = row.feature;
+      value.candidate_rank = row.candidate_rank;
+      value.name = row.name;
+      value.polarity = row.polarity;
+      value.db_mass = row.db_mass;
+      value.exp_mass = row.exp_mass;
+      value.error_mass = row.error_mass;
+      value.db_rt = row.db_rt;
+      value.exp_rt = row.exp_rt;
+      value.error_rt = row.error_rt;
+      value.intensity = row.intensity;
+      value.area = row.area;
+      value.id_level = row.id_level;
+      value.score = row.score;
+      value.shared_fragments = row.shared_fragments;
+      value.cosine_similarity = row.cosine_similarity;
+      value.formula = row.formula;
+      value.SMILES = row.SMILES;
+      value.InChI = row.InChI;
+      value.InChIKey = row.InChIKey;
+      value.xLogP = row.xLogP;
+      value.database_id = row.database_id;
+      value.db_ms2_size = row.db_ms2_size;
+      value.db_ms2_mz = row.db_ms2_mz;
+      value.db_ms2_intensity = row.db_ms2_intensity;
+      value.db_ms2_formula = row.db_ms2_formula;
+      value.exp_ms2_size = row.exp_ms2_size;
+      value.exp_ms2_mz = row.exp_ms2_mz;
+      value.exp_ms2_intensity = row.exp_ms2_intensity;
+      value.created_at = row.created_at;
+      suspect_rows.push_back(value);
+    }
+    return nts_suspect_rows_to_dt(suspect_rows);
+  }
+
+  Rcpp::List nts_transformation_product_rows_to_dt(const std::vector<nts::NTS_TRANSFORMATION_PRODUCT_ROW> &rows)
+  {
+    const std::size_t n = rows.size();
+    if (n == 0)
+    {
+      return get_empty_dt();
+    }
+    Rcpp::CharacterVector project_id(n), name(n), formula(n), smiles(n), inchi(n), inchikey(n), transformation(n), precursor_name(n), precursor_formula(n), precursor_smiles(n), precursor_inchi(n), precursor_inchikey(n), main_precursor_name(n), main_precursor_formula(n), main_precursor_smiles(n), main_precursor_inchi(n), main_precursor_inchikey(n), feature_group(n), precursor_feature_group(n), main_precursor_feature_group(n), created_at(n);
+    Rcpp::NumericVector mass(n), xLogP(n), precursor_mass(n), precursor_xLogP(n), main_precursor_mass(n), main_precursor_xLogP(n), cosine_similarity(n), main_precursor_cosine_similarity(n), rt_plausibility(n), main_precursor_rt_plausibility(n);
+    for (std::size_t i = 0; i < n; ++i)
+    {
+      const auto &row = rows[i];
+      project_id[i] = row.project_id;
+      name[i] = row.name.empty() ? NA_STRING : Rcpp::String(row.name);
+      formula[i] = row.formula.empty() ? NA_STRING : Rcpp::String(row.formula);
+      mass[i] = row.mass;
+      smiles[i] = row.SMILES.empty() ? NA_STRING : Rcpp::String(row.SMILES);
+      inchi[i] = row.InChI.empty() ? NA_STRING : Rcpp::String(row.InChI);
+      inchikey[i] = row.InChIKey.empty() ? NA_STRING : Rcpp::String(row.InChIKey);
+      xLogP[i] = row.xLogP;
+      transformation[i] = row.transformation.empty() ? NA_STRING : Rcpp::String(row.transformation);
+      precursor_name[i] = row.precursor_name.empty() ? NA_STRING : Rcpp::String(row.precursor_name);
+      precursor_formula[i] = row.precursor_formula.empty() ? NA_STRING : Rcpp::String(row.precursor_formula);
+      precursor_mass[i] = row.precursor_mass;
+      precursor_smiles[i] = row.precursor_SMILES.empty() ? NA_STRING : Rcpp::String(row.precursor_SMILES);
+      precursor_inchi[i] = row.precursor_InChI.empty() ? NA_STRING : Rcpp::String(row.precursor_InChI);
+      precursor_inchikey[i] = row.precursor_InChIKey.empty() ? NA_STRING : Rcpp::String(row.precursor_InChIKey);
+      precursor_xLogP[i] = row.precursor_xLogP;
+      main_precursor_name[i] = row.main_precursor_name.empty() ? NA_STRING : Rcpp::String(row.main_precursor_name);
+      main_precursor_formula[i] = row.main_precursor_formula.empty() ? NA_STRING : Rcpp::String(row.main_precursor_formula);
+      main_precursor_mass[i] = row.main_precursor_mass;
+      main_precursor_smiles[i] = row.main_precursor_SMILES.empty() ? NA_STRING : Rcpp::String(row.main_precursor_SMILES);
+      main_precursor_inchi[i] = row.main_precursor_InChI.empty() ? NA_STRING : Rcpp::String(row.main_precursor_InChI);
+      main_precursor_inchikey[i] = row.main_precursor_InChIKey.empty() ? NA_STRING : Rcpp::String(row.main_precursor_InChIKey);
+      main_precursor_xLogP[i] = row.main_precursor_xLogP;
+      feature_group[i] = row.feature_group.empty() ? NA_STRING : Rcpp::String(row.feature_group);
+      precursor_feature_group[i] = row.precursor_feature_group.empty() ? NA_STRING : Rcpp::String(row.precursor_feature_group);
+      main_precursor_feature_group[i] = row.main_precursor_feature_group.empty() ? NA_STRING : Rcpp::String(row.main_precursor_feature_group);
+      cosine_similarity[i] = row.cosine_similarity;
+      main_precursor_cosine_similarity[i] = row.main_precursor_cosine_similarity;
+      rt_plausibility[i] = row.rt_plausibility;
+      main_precursor_rt_plausibility[i] = row.main_precursor_rt_plausibility;
+      created_at[i] = row.created_at.empty() ? NA_STRING : Rcpp::String(row.created_at);
+    }
+    Rcpp::List out = Rcpp::List::create(
+        Rcpp::Named("project_id") = project_id,
+        Rcpp::Named("name") = name,
+        Rcpp::Named("formula") = formula,
+        Rcpp::Named("mass") = mass,
+        Rcpp::Named("SMILES") = smiles,
+        Rcpp::Named("InChI") = inchi,
+        Rcpp::Named("InChIKey") = inchikey,
+        Rcpp::Named("xLogP") = xLogP,
+        Rcpp::Named("transformation") = transformation,
+        Rcpp::Named("precursor_name") = precursor_name,
+        Rcpp::Named("precursor_formula") = precursor_formula,
+        Rcpp::Named("precursor_mass") = precursor_mass,
+        Rcpp::Named("precursor_SMILES") = precursor_smiles,
+        Rcpp::Named("precursor_InChI") = precursor_inchi,
+        Rcpp::Named("precursor_InChIKey") = precursor_inchikey,
+        Rcpp::Named("precursor_xLogP") = precursor_xLogP,
+        Rcpp::Named("main_precursor_name") = main_precursor_name,
+        Rcpp::Named("main_precursor_formula") = main_precursor_formula,
+        Rcpp::Named("main_precursor_mass") = main_precursor_mass,
+        Rcpp::Named("main_precursor_SMILES") = main_precursor_smiles,
+        Rcpp::Named("main_precursor_InChI") = main_precursor_inchi,
+        Rcpp::Named("main_precursor_InChIKey") = main_precursor_inchikey,
+        Rcpp::Named("main_precursor_xLogP") = main_precursor_xLogP,
+        Rcpp::Named("feature_group") = feature_group,
+        Rcpp::Named("precursor_feature_group") = precursor_feature_group,
+        Rcpp::Named("main_precursor_feature_group") = main_precursor_feature_group,
+        Rcpp::Named("cosine_similarity") = cosine_similarity,
+        Rcpp::Named("main_precursor_cosine_similarity") = main_precursor_cosine_similarity,
+        Rcpp::Named("rt_plausibility") = rt_plausibility,
+        Rcpp::Named("main_precursor_rt_plausibility") = main_precursor_rt_plausibility,
+        Rcpp::Named("created_at") = created_at);
+    out.attr("class") = Rcpp::CharacterVector::create("data.table", "data.frame");
+    return out;
+  }
+
   Rcpp::List features_as_list_of_dt(const nts::NTS_DATA &nts_data)
   {
     const int n = nts_data.features.size();
@@ -952,6 +1535,619 @@ namespace
   }
 
 } // namespace
+
+// [[Rcpp::export]]
+SEXP rcpp_project_non_target_analysis_new(SEXP project_xptr)
+{
+  return project_call([&]() {
+    auto *ptr = new nts::PROJECT_NON_TARGET_ANALYSIS(project_from_xptr(project_xptr).context());
+    Rcpp::XPtr<nts::PROJECT_NON_TARGET_ANALYSIS> out(ptr, true);
+    out.attr("class") = "StreamFindProjectNonTargetAnalysis";
+    return SEXP(out);
+  });
+}
+
+// [[Rcpp::export]]
+Rcpp::List rcpp_project_non_target_analysis_get_features(SEXP nts_xptr,
+                                                         CharacterVector analyses,
+                                                         bool include_filtered)
+{
+  return project_call([&]() {
+    return nts_feature_rows_to_dt(
+        project_non_target_analysis_from_xptr(nts_xptr).get_features(
+            Rcpp::as<std::vector<std::string>>(analyses), include_filtered));
+  });
+}
+
+// [[Rcpp::export]]
+Rcpp::List rcpp_project_non_target_analysis_get_features_count(SEXP nts_xptr,
+                                                               CharacterVector analyses,
+                                                               bool include_filtered)
+{
+  return project_call([&]() {
+    return nts_feature_count_rows_to_dt(
+        project_non_target_analysis_from_xptr(nts_xptr).get_features_count(
+            Rcpp::as<std::vector<std::string>>(analyses), include_filtered));
+  });
+}
+
+// [[Rcpp::export]]
+Rcpp::List rcpp_project_non_target_analysis_get_suspects(SEXP nts_xptr,
+                                                         CharacterVector analyses,
+                                                         SEXP features,
+                                                         SEXP groups,
+                                                         SEXP targets,
+                                                         double ppm = 20.0,
+                                                         double sec = 60.0,
+                                                         double millisec = 5.0)
+{
+  return project_call([&]() {
+    return nts_suspect_rows_to_dt(
+        project_non_target_analysis_from_xptr(nts_xptr).get_suspects(
+            Rcpp::as<std::vector<std::string>>(analyses),
+            as_character_selection(features, "feature"),
+            as_character_selection(groups, "feature_group", "group"),
+            ms_targets_input_from_object(targets),
+            ppm,
+            sec,
+            millisec));
+  });
+}
+
+// [[Rcpp::export]]
+Rcpp::List rcpp_project_non_target_analysis_get_internal_standards(SEXP nts_xptr,
+                                                                   CharacterVector analyses,
+                                                                   SEXP features,
+                                                                   SEXP groups,
+                                                                   SEXP targets,
+                                                                   double ppm = 20.0,
+                                                                   double sec = 60.0,
+                                                                   double millisec = 5.0)
+{
+  return project_call([&]() {
+    return nts_internal_standard_rows_to_dt(
+        project_non_target_analysis_from_xptr(nts_xptr).get_internal_standards(
+            Rcpp::as<std::vector<std::string>>(analyses),
+            as_character_selection(features, "feature"),
+            as_character_selection(groups, "feature_group", "group"),
+            ms_targets_input_from_object(targets),
+            ppm,
+            sec,
+            millisec));
+  });
+}
+
+// [[Rcpp::export]]
+Rcpp::List rcpp_project_non_target_analysis_get_transformation_products(SEXP nts_xptr)
+{
+  return project_call([&]() {
+    return nts_transformation_product_rows_to_dt(
+        project_non_target_analysis_from_xptr(nts_xptr).get_transformation_products());
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_non_target_analysis_find_features(SEXP nts_xptr,
+                                                    CharacterVector analyses,
+                                                    NumericVector rt_windows_min,
+                                                    NumericVector rt_windows_max,
+                                                    float ppm_threshold = 15.0,
+                                                    float noise_threshold = 15.0,
+                                                    float min_snr = 3.0,
+                                                    int min_traces = 3,
+                                                    float baseline_window = 200.0,
+                                                    float max_width = 100.0,
+                                                    float base_quantile = 0.10,
+                                                    std::string debug_analysis = "",
+                                                    float debug_mz = 0.0,
+                                                    int debug_spec_idx = -1)
+{
+  return project_call([&]() {
+    return project_non_target_analysis_from_xptr(nts_xptr).find_features(
+        Rcpp::as<std::vector<std::string>>(analyses),
+        Rcpp::as<std::vector<float>>(rt_windows_min),
+        Rcpp::as<std::vector<float>>(rt_windows_max),
+        ppm_threshold,
+        noise_threshold,
+        min_snr,
+        min_traces,
+        baseline_window,
+        max_width,
+        base_quantile,
+        debug_analysis,
+        debug_mz,
+        debug_spec_idx);
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_non_target_analysis_suspect_screening(SEXP nts_xptr,
+                                                        Rcpp::List suspects,
+                                                        CharacterVector analyses,
+                                                        double ppm = 5.0,
+                                                        double sec = 10.0,
+                                                        double ppmMS2 = 10.0,
+                                                        double mzrMS2 = 0.008,
+                                                        double minCosineSimilarity = 0.7,
+                                                        int minSharedFragments = 3,
+                                                        bool filtered = false)
+{
+  return project_call([&]() {
+    return project_non_target_analysis_from_xptr(nts_xptr).suspect_screening(
+        as_suspect_queries(suspects),
+        Rcpp::as<std::vector<std::string>>(analyses),
+        ppm,
+        sec,
+        ppmMS2,
+        mzrMS2,
+        minCosineSimilarity,
+        minSharedFragments,
+        filtered);
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_non_target_analysis_find_internal_standards(SEXP nts_xptr,
+                                                              Rcpp::List suspects,
+                                                              CharacterVector analyses,
+                                                              double ppm = 5.0,
+                                                              double sec = 10.0,
+                                                              double ppmMS2 = 10.0,
+                                                              double mzrMS2 = 0.008,
+                                                              double minCosineSimilarity = 0.7,
+                                                              int minSharedFragments = 3,
+                                                              bool filtered = true)
+{
+  return project_call([&]() {
+    return project_non_target_analysis_from_xptr(nts_xptr).find_internal_standards(
+        as_suspect_queries(suspects),
+        Rcpp::as<std::vector<std::string>>(analyses),
+        ppm,
+        sec,
+        ppmMS2,
+        mzrMS2,
+        minCosineSimilarity,
+        minSharedFragments,
+        filtered);
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_non_target_analysis_load_features_ms1(SEXP nts_xptr,
+                                                        CharacterVector analyses,
+                                                        bool filtered = false,
+                                                        NumericVector rtWindow = NumericVector::create(-2.0, 2.0),
+                                                        NumericVector mzWindow = NumericVector::create(-1.0, 6.0),
+                                                        float minTracesIntensity = 250.0,
+                                                        float mzClust = 0.005,
+                                                        float presence = 0.8)
+{
+  return project_call([&]() {
+    return project_non_target_analysis_from_xptr(nts_xptr).load_features_ms1(
+        Rcpp::as<std::vector<std::string>>(analyses),
+        filtered,
+        Rcpp::as<std::vector<float>>(rtWindow),
+        Rcpp::as<std::vector<float>>(mzWindow),
+        minTracesIntensity,
+        mzClust,
+        presence);
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_non_target_analysis_load_features_ms2(SEXP nts_xptr,
+                                                        CharacterVector analyses,
+                                                        bool filtered = false,
+                                                        float minTracesIntensity = 10.0,
+                                                        float isolationWindow = 1.3,
+                                                        float mzClust = 0.005,
+                                                        float presence = 0.8)
+{
+  return project_call([&]() {
+    return project_non_target_analysis_from_xptr(nts_xptr).load_features_ms2(
+        Rcpp::as<std::vector<std::string>>(analyses),
+        filtered,
+        minTracesIntensity,
+        isolationWindow,
+        mzClust,
+        presence);
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_non_target_analysis_create_components(SEXP nts_xptr,
+                                                        CharacterVector analyses,
+                                                        NumericVector rtWindow = NumericVector::create(0.0, 0.0),
+                                                        float minCorrelation = 0.8,
+                                                        float debugRT = 0.0,
+                                                        std::string debugAnalysis = "")
+{
+  return project_call([&]() {
+    return project_non_target_analysis_from_xptr(nts_xptr).create_components(
+        Rcpp::as<std::vector<std::string>>(analyses),
+        Rcpp::as<std::vector<float>>(rtWindow),
+        minCorrelation,
+        debugRT,
+        debugAnalysis);
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_non_target_analysis_annotate_components(SEXP nts_xptr,
+                                                          CharacterVector analyses,
+                                                          int maxIsotopes = 5,
+                                                          int maxCharge = 1,
+                                                          int maxGaps = 1,
+                                                          float ppm = 10.0,
+                                                          std::string debugComponent = "",
+                                                          std::string debugAnalysis = "")
+{
+  return project_call([&]() {
+    return project_non_target_analysis_from_xptr(nts_xptr).annotate_components(
+        Rcpp::as<std::vector<std::string>>(analyses),
+        maxIsotopes,
+        maxCharge,
+        maxGaps,
+        ppm,
+        debugComponent,
+        debugAnalysis);
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_non_target_analysis_group_features(SEXP nts_xptr,
+                                                     CharacterVector analyses,
+                                                     std::string method = "internal_standards",
+                                                     float rtDeviation = 5.0,
+                                                     float ppm = 10.0,
+                                                     int minSamples = 1,
+                                                     float binSize = 5.0,
+                                                     bool filtered = false,
+                                                     bool debug = false,
+                                                     float debugRT = 0.0)
+{
+  return project_call([&]() {
+    return project_non_target_analysis_from_xptr(nts_xptr).group_features(
+        Rcpp::as<std::vector<std::string>>(analyses),
+        method,
+        rtDeviation,
+        ppm,
+        minSamples,
+        binSize,
+        filtered,
+        debug,
+        debugRT);
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_non_target_analysis_fill_features(SEXP nts_xptr,
+                                                    CharacterVector analyses,
+                                                    bool withinReplicate = false,
+                                                    bool filtered = false,
+                                                    float rtExpand = 10.0,
+                                                    float mzExpand = 0.01,
+                                                    float maxPeakWidth = 30.0,
+                                                    float minTracesIntensity = 1000.0,
+                                                    int minNumberTraces = 5,
+                                                    float minIntensity = 5000.0,
+                                                    float rtApexDeviation = 5.0,
+                                                    float minSignalToNoiseRatio = 3.0,
+                                                    float minGaussianFit = 0.2,
+                                                    std::string debugFG = "")
+{
+  return project_call([&]() {
+    return project_non_target_analysis_from_xptr(nts_xptr).fill_features(
+        Rcpp::as<std::vector<std::string>>(analyses),
+        withinReplicate,
+        filtered,
+        rtExpand,
+        mzExpand,
+        maxPeakWidth,
+        minTracesIntensity,
+        minNumberTraces,
+        minIntensity,
+        rtApexDeviation,
+        minSignalToNoiseRatio,
+        minGaussianFit,
+        debugFG);
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_non_target_analysis_blank_subtraction(SEXP nts_xptr,
+                                                        CharacterVector analyses,
+                                                        float blankThreshold = 5.0,
+                                                        float rtExpand = 10.0,
+                                                        float mzExpand = 0.005)
+{
+  return project_call([&]() {
+    return project_non_target_analysis_from_xptr(nts_xptr).blank_subtraction(
+        Rcpp::as<std::vector<std::string>>(analyses),
+        blankThreshold,
+        rtExpand,
+        mzExpand);
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_non_target_analysis_filter_features(SEXP nts_xptr,
+                                                      CharacterVector analyses,
+                                                      double minSN = NA_REAL,
+                                                      double minIntensity = NA_REAL,
+                                                      double minArea = NA_REAL,
+                                                      double minWidth = NA_REAL,
+                                                      double maxWidth = NA_REAL,
+                                                      double maxPPM = NA_REAL,
+                                                      double minFwhmRT = NA_REAL,
+                                                      double maxFwhmRT = NA_REAL,
+                                                      double minFwhmMZ = NA_REAL,
+                                                      double maxFwhmMZ = NA_REAL,
+                                                      double minGaussianA = NA_REAL,
+                                                      double minGaussianMu = NA_REAL,
+                                                      double maxGaussianMu = NA_REAL,
+                                                      double minGaussianSigma = NA_REAL,
+                                                      double maxGaussianSigma = NA_REAL,
+                                                      double minGaussianR2 = NA_REAL,
+                                                      double maxJaggedness = NA_REAL,
+                                                      double minSharpness = NA_REAL,
+                                                      double minAsymmetry = NA_REAL,
+                                                      double maxAsymmetry = NA_REAL,
+                                                      int maxModality = NA_INTEGER,
+                                                      double minPlates = NA_REAL,
+                                                      LogicalVector onlyFilled = LogicalVector::create(NA_LOGICAL),
+                                                      bool removeFilled = false,
+                                                      int minSizeEIC = NA_INTEGER,
+                                                      int minSizeMS1 = NA_INTEGER,
+                                                      int minSizeMS2 = NA_INTEGER,
+                                                      double minRelPresenceReplicate = NA_REAL,
+                                                      bool removeIsotopes = false,
+                                                      bool removeAdducts = false,
+                                                      bool removeLosses = false)
+{
+  return project_call([&]() {
+    const bool hasOnlyFilled = (onlyFilled.size() > 0 && onlyFilled[0] != NA_LOGICAL);
+    const bool onlyFilledValue = hasOnlyFilled ? static_cast<bool>(onlyFilled[0]) : false;
+    return project_non_target_analysis_from_xptr(nts_xptr).filter_features(
+        Rcpp::as<std::vector<std::string>>(analyses),
+        minSN,
+        minIntensity,
+        minArea,
+        minWidth,
+        maxWidth,
+        maxPPM,
+        minFwhmRT,
+        maxFwhmRT,
+        minFwhmMZ,
+        maxFwhmMZ,
+        minGaussianA,
+        minGaussianMu,
+        maxGaussianMu,
+        minGaussianSigma,
+        maxGaussianSigma,
+        minGaussianR2,
+        maxJaggedness,
+        minSharpness,
+        minAsymmetry,
+        maxAsymmetry,
+        maxModality,
+        minPlates,
+        hasOnlyFilled,
+        onlyFilledValue,
+        removeFilled,
+        minSizeEIC,
+        minSizeEIC != NA_INTEGER,
+        minSizeMS1,
+        minSizeMS1 != NA_INTEGER,
+        minSizeMS2,
+        minSizeMS2 != NA_INTEGER,
+        minRelPresenceReplicate,
+        removeIsotopes,
+        removeAdducts,
+        removeLosses);
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_non_target_analysis_filter_suspects(SEXP nts_xptr,
+                                                      CharacterVector analyses,
+                                                      CharacterVector names = CharacterVector::create(),
+                                                      double minScore = NA_REAL,
+                                                      double maxErrorRT = NA_REAL,
+                                                      double maxErrorMass = NA_REAL,
+                                                      IntegerVector idLevels = IntegerVector::create(),
+                                                      int minSharedFragments = 0,
+                                                      double minCosineSimilarity = NA_REAL)
+{
+  return project_call([&]() {
+    return project_non_target_analysis_from_xptr(nts_xptr).filter_suspects(
+        Rcpp::as<std::vector<std::string>>(analyses),
+        Rcpp::as<std::vector<std::string>>(names),
+        minScore,
+        maxErrorRT,
+        maxErrorMass,
+        Rcpp::as<std::vector<int>>(idLevels),
+        minSharedFragments,
+        minCosineSimilarity);
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_non_target_analysis_filter_internal_standards(SEXP nts_xptr,
+                                                                CharacterVector analyses,
+                                                                CharacterVector names = CharacterVector::create(),
+                                                                double minScore = NA_REAL,
+                                                                double maxErrorRT = NA_REAL,
+                                                                double maxErrorMass = NA_REAL,
+                                                                IntegerVector idLevels = IntegerVector::create(),
+                                                                int minSharedFragments = 0,
+                                                                double minCosineSimilarity = NA_REAL)
+{
+  return project_call([&]() {
+    return project_non_target_analysis_from_xptr(nts_xptr).filter_internal_standards(
+        Rcpp::as<std::vector<std::string>>(analyses),
+        Rcpp::as<std::vector<std::string>>(names),
+        minScore,
+        maxErrorRT,
+        maxErrorMass,
+        Rcpp::as<std::vector<int>>(idLevels),
+        minSharedFragments,
+        minCosineSimilarity);
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_non_target_analysis_filter_features_ms2(SEXP nts_xptr,
+                                                          CharacterVector analyses,
+                                                          int top = 0,
+                                                          double minIntensity = NA_REAL,
+                                                          double relMinIntensity = NA_REAL,
+                                                          bool blankClean = false,
+                                                          double mzClust = 0.005,
+                                                          double blankPresenceThreshold = 0.8,
+                                                          double globalPresenceThreshold = 0.1)
+{
+  return project_call([&]() {
+    return project_non_target_analysis_from_xptr(nts_xptr).filter_features_ms2(
+        Rcpp::as<std::vector<std::string>>(analyses),
+        top,
+        minIntensity,
+        relMinIntensity,
+        blankClean,
+        mzClust,
+        blankPresenceThreshold,
+        globalPresenceThreshold);
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_non_target_analysis_metfrag_screening(SEXP nts_xptr,
+                                                        std::string metfrag_path,
+                                                        CharacterVector analyses,
+                                                        std::string database_type = "LocalCSV",
+                                                        std::string database_path = "",
+                                                        double ppm = 5.0,
+                                                        double sec = 10.0,
+                                                        double ppmMS2 = 10.0,
+                                                        double mzrMS2 = 0.008,
+                                                        int top_n = 1,
+                                                        bool filtered = false,
+                                                        std::string java_path = "java",
+                                                        std::string run_dir = "",
+                                                        bool debug = false,
+                                                        Rcpp::List extra_params = R_NilValue)
+{
+  return project_call([&]() {
+    std::vector<std::pair<std::string, std::string>> extra_params_cpp;
+    if (extra_params.size() > 0) {
+      Rcpp::CharacterVector ep_names = extra_params.names();
+      for (int i = 0; i < extra_params.size(); ++i) {
+        std::string key = Rcpp::as<std::string>(ep_names[i]);
+        std::string val = Rcpp::as<std::string>(extra_params[i]);
+        if (!key.empty()) {
+          extra_params_cpp.emplace_back(key, val);
+        }
+      }
+    }
+    return project_non_target_analysis_from_xptr(nts_xptr).metfrag_screening(
+        metfrag_path,
+        Rcpp::as<std::vector<std::string>>(analyses),
+        database_type,
+        database_path,
+        ppm,
+        sec,
+        ppmMS2,
+        mzrMS2,
+        top_n,
+        filtered,
+        java_path,
+        run_dir,
+        debug,
+        extra_params_cpp);
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_non_target_analysis_assign_transformation_products(SEXP nts_xptr,
+                                                                     Rcpp::List transformation_products,
+                                                                     std::string chromatographic_phase = "reverse_phase",
+                                                                     double mzrMS2 = 0.008)
+{
+  return project_call([&]() {
+    namespace atp = nts::assign_transformation_products;
+    std::vector<atp::TPInputRow> tp_rows;
+    if (transformation_products.size() > 0) {
+      auto get_str = [&](const char *col) {
+        Rcpp::CharacterVector v = transformation_products[col];
+        std::vector<std::string> out;
+        out.reserve(v.size());
+        for (int i = 0; i < v.size(); ++i)
+          out.push_back((v[i] == NA_STRING) ? "" : Rcpp::as<std::string>(v[i]));
+        return out;
+      };
+      auto get_dbl = [&](const char *col) {
+        Rcpp::NumericVector v = transformation_products[col];
+        std::vector<double> out;
+        out.reserve(v.size());
+        for (int i = 0; i < v.size(); ++i)
+          out.push_back(Rcpp::NumericVector::is_na(v[i]) ? std::numeric_limits<double>::quiet_NaN() : static_cast<double>(v[i]));
+        return out;
+      };
+      auto name = get_str("name");
+      auto formula = get_str("formula");
+      auto mass = get_dbl("mass");
+      auto SMILES = get_str("SMILES");
+      auto InChI = get_str("InChI");
+      auto InChIKey = get_str("InChIKey");
+      auto xLogP = get_dbl("xLogP");
+      auto transformation = get_str("transformation");
+      auto precursor_name = get_str("precursor_name");
+      auto precursor_formula = get_str("precursor_formula");
+      auto precursor_mass = get_dbl("precursor_mass");
+      auto precursor_SMILES = get_str("precursor_SMILES");
+      auto precursor_InChI = get_str("precursor_InChI");
+      auto precursor_InChIKey = get_str("precursor_InChIKey");
+      auto precursor_xLogP = get_dbl("precursor_xLogP");
+      auto main_precursor_name = get_str("main_precursor_name");
+      auto main_precursor_formula = get_str("main_precursor_formula");
+      auto main_precursor_mass = get_dbl("main_precursor_mass");
+      auto main_precursor_SMILES = get_str("main_precursor_SMILES");
+      auto main_precursor_InChI = get_str("main_precursor_InChI");
+      auto main_precursor_InChIKey = get_str("main_precursor_InChIKey");
+      auto main_precursor_xLogP = get_dbl("main_precursor_xLogP");
+      for (int i = 0; i < static_cast<int>(name.size()); ++i) {
+        atp::TPInputRow row;
+        row.name = name[i];
+        row.formula = formula[i];
+        row.mass = mass[i];
+        row.SMILES = SMILES[i];
+        row.InChI = InChI[i];
+        row.InChIKey = InChIKey[i];
+        row.xLogP = xLogP[i];
+        row.transformation = transformation[i];
+        row.precursor_name = precursor_name[i];
+        row.precursor_formula = precursor_formula[i];
+        row.precursor_mass = precursor_mass[i];
+        row.precursor_SMILES = precursor_SMILES[i];
+        row.precursor_InChI = precursor_InChI[i];
+        row.precursor_InChIKey = precursor_InChIKey[i];
+        row.precursor_xLogP = precursor_xLogP[i];
+        row.main_precursor_name = main_precursor_name[i];
+        row.main_precursor_formula = main_precursor_formula[i];
+        row.main_precursor_mass = main_precursor_mass[i];
+        row.main_precursor_SMILES = main_precursor_SMILES[i];
+        row.main_precursor_InChI = main_precursor_InChI[i];
+        row.main_precursor_InChIKey = main_precursor_InChIKey[i];
+        row.main_precursor_xLogP = main_precursor_xLogP[i];
+        tp_rows.push_back(row);
+      }
+    }
+    return project_non_target_analysis_from_xptr(nts_xptr).assign_transformation_products(
+        tp_rows,
+        chromatographic_phase,
+        mzrMS2);
+  });
+}
 
 // MARK: rcpp_nts_find_features
 // [[Rcpp::export]]

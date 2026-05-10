@@ -1,6 +1,6 @@
 ##' @noRd
 ##' @export
-.mod_Workflow_UI.Engine <- function(x, id, ns) {
+.mod_Workflow_UI.Project <- function(x, id, ns) {
   ns2 <- shiny::NS(id)
   htmltools::div(
     style = "height: calc(100vh - 35px); overflow: hidden; padding: 0px;",
@@ -117,7 +117,7 @@
 
 ##' @noRd
 ##' @export
-.mod_Workflow_Server.Engine <- function(
+.mod_Workflow_Server.Project <- function(
     x,
     id,
     ns,
@@ -127,23 +127,41 @@
     reactive_update_trigger) {
   shiny::moduleServer(id, function(input, output, session) {
     ns2 <- shiny::NS(id)
-    engine <- x
-    engine_type <- class(engine)[1]
+    project <- x
+    project_type <- class(project)[1]
     param_edit_state <- shiny::reactiveValues()
 
-    processing_methods <- .get_available_processing_methods(engine_type)
+    get_object_workflow <- function(obj) {
+      if (is.null(obj$workflow)) {
+        stop(sprintf("Object of class '%s' does not expose project workflow storage.", class(obj)[1]))
+      }
+      wf <- obj$workflow
+      if (is.null(wf)) Workflow() else Workflow(wf)
+    }
 
-    if (length(processing_methods) == 0) {
+    set_object_workflow <- function(obj, workflow) {
+      workflow <- if (inherits(workflow, "Workflow")) workflow else Workflow(workflow)
+      if (is.null(obj$workflow)) {
+        stop(sprintf("Object of class '%s' does not expose project workflow storage.", class(obj)[1]))
+      }
+      obj$workflow <- workflow
+      invisible(obj)
+    }
+
+    processing_registry <- NULL
+    if (!is.null(project$available_processing_methods) && is.function(project$available_processing_methods)) {
+      processing_registry <- project$available_processing_methods()
+    }
+
+    if (length(processing_registry) == 0) {
       shiny::showNotification(
-        paste("No settings functions found for", engine_type, "engine!"),
+        paste("No processing methods found for project class", project_type, "!"),
         duration = 5,
         type = "warning"
       )
       processing_methods_short <- NULL
     } else {
-      engine_key <- paste0(gsub("Engine", "", engine_type), "Method_")
-      processing_methods_short <- gsub(engine_key, "", processing_methods)
-      names(processing_methods) <- processing_methods_short
+      processing_methods_short <- names(processing_registry)
     }
 
     reactive_selected_method <- shiny::reactiveVal(NULL)
@@ -355,13 +373,15 @@
       shiny::req(selected_method %in% names(rw))
       short_selected_method <- gsub("^\\d+_", "", selected_method)
       idx_selected_method <- gsub("^(\\d+)_.*", "\\1", selected_method)
-      method_name <- processing_methods[short_selected_method]
-      help_url <- paste0(
-        "https://odea-project.github.io/StreamFind/reference/",
-        method_name,
-        ".html"
-      )
       settings <- rw[[selected_method]]
+      registry_entry <- processing_registry[[short_selected_method]]
+      if (is.null(registry_entry)) {
+        registry_entry <- settings
+      }
+      help_url <- NA_character_
+      if (!is.null(registry_entry$link) && nzchar(registry_entry$link) && !is.na(registry_entry$link)) {
+        help_url <- registry_entry$link
+      }
       method_editor_title <- paste0(
         idx_selected_method,
         ": ",
@@ -700,7 +720,15 @@
               shiny::tags$b("DOI: "),
               shiny::tags$span(settings$doi)
             ),
-            if (!is.null(help_url)) {
+            shiny::tags$div(
+              style = "margin-top: 10px;",
+              shiny::tags$b("Summary: "),
+              shiny::tags$span(settings$description),
+              shiny::tags$br(),
+              shiny::tags$b("Details: "),
+              shiny::tags$span(settings$details)
+            ),
+            if (!is.na(help_url)) {
               shiny::tags$div(
                 style = "margin-top: 5px;margin-bottom: 5px;",
                 shiny::tags$a(
@@ -899,9 +927,10 @@
       rw <- reactive_workflow()
       tryCatch(
         {
-          engine$Workflow <- rw
-          reactive_workflow(engine$Workflow)
-          reactive_saved_workflow(engine$Workflow)
+          set_object_workflow(project, rw)
+          saved_workflow <- get_object_workflow(project)
+          reactive_workflow(saved_workflow)
+          reactive_saved_workflow(saved_workflow)
           reactive_update_trigger(reactive_update_trigger() + 1)
           shiny::showNotification("Workflow saved to database.", type = "message")
         },
@@ -936,10 +965,15 @@
       ))
       tryCatch(
         {
-          engine$Workflow <- reactive_workflow()
-          engine$run_workflow()
-          reactive_workflow(engine$Workflow)
-          reactive_saved_workflow(engine$Workflow)
+          set_object_workflow(project, reactive_workflow())
+          if (!is.null(project$run_workflow) && is.function(project$run_workflow)) {
+            project$run_workflow()
+          } else {
+            stop(sprintf("Object of class '%s' does not implement run_workflow().", class(project)[1]))
+          }
+          saved_workflow <- get_object_workflow(project)
+          reactive_workflow(saved_workflow)
+          reactive_saved_workflow(saved_workflow)
           reactive_update_trigger(reactive_update_trigger() + 1)
           shiny::removeModal()
         },
@@ -956,13 +990,13 @@
 
     shiny::observeEvent(input$add_workflow_step, {
       rw <- reactive_workflow()
-      settings_name <- input$settings_selector
+        settings_name <- input$settings_selector
       if (length(settings_name) > 0) {
-        settings <- do.call(processing_methods[settings_name], list())
+        settings <- processing_registry[[settings_name]]
         tryCatch(
           {
             rw[[length(rw) + 1]] <- settings
-            names(rw)[length(rw)] <- paste0(length(rw), "_", settings$method, "_", settings$algorithm)
+            names(rw)[length(rw)] <- paste0(length(rw), "_", settings$method)
             rw <- Workflow(rw)
             reactive_workflow(rw)
           },
@@ -989,43 +1023,37 @@
       rw <- reactive_workflow()
       selected_method <- reactive_selected_method()
       shiny::req(selected_method %in% names(rw))
-      short_selected_method <- gsub("^\\d+_", "", selected_method)
-      idx_selected_method <- gsub("^(\\d+)_.*", "\\1", selected_method)
-      method_name <- processing_methods[short_selected_method]
-      package_name <- "StreamFind"
-      package_path <- find.package(package_name, lib.loc = .libPaths())
+      settings <- rw[[selected_method]]
+      parameter_docs <- settings$parameter_docs
+      if (is.null(parameter_docs)) {
+        parameter_docs <- list()
+      }
       tryCatch(
         {
-          rd_list <- tools::Rd_db("StreamFind")
-          rd <- NULL
-          for (entry in rd_list) {
-            aliases <- unlist(lapply(entry, function(x) {
-              if (attr(x, "Rd_tag") == "\\alias") {
-                return(as.character(x))
-              }
-              return(NULL)
-            }))
-            if (method_name %in% aliases) {
-              rd <- entry
-              break
+          parameter_items <- lapply(names(settings$parameters), function(param_name) {
+            doc <- parameter_docs[[param_name]]
+            if (is.null(doc)) {
+              doc <- list(description = "", type = class(settings$parameters[[param_name]])[1], required = FALSE)
             }
-          }
-
-          if (is.null(rd)) {
-            stop(
-              sprintf(
-                "No Rd entry with alias '%s' found in package '%s'.",
-                method_name,
-                "StreamFind"
-              )
+            shiny::tags$li(
+              shiny::tags$b(param_name),
+              paste0(" (", doc$type, if (isTRUE(doc$required)) ", required" else "", ")"),
+              if (nzchar(doc$description)) paste0(": ", doc$description) else NULL
             )
-          }
+          })
 
-          help_page <- capture.output(
-            tools::Rd2HTML(
-              rd,
-              out = "",
-              options = list(underline_titles = FALSE)
+          help_page <- htmltools::tagList(
+            htmltools::h3(settings$title),
+            htmltools::p(settings$description),
+            htmltools::p(settings$details),
+            htmltools::tags$div(
+              htmltools::tags$b("Project Method: "),
+              htmltools::tags$code(settings$method)
+            ),
+            htmltools::tags$div(
+              style = "margin-top: 10px;",
+              htmltools::tags$b("Parameters"),
+              htmltools::tags$ul(parameter_items)
             )
           )
 
@@ -1033,31 +1061,26 @@
             shiny::modalDialog(
               title = NULL,
               size = "l",
-              shiny::HTML(help_page),
+              help_page,
               easyClose = TRUE,
               footer = NULL
             )
           )
         },
         error = function(e) {
-          shiny::showNotification(
-            paste("Error getting help file for ", method_name, ":", e$message),
-            duration = 5,
-            type = "error"
-          )
+            shiny::showNotification(
+              paste("Error getting processing-step metadata:", e$message),
+              duration = 5,
+              type = "error"
+            )
           return()
         },
         warning = function(w) {
-          shiny::showNotification(
-            paste(
-              "Warning getting help file for ",
-              method_name,
-              ":",
-              w$message
-            ),
-            duration = 5,
-            type = "warning"
-          )
+            shiny::showNotification(
+              paste("Warning getting processing-step metadata:", w$message),
+              duration = 5,
+              type = "warning"
+            )
           return()
         }
       )
@@ -1187,8 +1210,7 @@
       selected_method <- reactive_selected_method()
       shiny::req(selected_method %in% names(rw))
       short_selected_method <- gsub("^\\d+_", "", selected_method)
-      method_name <- processing_methods[short_selected_method]
-      settings <- do.call(method_name, list())
+      settings <- processing_registry[[short_selected_method]]
       rw[[selected_method]] <- settings
       reactive_workflow(rw)
       shiny::showNotification("Settings reset successfully!", type = "message")

@@ -41,14 +41,15 @@
 # MARK: Initial Modal
 #' @noRd
 .app_util_use_initial_modal <- function(reactive_app_mode,
-                                        reactive_engine_type,
-                                        reactive_project_path,
+                                        reactive_project_class,
+                                        reactive_project_db,
+                                        reactive_project_id,
                                         reactive_show_init_modal,
                                         volumes,
                                         input, output, session) {
 
-  available_engines <- .get_available_engines()
-  available_engines <- available_engines[grepl("Engine", available_engines)]
+  project_registry <- ProjectClasses()
+  available_projects <- names(project_registry)
 
   time_var <- format(Sys.time(), "%Y%m%d%H%M%S")
 
@@ -68,14 +69,11 @@
   )
 
   # Create tile container with grid layout
-  tiles_content <- lapply(seq_along(available_engines), function(i) {
-    obj <- available_engines[i]
+  tiles_content <- lapply(seq_along(available_projects), function(i) {
+    obj <- available_projects[i]
+    project_meta <- project_registry[[obj]]
     color <- tile_colors[(i - 1) %% length(tile_colors) + 1]
-    btn_label <- obj
-    if (grepl("DB", obj)) {
-      btn_label <- gsub("Engine", "", obj)
-      btn_label <- shiny::HTML(paste0(btn_label, "<br>(Database Backend)"))
-    }
+    btn_label <- project_meta$label
     shiny::column(
       4,
       shiny::div(
@@ -101,6 +99,10 @@
             "this.style.transform='translateY(0)';"
           )
         ),
+        shiny::p(
+          project_meta$description,
+          style = "margin: 10px 0 0 0; text-align: center; min-height: 40px; color: #555; font-size: 12px;"
+        ),
         style = "margin-bottom: 15px;"
       )
     )
@@ -118,42 +120,46 @@
     do.call(shiny::tagList, model_elements)
   ))
 
-  lapply(available_engines, function(obj) {
+  lapply(available_projects, function(obj) {
 
     shiny::observeEvent(input[[paste0(time_var, "_select_", obj)]], {
-      reactive_engine_type(obj)
+      reactive_project_class(obj)
       shiny::removeModal()
       reactive_show_init_modal(FALSE)
-      # Setup shinyFiles for project directory selection
-      project_dir_var <- paste0(time_var, "_select_ProjectDir")
-      shinyFiles::shinyDirChoose(
+      project_db_var <- paste0(time_var, "_select_ProjectDB")
+      project_id_var <- paste0(time_var, "_project_id")
+      shinyFiles::shinyFileChoose(
         input,
-        project_dir_var,
+        project_db_var,
         roots = volumes,
         defaultRoot = "wd",
-        session = session
+        session = session,
+        filetypes = "duckdb"
       )
-      # Create a modal to ask for project path
       shiny::showModal(shiny::modalDialog(
-        title = "Select Project Directory",
-        shiny::p("Please select a directory for your project:"),
+        title = "Open Project",
+        shiny::p("Select a StreamFind DuckDB file and enter the project ID."),
         shiny::div(
-          shinyFiles::shinyDirButton(
-            project_dir_var,
-            "Choose Directory",
-            "Select a folder for the project",
+          shinyFiles::shinyFilesButton(
+            project_db_var,
+            "Choose DuckDB File",
+            "Select a StreamFind .duckdb file",
             class = "btn btn-primary"
           ),
           style = "text-align: center; margin: 20px 0;"
         ),
         shiny::div(
-          id = paste0(project_dir_var, "_display"),
+          id = paste0(project_db_var, "_display"),
           style = "margin-top: 15px; padding: 10px; background-color: var(--sf-content-bg, #f5f5f5); border: 1px solid rgba(128,128,128,0.2); border-radius: 4px; min-height: 30px;",
-          shiny::p("No directory selected", style = "margin: 0; color: #999;")
+          shiny::p("No database selected", style = "margin: 0; color: #999;")
+        ),
+        shiny::div(
+          style = "margin-top: 15px;",
+          shiny::textInput(project_id_var, "Project ID", value = "default")
         ),
         footer = shiny::tagList(
           shiny::actionButton(
-            paste0(project_dir_var, "_confirm"),
+            paste0(project_db_var, "_confirm"),
             "Confirm",
             class = "btn btn-success"
           ),
@@ -161,31 +167,30 @@
         ),
         easyClose = FALSE
       ))
-      # Handle directory selection
-      shiny::observeEvent(input[[project_dir_var]], {
-        shiny::req(input[[project_dir_var]])
-        dirinfo <- shinyFiles::parseDirPath(volumes, input[[project_dir_var]])
-        if (length(dirinfo) > 0) {
-          project_path <- dirinfo
-          # Update display
-          shiny::removeUI(selector = paste0("#", project_dir_var, "_display > *"))
+      shiny::observeEvent(input[[project_db_var]], {
+        shiny::req(input[[project_db_var]])
+        fileinfo <- shinyFiles::parseFilePaths(volumes, input[[project_db_var]])
+        if (nrow(fileinfo) > 0) {
+          project_db <- fileinfo$datapath[1]
+          shiny::removeUI(selector = paste0("#", project_db_var, "_display > *"))
           shiny::insertUI(
-            selector = paste0("#", project_dir_var, "_display"),
+            selector = paste0("#", project_db_var, "_display"),
             where = "afterBegin",
-            shiny::p(project_path, style = "margin: 0; color: #333; word-break: break-all;")
+            shiny::p(project_db, style = "margin: 0; color: #333; word-break: break-all;")
           )
         }
       })
-      # Handle confirmation
-      shiny::observeEvent(input[[paste0(project_dir_var, "_confirm")]], {
-        dirinfo <- shinyFiles::parseDirPath(volumes, input[[project_dir_var]])
-        if (length(dirinfo) > 0) {
-          reactive_project_path(dirinfo)
+      shiny::observeEvent(input[[paste0(project_db_var, "_confirm")]], {
+        fileinfo <- shinyFiles::parseFilePaths(volumes, input[[project_db_var]])
+        project_id <- input[[project_id_var]]
+        if (nrow(fileinfo) > 0 && is.character(project_id) && nzchar(trimws(project_id))) {
+          reactive_project_db(fileinfo$datapath[1])
+          reactive_project_id(trimws(project_id))
           reactive_app_mode("WADB")
           shiny::removeModal()
         } else {
           shiny::showNotification(
-            "Please select a valid directory",
+            "Please select a valid database file and project ID",
             duration = 5,
             type = "warning"
           )

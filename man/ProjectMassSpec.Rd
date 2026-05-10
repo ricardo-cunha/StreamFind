@@ -2,10 +2,18 @@
 % Please edit documentation in R/class_ProjectMassSpec.R
 \name{ProjectMassSpec}
 \alias{ProjectMassSpec}
-\title{Project Mass Spec R6 Class}
+\title{Internal Project Mass Spec Base R6 Class}
 \description{
-R6 child of \code{Project} exposing Mass Spec domain tables in the shared DuckDB project.
+Internal R6 child of \code{Project} exposing shared Mass Spec tables and native
+helpers in the shared DuckDB project. \code{ProjectMassSpecSpectra} and
+\code{ProjectMassSpecChromatograms} provide the dedicated public sub-domain
+interfaces on top of this base.
 }
+\details{
+This shared base is used by the public Mass Spec project wrappers and
+is not intended to be opened directly by end users.
+}
+\keyword{internal}
 \section{Super class}{
 \code{\link[StreamFind:Project]{StreamFind::Project}} -> \code{ProjectMassSpec}
 }
@@ -25,7 +33,6 @@ R6 child of \code{Project} exposing Mass Spec domain tables in the shared DuckDB
 \item \href{#method-ProjectMassSpec-get_concentrations}{\code{ProjectMassSpec$get_concentrations()}}
 \item \href{#method-ProjectMassSpec-set_concentrations}{\code{ProjectMassSpec$set_concentrations()}}
 \item \href{#method-ProjectMassSpec-get_spectra_headers}{\code{ProjectMassSpec$get_spectra_headers()}}
-\item \href{#method-ProjectMassSpec-get_chromatograms_headers}{\code{ProjectMassSpec$get_chromatograms_headers()}}
 \item \href{#method-ProjectMassSpec-get_spectra_tic}{\code{ProjectMassSpec$get_spectra_tic()}}
 \item \href{#method-ProjectMassSpec-get_raw_spectra}{\code{ProjectMassSpec$get_raw_spectra()}}
 \item \href{#method-ProjectMassSpec-get_raw_spectra_tic}{\code{ProjectMassSpec$get_raw_spectra_tic()}}
@@ -36,8 +43,6 @@ R6 child of \code{Project} exposing Mass Spec domain tables in the shared DuckDB
 \item \href{#method-ProjectMassSpec-plot_spectra_eic}{\code{ProjectMassSpec$plot_spectra_eic()}}
 \item \href{#method-ProjectMassSpec-get_raw_spectra_ms1}{\code{ProjectMassSpec$get_raw_spectra_ms1()}}
 \item \href{#method-ProjectMassSpec-get_raw_spectra_ms2}{\code{ProjectMassSpec$get_raw_spectra_ms2()}}
-\item \href{#method-ProjectMassSpec-get_chromatograms}{\code{ProjectMassSpec$get_chromatograms()}}
-\item \href{#method-ProjectMassSpec-plot_chromatograms}{\code{ProjectMassSpec$plot_chromatograms()}}
 \item \href{#method-ProjectMassSpec-print}{\code{ProjectMassSpec$print()}}
 \item \href{#method-ProjectMassSpec-show}{\code{ProjectMassSpec$show()}}
 }
@@ -45,6 +50,7 @@ R6 child of \code{Project} exposing Mass Spec domain tables in the shared DuckDB
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="available_processing_methods"><a href='../../StreamFind/html/Project.html#method-Project-available_processing_methods'><code>StreamFind::Project$available_processing_methods()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="copy"><a href='../../StreamFind/html/Project.html#method-Project-copy'><code>StreamFind::Project$copy()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_audit"><a href='../../StreamFind/html/Project.html#method-Project-get_audit'><code>StreamFind::Project$get_audit()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_domain"><a href='../../StreamFind/html/Project.html#method-Project-get_domain'><code>StreamFind::Project$get_domain()</code></a></span></li>
@@ -52,7 +58,10 @@ R6 child of \code{Project} exposing Mass Spec domain tables in the shared DuckDB
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_ptr"><a href='../../StreamFind/html/Project.html#method-Project-get_ptr'><code>StreamFind::Project$get_ptr()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_workflow"><a href='../../StreamFind/html/Project.html#method-Project-get_workflow'><code>StreamFind::Project$get_workflow()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="list_tables"><a href='../../StreamFind/html/Project.html#method-Project-list_tables'><code>StreamFind::Project$list_tables()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="set_domain"><a href='../../StreamFind/html/Project.html#method-Project-set_domain'><code>StreamFind::Project$set_domain()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="report_quarto"><a href='../../StreamFind/html/Project.html#method-Project-report_quarto'><code>StreamFind::Project$report_quarto()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_app"><a href='../../StreamFind/html/Project.html#method-Project-run_app'><code>StreamFind::Project$run_app()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_processing_step"><a href='../../StreamFind/html/Project.html#method-Project-run_processing_step'><code>StreamFind::Project$run_processing_step()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_workflow"><a href='../../StreamFind/html/Project.html#method-Project-run_workflow'><code>StreamFind::Project$run_workflow()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="set_metadata"><a href='../../StreamFind/html/Project.html#method-Project-set_metadata'><code>StreamFind::Project$set_metadata()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="set_workflow"><a href='../../StreamFind/html/Project.html#method-Project-set_workflow'><code>StreamFind::Project$set_workflow()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="validate"><a href='../../StreamFind/html/Project.html#method-Project-validate'><code>StreamFind::Project$validate()</code></a></span></li>
@@ -282,72 +291,6 @@ object.}
 
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ProjectMassSpec-get_chromatograms_headers"></a>}}
-\if{latex}{\out{\hypertarget{method-ProjectMassSpec-get_chromatograms_headers}{}}}
-\subsection{Method \code{get_chromatograms_headers()}}{
-Return chromatogram headers for selected analyses.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$get_chromatograms_headers(analyses = NULL)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
 }
 \if{html}{\out{</div>}}
 }
@@ -364,15 +307,6 @@ Return spectra TIC rows for selected analyses.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
@@ -488,15 +422,6 @@ Get raw spectra data for selected analyses.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
@@ -822,15 +747,6 @@ object.}
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
 \item{\code{levels}}{Integer vector with the levels of MS data.}
 
 \item{\code{levels}}{Integer vector with the levels of MS data.}
@@ -902,15 +818,6 @@ Get base peak chromatogram traces for selected analyses.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
@@ -1055,15 +962,6 @@ object.}
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
 \item{\code{levels}}{Integer vector with the levels of MS data.}
 
 \item{\code{levels}}{Integer vector with the levels of MS data.}
@@ -1122,17 +1020,11 @@ time values (in seconds).}
 
 \item{\code{downsize}}{An integer of length one to downsize the TIC plot. The default is 1.}
 
-\item{\code{downsize}}{An integer of length one to downsize the TIC plot. The default is 1.}
-
 \item{\code{xLab}}{X axis label for the plot.}
 
 \item{\code{xLab}}{X axis label for the plot.}
 
 \item{\code{xLab}}{X axis label for the plot.}
-
-\item{\code{xLab}}{X axis label for the plot.}
-
-\item{\code{yLab}}{Y axis label for the plot.}
 
 \item{\code{yLab}}{Y axis label for the plot.}
 
@@ -1146,10 +1038,6 @@ time values (in seconds).}
 
 \item{\code{title}}{Plot title.}
 
-\item{\code{title}}{Plot title.}
-
-\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
-
 \item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
 
 \item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
@@ -1161,10 +1049,6 @@ time values (in seconds).}
 \item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
 
 \item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
-
-\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
-
-\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
@@ -1231,15 +1115,6 @@ object.}
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
 \item{\code{levels}}{Integer vector with the levels of MS data.}
 
 \item{\code{levels}}{Integer vector with the levels of MS data.}
@@ -1298,17 +1173,11 @@ time values (in seconds).}
 
 \item{\code{downsize}}{An integer of length one to downsize the TIC plot. The default is 1.}
 
-\item{\code{downsize}}{An integer of length one to downsize the TIC plot. The default is 1.}
-
 \item{\code{xLab}}{X axis label for the plot.}
 
 \item{\code{xLab}}{X axis label for the plot.}
 
 \item{\code{xLab}}{X axis label for the plot.}
-
-\item{\code{xLab}}{X axis label for the plot.}
-
-\item{\code{yLab}}{Y axis label for the plot.}
 
 \item{\code{yLab}}{Y axis label for the plot.}
 
@@ -1322,10 +1191,6 @@ time values (in seconds).}
 
 \item{\code{title}}{Plot title.}
 
-\item{\code{title}}{Plot title.}
-
-\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
-
 \item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
 
 \item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
@@ -1337,10 +1202,6 @@ time values (in seconds).}
 \item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
 
 \item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
-
-\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
-
-\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
@@ -1373,15 +1234,6 @@ Get extracted ion chromatograms for selected analyses.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
@@ -1690,15 +1542,6 @@ object.}
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
 \item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
 and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
 and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
@@ -1915,17 +1758,11 @@ combination of the \emph{m/z} and retention time ranges or values.}
 
 \item{\code{downsize}}{An integer of length one to downsize the TIC plot. The default is 1.}
 
-\item{\code{downsize}}{An integer of length one to downsize the TIC plot. The default is 1.}
-
 \item{\code{xLab}}{X axis label for the plot.}
 
 \item{\code{xLab}}{X axis label for the plot.}
 
 \item{\code{xLab}}{X axis label for the plot.}
-
-\item{\code{xLab}}{X axis label for the plot.}
-
-\item{\code{yLab}}{Y axis label for the plot.}
 
 \item{\code{yLab}}{Y axis label for the plot.}
 
@@ -1939,10 +1776,6 @@ combination of the \emph{m/z} and retention time ranges or values.}
 
 \item{\code{title}}{Plot title.}
 
-\item{\code{title}}{Plot title.}
-
-\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
-
 \item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
 
 \item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
@@ -1954,10 +1787,6 @@ combination of the \emph{m/z} and retention time ranges or values.}
 \item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
 
 \item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
-
-\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
-
-\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
@@ -2026,15 +1855,6 @@ object.}
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
 \item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
 and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
 and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
@@ -2256,10 +2076,6 @@ spectra) to 1 (i.e., must be present in all spectra) for traces during clusterin
 
 \item{\code{presence}}{Numeric (length 1) with the required presence ratio from 0 (i.e., doesn't need to be present in any
 spectra) to 1 (i.e., must be present in all spectra) for traces during clustering of spectra.}
-
-\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
-
-\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
 
 \item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
 
@@ -2327,15 +2143,6 @@ object.}
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
 \item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
 and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
 and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
@@ -2569,239 +2376,6 @@ spectra) to 1 (i.e., must be present in all spectra) for traces during clusterin
 \item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
 
 \item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
-
-\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
-
-\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ProjectMassSpec-get_chromatograms"></a>}}
-\if{latex}{\out{\hypertarget{method-ProjectMassSpec-get_chromatograms}{}}}
-\subsection{Method \code{get_chromatograms()}}{
-Get chromatograms for selected analyses.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$get_chromatograms(
-  analyses = NULL,
-  chromatograms = NULL,
-  rtmin = 0,
-  rtmax = 0,
-  minIntensity = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{chromatograms}}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
-
-\item{\code{chromatograms}}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
-
-\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
-
-\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
-
-\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
-
-\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
-
-\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
-
-\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
-
-\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
-
-\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ProjectMassSpec-plot_chromatograms"></a>}}
-\if{latex}{\out{\hypertarget{method-ProjectMassSpec-plot_chromatograms}{}}}
-\subsection{Method \code{plot_chromatograms()}}{
-Plot chromatograms for selected analyses.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$plot_chromatograms(
-  analyses = NULL,
-  chromatograms = NULL,
-  rtmin = 0,
-  rtmax = 0,
-  minIntensity = NULL,
-  downsize = NULL,
-  xLab = NULL,
-  yLab = NULL,
-  title = NULL,
-  groupBy = "analysis",
-  interactive = TRUE,
-  colorPalette = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{chromatograms}}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
-
-\item{\code{chromatograms}}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
-
-\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
-
-\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
-
-\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
-
-\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
-
-\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
-
-\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
-
-\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
-
-\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
-
-\item{\code{downsize}}{An integer of length one to downsize the TIC plot. The default is 1.}
-
-\item{\code{downsize}}{An integer of length one to downsize the TIC plot. The default is 1.}
-
-\item{\code{downsize}}{An integer of length one to downsize the TIC plot. The default is 1.}
-
-\item{\code{downsize}}{An integer of length one to downsize the TIC plot. The default is 1.}
-
-\item{\code{xLab}}{X axis label for the plot.}
-
-\item{\code{xLab}}{X axis label for the plot.}
-
-\item{\code{xLab}}{X axis label for the plot.}
-
-\item{\code{xLab}}{X axis label for the plot.}
-
-\item{\code{yLab}}{Y axis label for the plot.}
-
-\item{\code{yLab}}{Y axis label for the plot.}
-
-\item{\code{yLab}}{Y axis label for the plot.}
-
-\item{\code{yLab}}{Y axis label for the plot.}
-
-\item{\code{title}}{Plot title.}
-
-\item{\code{title}}{Plot title.}
-
-\item{\code{title}}{Plot title.}
-
-\item{\code{title}}{Plot title.}
-
-\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
-
-\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
-
-\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
-
-\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
-
-\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
-
-\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
-
-\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
-
-\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
-
-\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
-
-\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
-
-\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
-
-\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 }
 \if{html}{\out{</div>}}
 }

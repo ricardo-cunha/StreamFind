@@ -1,6 +1,7 @@
 #' Run the Shiny Application
 #'
-#' @param ... arguments to pass to golem_opts.
+#' @param ... arguments to pass to golem options such as `db`, `project_id`, and
+#'   `project_class`.
 #' See `?golem::get_golem_options` for more details.
 #' @inheritParams shiny::shinyApp
 #'
@@ -35,17 +36,14 @@ run_app <- function(onStart = NULL, options = list(), enableBookmarking = NULL, 
 
   library(StreamFind)
   dots <- list(...)
-  if ("file" %in% names(dots)) {
-    file <- dots$file
-    if (!is.na(file)) {
-      if (!grepl(".sqlite$|.rds$", file)) {
-        msg <- paste("The file", file, "is not an sqlite or rds file!")
-        stop(msg)
-      } else {
-        if (!file.exists(file)) {
-          msg <- paste("The file", file, "does not exist!")
-          stop(msg)
-        }
+  if ("db" %in% names(dots)) {
+    db <- dots$db
+    if (!is.na(db)) {
+      if (!grepl(".duckdb$", db, ignore.case = TRUE)) {
+        stop("The file ", db, " is not a DuckDB database!")
+      }
+      if (!file.exists(db)) {
+        stop("The file ", db, " does not exist!")
       }
     }
   }

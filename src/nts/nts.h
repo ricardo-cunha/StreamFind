@@ -693,7 +693,7 @@ namespace nts
     std::vector<INTERNAL_STANDARDS> internal_standards;
 
     NTS_DATA(const NTS_INFO &info,
-              const std::vector<mass_spec::MS_SPECTRA_HEADERS> &spectra_headers,
+             const std::vector<mass_spec::MS_SPECTRA_HEADERS> &spectra_headers,
              const std::vector<FEATURES> &feature_list,
              const std::vector<SUSPECTS> &suspects_cpp = std::vector<SUSPECTS>(),
              const std::vector<INTERNAL_STANDARDS> &internal_standards_cpp = std::vector<INTERNAL_STANDARDS>())

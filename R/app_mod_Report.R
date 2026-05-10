@@ -1,6 +1,6 @@
 ##' @noRd
 ##' @export
-.mod_Report_UI.Engine <- function(x, id, ns) {
+.mod_Report_UI.Project <- function(x, id, ns) {
   ns2 <- shiny::NS(id)
 
   htmltools::div(
@@ -75,10 +75,10 @@
 
 ##' @noRd
 ##' @export
-.mod_Report_Server.Engine <- function(x, id, ns, reactive_volumes) {
+.mod_Report_Server.Project <- function(x, id, ns, reactive_volumes) {
   shiny::moduleServer(id, function(input, output, session) {
     ns2 <- shiny::NS(id)
-    engine <- x
+    project <- x
 
     selected_qmd_file <- shiny::reactiveVal(NULL)
     selected_output_file <- shiny::reactiveVal(NULL)
@@ -210,7 +210,7 @@
             duration = 5,
             type = "message"
           )
-          engine$report_quarto(
+          project$report_quarto(
             template = qmd_path,
             output_file = output_file,
             execute_dir = execute_dir

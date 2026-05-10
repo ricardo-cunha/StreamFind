@@ -28,8 +28,8 @@ void from_json(const json& j, AUDIT_TRAIL_ROW& x) {
 void AUDIT_TRAIL::create_schema(const std::shared_ptr<CONTEXT>& ctx) {
   auto guard = project::detail::CONNECTION_GUARD(ctx);
   project::detail::run_sql(guard.get(),
-          "CREATE TABLE IF NOT EXISTS AuditTrail (project_id VARCHAR NOT NULL, operation_type VARCHAR NOT NULL, object_type VARCHAR NOT NULL, operation_details JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
-          "create AuditTrail table");
+          "CREATE TABLE IF NOT EXISTS AUDIT_TRAIL (project_id VARCHAR NOT NULL, operation_type VARCHAR NOT NULL, object_type VARCHAR NOT NULL, operation_details JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
+          "create AUDIT_TRAIL table");
 }
 
 void AUDIT_TRAIL::validate_schema(const std::shared_ptr<CONTEXT>& ctx) {
@@ -45,8 +45,8 @@ std::vector<AUDIT_TRAIL::ROW_TYPE> AUDIT_TRAIL::all() const {
   auto guard = project::detail::CONNECTION_GUARD(context());
   std::vector<ROW_TYPE> out;
   project::detail::run_prepared(guard.get(),
-                "SELECT project_id, operation_type, object_type, operation_details, created_at FROM AuditTrail WHERE project_id = ? ORDER BY created_at DESC",
-                "query AuditTrail",
+                "SELECT project_id, operation_type, object_type, operation_details, created_at FROM AUDIT_TRAIL WHERE project_id = ? ORDER BY created_at DESC",
+                "query AUDIT_TRAIL",
                 [&](duckdb_prepared_statement statement) { duckdb_bind_varchar(statement, 1, context()->project_id.c_str()); },
                 [&](duckdb_result& result) {
                   out = project::detail::rows_from_result(&result, [&](idx_t row) {
@@ -67,8 +67,8 @@ void AUDIT_TRAIL::add(const std::string& operation_type,
                       const json& details) {
   auto guard = project::detail::CONNECTION_GUARD(context());
   project::detail::run_prepared(guard.get(),
-                          "INSERT INTO AuditTrail (project_id, operation_type, object_type, operation_details) VALUES (?, ?, ?, ?)",
-                          "insert AuditTrail entry",
+                          "INSERT INTO AUDIT_TRAIL (project_id, operation_type, object_type, operation_details) VALUES (?, ?, ?, ?)",
+                          "insert AUDIT_TRAIL entry",
                           [&](duckdb_prepared_statement statement) {
                             duckdb_bind_varchar(statement, 1, context()->project_id.c_str());
                             duckdb_bind_varchar(statement, 2, operation_type.c_str());
@@ -82,8 +82,8 @@ void AUDIT_TRAIL::add(const std::string& operation_type,
 void AUDIT_TRAIL::clear() {
   auto guard = project::detail::CONNECTION_GUARD(context());
   project::detail::run_prepared(guard.get(),
-                          "DELETE FROM AuditTrail WHERE project_id = ?",
-                          "clear AuditTrail",
+                          "DELETE FROM AUDIT_TRAIL WHERE project_id = ?",
+                          "clear AUDIT_TRAIL",
                           [&](duckdb_prepared_statement statement) { duckdb_bind_varchar(statement, 1, context()->project_id.c_str()); },
                           [](duckdb_result&) {});
 }

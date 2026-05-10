@@ -52,7 +52,7 @@ struct ROW {
   std::string created_at;
 };
 
-/** Row representation of the `Project` table, extending Row with JSON columns. */
+/** Row representation of the `PROJECT` table, extending Row with JSON columns. */
 struct PROJECT_ROW : public ROW {
   /** Domain code stored for this project, such as MS or RAMAN. */
   std::string domain;
@@ -143,9 +143,9 @@ class PROJECT {
   PROJECT* copy(std::string db_path, std::string project_id) const;
 
  private:
-  /** Create the project table schema if needed. */
+  /** Create the PROJECT table schema if needed. */
   static void create_schema(const std::shared_ptr<CONTEXT>& ctx);
-  /** Validate the project table schema. */
+  /** Validate the PROJECT table schema. */
   static void validate_schema(const std::shared_ptr<CONTEXT>& ctx);
   /** Insert a default project row when none exists. */
   static void ensure_row_exists(const std::shared_ptr<CONTEXT>& ctx);

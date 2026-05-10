@@ -2,6 +2,16 @@
 
 namespace project {
 
+namespace {
+
+std::string hex_hash(std::size_t value) {
+  std::ostringstream oss;
+  oss << std::hex << value;
+  return oss.str();
+}
+
+}  // namespace
+
 CACHE::CACHE(std::shared_ptr<CONTEXT> ctx) : TABLE_BASE<CACHE_ROW>(std::move(ctx)) {
   create_schema(context());
   validate_schema(context());
@@ -10,8 +20,8 @@ CACHE::CACHE(std::shared_ptr<CONTEXT> ctx) : TABLE_BASE<CACHE_ROW>(std::move(ctx
 void CACHE::create_schema(const std::shared_ptr<CONTEXT>& ctx) {
   auto guard = project::detail::CONNECTION_GUARD(ctx);
   project::detail::run_sql(guard.get(),
-          "CREATE TABLE IF NOT EXISTS Cache (project_id VARCHAR NOT NULL, name VARCHAR NOT NULL, description VARCHAR NOT NULL, hash VARCHAR NOT NULL, data BLOB NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, hash))",
-          "create Cache table");
+          "CREATE TABLE IF NOT EXISTS CACHE (project_id VARCHAR NOT NULL, name VARCHAR NOT NULL, description VARCHAR NOT NULL, hash VARCHAR NOT NULL, data BLOB NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, hash))",
+          "create CACHE table");
 }
 
 void CACHE::validate_schema(const std::shared_ptr<CONTEXT>& ctx) {
@@ -28,8 +38,8 @@ std::vector<CACHE::ROW_TYPE> CACHE::all() const {
   auto guard = project::detail::CONNECTION_GUARD(context());
   std::vector<ROW_TYPE> out;
   project::detail::run_prepared(guard.get(),
-                "SELECT project_id, name, description, hash, data, created_at FROM Cache WHERE project_id = ? ORDER BY created_at DESC",
-                "query Cache",
+                "SELECT project_id, name, description, hash, data, created_at FROM CACHE WHERE project_id = ? ORDER BY created_at DESC",
+                "query CACHE",
                 [&](duckdb_prepared_statement statement) { duckdb_bind_varchar(statement, 1, context()->project_id.c_str()); },
                 [&](duckdb_result& result) {
                   out = project::detail::rows_from_result(&result, [&](idx_t row) {
@@ -50,8 +60,8 @@ std::optional<CACHE::ROW_TYPE> CACHE::get(const std::string& hash) const {
   auto guard = project::detail::CONNECTION_GUARD(context());
   std::optional<ROW_TYPE> out;
   project::detail::run_prepared(guard.get(),
-                "SELECT project_id, name, description, hash, data, created_at FROM Cache WHERE project_id = ? AND hash = ? LIMIT 1",
-                "select Cache entry",
+                "SELECT project_id, name, description, hash, data, created_at FROM CACHE WHERE project_id = ? AND hash = ? LIMIT 1",
+                "select CACHE entry",
                 [&](duckdb_prepared_statement statement) {
                  duckdb_bind_varchar(statement, 1, context()->project_id.c_str());
                   duckdb_bind_varchar(statement, 2, hash.c_str());
@@ -100,8 +110,8 @@ void CACHE::put(const ROW_TYPE& row) {
 
   auto guard = project::detail::CONNECTION_GUARD(context());
   project::detail::run_prepared(guard.get(),
-                "INSERT INTO Cache (project_id, name, description, hash, data) VALUES (?, ?, ?, ?, ?) ON CONFLICT(project_id, hash) DO UPDATE SET name = excluded.name, description = excluded.description, data = excluded.data",
-                "upsert Cache entry",
+                "INSERT INTO CACHE (project_id, name, description, hash, data) VALUES (?, ?, ?, ?, ?) ON CONFLICT(project_id, hash) DO UPDATE SET name = excluded.name, description = excluded.description, data = excluded.data",
+                "upsert CACHE entry",
                 [&](duckdb_prepared_statement statement) {
                  duckdb_bind_varchar(statement, 1, value.project_id.c_str());
                  duckdb_bind_varchar(statement, 2, value.name.c_str());
@@ -129,8 +139,8 @@ void CACHE::put(const std::string& name,
 void CACHE::remove(const std::string& hash) {
   auto guard = project::detail::CONNECTION_GUARD(context());
   project::detail::run_prepared(guard.get(),
-                "DELETE FROM Cache WHERE project_id = ? AND hash = ?",
-                "delete Cache entry",
+                "DELETE FROM CACHE WHERE project_id = ? AND hash = ?",
+                "delete CACHE entry",
                 [&](duckdb_prepared_statement statement) {
                  duckdb_bind_varchar(statement, 1, context()->project_id.c_str());
                  duckdb_bind_varchar(statement, 2, hash.c_str());
@@ -141,10 +151,71 @@ void CACHE::remove(const std::string& hash) {
 void CACHE::clear() {
   auto guard = project::detail::CONNECTION_GUARD(context());
   project::detail::run_prepared(guard.get(),
-                "DELETE FROM Cache WHERE project_id = ?",
-                "clear Cache",
+                "DELETE FROM CACHE WHERE project_id = ?",
+                "clear CACHE",
                 [&](duckdb_prepared_statement statement) { duckdb_bind_varchar(statement, 1, context()->project_id.c_str()); },
                [](duckdb_result&) {});
+}
+
+json CACHE::make_request_payload(const std::string& method_name,
+                                 const std::vector<std::string>& scope) {
+  return json{{"method", method_name}, {"scope", scope}};
+}
+
+std::string CACHE::hash_json(const json& payload) {
+  return hex_hash(std::hash<std::string>{}(payload.dump()));
+}
+
+std::string CACHE::describe_scope(const std::string& method_name,
+                                  const std::vector<std::string>& scope) {
+  std::ostringstream oss;
+  oss << method_name << " [";
+  for (std::size_t i = 0; i < scope.size(); ++i) {
+    if (i > 0) {
+      oss << ", ";
+    }
+    oss << scope[i];
+  }
+  oss << "]";
+  return oss.str();
+}
+
+std::string CACHE::stable_number(double value) {
+  if (std::isnan(value)) {
+    return "NaN";
+  }
+  if (std::isinf(value)) {
+    return value > 0 ? "Inf" : "-Inf";
+  }
+  std::ostringstream oss;
+  oss << std::setprecision(17) << value;
+  return oss.str();
+}
+
+json CACHE::json_array(const std::vector<std::string>& values) {
+  json out = json::array();
+  for (const auto& value : values) {
+    out.push_back(value);
+  }
+  return out;
+}
+
+bool CACHE::restore_json_if_present(const std::string& hash,
+                                    const std::function<void(const json&)>& restore) const {
+  auto bytes = get_bytes(hash);
+  if (!bytes) {
+    return false;
+  }
+  restore(detail::json_from_text(std::string(bytes->begin(), bytes->end())));
+  return true;
+}
+
+void CACHE::put_json(const std::string& name,
+                     const std::string& hash,
+                     const std::string& description,
+                     const json& value) {
+  const auto text = detail::json_to_text(value);
+  put(name, hash, description, std::vector<std::uint8_t>(text.begin(), text.end()));
 }
 
 }  // namespace project

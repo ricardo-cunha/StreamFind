@@ -2,9 +2,12 @@
 
 #include "db_helpers.h"
 
+#include <functional>
+#include <iomanip>
+
 namespace project {
 
-/** Row representation of the `Cache` table, extending Row with cache-specific fields. */
+/** Row representation of the `CACHE` table, extending Row with cache-specific fields. */
 struct CACHE_ROW : public ROW {
   /** Cache entry name. */
   std::string name;
@@ -55,9 +58,32 @@ class CACHE : public TABLE_BASE<CACHE_ROW> {
   void remove(const std::string& hash);
   /** Remove all cache rows for the active project. */
   void clear();
+  /** Build a stable JSON payload scaffold for a cached method call. */
+  static json make_request_payload(const std::string& method_name,
+                                   const std::vector<std::string>& scope = {});
+  /** Hash a JSON payload deterministically for cache lookup. */
+  static std::string hash_json(const json& payload);
+  /** Build a human-readable cache description for a scoped method call. */
+  static std::string describe_scope(const std::string& method_name,
+                                    const std::vector<std::string>& scope = {});
+  /** Format a numeric value consistently for stable cache keys. */
+  static std::string stable_number(double value);
+  /** Convert a string vector into a JSON array. */
+  static json json_array(const std::vector<std::string>& values);
+  /** Convert a numeric vector into a JSON array using stable numeric formatting. */
+  template <typename T>
+  static json json_array(const std::vector<T>& values);
+  /** Load cached JSON and invoke a restore callback when present. */
+  bool restore_json_if_present(const std::string& hash,
+                               const std::function<void(const json&)>& restore) const;
+  /** Store a JSON payload directly into the cache table. */
+  void put_json(const std::string& name,
+                const std::string& hash,
+                const std::string& description,
+                const json& value);
 
  private:
-  static constexpr const char* table_name() { return "Cache"; }
+  static constexpr const char* table_name() { return "CACHE"; }
 };
 
 template <typename T>
@@ -77,6 +103,15 @@ std::optional<T> CACHE::get_object(const std::string& hash) const {
   }
 
   return detail::deserialize_object<T>(*bytes);
+}
+
+template <typename T>
+json CACHE::json_array(const std::vector<T>& values) {
+  json out = json::array();
+  for (const auto& value : values) {
+    out.push_back(stable_number(static_cast<double>(value)));
+  }
+  return out;
 }
 
 }  // namespace project

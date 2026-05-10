@@ -1,65 +1,104 @@
-dbis <- data.table::fread(
-  file.path(
-    "dev",
-    "dev_duckdb",
-    "internal_standards.csv"
-  )
-)
+# Development script for testing the project-first NTS framework.
+#
+# This script shows how to:
+# 1. inspect the public project-class registry
+# 2. open a ProjectNonTargetAnalysis project
+# 3. import analyses into the shared project database
+# 4. run NTS methods directly on the project object
+# 5. run a workflow via project-owned ProcessingStep metadata
+# 6. inspect downstream NTS results
 
-dbis <- dbis[!is.na(rt), ]
+library(StreamFind)
+library(data.table)
 
-dbsus <- data.table::fread(
-  file.path(
-    "dev",
-    "dev_duckdb",
-    "suspects_with_ms2_template.csv"
-  )
-)
+# Optional helper package used by the existing dev data setup.
+if (!requireNamespace("StreamFindData", quietly = TRUE)) {
+  stop("Install StreamFindData to use this development script.")
+}
+
+project_db <- file.path("dev", "dev_duckdb", "data_nts.duckdb")
+project_id <- "demo_nts"
+
+internal_standards <- fread(file.path("dev", "dev_duckdb", "internal_standards.csv"))
+internal_standards <- internal_standards[!is.na(rt), ]
+
+suspects <- fread(file.path("dev", "dev_duckdb", "suspects_with_ms2_template.csv"))
+transformation_products <- fread(file.path("dev", "dev_duckdb", "transformation_products_template.csv"))
 
 ms_files <- StreamFindData::get_ms_file_paths()
 ms_files <- ms_files[grepl("ww_", ms_files)]
-#ms_files <- ms_files[grepl("pos_", ms_files)]
 
-root <- file.path("dev", "dev_duckdb", "data_nts")
-# file.remove(list.files(root, full.names = TRUE))
-# fs::dir_delete(root)
+# -----------------------------------------------------------------------------
+# 1. Overview of the public project classes
+# -----------------------------------------------------------------------------
 
-ms <- MassSpecEngine$new(
-  projectPath = root,
-  files = ms_files,
-  metadata = list(
-    name = "Demo Non-Target Analysis",
-    author = "Ana Polina Oliveira"
-  )
+project_classes <- ProjectClasses()
+str(project_classes, max.level = 1)
+ProjectClasses("ProjectNonTargetAnalysis")
+
+# -----------------------------------------------------------------------------
+# 2. Open the NTS project
+# -----------------------------------------------------------------------------
+
+nts <- ProjectNonTargetAnalysis$new(
+  db = project_db,
+  project_id = project_id
 )
 
-set_replicate_names(ms$Analyses, c(
-  rep("neg_blank", 3),
-  rep("pos_blank", 3),
-  rep("neg_influent", 3),
-  rep("pos_influent", 3),
-  rep("neg_effluent", 3),
-  rep("pos_effluent", 3)
-))
+nts
 
-set_blank_names(ms$Analyses, c(
-  rep("neg_blank", 3),
-  rep("pos_blank", 3),
-  rep("neg_blank", 3),
-  rep("pos_blank", 3),
-  rep("neg_blank", 3),
-  rep("pos_blank", 3)
-))
+nts$get_domain()
 
-# ms$report_quarto(
-#   template = file.path("dev", "dev_duckdb", "report_templete.qmd"),
-#   output_file = file.path("dev", "dev_duckdb", "report")
-# )
-# ms <- MassSpecEngine$new(projectPath = root)
-# ms$run_app()
+nts$list_tables()
 
+# -----------------------------------------------------------------------------
+# 3. Import files into the shared project DB
+#    Run this section only when the project is still empty or you want to add
+#    more analyses.
+# -----------------------------------------------------------------------------
 
-ps_ff <- MassSpecMethod_FindFeatures_native(
+if (length(nts$get_analysis_names()) == 0) {
+  nts$import_files(file_paths = ms_files)
+
+  nts$set_replicate_names(c(
+    rep("neg_blank", 3),
+    rep("pos_blank", 3),
+    rep("neg_influent", 3),
+    rep("pos_influent", 3),
+    rep("neg_effluent", 3),
+    rep("pos_effluent", 3)
+  ))
+
+  nts$set_blank_names(c(
+    rep("neg_blank", 3),
+    rep("pos_blank", 3),
+    rep("neg_blank", 3),
+    rep("pos_blank", 3),
+    rep("neg_blank", 3),
+    rep("pos_blank", 3)
+  ))
+}
+
+info(nts)
+
+# -----------------------------------------------------------------------------
+# 4. Inspect the project-owned processing registry
+# -----------------------------------------------------------------------------
+
+registry <- nts$available_processing_methods()
+names(registry)
+ProjectClasses("ProjectNonTargetAnalysis")$processing_methods
+
+registry$FindFeatures_native
+registry$SuspectScreening_metfrag
+
+# -----------------------------------------------------------------------------
+# 5. Run methods directly on the project object
+#    These calls are the primary API for testing implementations in
+#    ProjectNonTargetAnalysis.
+# -----------------------------------------------------------------------------
+
+features <- nts$find_features(
   rtWindows = data.frame(rtmin = numeric(), rtmax = numeric()),
   ppmThreshold = 10,
   noiseThreshold = 250,
@@ -70,17 +109,36 @@ ps_ff <- MassSpecMethod_FindFeatures_native(
   baseQuantile = 0.99,
   debugAnalysis = "",
   debugMZ = 0,
-  debugSpecIdx = -1
+  debugSpecIdx = -1L
 )
 
-ps_comp <- MassSpecMethod_CreateComponents_native(
+head(features)
+
+nts$load_features_ms1(
+  rtWindow = c(-1, 1),
+  mzWindow = c(-1, 6),
+  mzClust = 0.008,
+  presence = 0.5,
+  minIntensity = 250,
+  filtered = FALSE
+)
+
+nts$load_features_ms2(
+  isolationWindow = 1.3,
+  mzClust = 0.008,
+  presence = 0.5,
+  minIntensity = 10,
+  filtered = FALSE
+)
+
+nts$create_components(
   rtWindow = c(-5, 5),
   minCorrelation = 0.8,
   debugRT = 0,
   debugAnalysis = ""
 )
 
-ps_annot <- MassSpecMethod_AnnotateComponents_native(
+nts$annotate_components(
   maxIsotopes = 8,
   maxCharge = 1,
   maxGaps = 1,
@@ -89,8 +147,8 @@ ps_annot <- MassSpecMethod_AnnotateComponents_native(
   debugAnalysis = ""
 )
 
-pf_istd <- MassSpecMethod_FindInternalStandard_native(
-  suspects = dbis,
+nts$find_internal_standards(
+  suspects = internal_standards,
   ppm = 10,
   sec = 15,
   ppmMS2 = 10,
@@ -100,440 +158,19 @@ pf_istd <- MassSpecMethod_FindInternalStandard_native(
   filtered = TRUE
 )
 
-ps_filteris <- MassSpecMethod_FilterInternalStandards_native(
-  idLevels = c(1, 3)
-)
-
-ps_gf <- MassSpecMethod_GroupFeatures_native(
-  method = "internal_standards", #"obi_warp"
-  rtDeviation = 5,
-  ppm = 10,
-  minSamples = 1,
-  binSize = 5,
-  filtered = FALSE,
-  debug = TRUE,
-  debugRT = 0
-)
-
-ps_bsub <- MassSpecMethod_FeatureBlankSubtraction_native(
-  blankThreshold = 5,
-  rtExpand = 10,
-  mzExpand = 0.005
-)
-
-ps_filterf1 <- MassSpecMethod_FilterFeatures_native(
-  minIntensity = 10000,
-  removeIsotopes = TRUE,
-  removeAdducts = TRUE,
-  removeLosses = TRUE
-)
-
-ps_filterf2 <- MassSpecMethod_FilterFeatures_native(
-  minRelPresenceReplicate = 1
-)
-
-ps_fillf <- MassSpecMethod_FillFeatures_native(
-  withinReplicate = TRUE,
-  filtered = FALSE,
-  rtExpand = 5,
-  mzExpand = 0.0005,
-  maxPeakWidth = 250,
-  minTracesIntensity = 250,
-  minNumberTraces = 4,
-  minIntensity = 1000,
-  rtApexDeviation = 5,
-  minSignalToNoiseRatio = 3,
-  minGaussianFit = 0.8,
-  debugFG = ""
-)
-
-ps_ms1 <- MassSpecMethod_LoadFeaturesMS1_native(
-  rtWindow = c(-1, 1),
-  mzWindow = c(-1, 6),
-  mzClust = 0.008,
-  presence = 0.5,
-  minIntensity = 250,
-  filtered = FALSE
-)
-
-ps_ms2 <- MassSpecMethod_LoadFeaturesMS2_native(
-  isolationWindow = 1.3,
-  mzClust = 0.008,
-  presence = 0.5,
-  minIntensity = 10,
-  filtered = FALSE
-)
-
-# ps_sus <- MassSpecMethod_SuspectScreening_native(
-#   suspects = dbsus,
-#   ppm = 10,
-#   sec = 15,
-#   ppmMS2 = 10,
-#   mzrMS2 = 0.008,
-#   minCosineSimilarity = 0.7,
-#   minSharedFragments = 3,
-#   filtered = TRUE
-# )
-
-# ps_filtersus <- MassSpecMethod_FilterSuspects_native(
-#   idLevels = c(1, 2, 3)
-# )
-
-ps_sus <- MassSpecMethod_SuspectScreening_metfrag(
-  metfrag_path = "C:\\Users\\cunha\\Documents\\patRoon_deps\\MetFragCommandLine-2.5.0.jar",
-  database_type = "LocalCSV",
-  # database_path = file.path("dev", "dev_duckdb", "suspects_with_ms2_template.csv"),
-  database_path = file.path("dev", "dev_duckdb", "transformation_products_template.csv"),
-  #"C:/Users/cunha/AppData/Local/R/win-library/4.5/patRoonExt/ext/PubChemLite.csv",
-  ppm = 10,
-  sec = 15,
-  ppmMS2 = 10,
-  mzrMS2 = 0.008,
-  top_n = 5,
-  filtered = FALSE,
-  n_cores = 10,
-  java_path = "java",
-  metfrag_args = NULL,
-  extra_params = list(),
-  show_progress = TRUE,
-  quiet = FALSE,
-  debug = TRUE
-)
-
-ps_tps <- MassSpecMethod_AssignTransformationProducts_native(
-  transformation_products = data.table::fread(
-    file.path(
-      "dev",
-      "dev_duckdb",
-      "transformation_products_template.csv"
-    )
-  ),
-  chromatographic_phase = c("reverse_phase"),
-  mzrMS2 = 0.008
-)
-
-ms$Workflow <- list(
-  ps_ff,
-  ps_comp,
-  ps_annot,
-  pf_istd,
-  ps_filteris,
-  ps_gf,
-  ps_bsub,
-  ps_filterf1,
-  ps_filterf2,
-  ps_ms1,
-  ps_ms2,
-  ps_sus,
-  ps_tps
-  # ps_filtersus
-) # ps_fillf, #, ps_tps
-
-# clear_cache(ms$Cache, value = c("DB_FindFeatures_native"))
-# clear_cache(ms$Cache, value = c("DB_CreateComponents_native"))
-# clear_cache(ms$Cache, value = c("DB_AnnotateComponents_native"))
-# clear_cache(ms$Cache, value = c("DB_FindInternalStandard_native"))
-# clear_cache(ms$Cache, value = c("DB_FilterInternalStandards_native"))
-# clear_cache(ms$Cache, value = c("DB_GroupFeatures_native"))
-# clear_cache(ms$Cache, value = c("DB_FeatureBlankSubtraction_native"))
-# clear_cache(ms$Cache, value = c("DB_FilterFeatures_native"))
-# clear_cache(ms$Cache, value = c("DB_FillFeatures_native"))
-# clear_cache(ms$Cache, value = c("DB_LoadFeaturesMS1_native"))
-# clear_cache(ms$Cache, value = c("DB_LoadFeaturesMS2_native"))
-# clear_cache(ms$Cache, value = c("DB_SuspectScreening_native"))
-# clear_cache(ms$Cache, value = c("DB_SuspectScreening_metfrag"))
-# clear_cache(ms$Cache, value = c("DB_AssignTransformationProducts_native"))
-
-ms$run_workflow()
-
-
-.plot_debug_DB_MassSpecMethod_GroupFeatures_native(
-  "log\\debug_log_group_features_methodinternal_standards.log"
-)
-
-get_features(
-  ms$NonTargetAnalysis,
-  mass = data.table::fread(
-    file.path(
-      "dev",
-      "dev_duckdb",
-      "suspects_with_ms2_template.csv"
-    )
-  ),
-  ppm = 20,
-  sec = 30
-  # groupBy = c("name", "replicate"),
-  # showDetails = TRUE
-)[, 1:10]
-
-
-tps <- get_internal_standards(ms$NonTargetAnalysis)
-tps[54, ]
-
-sus <- get_suspects(ms$NonTargetAnalysis)
-
-sus[, 1:5]
-
-plot_suspects_ms2(
-  ms$NonTargetAnalysis,
-  features = sus[21, ],
-  interactive = TRUE
-)
-
-# sus <- get_suspects(ms$NonTargetAnalysis)
-# sus  <- sus[grepl("MZ219", sus$feature), ]
-
-clear_cache(ms$Cache, value = c("DB_AssignTransformationProducts_native"))
-#clear_cache(ms$Cache, value = c("DB_SuspectScreening_metfrag"))
-run(ps_tps, ms)
-
-
-# metfrag_dir <- list.dirs(file.path(getwd(), "log"), full.names = TRUE)
-# fs::dir_delete(metfrag_dir[grepl("metfrag", metfrag_dir)])
-# clear_cache(ms$Cache, value = c("DB_SuspectScreening_metfrag"))
-# run(ps_sus, ms)
-
-tps <- get_transformation_products(
-  ms$NonTargetAnalysis
-)
-
-htmlwidgets::saveWidget(
-  plot_transformation_products(
-    ms$NonTargetAnalysis,
-    groups = c("FG5496_M440_RT1097_POS", "FG2985_M267_RT916_POS"),
-    showMS2 = TRUE,
-    showIntensityProfile = TRUE
-  ),
-  file.path("dev", "dev_duckdb", "transformation_products_plot.html"),
-  selfcontained = TRUE
-)
-
-plot_transformation_products(
-  ms$NonTargetAnalysis,
-  groups = c("FG5496_M440_RT1097_POS", "FG2985_M267_RT916_POS"),
-  showMS2 = TRUE
-)
-
-ms$run_app()
-
-root <- file.path("dev", "dev_duckdb", "data_nts")
-ms <- MassSpecEngine$new(projectPath = root)
-ms$run_app()
-
-# TODO add user questions to install needed packages when lauching the app and not all required packages are installed
-
-# TODO create a wizard to see with more details each suspect, implemented as a modal that reuses the structure and uses the interactive mode for the plot_suspects_ms2 and also shows the eic and all the details for the selected row, add it via a button in the DT first column with an eye icon
-
-# TODO implement matrix correction from Tisler et al. also as a DB_MassSpecMethod
-
-# TODO Implement Filters for MS2 spectra in features and filter for suspects
-
-# TODO Add a transformation products suspect screening method, that takes a suspect screening database with transformation products
-
-# TODO Better documentation for the duckdb structure and how to use it with StreamFind
-
-plot_features_ms1(
-  ms$NonTargetAnalysis,
-  groupBy = c("replicate", "feature_group"),
-  interactive = TRUE
-)
-
-fts <- get_features(ms$NonTargetAnalysis)[, 1:20]
-fts <- fts[order(intensity), ]
-
-fts <- get_features(
-  ms$NonTargetAnalysis,
-  mass = dbsus[15, ],
-  ppm = 20,
-  filtered = FALSE
-)[, 1:30]
-
-fts <- get_features(
-  ms$NonTargetAnalysis,
-  mass = dbsus$mass[15],
-  ppm = 20,
-  filtered = FALSE
-)[, 1:30]
-
-plot_suspects_ms2(ms$NonTargetAnalysis, features = get_suspects(ms$NonTargetAnalysis)[1, ], interactive = F)
-
-
-
-
-
-
-
-
-
-
-library(rcdk)
-smiles <- "CC(=O)Oc1ccccc1C(=O)O"  # Aspirin
-mol <- parse.smiles(smiles)[[1]]
-# Generate 2D coordinates
-do.aromaticity(mol)
-set.atom.types(mol)
-do.isotopes(mol)
-generate.2d.coordinates(mol)
-# Plot
-library(rJava)
-library(rcdk)
-rcdk::plot(mol)
-rcdk::draw.molecule(mol)
-view.molecule.2d(mol)
-
-library(rJava)
-library(rcdk)
-smiles <- "CC(=O)Oc1ccccc1C(=O)O"
-mol <- parse.smiles(smiles)[[1]]
-img <- view.image.2d(mol)
-plot.new()
-rasterImage(img, 0, 0, 1, 1)
-
-
-
-res <- get_suspects(ms$NonTargetAnalysis)
-nrow(res)
-
-res_istd <- get_internal_standards(ms$NonTargetAnalysis)
-nrow(res_istd)
-
-
-pos_fc <- get_fold_change(
-  ms$NonTargetAnalysis,
-  replicatesIn = "pos_influent",
-  replicatesOut = "pos_effluent"
-)
-
-plot_fold_change(
-  ms$NonTargetAnalysis,
-  replicatesIn = "pos_influent",
-  replicatesOut = "pos_effluent"
-)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-.plot_debug_DB_MassSpecMethod_GroupFeatures_native(
-  "C:\\Users\\cunha\\Documents\\GitHub\\StreamFind\\log\\debug_log_group_features_methodobi_warp_rt915.00.log"
-)
-
-.plot_debug_DB_MassSpecMethod_GroupFeatures_native(
-  "C:\\Users\\cunha\\Documents\\GitHub\\StreamFind\\log\\debug_log_group_features_methodinternal_standards_rt1157.00.log"
-)
-
-plot_debug_log(
-  ps_ff,
-  logFile = file.path("C:/Users/cunha/Documents/GitHub/StreamFind/log/debug_log_peak_detection_304.189301.log")
-)
-
-#DEBUG
-#"03_tof_ww_is_pos_o3sw_effluent-r002"
-#304.1893
-
-#"03_tof_ww_is_pos_o3sw_effluent-r002"
-#356.2657
-
-#"02_tof_ww_is_pos_influent-r003"
-#342.2639
-
-# DEBUG ANNOTATION
-#"02_tof_ww_is_neg_influent-r002", "FG761_M286_RT968_NEG", "FC60_RT968_NEG", mz 285.0802
-#"02_tof_ww_is_neg_influent-r001", "FG761_M286_RT968_NEG", "FC65_RT967_NEG", mz 285.0806
-
-get_suspects(ms$NonTargetAnalysis)
-
-
-istd_dt <- get_internal_standards(ms$NonTargetAnalysis)
-istd_avg_rt <- istd_dt[, .(avg_exp_rt = mean(exp_rt, na.rm = TRUE)), by = "name"]
-istd_dt_with_shift <- istd_dt[istd_avg_rt, on = "name", `:=`(rt_shift = exp_rt - i.avg_exp_rt)]
-
-
-
-
-#get_cache_info(ms$Cache)
-
-
-
-View(get_suspects(ms$NonTargetAnalysis, suspects = dbsus, ppm = 10, sec = 15))
-
-
-
-
-find_features_debug <- function(
-  projectPath,
-  file,
-  rtWindows = data.frame(rtmin = numeric(), rtmax = numeric()),
-  ppmThreshold = 10,
-  noiseThreshold = 250,
-  minSNR = 3,
-  minTraces = 3,
-  baselineWindow = 200,
-  maxWidth = 250,
-  baseQuantile = 0.99,
-  debugMZ = 0,
-  debugSpecIdx = -1
-) {
-  ms <- DB_MassSpecEngine$new(
-    projectPath = projectPath,
-    files = file
-  )
-  ps_ff <- DB_MassSpecMethod_FindFeatures_native(
-    rtWindows = rtWindows,
-    ppmThreshold = ppmThreshold,
-    noiseThreshold = noiseThreshold,
-    minSNR = minSNR,
-    minTraces = minTraces,
-    baselineWindow = baselineWindow,
-    maxWidth = maxWidth,
-    baseQuantile = baseQuantile,
-    debugMZ = debugMZ,
-    debugSpecIdx = debugSpecIdx
-  )
-  ms$Workflow <- list(ps_ff)
-  ms$run_workflow()
-  ms
+# -----------------------------------------------------------------------------
+# 6. Build and run a workflow from the registry metadata
+#    This tests the project-owned workflow dispatcher.
+# -----------------------------------------------------------------------------
+
+configure_step <- function(step, parameters) {
+  step$parameters <- parameters
+  step
 }
 
-ms <- find_features_debug(
-  projectPath = root,
-  file = ms_files[6],
-  rtWindows = data.frame(rtmin = numeric(), rtmax = numeric()),
-  ppmThreshold = 10,
-  noiseThreshold = 250,
-  minSNR = 3,
-  minTraces = 3,
-  baselineWindow = 200,
-  maxWidth = 250,
-  baseQuantile = 0.99,
-  debugMZ = 0,
-  debugSpecIdx = -1
-)
-ms$run_app()
-
-
-create_components_debug <- function(
-  projectPath,
-  files,
-  rtWindow = c(-2, 2),
-  minCorrelation = 0.8,
-  debugRT = 0.0,
-  debugAnalysis = ""
-) {
-  ms <- DB_MassSpecEngine$new(
-    projectPath = projectPath,
-    files = files
-  )
-  ps_ff <- DB_MassSpecMethod_FindFeatures_native(
+workflow <- Workflow(list(
+  configure_step(registry$FindFeatures_native, list(
+    analyses = character(),
     rtWindows = data.frame(rtmin = numeric(), rtmax = numeric()),
     ppmThreshold = 10,
     noiseThreshold = 250,
@@ -542,344 +179,138 @@ create_components_debug <- function(
     baselineWindow = 200,
     maxWidth = 250,
     baseQuantile = 0.99,
+    debugAnalysis = "",
     debugMZ = 0,
-    debugSpecIdx = -1
-  )
-  ps_comp <- DB_MassSpecMethod_CreateComponents_native(
-    rtWindow = rtWindow,
-    minCorrelation = minCorrelation,
-    debugRT = debugRT,
-    debugAnalysis = debugAnalysis
-  )
-  ms$Workflow <- list(ps_comp)
-  ms$run_workflow()
-}
+    debugSpecIdx = -1L
+  )),
+  configure_step(registry$LoadFeaturesMS1_native, list(
+    analyses = character(),
+    rtWindow = c(-1, 1),
+    mzWindow = c(-1, 6),
+    mzClust = 0.008,
+    presence = 0.5,
+    minIntensity = 250,
+    filtered = FALSE
+  )),
+  configure_step(registry$LoadFeaturesMS2_native, list(
+    analyses = character(),
+    isolationWindow = 1.3,
+    mzClust = 0.008,
+    presence = 0.5,
+    minIntensity = 10,
+    filtered = FALSE
+  )),
+  configure_step(registry$CreateComponents_native, list(
+    analyses = character(),
+    rtWindow = c(-5, 5),
+    minCorrelation = 0.8,
+    debugRT = 0,
+    debugAnalysis = ""
+  )),
+  configure_step(registry$AnnotateComponents_native, list(
+    analyses = character(),
+    maxIsotopes = 8,
+    maxCharge = 1,
+    maxGaps = 1,
+    ppm = 10,
+    debugComponent = "",
+    debugAnalysis = ""
+  )),
+  configure_step(registry$FindInternalStandard_native, list(
+    analyses = character(),
+    suspects = internal_standards,
+    ppm = 10,
+    sec = 15,
+    ppmMS2 = 10,
+    mzrMS2 = 0.008,
+    minCosineSimilarity = 0.7,
+    minSharedFragments = 3,
+    filtered = TRUE
+  )),
+  configure_step(registry$FilterInternalStandards_native, list(
+    analyses = character(),
+    idLevels = c(1, 3)
+  )),
+  configure_step(registry$GroupFeatures_native, list(
+    analyses = character(),
+    method = "internal_standards",
+    rtDeviation = 5,
+    ppm = 10,
+    minSamples = 1,
+    binSize = 5,
+    filtered = FALSE,
+    debug = FALSE,
+    debugRT = 0
+  )),
+  configure_step(registry$FeatureBlankSubtraction_native, list(
+    analyses = character(),
+    blankThreshold = 5,
+    rtExpand = 10,
+    mzExpand = 0.005
+  )),
+  configure_step(registry$FilterFeatures_native, list(
+    analyses = character(),
+    minIntensity = 10000,
+    removeIsotopes = TRUE,
+    removeAdducts = TRUE,
+    removeLosses = TRUE
+  )),
+  configure_step(registry$SuspectScreening_metfrag, list(
+    analyses = character(),
+    metfrag_path = "C:\\Users\\cunha\\Documents\\patRoon_deps\\MetFragCommandLine-2.5.0.jar",
+    database_type = "LocalCSV",
+    database_path = file.path("dev", "dev_duckdb", "transformation_products_template.csv"),
+    ppm = 10,
+    sec = 15,
+    ppmMS2 = 10,
+    mzrMS2 = 0.008,
+    top_n = 5,
+    filtered = FALSE,
+    n_cores = 10,
+    java_path = "java",
+    metfrag_args = NULL,
+    extra_params = list(),
+    show_progress = TRUE,
+    quiet = FALSE,
+    debug = TRUE
+  )),
+  configure_step(registry$AssignTransformationProducts_native, list(
+    analyses = character(),
+    transformation_products = transformation_products,
+    chromatographic_phase = "reverse_phase",
+    mzrMS2 = 0.008
+  ))
+))
 
-create_components_debug(
-  projectPath = root,
-  files = ms_files,
-  rtWindow = c(-2, 2),
-  minCorrelation = 0.8,
-  debugRT = 1108,
-  debugAnalysis = ""
-)
+nts$run_workflow(workflow)
 
+# -----------------------------------------------------------------------------
+# 7. Inspect downstream results using the project object
+# -----------------------------------------------------------------------------
 
-
-
-
-
-source("dev\\merck_peak_finding\\dev_log_plot.R")
-plot_cluster_data(log_file = "log\\debug_log_peak_detection_247.176300.log")
-
-hd <- get_spectra_headers(ms$Analyses)
-hd[hd$rt >= 1119 & hd$rt <= 1120, ]
-
-ms$clear_cache()
-
-show(ms$NonTargetAnalysis)
-
-fts <- get_features(
-  ms$NonTargetAnalysis,
-  analyses = 5,
-  mass = dbsus,
+features_all <- get_features(nts)
+features_subset <- get_features(
+  nts,
+  mass = suspects$mass[1],
   ppm = 20,
-  sec = 30,
   filtered = FALSE
-)[, 1:30]
-
-
-get_features(
-  ms$NonTargetAnalysis,
-  analyses = 5,
-  components = "FC_934",
-  filtered = FALSE
-)[, 1:30]
-
-fts <- get_features(
-  ms$NonTargetAnalysis,
-  analyses = 5,
-  filtered = FALSE
-)
-fts <- fts[fts$feature_component %in% "FC_1082", ]
-plot_features(
-  ms$NonTargetAnalysis,
-  features = fts
 )
 
+suspects_found <- get_suspects(nts)
+internal_standards_found <- get_internal_standards(nts)
+transformation_products_found <- get_transformation_products(nts)
 
-plot_features(
-  ms$NonTargetAnalysis,
-  analyses = 5,
-  components = "FC_1083",
-  showDetails = FALSE
-)
+head(features_all)
+head(features_subset)
+head(suspects_found)
+head(internal_standards_found)
+head(transformation_products_found)
 
-map_features(
-  ms$NonTargetAnalysis,
-  analyses = 5,
-  components = "FC_1083",
-  showDetails = TRUE
-)
+# -----------------------------------------------------------------------------
+# 8. Optional interactive/manual checks
+# -----------------------------------------------------------------------------
 
-colnames(fts)
-
-fts[, c("feature", "intensity", "ms1_size")]
-fts[, c("feature", "intensity", "ms2_size")]
-
-plot_features(
-  ms$NonTargetAnalysis,
-  analyses = 5,
-  mass = dbsus,
-  ppm = 20,
-  sec = 30,
-  filtered = FALSE,
-  groupBy = c("name", "replicate"),
-  showDetails = TRUE
-)
-
-
-colnames(fts)
-
-
-
-
-plot_features_ms1(
-  ms$NonTargetAnalysis,
-  analyses = 5,
-  mass = dbsus,
-  ppm = 20,
-  sec = 30,
-  groupBy = c("name", "replicate")
-)
-
-plot_features_ms2(
-  ms$NonTargetAnalysis,
-  analyses = 5,
-  mass = dbsus,
-  ppm = 20,
-  sec = 30,
-  groupBy = c("name", "replicate")
-)
-
-
-# ms_files <- StreamFindData::get_ms_file_paths()[1:3]
-# ms_db_path <- file.path(sf_root, "MassSpecAnalyses.duckdb")
-# ms_db_obj <- MassSpecAnalysesDB(db = ms_db_path, files = ms_files)
-# get_analysis_names(ms_db_obj)
-# get_replicate_names(ms_db_obj)
-# set_replicate_names(ms_db_obj, rep("Sample", 3))
-# info(ms_db_obj)
-# get_chromatograms_headers(ms_db_obj, get_analysis_names(ms_db_obj)[1])
-# get_spectra_headers(ms_db_obj, get_analysis_names(ms_db_obj)[1])
-# list_db_tables(ms_db_obj)
-# get_db_table_info(ms_db_obj, "ChromatogramsHeaders")
-# get_db_table_info(ms_db_obj, "SpectraHeaders")
-
-# MARK: EngineDB with MassSpec tests
-# EngineDB with MassSpec tests -----
-
-sf_root <- file.path("dev", "dev_duckdb", "data")
-#file.remove(list.files(sf_root, full.names = TRUE))
-#ms_files <- StreamFindData::get_ms_file_paths()[1]
-source(file.path("C:\\Users\\apoli\\Documents\\github\\StreamFind\\dev\\merck_peak_finding\\dev_resources.R"))
-examples <- unique(files_merck_ex$example)
-files_merck_ex[, 1:3]
-
-
-ms <- DB_MassSpecEngine$new(
-  projectPath = sf_root,
-  files = files_merck_ex$file_path[1:2]
-)
-
-get_cache_info(ms$Cache)
-
-ms$Metadata[["project"]] <- "ms-demo"
-
-set_replicate_names(ms$Analyses, c("sample", "blank"))
-set_blank_names(ms$Analyses, c("blank", "blank"))
-
-# ms
-# ms$clear_result_databases()
-
-# ms$info_analyses()
-# ms$list_db_tables()
-# ms$get_db_table_info("SpectraHeaders")
-
-# head(get_spectra_headers(ms$Analyses))
-# head(get_spectra_bpc(ms$Analyses))
-# head(get_spectra_tic(ms$Analyses))
-# plot_spectra_tic(ms$Analyses, levels = 1, downsize = 2)
-# plot_spectra_bpc(ms$Analyses, levels = 1, downsize = 2)
-
-# get_raw_spectra(ms$Analyses, levels = 1, mass = dbis[7, ], ppm = 20, sec = 30)
-# get_spectra_eic(ms$Analyses, mass = dbis[7, ], ppm = 20)
-# get_spectra_ms1(ms$Analyses, mass = dbis[7, ], ppm = 20)
-# get_spectra_ms2(ms$Analyses, mass = dbis[7, ], ppm = 20)
-
-ps_ff <- DB_MassSpecMethod_FindFeatures_native(
-  # rtWindows = data.table::data.table(rtmin = 300, rtmax = 3600),
-  # resolution_profile = c(35000L, 35000L, 35000L),
-  # noiseThreshold = 250,
-  # minSNR = 3,
-  # minTraces = 3,
-  # baselineWindow = 200,
-  # maxWidth = 100,
-  # base_quantile = 0.1,
-  # debug_mz = dbis$mass[1] + 1.007276
-  rtWindows = data.frame(rtmin = 300, rtmax = 3400),
-  resolution_profile = c(25000L, 55000L, 80000L),
-  noiseThreshold = 15,
-  minSNR = 3,
-  minTraces = 3,
-  baselineWindow = 200,
-  maxWidth = 250, #100
-  base_quantile = 0.99,
-  debug_mz = 0
-)
-
-wf <- Workflow(list(ps_ff))
-ms$Workflow <- wf
-ms$run_workflow()
-
-
-show(ms$NonTargetAnalysis)
-
-
-
-run.DB_MassSpecMethod_FeatureBlankSubtraction_native(
-  DB_MassSpecMethod_FeatureBlankSubtraction_native(
-    blankThreshold = 10
-  ),
-  engine = ms
-)
-
-get_features(
-  ms$NonTargetAnalysis,
-  analyses = 2
-)
-
-# run(ps_ff, engine = ms)
-
-# size(ms$Cache)
-# get_cache_info(ms$Cache)
-# show(ms$Workflow)
-# show(ms$NonTargetAnalysis)
-
-get_features(
-  ms$NonTargetAnalysis,
-  analyses = 1,
-  mass = dbis, ppm = 20
-)
-
-plot_features(
-  ms$NonTargetAnalysis,
-  analyses = 1,
-  mass = dbis,
-  ppm = 20,
-  legendNames = TRUE
-)
-
-plot_features_ms2(
-  ms$NonTargetAnalysis,
-  analyses = 1,
-  mass = dbis,
-  ppm = 20,
-  legendNames = TRUE
-)
-
-# sf_root <- file.path("dev", "dev_duckdb", "demo.sf")
-# nts_db_path <- file.path(sf_root, "MassSpecResults_NonTargetAnalysis.duckdb")
-# nts <- DB_MassSpecResults_NonTargetAnalysis(db = nts_db_path)
-# show(nts)
-# list_db_tables(nts)
-
-
-# MARK: MS Chromatograms
-# MS Chromatograms -----
-
-#file.remove(list.files(sf_root, full.names = TRUE))
-
-# sf_root <- file.path("dev", "dev_duckdb", "demo.sf")
-# ms_files <- StreamFindData::get_ms_file_paths()[29:30]
-# ms <- DB_MassSpecEngine$new(
-#   project_dir = sf_root,
-#   files = ms_files
-# )
-# ms$Metadata[["project"]] <- "chromatograms-demo"
-# ms
-
-#head(ms$get_chromatograms_headers(analyses = 1))
-#get_chromatograms(ms$Analyses, chromatograms = c(0, 1))
-#plot_chromatograms(ms$Analyses, chromatograms = c(0, 1), interactive = FALSE)
-
-# plot_chromatograms(
-#   ms$Analyses,
-#   #analyses = 2,
-#   chromatograms = c(0, 1),
-#   groupBy = c("analysis", "id"),
-#   downsize = 3
-# )
-
-
-
-
-
-
-# MARK: Custom ProcessingSteps
-# Custom ProcessingSteps -----
-
-# .get_available_engines()
-# length(.get_available_processing_methods(dataType = "MassSpec"))
-# length(.get_available_methods(dataType = "MassSpec"))
-# .list_processing_steps_metadata(dataType = "MassSpec")[, 1:4]
-
-# # Dummy ProcessingStep S3 child for testing
-# MassSpecMethod_TestStep <- function() {
-#   x <- ProcessingStep(
-#     type = "MassSpec",
-#     method = "FindFeatures",
-#     required = NA_character_,
-#     algorithm = "TestStep",
-#     input_class = NA_character_,
-#     output_class = "DummyOutput",
-#     parameters = list(dummy = TRUE),
-#     number_permitted = 1,
-#     version = "0.0.1",
-#     software = "DummySoftware",
-#     developer = "Test Developer",
-#     contact = "test@example.com",
-#     link = NA_character_,
-#     doi = NA_character_
-#   )
-#   if (is.null(validate_object(x))) {
-#     x
-#   } else {
-#     stop("Invalid parameters for MassSpecMethod_TestStep.")
-#   }
-# }
-
-# validate_object.MassSpecMethod_TestStep <- function(x) {
-#   # Dummy validation: always valid
-#   TRUE
-# }
-
-# run.MassSpecMethod_TestStep <- function(x, engine = NULL) {
-#   # Dummy run: returns a message
-#   list(result = "Dummy run executed", engine = engine)
-# }
-
-# dummy_ps <- MassSpecMethod_TestStep()
-# run.MassSpecMethod_TestStep(dummy_ps)
-
-# .list_processing_steps_metadata(dataType = "MassSpec")[, 1:4]
-
-# sf_root <- file.path("dev", "dev_duckdb", "demo.sf")
-# nts_db_path <- file.path(sf_root, "MassSpecResults_NonTargetAnalysis.duckdb")
-# nts <- DB_MassSpecResults_NonTargetAnalysis(db = nts_db_path)
-# show(nts)
-
-# list_db_tables(nts)
-
-
-
+# nts$run_app()
+# plot_features_ms1(nts, interactive = TRUE)
+# plot_suspects_ms2(nts, features = get_suspects(nts)[1, ], interactive = TRUE)
+# plot_transformation_products(nts, groups = unique(transformation_products_found$feature_group)[1], showMS2 = TRUE)

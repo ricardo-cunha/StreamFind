@@ -777,3 +777,35 @@
     # })
   })
 }
+
+##' @noRd
+##' @export
+.mod_Explorer_UI.ProjectMassSpec <- .mod_Explorer_UI.MassSpecAnalyses
+
+##' @noRd
+##' @export
+.mod_Explorer_Server.ProjectMassSpec <- .mod_Explorer_Server.MassSpecAnalyses
+
+##' @noRd
+##' @export
+.mod_Explorer_UI.ProjectNonTargetAnalysis <- .mod_Explorer_UI.MassSpecAnalyses
+
+##' @noRd
+##' @export
+.mod_Explorer_Server.ProjectNonTargetAnalysis <- .mod_Explorer_Server.MassSpecAnalyses
+
+##' @noRd
+##' @export
+.mod_Explorer_UI.ProjectMassSpecSpectra <- .mod_Explorer_UI.MassSpecAnalyses
+
+##' @noRd
+##' @export
+.mod_Explorer_Server.ProjectMassSpecSpectra <- .mod_Explorer_Server.MassSpecAnalyses
+
+##' @noRd
+##' @export
+.mod_Explorer_UI.ProjectMassSpecChromatograms <- .mod_Explorer_UI.MassSpecAnalyses
+
+##' @noRd
+##' @export
+.mod_Explorer_Server.ProjectMassSpecChromatograms <- .mod_Explorer_Server.MassSpecAnalyses

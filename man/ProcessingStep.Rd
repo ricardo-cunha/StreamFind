@@ -2,19 +2,15 @@
 % Please edit documentation in R/class_ProcessingStep.R
 \name{ProcessingStep}
 \alias{ProcessingStep}
-\alias{validate_object.ProcessingStep}
 \alias{as.ProcessingStep}
-\alias{as.json.ProcessingStep}
-\alias{save.ProcessingStep}
-\alias{read.ProcessingStep}
-\alias{show.ProcessingStep}
-\title{Generic ProcessingStep class and methods}
+\title{ProcessingStep Metadata Object}
 \usage{
 ProcessingStep(
   type = NA_character_,
   method = NA_character_,
-  required = NA_character_,
+  required = character(),
   algorithm = NA_character_,
+  owner_class = NA_character_,
   input_class = NA_character_,
   output_class = NA_character_,
   number_permitted = NA_real_,
@@ -24,79 +20,71 @@ ProcessingStep(
   contact = NA_character_,
   link = NA_character_,
   doi = NA_character_,
-  parameters = list()
+  parameters = list(),
+  title = NA_character_,
+  description = NA_character_,
+  details = NA_character_,
+  parameter_docs = list(),
+  constructor_name = NA_character_,
+  project_method = NA_character_
 )
 
-\method{validate_object}{ProcessingStep}(x)
-
 as.ProcessingStep(value)
-
-\method{as.json}{ProcessingStep}(x)
-
-\method{save}{ProcessingStep}(x, file = "settings.json")
-
-\method{read}{ProcessingStep}(x, file)
-
-\method{show}{ProcessingStep}(x, ...)
 }
 \arguments{
-\item{type}{A character string representing the data type (e.g., "MassSpec", "Raman").}
+\item{type}{Processing type, for example \code{"MassSpec"}.}
 
-\item{method}{A character string representing the method used (e.g., "BaselineCorrection").}
+\item{method}{Processing method name.}
 
-\item{required}{A character vector of required preceding methods.}
+\item{required}{Character vector of required preceding methods.}
 
-\item{algorithm}{A character string representing the algorithm used (e.g., "baseline_als").}
+\item{algorithm}{Algorithm name.}
 
-\item{input_class}{A character string representing the class of the input data.}
+\item{owner_class}{Owning project class.}
 
-\item{output_class}{A character string representing the class of the output data.}
+\item{input_class}{Input class metadata.}
 
-\item{number_permitted}{A numeric value indicating the number of permitted instances.}
+\item{output_class}{Output class metadata.}
 
-\item{version}{A character string representing the version of the processing step.}
+\item{number_permitted}{Maximum permitted occurrences in one workflow.}
 
-\item{software}{A character string representing the original software.}
+\item{version}{Method version string.}
 
-\item{developer}{A character string representing the developer of the processing step.}
+\item{software}{Software name.}
 
-\item{contact}{A character string representing the contact information for the developer.}
+\item{developer}{Developer name.}
 
-\item{link}{A character string representing the link to the origin of the algorithm or link to
-additional information.}
+\item{contact}{Developer contact.}
 
-\item{doi}{A character string representing the DOI of the algorithm or additional information.}
+\item{link}{Reference link.}
 
-\item{parameters}{A list of parameters for the processing step.}
+\item{doi}{Reference DOI.}
 
-\item{x}{A \code{ProcessingStep} object.}
+\item{parameters}{Named list of parameter default values.}
 
-\item{value}{A list or JSON object containing the parameters for the processing step.}
+\item{title}{Optional display title.}
 
-\item{file}{A character string specifying the file path to read the object from.
-The file extension should be \code{.json} or \code{.rds}.}
+\item{description}{Optional short description.}
 
-\item{...}{Additional arguments (not used).}
+\item{details}{Optional long-form details.}
+
+\item{parameter_docs}{Optional named list with per-parameter metadata.}
+
+\item{constructor_name}{Optional legacy constructor-style name.}
+
+\item{project_method}{Optional owning R6 method name.}
+
+\item{value}{A list representation of a processing-step metadata object.}
 }
 \value{
-A \code{ProcessingStep} object. Fundamentally, it is a list with class \code{ProcessingStep} and a data specific method class (e.g., \code{RamanMethod_AverageSpectra_native}) with the following elements:
-\itemize{
-\item \code{type}: The data type (e.g., "MassSpec", "Raman").
-\item \code{method}: The method used (e.g., "BaselineCorrection").
-\item \code{required}: A character vector of required preceding methods.
-\item \code{algorithm}: The algorithm used (e.g., "baseline_als").
-\item \code{input_class}: The class of the input data.
-\item \code{output_class}: The class of the output data.
-\item \code{number_permitted}: The number of permitted instances.
-\item \code{version}: The version of the processing step.
-\item \code{software}: The original software used.
-\item \code{developer}: The developer of the processing step.
-\item \code{contact}: The contact information for the developer.
-\item \code{link}: A link to the origin of the algorithm or additional information.
-\item \code{doi}: The DOI of the algorithm or additional information.
-\item \code{parameters}: A list of parameters for the processing step.
-}
+A \code{ProcessingStep} object.
+
+A \code{ProcessingStep} object.
 }
 \description{
-The \code{ProcessingStep} class is used to define a processing step within a \link{Workflow}. It contains information about the data type, method, algorithm, parameters, and other relevant metadata for the processing step. The \code{ProcessingStep} is the parent class of all processing methods in StreamFind.
+Processing-step metadata used by project-owned workflow registries.
+The object preserves the legacy \code{ProcessingStep} shape used by the workflow UI
+while allowing project classes to provide richer documentation metadata.
+
+Convert a list to a \code{ProcessingStep} object.
 }

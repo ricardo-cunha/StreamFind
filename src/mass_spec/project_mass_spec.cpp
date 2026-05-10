@@ -135,16 +135,11 @@ bool has_rt_window(double rt_min, double rt_max) {
 }  // namespace
 
 PROJECT_MASS_SPEC::PROJECT_MASS_SPEC(std::shared_ptr<project::CONTEXT> ctx) : ctx_(std::move(ctx)) {
-  PROJECT root(ctx_->db_path, ctx_->project_id);
-  root.set_domain("MS");
   create_schema(ctx_);
   validate_schema(ctx_);
 }
 
 void PROJECT_MASS_SPEC::create_schema(const std::shared_ptr<project::CONTEXT>& ctx) {
-  PROJECT root(ctx->db_path, ctx->project_id);
-  root.set_domain("MS");
-
   auto guard = connect_checked(ctx);
   detail::run_sql(guard.get(),
                   "CREATE TABLE IF NOT EXISTS MS_ANALYSES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, replicate VARCHAR, blank VARCHAR, file_name VARCHAR, file_path VARCHAR NOT NULL, file_dir VARCHAR, file_extension VARCHAR, format VARCHAR, type VARCHAR, time_stamp VARCHAR, number_spectra INTEGER, number_chromatograms INTEGER, number_spectra_binary_arrays INTEGER, min_mz DOUBLE, max_mz DOUBLE, start_rt DOUBLE, end_rt DOUBLE, has_ion_mobility BOOLEAN, concentration DOUBLE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis))",
@@ -231,8 +226,6 @@ void PROJECT_MASS_SPEC::import_files(const std::vector<std::string>& file_paths,
     throw ERROR(ERROR_CODE::InvalidArgument, "Mass spec import_files blanks length must match file_paths");
   }
 
-  PROJECT root(ctx_->db_path, ctx_->project_id);
-  root.set_domain("MS");
   create_schema(ctx_);
   validate_schema(ctx_);
 

@@ -2,78 +2,16 @@
 % Please edit documentation in R/class_Workflow.R
 \name{Workflow}
 \alias{Workflow}
-\alias{validate_object.Workflow}
-\alias{info.Workflow}
-\alias{get_methods.Workflow}
-\alias{[.Workflow}
-\alias{[<-.Workflow}
-\alias{[[.Workflow}
-\alias{[[<-.Workflow}
-\alias{save.Workflow}
-\alias{read.Workflow}
-\alias{show.Workflow}
-\title{Generic (top level) Workflow class and methods}
+\title{Workflow Metadata Container}
 \usage{
 Workflow(processing_steps = list())
-
-\method{validate_object}{Workflow}(x)
-
-\method{info}{Workflow}(x)
-
-\method{get_methods}{Workflow}(x)
-
-\method{[}{Workflow}(x, i)
-
-\method{[}{Workflow}(x, i) <- value
-
-\method{[[}{Workflow}(x, i)
-
-\method{[[}{Workflow}(x, i) <- value
-
-\method{save}{Workflow}(x, file = "workflow.rds")
-
-\method{read}{Workflow}(x, file)
-
-\method{show}{Workflow}(x, ...)
 }
 \arguments{
-\item{processing_steps}{A list of \link{ProcessingStep} objects.}
-
-\item{x}{A Workflow object.}
-
-\item{i}{An index indicating which element to replace or a character to add a new element.}
-
-\item{value}{A \link{ProcessingStep} object to replace the selected element with.}
-
-\item{file}{A file path to read the Workflow object from.
-Supported formats are \code{.json} and \code{.rds}.}
-
-\item{...}{Additional arguments (not used).}
+\item{processing_steps}{A list of \code{ProcessingStep} objects or compatible lists.}
+}
+\value{
+A \code{Workflow} object.
 }
 \description{
-The \code{Workflow} class is an ordered list of \link{ProcessingStep} objects dedicated to a specific type of data.
+Ordered list of \code{ProcessingStep} metadata objects.
 }
-\section{Methods (by generic)}{
-\itemize{
-\item \code{validate_object(Workflow)}: Validate a Workflow object, returning NULL if valid or an error if not.
-
-\item \code{info(Workflow)}: Convert a Workflow object to a data frame.
-
-\item \code{get_methods(Workflow)}: Get the names of the methods in a Workflow object.
-
-\item \code{[}: Subset a Workflow object.
-
-\item \code{`[`(Workflow) <- value}: Replace elements in a Workflow object, returning a modified \code{Workflow}
-object.
-
-\item \code{[[}: Extract elements from a Workflow object using \code{[[}.
-
-\item \code{`[[`(Workflow) <- value}: Replace elements in a Workflow object using \verb{[[<-}.
-
-\item \code{save(Workflow)}: Save a Workflow object to a file.
-
-\item \code{read(Workflow)}: Read a Workflow object from a file.
-
-\item \code{show(Workflow)}: Show the contents of a Workflow object.
-
-}}

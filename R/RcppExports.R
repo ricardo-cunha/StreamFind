@@ -206,6 +206,26 @@ rcpp_project_mass_spec_new <- function(project_xptr) {
     .Call(`_StreamFind_rcpp_project_mass_spec_new`, project_xptr)
 }
 
+rcpp_project_mass_spec_spectra_new <- function(project_xptr) {
+    .Call(`_StreamFind_rcpp_project_mass_spec_spectra_new`, project_xptr)
+}
+
+rcpp_project_mass_spec_chromatograms_new <- function(project_xptr) {
+    .Call(`_StreamFind_rcpp_project_mass_spec_chromatograms_new`, project_xptr)
+}
+
+rcpp_project_mass_spec_spectra_get_spectra_tic <- function(spectra_xptr, analyses, levels, rt) {
+    .Call(`_StreamFind_rcpp_project_mass_spec_spectra_get_spectra_tic`, spectra_xptr, analyses, levels, rt)
+}
+
+rcpp_project_mass_spec_spectra_get_raw_spectra <- function(spectra_xptr, analyses, levels, mass, mz, rt, mobility, id, ppm, sec, millisec, all_traces, isolation_window, min_intensity_ms1, min_intensity_ms2) {
+    .Call(`_StreamFind_rcpp_project_mass_spec_spectra_get_raw_spectra`, spectra_xptr, analyses, levels, mass, mz, rt, mobility, id, ppm, sec, millisec, all_traces, isolation_window, min_intensity_ms1, min_intensity_ms2)
+}
+
+rcpp_project_mass_spec_chromatograms_extract <- function(chromatograms_xptr, analysis, indices) {
+    .Call(`_StreamFind_rcpp_project_mass_spec_chromatograms_extract`, chromatograms_xptr, analysis, indices)
+}
+
 rcpp_project_mass_spec_import_files <- function(mass_spec_xptr, file_paths, analyses, replicates, blanks) {
     invisible(.Call(`_StreamFind_rcpp_project_mass_spec_import_files`, mass_spec_xptr, file_paths, analyses, replicates, blanks))
 }
@@ -264,6 +284,94 @@ rcpp_project_mass_spec_get_raw_spectra <- function(mass_spec_xptr, analyses, lev
 
 rcpp_project_mass_spec_extract_chromatograms <- function(mass_spec_xptr, analysis, indices) {
     .Call(`_StreamFind_rcpp_project_mass_spec_extract_chromatograms`, mass_spec_xptr, analysis, indices)
+}
+
+rcpp_project_non_target_analysis_new <- function(project_xptr) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_new`, project_xptr)
+}
+
+rcpp_project_non_target_analysis_get_features <- function(nts_xptr, analyses, include_filtered) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_get_features`, nts_xptr, analyses, include_filtered)
+}
+
+rcpp_project_non_target_analysis_get_features_count <- function(nts_xptr, analyses, include_filtered) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_get_features_count`, nts_xptr, analyses, include_filtered)
+}
+
+rcpp_project_non_target_analysis_get_suspects <- function(nts_xptr, analyses, features, groups, targets, ppm = 20.0, sec = 60.0, millisec = 5.0) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_get_suspects`, nts_xptr, analyses, features, groups, targets, ppm, sec, millisec)
+}
+
+rcpp_project_non_target_analysis_get_internal_standards <- function(nts_xptr, analyses, features, groups, targets, ppm = 20.0, sec = 60.0, millisec = 5.0) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_get_internal_standards`, nts_xptr, analyses, features, groups, targets, ppm, sec, millisec)
+}
+
+rcpp_project_non_target_analysis_get_transformation_products <- function(nts_xptr) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_get_transformation_products`, nts_xptr)
+}
+
+rcpp_project_non_target_analysis_find_features <- function(nts_xptr, analyses, rt_windows_min, rt_windows_max, ppm_threshold = 15.0, noise_threshold = 15.0, min_snr = 3.0, min_traces = 3L, baseline_window = 200.0, max_width = 100.0, base_quantile = 0.10, debug_analysis = "", debug_mz = 0.0, debug_spec_idx = -1L) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_find_features`, nts_xptr, analyses, rt_windows_min, rt_windows_max, ppm_threshold, noise_threshold, min_snr, min_traces, baseline_window, max_width, base_quantile, debug_analysis, debug_mz, debug_spec_idx)
+}
+
+rcpp_project_non_target_analysis_suspect_screening <- function(nts_xptr, suspects, analyses, ppm = 5.0, sec = 10.0, ppmMS2 = 10.0, mzrMS2 = 0.008, minCosineSimilarity = 0.7, minSharedFragments = 3L, filtered = FALSE) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_suspect_screening`, nts_xptr, suspects, analyses, ppm, sec, ppmMS2, mzrMS2, minCosineSimilarity, minSharedFragments, filtered)
+}
+
+rcpp_project_non_target_analysis_find_internal_standards <- function(nts_xptr, suspects, analyses, ppm = 5.0, sec = 10.0, ppmMS2 = 10.0, mzrMS2 = 0.008, minCosineSimilarity = 0.7, minSharedFragments = 3L, filtered = TRUE) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_find_internal_standards`, nts_xptr, suspects, analyses, ppm, sec, ppmMS2, mzrMS2, minCosineSimilarity, minSharedFragments, filtered)
+}
+
+rcpp_project_non_target_analysis_load_features_ms1 <- function(nts_xptr, analyses, filtered = FALSE, rtWindow = as.numeric( c(-2.0, 2.0)), mzWindow = as.numeric( c(-1.0, 6.0)), minTracesIntensity = 250.0, mzClust = 0.005, presence = 0.8) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_load_features_ms1`, nts_xptr, analyses, filtered, rtWindow, mzWindow, minTracesIntensity, mzClust, presence)
+}
+
+rcpp_project_non_target_analysis_load_features_ms2 <- function(nts_xptr, analyses, filtered = FALSE, minTracesIntensity = 10.0, isolationWindow = 1.3, mzClust = 0.005, presence = 0.8) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_load_features_ms2`, nts_xptr, analyses, filtered, minTracesIntensity, isolationWindow, mzClust, presence)
+}
+
+rcpp_project_non_target_analysis_create_components <- function(nts_xptr, analyses, rtWindow = as.numeric( c(0.0, 0.0)), minCorrelation = 0.8, debugRT = 0.0, debugAnalysis = "") {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_create_components`, nts_xptr, analyses, rtWindow, minCorrelation, debugRT, debugAnalysis)
+}
+
+rcpp_project_non_target_analysis_annotate_components <- function(nts_xptr, analyses, maxIsotopes = 5L, maxCharge = 1L, maxGaps = 1L, ppm = 10.0, debugComponent = "", debugAnalysis = "") {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_annotate_components`, nts_xptr, analyses, maxIsotopes, maxCharge, maxGaps, ppm, debugComponent, debugAnalysis)
+}
+
+rcpp_project_non_target_analysis_group_features <- function(nts_xptr, analyses, method = "internal_standards", rtDeviation = 5.0, ppm = 10.0, minSamples = 1L, binSize = 5.0, filtered = FALSE, debug = FALSE, debugRT = 0.0) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_group_features`, nts_xptr, analyses, method, rtDeviation, ppm, minSamples, binSize, filtered, debug, debugRT)
+}
+
+rcpp_project_non_target_analysis_fill_features <- function(nts_xptr, analyses, withinReplicate = FALSE, filtered = FALSE, rtExpand = 10.0, mzExpand = 0.01, maxPeakWidth = 30.0, minTracesIntensity = 1000.0, minNumberTraces = 5L, minIntensity = 5000.0, rtApexDeviation = 5.0, minSignalToNoiseRatio = 3.0, minGaussianFit = 0.2, debugFG = "") {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_fill_features`, nts_xptr, analyses, withinReplicate, filtered, rtExpand, mzExpand, maxPeakWidth, minTracesIntensity, minNumberTraces, minIntensity, rtApexDeviation, minSignalToNoiseRatio, minGaussianFit, debugFG)
+}
+
+rcpp_project_non_target_analysis_blank_subtraction <- function(nts_xptr, analyses, blankThreshold = 5.0, rtExpand = 10.0, mzExpand = 0.005) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_blank_subtraction`, nts_xptr, analyses, blankThreshold, rtExpand, mzExpand)
+}
+
+rcpp_project_non_target_analysis_filter_features <- function(nts_xptr, analyses, minSN = NA_real_, minIntensity = NA_real_, minArea = NA_real_, minWidth = NA_real_, maxWidth = NA_real_, maxPPM = NA_real_, minFwhmRT = NA_real_, maxFwhmRT = NA_real_, minFwhmMZ = NA_real_, maxFwhmMZ = NA_real_, minGaussianA = NA_real_, minGaussianMu = NA_real_, maxGaussianMu = NA_real_, minGaussianSigma = NA_real_, maxGaussianSigma = NA_real_, minGaussianR2 = NA_real_, maxJaggedness = NA_real_, minSharpness = NA_real_, minAsymmetry = NA_real_, maxAsymmetry = NA_real_, maxModality = NA_integer_, minPlates = NA_real_, onlyFilled = as.logical( c(NA_LOGICAL)), removeFilled = FALSE, minSizeEIC = NA_integer_, minSizeMS1 = NA_integer_, minSizeMS2 = NA_integer_, minRelPresenceReplicate = NA_real_, removeIsotopes = FALSE, removeAdducts = FALSE, removeLosses = FALSE) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_filter_features`, nts_xptr, analyses, minSN, minIntensity, minArea, minWidth, maxWidth, maxPPM, minFwhmRT, maxFwhmRT, minFwhmMZ, maxFwhmMZ, minGaussianA, minGaussianMu, maxGaussianMu, minGaussianSigma, maxGaussianSigma, minGaussianR2, maxJaggedness, minSharpness, minAsymmetry, maxAsymmetry, maxModality, minPlates, onlyFilled, removeFilled, minSizeEIC, minSizeMS1, minSizeMS2, minRelPresenceReplicate, removeIsotopes, removeAdducts, removeLosses)
+}
+
+rcpp_project_non_target_analysis_filter_suspects <- function(nts_xptr, analyses, names = as.character( c()), minScore = NA_real_, maxErrorRT = NA_real_, maxErrorMass = NA_real_, idLevels = as.integer( c()), minSharedFragments = 0L, minCosineSimilarity = NA_real_) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_filter_suspects`, nts_xptr, analyses, names, minScore, maxErrorRT, maxErrorMass, idLevels, minSharedFragments, minCosineSimilarity)
+}
+
+rcpp_project_non_target_analysis_filter_internal_standards <- function(nts_xptr, analyses, names = as.character( c()), minScore = NA_real_, maxErrorRT = NA_real_, maxErrorMass = NA_real_, idLevels = as.integer( c()), minSharedFragments = 0L, minCosineSimilarity = NA_real_) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_filter_internal_standards`, nts_xptr, analyses, names, minScore, maxErrorRT, maxErrorMass, idLevels, minSharedFragments, minCosineSimilarity)
+}
+
+rcpp_project_non_target_analysis_filter_features_ms2 <- function(nts_xptr, analyses, top = 0L, minIntensity = NA_real_, relMinIntensity = NA_real_, blankClean = FALSE, mzClust = 0.005, blankPresenceThreshold = 0.8, globalPresenceThreshold = 0.1) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_filter_features_ms2`, nts_xptr, analyses, top, minIntensity, relMinIntensity, blankClean, mzClust, blankPresenceThreshold, globalPresenceThreshold)
+}
+
+rcpp_project_non_target_analysis_metfrag_screening <- function(nts_xptr, metfrag_path, analyses, database_type = "LocalCSV", database_path = "", ppm = 5.0, sec = 10.0, ppmMS2 = 10.0, mzrMS2 = 0.008, top_n = 1L, filtered = FALSE, java_path = "java", run_dir = "", debug = FALSE, extra_params = NULL) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_metfrag_screening`, nts_xptr, metfrag_path, analyses, database_type, database_path, ppm, sec, ppmMS2, mzrMS2, top_n, filtered, java_path, run_dir, debug, extra_params)
+}
+
+rcpp_project_non_target_analysis_assign_transformation_products <- function(nts_xptr, transformation_products, chromatographic_phase = "reverse_phase", mzrMS2 = 0.008) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_assign_transformation_products`, nts_xptr, transformation_products, chromatographic_phase, mzrMS2)
 }
 
 rcpp_nts_find_features <- function(info, spectra_headers, rtWindowsMin, rtWindowsMax, ppmThreshold = 15.0, noiseThreshold = 15.0, minSNR = 3.0, minTraces = 3L, baselineWindow = 200.0, maxWidth = 100.0, baseQuantile = 0.10, debugAnalysis = "", debugMZ = 0.0, debugSpecIdx = -1L) {

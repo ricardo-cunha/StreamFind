@@ -4,6 +4,8 @@
 #include <Rcpp.h>
 #include "mass_spec/mass_spec.h"
 #include "mass_spec/project_mass_spec.h"
+#include "mass_spec/project_mass_spec_spectra.h"
+#include "mass_spec/project_mass_spec_chromatograms.h"
 #include "mass_spec/targets.h"
 #include "mass_spec/utils.h"
 #include "project/project.h"
@@ -65,6 +67,22 @@ mass_spec::PROJECT_MASS_SPEC& project_mass_spec_from_xptr(SEXP extptr) {
     Rcpp::XPtr<mass_spec::PROJECT_MASS_SPEC> ptr(extptr);
     if (ptr.get() == nullptr) {
         stop("Project Mass Spec pointer is null");
+    }
+    return *ptr;
+}
+
+mass_spec::PROJECT_MASS_SPEC_SPECTRA& project_mass_spec_spectra_from_xptr(SEXP extptr) {
+    Rcpp::XPtr<mass_spec::PROJECT_MASS_SPEC_SPECTRA> ptr(extptr);
+    if (ptr.get() == nullptr) {
+        stop("Project Mass Spec Spectra pointer is null");
+    }
+    return *ptr;
+}
+
+mass_spec::PROJECT_MASS_SPEC_CHROMATOGRAMS& project_mass_spec_chromatograms_from_xptr(SEXP extptr) {
+    Rcpp::XPtr<mass_spec::PROJECT_MASS_SPEC_CHROMATOGRAMS> ptr(extptr);
+    if (ptr.get() == nullptr) {
+        stop("Project Mass Spec Chromatograms pointer is null");
     }
     return *ptr;
 }
@@ -1829,6 +1847,120 @@ SEXP rcpp_project_mass_spec_new(SEXP project_xptr) {
         Rcpp::XPtr<mass_spec::PROJECT_MASS_SPEC> out(ptr, true);
         out.attr("class") = "StreamFindProjectMassSpec";
         return SEXP(out);
+    });
+}
+
+// [[Rcpp::export]]
+SEXP rcpp_project_mass_spec_spectra_new(SEXP project_xptr) {
+    return project_call([&]() {
+        auto* ptr = new mass_spec::PROJECT_MASS_SPEC_SPECTRA(project_from_xptr(project_xptr).context());
+        Rcpp::XPtr<mass_spec::PROJECT_MASS_SPEC_SPECTRA> out(ptr, true);
+        out.attr("class") = "StreamFindProjectMassSpecSpectra";
+        return SEXP(out);
+    });
+}
+
+// [[Rcpp::export]]
+SEXP rcpp_project_mass_spec_chromatograms_new(SEXP project_xptr) {
+    return project_call([&]() {
+        auto* ptr = new mass_spec::PROJECT_MASS_SPEC_CHROMATOGRAMS(project_from_xptr(project_xptr).context());
+        Rcpp::XPtr<mass_spec::PROJECT_MASS_SPEC_CHROMATOGRAMS> out(ptr, true);
+        out.attr("class") = "StreamFindProjectMassSpecChromatograms";
+        return SEXP(out);
+    });
+}
+
+// [[Rcpp::export]]
+DataFrame rcpp_project_mass_spec_spectra_get_spectra_tic(SEXP spectra_xptr,
+                                                         CharacterVector analyses,
+                                                         std::vector<int> levels,
+                                                         NumericVector rt) {
+    return project_call([&]() {
+        auto& spectra = project_mass_spec_spectra_from_xptr(spectra_xptr);
+        double rt_min = 0.0;
+        double rt_max = 0.0;
+        if (rt.size() == 2) {
+            rt_min = std::min(rt[0], rt[1]);
+            rt_max = std::max(rt[0], rt[1]);
+        }
+        return ms_spectra_tic_rows_to_df(
+            spectra.base().get_spectra_tic(analyses_from_character_vector(analyses), levels, rt_min, rt_max));
+    });
+}
+
+// [[Rcpp::export]]
+DataFrame rcpp_project_mass_spec_spectra_get_raw_spectra(SEXP spectra_xptr,
+                                                         CharacterVector analyses,
+                                                         std::vector<int> levels,
+                                                         SEXP mass,
+                                                         SEXP mz,
+                                                         SEXP rt,
+                                                         SEXP mobility,
+                                                         CharacterVector id,
+                                                         double ppm,
+                                                         double sec,
+                                                         double millisec,
+                                                         bool all_traces,
+                                                         double isolation_window,
+                                                         float min_intensity_ms1,
+                                                         float min_intensity_ms2) {
+    return project_call([&]() {
+        auto& spectra = project_mass_spec_spectra_from_xptr(spectra_xptr);
+        mass_spec::MS_TARGETS_REQUEST request;
+        request.analyses = analyses_from_character_vector(analyses);
+        request.levels = std::move(levels);
+        request.mass = ms_targets_input_from_object(mass);
+        request.mz = ms_targets_input_from_object(mz);
+        request.rt = ms_targets_input_from_object(rt);
+        request.mobility = ms_targets_input_from_object(mobility);
+        request.id = analyses_from_character_vector(id);
+        request.ppm = ppm;
+        request.sec = sec;
+        request.millisec = millisec;
+        request.all_traces = all_traces;
+        request.isolation_window = isolation_window;
+        request.min_intensity_ms1 = min_intensity_ms1;
+        request.min_intensity_ms2 = min_intensity_ms2;
+        return ms_raw_spectrum_rows_to_df(spectra.base().get_raw_spectra(request));
+    });
+}
+
+// [[Rcpp::export]]
+DataFrame rcpp_project_mass_spec_chromatograms_extract(SEXP chromatograms_xptr,
+                                                       std::string analysis,
+                                                       std::vector<int> indices) {
+    return project_call([&]() {
+        auto& chromatograms = project_mass_spec_chromatograms_from_xptr(chromatograms_xptr);
+        auto& mass_spec = chromatograms.base();
+        const auto analyses = mass_spec.get_analyses();
+        const auto analysis_it = std::find_if(analyses.begin(), analyses.end(), [&](const auto& row) {
+            return row.analysis == analysis;
+        });
+        if (analysis_it == analyses.end()) {
+            stop("Mass spec analysis not found: " + analysis);
+        }
+        const auto all_headers = mass_spec.get_chromatograms_headers({analysis});
+        std::vector<mass_spec::MS_CHROMATOGRAM_HEADER_ROW> selected_headers;
+        if (indices.empty()) {
+            selected_headers = all_headers;
+            indices.reserve(all_headers.size());
+            for (const auto& header : all_headers) {
+                indices.push_back(header.index);
+            }
+        } else {
+            for (int index : indices) {
+                const auto it = std::find_if(all_headers.begin(), all_headers.end(), [&](const auto& header) {
+                    return header.index == index;
+                });
+                if (it != all_headers.end()) {
+                    selected_headers.push_back(*it);
+                }
+            }
+        }
+        return ms_chromatograms_to_df(analysis,
+                                      analysis_it->replicate,
+                                      selected_headers,
+                                      mass_spec.get_chromatograms_data(analysis, indices));
     });
 }
 

@@ -625,7 +625,7 @@
     # MARK: summary_data
     summary_data <- shiny::reactive({
       nts <- nts_data()
-      info_analyses <- info(nts$analyses)
+      info_analyses <- info(nts)
       all_fts <- features_data()
       if (nrow(all_fts) == 0) {
         counts <- data.frame(
@@ -1322,7 +1322,7 @@
       suspects <- suspects[analysis %in% sel$analysis & feature %in% sel$feature, ]
       shiny::validate(shiny::need(nrow(suspects) > 0, "No suspects available for selected features."))
 
-      analyses_info <- info(nts$analyses)
+      analyses_info <- info(nts)
       rep_map <- analyses_info$replicate
       names(rep_map) <- analyses_info$analysis
       suspects$replicate <- rep_map[suspects$analysis]
@@ -1393,3 +1393,11 @@
     })
   })
 }
+
+##' @export
+##' @noRd
+.mod_Result_UI.ProjectNonTargetAnalysis <- .mod_Result_UI.MassSpecResults_NonTargetAnalysis
+
+##' @export
+##' @noRd
+.mod_Result_Server.ProjectNonTargetAnalysis <- .mod_Result_Server.MassSpecResults_NonTargetAnalysis

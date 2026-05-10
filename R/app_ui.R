@@ -71,18 +71,7 @@ app_ui <- function(request) {
         ),
         htmltools::div(
           id = "sf-topbar-right",
-          shiny::uiOutput("engine_data_type"),
-          htmltools::tags$span(
-            class = "sf-cache-label",
-            "Cache: ",
-            shiny::textOutput("cache_size", inline = TRUE)
-          ),
-          shiny::actionButton(
-            "clear_cache_button",
-            label = "Clear Cache",
-            title = "Clear Cache",
-            class = "sf-topbar-btn sf-topbar-text-btn"
-          ),
+          shiny::uiOutput("project_data_type"),
           shiny::actionButton(
             "restart_app",
             label = "Restart",

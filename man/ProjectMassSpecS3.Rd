@@ -19,9 +19,9 @@
 \alias{plot_spectra_eic.ProjectMassSpec}
 \alias{get_raw_spectra_ms1.ProjectMassSpec}
 \alias{get_raw_spectra_ms2.ProjectMassSpec}
-\alias{get_chromatograms_headers.ProjectMassSpec}
-\alias{get_chromatograms.ProjectMassSpec}
-\alias{plot_chromatograms.ProjectMassSpec}
+\alias{info.ProjectMassSpec}
+\alias{add_analyses.ProjectMassSpec}
+\alias{remove_analyses.ProjectMassSpec}
 \title{ProjectMassSpec S3 Methods}
 \usage{
 \method{get_raw_spectra_tic}{ProjectMassSpec}(x, analyses = NULL, levels = c(1, 2), rt = NULL)
@@ -57,6 +57,12 @@
 )
 
 \method{get_spectra_headers}{ProjectMassSpec}(x, analyses = NULL)
+
+\method{info}{ProjectMassSpec}(x, ...)
+
+\method{add_analyses}{ProjectMassSpec}(x, ...)
+
+\method{remove_analyses}{ProjectMassSpec}(x, ...)
 
 \method{get_analysis_names}{ProjectMassSpec}(x)
 
@@ -155,33 +161,6 @@
   presence = 0.8,
   minIntensity = 0
 )
-
-\method{get_chromatograms_headers}{ProjectMassSpec}(x, analyses = NULL)
-
-\method{get_chromatograms}{ProjectMassSpec}(
-  x,
-  analyses = NULL,
-  chromatograms = NULL,
-  rtmin = 0,
-  rtmax = 0,
-  minIntensity = NULL
-)
-
-\method{plot_chromatograms}{ProjectMassSpec}(
-  x,
-  analyses = NULL,
-  chromatograms = NULL,
-  rtmin = 0,
-  rtmax = 0,
-  minIntensity = NULL,
-  downsize = NULL,
-  xLab = NULL,
-  yLab = NULL,
-  title = NULL,
-  groupBy = "analysis",
-  interactive = TRUE,
-  colorPalette = NULL
-)
 }
 \arguments{
 \item{x}{A \code{ProjectMassSpec} object.}
@@ -208,6 +187,8 @@ time values (in seconds).}
 \item{interactive}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
 
 \item{colorPalette}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{...}{Character or integer analysis selection.}
 
 \item{value}{Numeric vector of concentrations matching the number of analyses.}
 
@@ -266,12 +247,6 @@ on the mass resolution of the MS data.}
 spectra) to 1 (i.e., must be present in all spectra) for traces during clustering of spectra.}
 
 \item{minIntensity}{Numeric (length 1) with the minimum intensity.}
-
-\item{chromatograms}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
-
-\item{rtmin}{Numeric (length 1) with the minimum retention time.}
-
-\item{rtmax}{Numeric (length 1) with the maximum retention time.}
 }
 \description{
 S3 interface methods for \code{ProjectMassSpec}.
@@ -295,7 +270,6 @@ Metadata methods:
 Header methods:
 \itemize{
 \item \code{get_spectra_headers()}: Fetch spectra headers for the specified analyses.
-\item \code{get_chromatograms_headers()}: Fetch chromatograms headers for the specified analyses.
 \item \code{get_spectra_tic()}: Fetch spectra TIC rows for the specified analyses.
 }
 
@@ -314,11 +288,5 @@ Spectra extraction methods:
 \item \code{plot_spectra_eic()}: Plot extracted ion chromatograms (EIC) for the specified analyses and targets.
 \item \code{get_raw_spectra_ms1()}: Get MS1 spectra for the specified analyses and targets.
 \item \code{get_raw_spectra_ms2()}: Get MS2 spectra for the specified analyses and targets.
-}
-
-Chromatogram methods:
-\itemize{
-\item \code{get_chromatograms()}: Get chromatograms for the specified analyses and chromatogram IDs/indices.
-\item \code{plot_chromatograms()}: Plot chromatograms for the specified analyses and chromatogram IDs/indices.
 }
 }

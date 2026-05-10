@@ -2,13 +2,16 @@
 % Please edit documentation in R/class_Project.R
 \name{Project}
 \alias{Project}
-\title{Project R6 Class}
+\title{Internal Project Base R6 Class}
 \description{
-R6 wrapper for a DuckDB-backed StreamFind project.
+Internal DuckDB-backed StreamFind project runtime.
 }
 \details{
 Native bridge calls are inlined in the public methods for a single, flat interface.
+This class underpins the public project wrappers but is not intended as a direct
+user-facing entry point.
 }
+\keyword{internal}
 \section{Active bindings}{
 \if{html}{\out{<div class="r6-active-bindings">}}
 \describe{
@@ -33,11 +36,15 @@ Native bridge calls are inlined in the public methods for a single, flat interfa
 \item \href{#method-Project-get_metadata}{\code{Project$get_metadata()}}
 \item \href{#method-Project-set_metadata}{\code{Project$set_metadata()}}
 \item \href{#method-Project-get_domain}{\code{Project$get_domain()}}
-\item \href{#method-Project-set_domain}{\code{Project$set_domain()}}
 \item \href{#method-Project-get_workflow}{\code{Project$get_workflow()}}
 \item \href{#method-Project-set_workflow}{\code{Project$set_workflow()}}
 \item \href{#method-Project-get_audit}{\code{Project$get_audit()}}
 \item \href{#method-Project-list_tables}{\code{Project$list_tables()}}
+\item \href{#method-Project-available_processing_methods}{\code{Project$available_processing_methods()}}
+\item \href{#method-Project-run_processing_step}{\code{Project$run_processing_step()}}
+\item \href{#method-Project-run_workflow}{\code{Project$run_workflow()}}
+\item \href{#method-Project-report_quarto}{\code{Project$report_quarto()}}
+\item \href{#method-Project-run_app}{\code{Project$run_app()}}
 \item \href{#method-Project-copy}{\code{Project$copy()}}
 \item \href{#method-Project-print}{\code{Project$print()}}
 \item \href{#method-Project-show}{\code{Project$show()}}
@@ -137,26 +144,6 @@ A character scalar or \code{NULL}.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Project-set_domain"></a>}}
-\if{latex}{\out{\hypertarget{method-Project-set_domain}{}}}
-\subsection{Method \code{set_domain()}}{
-Set the project domain.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Project$set_domain(value)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{value}}{A character scalar.}
-}
-\if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The \code{Project} object invisibly.
-}
-}
-\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Project-get_workflow"></a>}}
 \if{latex}{\out{\hypertarget{method-Project-get_workflow}{}}}
 \subsection{Method \code{get_workflow()}}{
@@ -213,6 +200,103 @@ List tables in the project database.
 
 \subsection{Returns}{
 A character vector of table names.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Project-available_processing_methods"></a>}}
+\if{latex}{\out{\hypertarget{method-Project-available_processing_methods}{}}}
+\subsection{Method \code{available_processing_methods()}}{
+Return project-owned processing-step metadata.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Project$available_processing_methods()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+A named list of \code{ProcessingStep} metadata objects.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Project-run_processing_step"></a>}}
+\if{latex}{\out{\hypertarget{method-Project-run_processing_step}{}}}
+\subsection{Method \code{run_processing_step()}}{
+Run one workflow step via its owning project method.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Project$run_processing_step(step)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{step}}{A \code{ProcessingStep} object or compatible list.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The \code{Project} object invisibly.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Project-run_workflow"></a>}}
+\if{latex}{\out{\hypertarget{method-Project-run_workflow}{}}}
+\subsection{Method \code{run_workflow()}}{
+Run the active project workflow via project-owned methods.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Project$run_workflow(workflow = self$workflow)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{workflow}}{Optional \code{Workflow} object or compatible list. Defaults to the stored project workflow.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The \code{Project} object invisibly.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Project-report_quarto"></a>}}
+\if{latex}{\out{\hypertarget{method-Project-report_quarto}{}}}
+\subsection{Method \code{report_quarto()}}{
+Generate a Quarto report for the active project.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Project$report_quarto(
+  template = NULL,
+  output_file = NULL,
+  execute_dir = getwd(),
+  ...
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{template}}{Full path to the Quarto \code{.qmd} template.}
+
+\item{\code{output_file}}{Output file name or path without enforcing an extension.}
+
+\item{\code{execute_dir}}{Execution directory for Quarto.}
+
+\item{\code{...}}{Additional arguments forwarded to \code{quarto::quarto_render()}.}
+}
+\if{html}{\out{</div>}}
+}
+\subsection{Returns}{
+The \code{Project} object invisibly.
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Project-run_app"></a>}}
+\if{latex}{\out{\hypertarget{method-Project-run_app}{}}}
+\subsection{Method \code{run_app()}}{
+Run the StreamFind app using the active project as startup context.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Project$run_app()}\if{html}{\out{</div>}}
+}
+
+\subsection{Returns}{
+Invisibly returns the launched app object.
 }
 }
 \if{html}{\out{<hr>}}

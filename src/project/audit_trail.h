@@ -4,7 +4,7 @@
 
 namespace project {
 
-/** Row representation of the `AuditTrail` table, extending Row with audit-specific fields. */
+/** Row representation of the `AUDIT_TRAIL` table, extending Row with audit-specific fields. */
 struct AUDIT_TRAIL_ROW : public ROW {
   /** Operation type such as create/update/delete/run. */
   std::string operation_type;
@@ -44,7 +44,7 @@ class AUDIT_TRAIL : public TABLE_BASE<AUDIT_TRAIL_ROW> {
   void clear();
 
  private:
-  static constexpr const char* table_name() { return "AuditTrail"; }
+  static constexpr const char* table_name() { return "AUDIT_TRAIL"; }
 };
 
 }  // namespace project

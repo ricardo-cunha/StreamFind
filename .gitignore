@@ -21,7 +21,6 @@
 # Globally excluded file types and folders ------------------------------------
 *.sqlite
 *.rds
-*.json
 *.o
 *.so
 *.dll
