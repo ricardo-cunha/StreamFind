@@ -365,18 +365,14 @@
       if (!is.null(input$summary_plot_type)) {
         selected <- input$spectraAnalysesTable_rows_selected
         if (length(selected) == 0) return()
+        csv <- reactive_analyses()$get_spectra_tic(
+          analyses = selected,
+          levels = input$summary_plot_level
+        )
         if (input$summary_plot_type %in% "TIC") {
-          csv <- get_raw_spectra_tic(
-            reactive_analyses(),
-            analyses = selected,
-            level = input$summary_plot_level
-          )
+          csv <- csv[, .(analysis, replicate, polarity, level, rt, tic)]
         } else if (input$summary_plot_type %in% "BPC") {
-          csv <- get_raw_spectra_bpc(
-            reactive_analyses(),
-            analyses = selected,
-            level = input$summary_plot_level
-          )
+          csv <- csv[, .(analysis, replicate, polarity, level, rt, bpmz, bpint)]
         }
         fileinfo <- shinyFiles::parseSavePath(
           reactive_volumes(),

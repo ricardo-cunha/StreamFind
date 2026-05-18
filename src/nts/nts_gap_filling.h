@@ -13,8 +13,7 @@
 namespace nts
 {
   // Forward declaration
-  struct FEATURE;
-  struct FEATURES;
+  namespace api { struct NTS_FEATURE_ROW; struct NTS_FEATURES; }
   struct NTS_DATA;
 
   namespace gap_filling
@@ -91,7 +90,7 @@ namespace nts
 
     // Analyze feature groups to identify gaps
     std::vector<FEATURE_GROUP_INFO> analyze_feature_groups(
-        const std::vector<FEATURES> &features,
+        const std::vector<api::NTS_FEATURES> &features,
         const std::vector<std::string> &analyses,
         const std::vector<std::string> &replicates,
         bool withinReplicate,
@@ -99,8 +98,8 @@ namespace nts
 
     // Extract EIC for a specific m/z and RT window
     EIC_DATA extract_eic_for_gap_filling(
-        mass_spec::MS_FILE &ana,
-        const mass_spec::MS_SPECTRA_HEADERS &headers,
+        mass_spec::reader::MS_FILE &ana,
+        const mass_spec::reader::MS_SPECTRA_HEADERS &headers,
         float target_mz,
         float target_rt,
         float mzExpand,

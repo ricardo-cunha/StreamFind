@@ -161,7 +161,7 @@ std::string sc::encode_big_endian_from_double(const std::vector<double> &input, 
 
 std::vector<float> sc::decode_little_endian_to_float(const std::string &str, const int &precision)
 {
-  
+
   std::vector<std::uint8_t> bytes(str.begin(), str.end());
 
   if (precision != sizeof(double) && precision != sizeof(float))
@@ -1188,11 +1188,11 @@ std::vector<std::vector<float>> sc::mzml::MZML_SPECTRUM::extract_binary_data(con
 
     if (mtd[counter].compressed)
       decoded_string = sc::decompress_zlib(decoded_string);
-    
+
     const std::vector<float> decoded_floats = sc::decode_little_endian_to_float(decoded_string, mtd[counter].precision_int / 8);
-    
+
     const int bin_array_size = decoded_floats.size();
-    
+
     spectrum[counter].resize(bin_array_size);
 
     spectrum[counter] = decoded_floats;
@@ -1431,9 +1431,9 @@ std::vector<std::vector<float>> sc::mzml::MZML_CHROMATOGRAM::extract_binary_data
     {
       decoded_string = sc::decompress_zlib(decoded_string);
     }
-    
+
     const std::vector<float> decoded_floats = sc::decode_little_endian_to_float(decoded_string, mtd.precision_int / 8);
-    
+
     chromatogram[counter].resize(decoded_floats.size());
 
     chromatogram[counter] = decoded_floats;

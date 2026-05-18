@@ -6,32 +6,14 @@
 \description{
 Internal DuckDB-backed StreamFind project runtime.
 }
-\details{
-Native bridge calls are inlined in the public methods for a single, flat interface.
-This class underpins the public project wrappers but is not intended as a direct
-user-facing entry point.
-}
 \keyword{internal}
-\section{Active bindings}{
-\if{html}{\out{<div class="r6-active-bindings">}}
-\describe{
-\item{\code{db}}{Project database path (read-only).}
-
-\item{\code{project_id}}{Active project identifier (read-only).}
-
-\item{\code{metadata}}{Project metadata JSON stored in DuckDB.}
-
-\item{\code{domain}}{Project domain stored in DuckDB.}
-
-\item{\code{workflow}}{Project workflow JSON stored in DuckDB.}
-}
-\if{html}{\out{</div>}}
-}
 \section{Methods}{
 \subsection{Public methods}{
 \itemize{
 \item \href{#method-Project-new}{\code{Project$new()}}
 \item \href{#method-Project-get_ptr}{\code{Project$get_ptr()}}
+\item \href{#method-Project-get_db}{\code{Project$get_db()}}
+\item \href{#method-Project-get_project_id}{\code{Project$get_project_id()}}
 \item \href{#method-Project-validate}{\code{Project$validate()}}
 \item \href{#method-Project-get_metadata}{\code{Project$get_metadata()}}
 \item \href{#method-Project-set_metadata}{\code{Project$set_metadata()}}
@@ -39,6 +21,9 @@ user-facing entry point.
 \item \href{#method-Project-get_workflow}{\code{Project$get_workflow()}}
 \item \href{#method-Project-set_workflow}{\code{Project$set_workflow()}}
 \item \href{#method-Project-get_audit}{\code{Project$get_audit()}}
+\item \href{#method-Project-get_cache_size}{\code{Project$get_cache_size()}}
+\item \href{#method-Project-get_cache}{\code{Project$get_cache()}}
+\item \href{#method-Project-delete_cache}{\code{Project$delete_cache()}}
 \item \href{#method-Project-list_tables}{\code{Project$list_tables()}}
 \item \href{#method-Project-available_processing_methods}{\code{Project$available_processing_methods()}}
 \item \href{#method-Project-run_processing_step}{\code{Project$run_processing_step()}}
@@ -56,17 +41,17 @@ user-facing entry point.
 \subsection{Method \code{new()}}{
 Create a new \code{Project} handle.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Project$new(db, project_id, .ptr = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Project$new(db, project_id, ...)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{db}}{Path to the DuckDB project file.}
+\item{\code{db}}{Path to DuckDB file.}
 
 \item{\code{project_id}}{Active project identifier.}
 
-\item{\code{.ptr}}{Existing native project pointer for internal use.}
+\item{\code{...}}{Additional arguments passed to the method or ignored by the implementation.}
 }
 \if{html}{\out{</div>}}
 }
@@ -80,9 +65,26 @@ Return the native project pointer.
 \if{html}{\out{<div class="r">}}\preformatted{Project$get_ptr()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-External pointer to the C++ \code{project::Project} object.
 }
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Project-get_db"></a>}}
+\if{latex}{\out{\hypertarget{method-Project-get_db}{}}}
+\subsection{Method \code{get_db()}}{
+Get the project database path.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Project$get_db()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Project-get_project_id"></a>}}
+\if{latex}{\out{\hypertarget{method-Project-get_project_id}{}}}
+\subsection{Method \code{get_project_id()}}{
+Get the active project identifier.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Project$get_project_id()}\if{html}{\out{</div>}}
+}
+
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Project-validate"></a>}}
@@ -93,9 +95,6 @@ Validate the project schema and row state.
 \if{html}{\out{<div class="r">}}\preformatted{Project$validate()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-The \code{Project} object invisibly.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Project-get_metadata"></a>}}
@@ -106,9 +105,6 @@ Get the project metadata.
 \if{html}{\out{<div class="r">}}\preformatted{Project$get_metadata()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A list or \code{NULL}.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Project-set_metadata"></a>}}
@@ -122,12 +118,9 @@ Set the project metadata.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{value}}{A list, JSON string, or \code{NULL}.}
+\item{\code{value}}{An object that highly depends on the method. Check the specific method documentation for details.}
 }
 \if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The \code{Project} object invisibly.
 }
 }
 \if{html}{\out{<hr>}}
@@ -139,9 +132,6 @@ Get the project domain.
 \if{html}{\out{<div class="r">}}\preformatted{Project$get_domain()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A character scalar or \code{NULL}.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Project-get_workflow"></a>}}
@@ -152,9 +142,6 @@ Get the project workflow.
 \if{html}{\out{<div class="r">}}\preformatted{Project$get_workflow()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A list or \code{NULL}.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Project-set_workflow"></a>}}
@@ -168,12 +155,9 @@ Set the project workflow.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{value}}{A list, JSON string, or \code{NULL}.}
+\item{\code{value}}{An object that highly depends on the method. Check the specific method documentation for details.}
 }
 \if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The \code{Project} object invisibly.
 }
 }
 \if{html}{\out{<hr>}}
@@ -185,8 +169,42 @@ Return all audit entries.
 \if{html}{\out{<div class="r">}}\preformatted{Project$get_audit()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A data.frame ordered by newest first.
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Project-get_cache_size"></a>}}
+\if{latex}{\out{\hypertarget{method-Project-get_cache_size}{}}}
+\subsection{Method \code{get_cache_size()}}{
+Return the number of cache rows.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Project$get_cache_size()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Project-get_cache"></a>}}
+\if{latex}{\out{\hypertarget{method-Project-get_cache}{}}}
+\subsection{Method \code{get_cache()}}{
+Return cache rows for the active project.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Project$get_cache()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Project-delete_cache"></a>}}
+\if{latex}{\out{\hypertarget{method-Project-delete_cache}{}}}
+\subsection{Method \code{delete_cache()}}{
+Delete cache rows, optionally filtered by cache name.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Project$delete_cache(name = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{name}}{Optional cache name to delete. Use \code{NULL} to delete all cache rows.}
+}
+\if{html}{\out{</div>}}
 }
 }
 \if{html}{\out{<hr>}}
@@ -198,9 +216,6 @@ List tables in the project database.
 \if{html}{\out{<div class="r">}}\preformatted{Project$list_tables()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A character vector of table names.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Project-available_processing_methods"></a>}}
@@ -211,9 +226,6 @@ Return project-owned processing-step metadata.
 \if{html}{\out{<div class="r">}}\preformatted{Project$available_processing_methods()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A named list of \code{ProcessingStep} metadata objects.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Project-run_processing_step"></a>}}
@@ -227,12 +239,9 @@ Run one workflow step via its owning project method.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{step}}{A \code{ProcessingStep} object or compatible list.}
+\item{\code{step}}{A \code{ProcessingStep} object or a compatible list describing a workflow step.}
 }
 \if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The \code{Project} object invisibly.
 }
 }
 \if{html}{\out{<hr>}}
@@ -241,18 +250,15 @@ The \code{Project} object invisibly.
 \subsection{Method \code{run_workflow()}}{
 Run the active project workflow via project-owned methods.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Project$run_workflow(workflow = self$workflow)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Project$run_workflow(workflow = NULL)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{workflow}}{Optional \code{Workflow} object or compatible list. Defaults to the stored project workflow.}
+\item{\code{workflow}}{A \code{Workflow} object or a compatible list of processing steps.}
 }
 \if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The \code{Project} object invisibly.
 }
 }
 \if{html}{\out{<hr>}}
@@ -272,18 +278,15 @@ Generate a Quarto report for the active project.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{template}}{Full path to the Quarto \code{.qmd} template.}
+\item{\code{template}}{Full path to a template file (e.g. a Quarto \code{.qmd} file).}
 
-\item{\code{output_file}}{Output file name or path without enforcing an extension.}
+\item{\code{output_file}}{Output file name or path; file extension is handled by the caller.}
 
-\item{\code{execute_dir}}{Execution directory for Quarto.}
+\item{\code{execute_dir}}{Directory in which to execute rendering or related operations.}
 
-\item{\code{...}}{Additional arguments forwarded to \code{quarto::quarto_render()}.}
+\item{\code{...}}{Additional arguments passed to the method or ignored by the implementation.}
 }
 \if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-The \code{Project} object invisibly.
 }
 }
 \if{html}{\out{<hr>}}
@@ -295,9 +298,6 @@ Run the StreamFind app using the active project as startup context.
 \if{html}{\out{<div class="r">}}\preformatted{Project$run_app()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-Invisibly returns the launched app object.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-Project-copy"></a>}}
@@ -311,14 +311,11 @@ Copy this project to another database and/or project id.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{db}}{Target DuckDB file path.}
+\item{\code{db}}{Path to DuckDB file.}
 
-\item{\code{project_id}}{Target project identifier.}
+\item{\code{project_id}}{Active project identifier.}
 }
 \if{html}{\out{</div>}}
-}
-\subsection{Returns}{
-A new \code{Project} object.
 }
 }
 \if{html}{\out{<hr>}}
@@ -333,7 +330,7 @@ Print a short summary.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{...}}{Additional arguments ignored.}
+\item{\code{...}}{Additional arguments passed to the method or ignored by the implementation.}
 }
 \if{html}{\out{</div>}}
 }
@@ -350,7 +347,7 @@ Show a short summary.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{...}}{Additional arguments ignored.}
+\item{\code{...}}{Additional arguments passed to the method or ignored by the implementation.}
 }
 \if{html}{\out{</div>}}
 }

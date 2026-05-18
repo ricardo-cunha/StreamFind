@@ -25,8 +25,7 @@ ProcessingStep(
   description = NA_character_,
   details = NA_character_,
   parameter_docs = list(),
-  constructor_name = NA_character_,
-  project_method = NA_character_
+  constructor_name = NA_character_
 )
 
 as.ProcessingStep(value)
@@ -34,11 +33,12 @@ as.ProcessingStep(value)
 \arguments{
 \item{type}{Processing type, for example \code{"MassSpec"}.}
 
-\item{method}{Processing method name.}
+\item{method}{Processing method name. This should match the owning project
+child-class method name.}
 
 \item{required}{Character vector of required preceding methods.}
 
-\item{algorithm}{Algorithm name.}
+\item{algorithm}{Optional algorithm label retained for compatibility.}
 
 \item{owner_class}{Owning project class.}
 
@@ -71,8 +71,6 @@ as.ProcessingStep(value)
 \item{parameter_docs}{Optional named list with per-parameter metadata.}
 
 \item{constructor_name}{Optional legacy constructor-style name.}
-
-\item{project_method}{Optional owning R6 method name.}
 
 \item{value}{A list representation of a processing-step metadata object.}
 }

@@ -7,12 +7,11 @@
 ProjectClasses(project_class = NULL)
 }
 \arguments{
-\item{project_class}{Optional public project class name. If \code{NULL}, returns the
-full registry.}
+\item{project_class}{Optional public project class name. If \code{NULL}, returns the full registry.}
 }
 \value{
-If \code{project_class} is \code{NULL}, a named list keyed by public project
-class. Otherwise, a named list describing the selected project class.
+If \code{project_class} is \code{NULL}, a named list keyed by public project class.
+Otherwise, a named list describing the selected project class.
 }
 \description{
 Return metadata describing the public StreamFind project classes.

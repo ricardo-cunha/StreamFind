@@ -4,27 +4,7 @@
 \alias{ProjectMassSpecSpectra}
 \title{Project Mass Spec Spectra R6 Class}
 \description{
-R6 child of \code{ProjectMassSpec} exposing the spectra-focused Mass
-Spec interface backed by the native C++ spectra facade. Shared raw spectra
-access remains on \code{ProjectMassSpec} so both \code{ProjectMassSpecSpectra} and
-\code{ProjectNonTargetAnalysis} inherit the same base spectra helpers.
-}
-\details{
-This is a public user-facing project class.
-
-In addition to the methods documented on this page, it inherits shared project
-runtime methods such as \code{run_app()}, \code{run_workflow()}, \code{report_quarto()},
-\code{metadata}, \code{workflow}, \code{get_audit()}, and \code{list_tables()}, plus shared Mass
-Spec methods such as \code{import_files()}, \code{list_analyses()}, \code{get_spectra_headers()},
-\code{get_raw_spectra()}, \code{get_raw_spectra_tic()}, \code{get_raw_spectra_bpc()},
-\code{get_raw_spectra_eic()}, \code{get_raw_spectra_ms1()}, \code{get_raw_spectra_ms2()},
-\code{plot_spectra_tic()}, \code{plot_spectra_bpc()}, and \code{plot_spectra_eic()}.
-
-See \code{?Project} for shared project/runtime methods and \code{?ProjectMassSpec} for
-inherited shared Mass Spec methods.
-
-Use \code{?ProjectMassSpecSpectra} as the main entry point for the spectra-specific
-interface on top of those base classes.
+R6 child of \code{ProjectMassSpec} exposing the spectra-focused MassSpec interface.
 }
 \section{Super classes}{
 \code{\link[StreamFind:Project]{StreamFind::Project}} -> \code{\link[StreamFind:ProjectMassSpec]{StreamFind::ProjectMassSpec}} -> \code{ProjectMassSpecSpectra}
@@ -43,9 +23,14 @@ interface on top of those base classes.
 <details><summary>Inherited methods</summary>
 <ul>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="copy"><a href='../../StreamFind/html/Project.html#method-Project-copy'><code>StreamFind::Project$copy()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="delete_cache"><a href='../../StreamFind/html/Project.html#method-Project-delete_cache'><code>StreamFind::Project$delete_cache()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_audit"><a href='../../StreamFind/html/Project.html#method-Project-get_audit'><code>StreamFind::Project$get_audit()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_cache"><a href='../../StreamFind/html/Project.html#method-Project-get_cache'><code>StreamFind::Project$get_cache()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_cache_size"><a href='../../StreamFind/html/Project.html#method-Project-get_cache_size'><code>StreamFind::Project$get_cache_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_db"><a href='../../StreamFind/html/Project.html#method-Project-get_db'><code>StreamFind::Project$get_db()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_domain"><a href='../../StreamFind/html/Project.html#method-Project-get_domain'><code>StreamFind::Project$get_domain()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_metadata"><a href='../../StreamFind/html/Project.html#method-Project-get_metadata'><code>StreamFind::Project$get_metadata()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_project_id"><a href='../../StreamFind/html/Project.html#method-Project-get_project_id'><code>StreamFind::Project$get_project_id()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_ptr"><a href='../../StreamFind/html/Project.html#method-Project-get_ptr'><code>StreamFind::Project$get_ptr()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_workflow"><a href='../../StreamFind/html/Project.html#method-Project-get_workflow'><code>StreamFind::Project$get_workflow()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="list_tables"><a href='../../StreamFind/html/Project.html#method-Project-list_tables'><code>StreamFind::Project$list_tables()</code></a></span></li>
@@ -56,25 +41,23 @@ interface on top of those base classes.
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="set_metadata"><a href='../../StreamFind/html/Project.html#method-Project-set_metadata'><code>StreamFind::Project$set_metadata()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="set_workflow"><a href='../../StreamFind/html/Project.html#method-Project-set_workflow'><code>StreamFind::Project$set_workflow()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="validate"><a href='../../StreamFind/html/Project.html#method-Project-validate'><code>StreamFind::Project$validate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="add_analyses"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-add_analyses'><code>StreamFind::ProjectMassSpec$add_analyses()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_analyses"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_analyses'><code>StreamFind::ProjectMassSpec$get_analyses()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_analysis_names"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_analysis_names'><code>StreamFind::ProjectMassSpec$get_analysis_names()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_blank_names"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_blank_names'><code>StreamFind::ProjectMassSpec$get_blank_names()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_concentrations"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_concentrations'><code>StreamFind::ProjectMassSpec$get_concentrations()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_mass_spec_ptr"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_mass_spec_ptr'><code>StreamFind::ProjectMassSpec$get_mass_spec_ptr()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_raw_spectra"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_raw_spectra'><code>StreamFind::ProjectMassSpec$get_raw_spectra()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_raw_spectra_bpc"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_raw_spectra_bpc'><code>StreamFind::ProjectMassSpec$get_raw_spectra_bpc()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_raw_spectra_eic"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_raw_spectra_eic'><code>StreamFind::ProjectMassSpec$get_raw_spectra_eic()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_raw_spectra_ms1"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_raw_spectra_ms1'><code>StreamFind::ProjectMassSpec$get_raw_spectra_ms1()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_raw_spectra_ms2"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_raw_spectra_ms2'><code>StreamFind::ProjectMassSpec$get_raw_spectra_ms2()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_raw_spectra_tic"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_raw_spectra_tic'><code>StreamFind::ProjectMassSpec$get_raw_spectra_tic()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_replicate_names"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_replicate_names'><code>StreamFind::ProjectMassSpec$get_replicate_names()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_spectra_headers"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_spectra_headers'><code>StreamFind::ProjectMassSpec$get_spectra_headers()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_spectra_tic"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_spectra_tic'><code>StreamFind::ProjectMassSpec$get_spectra_tic()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="import_files"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-import_files'><code>StreamFind::ProjectMassSpec$import_files()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="list_analyses"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-list_analyses'><code>StreamFind::ProjectMassSpec$list_analyses()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="plot_spectra_bpc"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-plot_spectra_bpc'><code>StreamFind::ProjectMassSpec$plot_spectra_bpc()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="plot_spectra_eic"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-plot_spectra_eic'><code>StreamFind::ProjectMassSpec$plot_spectra_eic()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="plot_spectra_tic"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-plot_spectra_tic'><code>StreamFind::ProjectMassSpec$plot_spectra_tic()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="remove_analysis"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-remove_analysis'><code>StreamFind::ProjectMassSpec$remove_analysis()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="remove_analyses"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-remove_analyses'><code>StreamFind::ProjectMassSpec$remove_analyses()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="set_blank_names"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-set_blank_names'><code>StreamFind::ProjectMassSpec$set_blank_names()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="set_concentrations"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-set_concentrations'><code>StreamFind::ProjectMassSpec$set_concentrations()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="set_replicate_names"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-set_replicate_names'><code>StreamFind::ProjectMassSpec$set_replicate_names()</code></a></span></li>
@@ -90,24 +73,27 @@ Create a spectra-specific Mass Spec project wrapper.
 \if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpecSpectra$new(
   db,
   project_id,
-  .ptr = NULL,
-  .mass_spec_ptr = NULL,
-  .mass_spec_spectra_ptr = NULL
+  ...,
+  file_paths = character(),
+  replicates = character(),
+  blanks = character()
 )}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{db}}{Path to the DuckDB project file.}
+\item{\code{db}}{Path to DuckDB file.}
 
 \item{\code{project_id}}{Active project identifier.}
 
-\item{\code{.ptr}}{Existing native project pointer for internal use.}
+\item{\code{...}}{Additional arguments passed to the method or ignored by the implementation.}
 
-\item{\code{.mass_spec_ptr}}{Existing native shared Mass Spec pointer for internal use.}
+\item{\code{file_paths}}{Character vector with Mass Spec file paths.}
 
-\item{\code{.mass_spec_spectra_ptr}}{Existing native spectra pointer for internal use.}
+\item{\code{replicates}}{Optional character vector with replicate names.}
+
+\item{\code{blanks}}{Optional character vector with blank names.}
 }
 \if{html}{\out{</div>}}
 }
@@ -131,9 +117,6 @@ Return spectra-project processing-step metadata.
 \if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpecSpectra$available_processing_methods()}\if{html}{\out{</div>}}
 }
 
-\subsection{Returns}{
-A named list of \code{ProcessingStep} metadata objects.
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ProjectMassSpecSpectra-print"></a>}}
@@ -147,7 +130,7 @@ Print a short summary.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{...}}{Additional arguments ignored.}
+\item{\code{...}}{Additional arguments passed to the method or ignored by the implementation.}
 }
 \if{html}{\out{</div>}}
 }
@@ -164,7 +147,7 @@ Show a short summary.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{...}}{Additional arguments ignored.}
+\item{\code{...}}{Additional arguments passed to the method or ignored by the implementation.}
 }
 \if{html}{\out{</div>}}
 }

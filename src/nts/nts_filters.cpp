@@ -170,7 +170,7 @@ namespace nts::filter_features
       {
         const std::string &analysis = nts_data.analyses[a];
         const std::string &replicate = nts_data.replicates[a];
-        const FEATURES &fts = nts_data.features[a];
+        const nts::api::NTS_FEATURES &fts = nts_data.features[a];
 
         for (int i = 0; i < fts.size(); ++i)
         {
@@ -204,11 +204,11 @@ namespace nts::filter_features
       }
     }
 
-    auto apply_filter = [&](const std::string &name, const std::function<bool(const FEATURES &, int, const std::string &replicate)> &predicate) {
+    auto apply_filter = [&](const std::string &name, const std::function<bool(const nts::api::NTS_FEATURES &, int, const std::string &replicate)> &predicate) {
       int updated = 0;
       for (size_t a = 0; a < nts_data.analyses.size(); ++a)
       {
-        FEATURES &fts = nts_data.features[a];
+        nts::api::NTS_FEATURES &fts = nts_data.features[a];
         const std::string &replicate = nts_data.replicates[a];
         for (int i = 0; i < fts.size(); ++i)
         {
@@ -231,7 +231,7 @@ namespace nts::filter_features
     if (params.minSN.has_value())
     {
       float v = params.minSN.value();
-      apply_filter("minSN", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("minSN", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.sn[i]) && fts.sn[i] < v;
       });
     }
@@ -239,7 +239,7 @@ namespace nts::filter_features
     if (params.minIntensity.has_value())
     {
       float v = params.minIntensity.value();
-      apply_filter("minIntensity", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("minIntensity", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.intensity[i]) && fts.intensity[i] < v;
       });
     }
@@ -247,7 +247,7 @@ namespace nts::filter_features
     if (params.minArea.has_value())
     {
       float v = params.minArea.value();
-      apply_filter("minArea", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("minArea", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.area[i]) && fts.area[i] < v;
       });
     }
@@ -255,7 +255,7 @@ namespace nts::filter_features
     if (params.minWidth.has_value())
     {
       float v = params.minWidth.value();
-      apply_filter("minWidth", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("minWidth", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.width[i]) && fts.width[i] < v;
       });
     }
@@ -263,7 +263,7 @@ namespace nts::filter_features
     if (params.maxWidth.has_value())
     {
       float v = params.maxWidth.value();
-      apply_filter("maxWidth", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("maxWidth", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.width[i]) && fts.width[i] > v;
       });
     }
@@ -271,7 +271,7 @@ namespace nts::filter_features
     if (params.maxPPM.has_value())
     {
       float v = params.maxPPM.value();
-      apply_filter("maxPPM", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("maxPPM", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.ppm[i]) && fts.ppm[i] > v;
       });
     }
@@ -279,7 +279,7 @@ namespace nts::filter_features
     if (params.minFwhmRT.has_value())
     {
       float v = params.minFwhmRT.value();
-      apply_filter("minFwhmRT", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("minFwhmRT", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.fwhm_rt[i]) && fts.fwhm_rt[i] < v;
       });
     }
@@ -287,7 +287,7 @@ namespace nts::filter_features
     if (params.maxFwhmRT.has_value())
     {
       float v = params.maxFwhmRT.value();
-      apply_filter("maxFwhmRT", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("maxFwhmRT", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.fwhm_rt[i]) && fts.fwhm_rt[i] > v;
       });
     }
@@ -295,7 +295,7 @@ namespace nts::filter_features
     if (params.minFwhmMZ.has_value())
     {
       float v = params.minFwhmMZ.value();
-      apply_filter("minFwhmMZ", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("minFwhmMZ", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.fwhm_mz[i]) && fts.fwhm_mz[i] < v;
       });
     }
@@ -303,7 +303,7 @@ namespace nts::filter_features
     if (params.maxFwhmMZ.has_value())
     {
       float v = params.maxFwhmMZ.value();
-      apply_filter("maxFwhmMZ", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("maxFwhmMZ", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.fwhm_mz[i]) && fts.fwhm_mz[i] > v;
       });
     }
@@ -311,7 +311,7 @@ namespace nts::filter_features
     if (params.minGaussianA.has_value())
     {
       float v = params.minGaussianA.value();
-      apply_filter("minGaussianA", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("minGaussianA", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.gaussian_A[i]) && fts.gaussian_A[i] < v;
       });
     }
@@ -319,7 +319,7 @@ namespace nts::filter_features
     if (params.minGaussianMu.has_value())
     {
       float v = params.minGaussianMu.value();
-      apply_filter("minGaussianMu", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("minGaussianMu", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.gaussian_mu[i]) && fts.gaussian_mu[i] < v;
       });
     }
@@ -327,7 +327,7 @@ namespace nts::filter_features
     if (params.maxGaussianMu.has_value())
     {
       float v = params.maxGaussianMu.value();
-      apply_filter("maxGaussianMu", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("maxGaussianMu", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.gaussian_mu[i]) && fts.gaussian_mu[i] > v;
       });
     }
@@ -335,7 +335,7 @@ namespace nts::filter_features
     if (params.minGaussianSigma.has_value())
     {
       float v = params.minGaussianSigma.value();
-      apply_filter("minGaussianSigma", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("minGaussianSigma", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.gaussian_sigma[i]) && fts.gaussian_sigma[i] < v;
       });
     }
@@ -343,7 +343,7 @@ namespace nts::filter_features
     if (params.maxGaussianSigma.has_value())
     {
       float v = params.maxGaussianSigma.value();
-      apply_filter("maxGaussianSigma", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("maxGaussianSigma", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.gaussian_sigma[i]) && fts.gaussian_sigma[i] > v;
       });
     }
@@ -351,7 +351,7 @@ namespace nts::filter_features
     if (params.minGaussianR2.has_value())
     {
       float v = params.minGaussianR2.value();
-      apply_filter("minGaussianR2", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("minGaussianR2", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.gaussian_r2[i]) && fts.gaussian_r2[i] < v;
       });
     }
@@ -359,7 +359,7 @@ namespace nts::filter_features
     if (params.maxJaggedness.has_value())
     {
       float v = params.maxJaggedness.value();
-      apply_filter("maxJaggedness", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("maxJaggedness", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.jaggedness[i]) && fts.jaggedness[i] > v;
       });
     }
@@ -367,7 +367,7 @@ namespace nts::filter_features
     if (params.minSharpness.has_value())
     {
       float v = params.minSharpness.value();
-      apply_filter("minSharpness", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("minSharpness", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.sharpness[i]) && fts.sharpness[i] < v;
       });
     }
@@ -375,7 +375,7 @@ namespace nts::filter_features
     if (params.minAsymmetry.has_value())
     {
       float v = params.minAsymmetry.value();
-      apply_filter("minAsymmetry", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("minAsymmetry", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.asymmetry[i]) && fts.asymmetry[i] < v;
       });
     }
@@ -383,7 +383,7 @@ namespace nts::filter_features
     if (params.maxAsymmetry.has_value())
     {
       float v = params.maxAsymmetry.value();
-      apply_filter("maxAsymmetry", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("maxAsymmetry", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.asymmetry[i]) && fts.asymmetry[i] > v;
       });
     }
@@ -391,7 +391,7 @@ namespace nts::filter_features
     if (params.maxModality.has_value())
     {
       int v = params.maxModality.value();
-      apply_filter("maxModality", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("maxModality", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return fts.modality[i] > v;
       });
     }
@@ -399,7 +399,7 @@ namespace nts::filter_features
     if (params.minPlates.has_value())
     {
       float v = params.minPlates.value();
-      apply_filter("minPlates", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("minPlates", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return !is_nan(fts.plates[i]) && fts.plates[i] < v;
       });
     }
@@ -409,13 +409,13 @@ namespace nts::filter_features
       bool onlyFilled = params.onlyFilled.value();
       if (onlyFilled)
       {
-        apply_filter("onlyFilled", [&](const FEATURES &fts, int i, const std::string &) {
+        apply_filter("onlyFilled", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
           return !fts.filled[i];
         });
       }
       else
       {
-        apply_filter("notFilled", [&](const FEATURES &fts, int i, const std::string &) {
+        apply_filter("notFilled", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
           return fts.filled[i];
         });
       }
@@ -423,7 +423,7 @@ namespace nts::filter_features
 
     if (params.removeFilled)
     {
-      apply_filter("removeFilled", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("removeFilled", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return fts.filled[i];
       });
     }
@@ -431,7 +431,7 @@ namespace nts::filter_features
     if (params.minSizeEIC.has_value())
     {
       int v = params.minSizeEIC.value();
-      apply_filter("minSizeEIC", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("minSizeEIC", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return fts.eic_size[i] < v;
       });
     }
@@ -439,7 +439,7 @@ namespace nts::filter_features
     if (params.minSizeMS1.has_value())
     {
       int v = params.minSizeMS1.value();
-      apply_filter("minSizeMS1", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("minSizeMS1", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return fts.ms1_size[i] < v;
       });
     }
@@ -447,7 +447,7 @@ namespace nts::filter_features
     if (params.minSizeMS2.has_value())
     {
       int v = params.minSizeMS2.value();
-      apply_filter("minSizeMS2", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("minSizeMS2", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return fts.ms2_size[i] < v;
       });
     }
@@ -457,7 +457,7 @@ namespace nts::filter_features
       float v = params.minRelPresenceReplicate.value();
       if (v > 0.0f)
       {
-        apply_filter("minRelPresenceReplicate", [&](const FEATURES &fts, int i, const std::string &replicate) {
+        apply_filter("minRelPresenceReplicate", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &replicate) {
           const std::string &fg = fts.feature_group[i];
           if (fg.empty())
             return false;
@@ -469,21 +469,21 @@ namespace nts::filter_features
 
     if (params.removeIsotopes)
     {
-      apply_filter("removeIsotopes", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("removeIsotopes", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return fts.adduct[i].find("isotope") != std::string::npos;
       });
     }
 
     if (params.removeAdducts)
     {
-      apply_filter("removeAdducts", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("removeAdducts", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return fts.adduct[i].find("adduct") != std::string::npos;
       });
     }
 
     if (params.removeLosses)
     {
-      apply_filter("removeLosses", [&](const FEATURES &fts, int i, const std::string &) {
+      apply_filter("removeLosses", [&](const nts::api::NTS_FEATURES &fts, int i, const std::string &) {
         return fts.adduct[i].find("loss") != std::string::npos;
       });
     }
@@ -505,7 +505,7 @@ namespace nts::filter_suspects
   {
     for (size_t a = 0; a < nts_data.suspects.size(); ++a)
     {
-      SUSPECTS &sus = nts_data.suspects[a];
+      nts::api::NTS_SUSPECTS &sus = nts_data.suspects[a];
       if (sus.size() == 0)
         continue;
 
@@ -582,12 +582,12 @@ namespace nts::filter_suspects
       }
 
       // Create filtered suspects
-      SUSPECTS filtered;
+      nts::api::NTS_SUSPECTS filtered;
       for (int i = 0; i < sus.size(); ++i)
       {
         if (keep[i])
         {
-          SUSPECT s;
+          nts::api::NTS_SUSPECT_ROW s;
           s.analysis = sus.analysis[i];
           s.feature = sus.feature[i];
           s.candidate_rank = sus.candidate_rank[i];
@@ -642,7 +642,7 @@ namespace nts::filter_internal_standards
   {
     for (size_t a = 0; a < nts_data.internal_standards.size(); ++a)
     {
-      INTERNAL_STANDARDS &istd = nts_data.internal_standards[a];
+      nts::api::NTS_INTERNAL_STANDARDS &istd = nts_data.internal_standards[a];
       if (istd.size() == 0)
         continue;
 
@@ -719,12 +719,12 @@ namespace nts::filter_internal_standards
       }
 
       // Create filtered internal standards
-      INTERNAL_STANDARDS filtered;
+      nts::api::NTS_INTERNAL_STANDARDS filtered;
       for (int i = 0; i < istd.size(); ++i)
       {
         if (keep[i])
         {
-          INTERNAL_STANDARD is;
+          nts::api::NTS_INTERNAL_STANDARD_ROW is;
           is.analysis = istd.analysis[i];
           is.feature = istd.feature[i];
           is.candidate_rank = istd.candidate_rank[i];
@@ -775,10 +775,10 @@ namespace nts::filter_features_ms2
     {
       if (encoded.empty())
         return {};
-      std::string raw = mass_spec::utils::decode_base64(encoded);
+      std::string raw = mass_spec::reader::utils::decode_base64(encoded);
       if (raw.empty())
         return {};
-      return mass_spec::utils::decode_little_endian_to_float(raw, 4); // 4 bytes = float32
+      return mass_spec::reader::utils::decode_little_endian_to_float(raw, 4); // 4 bytes = float32
     }
 
     // Cluster a flat list of (mz, intensity) pairs from multiple features/analyses.
@@ -959,7 +959,7 @@ namespace nts::filter_features_ms2
         if (blank_analyses_set.find(ana) == blank_analyses_set.end())
           continue;
 
-        const FEATURES &fts = nts_data.features[a];
+        const nts::api::NTS_FEATURES &fts = nts_data.features[a];
         for (int i = 0; i < fts.size(); ++i)
         {
           if (fts.ms2_size[i] <= 0 || fts.ms2_mz[i].empty())
@@ -988,7 +988,7 @@ namespace nts::filter_features_ms2
           std::vector<float> global_all_mz;
           for (size_t a = 0; a < nts_data.analyses.size(); ++a)
           {
-            const FEATURES &fts = nts_data.features[a];
+            const nts::api::NTS_FEATURES &fts = nts_data.features[a];
             for (int i = 0; i < fts.size(); ++i)
             {
               if (fts.ms2_size[i] <= 0 || fts.ms2_mz[i].empty())
@@ -1023,7 +1023,7 @@ namespace nts::filter_features_ms2
 
     for (size_t a = 0; a < nts_data.analyses.size(); ++a)
     {
-      FEATURES &fts = nts_data.features[a];
+      nts::api::NTS_FEATURES &fts = nts_data.features[a];
       for (int i = 0; i < fts.size(); ++i)
       {
         if (fts.ms2_size[i] <= 0 || fts.ms2_mz[i].empty())

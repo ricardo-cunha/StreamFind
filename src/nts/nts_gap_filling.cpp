@@ -3,7 +3,7 @@
 // This file contains the logic for identifying and filling missing features across analyses
 
 #include "nts_gap_filling.h"
-#include "nts_utils.h"
+#include "nts.h"
 #include "nts_deconvolution.h"
 #include "nts.h"
 #include <algorithm>
@@ -19,7 +19,7 @@
 
 // MARK: analyze_feature_groups
 std::vector<nts::gap_filling::FEATURE_GROUP_INFO> nts::gap_filling::analyze_feature_groups(
-    const std::vector<nts::FEATURES> &features,
+    const std::vector<nts::api::NTS_FEATURES> &features,
     const std::vector<std::string> &analyses,
     const std::vector<std::string> &replicates,
     bool withinReplicate,
@@ -171,8 +171,8 @@ std::vector<nts::gap_filling::FEATURE_GROUP_INFO> nts::gap_filling::analyze_feat
 
 // MARK: extract_eic_for_gap_filling
 nts::gap_filling::EIC_DATA nts::gap_filling::extract_eic_for_gap_filling(
-    mass_spec::MS_FILE &ana,
-    const mass_spec::MS_SPECTRA_HEADERS &headers,
+    mass_spec::reader::MS_FILE &ana,
+    const mass_spec::reader::MS_SPECTRA_HEADERS &headers,
     float target_mz,
     float target_rt,
     float mzExpand,
@@ -751,14 +751,14 @@ void nts::gap_filling::fill_features_impl(
     std::cout << "  Processing " << gaps.size() << " gaps in file: " << file_path << std::endl;
 
     // Open MS file once per file
-    mass_spec::MS_FILE ana(file_path);
+    mass_spec::reader::MS_FILE ana(file_path);
 
     // Get headers for first gap (all gaps in same file share same headers)
     const auto &headers = nts_data.headers[gaps[0].analysis_idx];
 
 
     // Build MS_TARGETS for all gaps in this file, but skip those already present as filtered features
-    mass_spec::MS_TARGETS targets;
+    mass_spec::spectra::MS_TARGETS targets;
     std::vector<size_t> valid_gap_indices;
     targets.resize_all(gaps.size()); // Will shrink later if needed
 
@@ -766,7 +766,7 @@ void nts::gap_filling::fill_features_impl(
     {
       const auto &gap = gaps[i];
       const auto &ranges = group_ranges_map[gap.feature_group];
-      nts::FEATURES &analysis_features = nts_data.features[gap.analysis_idx];
+      nts::api::NTS_FEATURES &analysis_features = nts_data.features[gap.analysis_idx];
       bool found_filtered_feature = false;
 
       for (int j = 0; j < analysis_features.size(); ++j)
@@ -820,7 +820,7 @@ void nts::gap_filling::fill_features_impl(
 
     // Shrink targets to only valid gaps
     if (valid_gap_indices.size() < gaps.size()) {
-      mass_spec::MS_TARGETS shrunk_targets;
+      mass_spec::spectra::MS_TARGETS shrunk_targets;
       shrunk_targets.resize_all(valid_gap_indices.size());
       for (size_t k = 0; k < valid_gap_indices.size(); ++k) {
         size_t i = valid_gap_indices[k];
@@ -843,7 +843,7 @@ void nts::gap_filling::fill_features_impl(
     }
 
     // Extract all EICs in one batch call (uses OpenMP internally)
-    mass_spec::MS_TARGETS_SPECTRA all_eics = ana.get_spectra_targets(targets, headers, minTracesIntensity, 0);
+    mass_spec::spectra::MS_TARGETS_SPECTRA all_eics = ana.get_spectra_targets(targets, headers, minTracesIntensity, 0);
 
     // Process each gap using extracted EICs
     for (const auto &gap : gaps)
@@ -873,7 +873,7 @@ void nts::gap_filling::fill_features_impl(
       // ...existing code...
 
       // Get EIC for this specific target
-      mass_spec::MS_TARGETS_SPECTRA eic_spec = all_eics[gap.target_id];
+      mass_spec::spectra::MS_TARGETS_SPECTRA eic_spec = all_eics[gap.target_id];
 
       if (is_debug_fg)
       {
@@ -960,7 +960,7 @@ void nts::gap_filling::fill_features_impl(
       }
 
       // Create FEATURE from FILLED_FEATURE_INFO
-      nts::FEATURE new_feature;
+      nts::api::NTS_FEATURE_ROW new_feature;
       new_feature.analysis = filled_feature.analysis;
 
       // Increment filled feature count for this analysis

@@ -3,10 +3,9 @@
 #'   The registry includes the class name, user-facing label, project domain,
 #'   supported input file formats, a short description, and the available
 #'   project-owned processing method names for each concrete project class.
-#' @param project_class Optional public project class name. If `NULL`, returns the
-#'   full registry.
-#' @return If `project_class` is `NULL`, a named list keyed by public project
-#'   class. Otherwise, a named list describing the selected project class.
+#' @param project_class Optional public project class name. If `NULL`, returns the full registry.
+#' @return If `project_class` is `NULL`, a named list keyed by public project class.
+#' Otherwise, a named list describing the selected project class.
 #' @export
 ProjectClasses <- function(project_class = NULL) {
   registry <- list(
@@ -50,4 +49,62 @@ ProjectClasses <- function(project_class = NULL) {
   }
 
   registry[[project_class]]
+}
+
+#' @title Construct a Mass Spec Spectra Project
+#' @description User-facing constructor wrapper for `ProjectMassSpecSpectra`.
+#' @param db Path to the project DuckDB file.
+#' @param project_id Active project identifier.
+#' @param file_paths Character vector with Mass Spec file paths.
+#' @param replicates Optional character vector with replicate names.
+#' @param blanks Optional character vector with blank names.
+#' @return A `ProjectMassSpecSpectra` object.
+#' @export
+NewProjectMassSpecSpectra <- function(
+    db,
+    project_id,
+    file_paths = character(),
+    replicates = character(),
+    blanks = character()) {
+  ProjectMassSpecSpectra$new(
+    db = db,
+    project_id = project_id,
+    file_paths = file_paths,
+    replicates = replicates,
+    blanks = blanks
+  )
+}
+
+#' @title Construct a Mass Spec Chromatograms Project
+#' @description User-facing constructor wrapper for `ProjectMassSpecChromatograms`.
+#' @param db Path to the project DuckDB file.
+#' @param project_id Active project identifier.
+#' @param file_paths Character vector with Mass Spec file paths.
+#' @param replicates Optional character vector with replicate names.
+#' @param blanks Optional character vector with blank names.
+#' @return A `ProjectMassSpecChromatograms` object.
+#' @export
+NewProjectMassSpecChromatograms <- function(
+    db,
+    project_id,
+    file_paths = character(),
+    replicates = character(),
+    blanks = character()) {
+  ProjectMassSpecChromatograms$new(
+    db = db,
+    project_id = project_id,
+    file_paths = file_paths,
+    replicates = replicates,
+    blanks = blanks
+  )
+}
+
+#' @title Construct a Non-Target Analysis Project
+#' @description User-facing constructor wrapper for `ProjectNonTargetAnalysis`.
+#' @param db Path to the project DuckDB file.
+#' @param project_id Active project identifier.
+#' @return A `ProjectNonTargetAnalysis` object.
+#' @export
+NewProjectNonTargetAnalysis <- function(db, project_id) {
+  ProjectNonTargetAnalysis$new(db = db, project_id = project_id)
 }

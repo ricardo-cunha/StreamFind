@@ -7,12 +7,9 @@
 #include <vector>
 #include <string>
 #include <map>
-#include "nts_utils.h"
+#include <cstddef>
 
-namespace nts {
-  struct NTS_DATA;  // Forward declaration
-  struct FEATURE;   // Forward declaration
-}
+namespace nts { namespace api { struct NTS_FEATURE_ROW; struct NTS_FEATURES; } struct NTS_DATA; }
 
 namespace nts {
 namespace alignment {
@@ -77,8 +74,7 @@ float interpolate_rt_shift(
   const std::vector<float> &anchor_shifts
 );
 
-// Forward declaration for NTS_DATA
-struct NTS_DATA;
+// Forward declaration for NTS_DATA (already declared above)
 
 // Implementation function for NTS_DATA::group_features
 void group_features_impl(

@@ -1,10 +1,12 @@
 #ifndef NTS_H
 #define NTS_H
 
+#include <vector>
+#include <fstream>
 #include <numeric>
 #include <unordered_map>
 #include <iostream>
-#include "nts_utils.h"
+
 #include "nts_deconvolution.h"
 #include "nts_annotation.h"
 #include "nts_componentization.h"
@@ -15,658 +17,901 @@
 #include "suspect_screening.h"
 #include "metfrag_runner.h"
 #include "assign_transformation_products.h"
+
+#include "../project/project.h"
+#include "../mass_spec/project_mass_spec.h"
 #include "../mass_spec/reader.h"
 
 namespace nts
 {
-  // MARK: MS_SPECTRUM
-  struct MS_SPECTRUM
+
+  // MARK: ns utils
+  namespace utils
   {
-    std::vector<float> mz;
-    std::vector<float> intensity;
-  };
+    // Debug log file stream (global for debugging)
+    extern std::ofstream debug_log;
 
-  // MARK: merge_MS_TARGETS_SPECTRA
-  MS_SPECTRUM merge_MS_TARGETS_SPECTRA(
-      const mass_spec::MS_TARGETS_SPECTRA &spectra,
-      const float &mzClust,
-      const float &presence);
+    // Helper function to initialize debug log with dynamic filename
+    void init_debug_log(const std::string &filename, const std::string &header = "");
 
-  // MARK: FEATURE
-  struct FEATURE
+    // Helper function to close debug log
+    void close_debug_log();
+
+    // (DEBUG_LOG/DEBUG_OUT moved to global scope at end of header)
+
+    float mean(const std::vector<float> &v);
+
+    float standard_deviation(const std::vector<float> &v, float mean_val);
+
+    float quantile(std::vector<float> data, float quantile_fraction);
+
+    std::string encode_floats_base64(const std::vector<float> &input, int precision = 4);
+
+    float gaussian_function(const float &A, const float &mu, const float &sigma, const float &x);
+
+    float gaussian_function_with_baseline(
+        const float &A,
+        const float &mu,
+        const float &sigma,
+        const float &baseline,
+        const float &x);
+
+    std::vector<size_t> get_sort_indices_float(const std::vector<float> &data);
+
+    void reorder_float_data(std::vector<float> &data, const std::vector<size_t> &indices);
+
+    void reorder_int_data(std::vector<int> &data, const std::vector<size_t> &indices);
+
+    void reorder_multiple_vectors(
+        const std::vector<size_t> &indices,
+        std::vector<float> &vec1);
+
+    void reorder_multiple_vectors(
+        const std::vector<size_t> &indices,
+        std::vector<float> &vec1,
+        std::vector<float> &vec2);
+
+    void reorder_multiple_vectors(
+        const std::vector<size_t> &indices,
+        std::vector<float> &vec1,
+        std::vector<float> &vec2,
+        std::vector<float> &vec3);
+
+    void reorder_multiple_vectors(
+        const std::vector<size_t> &indices,
+        std::vector<float> &vec1,
+        std::vector<float> &vec2,
+        std::vector<float> &vec3,
+        std::vector<float> &vec4);
+
+    void reorder_multiple_vectors(
+        const std::vector<size_t> &indices,
+        std::vector<float> &vec1,
+        std::vector<float> &vec2,
+        std::vector<float> &vec3,
+        std::vector<float> &vec4,
+        std::vector<int> &int_vec);
+
+    std::vector<size_t> filter_above_threshold(
+        const std::vector<float> &data,
+        const std::vector<float> &thresholds);
+
+    std::vector<int> cluster_by_threshold_float(
+        const std::vector<float> &sorted_data,
+        const std::vector<float> &thresholds);
+
+    std::vector<float> calculate_baseline(const std::vector<float> &intensity, int windowSize);
+
+    std::vector<float> smooth_intensity_savitzky_golay(
+        const std::vector<float> &intensity,
+        int windowSize,
+        int polyOrder);
+
+    std::vector<float> smooth_intensity(const std::vector<float> &intensity, int windowSize);
+
+    void calculate_derivatives(
+        const std::vector<float> &smoothed_intensity,
+        std::vector<float> &first_derivative,
+        std::vector<float> &second_derivative);
+
+    float calculate_jaggedness(const std::vector<float> &intensity);
+
+    float calculate_sharpness(
+        const std::vector<float> &rt,
+        const std::vector<float> &intensity,
+        float area);
+
+    float calculate_asymmetry(
+        const std::vector<float> &rt,
+        const std::vector<float> &intensity);
+
+    int calculate_modality(
+        const std::vector<float> &smoothed_intensity,
+        float min_prominence_ratio);
+
+    float calculate_theoretical_plates(float rt_apex, float width_at_half_height);
+
+    // Calculate peak area using trapezoidal integration
+    float calculate_area(const std::vector<float> &rt, const std::vector<float> &intensity);
+
+    // Gaussian fitting functions
+    float gaussian_cost_function(
+        const std::vector<float> &x,
+        const std::vector<float> &y,
+        float A, float mu, float sigma);
+
+    void fit_gaussian(
+        const std::vector<float> &x,
+        const std::vector<float> &y,
+        float &A, float &mu, float &sigma,
+        float &baseline);
+
+    float calculate_gaussian_rsquared(
+        const std::vector<float> &x,
+        const std::vector<float> &y,
+        float A, float mu, float sigma,
+        float baseline);
+
+  }
+
+  // MARK: ns api
+  namespace api
   {
-    std::string analysis;
-    std::string feature;
-    std::string feature_component;
-    std::string feature_group;
-    std::string adduct;
-    float rt;
-    float mz;
-    float mass;
-    float intensity;
-    float noise;
-    float sn;
-    float area;
-    float rtmin;
-    float rtmax;
-    float width;
-    float mzmin;
-    float mzmax;
-    float ppm;
-    float fwhm_rt;
-    float fwhm_mz;
-    float gaussian_A;
-    float gaussian_mu;
-    float gaussian_sigma;
-    float gaussian_r2;
-    float jaggedness;
-    float sharpness;
-    float asymmetry;
-    int modality;
-    float plates;
-    int polarity;
-    bool filtered;
-    std::string filter;
-    bool filled;
-    float correction;
-    int eic_size;
-    std::string eic_rt;
-    std::string eic_mz;
-    std::string eic_intensity;
-    std::string eic_baseline;
-    std::string eic_smoothed;
-    int ms1_size;
-    std::string ms1_mz;
-    std::string ms1_intensity;
-    int ms2_size;
-    std::string ms2_mz;
-    std::string ms2_intensity;
-  };
-
-  // MARK: FEATURES
-  struct FEATURES
-  {
-    std::string analysis;
-    std::vector<std::string> feature;
-    std::vector<std::string> feature_group;
-    std::vector<std::string> feature_component;
-    std::vector<std::string> adduct;
-    std::vector<float> rt;
-    std::vector<float> mz;
-    std::vector<float> mass;
-    std::vector<float> intensity;
-    std::vector<float> noise;
-    std::vector<float> sn;
-    std::vector<float> area;
-    std::vector<float> rtmin;
-    std::vector<float> rtmax;
-    std::vector<float> width;
-    std::vector<float> mzmin;
-    std::vector<float> mzmax;
-    std::vector<float> ppm;
-    std::vector<float> fwhm_rt;
-    std::vector<float> fwhm_mz;
-    std::vector<float> gaussian_A;
-    std::vector<float> gaussian_mu;
-    std::vector<float> gaussian_sigma;
-    std::vector<float> gaussian_r2;
-    std::vector<float> jaggedness;
-    std::vector<float> sharpness;
-    std::vector<float> asymmetry;
-    std::vector<int> modality;
-    std::vector<float> plates;
-    std::vector<int> polarity;
-    std::vector<bool> filtered;
-    std::vector<std::string> filter;
-    std::vector<bool> filled;
-    std::vector<float> correction;
-    std::vector<int> eic_size;
-    std::vector<std::string> eic_rt;
-    std::vector<std::string> eic_mz;
-    std::vector<std::string> eic_intensity;
-    std::vector<std::string> eic_baseline;
-    std::vector<std::string> eic_smoothed;
-    std::vector<int> ms1_size;
-    std::vector<std::string> ms1_mz;
-    std::vector<std::string> ms1_intensity;
-    std::vector<int> ms2_size;
-    std::vector<std::string> ms2_mz;
-    std::vector<std::string> ms2_intensity;
-
-    int size() const
+    struct NTS_FEATURE_SPECTRUM
     {
-      return feature.size();
+      std::vector<float> mz;
+      std::vector<float> intensity;
+      // Optional constructor to initialize from targets spectra
+      NTS_FEATURE_SPECTRUM() = default;
+      NTS_FEATURE_SPECTRUM(const mass_spec::spectra::MS_TARGETS_SPECTRA &spectra,
+                           float mzClust,
+                           float presence);
+
+      // Optional initializer
+      void init_from_targets(const mass_spec::spectra::MS_TARGETS_SPECTRA &spectra,
+                             float mzClust,
+                             float presence);
     };
 
-    FEATURE get_feature(const int &i) const
+    // MARK: merge_NTS_FEATURE_SPECTRA
+    NTS_FEATURE_SPECTRUM merge_NTS_FEATURE_SPECTRA(
+        const mass_spec::spectra::MS_TARGETS_SPECTRA &spectra,
+        const float &mzClust,
+        const float &presence);
+
+    // MARK: NTS_FEATURE_ROW
+    struct NTS_FEATURE_ROW : public project::api::ROW
     {
-      FEATURE feature_i;
-      feature_i.analysis = analysis;
-      feature_i.feature = feature[i];
-      feature_i.feature_group = feature_group[i];
-      feature_i.feature_component = feature_component[i];
-      feature_i.adduct = adduct[i];
-      feature_i.rt = rt[i];
-      feature_i.mz = mz[i];
-      feature_i.mass = mass[i];
-      feature_i.intensity = intensity[i];
-      feature_i.noise = noise[i];
-      feature_i.sn = sn[i];
-      feature_i.area = area[i];
-      feature_i.rtmin = rtmin[i];
-      feature_i.rtmax = rtmax[i];
-      feature_i.width = width[i];
-      feature_i.mzmin = mzmin[i];
-      feature_i.mzmax = mzmax[i];
-      feature_i.ppm = ppm[i];
-      feature_i.fwhm_rt = fwhm_rt[i];
-      feature_i.fwhm_mz = fwhm_mz[i];
-      feature_i.gaussian_A = gaussian_A[i];
-      feature_i.gaussian_mu = gaussian_mu[i];
-      feature_i.gaussian_sigma = gaussian_sigma[i];
-      feature_i.gaussian_r2 = gaussian_r2[i];
-      feature_i.jaggedness = jaggedness[i];
-      feature_i.sharpness = sharpness[i];
-      feature_i.asymmetry = asymmetry[i];
-      feature_i.modality = modality[i];
-      feature_i.plates = plates[i];
-      feature_i.polarity = polarity[i];
-      feature_i.filtered = filtered[i];
-      feature_i.filter = filter[i];
-      feature_i.filled = filled[i];
-      feature_i.correction = correction[i];
-      feature_i.eic_size = eic_size[i];
-      feature_i.eic_rt = eic_rt[i];
-      feature_i.eic_mz = eic_mz[i];
-      feature_i.eic_intensity = eic_intensity[i];
-      feature_i.eic_baseline = eic_baseline[i];
-      feature_i.eic_smoothed = eic_smoothed[i];
-      feature_i.ms1_size = ms1_size[i];
-      feature_i.ms1_mz = ms1_mz[i];
-      feature_i.ms1_intensity = ms1_intensity[i];
-      feature_i.ms2_size = ms2_size[i];
-      feature_i.ms2_mz = ms2_mz[i];
-      feature_i.ms2_intensity = ms2_intensity[i];
-      return feature_i;
+      std::string analysis;
+      std::string feature;
+      std::string feature_component;
+      std::string feature_group;
+      std::string adduct;
+      double rt = 0.0;
+      double mz = 0.0;
+      double mass = 0.0;
+      double intensity = 0.0;
+      double noise = 0.0;
+      double sn = 0.0;
+      double area = 0.0;
+      double rtmin = 0.0;
+      double rtmax = 0.0;
+      double width = 0.0;
+      double mzmin = 0.0;
+      double mzmax = 0.0;
+      double ppm = 0.0;
+      double fwhm_rt = 0.0;
+      double fwhm_mz = 0.0;
+      double gaussian_A = 0.0;
+      double gaussian_mu = 0.0;
+      double gaussian_sigma = 0.0;
+      double gaussian_r2 = 0.0;
+      double jaggedness = 0.0;
+      double sharpness = 0.0;
+      double asymmetry = 0.0;
+      int modality = 0;
+      double plates = 0.0;
+      int polarity = 0;
+      bool filtered = false;
+      std::string filter;
+      bool filled = false;
+      double correction = 0.0;
+      int eic_size = 0;
+      std::string eic_rt;
+      std::string eic_mz;
+      std::string eic_intensity;
+      std::string eic_baseline;
+      std::string eic_smoothed;
+      int ms1_size = 0;
+      std::string ms1_mz;
+      std::string ms1_intensity;
+      int ms2_size = 0;
+      std::string ms2_mz;
+      std::string ms2_intensity;
     };
 
-    void set_feature(const int &i, const FEATURE &feature_i)
+    struct NTS_FEATURES_COUNT_ROW
     {
-      feature[i] = feature_i.feature;
-      feature_group[i] = feature_i.feature_group;
-      feature_component[i] = feature_i.feature_component;
-      adduct[i] = feature_i.adduct;
-      rt[i] = feature_i.rt;
-      mz[i] = feature_i.mz;
-      mass[i] = feature_i.mass;
-      intensity[i] = feature_i.intensity;
-      noise[i] = feature_i.noise;
-      sn[i] = feature_i.sn;
-      area[i] = feature_i.area;
-      rtmin[i] = feature_i.rtmin;
-      rtmax[i] = feature_i.rtmax;
-      width[i] = feature_i.width;
-      mzmin[i] = feature_i.mzmin;
-      mzmax[i] = feature_i.mzmax;
-      ppm[i] = feature_i.ppm;
-      fwhm_rt[i] = feature_i.fwhm_rt;
-      fwhm_mz[i] = feature_i.fwhm_mz;
-      gaussian_A[i] = feature_i.gaussian_A;
-      gaussian_mu[i] = feature_i.gaussian_mu;
-      gaussian_sigma[i] = feature_i.gaussian_sigma;
-      gaussian_r2[i] = feature_i.gaussian_r2;
-      jaggedness[i] = feature_i.jaggedness;
-      sharpness[i] = feature_i.sharpness;
-      asymmetry[i] = feature_i.asymmetry;
-      modality[i] = feature_i.modality;
-      plates[i] = feature_i.plates;
-      polarity[i] = feature_i.polarity;
-      filtered[i] = feature_i.filtered;
-      filter[i] = feature_i.filter;
-      filled[i] = feature_i.filled;
-      correction[i] = feature_i.correction;
-      eic_size[i] = feature_i.eic_size;
-      eic_rt[i] = feature_i.eic_rt;
-      eic_mz[i] = feature_i.eic_mz;
-      eic_intensity[i] = feature_i.eic_intensity;
-      eic_baseline[i] = feature_i.eic_baseline;
-      eic_smoothed[i] = feature_i.eic_smoothed;
-      ms1_size[i] = feature_i.ms1_size;
-      ms1_mz[i] = feature_i.ms1_mz;
-      ms1_intensity[i] = feature_i.ms1_intensity;
-      ms2_size[i] = feature_i.ms2_size;
-      ms2_mz[i] = feature_i.ms2_mz;
-      ms2_intensity[i] = feature_i.ms2_intensity;
+      std::string analysis;
+      int total = 0;
+      int filtered = 0;
+      int groups = 0;
+      int components = 0;
     };
 
-    void append_feature(const FEATURE &feature_i)
+    // MARK: NTS_FEATURES
+    struct NTS_FEATURES
     {
-      feature.push_back(feature_i.feature);
-      feature_group.push_back(feature_i.feature_group);
-      feature_component.push_back(feature_i.feature_component);
-      adduct.push_back(feature_i.adduct);
-      rt.push_back(feature_i.rt);
-      mz.push_back(feature_i.mz);
-      mass.push_back(feature_i.mass);
-      intensity.push_back(feature_i.intensity);
-      noise.push_back(feature_i.noise);
-      sn.push_back(feature_i.sn);
-      area.push_back(feature_i.area);
-      rtmin.push_back(feature_i.rtmin);
-      rtmax.push_back(feature_i.rtmax);
-      width.push_back(feature_i.width);
-      mzmin.push_back(feature_i.mzmin);
-      mzmax.push_back(feature_i.mzmax);
-      ppm.push_back(feature_i.ppm);
-      fwhm_rt.push_back(feature_i.fwhm_rt);
-      fwhm_mz.push_back(feature_i.fwhm_mz);
-      gaussian_A.push_back(feature_i.gaussian_A);
-      gaussian_mu.push_back(feature_i.gaussian_mu);
-      gaussian_sigma.push_back(feature_i.gaussian_sigma);
-      gaussian_r2.push_back(feature_i.gaussian_r2);
-      jaggedness.push_back(feature_i.jaggedness);
-      sharpness.push_back(feature_i.sharpness);
-      asymmetry.push_back(feature_i.asymmetry);
-      modality.push_back(feature_i.modality);
-      plates.push_back(feature_i.plates);
-      polarity.push_back(feature_i.polarity);
-      filtered.push_back(feature_i.filtered);
-      filter.push_back(feature_i.filter);
-      filled.push_back(feature_i.filled);
-      correction.push_back(feature_i.correction);
-      eic_size.push_back(feature_i.eic_size);
-      eic_rt.push_back(feature_i.eic_rt);
-      eic_mz.push_back(feature_i.eic_mz);
-      eic_intensity.push_back(feature_i.eic_intensity);
-      eic_baseline.push_back(feature_i.eic_baseline);
-      eic_smoothed.push_back(feature_i.eic_smoothed);
-      ms1_size.push_back(feature_i.ms1_size);
-      ms1_mz.push_back(feature_i.ms1_mz);
-      ms1_intensity.push_back(feature_i.ms1_intensity);
-      ms2_size.push_back(feature_i.ms2_size);
-      ms2_mz.push_back(feature_i.ms2_mz);
-      ms2_intensity.push_back(feature_i.ms2_intensity);
-    };
+      std::string analysis;
+      std::vector<std::string> feature;
+      std::vector<std::string> feature_group;
+      std::vector<std::string> feature_component;
+      std::vector<std::string> adduct;
+      std::vector<float> rt;
+      std::vector<float> mz;
+      std::vector<float> mass;
+      std::vector<float> intensity;
+      std::vector<float> noise;
+      std::vector<float> sn;
+      std::vector<float> area;
+      std::vector<float> rtmin;
+      std::vector<float> rtmax;
+      std::vector<float> width;
+      std::vector<float> mzmin;
+      std::vector<float> mzmax;
+      std::vector<float> ppm;
+      std::vector<float> fwhm_rt;
+      std::vector<float> fwhm_mz;
+      std::vector<float> gaussian_A;
+      std::vector<float> gaussian_mu;
+      std::vector<float> gaussian_sigma;
+      std::vector<float> gaussian_r2;
+      std::vector<float> jaggedness;
+      std::vector<float> sharpness;
+      std::vector<float> asymmetry;
+      std::vector<int> modality;
+      std::vector<float> plates;
+      std::vector<int> polarity;
+      std::vector<bool> filtered;
+      std::vector<std::string> filter;
+      std::vector<bool> filled;
+      std::vector<float> correction;
+      std::vector<int> eic_size;
+      std::vector<std::string> eic_rt;
+      std::vector<std::string> eic_mz;
+      std::vector<std::string> eic_intensity;
+      std::vector<std::string> eic_baseline;
+      std::vector<std::string> eic_smoothed;
+      std::vector<int> ms1_size;
+      std::vector<std::string> ms1_mz;
+      std::vector<std::string> ms1_intensity;
+      std::vector<int> ms2_size;
+      std::vector<std::string> ms2_mz;
+      std::vector<std::string> ms2_intensity;
 
-    void set_analysis(const std::string &a)
-    {
-      analysis = a;
-    }
-
-    void sort_by_mz()
-    {
-      if (feature.size() == 0)
-        return;
-
-      std::vector<int> new_order(feature.size());
-      std::iota(new_order.begin(), new_order.end(), 0);
-
-      std::sort(new_order.begin(), new_order.end(), [this](int i1, int i2)
-                { return mz[i1] < mz[i2]; });
-
-      // Create sorted copies of all vectors
-      std::vector<std::string> feature_sorted(feature.size());
-      std::vector<std::string> feature_group_sorted(feature.size());
-      std::vector<std::string> feature_component_sorted(feature.size());
-      std::vector<std::string> adduct_sorted(feature.size());
-      std::vector<float> rt_sorted(feature.size());
-      std::vector<float> mz_sorted(feature.size());
-      std::vector<float> mass_sorted(feature.size());
-      std::vector<float> intensity_sorted(feature.size());
-      std::vector<float> noise_sorted(feature.size());
-      std::vector<float> sn_sorted(feature.size());
-      std::vector<float> area_sorted(feature.size());
-      std::vector<float> rtmin_sorted(feature.size());
-      std::vector<float> rtmax_sorted(feature.size());
-      std::vector<float> width_sorted(feature.size());
-      std::vector<float> mzmin_sorted(feature.size());
-      std::vector<float> mzmax_sorted(feature.size());
-      std::vector<float> ppm_sorted(feature.size());
-      std::vector<float> fwhm_rt_sorted(feature.size());
-      std::vector<float> fwhm_mz_sorted(feature.size());
-      std::vector<float> gaussian_A_sorted(feature.size());
-      std::vector<float> gaussian_mu_sorted(feature.size());
-      std::vector<float> gaussian_sigma_sorted(feature.size());
-      std::vector<float> gaussian_r2_sorted(feature.size());
-      std::vector<float> jaggedness_sorted(feature.size());
-      std::vector<float> sharpness_sorted(feature.size());
-      std::vector<float> asymmetry_sorted(feature.size());
-      std::vector<int> modality_sorted(feature.size());
-      std::vector<float> plates_sorted(feature.size());
-      std::vector<int> polarity_sorted(feature.size());
-      std::vector<bool> filtered_sorted(feature.size());
-      std::vector<std::string> filter_sorted(feature.size());
-      std::vector<bool> filled_sorted(feature.size());
-      std::vector<float> correction_sorted(feature.size());
-      std::vector<int> eic_size_sorted(feature.size());
-      std::vector<std::string> eic_rt_sorted(feature.size());
-      std::vector<std::string> eic_mz_sorted(feature.size());
-      std::vector<std::string> eic_intensity_sorted(feature.size());
-      std::vector<std::string> eic_baseline_sorted(feature.size());
-      std::vector<std::string> eic_smoothed_sorted(feature.size());
-      std::vector<int> ms1_size_sorted(feature.size());
-      std::vector<std::string> ms1_mz_sorted(feature.size());
-      std::vector<std::string> ms1_intensity_sorted(feature.size());
-      std::vector<int> ms2_size_sorted(feature.size());
-      std::vector<std::string> ms2_mz_sorted(feature.size());
-      std::vector<std::string> ms2_intensity_sorted(feature.size());
-
-      for (size_t i = 0; i < feature.size(); i++)
+      int size() const
       {
-        int idx = new_order[i];
-        feature_sorted[i] = feature[idx];
-        feature_group_sorted[i] = feature_group[idx];
-        feature_component_sorted[i] = feature_component[idx];
-        adduct_sorted[i] = adduct[idx];
-        rt_sorted[i] = rt[idx];
-        mz_sorted[i] = mz[idx];
-        mass_sorted[i] = mass[idx];
-        intensity_sorted[i] = intensity[idx];
-        noise_sorted[i] = noise[idx];
-        sn_sorted[i] = sn[idx];
-        area_sorted[i] = area[idx];
-        rtmin_sorted[i] = rtmin[idx];
-        rtmax_sorted[i] = rtmax[idx];
-        width_sorted[i] = width[idx];
-        mzmin_sorted[i] = mzmin[idx];
-        mzmax_sorted[i] = mzmax[idx];
-        ppm_sorted[i] = ppm[idx];
-        fwhm_rt_sorted[i] = fwhm_rt[idx];
-        fwhm_mz_sorted[i] = fwhm_mz[idx];
-        gaussian_A_sorted[i] = gaussian_A[idx];
-        gaussian_mu_sorted[i] = gaussian_mu[idx];
-        gaussian_sigma_sorted[i] = gaussian_sigma[idx];
-        gaussian_r2_sorted[i] = gaussian_r2[idx];
-        jaggedness_sorted[i] = jaggedness[idx];
-        sharpness_sorted[i] = sharpness[idx];
-        asymmetry_sorted[i] = asymmetry[idx];
-        modality_sorted[i] = modality[idx];
-        plates_sorted[i] = plates[idx];
-        polarity_sorted[i] = polarity[idx];
-        filtered_sorted[i] = filtered[idx];
-        filter_sorted[i] = filter[idx];
-        filled_sorted[i] = filled[idx];
-        correction_sorted[i] = correction[idx];
-        eic_size_sorted[i] = eic_size[idx];
-        eic_rt_sorted[i] = eic_rt[idx];
-        eic_mz_sorted[i] = eic_mz[idx];
-        eic_intensity_sorted[i] = eic_intensity[idx];
-        eic_baseline_sorted[i] = eic_baseline[idx];
-        eic_smoothed_sorted[i] = eic_smoothed[idx];
-        ms1_size_sorted[i] = ms1_size[idx];
-        ms1_mz_sorted[i] = ms1_mz[idx];
-        ms1_intensity_sorted[i] = ms1_intensity[idx];
-        ms2_size_sorted[i] = ms2_size[idx];
-        ms2_mz_sorted[i] = ms2_mz[idx];
-        ms2_intensity_sorted[i] = ms2_intensity[idx];
+        return feature.size();
+      };
+
+      std::vector<std::uint8_t> serialize_object() const;
+
+      static NTS_FEATURES deserialize_object(const std::vector<std::uint8_t> &bytes);
+
+      NTS_FEATURE_ROW get_feature(const int &i) const
+      {
+        NTS_FEATURE_ROW feature_i;
+        feature_i.analysis = analysis;
+        feature_i.feature = feature[i];
+        feature_i.feature_group = feature_group[i];
+        feature_i.feature_component = feature_component[i];
+        feature_i.adduct = adduct[i];
+        feature_i.rt = rt[i];
+        feature_i.mz = mz[i];
+        feature_i.mass = mass[i];
+        feature_i.intensity = intensity[i];
+        feature_i.noise = noise[i];
+        feature_i.sn = sn[i];
+        feature_i.area = area[i];
+        feature_i.rtmin = rtmin[i];
+        feature_i.rtmax = rtmax[i];
+        feature_i.width = width[i];
+        feature_i.mzmin = mzmin[i];
+        feature_i.mzmax = mzmax[i];
+        feature_i.ppm = ppm[i];
+        feature_i.fwhm_rt = fwhm_rt[i];
+        feature_i.fwhm_mz = fwhm_mz[i];
+        feature_i.gaussian_A = gaussian_A[i];
+        feature_i.gaussian_mu = gaussian_mu[i];
+        feature_i.gaussian_sigma = gaussian_sigma[i];
+        feature_i.gaussian_r2 = gaussian_r2[i];
+        feature_i.jaggedness = jaggedness[i];
+        feature_i.sharpness = sharpness[i];
+        feature_i.asymmetry = asymmetry[i];
+        feature_i.modality = modality[i];
+        feature_i.plates = plates[i];
+        feature_i.polarity = polarity[i];
+        feature_i.filtered = filtered[i];
+        feature_i.filter = filter[i];
+        feature_i.filled = filled[i];
+        feature_i.correction = correction[i];
+        feature_i.eic_size = eic_size[i];
+        feature_i.eic_rt = eic_rt[i];
+        feature_i.eic_mz = eic_mz[i];
+        feature_i.eic_intensity = eic_intensity[i];
+        feature_i.eic_baseline = eic_baseline[i];
+        feature_i.eic_smoothed = eic_smoothed[i];
+        feature_i.ms1_size = ms1_size[i];
+        feature_i.ms1_mz = ms1_mz[i];
+        feature_i.ms1_intensity = ms1_intensity[i];
+        feature_i.ms2_size = ms2_size[i];
+        feature_i.ms2_mz = ms2_mz[i];
+        feature_i.ms2_intensity = ms2_intensity[i];
+        return feature_i;
+      };
+
+      void set_feature(const int &i, const NTS_FEATURE_ROW &feature_i)
+      {
+        feature[i] = feature_i.feature;
+        feature_group[i] = feature_i.feature_group;
+        feature_component[i] = feature_i.feature_component;
+        adduct[i] = feature_i.adduct;
+        rt[i] = feature_i.rt;
+        mz[i] = feature_i.mz;
+        mass[i] = feature_i.mass;
+        intensity[i] = feature_i.intensity;
+        noise[i] = feature_i.noise;
+        sn[i] = feature_i.sn;
+        area[i] = feature_i.area;
+        rtmin[i] = feature_i.rtmin;
+        rtmax[i] = feature_i.rtmax;
+        width[i] = feature_i.width;
+        mzmin[i] = feature_i.mzmin;
+        mzmax[i] = feature_i.mzmax;
+        ppm[i] = feature_i.ppm;
+        fwhm_rt[i] = feature_i.fwhm_rt;
+        fwhm_mz[i] = feature_i.fwhm_mz;
+        gaussian_A[i] = feature_i.gaussian_A;
+        gaussian_mu[i] = feature_i.gaussian_mu;
+        gaussian_sigma[i] = feature_i.gaussian_sigma;
+        gaussian_r2[i] = feature_i.gaussian_r2;
+        jaggedness[i] = feature_i.jaggedness;
+        sharpness[i] = feature_i.sharpness;
+        asymmetry[i] = feature_i.asymmetry;
+        modality[i] = feature_i.modality;
+        plates[i] = feature_i.plates;
+        polarity[i] = feature_i.polarity;
+        filtered[i] = feature_i.filtered;
+        filter[i] = feature_i.filter;
+        filled[i] = feature_i.filled;
+        correction[i] = feature_i.correction;
+        eic_size[i] = feature_i.eic_size;
+        eic_rt[i] = feature_i.eic_rt;
+        eic_mz[i] = feature_i.eic_mz;
+        eic_intensity[i] = feature_i.eic_intensity;
+        eic_baseline[i] = feature_i.eic_baseline;
+        eic_smoothed[i] = feature_i.eic_smoothed;
+        ms1_size[i] = feature_i.ms1_size;
+        ms1_mz[i] = feature_i.ms1_mz;
+        ms1_intensity[i] = feature_i.ms1_intensity;
+        ms2_size[i] = feature_i.ms2_size;
+        ms2_mz[i] = feature_i.ms2_mz;
+        ms2_intensity[i] = feature_i.ms2_intensity;
+      };
+
+      void append_feature(const NTS_FEATURE_ROW &feature_i)
+      {
+        feature.push_back(feature_i.feature);
+        feature_group.push_back(feature_i.feature_group);
+        feature_component.push_back(feature_i.feature_component);
+        adduct.push_back(feature_i.adduct);
+        rt.push_back(feature_i.rt);
+        mz.push_back(feature_i.mz);
+        mass.push_back(feature_i.mass);
+        intensity.push_back(feature_i.intensity);
+        noise.push_back(feature_i.noise);
+        sn.push_back(feature_i.sn);
+        area.push_back(feature_i.area);
+        rtmin.push_back(feature_i.rtmin);
+        rtmax.push_back(feature_i.rtmax);
+        width.push_back(feature_i.width);
+        mzmin.push_back(feature_i.mzmin);
+        mzmax.push_back(feature_i.mzmax);
+        ppm.push_back(feature_i.ppm);
+        fwhm_rt.push_back(feature_i.fwhm_rt);
+        fwhm_mz.push_back(feature_i.fwhm_mz);
+        gaussian_A.push_back(feature_i.gaussian_A);
+        gaussian_mu.push_back(feature_i.gaussian_mu);
+        gaussian_sigma.push_back(feature_i.gaussian_sigma);
+        gaussian_r2.push_back(feature_i.gaussian_r2);
+        jaggedness.push_back(feature_i.jaggedness);
+        sharpness.push_back(feature_i.sharpness);
+        asymmetry.push_back(feature_i.asymmetry);
+        modality.push_back(feature_i.modality);
+        plates.push_back(feature_i.plates);
+        polarity.push_back(feature_i.polarity);
+        filtered.push_back(feature_i.filtered);
+        filter.push_back(feature_i.filter);
+        filled.push_back(feature_i.filled);
+        correction.push_back(feature_i.correction);
+        eic_size.push_back(feature_i.eic_size);
+        eic_rt.push_back(feature_i.eic_rt);
+        eic_mz.push_back(feature_i.eic_mz);
+        eic_intensity.push_back(feature_i.eic_intensity);
+        eic_baseline.push_back(feature_i.eic_baseline);
+        eic_smoothed.push_back(feature_i.eic_smoothed);
+        ms1_size.push_back(feature_i.ms1_size);
+        ms1_mz.push_back(feature_i.ms1_mz);
+        ms1_intensity.push_back(feature_i.ms1_intensity);
+        ms2_size.push_back(feature_i.ms2_size);
+        ms2_mz.push_back(feature_i.ms2_mz);
+        ms2_intensity.push_back(feature_i.ms2_intensity);
+      };
+
+      void set_analysis(const std::string &a)
+      {
+        analysis = a;
       }
 
-      // Replace with sorted vectors
-      feature = feature_sorted;
-      feature_group = feature_group_sorted;
-      feature_component = feature_component_sorted;
-      adduct = adduct_sorted;
-      rt = rt_sorted;
-      mz = mz_sorted;
-      mass = mass_sorted;
-      intensity = intensity_sorted;
-      noise = noise_sorted;
-      sn = sn_sorted;
-      area = area_sorted;
-      rtmin = rtmin_sorted;
-      rtmax = rtmax_sorted;
-      width = width_sorted;
-      mzmin = mzmin_sorted;
-      mzmax = mzmax_sorted;
-      ppm = ppm_sorted;
-      fwhm_rt = fwhm_rt_sorted;
-      fwhm_mz = fwhm_mz_sorted;
-      gaussian_A = gaussian_A_sorted;
-      gaussian_mu = gaussian_mu_sorted;
-      gaussian_sigma = gaussian_sigma_sorted;
-      gaussian_r2 = gaussian_r2_sorted;
-      jaggedness = jaggedness_sorted;
-      sharpness = sharpness_sorted;
-      asymmetry = asymmetry_sorted;
-      modality = modality_sorted;
-      plates = plates_sorted;
-      polarity = polarity_sorted;
-      filtered = filtered_sorted;
-      filter = filter_sorted;
-      filled = filled_sorted;
-      correction = correction_sorted;
-      eic_size = eic_size_sorted;
-      eic_rt = eic_rt_sorted;
-      eic_mz = eic_mz_sorted;
-      eic_intensity = eic_intensity_sorted;
-      eic_baseline = eic_baseline_sorted;
-      eic_smoothed = eic_smoothed_sorted;
-      ms1_size = ms1_size_sorted;
-      ms1_mz = ms1_mz_sorted;
-      ms1_intensity = ms1_intensity_sorted;
-      ms2_size = ms2_size_sorted;
-      ms2_mz = ms2_mz_sorted;
-      ms2_intensity = ms2_intensity_sorted;
+      void sort_by_mz()
+      {
+        if (feature.size() == 0)
+          return;
+
+        std::vector<int> new_order(feature.size());
+        std::iota(new_order.begin(), new_order.end(), 0);
+
+        std::sort(new_order.begin(), new_order.end(), [this](int i1, int i2)
+                  { return mz[i1] < mz[i2]; });
+
+        // Create sorted copies of all vectors
+        std::vector<std::string> feature_sorted(feature.size());
+        std::vector<std::string> feature_group_sorted(feature.size());
+        std::vector<std::string> feature_component_sorted(feature.size());
+        std::vector<std::string> adduct_sorted(feature.size());
+        std::vector<float> rt_sorted(feature.size());
+        std::vector<float> mz_sorted(feature.size());
+        std::vector<float> mass_sorted(feature.size());
+        std::vector<float> intensity_sorted(feature.size());
+        std::vector<float> noise_sorted(feature.size());
+        std::vector<float> sn_sorted(feature.size());
+        std::vector<float> area_sorted(feature.size());
+        std::vector<float> rtmin_sorted(feature.size());
+        std::vector<float> rtmax_sorted(feature.size());
+        std::vector<float> width_sorted(feature.size());
+        std::vector<float> mzmin_sorted(feature.size());
+        std::vector<float> mzmax_sorted(feature.size());
+        std::vector<float> ppm_sorted(feature.size());
+        std::vector<float> fwhm_rt_sorted(feature.size());
+        std::vector<float> fwhm_mz_sorted(feature.size());
+        std::vector<float> gaussian_A_sorted(feature.size());
+        std::vector<float> gaussian_mu_sorted(feature.size());
+        std::vector<float> gaussian_sigma_sorted(feature.size());
+        std::vector<float> gaussian_r2_sorted(feature.size());
+        std::vector<float> jaggedness_sorted(feature.size());
+        std::vector<float> sharpness_sorted(feature.size());
+        std::vector<float> asymmetry_sorted(feature.size());
+        std::vector<int> modality_sorted(feature.size());
+        std::vector<float> plates_sorted(feature.size());
+        std::vector<int> polarity_sorted(feature.size());
+        std::vector<bool> filtered_sorted(feature.size());
+        std::vector<std::string> filter_sorted(feature.size());
+        std::vector<bool> filled_sorted(feature.size());
+        std::vector<float> correction_sorted(feature.size());
+        std::vector<int> eic_size_sorted(feature.size());
+        std::vector<std::string> eic_rt_sorted(feature.size());
+        std::vector<std::string> eic_mz_sorted(feature.size());
+        std::vector<std::string> eic_intensity_sorted(feature.size());
+        std::vector<std::string> eic_baseline_sorted(feature.size());
+        std::vector<std::string> eic_smoothed_sorted(feature.size());
+        std::vector<int> ms1_size_sorted(feature.size());
+        std::vector<std::string> ms1_mz_sorted(feature.size());
+        std::vector<std::string> ms1_intensity_sorted(feature.size());
+        std::vector<int> ms2_size_sorted(feature.size());
+        std::vector<std::string> ms2_mz_sorted(feature.size());
+        std::vector<std::string> ms2_intensity_sorted(feature.size());
+
+        for (size_t i = 0; i < feature.size(); i++)
+        {
+          int idx = new_order[i];
+          feature_sorted[i] = feature[idx];
+          feature_group_sorted[i] = feature_group[idx];
+          feature_component_sorted[i] = feature_component[idx];
+          adduct_sorted[i] = adduct[idx];
+          rt_sorted[i] = rt[idx];
+          mz_sorted[i] = mz[idx];
+          mass_sorted[i] = mass[idx];
+          intensity_sorted[i] = intensity[idx];
+          noise_sorted[i] = noise[idx];
+          sn_sorted[i] = sn[idx];
+          area_sorted[i] = area[idx];
+          rtmin_sorted[i] = rtmin[idx];
+          rtmax_sorted[i] = rtmax[idx];
+          width_sorted[i] = width[idx];
+          mzmin_sorted[i] = mzmin[idx];
+          mzmax_sorted[i] = mzmax[idx];
+          ppm_sorted[i] = ppm[idx];
+          fwhm_rt_sorted[i] = fwhm_rt[idx];
+          fwhm_mz_sorted[i] = fwhm_mz[idx];
+          gaussian_A_sorted[i] = gaussian_A[idx];
+          gaussian_mu_sorted[i] = gaussian_mu[idx];
+          gaussian_sigma_sorted[i] = gaussian_sigma[idx];
+          gaussian_r2_sorted[i] = gaussian_r2[idx];
+          jaggedness_sorted[i] = jaggedness[idx];
+          sharpness_sorted[i] = sharpness[idx];
+          asymmetry_sorted[i] = asymmetry[idx];
+          modality_sorted[i] = modality[idx];
+          plates_sorted[i] = plates[idx];
+          polarity_sorted[i] = polarity[idx];
+          filtered_sorted[i] = filtered[idx];
+          filter_sorted[i] = filter[idx];
+          filled_sorted[i] = filled[idx];
+          correction_sorted[i] = correction[idx];
+          eic_size_sorted[i] = eic_size[idx];
+          eic_rt_sorted[i] = eic_rt[idx];
+          eic_mz_sorted[i] = eic_mz[idx];
+          eic_intensity_sorted[i] = eic_intensity[idx];
+          eic_baseline_sorted[i] = eic_baseline[idx];
+          eic_smoothed_sorted[i] = eic_smoothed[idx];
+          ms1_size_sorted[i] = ms1_size[idx];
+          ms1_mz_sorted[i] = ms1_mz[idx];
+          ms1_intensity_sorted[i] = ms1_intensity[idx];
+          ms2_size_sorted[i] = ms2_size[idx];
+          ms2_mz_sorted[i] = ms2_mz[idx];
+          ms2_intensity_sorted[i] = ms2_intensity[idx];
+        }
+
+        // Replace with sorted vectors
+        feature = feature_sorted;
+        feature_group = feature_group_sorted;
+        feature_component = feature_component_sorted;
+        adduct = adduct_sorted;
+        rt = rt_sorted;
+        mz = mz_sorted;
+        mass = mass_sorted;
+        intensity = intensity_sorted;
+        noise = noise_sorted;
+        sn = sn_sorted;
+        area = area_sorted;
+        rtmin = rtmin_sorted;
+        rtmax = rtmax_sorted;
+        width = width_sorted;
+        mzmin = mzmin_sorted;
+        mzmax = mzmax_sorted;
+        ppm = ppm_sorted;
+        fwhm_rt = fwhm_rt_sorted;
+        fwhm_mz = fwhm_mz_sorted;
+        gaussian_A = gaussian_A_sorted;
+        gaussian_mu = gaussian_mu_sorted;
+        gaussian_sigma = gaussian_sigma_sorted;
+        gaussian_r2 = gaussian_r2_sorted;
+        jaggedness = jaggedness_sorted;
+        sharpness = sharpness_sorted;
+        asymmetry = asymmetry_sorted;
+        modality = modality_sorted;
+        plates = plates_sorted;
+        polarity = polarity_sorted;
+        filtered = filtered_sorted;
+        filter = filter_sorted;
+        filled = filled_sorted;
+        correction = correction_sorted;
+        eic_size = eic_size_sorted;
+        eic_rt = eic_rt_sorted;
+        eic_mz = eic_mz_sorted;
+        eic_intensity = eic_intensity_sorted;
+        eic_baseline = eic_baseline_sorted;
+        eic_smoothed = eic_smoothed_sorted;
+        ms1_size = ms1_size_sorted;
+        ms1_mz = ms1_mz_sorted;
+        ms1_intensity = ms1_intensity_sorted;
+        ms2_size = ms2_size_sorted;
+        ms2_mz = ms2_mz_sorted;
+        ms2_intensity = ms2_intensity_sorted;
+      };
     };
-  };
 
-  // MARK: SUSPECTS
-  struct SUSPECT
-  {
-    std::string analysis;
-    std::string feature;
-    int candidate_rank;
-    std::string name;
-    int polarity;
-    double db_mass;
-    double exp_mass;
-    double error_mass;
-    double db_rt;
-    double exp_rt;
-    double error_rt;
-    double intensity;
-    double area;
-    int id_level;
-    double score;
-    int shared_fragments;
-    double cosine_similarity;
-    std::string formula;
-    std::string SMILES;
-    std::string InChI;
-    std::string InChIKey;
-    double xLogP;
-    std::string database_id;
-    int db_ms2_size;
-    std::string db_ms2_mz;
-    std::string db_ms2_intensity;
-    std::string db_ms2_formula;
-    int exp_ms2_size;
-    std::string exp_ms2_mz;
-    std::string exp_ms2_intensity;
-  };
-
-  // MARK: INTERNAL_STANDARD
-  struct INTERNAL_STANDARD
-  {
-    std::string analysis;
-    std::string feature;
-    int candidate_rank;
-    std::string name;
-    int polarity;
-    double db_mass;
-    double exp_mass;
-    double error_mass;
-    double db_rt;
-    double exp_rt;
-    double error_rt;
-    double intensity;
-    double area;
-    int id_level;
-    double score;
-    int shared_fragments;
-    double cosine_similarity;
-    std::string formula;
-    std::string SMILES;
-    std::string InChI;
-    std::string InChIKey;
-    double xLogP;
-    std::string database_id;
-    int db_ms2_size;
-    std::string db_ms2_mz;
-    std::string db_ms2_intensity;
-    std::string db_ms2_formula;
-    int exp_ms2_size;
-    std::string exp_ms2_mz;
-    std::string exp_ms2_intensity;
-  };
-
-  struct SUSPECTS
-  {
-    std::vector<std::string> analysis;
-    std::vector<std::string> feature;
-    std::vector<int> candidate_rank;
-    std::vector<std::string> name;
-    std::vector<int> polarity;
-    std::vector<double> db_mass;
-    std::vector<double> exp_mass;
-    std::vector<double> error_mass;
-    std::vector<double> db_rt;
-    std::vector<double> exp_rt;
-    std::vector<double> error_rt;
-    std::vector<double> intensity;
-    std::vector<double> area;
-    std::vector<int> id_level;
-    std::vector<double> score;
-    std::vector<int> shared_fragments;
-    std::vector<double> cosine_similarity;
-    std::vector<std::string> formula;
-    std::vector<std::string> SMILES;
-    std::vector<std::string> InChI;
-    std::vector<std::string> InChIKey;
-    std::vector<double> xLogP;
-    std::vector<std::string> database_id;
-    std::vector<int> db_ms2_size;
-    std::vector<std::string> db_ms2_mz;
-    std::vector<std::string> db_ms2_intensity;
-    std::vector<std::string> db_ms2_formula;
-    std::vector<int> exp_ms2_size;
-    std::vector<std::string> exp_ms2_mz;
-    std::vector<std::string> exp_ms2_intensity;
-
-    int size() const
+    struct NTS_FEATURE_COUNT_ROW
     {
-      return analysis.size();
-    }
+      std::string analysis;
+      int total = 0;
+      int filtered = 0;
+      int groups = 0;
+      int components = 0;
+    };
 
-    void append(const SUSPECT &s)
+    // MARK: NTS_SUSPECT_ROW
+    struct NTS_SUSPECT_ROW : public project::api::ROW
     {
-      analysis.push_back(s.analysis);
-      feature.push_back(s.feature);
-      candidate_rank.push_back(s.candidate_rank);
-      name.push_back(s.name);
-      polarity.push_back(s.polarity);
-      db_mass.push_back(s.db_mass);
-      exp_mass.push_back(s.exp_mass);
-      error_mass.push_back(s.error_mass);
-      db_rt.push_back(s.db_rt);
-      exp_rt.push_back(s.exp_rt);
-      error_rt.push_back(s.error_rt);
-      intensity.push_back(s.intensity);
-      area.push_back(s.area);
-      id_level.push_back(s.id_level);
-      score.push_back(s.score);
-      shared_fragments.push_back(s.shared_fragments);
-      cosine_similarity.push_back(s.cosine_similarity);
-      formula.push_back(s.formula);
-      SMILES.push_back(s.SMILES);
-      InChI.push_back(s.InChI);
-      InChIKey.push_back(s.InChIKey);
-      xLogP.push_back(s.xLogP);
-      database_id.push_back(s.database_id);
-      db_ms2_size.push_back(s.db_ms2_size);
-      db_ms2_mz.push_back(s.db_ms2_mz);
-      db_ms2_intensity.push_back(s.db_ms2_intensity);
-      db_ms2_formula.push_back(s.db_ms2_formula);
-      exp_ms2_size.push_back(s.exp_ms2_size);
-      exp_ms2_mz.push_back(s.exp_ms2_mz);
-      exp_ms2_intensity.push_back(s.exp_ms2_intensity);
-    }
-  };
+      std::string analysis;
+      std::string feature;
+      int candidate_rank = 0;
+      std::string name;
+      int polarity = 0;
+      double db_mass = 0.0;
+      double exp_mass = 0.0;
+      double error_mass = 0.0;
+      double db_rt = 0.0;
+      double exp_rt = 0.0;
+      double error_rt = 0.0;
+      double intensity = 0.0;
+      double area = 0.0;
+      int id_level = 0;
+      double score = 0.0;
+      int shared_fragments = 0;
+      double cosine_similarity = 0.0;
+      std::string formula;
+      std::string SMILES;
+      std::string InChI;
+      std::string InChIKey;
+      double xLogP = 0.0;
+      std::string database_id;
+      int db_ms2_size = 0;
+      std::string db_ms2_mz;
+      std::string db_ms2_intensity;
+      std::string db_ms2_formula;
+      int exp_ms2_size = 0;
+      std::string exp_ms2_mz;
+      std::string exp_ms2_intensity;
+    };
 
-  // MARK: INTERNAL_STANDARDS
-  struct INTERNAL_STANDARDS
+    // MARK: NTS_SUSPECTS
+    struct NTS_SUSPECTS
+    {
+      std::vector<std::string> analysis;
+      std::vector<std::string> feature;
+      std::vector<int> candidate_rank;
+      std::vector<std::string> name;
+      std::vector<int> polarity;
+      std::vector<double> db_mass;
+      std::vector<double> exp_mass;
+      std::vector<double> error_mass;
+      std::vector<double> db_rt;
+      std::vector<double> exp_rt;
+      std::vector<double> error_rt;
+      std::vector<double> intensity;
+      std::vector<double> area;
+      std::vector<int> id_level;
+      std::vector<double> score;
+      std::vector<int> shared_fragments;
+      std::vector<double> cosine_similarity;
+      std::vector<std::string> formula;
+      std::vector<std::string> SMILES;
+      std::vector<std::string> InChI;
+      std::vector<std::string> InChIKey;
+      std::vector<double> xLogP;
+      std::vector<std::string> database_id;
+      std::vector<int> db_ms2_size;
+      std::vector<std::string> db_ms2_mz;
+      std::vector<std::string> db_ms2_intensity;
+      std::vector<std::string> db_ms2_formula;
+      std::vector<int> exp_ms2_size;
+      std::vector<std::string> exp_ms2_mz;
+      std::vector<std::string> exp_ms2_intensity;
+
+      int size() const
+      {
+        return analysis.size();
+      }
+
+      std::vector<std::uint8_t> serialize_object() const;
+
+      static NTS_SUSPECTS deserialize_object(const std::vector<std::uint8_t> &bytes);
+
+      void append(const NTS_SUSPECT_ROW &s)
+      {
+        analysis.push_back(s.analysis);
+        feature.push_back(s.feature);
+        candidate_rank.push_back(s.candidate_rank);
+        name.push_back(s.name);
+        polarity.push_back(s.polarity);
+        db_mass.push_back(s.db_mass);
+        exp_mass.push_back(s.exp_mass);
+        error_mass.push_back(s.error_mass);
+        db_rt.push_back(s.db_rt);
+        exp_rt.push_back(s.exp_rt);
+        error_rt.push_back(s.error_rt);
+        intensity.push_back(s.intensity);
+        area.push_back(s.area);
+        id_level.push_back(s.id_level);
+        score.push_back(s.score);
+        shared_fragments.push_back(s.shared_fragments);
+        cosine_similarity.push_back(s.cosine_similarity);
+        formula.push_back(s.formula);
+        SMILES.push_back(s.SMILES);
+        InChI.push_back(s.InChI);
+        InChIKey.push_back(s.InChIKey);
+        xLogP.push_back(s.xLogP);
+        database_id.push_back(s.database_id);
+        db_ms2_size.push_back(s.db_ms2_size);
+        db_ms2_mz.push_back(s.db_ms2_mz);
+        db_ms2_intensity.push_back(s.db_ms2_intensity);
+        db_ms2_formula.push_back(s.db_ms2_formula);
+        exp_ms2_size.push_back(s.exp_ms2_size);
+        exp_ms2_mz.push_back(s.exp_ms2_mz);
+        exp_ms2_intensity.push_back(s.exp_ms2_intensity);
+      }
+    };
+
+    // MARK: NTS_INTERNAL_STANDARD_ROW
+    struct NTS_INTERNAL_STANDARD_ROW : public project::api::ROW
+    {
+      std::string analysis;
+      std::string feature;
+      int candidate_rank = 0;
+      std::string name;
+      int polarity = 0;
+      double db_mass = 0.0;
+      double exp_mass = 0.0;
+      double error_mass = 0.0;
+      double db_rt = 0.0;
+      double exp_rt = 0.0;
+      double error_rt = 0.0;
+      double intensity = 0.0;
+      double area = 0.0;
+      int id_level = 0;
+      double score = 0.0;
+      int shared_fragments = 0;
+      double cosine_similarity = 0.0;
+      std::string formula;
+      std::string SMILES;
+      std::string InChI;
+      std::string InChIKey;
+      double xLogP = 0.0;
+      std::string database_id;
+      int db_ms2_size = 0;
+      std::string db_ms2_mz;
+      std::string db_ms2_intensity;
+      std::string db_ms2_formula;
+      int exp_ms2_size = 0;
+      std::string exp_ms2_mz;
+      std::string exp_ms2_intensity;
+    };
+
+    // MARK: NTS_INTERNAL_STANDARDS
+    struct NTS_INTERNAL_STANDARDS
+    {
+      std::vector<std::string> analysis;
+      std::vector<std::string> feature;
+      std::vector<int> candidate_rank;
+      std::vector<std::string> name;
+      std::vector<int> polarity;
+      std::vector<double> db_mass;
+      std::vector<double> exp_mass;
+      std::vector<double> error_mass;
+      std::vector<double> db_rt;
+      std::vector<double> exp_rt;
+      std::vector<double> error_rt;
+      std::vector<double> intensity;
+      std::vector<double> area;
+      std::vector<int> id_level;
+      std::vector<double> score;
+      std::vector<int> shared_fragments;
+      std::vector<double> cosine_similarity;
+      std::vector<std::string> formula;
+      std::vector<std::string> SMILES;
+      std::vector<std::string> InChI;
+      std::vector<std::string> InChIKey;
+      std::vector<double> xLogP;
+      std::vector<std::string> database_id;
+      std::vector<int> db_ms2_size;
+      std::vector<std::string> db_ms2_mz;
+      std::vector<std::string> db_ms2_intensity;
+      std::vector<std::string> db_ms2_formula;
+      std::vector<int> exp_ms2_size;
+      std::vector<std::string> exp_ms2_mz;
+      std::vector<std::string> exp_ms2_intensity;
+
+      int size() const
+      {
+        return analysis.size();
+      }
+
+      void append(const NTS_INTERNAL_STANDARD_ROW &is)
+      {
+        analysis.push_back(is.analysis);
+        feature.push_back(is.feature);
+        candidate_rank.push_back(is.candidate_rank);
+        name.push_back(is.name);
+        polarity.push_back(is.polarity);
+        db_mass.push_back(is.db_mass);
+        exp_mass.push_back(is.exp_mass);
+        error_mass.push_back(is.error_mass);
+        db_rt.push_back(is.db_rt);
+        exp_rt.push_back(is.exp_rt);
+        error_rt.push_back(is.error_rt);
+        intensity.push_back(is.intensity);
+        area.push_back(is.area);
+        id_level.push_back(is.id_level);
+        score.push_back(is.score);
+        shared_fragments.push_back(is.shared_fragments);
+        cosine_similarity.push_back(is.cosine_similarity);
+        formula.push_back(is.formula);
+        SMILES.push_back(is.SMILES);
+        InChI.push_back(is.InChI);
+        InChIKey.push_back(is.InChIKey);
+        xLogP.push_back(is.xLogP);
+        database_id.push_back(is.database_id);
+        db_ms2_size.push_back(is.db_ms2_size);
+        db_ms2_mz.push_back(is.db_ms2_mz);
+        db_ms2_intensity.push_back(is.db_ms2_intensity);
+        db_ms2_formula.push_back(is.db_ms2_formula);
+        exp_ms2_size.push_back(is.exp_ms2_size);
+        exp_ms2_mz.push_back(is.exp_ms2_mz);
+        exp_ms2_intensity.push_back(is.exp_ms2_intensity);
+      }
+    };
+
+    // MARK: NTS_TRANSFORMATION_PRODUCT_ROW
+    struct NTS_TRANSFORMATION_PRODUCT_ROW : public project::api::ROW
+    {
+      std::string name;
+      std::string formula;
+      double mass = 0.0;
+      std::string SMILES;
+      std::string InChI;
+      std::string InChIKey;
+      double xLogP = 0.0;
+      std::string transformation;
+      std::string precursor_name;
+      std::string precursor_formula;
+      double precursor_mass = 0.0;
+      std::string precursor_SMILES;
+      std::string precursor_InChI;
+      std::string precursor_InChIKey;
+      double precursor_xLogP = 0.0;
+      std::string main_precursor_name;
+      std::string main_precursor_formula;
+      double main_precursor_mass = 0.0;
+      std::string main_precursor_SMILES;
+      std::string main_precursor_InChI;
+      std::string main_precursor_InChIKey;
+      double main_precursor_xLogP = 0.0;
+      std::string feature_group;
+      std::string precursor_feature_group;
+      std::string main_precursor_feature_group;
+      double cosine_similarity = 0.0;
+      double main_precursor_cosine_similarity = 0.0;
+      double rt_plausibility = 0.0;
+      double main_precursor_rt_plausibility = 0.0;
+    };
+
+    // MARK: PROJECT_NON_TARGET_ANALYSIS
+    class PROJECT_NON_TARGET_ANALYSIS
+    {
+    public:
+      explicit PROJECT_NON_TARGET_ANALYSIS(std::shared_ptr<project::api::CONTEXT> ctx);
+      static void create_schema(const std::shared_ptr<project::api::CONTEXT> &ctx);
+      static void validate_schema(const std::shared_ptr<project::api::CONTEXT> &ctx);
+
+      std::vector<NTS_FEATURE_COUNT_ROW> get_features_count(
+          const std::vector<std::string> &analyses = {},
+          bool include_filtered = false) const;
+
+
+      std::vector<NTS_FEATURE_ROW> get_features(
+        const std::vector<std::string> &analyses = {},
+        bool include_filtered = false) const;
+
+    private:
+      std::shared_ptr<project::api::CONTEXT> ctx_;
+
+      static constexpr const char *features_table_name() { return "NTS_FEATURES"; }
+      static constexpr const char *internal_standards_table_name() { return "NTS_INTERNAL_STANDARDS"; }
+      static constexpr const char *suspects_table_name() { return "NTS_SUSPECTS"; }
+      static constexpr const char *transformation_products_table_name() { return "NTS_TRANSFORMATION_PRODUCTS"; }
+    };
+
+  } // namespace api
+
+  using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS;
+
+  // MARK: ns processing
+  namespace processing
   {
-    std::vector<std::string> analysis;
-    std::vector<std::string> feature;
-    std::vector<int> candidate_rank;
-    std::vector<std::string> name;
-    std::vector<int> polarity;
-    std::vector<double> db_mass;
-    std::vector<double> exp_mass;
-    std::vector<double> error_mass;
-    std::vector<double> db_rt;
-    std::vector<double> exp_rt;
-    std::vector<double> error_rt;
-    std::vector<double> intensity;
-    std::vector<double> area;
-    std::vector<int> id_level;
-    std::vector<double> score;
-    std::vector<int> shared_fragments;
-    std::vector<double> cosine_similarity;
-    std::vector<std::string> formula;
-    std::vector<std::string> SMILES;
-    std::vector<std::string> InChI;
-    std::vector<std::string> InChIKey;
-    std::vector<double> xLogP;
-    std::vector<std::string> database_id;
-    std::vector<int> db_ms2_size;
-    std::vector<std::string> db_ms2_mz;
-    std::vector<std::string> db_ms2_intensity;
-    std::vector<std::string> db_ms2_formula;
-    std::vector<int> exp_ms2_size;
-    std::vector<std::string> exp_ms2_mz;
-    std::vector<std::string> exp_ms2_intensity;
 
-    int size() const
-    {
-      return analysis.size();
-    }
+  }
 
-    void append(const INTERNAL_STANDARD &is)
-    {
-      analysis.push_back(is.analysis);
-      feature.push_back(is.feature);
-      candidate_rank.push_back(is.candidate_rank);
-      name.push_back(is.name);
-      polarity.push_back(is.polarity);
-      db_mass.push_back(is.db_mass);
-      exp_mass.push_back(is.exp_mass);
-      error_mass.push_back(is.error_mass);
-      db_rt.push_back(is.db_rt);
-      exp_rt.push_back(is.exp_rt);
-      error_rt.push_back(is.error_rt);
-      intensity.push_back(is.intensity);
-      area.push_back(is.area);
-      id_level.push_back(is.id_level);
-      score.push_back(is.score);
-      shared_fragments.push_back(is.shared_fragments);
-      cosine_similarity.push_back(is.cosine_similarity);
-      formula.push_back(is.formula);
-      SMILES.push_back(is.SMILES);
-      InChI.push_back(is.InChI);
-      InChIKey.push_back(is.InChIKey);
-      xLogP.push_back(is.xLogP);
-      database_id.push_back(is.database_id);
-      db_ms2_size.push_back(is.db_ms2_size);
-      db_ms2_mz.push_back(is.db_ms2_mz);
-      db_ms2_intensity.push_back(is.db_ms2_intensity);
-      db_ms2_formula.push_back(is.db_ms2_formula);
-      exp_ms2_size.push_back(is.exp_ms2_size);
-      exp_ms2_mz.push_back(is.exp_ms2_mz);
-      exp_ms2_intensity.push_back(is.exp_ms2_intensity);
-    }
-  };
-
+  // MARK: NTS_INFO
   struct NTS_INFO
   {
     std::vector<std::string> analyses;
@@ -687,16 +932,16 @@ namespace nts
     std::vector<std::string> replicates;
     std::vector<std::string> blanks;
     std::vector<std::string> files;
-    std::vector<mass_spec::MS_SPECTRA_HEADERS> headers;
-    std::vector<FEATURES> features;
-    std::vector<SUSPECTS> suspects;
-    std::vector<INTERNAL_STANDARDS> internal_standards;
+    std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> headers;
+    std::vector<api::NTS_FEATURES> features;
+    std::vector<api::NTS_SUSPECTS> suspects;
+    std::vector<api::NTS_INTERNAL_STANDARDS> internal_standards;
 
     NTS_DATA(const NTS_INFO &info,
-             const std::vector<mass_spec::MS_SPECTRA_HEADERS> &spectra_headers,
-             const std::vector<FEATURES> &feature_list,
-             const std::vector<SUSPECTS> &suspects_cpp = std::vector<SUSPECTS>(),
-             const std::vector<INTERNAL_STANDARDS> &internal_standards_cpp = std::vector<INTERNAL_STANDARDS>())
+             const std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> &spectra_headers,
+             const std::vector<api::NTS_FEATURES> &feature_list,
+             const std::vector<api::NTS_SUSPECTS> &suspects_cpp = std::vector<api::NTS_SUSPECTS>(),
+             const std::vector<api::NTS_INTERNAL_STANDARDS> &internal_standards_cpp = std::vector<api::NTS_INTERNAL_STANDARDS>())
     {
 
       analyses = info.analyses;
@@ -720,7 +965,7 @@ namespace nts
       {
         for (size_t i = 0; i < number_analyses; i++)
         {
-          mass_spec::MS_FILE ana(files[i]);
+          mass_spec::reader::MS_FILE ana(files[i]);
           headers[i] = ana.get_spectra_headers();
         }
       }
@@ -1040,5 +1285,31 @@ namespace nts
     }
   };
 }; // namespace nts
+
+// Include internal NTS module headers now that `nts::api` types are defined
+// (sub-modules already included above)
+
+// Macro to write verbose debug output ONLY to log file (not console)
+#define DEBUG_LOG(x)                       \
+  do                                       \
+  {                                        \
+    if (::nts::utils::debug_log.is_open()) \
+    {                                      \
+      ::nts::utils::debug_log << x;        \
+      ::nts::utils::debug_log.flush();     \
+    }                                      \
+  } while (0)
+
+// Macro to write important debug output to both console and log file
+#define DEBUG_OUT(x)                       \
+  do                                       \
+  {                                        \
+    if (::nts::utils::debug_log.is_open()) \
+    {                                      \
+      ::nts::utils::debug_log << x;        \
+      ::nts::utils::debug_log.flush();     \
+    }                                      \
+    std::cout << x;                        \
+  } while (0)
 
 #endif

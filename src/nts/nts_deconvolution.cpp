@@ -3,7 +3,6 @@
 // This file contains spectral processing, peak detection, and quality metrics functions
 
 #include "nts_deconvolution.h"
-#include "nts_utils.h"
 #include "nts.h"
 #include <algorithm>
 #include <numeric>
@@ -217,7 +216,7 @@ void nts::deconvolution::filter_and_cluster(
 
 // MARK: denoise_spectra
 void nts::deconvolution::denoise_spectra(
-  mass_spec::MS_FILE &ana,
+  mass_spec::reader::MS_FILE &ana,
   const int &spectrumIdx,
   const float &rt,
   const float &noiseThreshold,
@@ -985,7 +984,7 @@ std::tuple<float, float, float> nts::deconvolution::calculate_fwhm_combined(
 };
 
 // MARK: process_polarity_clusters
-std::vector<nts::FEATURE> nts::deconvolution::process_polarity_clusters(
+std::vector<nts::api::NTS_FEATURE_ROW> nts::deconvolution::process_polarity_clusters(
     const std::vector<float> &clust_rt,
     const std::vector<float> &clust_mz,
     const std::vector<float> &clust_intensity,
@@ -1018,7 +1017,7 @@ std::vector<nts::FEATURE> nts::deconvolution::process_polarity_clusters(
     cluster_indices[clust_cluster[i]].push_back(static_cast<int>(i));
   }
 
-  std::vector<nts::FEATURE> polarity_features;
+  std::vector<nts::api::NTS_FEATURE_ROW> polarity_features;
 
   for (const auto& [cluster_id, indices] : cluster_indices)
   {
@@ -1845,7 +1844,7 @@ std::vector<nts::FEATURE> nts::deconvolution::process_polarity_clusters(
       }
 
       // Create FEATURE structure
-      nts::FEATURE feature;
+      nts::api::NTS_FEATURE_ROW feature;
 
       // Basic identification with polarity-specific naming
       std::string polarity_suffix = (polarity_sign > 0) ? "POS" : "NEG";
@@ -1878,8 +1877,9 @@ std::vector<nts::FEATURE> nts::deconvolution::process_polarity_clusters(
       feature.mzmax = peak_mz[0];
       for (size_t i = 0; i < peak_mz.size(); ++i)
       {
-        feature.mzmin = std::min(feature.mzmin, peak_mz[i]);
-        feature.mzmax = std::max(feature.mzmax, peak_mz[i]);
+        double mzval = static_cast<double>(peak_mz[i]);
+        if (mzval < feature.mzmin) feature.mzmin = mzval;
+        if (mzval > feature.mzmax) feature.mzmax = mzval;
       }
       feature.ppm = (feature.mzmax - feature.mzmin) / feature.mz * 1e6f;
 
@@ -1908,17 +1908,17 @@ std::vector<nts::FEATURE> nts::deconvolution::process_polarity_clusters(
       feature.correction = 1.0f;
 
       feature.eic_size = static_cast<int>(peak_rt.size());
-      std::string rt_encoded = mass_spec::utils::encode_little_endian_from_float(peak_rt, 4);
-      std::string mz_encoded = mass_spec::utils::encode_little_endian_from_float(peak_mz, 4);
-      std::string intensity_encoded = mass_spec::utils::encode_little_endian_from_float(peak_intensity, 4);
-      std::string baseline_encoded = mass_spec::utils::encode_little_endian_from_float(peak_baseline, 4);
-      std::string smoothed_encoded = mass_spec::utils::encode_little_endian_from_float(peak_smoothed, 4);
+      std::string rt_encoded = mass_spec::reader::utils::encode_little_endian_from_float(peak_rt, 4);
+      std::string mz_encoded = mass_spec::reader::utils::encode_little_endian_from_float(peak_mz, 4);
+      std::string intensity_encoded = mass_spec::reader::utils::encode_little_endian_from_float(peak_intensity, 4);
+      std::string baseline_encoded = mass_spec::reader::utils::encode_little_endian_from_float(peak_baseline, 4);
+      std::string smoothed_encoded = mass_spec::reader::utils::encode_little_endian_from_float(peak_smoothed, 4);
 
-      feature.eic_rt = mass_spec::utils::encode_base64(rt_encoded);
-      feature.eic_mz = mass_spec::utils::encode_base64(mz_encoded);
-      feature.eic_intensity = mass_spec::utils::encode_base64(intensity_encoded);
-      feature.eic_baseline = mass_spec::utils::encode_base64(baseline_encoded);
-      feature.eic_smoothed = mass_spec::utils::encode_base64(smoothed_encoded);
+      feature.eic_rt = mass_spec::reader::utils::encode_base64(rt_encoded);
+      feature.eic_mz = mass_spec::reader::utils::encode_base64(mz_encoded);
+      feature.eic_intensity = mass_spec::reader::utils::encode_base64(intensity_encoded);
+      feature.eic_baseline = mass_spec::reader::utils::encode_base64(baseline_encoded);
+      feature.eic_smoothed = mass_spec::reader::utils::encode_base64(smoothed_encoded);
 
       // Set MS1 and MS2 as empty for now
       feature.ms1_size = 0;
@@ -1996,7 +1996,7 @@ void nts::deconvolution::find_features_impl(
     // Only enable debugging for matching analysis
     float current_debugMZ = (debugAnalysis.empty() || debugAnalysis == nts_data.analyses[a]) ? debugMZ : 0.0f;
     int current_debugSpecIdx = (debugAnalysis.empty() || debugAnalysis == nts_data.analyses[a]) ? debugSpecIdx : -1;
-    const mass_spec::MS_SPECTRA_HEADERS &header = nts_data.headers[a];
+    const mass_spec::reader::MS_SPECTRA_HEADERS &header = nts_data.headers[a];
     std::vector<int> idx_load;
     std::vector<float> rt_load;
     std::vector<int> polarity_load;
@@ -2032,7 +2032,7 @@ void nts::deconvolution::find_features_impl(
       }
     }
 
-    mass_spec::MS_FILE ana(nts_data.files[a]);
+    mass_spec::reader::MS_FILE ana(nts_data.files[a]);
 
     // Separate data by polarity
     std::vector<float> spec_pos_rt, spec_pos_mz, spec_pos_intensity, spec_pos_noise;
@@ -2100,7 +2100,7 @@ void nts::deconvolution::find_features_impl(
                 << "% noise removed, baseQuantile=" << baseQuantile << ")" << std::endl;
 
     // Process positive and negative polarities separately
-    std::vector<nts::FEATURE> pos_features, neg_features;
+    std::vector<nts::api::NTS_FEATURE_ROW> pos_features, neg_features;
 
     // Process positive polarity
     if (spec_pos_rt.size() > 0) {
@@ -2153,7 +2153,7 @@ void nts::deconvolution::find_features_impl(
     }
 
     // Combine features from both polarities
-    std::vector<nts::FEATURE> all_features;
+    std::vector<nts::api::NTS_FEATURE_ROW> all_features;
     all_features.reserve(pos_features.size() + neg_features.size());
     all_features.insert(all_features.end(), pos_features.begin(), pos_features.end());
     all_features.insert(all_features.end(), neg_features.begin(), neg_features.end());
@@ -2161,7 +2161,7 @@ void nts::deconvolution::find_features_impl(
     std::cout << "  4/5 Found " << all_features.size() << " total features ("
                 << pos_features.size() << " positive, " << neg_features.size() << " negative)" << std::endl;
 
-    nts_data.features[a] = nts::FEATURES();
+    nts_data.features[a] = nts::api::NTS_FEATURES();
     nts_data.features[a].analysis = nts_data.analyses[a];
 
     for (const auto& feature : all_features)

@@ -2,8 +2,7 @@
 
 #include "metfrag_runner.h"
 #include "nts.h"
-#include "nts_utils.h"
-#include "../mass_spec/utils.h"
+#include "../mass_spec/project_mass_spec.h"
 
 #include <algorithm>
 #include <cmath>
@@ -29,8 +28,8 @@ namespace
     std::vector<double> out;
     if (encoded.empty())
       return out;
-    std::string raw        = mass_spec::utils::decode_base64(encoded);
-    std::vector<float> fv  = mass_spec::utils::decode_little_endian_to_float(raw, 4);
+    std::string raw        = mass_spec::reader::utils::decode_base64(encoded);
+    std::vector<float> fv  = mass_spec::reader::utils::decode_little_endian_to_float(raw, 4);
     out.reserve(fv.size());
     for (float f : fv)
       out.push_back(static_cast<double>(f));
@@ -553,7 +552,7 @@ void metfrag_screening_impl(
 
   // Reset suspects for all analyses.
   for (size_t ai = 0; ai < n_ana; ++ai)
-    nts_data.suspects[ai] = SUSPECTS();
+    nts_data.suspects[ai] = nts::api::NTS_SUSPECTS();
 
   for (size_t ai = 0; ai < n_ana; ++ai)
   {
@@ -563,7 +562,7 @@ void metfrag_screening_impl(
         std::find(analyses_sel.begin(), analyses_sel.end(), ana) == analyses_sel.end())
       continue;
 
-    FEATURES &feats = nts_data.features[ai];
+    nts::api::NTS_FEATURES &feats = nts_data.features[ai];
     const int n_feat = feats.size();
 
     std::cout << ai + 1 << "/" << n_ana
@@ -713,7 +712,7 @@ void metfrag_screening_impl(
         else if (rt_match)              id_level = 3;
 
         // Populate SUSPECT.
-        SUSPECT s;
+        nts::api::NTS_SUSPECT_ROW s;
         s.analysis           = ana;
         s.feature            = feats.feature[fi];
         s.candidate_rank     = rank;

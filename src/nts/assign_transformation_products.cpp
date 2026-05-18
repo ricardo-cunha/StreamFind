@@ -12,7 +12,8 @@
 //        - cosine similarity (best pair across matching suspects)
 
 #include "assign_transformation_products.h"
-#include "../mass_spec/utils.h"
+#include "../mass_spec/project_mass_spec.h"
+#include "../mass_spec/reader.h"
 
 #include <algorithm>
 #include <cmath>
@@ -31,8 +32,8 @@ namespace nts::assign_transformation_products
     {
       std::vector<double> out;
       if (encoded.empty()) return out;
-      std::string raw       = mass_spec::utils::decode_base64(encoded);
-      std::vector<float> fv = mass_spec::utils::decode_little_endian_to_float(raw, 4);
+      std::string raw       = mass_spec::reader::utils::decode_base64(encoded);
+      std::vector<float> fv = mass_spec::reader::utils::decode_little_endian_to_float(raw, 4);
       out.reserve(fv.size());
       for (float f : fv) out.push_back(static_cast<double>(f));
       return out;

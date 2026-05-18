@@ -1,27 +1,13 @@
 #' @title Project Mass Spec Spectra R6 Class
-#' @description R6 child of `ProjectMassSpec` exposing the spectra-focused Mass
-#'   Spec interface backed by the native C++ spectra facade. Shared raw spectra
-#'   access remains on `ProjectMassSpec` so both `ProjectMassSpecSpectra` and
-#'   `ProjectNonTargetAnalysis` inherit the same base spectra helpers.
-#' @details
-#' This is a public user-facing project class.
-#'
-#' In addition to the methods documented on this page, it inherits shared project
-#' runtime methods such as `run_app()`, `run_workflow()`, `report_quarto()`,
-#' `metadata`, `workflow`, `get_audit()`, and `list_tables()`, plus shared Mass
-#' Spec methods such as `import_files()`, `list_analyses()`, `get_spectra_headers()`,
-#' `get_raw_spectra()`, `get_raw_spectra_tic()`, `get_raw_spectra_bpc()`,
-#' `get_raw_spectra_eic()`, `get_raw_spectra_ms1()`, `get_raw_spectra_ms2()`,
-#' `plot_spectra_tic()`, `plot_spectra_bpc()`, and `plot_spectra_eic()`.
-#'
-#' See `?Project` for shared project/runtime methods and `?ProjectMassSpec` for
-#' inherited shared Mass Spec methods.
-#'
-#' Use `?ProjectMassSpecSpectra` as the main entry point for the spectra-specific
-#' interface on top of those base classes.
-#' @param db Path to the project DuckDB file.
-#' @param project_id Active project identifier.
-#' @export
+#' @description R6 child of `ProjectMassSpec` exposing the spectra-focused MassSpec interface.
+ #' @template arg-db-path
+ #' @template arg-project-id
+ #' @template arg-file-paths
+ #' @template arg-analyses
+ #' @template arg-replicates
+ #' @template arg-blanks
+ #' @template arg-ellipsis
+ #' @export
 ProjectMassSpecSpectra <- R6::R6Class(
   classname = "ProjectMassSpecSpectra",
   inherit = ProjectMassSpec,
@@ -31,17 +17,36 @@ ProjectMassSpecSpectra <- R6::R6Class(
   ),
   public = list(
     #' @description Create a spectra-specific Mass Spec project wrapper.
-    #' @param db Path to the DuckDB project file.
-    #' @param project_id Active project identifier.
-    #' @param .ptr Existing native project pointer for internal use.
-    #' @param .mass_spec_ptr Existing native shared Mass Spec pointer for internal use.
-    #' @param .mass_spec_spectra_ptr Existing native spectra pointer for internal use.
-    initialize = function(db, project_id, .ptr = NULL, .mass_spec_ptr = NULL, .mass_spec_spectra_ptr = NULL) {
-      super$initialize(db = db, project_id = project_id, .ptr = .ptr, .mass_spec_ptr = .mass_spec_ptr)
+    initialize = function(db,
+                          project_id,
+                          ...,
+                          file_paths = character(),
+                          replicates = character(),
+                          blanks = character()) {
+      dots <- list(...)
+      ptr_res <- .pull_internal_init_arg(dots, ".ptr")
+      .ptr <- ptr_res$value
+      mass_spec_ptr_res <- .pull_internal_init_arg(ptr_res$dots, ".mass_spec_ptr")
+      .mass_spec_ptr <- mass_spec_ptr_res$value
+      spectra_ptr_res <- .pull_internal_init_arg(mass_spec_ptr_res$dots, ".mass_spec_spectra_ptr")
+      .mass_spec_spectra_ptr <- spectra_ptr_res$value
+      .assert_only_internal_init_args(spectra_ptr_res$dots, "ProjectMassSpecSpectra$initialize()")
+      super$initialize(
+        db = db,
+        project_id = project_id,
+        .ptr = .ptr,
+        .mass_spec_ptr = .mass_spec_ptr,
+        file_paths = character(),
+        replicates = character(),
+        blanks = character()
+      )
       private$.mass_spec_spectra_ptr <- if (is.null(.mass_spec_spectra_ptr)) {
-        rcpp_project_mass_spec_spectra_new(self$get_ptr())
+        rcpp_project_mass_spec_spectra_new(self$get_ptr(), file_paths, replicates, blanks)
       } else {
         .mass_spec_spectra_ptr
+      }
+      if (length(file_paths) > 0 && !is.null(.mass_spec_spectra_ptr)) {
+        self$add_analyses(file_paths = file_paths, replicates = replicates, blanks = blanks)
       }
     },
     #' @description Return the native spectra pointer.
@@ -49,12 +54,10 @@ ProjectMassSpecSpectra <- R6::R6Class(
       private$.mass_spec_spectra_ptr
     },
     #' @description Return spectra-project processing-step metadata.
-    #' @return A named list of `ProcessingStep` metadata objects.
     available_processing_methods = function() {
       list()
     },
     #' @description Print a short summary.
-    #' @param ... Additional arguments ignored.
     print = function(...) {
       cat("\nProjectMassSpecSpectra\n")
       cat("db: ", self$db, "\n", sep = "")
@@ -63,16 +66,52 @@ ProjectMassSpecSpectra <- R6::R6Class(
       if (!inherits(domain, "try-error") && !is.null(domain)) {
         cat("domain: ", domain, "\n", sep = "")
       }
-      analyses <- try(self$list_analyses(), silent = TRUE)
+      analyses <- try(self$get_analyses(), silent = TRUE)
       if (!inherits(analyses, "try-error")) {
         cat("analyses: ", nrow(analyses), "\n", sep = "")
       }
       invisible(self)
     },
     #' @description Show a short summary.
-    #' @param ... Additional arguments ignored.
     show = function(...) {
       self$print(...)
     }
   )
 )
+
+#' @name ProjectMassSpecSpectraS3
+#' @title ProjectMassSpecSpectra S3 Methods
+#' @description S3 interface methods for `ProjectMassSpecSpectra`.
+#' These methods are thin wrappers over the `ProjectMassSpecSpectra` R6
+#' methods and expose the spectra-specific package generics.
+#' @param x A `ProjectMassSpecSpectra` object.
+#' @template arg-ellipsis
+NULL
+
+#' @describeIn ProjectMassSpecSpectraS3 Return the native spectra pointer.
+#' @export
+get_mass_spec_spectra_ptr.ProjectMassSpecSpectra <- function(x) {
+  checkmate::assert_class(x, "ProjectMassSpecSpectra")
+  x$get_mass_spec_spectra_ptr()
+}
+
+#' @describeIn ProjectMassSpecSpectraS3 Return spectra processing methods.
+#' @export
+available_processing_methods.ProjectMassSpecSpectra <- function(x) {
+  checkmate::assert_class(x, "ProjectMassSpecSpectra")
+  x$available_processing_methods()
+}
+
+#' @describeIn ProjectMassSpecSpectraS3 Print a short summary.
+#' @export
+print.ProjectMassSpecSpectra <- function(x, ...) {
+  checkmate::assert_class(x, "ProjectMassSpecSpectra")
+  x$print(...)
+}
+
+#' @describeIn ProjectMassSpecSpectraS3 Show a short summary.
+#' @export
+show.ProjectMassSpecSpectra <- function(x, ...) {
+  checkmate::assert_class(x, "ProjectMassSpecSpectra")
+  x$show(...)
+}

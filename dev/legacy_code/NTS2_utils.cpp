@@ -34,7 +34,7 @@ void NTS2::NTS_DATA::find_features(
   for (float test_mz : {100.0f, 200.0f, 400.0f, 600.0f, 1000.0f})
   {
     float mzThreshold = SF_UTILITY::calculate_mz_threshold_linear(test_mz, slope, intercept);
-    Rcpp::Rcout << "  m/z " << std::fixed << std::setprecision(1) << test_mz 
+    Rcpp::Rcout << "  m/z " << std::fixed << std::setprecision(1) << test_mz
                 << " -> threshold " << std::fixed << std::setprecision(6) << mzThreshold << " Da" << std::endl;
   }
 
@@ -75,7 +75,7 @@ void NTS2::NTS_DATA::find_features(
     }
 
     sc::MS_FILE ana(files[a]);
-    
+
     // Separate data by polarity
     std::vector<float> spec_pos_rt, spec_pos_mz, spec_pos_intensity, spec_pos_noise;
     std::vector<float> spec_neg_rt, spec_neg_mz, spec_neg_intensity, spec_neg_noise;
@@ -134,16 +134,16 @@ void NTS2::NTS_DATA::find_features(
     Rcpp::Rcout << "      Polarity distribution: " << pos_count << " positive, " << neg_count << " negative spectra" << std::endl;
 
     // Show denoising statistics
-    float denoising_efficiency = total_raw_points > 0 ? 
+    float denoising_efficiency = total_raw_points > 0 ?
         (1.0f - static_cast<float>(total_clean_points) / static_cast<float>(total_raw_points)) * 100.0f : 0.0f;
-    
-    Rcpp::Rcout << "      Denoising stats: " << total_raw_points << " -> " << total_clean_points 
-                << " points (" << std::fixed << std::setprecision(1) << denoising_efficiency 
+
+    Rcpp::Rcout << "      Denoising stats: " << total_raw_points << " -> " << total_clean_points
+                << " points (" << std::fixed << std::setprecision(1) << denoising_efficiency
                 << "% noise removed, base_quantile=" << base_quantile << ")" << std::endl;
 
     // Process positive and negative polarities separately
     std::vector<FEATURE> pos_features, neg_features;
-    
+
     // Process positive polarity
     if (spec_pos_rt.size() > 0) {
       Rcpp::Rcout << "  2a/5 Clustering " << spec_pos_rt.size() << " positive polarity traces by m/z" << std::endl;
@@ -160,16 +160,16 @@ void NTS2::NTS_DATA::find_features(
 
       Rcpp::Rcout << "  3a/5 Detecting peaks in " << pos_number_clusters << " positive m/z clusters" << std::endl;
       pos_features = SF_UTILITY::process_polarity_clusters(
-        pos_clust_rt, pos_clust_mz, pos_clust_intensity, 
+        pos_clust_rt, pos_clust_mz, pos_clust_intensity,
         pos_clust_noise, pos_clust_cluster, pos_number_clusters,
         +1, "[M+H]+", -1.007276f, // positive: subtract proton
-        minTraces, minSNR, baselineWindow, maxWidth, 
+        minTraces, minSNR, baselineWindow, maxWidth,
         analyses[a],
         debug_mz
       );
     }
 
-    // Process negative polarity  
+    // Process negative polarity
     if (spec_neg_rt.size() > 0) {
       Rcpp::Rcout << "  2b/5 Clustering " << spec_neg_rt.size() << " negative polarity traces by m/z" << std::endl;
       std::vector<float> neg_clust_rt, neg_clust_mz, neg_clust_intensity, neg_clust_noise;
@@ -185,10 +185,10 @@ void NTS2::NTS_DATA::find_features(
 
       Rcpp::Rcout << "  3b/5 Detecting peaks in " << neg_number_clusters << " negative m/z clusters" << std::endl;
       neg_features = SF_UTILITY::process_polarity_clusters(
-        neg_clust_rt, neg_clust_mz, neg_clust_intensity, 
+        neg_clust_rt, neg_clust_mz, neg_clust_intensity,
         neg_clust_noise, neg_clust_cluster, neg_number_clusters,
-        -1, "[M-H]-", 1.007276f, // negative: add proton  
-        minTraces, minSNR, baselineWindow, maxWidth, 
+        -1, "[M-H]-", 1.007276f, // negative: add proton
+        minTraces, minSNR, baselineWindow, maxWidth,
         analyses[a],
         debug_mz
       );
@@ -200,7 +200,7 @@ void NTS2::NTS_DATA::find_features(
     all_features.insert(all_features.end(), pos_features.begin(), pos_features.end());
     all_features.insert(all_features.end(), neg_features.begin(), neg_features.end());
 
-    Rcpp::Rcout << "  4/5 Found " << all_features.size() << " total features (" 
+    Rcpp::Rcout << "  4/5 Found " << all_features.size() << " total features ("
                 << pos_features.size() << " positive, " << neg_features.size() << " negative)" << std::endl;
 
 

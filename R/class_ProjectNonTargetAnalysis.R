@@ -1,479 +1,44 @@
-#' @noRd
-.project_non_target_analysis_processing_methods <- function() {
-  owner <- "ProjectNonTargetAnalysis"
-  methods <- list(
-    find_features = .make_project_processing_step(
-      method = "find_features",
-      required = NA_character_,
-      owner_class = owner,
-      parameters = list(
-        rtWindows = data.frame(rtmin = numeric(), rtmax = numeric()),
-        ppmThreshold = 15,
-        noiseThreshold = 250,
-        minSNR = 3,
-        minTraces = 3,
-        baselineWindow = 200,
-        maxWidth = 100,
-        baseQuantile = 0.1,
-        debugAnalysis = "",
-        debugMZ = 0,
-        debugSpecIdx = -1L
-      ),
-      parameter_docs = list(
-        analyses = .make_processing_parameter_doc("Analyses selection to process.", "character"),
-        rtWindows = .make_processing_parameter_doc("Data frame with 'rtmin' and 'rtmax' columns.", "data.frame", TRUE),
-        ppmThreshold = .make_processing_parameter_doc("Mass error threshold in ppm.", "numeric", TRUE),
-        noiseThreshold = .make_processing_parameter_doc("Minimum intensity threshold for denoising.", "numeric", TRUE),
-        minSNR = .make_processing_parameter_doc("Minimum signal-to-noise ratio.", "numeric", TRUE),
-        minTraces = .make_processing_parameter_doc("Minimum number of traces for a candidate feature.", "integer", TRUE),
-        baselineWindow = .make_processing_parameter_doc("Baseline estimation window.", "numeric", TRUE),
-        maxWidth = .make_processing_parameter_doc("Maximum expected peak width.", "numeric", TRUE),
-        baseQuantile = .make_processing_parameter_doc("Baseline quantile.", "numeric", TRUE),
-        debugAnalysis = .make_processing_parameter_doc("Optional analysis name to debug.", "character"),
-        debugMZ = .make_processing_parameter_doc("Optional m/z value to debug.", "numeric"),
-        debugSpecIdx = .make_processing_parameter_doc("Optional spectrum index to debug.", "integer")
-      ),
-      algorithm = "native",
-      title = "Find Features",
-      description = "Run project-owned feature detection using shared Mass Spec tables.",
-      details = "Native StreamFind feature finding over the active project analyses. Results are persisted into shared NTS feature tables for the owning project."
-    ),
-    load_features_ms1 = .make_project_processing_step(
-      method = "load_features_ms1",
-      required = "find_features",
-      owner_class = owner,
-      parameters = list(
-        rtWindow = c(-2, 2),
-        mzWindow = c(-1, 6),
-        mzClust = 0.005,
-        presence = 0.8,
-        minIntensity = 250,
-        filtered = FALSE
-      ),
-      parameter_docs = list(
-        analyses = .make_processing_parameter_doc("Analyses selection to process.", "character"),
-        rtWindow = .make_processing_parameter_doc("Numeric length-2 vector of RT offsets.", "numeric", TRUE),
-        mzWindow = .make_processing_parameter_doc("Numeric length-2 vector of m/z offsets.", "numeric", TRUE),
-        mzClust = .make_processing_parameter_doc("Clustering tolerance.", "numeric", TRUE),
-        presence = .make_processing_parameter_doc("Minimum cluster presence fraction.", "numeric", TRUE),
-        minIntensity = .make_processing_parameter_doc("Minimum trace intensity.", "numeric", TRUE),
-        filtered = .make_processing_parameter_doc("Include filtered features when TRUE.", "logical", TRUE)
-      ),
-      algorithm = "native",
-      title = "Load Features MS1",
-      description = "Load MS1 traces into shared project features.",
-      details = "Loads MS1 trace summaries for existing project features and updates the shared NTS feature store."
-    ),
-    load_features_ms2 = .make_project_processing_step(
-      method = "load_features_ms2",
-      required = "find_features",
-      owner_class = owner,
-      parameters = list(
-        isolationWindow = 1.3,
-        mzClust = 0.005,
-        presence = 0.8,
-        minIntensity = 10,
-        filtered = FALSE
-      ),
-      parameter_docs = list(
-        analyses = .make_processing_parameter_doc("Analyses selection to process.", "character"),
-        isolationWindow = .make_processing_parameter_doc("Precursor isolation window.", "numeric", TRUE),
-        mzClust = .make_processing_parameter_doc("Clustering tolerance.", "numeric", TRUE),
-        presence = .make_processing_parameter_doc("Minimum cluster presence fraction.", "numeric", TRUE),
-        minIntensity = .make_processing_parameter_doc("Minimum trace intensity.", "numeric", TRUE),
-        filtered = .make_processing_parameter_doc("Include filtered features when TRUE.", "logical", TRUE)
-      ),
-      algorithm = "native",
-      title = "Load Features MS2",
-      description = "Load MS2 spectra into shared project features.",
-      details = "Loads MS2 summaries for existing project features and updates the shared NTS feature store."
-    ),
-    create_components = .make_project_processing_step(
-      method = "create_components",
-      required = "find_features",
-      owner_class = owner,
-      parameters = list(
-        rtWindow = c(0, 0),
-        minCorrelation = 0.8,
-        debugRT = 0,
-        debugAnalysis = ""
-      ),
-      parameter_docs = list(
-        analyses = .make_processing_parameter_doc("Analyses selection to process.", "character"),
-        rtWindow = .make_processing_parameter_doc("Numeric length-2 vector of RT offsets.", "numeric", TRUE),
-        minCorrelation = .make_processing_parameter_doc("Minimum EIC correlation.", "numeric", TRUE),
-        debugRT = .make_processing_parameter_doc("Optional debug RT.", "numeric"),
-        debugAnalysis = .make_processing_parameter_doc("Optional analysis name to debug.", "character")
-      ),
-      algorithm = "native",
-      title = "Create Components",
-      description = "Create feature components and update shared NTS features.",
-      details = "Clusters related features into components using shared project feature state."
-    ),
-    annotate_components = .make_project_processing_step(
-      method = "annotate_components",
-      required = "create_components",
-      owner_class = owner,
-      parameters = list(
-        maxIsotopes = 5L,
-        maxCharge = 1L,
-        maxGaps = 1L,
-        ppm = 10,
-        debugComponent = "",
-        debugAnalysis = ""
-      ),
-      parameter_docs = list(
-        analyses = .make_processing_parameter_doc("Analyses selection to process.", "character"),
-        maxIsotopes = .make_processing_parameter_doc("Maximum isotope count.", "integer", TRUE),
-        maxCharge = .make_processing_parameter_doc("Maximum charge state.", "integer", TRUE),
-        maxGaps = .make_processing_parameter_doc("Maximum isotope gaps.", "integer", TRUE),
-        ppm = .make_processing_parameter_doc("Mass tolerance in ppm.", "numeric", TRUE),
-        debugComponent = .make_processing_parameter_doc("Optional component id to debug.", "character"),
-        debugAnalysis = .make_processing_parameter_doc("Optional analysis name to debug.", "character")
-      ),
-      algorithm = "native",
-      title = "Annotate Components",
-      description = "Annotate components with isotope, adduct, and fragment relationships.",
-      details = "Runs native component annotation against shared project feature data and persists the resulting annotations."
-    ),
-    group_features = .make_project_processing_step(
-      method = "group_features",
-      required = "find_features",
-      owner_class = owner,
-      parameters = list(
-        method = "internal_standards",
-        rtDeviation = 5,
-        ppm = 10,
-        minSamples = 1L,
-        binSize = 5,
-        filtered = FALSE,
-        debug = FALSE,
-        debugRT = 0
-      ),
-      parameter_docs = list(
-        analyses = .make_processing_parameter_doc("Analyses selection to process.", "character"),
-        method = .make_processing_parameter_doc("Alignment method.", "character", TRUE),
-        rtDeviation = .make_processing_parameter_doc("RT tolerance.", "numeric", TRUE),
-        ppm = .make_processing_parameter_doc("Mass tolerance in ppm.", "numeric", TRUE),
-        minSamples = .make_processing_parameter_doc("Minimum sample count.", "integer", TRUE),
-        binSize = .make_processing_parameter_doc("RT bin size.", "numeric", TRUE),
-        filtered = .make_processing_parameter_doc("Include filtered features when TRUE.", "logical", TRUE),
-        debug = .make_processing_parameter_doc("Enable native debug output.", "logical", TRUE),
-        debugRT = .make_processing_parameter_doc("Optional debug RT.", "numeric")
-      ),
-      algorithm = "native",
-      title = "Group Features",
-      description = "Group features across analyses and update shared NTS features.",
-      details = "Assigns feature groups across analyses using the configured alignment strategy."
-    ),
-    fill_features = .make_project_processing_step(
-      method = "fill_features",
-      required = c("find_features", "group_features"),
-      owner_class = owner,
-      parameters = list(
-        withinReplicate = FALSE,
-        filtered = FALSE,
-        rtExpand = 10,
-        mzExpand = 0.01,
-        maxPeakWidth = 30,
-        minTracesIntensity = 1000,
-        minNumberTraces = 5L,
-        minIntensity = 5000,
-        rtApexDeviation = 5,
-        minSignalToNoiseRatio = 3,
-        minGaussianFit = 0.2,
-        debugFG = ""
-      ),
-      parameter_docs = list(
-        analyses = .make_processing_parameter_doc("Analyses selection to process.", "character"),
-        withinReplicate = .make_processing_parameter_doc("Fill only within replicate when TRUE.", "logical", TRUE),
-        filtered = .make_processing_parameter_doc("Include filtered features when TRUE.", "logical", TRUE),
-        rtExpand = .make_processing_parameter_doc("RT expansion.", "numeric", TRUE),
-        mzExpand = .make_processing_parameter_doc("m/z expansion.", "numeric", TRUE),
-        maxPeakWidth = .make_processing_parameter_doc("Maximum peak width.", "numeric", TRUE),
-        minTracesIntensity = .make_processing_parameter_doc("Minimum trace intensity.", "numeric", TRUE),
-        minNumberTraces = .make_processing_parameter_doc("Minimum number of traces.", "integer", TRUE),
-        minIntensity = .make_processing_parameter_doc("Minimum feature intensity.", "numeric", TRUE),
-        rtApexDeviation = .make_processing_parameter_doc("RT apex deviation.", "numeric", TRUE),
-        minSignalToNoiseRatio = .make_processing_parameter_doc("Minimum signal-to-noise ratio.", "numeric", TRUE),
-        minGaussianFit = .make_processing_parameter_doc("Minimum Gaussian fit.", "numeric", TRUE),
-        debugFG = .make_processing_parameter_doc("Optional feature-group id to debug.", "character")
-      ),
-      algorithm = "native",
-      title = "Fill Features",
-      description = "Fill grouped feature gaps and update shared NTS features.",
-      details = "Expands grouped features to fill missing measurements using the shared project feature tables."
-    ),
-    blank_subtraction = .make_project_processing_step(
-      method = "blank_subtraction",
-      required = "find_features",
-      owner_class = owner,
-      parameters = list(
-        blankThreshold = 5,
-        rtExpand = 10,
-        mzExpand = 0.005
-      ),
-      parameter_docs = list(
-        analyses = .make_processing_parameter_doc("Analyses selection to process.", "character"),
-        blankThreshold = .make_processing_parameter_doc("Blank threshold.", "numeric", TRUE),
-        rtExpand = .make_processing_parameter_doc("RT expansion.", "numeric", TRUE),
-        mzExpand = .make_processing_parameter_doc("m/z expansion.", "numeric", TRUE)
-      ),
-      algorithm = "native",
-      title = "Blank Subtraction",
-      description = "Apply blank subtraction and update shared NTS features.",
-      details = "Removes features associated with blank samples using configured RT and m/z expansion rules."
-    ),
-    filter_features = .make_project_processing_step(
-      method = "filter_features",
-      required = "find_features",
-      owner_class = owner,
-      parameters = list(
-        minSN = NA_real_, minIntensity = NA_real_, minArea = NA_real_, minWidth = NA_real_, maxWidth = NA_real_,
-        maxPPM = NA_real_, minFwhmRT = NA_real_, maxFwhmRT = NA_real_, minFwhmMZ = NA_real_, maxFwhmMZ = NA_real_,
-        minGaussianA = NA_real_, minGaussianMu = NA_real_, maxGaussianMu = NA_real_, minGaussianSigma = NA_real_,
-        maxGaussianSigma = NA_real_, minGaussianR2 = NA_real_, maxJaggedness = NA_real_, minSharpness = NA_real_,
-        minAsymmetry = NA_real_, maxAsymmetry = NA_real_, maxModality = NA_integer_, minPlates = NA_real_, onlyFilled = NA,
-        removeFilled = FALSE, minSizeEIC = NA_integer_, minSizeMS1 = NA_integer_, minSizeMS2 = NA_integer_,
-        minRelPresenceReplicate = NA_real_, removeIsotopes = FALSE, removeAdducts = FALSE, removeLosses = FALSE
-      ),
-      parameter_docs = list(
-        analyses = .make_processing_parameter_doc("Analyses selection to process.", "character"),
-        minSN = .make_processing_parameter_doc("Minimum signal-to-noise ratio.", "numeric"),
-        minIntensity = .make_processing_parameter_doc("Minimum intensity.", "numeric"),
-        minArea = .make_processing_parameter_doc("Minimum peak area.", "numeric"),
-        minWidth = .make_processing_parameter_doc("Minimum peak width.", "numeric"),
-        maxWidth = .make_processing_parameter_doc("Maximum peak width.", "numeric"),
-        maxPPM = .make_processing_parameter_doc("Maximum ppm error.", "numeric"),
-        minFwhmRT = .make_processing_parameter_doc("Minimum FWHM in RT.", "numeric"),
-        maxFwhmRT = .make_processing_parameter_doc("Maximum FWHM in RT.", "numeric"),
-        minFwhmMZ = .make_processing_parameter_doc("Minimum FWHM in m/z.", "numeric"),
-        maxFwhmMZ = .make_processing_parameter_doc("Maximum FWHM in m/z.", "numeric"),
-        minGaussianA = .make_processing_parameter_doc("Minimum Gaussian amplitude.", "numeric"),
-        minGaussianMu = .make_processing_parameter_doc("Minimum Gaussian mean.", "numeric"),
-        maxGaussianMu = .make_processing_parameter_doc("Maximum Gaussian mean.", "numeric"),
-        minGaussianSigma = .make_processing_parameter_doc("Minimum Gaussian sigma.", "numeric"),
-        maxGaussianSigma = .make_processing_parameter_doc("Maximum Gaussian sigma.", "numeric"),
-        minGaussianR2 = .make_processing_parameter_doc("Minimum Gaussian fit.", "numeric"),
-        maxJaggedness = .make_processing_parameter_doc("Maximum jaggedness.", "numeric"),
-        minSharpness = .make_processing_parameter_doc("Minimum sharpness.", "numeric"),
-        minAsymmetry = .make_processing_parameter_doc("Minimum asymmetry.", "numeric"),
-        maxAsymmetry = .make_processing_parameter_doc("Maximum asymmetry.", "numeric"),
-        maxModality = .make_processing_parameter_doc("Maximum modality.", "integer"),
-        minPlates = .make_processing_parameter_doc("Minimum plates.", "numeric"),
-        onlyFilled = .make_processing_parameter_doc("Logical or NA selection for filled features.", "logical"),
-        removeFilled = .make_processing_parameter_doc("Remove filled features when TRUE.", "logical", TRUE),
-        minSizeEIC = .make_processing_parameter_doc("Minimum EIC size.", "integer"),
-        minSizeMS1 = .make_processing_parameter_doc("Minimum MS1 size.", "integer"),
-        minSizeMS2 = .make_processing_parameter_doc("Minimum MS2 size.", "integer"),
-        minRelPresenceReplicate = .make_processing_parameter_doc("Minimum replicate presence.", "numeric"),
-        removeIsotopes = .make_processing_parameter_doc("Remove isotope annotations when TRUE.", "logical", TRUE),
-        removeAdducts = .make_processing_parameter_doc("Remove adduct annotations when TRUE.", "logical", TRUE),
-        removeLosses = .make_processing_parameter_doc("Remove loss annotations when TRUE.", "logical", TRUE)
-      ),
-      algorithm = "native",
-      title = "Filter Features",
-      description = "Filter shared project features and update NTS features.",
-      details = "Applies feature-level filtering thresholds and annotation-based exclusion rules to the shared NTS feature table.",
-      number_permitted = Inf
-    ),
-    filter_features_ms2 = .make_project_processing_step(
-      method = "filter_features_ms2",
-      required = "load_features_ms2",
-      owner_class = owner,
-      parameters = list(
-        top = 0L, minIntensity = NA_real_, relMinIntensity = NA_real_, blankClean = FALSE,
-        mzClust = 0.005, blankPresenceThreshold = 0.8, globalPresenceThreshold = 0.1
-      ),
-      parameter_docs = list(
-        analyses = .make_processing_parameter_doc("Analyses selection to process.", "character"),
-        top = .make_processing_parameter_doc("Maximum number of peaks to keep.", "integer", TRUE),
-        minIntensity = .make_processing_parameter_doc("Minimum absolute peak intensity.", "numeric"),
-        relMinIntensity = .make_processing_parameter_doc("Minimum relative peak intensity.", "numeric"),
-        blankClean = .make_processing_parameter_doc("Remove blank-associated MS2 peaks when TRUE.", "logical", TRUE),
-        mzClust = .make_processing_parameter_doc("m/z clustering tolerance.", "numeric", TRUE),
-        blankPresenceThreshold = .make_processing_parameter_doc("Blank presence threshold.", "numeric", TRUE),
-        globalPresenceThreshold = .make_processing_parameter_doc("Global presence threshold.", "numeric", TRUE)
-      ),
-      algorithm = "native",
-      title = "Filter Features MS2",
-      description = "Filter MS2 spectra stored on shared project features.",
-      details = "Cleans and reduces feature-linked MS2 spectra using intensity and blank-presence criteria.",
-      number_permitted = Inf
-    ),
-    suspect_screening = .make_project_processing_step(
-      method = "suspect_screening",
-      required = "find_features",
-      owner_class = owner,
-      parameters = list(
-        suspects = data.frame(), ppm = 5, sec = 10, ppmMS2 = 10, mzrMS2 = 0.008,
-        minCosineSimilarity = 0.7, minSharedFragments = 3L, filtered = FALSE
-      ),
-      parameter_docs = list(
-        analyses = .make_processing_parameter_doc("Analyses selection to process.", "character"),
-        suspects = .make_processing_parameter_doc("Data frame with suspect information.", "data.frame", TRUE),
-        ppm = .make_processing_parameter_doc("Mass tolerance in ppm.", "numeric", TRUE),
-        sec = .make_processing_parameter_doc("Retention time tolerance in seconds.", "numeric", TRUE),
-        ppmMS2 = .make_processing_parameter_doc("MS2 fragment mass tolerance in ppm.", "numeric", TRUE),
-        mzrMS2 = .make_processing_parameter_doc("Minimum absolute MS2 fragment tolerance.", "numeric", TRUE),
-        minCosineSimilarity = .make_processing_parameter_doc("Minimum cosine similarity threshold.", "numeric", TRUE),
-        minSharedFragments = .make_processing_parameter_doc("Minimum number of shared fragments.", "integer", TRUE),
-        filtered = .make_processing_parameter_doc("Include filtered features when TRUE.", "logical", TRUE)
-      ),
-      algorithm = "native",
-      title = "Suspect Screening",
-      description = "Run project-owned suspect screening and persist shared suspect tables.",
-      details = "Matches supplied suspect metadata against project features and stores results in shared NTS suspect tables."
-    ),
-    metfrag_screening = .make_project_processing_step(
-      method = "metfrag_screening",
-      required = c("find_features", "load_features_ms1", "load_features_ms2"),
-      owner_class = owner,
-      parameters = list(
-        metfrag_path = "", database_type = "LocalCSV", database_path = "", ppm = 5, sec = 10,
-        ppmMS2 = 10, mzrMS2 = 0.008, top_n = 1L, filtered = FALSE, java_path = "java",
-        run_dir = "", debug = FALSE, extra_params = list()
-      ),
-      parameter_docs = list(
-        analyses = .make_processing_parameter_doc("Analyses selection to process.", "character"),
-        metfrag_path = .make_processing_parameter_doc("Path to the MetFrag executable or jar wrapper.", "character", TRUE),
-        database_type = .make_processing_parameter_doc("Database type string.", "character", TRUE),
-        database_path = .make_processing_parameter_doc("Optional MetFrag database path.", "character"),
-        ppm = .make_processing_parameter_doc("Precursor mass tolerance in ppm.", "numeric", TRUE),
-        sec = .make_processing_parameter_doc("Retention time tolerance in seconds.", "numeric", TRUE),
-        ppmMS2 = .make_processing_parameter_doc("MS2 tolerance in ppm.", "numeric", TRUE),
-        mzrMS2 = .make_processing_parameter_doc("Absolute MS2 tolerance.", "numeric", TRUE),
-        top_n = .make_processing_parameter_doc("Number of candidates per feature.", "integer", TRUE),
-        filtered = .make_processing_parameter_doc("Include filtered features when TRUE.", "logical", TRUE),
-        java_path = .make_processing_parameter_doc("Path to the Java executable.", "character", TRUE),
-        run_dir = .make_processing_parameter_doc("Optional MetFrag run directory.", "character"),
-        debug = .make_processing_parameter_doc("Enable debug mode.", "logical", TRUE),
-        extra_params = .make_processing_parameter_doc("Named list of additional MetFrag parameters.", "list")
-      ),
-      algorithm = "metfrag",
-      title = "MetFrag Screening",
-      description = "Run project-owned MetFrag screening and update shared suspect tables.",
-      details = "Executes MetFrag-based suspect screening against project feature data and persists matched candidates."
-    ),
-    find_internal_standards = .make_project_processing_step(
-      method = "find_internal_standards",
-      required = "find_features",
-      owner_class = owner,
-      parameters = list(
-        suspects = data.frame(), ppm = 5, sec = 10, ppmMS2 = 10, mzrMS2 = 0.008,
-        minCosineSimilarity = 0.7, minSharedFragments = 3L, filtered = TRUE
-      ),
-      parameter_docs = list(
-        analyses = .make_processing_parameter_doc("Analyses selection to process.", "character"),
-        suspects = .make_processing_parameter_doc("Data frame with internal-standard candidate information.", "data.frame", TRUE),
-        ppm = .make_processing_parameter_doc("Mass tolerance in ppm.", "numeric", TRUE),
-        sec = .make_processing_parameter_doc("Retention time tolerance in seconds.", "numeric", TRUE),
-        ppmMS2 = .make_processing_parameter_doc("MS2 fragment mass tolerance in ppm.", "numeric", TRUE),
-        mzrMS2 = .make_processing_parameter_doc("Minimum absolute MS2 fragment tolerance.", "numeric", TRUE),
-        minCosineSimilarity = .make_processing_parameter_doc("Minimum cosine similarity threshold.", "numeric", TRUE),
-        minSharedFragments = .make_processing_parameter_doc("Minimum number of shared fragments.", "integer", TRUE),
-        filtered = .make_processing_parameter_doc("Include filtered features when TRUE.", "logical", TRUE)
-      ),
-      algorithm = "native",
-      title = "Find Internal Standards",
-      description = "Run project-owned internal-standard finding and persist shared internal-standard tables.",
-      details = "Matches candidate internal standards against project features and stores the resulting annotations."
-    ),
-    filter_suspects = .make_project_processing_step(
-      method = "filter_suspects",
-      required = "suspect_screening",
-      owner_class = owner,
-      parameters = list(
-        names = character(0), minScore = NA_real_, maxErrorRT = NA_real_, maxErrorMass = NA_real_,
-        idLevels = integer(0), minSharedFragments = 0L, minCosineSimilarity = NA_real_
-      ),
-      parameter_docs = list(
-        analyses = .make_processing_parameter_doc("Analyses selection to process.", "character"),
-        names = .make_processing_parameter_doc("Suspect names to keep.", "character"),
-        minScore = .make_processing_parameter_doc("Minimum score.", "numeric"),
-        maxErrorRT = .make_processing_parameter_doc("Maximum RT error.", "numeric"),
-        maxErrorMass = .make_processing_parameter_doc("Maximum mass error.", "numeric"),
-        idLevels = .make_processing_parameter_doc("Allowed ID levels.", "integer"),
-        minSharedFragments = .make_processing_parameter_doc("Minimum shared fragments.", "integer", TRUE),
-        minCosineSimilarity = .make_processing_parameter_doc("Minimum cosine similarity.", "numeric")
-      ),
-      algorithm = "native",
-      title = "Filter Suspects",
-      description = "Filter shared project suspects and update NTS suspect results.",
-      details = "Applies score, error, and fragment-based filters to existing shared suspect matches.",
-      number_permitted = Inf
-    ),
-    filter_internal_standards = .make_project_processing_step(
-      method = "filter_internal_standards",
-      required = "find_internal_standards",
-      owner_class = owner,
-      parameters = list(
-        names = character(0), minScore = NA_real_, maxErrorRT = NA_real_, maxErrorMass = NA_real_,
-        idLevels = integer(0), minSharedFragments = 0L, minCosineSimilarity = NA_real_
-      ),
-      parameter_docs = list(
-        analyses = .make_processing_parameter_doc("Analyses selection to process.", "character"),
-        names = .make_processing_parameter_doc("Internal-standard names to keep.", "character"),
-        minScore = .make_processing_parameter_doc("Minimum score.", "numeric"),
-        maxErrorRT = .make_processing_parameter_doc("Maximum RT error.", "numeric"),
-        maxErrorMass = .make_processing_parameter_doc("Maximum mass error.", "numeric"),
-        idLevels = .make_processing_parameter_doc("Allowed ID levels.", "integer"),
-        minSharedFragments = .make_processing_parameter_doc("Minimum shared fragments.", "integer", TRUE),
-        minCosineSimilarity = .make_processing_parameter_doc("Minimum cosine similarity.", "numeric")
-      ),
-      algorithm = "native",
-      title = "Filter Internal Standards",
-      description = "Filter shared project internal standards and update results.",
-      details = "Applies score, error, and fragment-based filters to existing shared internal-standard matches.",
-      number_permitted = Inf
-    ),
-    assign_transformation_products = .make_project_processing_step(
-      method = "assign_transformation_products",
-      required = "suspect_screening",
-      owner_class = owner,
-      parameters = list(
-        transformation_products = data.frame(), chromatographic_phase = "reverse_phase", mzrMS2 = 0.008
-      ),
-      parameter_docs = list(
-        transformation_products = .make_processing_parameter_doc("Data frame with transformation-product definitions.", "data.frame", TRUE),
-        chromatographic_phase = .make_processing_parameter_doc("Chromatographic phase for RT plausibility.", "character", TRUE),
-        mzrMS2 = .make_processing_parameter_doc("Absolute MS2 tolerance.", "numeric", TRUE)
-      ),
-      algorithm = "native",
-      title = "Assign Transformation Products",
-      description = "Assign transformation products and update shared transformation-product tables.",
-      details = "Links transformation-product definitions to existing suspect annotations and persists the resulting network in the shared project DB."
-    )
-  )
-  methods
-}
-
 #' @title Project Non-Target Analysis R6 Class
-#' @description R6 child of `ProjectMassSpec` that anchors NTS-specific schema and
-#'   NTS processing/query methods in the shared project DuckDB.
-#' @details
-#' This is a public user-facing project class.
-#'
-#' `ProjectNonTargetAnalysis` includes all NTS-specific methods documented on this
-#' page and also inherits shared project/runtime methods such as `run_app()`,
-#' `run_workflow()`, `report_quarto()`, `metadata`, `workflow`, `get_audit()`,
-#' `list_tables()`, `validate()`, and `get_domain()`.
-#'
-#' It also inherits shared Mass Spec methods such as `import_files()`,
-#' `list_analyses()`, `get_analysis_names()`, `get_replicate_names()`,
-#' `set_replicate_names()`, `get_blank_names()`, `set_blank_names()`,
-#' `get_concentrations()`, `set_concentrations()`, `get_spectra_headers()`,
-#' `get_raw_spectra()`, `get_raw_spectra_tic()`, `get_raw_spectra_bpc()`,
-#' `get_raw_spectra_eic()`, `get_raw_spectra_ms1()`, `get_raw_spectra_ms2()`,
-#' `plot_spectra_tic()`, `plot_spectra_bpc()`, and `plot_spectra_eic()`.
-#'
-#' See `?Project` for shared project/runtime methods and `?ProjectMassSpec` for
-#' inherited shared Mass Spec methods.
-#'
-#' Use `?ProjectNonTargetAnalysis` as the main entry point for the NTS-specific
-#' interface on top of those base classes.
-#' @param db Path to the project DuckDB file.
-#' @param project_id Active project identifier.
+#' @description R6 child of `ProjectMassSpec` exposing the non-target analysis-focused NTS interface.
+#' @template arg-db-path
+#' @template arg-project-id
+#' @template arg-ptr
+#' @template arg-mass-spec-ptr
+#' @template arg-analyses
+#' @template arg-ms-features
+#' @template arg-ms-groups
+#' @template arg-ms-components
+#' @template arg-ms-mass
+#' @template arg-ms-mz
+#' @template arg-ms-rt
+#' @template arg-ms-mobility
+#' @template arg-ms-ppm
+#' @template arg-ms-sec
+#' @template arg-ms-millisec
+#' @template arg-parents
+#' @template arg-ms-filtered
+#' @template arg-plot-groupBy
+#' @template arg-normalized
+#' @template arg-yLab
+#' @template arg-title
+#' @template arg-interactive
+#' @template arg-showLegend
+#' @template arg-labs
+#' @template arg-showHoverText
+#' @template arg-showDetails
+#' @template arg-showText
+#' @template arg-globalNormalization
+#' @template arg-ms-correctIntensity
+#' @template arg-showMS2
+#' @template arg-showIntensityProfile
+#' @template arg-replicatesIn
+#' @template arg-replicatesOut
+#' @template arg-constantThreshold
+#' @template arg-eliminationThreshold
+#' @template arg-fillZerosWithLowerLimit
+#' @template arg-lowerLimit
+#' @template arg-ellipsis
+#' @keywords internal
 #' @export
 ProjectNonTargetAnalysis <- R6::R6Class(
   classname = "ProjectNonTargetAnalysis",
@@ -561,12 +126,15 @@ ProjectNonTargetAnalysis <- R6::R6Class(
   ),
   public = list(
     #' @description Create an NTS domain wrapper on top of a shared Mass Spec project.
-    #' @param db Path to the DuckDB project file.
-    #' @param project_id Active project identifier.
-    #' @param .ptr Existing native project pointer for internal use.
-    #' @param .mass_spec_ptr Existing native Mass Spec pointer for internal use.
-    #' @param .nts_ptr Existing native NTS pointer for internal use.
-    initialize = function(db, project_id, .ptr = NULL, .mass_spec_ptr = NULL, .nts_ptr = NULL) {
+    initialize = function(db, project_id, ...) {
+      dots <- list(...)
+      ptr_res <- .pull_internal_init_arg(dots, ".ptr")
+      .ptr <- ptr_res$value
+      mass_spec_ptr_res <- .pull_internal_init_arg(ptr_res$dots, ".mass_spec_ptr")
+      .mass_spec_ptr <- mass_spec_ptr_res$value
+      nts_ptr_res <- .pull_internal_init_arg(mass_spec_ptr_res$dots, ".nts_ptr")
+      .nts_ptr <- nts_ptr_res$value
+      .assert_only_internal_init_args(nts_ptr_res$dots, "ProjectNonTargetAnalysis$initialize()")
       super$initialize(db = db, project_id = project_id, .ptr = .ptr, .mass_spec_ptr = .mass_spec_ptr)
       private$.nts_ptr <- if (is.null(.nts_ptr)) {
         rcpp_project_non_target_analysis_new(self$get_ptr())
@@ -581,665 +149,9 @@ ProjectNonTargetAnalysis <- R6::R6Class(
     #' @description Return project-owned NTS processing-step metadata.
     #' @return A named list of `ProcessingStep` metadata objects.
     available_processing_methods = function() {
-      .project_non_target_analysis_processing_methods()
-    },
-#' @description Run project-owned feature detection using shared Mass Spec tables.
-#' @return Logical `TRUE` when execution completes. Use `get_features()` to read persisted results.
-#' @template arg-analyses
-    #' @param rtWindows Data frame with `rtmin` and `rtmax` columns.
-    #' @param ppmThreshold Numeric mass error threshold in ppm.
-    #' @param noiseThreshold Numeric minimum intensity threshold for denoising.
-    #' @param minSNR Numeric minimum signal-to-noise ratio.
-    #' @param minTraces Integer minimum number of traces for a feature candidate.
-    #' @param baselineWindow Numeric baseline estimation window.
-    #' @param maxWidth Numeric maximum expected peak width.
-    #' @param baseQuantile Numeric baseline quantile.
-    #' @param debugAnalysis Optional analysis name to debug.
-    #' @param debugMZ Optional m/z value to debug.
-    #' @param debugSpecIdx Optional spectrum index to debug.
-    find_features = function(
-        analyses = NULL,
-        rtWindows = data.frame(rtmin = numeric(), rtmax = numeric()),
-        ppmThreshold = 15,
-        noiseThreshold = 250,
-        minSNR = 3,
-        minTraces = 3,
-        baselineWindow = 200,
-        maxWidth = 100,
-        baseQuantile = 0.1,
-        debugAnalysis = "",
-        debugMZ = 0,
-        debugSpecIdx = -1) {
-      selection <- private$.resolve_selected_analyses(analyses)
-      sel_names <- selection$selected
-      if (length(sel_names) == 0) {
-        return(TRUE)
-      }
-      rtWindows <- data.table::as.data.table(rtWindows)
-      if (!all(c("rtmin", "rtmax") %in% colnames(rtWindows))) {
-        stop("rtWindows must contain 'rtmin' and 'rtmax' columns")
-      }
-      rcpp_project_non_target_analysis_find_features(
-        private$.nts_ptr,
-        sel_names,
-        as.numeric(rtWindows$rtmin),
-        as.numeric(rtWindows$rtmax),
-        as.numeric(ppmThreshold),
-        as.numeric(noiseThreshold),
-        as.numeric(minSNR),
-        as.integer(minTraces),
-        as.numeric(baselineWindow),
-        as.numeric(maxWidth),
-        as.numeric(baseQuantile),
-        as.character(debugAnalysis),
-        as.numeric(debugMZ),
-        as.integer(debugSpecIdx)
-      )
-    },
-#' @description Load MS1 traces into shared project features and update `NTS_FEATURES`.
-#' @return Logical `TRUE` when execution completes. Use `get_features()` to read persisted results.
-#' @template arg-analyses
-    #' @param rtWindow Numeric length-2 vector of RT offsets.
-    #' @param mzWindow Numeric length-2 vector of m/z offsets.
-    #' @param mzClust Numeric clustering tolerance.
-    #' @param presence Numeric minimum cluster presence fraction.
-    #' @param minIntensity Numeric minimum trace intensity.
-    #' @param filtered Logical; include filtered features when `TRUE`.
-    load_features_ms1 = function(
-        analyses = NULL,
-        rtWindow = c(-2, 2),
-        mzWindow = c(-1, 6),
-        mzClust = 0.005,
-        presence = 0.8,
-        minIntensity = 250,
-        filtered = FALSE) {
-      selection <- private$.resolve_selected_analyses(analyses)
-      if (length(selection$selected) == 0) {
-        return(TRUE)
-      }
-      rcpp_project_non_target_analysis_load_features_ms1(
-        private$.nts_ptr,
-        selection$selected,
-        as.logical(filtered),
-        as.numeric(rtWindow),
-        as.numeric(mzWindow),
-        as.numeric(minIntensity),
-        as.numeric(mzClust),
-        as.numeric(presence)
-      )
-    },
-#' @description Load MS2 spectra into shared project features and update `NTS_FEATURES`.
-#' @return Logical `TRUE` when execution completes. Use `get_features()` to read persisted results.
-#' @template arg-analyses
-    #' @param isolationWindow Numeric precursor isolation window.
-    #' @param mzClust Numeric clustering tolerance.
-    #' @param presence Numeric minimum cluster presence fraction.
-    #' @param minIntensity Numeric minimum trace intensity.
-    #' @param filtered Logical; include filtered features when `TRUE`.
-    load_features_ms2 = function(
-        analyses = NULL,
-        isolationWindow = 1.3,
-        mzClust = 0.005,
-        presence = 0.8,
-        minIntensity = 10,
-        filtered = FALSE) {
-      selection <- private$.resolve_selected_analyses(analyses)
-      if (length(selection$selected) == 0) {
-        return(TRUE)
-      }
-      rcpp_project_non_target_analysis_load_features_ms2(
-        private$.nts_ptr,
-        selection$selected,
-        as.logical(filtered),
-        as.numeric(minIntensity),
-        as.numeric(isolationWindow),
-        as.numeric(mzClust),
-        as.numeric(presence)
-      )
-    },
-#' @description Create feature components and update `NTS_FEATURES`.
-#' @return Logical `TRUE` when execution completes. Use `get_features()` to read persisted results.
-#' @template arg-analyses
-    #' @param rtWindow Numeric length-2 vector of RT offsets.
-    #' @param minCorrelation Numeric minimum EIC correlation.
-    #' @param debugRT Optional debug RT.
-    #' @param debugAnalysis Optional analysis name to debug.
-    create_components = function(
-        analyses = NULL,
-        rtWindow = c(0, 0),
-        minCorrelation = 0.8,
-        debugRT = 0,
-        debugAnalysis = "") {
-      selection <- private$.resolve_selected_analyses(analyses)
-      if (length(selection$selected) == 0) {
-        return(TRUE)
-      }
-      rcpp_project_non_target_analysis_create_components(
-        private$.nts_ptr,
-        selection$selected,
-        as.numeric(rtWindow),
-        as.numeric(minCorrelation),
-        as.numeric(debugRT),
-        as.character(debugAnalysis)
-      )
-    },
-#' @description Annotate feature components and update `NTS_FEATURES`.
-#' @return Logical `TRUE` when execution completes. Use `get_features()` to read persisted results.
-#' @template arg-analyses
-    #' @param maxIsotopes Integer maximum isotope count.
-    #' @param maxCharge Integer maximum charge state.
-    #' @param maxGaps Integer maximum isotope gaps.
-    #' @param ppm Numeric mass tolerance in ppm.
-    #' @param debugComponent Optional component ID to debug.
-    #' @param debugAnalysis Optional analysis name to debug.
-    annotate_components = function(
-        analyses = NULL,
-        maxIsotopes = 5,
-        maxCharge = 1,
-        maxGaps = 1,
-        ppm = 10,
-        debugComponent = "",
-        debugAnalysis = "") {
-      selection <- private$.resolve_selected_analyses(analyses)
-      if (length(selection$selected) == 0) {
-        return(TRUE)
-      }
-      rcpp_project_non_target_analysis_annotate_components(
-        private$.nts_ptr,
-        selection$selected,
-        as.integer(maxIsotopes),
-        as.integer(maxCharge),
-        as.integer(maxGaps),
-        as.numeric(ppm),
-        as.character(debugComponent),
-        as.character(debugAnalysis)
-      )
-    },
-#' @description Group features across analyses and update `NTS_FEATURES`.
-#' @return Logical `TRUE` when execution completes. Use `get_features()` to read persisted results.
-#' @template arg-analyses
-    #' @param method Alignment method.
-    #' @param rtDeviation Numeric RT tolerance.
-    #' @param ppm Numeric mass tolerance in ppm.
-    #' @param minSamples Integer minimum sample count.
-    #' @param binSize Numeric RT bin size.
-    #' @param filtered Logical; include filtered features when `TRUE`.
-    #' @param debug Logical; enable native debug output.
-    #' @param debugRT Optional debug RT.
-    group_features = function(
-        analyses = NULL,
-        method = "internal_standards",
-        rtDeviation = 5,
-        ppm = 10,
-        minSamples = 1,
-        binSize = 5,
-        filtered = FALSE,
-        debug = FALSE,
-        debugRT = 0) {
-      selection <- private$.resolve_selected_analyses(analyses)
-      if (length(selection$selected) == 0) {
-        return(TRUE)
-      }
-      rcpp_project_non_target_analysis_group_features(
-        private$.nts_ptr,
-        selection$selected,
-        as.character(method),
-        as.numeric(rtDeviation),
-        as.numeric(ppm),
-        as.integer(minSamples),
-        as.numeric(binSize),
-        as.logical(filtered),
-        as.logical(debug),
-        as.numeric(debugRT)
-      )
-    },
-#' @description Fill grouped feature gaps and update `NTS_FEATURES`.
-#' @return Logical `TRUE` when execution completes. Use `get_features()` to read persisted results.
-#' @template arg-analyses
-    #' @param withinReplicate Logical; fill only within replicate when `TRUE`.
-    #' @param filtered Logical; include filtered features when `TRUE`.
-    #' @param rtExpand Numeric RT expansion.
-    #' @param mzExpand Numeric m/z expansion.
-    #' @param maxPeakWidth Numeric maximum peak width.
-    #' @param minTracesIntensity Numeric minimum trace intensity.
-    #' @param minNumberTraces Integer minimum number of traces.
-    #' @param minIntensity Numeric minimum feature intensity.
-    #' @param rtApexDeviation Numeric RT apex deviation.
-    #' @param minSignalToNoiseRatio Numeric minimum S/N ratio.
-    #' @param minGaussianFit Numeric minimum Gaussian fit.
-    #' @param debugFG Optional feature-group ID to debug.
-    fill_features = function(
-        analyses = NULL,
-        withinReplicate = FALSE,
-        filtered = FALSE,
-        rtExpand = 10,
-        mzExpand = 0.01,
-        maxPeakWidth = 30,
-        minTracesIntensity = 1000,
-        minNumberTraces = 5,
-        minIntensity = 5000,
-        rtApexDeviation = 5,
-        minSignalToNoiseRatio = 3,
-        minGaussianFit = 0.2,
-        debugFG = "") {
-      selection <- private$.resolve_selected_analyses(analyses)
-      if (length(selection$selected) == 0) {
-        return(TRUE)
-      }
-      rcpp_project_non_target_analysis_fill_features(
-        private$.nts_ptr,
-        selection$selected,
-        as.logical(withinReplicate),
-        as.logical(filtered),
-        as.numeric(rtExpand),
-        as.numeric(mzExpand),
-        as.numeric(maxPeakWidth),
-        as.numeric(minTracesIntensity),
-        as.integer(minNumberTraces),
-        as.numeric(minIntensity),
-        as.numeric(rtApexDeviation),
-        as.numeric(minSignalToNoiseRatio),
-        as.numeric(minGaussianFit),
-        as.character(debugFG)
-      )
-    },
-#' @description Apply blank subtraction and update `NTS_FEATURES`.
-#' @return Logical `TRUE` when execution completes. Use `get_features()` to read persisted results.
-#' @template arg-analyses
-    #' @param blankThreshold Numeric blank threshold.
-    #' @param rtExpand Numeric RT expansion.
-    #' @param mzExpand Numeric m/z expansion.
-    blank_subtraction = function(
-        analyses = NULL,
-        blankThreshold = 5,
-        rtExpand = 10,
-        mzExpand = 0.005) {
-      selection <- private$.resolve_selected_analyses(analyses)
-      if (length(selection$selected) == 0) {
-        return(TRUE)
-      }
-      rcpp_project_non_target_analysis_blank_subtraction(
-        private$.nts_ptr,
-        selection$selected,
-        as.numeric(blankThreshold),
-        as.numeric(rtExpand),
-        as.numeric(mzExpand)
-      )
-    },
-#' @description Filter shared project features and update `NTS_FEATURES`.
-#' @return Logical `TRUE` when execution completes. Use `get_features()` to read persisted results.
-#' @template arg-analyses
-    #' @param minSN Numeric minimum signal-to-noise ratio.
-    #' @param minIntensity Numeric minimum intensity.
-    #' @param minArea Numeric minimum peak area.
-    #' @param minWidth Numeric minimum peak width.
-    #' @param maxWidth Numeric maximum peak width.
-    #' @param maxPPM Numeric maximum ppm error.
-    #' @param minFwhmRT Numeric minimum FWHM in RT.
-    #' @param maxFwhmRT Numeric maximum FWHM in RT.
-    #' @param minFwhmMZ Numeric minimum FWHM in m/z.
-    #' @param maxFwhmMZ Numeric maximum FWHM in m/z.
-    #' @param minGaussianA Numeric minimum Gaussian amplitude.
-    #' @param minGaussianMu Numeric minimum Gaussian mean.
-    #' @param maxGaussianMu Numeric maximum Gaussian mean.
-    #' @param minGaussianSigma Numeric minimum Gaussian sigma.
-    #' @param maxGaussianSigma Numeric maximum Gaussian sigma.
-    #' @param minGaussianR2 Numeric minimum Gaussian fit.
-    #' @param maxJaggedness Numeric maximum jaggedness.
-    #' @param minSharpness Numeric minimum sharpness.
-    #' @param minAsymmetry Numeric minimum asymmetry.
-    #' @param maxAsymmetry Numeric maximum asymmetry.
-    #' @param maxModality Integer maximum modality.
-    #' @param minPlates Numeric minimum plates.
-    #' @param onlyFilled Logical or `NA`.
-    #' @param removeFilled Logical remove filled features.
-    #' @param minSizeEIC Integer minimum EIC size.
-    #' @param minSizeMS1 Integer minimum MS1 size.
-    #' @param minSizeMS2 Integer minimum MS2 size.
-    #' @param minRelPresenceReplicate Numeric minimum replicate presence.
-    #' @param removeIsotopes Logical remove isotope annotations.
-    #' @param removeAdducts Logical remove adduct annotations.
-    #' @param removeLosses Logical remove loss annotations.
-    filter_features = function(
-        analyses = NULL,
-        minSN = NA_real_,
-        minIntensity = NA_real_,
-        minArea = NA_real_,
-        minWidth = NA_real_,
-        maxWidth = NA_real_,
-        maxPPM = NA_real_,
-        minFwhmRT = NA_real_,
-        maxFwhmRT = NA_real_,
-        minFwhmMZ = NA_real_,
-        maxFwhmMZ = NA_real_,
-        minGaussianA = NA_real_,
-        minGaussianMu = NA_real_,
-        maxGaussianMu = NA_real_,
-        minGaussianSigma = NA_real_,
-        maxGaussianSigma = NA_real_,
-        minGaussianR2 = NA_real_,
-        maxJaggedness = NA_real_,
-        minSharpness = NA_real_,
-        minAsymmetry = NA_real_,
-        maxAsymmetry = NA_real_,
-        maxModality = NA_integer_,
-        minPlates = NA_real_,
-        onlyFilled = NA,
-        removeFilled = FALSE,
-        minSizeEIC = NA_integer_,
-        minSizeMS1 = NA_integer_,
-        minSizeMS2 = NA_integer_,
-        minRelPresenceReplicate = NA_real_,
-        removeIsotopes = FALSE,
-        removeAdducts = FALSE,
-        removeLosses = FALSE) {
-      selection <- private$.resolve_selected_analyses(analyses)
-      if (length(selection$selected) == 0) {
-        return(TRUE)
-      }
-      rcpp_project_non_target_analysis_filter_features(
-        private$.nts_ptr,
-        selection$selected,
-        minSN,
-        minIntensity,
-        minArea,
-        minWidth,
-        maxWidth,
-        maxPPM,
-        minFwhmRT,
-        maxFwhmRT,
-        minFwhmMZ,
-        maxFwhmMZ,
-        minGaussianA,
-        minGaussianMu,
-        maxGaussianMu,
-        minGaussianSigma,
-        maxGaussianSigma,
-        minGaussianR2,
-        maxJaggedness,
-        minSharpness,
-        minAsymmetry,
-        maxAsymmetry,
-        maxModality,
-        minPlates,
-        onlyFilled,
-        as.logical(removeFilled),
-        minSizeEIC,
-        minSizeMS1,
-        minSizeMS2,
-        minRelPresenceReplicate,
-        as.logical(removeIsotopes),
-        as.logical(removeAdducts),
-        as.logical(removeLosses)
-      )
-    },
-#' @description Filter MS2 spectra stored on shared project features and update `NTS_FEATURES`.
-#' @return Logical `TRUE` when execution completes. Use `get_features()` to read persisted results.
-#' @template arg-analyses
-    #' @param top Integer maximum number of peaks to keep.
-    #' @param minIntensity Numeric minimum absolute peak intensity.
-    #' @param relMinIntensity Numeric minimum relative peak intensity.
-    #' @param blankClean Logical remove blank-associated MS2 peaks.
-    #' @param mzClust Numeric m/z clustering tolerance.
-    #' @param blankPresenceThreshold Numeric blank presence threshold.
-    #' @param globalPresenceThreshold Numeric global presence threshold.
-    filter_features_ms2 = function(
-        analyses = NULL,
-        top = 0,
-        minIntensity = NA_real_,
-        relMinIntensity = NA_real_,
-        blankClean = FALSE,
-        mzClust = 0.005,
-        blankPresenceThreshold = 0.8,
-        globalPresenceThreshold = 0.1) {
-      selection <- private$.resolve_selected_analyses(analyses)
-      if (length(selection$selected) == 0) {
-        return(TRUE)
-      }
-      rcpp_project_non_target_analysis_filter_features_ms2(
-        private$.nts_ptr,
-        selection$selected,
-        as.integer(top),
-        as.numeric(minIntensity),
-        as.numeric(relMinIntensity),
-        as.logical(blankClean),
-        as.numeric(mzClust),
-        as.numeric(blankPresenceThreshold),
-        as.numeric(globalPresenceThreshold)
-      )
-    },
-#' @description Run project-owned suspect screening and persist into shared NTS suspect tables.
-#' @return Logical `TRUE` when execution completes. Use `get_suspects()` to read persisted results.
-#' @template arg-analyses
-    #' @param suspects A data frame with suspect information.
-    #' @param ppm Numeric mass tolerance in ppm.
-    #' @param sec Numeric retention time tolerance in seconds.
-    #' @param ppmMS2 Numeric MS2 fragment mass tolerance in ppm.
-    #' @param mzrMS2 Numeric minimum absolute MS2 fragment tolerance.
-    #' @param minCosineSimilarity Numeric minimum cosine similarity threshold.
-    #' @param minSharedFragments Integer minimum number of shared fragments.
-    #' @param filtered Logical; include filtered features when `TRUE`.
-    suspect_screening = function(
-        suspects,
-        analyses = NULL,
-        ppm = 5,
-        sec = 10,
-        ppmMS2 = 10,
-        mzrMS2 = 0.008,
-        minCosineSimilarity = 0.7,
-        minSharedFragments = 3,
-        filtered = FALSE) {
-      selection <- private$.resolve_selected_analyses(analyses)
-      sel_names <- selection$selected
-      if (length(sel_names) == 0) {
-        return(TRUE)
-      }
-      suspects <- data.table::as.data.table(suspects)
-      rcpp_project_non_target_analysis_suspect_screening(
-        private$.nts_ptr,
-        suspects,
-        sel_names,
-        as.numeric(ppm),
-        as.numeric(sec),
-        as.numeric(ppmMS2),
-        as.numeric(mzrMS2),
-        as.numeric(minCosineSimilarity),
-        as.integer(minSharedFragments),
-        as.logical(filtered)
-      )
-    },
-#' @description Run project-owned internal-standard finding and persist into shared NTS internal-standard tables.
-#' @return Logical `TRUE` when execution completes. Use `get_internal_standards()` to read persisted results.
-#' @template arg-analyses
-    #' @param suspects A data frame with internal-standard candidate information.
-    #' @param ppm Numeric mass tolerance in ppm.
-    #' @param sec Numeric retention time tolerance in seconds.
-    #' @param ppmMS2 Numeric MS2 fragment mass tolerance in ppm.
-    #' @param mzrMS2 Numeric minimum absolute MS2 fragment tolerance.
-    #' @param minCosineSimilarity Numeric minimum cosine similarity threshold.
-    #' @param minSharedFragments Integer minimum number of shared fragments.
-    #' @param filtered Logical; include filtered features when `TRUE`.
-    find_internal_standards = function(
-        suspects,
-        analyses = NULL,
-        ppm = 5,
-        sec = 10,
-        ppmMS2 = 10,
-        mzrMS2 = 0.008,
-        minCosineSimilarity = 0.7,
-        minSharedFragments = 3,
-        filtered = TRUE) {
-      selection <- private$.resolve_selected_analyses(analyses)
-      sel_names <- selection$selected
-      if (length(sel_names) == 0) {
-        return(TRUE)
-      }
-      suspects <- data.table::as.data.table(suspects)
-      rcpp_project_non_target_analysis_find_internal_standards(
-        private$.nts_ptr,
-        suspects,
-        sel_names,
-        as.numeric(ppm),
-        as.numeric(sec),
-        as.numeric(ppmMS2),
-        as.numeric(mzrMS2),
-        as.numeric(minCosineSimilarity),
-        as.integer(minSharedFragments),
-        as.logical(filtered)
-      )
-    },
-#' @description Filter shared project suspects and update `NTS_SUSPECTS`.
-#' @return Logical `TRUE` when execution completes. Use `get_suspects()` to read persisted results.
-#' @template arg-analyses
-    #' @param names Character vector of suspect names to keep.
-    #' @param minScore Numeric minimum score.
-    #' @param maxErrorRT Numeric maximum RT error.
-    #' @param maxErrorMass Numeric maximum mass error.
-    #' @param idLevels Integer vector of allowed ID levels.
-    #' @param minSharedFragments Integer minimum shared fragments.
-    #' @param minCosineSimilarity Numeric minimum cosine similarity.
-    filter_suspects = function(
-        analyses = NULL,
-        names = character(0),
-        minScore = NA_real_,
-        maxErrorRT = NA_real_,
-        maxErrorMass = NA_real_,
-        idLevels = integer(0),
-        minSharedFragments = 0,
-        minCosineSimilarity = NA_real_) {
-      selection <- private$.resolve_selected_analyses(analyses)
-      if (length(selection$selected) == 0) {
-        return(TRUE)
-      }
-      rcpp_project_non_target_analysis_filter_suspects(
-        private$.nts_ptr,
-        selection$selected,
-        as.character(names),
-        as.numeric(minScore),
-        as.numeric(maxErrorRT),
-        as.numeric(maxErrorMass),
-        as.integer(idLevels),
-        as.integer(minSharedFragments),
-        as.numeric(minCosineSimilarity)
-      )
-    },
-#' @description Filter shared project internal standards and update `NTS_INTERNAL_STANDARDS`.
-#' @return Logical `TRUE` when execution completes. Use `get_internal_standards()` to read persisted results.
-#' @template arg-analyses
-    #' @param names Character vector of internal-standard names to keep.
-    #' @param minScore Numeric minimum score.
-    #' @param maxErrorRT Numeric maximum RT error.
-    #' @param maxErrorMass Numeric maximum mass error.
-    #' @param idLevels Integer vector of allowed ID levels.
-    #' @param minSharedFragments Integer minimum shared fragments.
-    #' @param minCosineSimilarity Numeric minimum cosine similarity.
-    filter_internal_standards = function(
-        analyses = NULL,
-        names = character(0),
-        minScore = NA_real_,
-        maxErrorRT = NA_real_,
-        maxErrorMass = NA_real_,
-        idLevels = integer(0),
-        minSharedFragments = 0,
-        minCosineSimilarity = NA_real_) {
-      selection <- private$.resolve_selected_analyses(analyses)
-      if (length(selection$selected) == 0) {
-        return(TRUE)
-      }
-      rcpp_project_non_target_analysis_filter_internal_standards(
-        private$.nts_ptr,
-        selection$selected,
-        as.character(names),
-        as.numeric(minScore),
-        as.numeric(maxErrorRT),
-        as.numeric(maxErrorMass),
-        as.integer(idLevels),
-        as.integer(minSharedFragments),
-        as.numeric(minCosineSimilarity)
-      )
-    },
-#' @description Run project-owned MetFrag screening and update `NTS_SUSPECTS`.
-#' @return Logical `TRUE` when execution completes. Use `get_suspects()` to read persisted results.
-#' @template arg-analyses
-    #' @param metfrag_path Path to the MetFrag executable or jar wrapper.
-    #' @param database_type Database type string.
-    #' @param database_path Optional MetFrag database path.
-    #' @param ppm Numeric precursor mass tolerance in ppm.
-    #' @param sec Numeric retention time tolerance in seconds.
-    #' @param ppmMS2 Numeric MS2 tolerance in ppm.
-    #' @param mzrMS2 Numeric absolute MS2 tolerance.
-    #' @param top_n Integer number of candidates per feature.
-    #' @param filtered Logical; include filtered features when `TRUE`.
-    #' @param java_path Path to the Java executable.
-    #' @param run_dir Optional MetFrag run directory.
-    #' @param debug Logical debug flag.
-    #' @param extra_params Named list of extra MetFrag parameters.
-    metfrag_screening = function(
-        metfrag_path,
-        analyses = NULL,
-        database_type = "LocalCSV",
-        database_path = "",
-        ppm = 5,
-        sec = 10,
-        ppmMS2 = 10,
-        mzrMS2 = 0.008,
-        top_n = 1,
-        filtered = FALSE,
-        java_path = "java",
-        run_dir = "",
-        debug = FALSE,
-        extra_params = list()) {
-      selection <- private$.resolve_selected_analyses(analyses)
-      if (length(selection$selected) == 0) {
-        return(TRUE)
-      }
-      rcpp_project_non_target_analysis_metfrag_screening(
-        private$.nts_ptr,
-        as.character(metfrag_path),
-        selection$selected,
-        as.character(database_type),
-        as.character(database_path),
-        as.numeric(ppm),
-        as.numeric(sec),
-        as.numeric(ppmMS2),
-        as.numeric(mzrMS2),
-        as.integer(top_n),
-        as.logical(filtered),
-        as.character(java_path),
-        as.character(run_dir),
-        as.logical(debug),
-        extra_params
-      )
-    },
-#' @description Assign transformation products and update `NTS_TRANSFORMATION_PRODUCTS`.
-#' @return Logical `TRUE` when execution completes. Use `get_transformation_products()` to read persisted results.
-#' @param transformation_products A data frame with transformation-product definitions.
-    #' @param chromatographic_phase Chromatographic phase for RT plausibility.
-    #' @param mzrMS2 Numeric absolute MS2 tolerance.
-    assign_transformation_products = function(
-        transformation_products,
-        chromatographic_phase = c("reverse_phase", "hilic"),
-        mzrMS2 = 0.008) {
-      chromatographic_phase <- match.arg(chromatographic_phase)
-      transformation_products <- data.table::as.data.table(transformation_products)
-      rcpp_project_non_target_analysis_assign_transformation_products(
-        private$.nts_ptr,
-        transformation_products,
-        as.character(chromatographic_phase),
-        as.numeric(mzrMS2)
-      )
+      NULL
     },
     #' @description Return shared `NTS_SUSPECTS` rows for selected analyses.
-    #' @template arg-analyses
-    #' @template arg-ms-features
-    #' @template arg-ms-groups
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
     get_suspects = function(
         analyses = NULL,
         features = NULL,
@@ -1294,16 +206,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
       suspects
     },
     #' @description Return shared `NTS_INTERNAL_STANDARDS` rows for selected analyses.
-    #' @template arg-analyses
-    #' @template arg-ms-features
-    #' @template arg-ms-groups
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
     get_internal_standards = function(
         analyses = NULL,
         features = NULL,
@@ -1358,8 +260,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
       internal_standards
     },
     #' @description Return shared `NTS_TRANSFORMATION_PRODUCTS` rows.
-    #' @param parents Optional parent names to keep.
-    #' @param groups Optional feature-group IDs used to expand a connected network selection.
     get_transformation_products = function(parents = NULL, groups = NULL) {
       tps <- data.table::as.data.table(
         rcpp_project_non_target_analysis_get_transformation_products(private$.nts_ptr)
@@ -1415,18 +315,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
       tps[precursor_name %in% parents | name %in% parents]
     },
     #' @description Return shared `NTS_FEATURES` rows for selected analyses.
-    #' @template arg-analyses
-    #' @template arg-ms-features
-    #' @template arg-ms-groups
-    #' @template arg-ms-components
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
-    #' @template arg-ms-filtered
     get_features = function(
         analyses = NULL,
         features = NULL,
@@ -1496,16 +384,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
       fts
     },
     #' @description Return feature-group profiles across analyses.
-    #' @template arg-analyses
-    #' @template arg-ms-groups
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
-    #' @template arg-ms-filtered
     get_features_profile = function(
         analyses = NULL,
         groups = NULL,
@@ -1565,7 +443,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
       prof
     },
     #' @description Return a per-analysis summary of shared `NTS_FEATURES` rows.
-    #' @template arg-analyses
     get_features_count = function(analyses = NULL, filtered = FALSE) {
       analyses_info <- data.table::as.data.table(self$list_analyses())
       all_names <- analyses_info$analysis
@@ -1617,13 +494,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
       )
     },
     #' @description Plot the number of features for selected analyses.
-    #' @template arg-analyses
-    #' @template arg-ms-filtered
-    #' @template arg-yLab
-    #' @template arg-title
-    #' @template arg-plot-groupBy
-    #' @template arg-showLegend
-    #' @template arg-showHoverText
     plot_features_count = function(
         analyses = NULL,
         filtered = FALSE,
@@ -1704,22 +574,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
         )
     },
     #' @description Plot feature-group profiles across analyses or replicates.
-    #' @template arg-analyses
-    #' @template arg-ms-groups
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
-    #' @template arg-ms-filtered
-    #' @template arg-plot-groupBy
-    #' @template arg-normalized
-    #' @template arg-yLab
-    #' @template arg-title
-    #' @template arg-interactive
-    #' @template arg-showLegend
     plot_features_profile = function(
         analyses = NULL,
         groups = NULL,
@@ -1875,22 +729,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
         )
     },
     #' @description Plot EIC traces for selected features.
-    #' @template arg-analyses
-    #' @template arg-ms-features
-    #' @template arg-ms-groups
-    #' @template arg-ms-components
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
-    #' @template arg-ms-filtered
-    #' @template arg-labs
-    #' @template arg-plot-groupBy
-    #' @template arg-interactive
-    #' @param showDetails Logical, show hover details in interactive plots.
     plot_features = function(
         analyses = NULL,
         features = NULL,
@@ -2135,24 +973,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
       plot %>% plotly::layout(xaxis = xaxis, yaxis = yaxis, title = title)
     },
     #' @description Plot RT versus m/z traces for selected features.
-    #' @template arg-analyses
-    #' @template arg-ms-features
-    #' @template arg-ms-groups
-    #' @template arg-ms-components
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
-    #' @template arg-ms-filtered
-    #' @template arg-labs
-    #' @template arg-plot-title
-    #' @template arg-plot-groupBy
-    #' @template arg-interactive
-    #' @param globalNormalization Logical, when TRUE normalize intensities globally across all selected features.
-    #' @param showDetails Logical, show hover details in interactive plots.
     map_features = function(
         analyses = NULL,
         features = NULL,
@@ -2300,21 +1120,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
         plotly::layout(title = title, xaxis = xaxis, yaxis = yaxis, legend = list(title = list(text = groupBy)))
     },
     #' @description Plot MS1 spectra for selected features.
-    #' @template arg-analyses
-    #' @template arg-ms-features
-    #' @template arg-ms-groups
-    #' @template arg-ms-components
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
-    #' @template arg-normalized
-    #' @template arg-ms-filtered
-    #' @template arg-plot-groupBy
-    #' @param showText Logical; annotate peaks with m/z labels.
     plot_features_ms1 = function(
         analyses = NULL,
         features = NULL,
@@ -2467,21 +1272,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
       plot %>% plotly::layout(title = title, xaxis = xaxis, yaxis = yaxis, uniformtext = list(minsize = 6, mode = "show"))
     },
     #' @description Plot MS2 spectra for selected features.
-    #' @template arg-analyses
-    #' @template arg-ms-features
-    #' @template arg-ms-groups
-    #' @template arg-ms-components
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
-    #' @template arg-normalized
-    #' @template arg-ms-filtered
-    #' @template arg-plot-groupBy
-    #' @param showText Logical; annotate peaks with m/z labels.
     plot_features_ms2 = function(
         analyses = NULL,
         features = NULL,
@@ -2643,20 +1433,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
       plot %>% plotly::layout(title = title, xaxis = xaxis, yaxis = yaxis, uniformtext = list(minsize = 6, mode = "show"))
     },
     #' @description Plot suspect MS2 spectra for selected features.
-    #' @template arg-analyses
-    #' @template arg-ms-features
-    #' @template arg-ms-groups
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
-    #' @template arg-normalized
-    #' @template arg-ms-filtered
-    #' @template arg-plot-groupBy
-    #' @param showText Logical; annotate peaks with m/z or fragment labels.
     plot_suspects_ms2 = function(
         analyses = NULL,
         features = NULL,
@@ -2851,22 +1627,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
       plot %>% plotly::layout(title = title, xaxis = xaxis, yaxis = yaxis, uniformtext = list(minsize = 6, mode = "show"), showlegend = showLegend, hoverlabel = list(align = "left"))
     },
     #' @description Return fold-change categories between replicate groups.
-    #' @param replicatesIn Character vector with replicate names used as denominator.
-    #' @param replicatesOut Character vector with replicate names used as numerator.
-    #' @template arg-ms-groups
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
-    #' @template arg-ms-filtered
-    #' @param constantThreshold Numeric threshold used to mark features as constant.
-    #' @param eliminationThreshold Numeric threshold used to mark features as eliminated.
-    #' @template arg-ms-correctIntensity
-    #' @param fillZerosWithLowerLimit Logical; replace zeros before fold-change calculation.
-    #' @param lowerLimit Optional lower limit used when filling zeros.
     get_fold_change = function(
         replicatesIn = NULL,
         replicatesOut = NULL,
@@ -3020,27 +1780,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
       fc
     },
     #' @description Plot fold-change categories between replicate groups.
-    #' @param replicatesIn Character vector with replicate names used as denominator.
-    #' @param replicatesOut Character vector with replicate names used as numerator.
-    #' @template arg-ms-groups
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
-    #' @template arg-ms-filtered
-    #' @param constantThreshold Numeric threshold used to mark features as constant.
-    #' @param eliminationThreshold Numeric threshold used to mark features as eliminated.
-    #' @template arg-ms-correctIntensity
-    #' @param fillZerosWithLowerLimit Logical; replace zeros before fold-change calculation.
-    #' @param lowerLimit Optional lower limit used when filling zeros.
-    #' @template arg-normalized
-    #' @template arg-yLab
-    #' @template arg-title
-    #' @template arg-interactive
-    #' @template arg-showLegend
     plot_fold_change = function(
         replicatesIn = NULL,
         replicatesOut = NULL,
@@ -3193,9 +1932,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
         )
     },
     #' @description Plot a transformation-products network.
-    #' @template arg-ms-groups
-    #' @param showMS2 Logical. When TRUE, includes MS2 spectra in node details.
-    #' @param showIntensityProfile Logical. When TRUE, includes intensity profiles in node details.
     plot_transformation_products = function(groups = NULL, showMS2 = FALSE, showIntensityProfile = FALSE) {
       if (!requireNamespace("visNetwork", quietly = TRUE)) {
         stop("visNetwork package is required for this function.")
@@ -3681,7 +2417,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
       p
     },
     #' @description Print a short summary.
-    #' @param ... Additional arguments ignored.
     print = function(...) {
       info <- try(self$info(), silent = TRUE)
       cat("\nProjectNonTargetAnalysis\n")
@@ -3701,43 +2436,20 @@ ProjectNonTargetAnalysis <- R6::R6Class(
       invisible(self)
     },
     #' @description Show a short summary.
-    #' @param ... Additional arguments ignored.
     show = function(...) {
       self$print(...)
     }
   )
 )
 
-#' @title ProjectNonTargetAnalysis S3 methods
 #' @name ProjectNonTargetAnalysisS3
-#' @rdname ProjectNonTargetAnalysisS3
-#' @description S3 wrappers for the `ProjectNonTargetAnalysis` R6 methods.
-#' @aliases
-#'   info.ProjectNonTargetAnalysis
-#'   get_features.ProjectNonTargetAnalysis
-#'   get_features_count.ProjectNonTargetAnalysis
-#'   get_features_profile.ProjectNonTargetAnalysis
-#'   get_fold_change.ProjectNonTargetAnalysis
-#'   get_suspects.ProjectNonTargetAnalysis
-#'   get_internal_standards.ProjectNonTargetAnalysis
-#'   get_transformation_products.ProjectNonTargetAnalysis
-#'   plot_fold_change.ProjectNonTargetAnalysis
-#'   plot_features_profile.ProjectNonTargetAnalysis
-#'   plot_features.ProjectNonTargetAnalysis
-#'   map_features.ProjectNonTargetAnalysis
-#'   plot_features_ms1.ProjectNonTargetAnalysis
-#'   plot_features_ms2.ProjectNonTargetAnalysis
-#'   plot_suspects_ms2.ProjectNonTargetAnalysis
-#'   plot_features_count.ProjectNonTargetAnalysis
+#' @title ProjectNonTargetAnalysis S3 Methods
+#' @description S3 interface methods for `ProjectNonTargetAnalysis`.
 #' @param x A `ProjectNonTargetAnalysis` object.
-#' @export
-info.ProjectNonTargetAnalysis <- function(x, ...) {
-  checkmate::assert_class(x, "ProjectNonTargetAnalysis")
-  x$info()
-}
-
-#' @rdname ProjectNonTargetAnalysisS3
-#' @param x A `ProjectNonTargetAnalysis` object.
+#' @template arg-db-path
+#' @template arg-project-id
+#' @template arg-ptr
+#' @template arg-mass-spec-ptr
 #' @template arg-analyses
 #' @template arg-ms-features
 #' @template arg-ms-groups
@@ -3750,6 +2462,40 @@ info.ProjectNonTargetAnalysis <- function(x, ...) {
 #' @template arg-ms-sec
 #' @template arg-ms-millisec
 #' @template arg-ms-filtered
+#' @template arg-plot-groupBy
+#' @template arg-normalized
+#' @template arg-yLab
+#' @template arg-title
+#' @template arg-interactive
+#' @template arg-showLegend
+#' @template arg-labs
+#' @template arg-ms-correctIntensity
+#' @template arg-showDetails
+#' @template arg-showText
+#' @template arg-globalNormalization
+#' @template arg-showMS2
+#' @template arg-showIntensityProfile
+#' @template arg-replicatesIn
+#' @template arg-replicatesOut
+#' @template arg-constantThreshold
+#' @template arg-eliminationThreshold
+#' @template arg-fillZerosWithLowerLimit
+#' @template arg-lowerLimit
+#' @template arg-parents
+#' @template arg-modal
+#' @template arg-ellipsis
+NULL
+
+#' @describeIn ProjectNonTargetAnalysisS3 Return project information summary.
+#' @method info ProjectNonTargetAnalysis
+#' @export
+info.ProjectNonTargetAnalysis <- function(x, ...) {
+  checkmate::assert_class(x, "ProjectNonTargetAnalysis")
+  x$info()
+}
+
+#' @describeIn ProjectNonTargetAnalysisS3 Return shared NTS_FEATURES rows for selected analyses.
+#' @method get_features ProjectNonTargetAnalysis
 #' @export
 get_features.ProjectNonTargetAnalysis <- function(
     x,
@@ -3783,28 +2529,16 @@ get_features.ProjectNonTargetAnalysis <- function(
   )
 }
 
-#' @rdname ProjectNonTargetAnalysisS3
-#' @param x A `ProjectNonTargetAnalysis` object.
-#' @template arg-analyses
-#' @template arg-ms-filtered
+#' @describeIn ProjectNonTargetAnalysisS3 Return feature counts for selected analyses.
+#' @method get_features_count ProjectNonTargetAnalysis
 #' @export
 get_features_count.ProjectNonTargetAnalysis <- function(x, analyses = NULL, filtered = FALSE) {
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
   x$get_features_count(analyses = analyses, filtered = filtered)
 }
 
-#' @rdname ProjectNonTargetAnalysisS3
-#' @param x A `ProjectNonTargetAnalysis` object.
-#' @template arg-analyses
-#' @template arg-ms-groups
-#' @template arg-ms-mass
-#' @template arg-ms-mz
-#' @template arg-ms-rt
-#' @template arg-ms-mobility
-#' @template arg-ms-ppm
-#' @template arg-ms-sec
-#' @template arg-ms-millisec
-#' @template arg-ms-filtered
+#' @describeIn ProjectNonTargetAnalysisS3 Return feature profiles across analyses.
+#' @method get_features_profile ProjectNonTargetAnalysis
 #' @export
 get_features_profile.ProjectNonTargetAnalysis <- function(
     x,
@@ -3834,24 +2568,8 @@ get_features_profile.ProjectNonTargetAnalysis <- function(
   )
 }
 
-#' @rdname ProjectNonTargetAnalysisS3
-#' @param x A `ProjectNonTargetAnalysis` object.
-#' @template arg-analyses
-#' @template arg-ms-groups
-#' @template arg-ms-mass
-#' @template arg-ms-mz
-#' @template arg-ms-rt
-#' @template arg-ms-mobility
-#' @template arg-ms-ppm
-#' @template arg-ms-sec
-#' @template arg-ms-millisec
-#' @template arg-ms-filtered
-#' @template arg-plot-groupBy
-#' @template arg-normalized
-#' @template arg-yLab
-#' @template arg-title
-#' @template arg-interactive
-#' @template arg-showLegend
+#' @describeIn ProjectNonTargetAnalysisS3 Plot feature profiles for selected analyses.
+#' @method plot_features_profile ProjectNonTargetAnalysis
 #' @export
 plot_features_profile.ProjectNonTargetAnalysis <- function(
     x,
@@ -3893,24 +2611,8 @@ plot_features_profile.ProjectNonTargetAnalysis <- function(
   )
 }
 
-#' @rdname ProjectNonTargetAnalysisS3
-#' @param x A `ProjectNonTargetAnalysis` object.
-#' @template arg-analyses
-#' @template arg-ms-features
-#' @template arg-ms-groups
-#' @template arg-ms-components
-#' @template arg-ms-mass
-#' @template arg-ms-mz
-#' @template arg-ms-rt
-#' @template arg-ms-mobility
-#' @template arg-ms-ppm
-#' @template arg-ms-sec
-#' @template arg-ms-millisec
-#' @template arg-ms-filtered
-#' @template arg-labs
-#' @template arg-plot-groupBy
-#' @template arg-interactive
-#' @param showDetails Logical, show hover details in interactive plots.
+#' @describeIn ProjectNonTargetAnalysisS3 Plot selected features for analyses.
+#' @method plot_features ProjectNonTargetAnalysis
 #' @export
 plot_features.ProjectNonTargetAnalysis <- function(
     x,
@@ -3956,26 +2658,8 @@ plot_features.ProjectNonTargetAnalysis <- function(
   )
 }
 
-#' @rdname ProjectNonTargetAnalysisS3
-#' @param x A `ProjectNonTargetAnalysis` object.
-#' @template arg-analyses
-#' @template arg-ms-features
-#' @template arg-ms-groups
-#' @template arg-ms-components
-#' @template arg-ms-mass
-#' @template arg-ms-mz
-#' @template arg-ms-rt
-#' @template arg-ms-mobility
-#' @template arg-ms-ppm
-#' @template arg-ms-sec
-#' @template arg-ms-millisec
-#' @template arg-ms-filtered
-#' @template arg-labs
-#' @template arg-plot-title
-#' @template arg-plot-groupBy
-#' @template arg-interactive
-#' @param globalNormalization Logical, when TRUE normalize intensities globally across all selected features.
-#' @param showDetails Logical, show hover details in interactive plots.
+#' @describeIn ProjectNonTargetAnalysisS3 Map features across analyses (visualization).
+#' @method map_features ProjectNonTargetAnalysis
 #' @export
 map_features.ProjectNonTargetAnalysis <- function(
     x,
@@ -4023,22 +2707,8 @@ map_features.ProjectNonTargetAnalysis <- function(
   )
 }
 
-#' @rdname ProjectNonTargetAnalysisS3
-#' @param x A `ProjectNonTargetAnalysis` object.
-#' @template arg-analyses
-#' @template arg-ms-features
-#' @template arg-ms-groups
-#' @template arg-ms-components
-#' @template arg-ms-mass
-#' @template arg-ms-mz
-#' @template arg-ms-rt
-#' @template arg-ms-mobility
-#' @template arg-ms-ppm
-#' @template arg-ms-sec
-#' @template arg-ms-millisec
-#' @template arg-normalized
-#' @template arg-ms-filtered
-#' @template arg-plot-groupBy
+#' @describeIn ProjectNonTargetAnalysisS3 Plot MS1 features for selected analyses.
+#' @method plot_features_ms1 ProjectNonTargetAnalysis
 #' @export
 plot_features_ms1.ProjectNonTargetAnalysis <- function(
     x,
@@ -4086,22 +2756,8 @@ plot_features_ms1.ProjectNonTargetAnalysis <- function(
   )
 }
 
-#' @rdname ProjectNonTargetAnalysisS3
-#' @param x A `ProjectNonTargetAnalysis` object.
-#' @template arg-analyses
-#' @template arg-ms-features
-#' @template arg-ms-groups
-#' @template arg-ms-components
-#' @template arg-ms-mass
-#' @template arg-ms-mz
-#' @template arg-ms-rt
-#' @template arg-ms-mobility
-#' @template arg-ms-ppm
-#' @template arg-ms-sec
-#' @template arg-ms-millisec
-#' @template arg-normalized
-#' @template arg-ms-filtered
-#' @template arg-plot-groupBy
+#' @describeIn ProjectNonTargetAnalysisS3 Plot MS2 features for selected analyses.
+#' @method plot_features_ms2 ProjectNonTargetAnalysis
 #' @export
 plot_features_ms2.ProjectNonTargetAnalysis <- function(
     x,
@@ -4149,21 +2805,8 @@ plot_features_ms2.ProjectNonTargetAnalysis <- function(
   )
 }
 
-#' @rdname ProjectNonTargetAnalysisS3
-#' @param x A `ProjectNonTargetAnalysis` object.
-#' @template arg-analyses
-#' @template arg-ms-features
-#' @template arg-ms-groups
-#' @template arg-ms-mass
-#' @template arg-ms-mz
-#' @template arg-ms-rt
-#' @template arg-ms-mobility
-#' @template arg-ms-ppm
-#' @template arg-ms-sec
-#' @template arg-ms-millisec
-#' @template arg-normalized
-#' @template arg-ms-filtered
-#' @template arg-plot-groupBy
+#' @describeIn ProjectNonTargetAnalysisS3 Plot suspects MS2 for selected analyses.
+#' @method plot_suspects_ms2 ProjectNonTargetAnalysis
 #' @export
 plot_suspects_ms2.ProjectNonTargetAnalysis <- function(
     x,
@@ -4211,24 +2854,8 @@ plot_suspects_ms2.ProjectNonTargetAnalysis <- function(
   )
 }
 
-#' @rdname ProjectNonTargetAnalysisS3
-#' @param x A `ProjectNonTargetAnalysis` object.
-#' @param replicatesIn Character vector with replicate names used as denominator.
-#' @param replicatesOut Character vector with replicate names used as numerator.
-#' @template arg-ms-groups
-#' @template arg-ms-mass
-#' @template arg-ms-mz
-#' @template arg-ms-rt
-#' @template arg-ms-mobility
-#' @template arg-ms-ppm
-#' @template arg-ms-sec
-#' @template arg-ms-millisec
-#' @template arg-ms-filtered
-#' @param constantThreshold Numeric threshold used to mark features as constant.
-#' @param eliminationThreshold Numeric threshold used to mark features as eliminated.
-#' @template arg-ms-correctIntensity
-#' @param fillZerosWithLowerLimit Logical; replace zeros before fold-change calculation.
-#' @param lowerLimit Optional lower limit used when filling zeros.
+#' @describeIn ProjectNonTargetAnalysisS3 Compute fold change between replicate sets.
+#' @method get_fold_change ProjectNonTargetAnalysis
 #' @export
 get_fold_change.ProjectNonTargetAnalysis <- function(
     x,
@@ -4270,18 +2897,8 @@ get_fold_change.ProjectNonTargetAnalysis <- function(
   )
 }
 
-#' @rdname ProjectNonTargetAnalysisS3
-#' @param x A `ProjectNonTargetAnalysis` object.
-#' @template arg-analyses
-#' @template arg-ms-features
-#' @template arg-ms-groups
-#' @template arg-ms-mass
-#' @template arg-ms-mz
-#' @template arg-ms-rt
-#' @template arg-ms-mobility
-#' @template arg-ms-ppm
-#' @template arg-ms-sec
-#' @template arg-ms-millisec
+#' @describeIn ProjectNonTargetAnalysisS3 Return suspects for selected analyses.
+#' @method get_suspects ProjectNonTargetAnalysis
 #' @export
 get_suspects.ProjectNonTargetAnalysis <- function(
     x,
@@ -4311,18 +2928,8 @@ get_suspects.ProjectNonTargetAnalysis <- function(
   )
 }
 
-#' @rdname ProjectNonTargetAnalysisS3
-#' @param x A `ProjectNonTargetAnalysis` object.
-#' @template arg-analyses
-#' @template arg-ms-features
-#' @template arg-ms-groups
-#' @template arg-ms-mass
-#' @template arg-ms-mz
-#' @template arg-ms-rt
-#' @template arg-ms-mobility
-#' @template arg-ms-ppm
-#' @template arg-ms-sec
-#' @template arg-ms-millisec
+#' @describeIn ProjectNonTargetAnalysisS3 Return internal standards for selected analyses.
+#' @method get_internal_standards ProjectNonTargetAnalysis
 #' @export
 get_internal_standards.ProjectNonTargetAnalysis <- function(
     x,
@@ -4352,39 +2959,16 @@ get_internal_standards.ProjectNonTargetAnalysis <- function(
   )
 }
 
-#' @rdname ProjectNonTargetAnalysisS3
-#' @param x A `ProjectNonTargetAnalysis` object.
-#' @param parents Optional parent names to keep.
-#' @template arg-ms-groups
+#' @describeIn ProjectNonTargetAnalysisS3 Return transformation products for groups/parents.
+#' @method get_transformation_products ProjectNonTargetAnalysis
 #' @export
 get_transformation_products.ProjectNonTargetAnalysis <- function(x, parents = NULL, groups = NULL, ...) {
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
   x$get_transformation_products(parents = parents, groups = groups)
 }
 
-#' @rdname ProjectNonTargetAnalysisS3
-#' @param x A `ProjectNonTargetAnalysis` object.
-#' @param replicatesIn Character vector with replicate names used as denominator.
-#' @param replicatesOut Character vector with replicate names used as numerator.
-#' @template arg-ms-groups
-#' @template arg-ms-mass
-#' @template arg-ms-mz
-#' @template arg-ms-rt
-#' @template arg-ms-mobility
-#' @template arg-ms-ppm
-#' @template arg-ms-sec
-#' @template arg-ms-millisec
-#' @template arg-ms-filtered
-#' @param constantThreshold Numeric threshold used to mark features as constant.
-#' @param eliminationThreshold Numeric threshold used to mark features as eliminated.
-#' @template arg-ms-correctIntensity
-#' @param fillZerosWithLowerLimit Logical; replace zeros before fold-change calculation.
-#' @param lowerLimit Optional lower limit used when filling zeros.
-#' @template arg-normalized
-#' @template arg-yLab
-#' @template arg-title
-#' @template arg-interactive
-#' @template arg-showLegend
+#' @describeIn ProjectNonTargetAnalysisS3 Plot fold change between replicate sets.
+#' @method plot_fold_change ProjectNonTargetAnalysis
 #' @export
 plot_fold_change.ProjectNonTargetAnalysis <- function(
     x,
@@ -4436,32 +3020,29 @@ plot_fold_change.ProjectNonTargetAnalysis <- function(
   )
 }
 
-#' @rdname ProjectNonTargetAnalysisS3
-#' @param x A `ProjectNonTargetAnalysis` object.
-#' @template arg-ms-groups
-#' @param modal Character vector of transformation-product modalities to keep.
-#' @template arg-normalized
-#' @template arg-labs
-#' @template arg-title
-#' @template arg-interactive
-#' @template arg-showLegend
+#' @describeIn ProjectNonTargetAnalysisS3 Plot transformation products for groups.
+#' @method plot_transformation_products ProjectNonTargetAnalysis
 #' @export
 plot_transformation_products.ProjectNonTargetAnalysis <- function(
-    x,
-    groups = NULL,
-    modal = c("all", "dda", "dia", "ms1"),
-    normalized = TRUE,
-    xLab = NULL,
-    yLab = NULL,
-    title = NULL,
-    interactive = TRUE,
-    showLegend = TRUE,
-    ...) {
+  x,
+  groups = NULL,
+  modal = c("all", "dda", "dia", "ms1"),
+  normalized = TRUE,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  interactive = TRUE,
+  showLegend = TRUE,
+  showMS2 = FALSE,
+  showIntensityProfile = FALSE,
+  ...) {
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
   x$plot_transformation_products(
     groups = groups,
     modal = modal,
     normalized = normalized,
+    showMS2 = showMS2,
+    showIntensityProfile = showIntensityProfile,
     xLab = xLab,
     yLab = yLab,
     title = title,
@@ -4470,15 +3051,8 @@ plot_transformation_products.ProjectNonTargetAnalysis <- function(
   )
 }
 
-#' @rdname ProjectNonTargetAnalysisS3
-#' @param x A `ProjectNonTargetAnalysis` object.
-#' @template arg-analyses
-#' @template arg-ms-filtered
-#' @template arg-yLab
-#' @template arg-title
-#' @template arg-plot-groupBy
-#' @template arg-showLegend
-#' @template arg-showHoverText
+#' @describeIn ProjectNonTargetAnalysisS3 Plot features count across analyses.
+#' @method plot_features_count ProjectNonTargetAnalysis
 #' @export
 plot_features_count.ProjectNonTargetAnalysis <- function(
     x,

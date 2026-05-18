@@ -10,7 +10,7 @@
 namespace nts
 {
   struct NTS_DATA;
-  struct SUSPECTS;
+  namespace api { struct NTS_SUSPECTS; }
 
   namespace suspect_screening
   {

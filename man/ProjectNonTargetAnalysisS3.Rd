@@ -6,20 +6,20 @@
 \alias{get_features.ProjectNonTargetAnalysis}
 \alias{get_features_count.ProjectNonTargetAnalysis}
 \alias{get_features_profile.ProjectNonTargetAnalysis}
-\alias{get_fold_change.ProjectNonTargetAnalysis}
-\alias{get_suspects.ProjectNonTargetAnalysis}
-\alias{get_internal_standards.ProjectNonTargetAnalysis}
-\alias{get_transformation_products.ProjectNonTargetAnalysis}
-\alias{plot_fold_change.ProjectNonTargetAnalysis}
 \alias{plot_features_profile.ProjectNonTargetAnalysis}
 \alias{plot_features.ProjectNonTargetAnalysis}
 \alias{map_features.ProjectNonTargetAnalysis}
 \alias{plot_features_ms1.ProjectNonTargetAnalysis}
 \alias{plot_features_ms2.ProjectNonTargetAnalysis}
 \alias{plot_suspects_ms2.ProjectNonTargetAnalysis}
-\alias{plot_features_count.ProjectNonTargetAnalysis}
+\alias{get_fold_change.ProjectNonTargetAnalysis}
+\alias{get_suspects.ProjectNonTargetAnalysis}
+\alias{get_internal_standards.ProjectNonTargetAnalysis}
+\alias{get_transformation_products.ProjectNonTargetAnalysis}
+\alias{plot_fold_change.ProjectNonTargetAnalysis}
 \alias{plot_transformation_products.ProjectNonTargetAnalysis}
-\title{ProjectNonTargetAnalysis S3 methods}
+\alias{plot_features_count.ProjectNonTargetAnalysis}
+\title{ProjectNonTargetAnalysis S3 Methods}
 \usage{
 \method{info}{ProjectNonTargetAnalysis}(x, ...)
 
@@ -286,6 +286,8 @@
   title = NULL,
   interactive = TRUE,
   showLegend = TRUE,
+  showMS2 = FALSE,
+  showIntensityProfile = FALSE,
   ...
 )
 
@@ -302,6 +304,8 @@
 }
 \arguments{
 \item{x}{A \code{ProjectNonTargetAnalysis} object.}
+
+\item{...}{Additional arguments passed to the method or ignored by the implementation.}
 
 \item{analyses}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
@@ -363,9 +367,11 @@ in milliseconds.}
 
 \item{xLab}{A string with the title for the x axis.}
 
-\item{showDetails}{Logical, show hover details in interactive plots.}
+\item{showDetails}{Logical (length 1), show hover details in interactive plots.}
 
 \item{globalNormalization}{Logical, when TRUE normalize intensities globally across all selected features.}
+
+\item{showText}{Logical (length 1), set to \code{TRUE} to show the text annotations.}
 
 \item{replicatesIn}{Character vector with replicate names used as denominator.}
 
@@ -386,10 +392,60 @@ correction is ignored even if set to \code{TRUE}.}
 
 \item{parents}{Optional parent names to keep.}
 
-\item{modal}{Character vector of transformation-product modalities to keep.}
+\item{modal}{Character vector of transformation-product modalities to keep.
+Typical values are "all", "dda", "dia", and "ms1"; use "all" to
+include every modality. When \code{NULL}, no modality filtering is applied.}
 
-\item{showHoverText}{Logical (length 1), set to \code{TRUE} to show hovering text annotations.}
+\item{showMS2}{Logical; include MS2 annotations in transformation product plots.}
+
+\item{showIntensityProfile}{Logical; include intensity profile in transformation product plots.}
+
+\item{db}{Path to DuckDB file.}
+
+\item{project_id}{Active project identifier.}
+
+\item{.ptr}{Existing native project pointer for internal use.}
+
+\item{.mass_spec_ptr}{Existing native Mass Spec pointer for internal use.}
 }
 \description{
-S3 wrappers for the \code{ProjectNonTargetAnalysis} R6 methods.
+S3 interface methods for \code{ProjectNonTargetAnalysis}.
 }
+\section{Functions}{
+\itemize{
+\item \code{info(ProjectNonTargetAnalysis)}: Return project information summary.
+
+\item \code{get_features(ProjectNonTargetAnalysis)}: Return shared NTS_FEATURES rows for selected analyses.
+
+\item \code{get_features_count(ProjectNonTargetAnalysis)}: Return feature counts for selected analyses.
+
+\item \code{get_features_profile(ProjectNonTargetAnalysis)}: Return feature profiles across analyses.
+
+\item \code{plot_features_profile(ProjectNonTargetAnalysis)}: Plot feature profiles for selected analyses.
+
+\item \code{plot_features(ProjectNonTargetAnalysis)}: Plot selected features for analyses.
+
+\item \code{map_features(ProjectNonTargetAnalysis)}: Map features across analyses (visualization).
+
+\item \code{plot_features_ms1(ProjectNonTargetAnalysis)}: Plot MS1 features for selected analyses.
+
+\item \code{plot_features_ms2(ProjectNonTargetAnalysis)}: Plot MS2 features for selected analyses.
+
+\item \code{plot_suspects_ms2(ProjectNonTargetAnalysis)}: Plot suspects MS2 for selected analyses.
+
+\item \code{get_fold_change(ProjectNonTargetAnalysis)}: Compute fold change between replicate sets.
+
+\item \code{get_suspects(ProjectNonTargetAnalysis)}: Return suspects for selected analyses.
+
+\item \code{get_internal_standards(ProjectNonTargetAnalysis)}: Return internal standards for selected analyses.
+
+\item \code{get_transformation_products(ProjectNonTargetAnalysis)}: Return transformation products for groups/parents.
+
+\item \code{plot_fold_change(ProjectNonTargetAnalysis)}: Plot fold change between replicate sets.
+
+\item \code{plot_transformation_products(ProjectNonTargetAnalysis)}: Plot transformation products for groups.
+
+\item \code{plot_features_count(ProjectNonTargetAnalysis)}: Plot features count across analyses.
+
+}}
+\keyword{internal}

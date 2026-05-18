@@ -1,13 +1,41 @@
 #' @title Internal Project Mass Spec Base R6 Class
-#' @description Internal R6 child of `Project` exposing shared Mass Spec tables and native
-#'   helpers in the shared DuckDB project. `ProjectMassSpecSpectra` and
-#'   `ProjectMassSpecChromatograms` provide the dedicated public sub-domain
-#'   interfaces on top of this base.
-#' @details This shared base is used by the public Mass Spec project wrappers and
-#' is not intended to be opened directly by end users.
-#' @param db Path to the project DuckDB file.
-#' @param project_id Active project identifier.
+#' @description Internal R6 child of `Project` exposing shared Mass Spec tables and native helpers.
+#' @template arg-db-path
+#' @template arg-project-id
+#' @template arg-analyses
+#' @template arg-ms-levels
+#' @template arg-ms-rt
+#' @template arg-ms-mass
+#' @template arg-ms-mz
+#' @template arg-ms-mobility
+#' @template arg-ms-ppm
+#' @template arg-ms-sec
+#' @template arg-ms-millisec
+#' @template arg-ms-id
+#' @template arg-ms-allTraces
+#' @template arg-ms-isolationWindow
+#' @template arg-ms-minIntensityMS1
+#' @template arg-ms-minIntensityMS2
+#' @template arg-plot-downsize
+#' @template arg-plot-xLab
+#' @template arg-plot-yLab
+#' @template arg-plot-title
+#' @template arg-plot-groupBy
+#' @template arg-plot-interactive
+#' @template arg-plot-colorPalette
+#' @template arg-ms-mzClust
+#' @template arg-ms-presence
+#' @template arg-ms-minIntensity
+#' @template arg-ms-isolationWindow
+#' @template arg-ellipsis
+#' @template arg-import-file
+#' @template arg-file-paths
+#' @template arg-replicates
+#' @template arg-blanks
+#' @template arg-analysis
+#' @template arg-value
 #' @keywords internal
+#'
 ProjectMassSpec <- R6::R6Class(
   classname = "ProjectMassSpec",
   inherit = Project,
@@ -17,53 +45,56 @@ ProjectMassSpec <- R6::R6Class(
   ),
   public = list(
     #' @description Create a Mass Spec domain wrapper for a shared `Project`.
-    #' @param db Path to the DuckDB project file.
-    #' @param project_id Active project identifier.
-    #' @param .ptr Existing native project pointer for internal use.
-    #' @param .mass_spec_ptr Existing native Mass Spec pointer for internal use.
-    initialize = function(db, project_id, .ptr = NULL, .mass_spec_ptr = NULL) {
+    initialize = function(db,
+                          project_id,
+                          ...,
+                          file_paths = character(),
+                          replicates = character(),
+                          blanks = character()) {
+      dots <- list(...)
+      ptr_res <- .pull_internal_init_arg(dots, ".ptr")
+      .ptr <- ptr_res$value
+      mass_spec_ptr_res <- .pull_internal_init_arg(ptr_res$dots, ".mass_spec_ptr")
+      .mass_spec_ptr <- mass_spec_ptr_res$value
+      .assert_only_internal_init_args(mass_spec_ptr_res$dots, "ProjectMassSpec$initialize()")
       super$initialize(db = db, project_id = project_id, .ptr = .ptr)
       private$.mass_spec_ptr <- if (is.null(.mass_spec_ptr)) {
-        rcpp_project_mass_spec_new(self$get_ptr())
+        rcpp_project_mass_spec_new(self$get_ptr(), file_paths, replicates, blanks)
       } else {
         .mass_spec_ptr
+      }
+      if (!is.null(.mass_spec_ptr) && length(file_paths) > 0) {
+        self$add_analyses(file_paths = file_paths, replicates = replicates, blanks = blanks)
       }
     },
     #' @description Return the native Mass Spec pointer.
     get_mass_spec_ptr = function() {
       private$.mass_spec_ptr
     },
-    #' @description Import multiple Mass Spec files into the shared DB.
-    #' @param file_paths Character vector with Mass Spec file paths.
-    #' @param analyses Optional character vector with analysis names.
-    #' @param replicates Optional character vector with replicate names.
-    #' @param blanks Optional character vector with blank names.
-    import_files = function(file_paths, analyses = character(), replicates = character(), blanks = character()) {
+    #' @description Add multiple Mass Spec files into the shared DB as analyses.
+    add_analyses = function(file_paths, replicates = character(), blanks = character()) {
       checkmate::assert_character(file_paths, min.len = 1, any.missing = FALSE)
-      checkmate::assert_character(analyses, any.missing = FALSE, null.ok = FALSE)
       checkmate::assert_character(replicates, any.missing = FALSE, null.ok = FALSE)
       checkmate::assert_character(blanks, any.missing = FALSE, null.ok = FALSE)
-      if (length(analyses) > 0 && length(analyses) != length(file_paths)) {
-        stop("`analyses` must have length 0 or match `file_paths`.")
-      }
       if (length(replicates) > 0 && length(replicates) != length(file_paths)) {
         stop("`replicates` must have length 0 or match `file_paths`.")
       }
       if (length(blanks) > 0 && length(blanks) != length(file_paths)) {
         stop("`blanks` must have length 0 or match `file_paths`.")
       }
-      rcpp_project_mass_spec_import_files(private$.mass_spec_ptr, file_paths, analyses, replicates, blanks)
+      rcpp_project_mass_spec_import_files(private$.mass_spec_ptr, file_paths, replicates, blanks)
       invisible(self)
     },
-    #' @description Remove one analysis from the shared DB.
-    #' @param analysis Character scalar with the analysis name.
-    remove_analysis = function(analysis) {
-      checkmate::assert_character(analysis, len = 1, any.missing = FALSE)
-      rcpp_project_mass_spec_remove_analysis(private$.mass_spec_ptr, analysis)
+    #' @description Remove analyses from the shared DB.
+    remove_analyses = function(analyses) {
+      checkmate::assert_character(analyses, min.len = 1, any.missing = FALSE)
+      for (analysis in analyses) {
+        rcpp_project_mass_spec_remove_analysis(private$.mass_spec_ptr, analysis)
+      }
       invisible(self)
     },
-    #' @description List imported analyses.
-    list_analyses = function() {
+    #' @description Return imported analyses.
+    get_analyses = function() {
       rcpp_project_mass_spec_list_analyses(private$.mass_spec_ptr)
     },
     #' @description Get analysis names.
@@ -75,7 +106,6 @@ ProjectMassSpec <- R6::R6Class(
       rcpp_project_mass_spec_get_replicate_names(private$.mass_spec_ptr)
     },
     #' @description Set replicate names by analysis order.
-    #' @param value Character vector of replicate names matching the number of analyses.
     set_replicate_names = function(value) {
       checkmate::assert_character(value, any.missing = FALSE)
       rcpp_project_mass_spec_set_replicate_names(private$.mass_spec_ptr, value)
@@ -86,7 +116,6 @@ ProjectMassSpec <- R6::R6Class(
       rcpp_project_mass_spec_get_blank_names(private$.mass_spec_ptr)
     },
     #' @description Set blank names by analysis order.
-    #' @param value Character vector of blank names matching the number of analyses.
     set_blank_names = function(value) {
       checkmate::assert_character(value, any.missing = FALSE)
       rcpp_project_mass_spec_set_blank_names(private$.mass_spec_ptr, value)
@@ -97,22 +126,18 @@ ProjectMassSpec <- R6::R6Class(
       rcpp_project_mass_spec_get_concentrations(private$.mass_spec_ptr)
     },
     #' @description Set concentrations by analysis order.
-    #' @param value Numeric vector of concentrations matching the number of analyses.
     set_concentrations = function(value) {
       if (!is.numeric(value)) stop("value must be numeric.")
       rcpp_project_mass_spec_set_concentrations(private$.mass_spec_ptr, value)
       invisible(self)
     },
     #' @description Return spectra headers for selected analyses.
-    #' @template arg-analyses
     get_spectra_headers = function(analyses = NULL) {
-      analyses_info <- data.table::as.data.table(self$list_analyses())
-      all_names <- analyses_info$analysis
-      sel_names <- .resolve_analyses_selection(analyses, all_names)
-      if (length(sel_names) == 0) {
-        return(data.table::data.table())
+      if (is.null(analyses)) {
+        analyses <- character()
       }
-      hd <- data.table::as.data.table(rcpp_project_mass_spec_get_spectra_headers(private$.mass_spec_ptr, sel_names))
+      analyses_info <- data.table::as.data.table(self$get_analyses())
+      hd <- data.table::as.data.table(rcpp_project_mass_spec_get_spectra_headers(private$.mass_spec_ptr, analyses))
       if (nrow(hd) == 0) {
         return(data.table::data.table())
       }
@@ -126,15 +151,9 @@ ProjectMassSpec <- R6::R6Class(
       hd
     },
     #' @description Return spectra TIC rows for selected analyses.
-    #' @template arg-analyses
-    #' @template arg-ms-levels
-    #' @template arg-ms-rt
     get_spectra_tic = function(analyses = NULL, levels = NULL, rt = NULL) {
-      analyses_info <- data.table::as.data.table(self$list_analyses())
-      all_names <- analyses_info$analysis
-      sel_names <- .resolve_analyses_selection(analyses, all_names)
-      if (length(sel_names) == 0) {
-        return(data.table::data.table())
+      if (is.null(analyses)) {
+        analyses <- character()
       }
       if (is.null(levels)) {
         levels <- integer()
@@ -144,70 +163,81 @@ ProjectMassSpec <- R6::R6Class(
       }
       data.table::as.data.table(rcpp_project_mass_spec_get_spectra_tic(
         private$.mass_spec_ptr,
-        sel_names,
+        analyses,
         as.integer(levels),
         as.numeric(rt)
       ))
     },
     #' @description Get raw spectra data for selected analyses.
-    #' @template arg-analyses
-    #' @template arg-ms-levels
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
-    #' @template arg-ms-id
-    #' @template arg-ms-allTraces
-    #' @template arg-ms-isolationWindow
-    #' @template arg-ms-minIntensityMS1
-    #' @template arg-ms-minIntensityMS2
     get_raw_spectra = function(
-        analyses = NULL,
-        levels = NULL,
-        mass = NULL,
-        mz = NULL,
-        rt = NULL,
-        mobility = NULL,
+        analyses = character(),
+        levels = integer(),
+        mass = numeric(),
+        mz = numeric(),
+        rt = numeric(),
+        mobility = numeric(),
         ppm = 20,
         sec = 60,
         millisec = 5,
-        id = NULL,
+        id = character(),
         allTraces = TRUE,
         isolationWindow = 1.3,
         minIntensityMS1 = 0,
         minIntensityMS2 = 0) {
-      analyses_info <- data.table::as.data.table(self$list_analyses())
-      all_names <- analyses_info$analysis
-      if (!any(is.numeric(minIntensityMS1) | is.integer(minIntensityMS1))) minIntensityMS1 <- 0
-      if (!any(is.numeric(minIntensityMS2) | is.integer(minIntensityMS2))) minIntensityMS2 <- 0
-      if (is.data.frame(mz) && "analysis" %in% colnames(mz)) analyses <- mz$analysis
-      if (is.data.frame(mass) && "analysis" %in% colnames(mass)) analyses <- mass$analysis
-      sel_names <- .resolve_analyses_selection(analyses, all_names)
-      if (length(sel_names) == 0) {
-        return(data.table::data.table())
+      if (is.null(analyses)) {
+        analyses <- character()
       }
-      hd <- self$get_spectra_headers(sel_names)
-      if (nrow(hd) == 0) {
-        return(data.table::data.table())
+      if (is.null(mass)) {
+        mass <- numeric()
       }
-      if (is.null(levels)) levels <- unique(hd$level)
-      if (!2 %in% levels) allTraces <- TRUE
-      if (!is.logical(allTraces)) allTraces <- TRUE
-      if (!any(is.numeric(isolationWindow) | is.integer(isolationWindow))) {
-        isolationWindow <- 0
+      if (is.null(mz)) {
+        mz <- numeric()
       }
+      if (is.null(rt)) {
+        rt <- numeric()
+      }
+      if (is.null(mobility)) {
+        mobility <- numeric()
+      }
+      if (is.null(id)) {
+        id <- character()
+      }
+      if (is.null(levels)) {
+        levels <- integer()
+      }
+      if (!(checkmate::test_character(analyses, any.missing = FALSE) || checkmate::test_integerish(analyses, any.missing = FALSE, lower = 1))) {
+        stop("`analyses` must be a character vector of names or a numeric vector of 1-based indices.")
+      }
+      checkmate::assert_integerish(levels, any.missing = FALSE, lower = 1)
+      if (!(checkmate::test_numeric(mass, any.missing = FALSE) || checkmate::test_data_frame(mass))) {
+        stop("`mass` must be a numeric vector or a data.frame.")
+      }
+      if (!(checkmate::test_numeric(mz, any.missing = FALSE) || checkmate::test_data_frame(mz))) {
+        stop("`mz` must be a numeric vector or a data.frame.")
+      }
+      if (!(checkmate::test_numeric(rt, any.missing = FALSE) || checkmate::test_data_frame(rt))) {
+        stop("`rt` must be a numeric vector or a data.frame.")
+      }
+      if (!(checkmate::test_numeric(mobility, any.missing = FALSE) || checkmate::test_data_frame(mobility))) {
+        stop("`mobility` must be a numeric vector or a data.frame.")
+      }
+      checkmate::assert_character(id, any.missing = FALSE)
+      checkmate::assert_number(ppm, lower = 0, finite = TRUE)
+      checkmate::assert_number(sec, lower = 0, finite = TRUE)
+      checkmate::assert_number(millisec, lower = 0, finite = TRUE)
+      checkmate::assert_flag(allTraces)
+      checkmate::assert_number(isolationWindow, lower = 0, finite = TRUE)
+      checkmate::assert_number(minIntensityMS1, lower = 0, finite = TRUE)
+      checkmate::assert_number(minIntensityMS2, lower = 0, finite = TRUE)
       spec <- data.table::as.data.table(rcpp_project_mass_spec_get_raw_spectra(
         private$.mass_spec_ptr,
-        sel_names,
+        analyses,
         as.integer(levels),
         mass,
         mz,
         rt,
         mobility,
-        if (is.null(id)) character() else as.character(id),
+        as.character(id),
         ppm,
         sec,
         millisec,
@@ -227,41 +257,7 @@ ProjectMassSpec <- R6::R6Class(
       }
       spec
     },
-    #' @description Get total ion current traces for selected analyses.
-    #' @template arg-analyses
-    #' @template arg-ms-levels
-    #' @template arg-ms-rt
-    get_raw_spectra_tic = function(analyses = NULL, levels = c(1, 2), rt = NULL) {
-      traces <- self$get_spectra_tic(analyses, levels, rt)
-      if (nrow(traces) == 0) {
-        return(data.table::data.table())
-      }
-      traces <- traces[, .(analysis, replicate, polarity, level, rt, tic)]
-      traces
-    },
-    #' @description Get base peak chromatogram traces for selected analyses.
-    #' @template arg-analyses
-    #' @template arg-ms-levels
-    #' @template arg-ms-rt
-    get_raw_spectra_bpc = function(analyses = NULL, levels = c(1, 2), rt = NULL) {
-      traces <- self$get_spectra_tic(analyses, levels, rt)
-      if (nrow(traces) == 0) {
-        return(data.table::data.table())
-      }
-      traces <- traces[, .(analysis, replicate, polarity, level, rt, bpmz, bpint)]
-      traces
-    },
     #' @description Plot total ion current traces for selected analyses.
-    #' @template arg-analyses
-    #' @template arg-ms-levels
-    #' @template arg-ms-rt
-    #' @template arg-plot-downsize
-    #' @template arg-plot-xLab
-    #' @template arg-plot-yLab
-    #' @template arg-plot-title
-    #' @template arg-plot-groupBy
-    #' @template arg-plot-interactive
-    #' @template arg-plot-colorPalette
     plot_spectra_tic = function(
         analyses = NULL,
         levels = c(1, 2),
@@ -273,14 +269,14 @@ ProjectMassSpec <- R6::R6Class(
         groupBy = "analysis",
         interactive = TRUE,
         colorPalette = NULL) {
-      tic <- self$get_raw_spectra_tic(analyses, levels, rt)
+      tic <- data.table::as.data.table(self$get_spectra_tic(analyses, levels, rt))
       if (nrow(tic) == 0) {
         message("\U2717 TIC not found for the analyses!")
         return(NULL)
       }
+      tic <- tic[, .(analysis, replicate, polarity, level, rt, tic)]
       if (!is.null(downsize) && downsize > 0 && nrow(tic) > downsize) {
-        tic <- data.table::as.data.table(tic)
-        tic$rt <- floor(tic$rt / downsize) * downsize
+        tic[, rt := floor(rt / downsize) * downsize]
         tic <- tic[, lapply(.SD, function(col) {
           if (is.numeric(col)) {
             mean(col, na.rm = TRUE)
@@ -307,16 +303,6 @@ ProjectMassSpec <- R6::R6Class(
       )
     },
     #' @description Plot base peak chromatogram traces for selected analyses.
-    #' @template arg-analyses
-    #' @template arg-ms-levels
-    #' @template arg-ms-rt
-    #' @template arg-plot-downsize
-    #' @template arg-plot-xLab
-    #' @template arg-plot-yLab
-    #' @template arg-plot-title
-    #' @template arg-plot-groupBy
-    #' @template arg-plot-interactive
-    #' @template arg-plot-colorPalette
     plot_spectra_bpc = function(
         analyses = NULL,
         levels = c(1, 2),
@@ -328,13 +314,13 @@ ProjectMassSpec <- R6::R6Class(
         groupBy = "analysis",
         interactive = TRUE,
         colorPalette = NULL) {
-      bpc <- self$get_raw_spectra_bpc(analyses, levels, rt)
+      bpc <- data.table::as.data.table(self$get_spectra_tic(analyses, levels, rt))
       if (nrow(bpc) == 0) {
         message("\U2717 BPC not found for the analyses!")
         return(NULL)
       }
+      bpc <- bpc[, .(analysis, replicate, polarity, level, rt, bpmz, bpint)]
       if (!is.null(downsize) && downsize > 0 && nrow(bpc) > downsize) {
-        bpc <- data.table::as.data.table(bpc)
         bpc[, rt := floor(rt / downsize) * downsize]
         bpc <- bpc[, lapply(.SD, function(col) {
           if (is.numeric(col)) {
@@ -362,15 +348,6 @@ ProjectMassSpec <- R6::R6Class(
       )
     },
     #' @description Get extracted ion chromatograms for selected analyses.
-    #' @template arg-analyses
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
-    #' @template arg-ms-id
     get_raw_spectra_eic = function(
         analyses = NULL,
         mass = NULL,
@@ -416,22 +393,6 @@ ProjectMassSpec <- R6::R6Class(
       eic
     },
     #' @description Plot extracted ion chromatograms for selected analyses.
-    #' @template arg-analyses
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
-    #' @template arg-ms-id
-    #' @template arg-plot-downsize
-    #' @template arg-plot-xLab
-    #' @template arg-plot-yLab
-    #' @template arg-plot-title
-    #' @template arg-plot-groupBy
-    #' @template arg-plot-interactive
-    #' @template arg-plot-colorPalette
     plot_spectra_eic = function(
         analyses = NULL,
         mass = NULL,
@@ -484,18 +445,6 @@ ProjectMassSpec <- R6::R6Class(
       )
     },
     #' @description Get clustered MS1 spectra for selected analyses.
-    #' @template arg-analyses
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
-    #' @template arg-ms-id
-    #' @template arg-ms-mzClust
-    #' @template arg-ms-presence
-    #' @template arg-ms-minIntensity
     get_raw_spectra_ms1 = function(
         analyses = NULL,
         mass = NULL,
@@ -559,7 +508,7 @@ ProjectMassSpec <- R6::R6Class(
       ms1_df <- ms1_df[order(ms1_df$mz), ]
       ms1_df <- ms1_df[order(ms1_df$id), ]
       ms1_df <- ms1_df[order(ms1_df$analysis), ]
-      analyses_info <- data.table::as.data.table(self$list_analyses())
+      analyses_info <- data.table::as.data.table(self$get_analyses())
       rpls <- analyses_info$replicate
       names(rpls) <- analyses_info$analysis
       ms1_df$replicate <- rpls[ms1_df$analysis]
@@ -567,19 +516,6 @@ ProjectMassSpec <- R6::R6Class(
       ms1_df
     },
     #' @description Get clustered MS2 spectra for selected analyses.
-    #' @template arg-analyses
-    #' @template arg-ms-mass
-    #' @template arg-ms-mz
-    #' @template arg-ms-rt
-    #' @template arg-ms-mobility
-    #' @template arg-ms-ppm
-    #' @template arg-ms-sec
-    #' @template arg-ms-millisec
-    #' @template arg-ms-id
-    #' @template arg-ms-isolationWindow
-    #' @template arg-ms-mzClust
-    #' @template arg-ms-presence
-    #' @template arg-ms-minIntensity
     get_raw_spectra_ms2 = function(
         analyses = NULL,
         mass = NULL,
@@ -645,7 +581,7 @@ ProjectMassSpec <- R6::R6Class(
       ms2_df <- ms2_df[order(ms2_df$mz), ]
       ms2_df <- ms2_df[order(ms2_df$id), ]
       ms2_df <- ms2_df[order(ms2_df$analysis), ]
-      analyses_info <- data.table::as.data.table(self$list_analyses())
+      analyses_info <- data.table::as.data.table(self$get_analyses())
       rpls <- analyses_info$replicate
       names(rpls) <- analyses_info$analysis
       ms2_df$replicate <- rpls[ms2_df$analysis]
@@ -653,7 +589,6 @@ ProjectMassSpec <- R6::R6Class(
       ms2_df
     },
     #' @description Print a short summary.
-    #' @param ... Additional arguments ignored.
     print = function(...) {
       cat("\nProjectMassSpec\n")
       cat("db: ", self$db, "\n", sep = "")
@@ -662,14 +597,13 @@ ProjectMassSpec <- R6::R6Class(
       if (!inherits(domain, "try-error") && !is.null(domain)) {
         cat("domain: ", domain, "\n", sep = "")
       }
-      analyses <- try(self$list_analyses(), silent = TRUE)
+      analyses <- try(self$get_analyses(), silent = TRUE)
       if (!inherits(analyses, "try-error")) {
         cat("analyses: ", nrow(analyses), "\n", sep = "")
       }
       invisible(self)
     },
     #' @description Show a short summary.
-    #' @param ... Additional arguments ignored.
     show = function(...) {
       self$print(...)
     }
@@ -679,88 +613,21 @@ ProjectMassSpec <- R6::R6Class(
 #' @name ProjectMassSpecS3
 #' @title ProjectMassSpec S3 Methods
 #' @description S3 interface methods for `ProjectMassSpec`.
-#' These methods are thin wrappers over the `ProjectMassSpec` R6 methods and expose
-#' the shared-project Mass Spec API through the package generics.
-#' @details
-#' Available methods are:
-#'
-#' Metadata methods:
-#' - `get_analysis_names()`: Get analysis names.
-#' - `get_replicate_names()`: Get replicate names.
-#' - `set_replicate_names()`: Set replicate names.
-#' - `get_blank_names()`: Get blank names.
-#' - `set_blank_names()`: Set blank names.
-#' - `get_concentrations()`: Get concentrations.
-#' - `set_concentrations()`: Set concentrations.
-#'
-#' Header methods:
-#' - `get_spectra_headers()`: Fetch spectra headers for the specified analyses.
-#' - `get_spectra_tic()`: Fetch spectra TIC rows for the specified analyses.
-#'
-#' Spectra trace methods:
-#' - `get_raw_spectra_tic()`: Get the total ion current (TIC) spectra for the specified analyses.
-#' - `get_raw_spectra_bpc()`: Get the base peak chromatograms (BPC) spectra for the specified analyses.
-#' - `plot_spectra_tic()`: Plot total ion current (TIC) spectra for the specified analyses.
-#' - `plot_spectra_bpc()`: Plot base peak chromatogram (BPC) spectra for the specified analyses.
-#'
-#' Spectra extraction methods:
-#' - `get_raw_spectra()`: Get raw spectra data from specified analyses, returning a `data.table` with the spectra data.
-#' - `get_raw_spectra_eic()`: Get extracted ion chromatograms (EIC) for the specified analyses and targets.
-#' - `plot_spectra_eic()`: Plot extracted ion chromatograms (EIC) for the specified analyses and targets.
-#' - `get_raw_spectra_ms1()`: Get MS1 spectra for the specified analyses and targets.
-#' - `get_raw_spectra_ms2()`: Get MS2 spectra for the specified analyses and targets.
-#' @aliases get_raw_spectra_tic.ProjectMassSpec
-#'   get_raw_spectra_bpc.ProjectMassSpec
-#'   plot_spectra_tic.ProjectMassSpec
-#'   plot_spectra_bpc.ProjectMassSpec
-#'   get_spectra_headers.ProjectMassSpec
-#'   get_analysis_names.ProjectMassSpec
-#'   get_replicate_names.ProjectMassSpec
-#'   set_replicate_names.ProjectMassSpec
-#'   get_blank_names.ProjectMassSpec
-#'   set_blank_names.ProjectMassSpec
-#'   get_concentrations.ProjectMassSpec
-#'   set_concentrations.ProjectMassSpec
-#'   get_raw_spectra.ProjectMassSpec
-#'   get_raw_spectra_eic.ProjectMassSpec
-#'   plot_spectra_eic.ProjectMassSpec
-#'   get_raw_spectra_ms1.ProjectMassSpec
-#'   get_raw_spectra_ms2.ProjectMassSpec
-#' @param x A `ProjectMassSpec` object.
-#' @rdname ProjectMassSpecS3
-#' @template arg-analyses
-#' @template arg-ms-levels
-#' @template arg-ms-rt
-#' @export
-get_raw_spectra_tic.ProjectMassSpec <- function(
-    x,
-    analyses = NULL,
-    levels = c(1, 2),
-    rt = NULL) {
-  checkmate::assert_class(x, "ProjectMassSpec")
-  x$get_raw_spectra_tic(analyses = analyses, levels = levels, rt = rt)
-}
-
-#' @rdname ProjectMassSpecS3
 #' @param x A `ProjectMassSpec` object.
 #' @template arg-analyses
 #' @template arg-ms-levels
 #' @template arg-ms-rt
-#' @export
-get_raw_spectra_bpc.ProjectMassSpec <- function(
-    x,
-    analyses = NULL,
-    levels = c(1, 2),
-    rt = NULL) {
-  checkmate::assert_class(x, "ProjectMassSpec")
-  x$get_raw_spectra_bpc(analyses = analyses, levels = levels, rt = rt)
-}
-
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
-#' @template arg-analyses
-#' @template arg-ms-levels
-#' @template arg-ms-rt
+#' @template arg-ms-mass
+#' @template arg-ms-mz
+#' @template arg-ms-mobility
+#' @template arg-ms-ppm
+#' @template arg-ms-sec
+#' @template arg-ms-millisec
+#' @template arg-ms-id
+#' @template arg-ms-allTraces
+#' @template arg-ms-isolationWindow
+#' @template arg-ms-minIntensityMS1
+#' @template arg-ms-minIntensityMS2
 #' @template arg-plot-downsize
 #' @template arg-plot-xLab
 #' @template arg-plot-yLab
@@ -768,6 +635,18 @@ get_raw_spectra_bpc.ProjectMassSpec <- function(
 #' @template arg-plot-groupBy
 #' @template arg-plot-interactive
 #' @template arg-plot-colorPalette
+NULL
+
+#' @describeIn ProjectMassSpecS3 Return imported analyses.
+#' @method get_analyses ProjectMassSpec
+#' @export
+get_analyses.ProjectMassSpec <- function(x) {
+  checkmate::assert_class(x, "ProjectMassSpec")
+  x$get_analyses()
+}
+
+#' @describeIn ProjectMassSpecS3 Plot total ion current (TIC) spectra for specified analyses.
+#' @method plot_spectra_tic ProjectMassSpec
 #' @export
 plot_spectra_tic.ProjectMassSpec <- function(
     x,
@@ -796,18 +675,8 @@ plot_spectra_tic.ProjectMassSpec <- function(
   )
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
-#' @template arg-analyses
-#' @template arg-ms-levels
-#' @template arg-ms-rt
-#' @template arg-plot-downsize
-#' @template arg-plot-xLab
-#' @template arg-plot-yLab
-#' @template arg-plot-title
-#' @template arg-plot-groupBy
-#' @template arg-plot-interactive
-#' @template arg-plot-colorPalette
+#' @describeIn ProjectMassSpecS3 Plot base peak chromatogram (BPC) spectra for specified analyses.
+#' @method plot_spectra_bpc ProjectMassSpec
 #' @export
 plot_spectra_bpc.ProjectMassSpec <- function(
     x,
@@ -836,21 +705,20 @@ plot_spectra_bpc.ProjectMassSpec <- function(
   )
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
-#' @template arg-analyses
+#' @describeIn ProjectMassSpecS3 Fetch spectra headers for specified analyses.
+#' @method get_spectra_headers ProjectMassSpec
 #' @export
 get_spectra_headers.ProjectMassSpec <- function(x, analyses = NULL) {
   checkmate::assert_class(x, "ProjectMassSpec")
   x$get_spectra_headers(analyses = analyses)
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
+#' @describeIn ProjectMassSpecS3 Print a short information table for the project analyses.
+#' @method info ProjectMassSpec
 #' @export
 info.ProjectMassSpec <- function(x, ...) {
   checkmate::assert_class(x, "ProjectMassSpec")
-  analyses_info <- data.table::as.data.table(x$list_analyses())
+  analyses_info <- data.table::as.data.table(x$get_analyses())
   if (nrow(analyses_info) == 0) {
     return(data.table::data.table())
   }
@@ -866,123 +734,102 @@ info.ProjectMassSpec <- function(x, ...) {
   analyses_info
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
-#' @param ... One or more file paths to import.
+#' @describeIn ProjectMassSpecS3 Import one or more data files into the project as analyses.
+#' @method add_analyses ProjectMassSpec
 #' @export
 add_analyses.ProjectMassSpec <- function(x, ...) {
   checkmate::assert_class(x, "ProjectMassSpec")
   dots <- list(...)
   file_paths <- unlist(dots, use.names = FALSE)
   checkmate::assert_character(file_paths, min.len = 1, any.missing = FALSE)
-  x$import_files(file_paths = file_paths)
+  x$add_analyses(file_paths = file_paths)
   invisible(x)
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
-#' @param ... Character or integer analysis selection.
+#' @describeIn ProjectMassSpecS3 Remove analyses from the project by name or index.
+#' @method remove_analyses ProjectMassSpec
 #' @export
 remove_analyses.ProjectMassSpec <- function(x, ...) {
   checkmate::assert_class(x, "ProjectMassSpec")
   dots <- list(...)
   value <- if (length(dots) > 0) dots[[1]] else NULL
-  analyses_info <- data.table::as.data.table(x$list_analyses())
+  analyses_info <- data.table::as.data.table(x$get_analyses())
   sel_names <- .resolve_analyses_selection(value, analyses_info$analysis)
-  for (analysis in sel_names) {
-    x$remove_analysis(analysis)
-  }
+  x$remove_analyses(sel_names)
   invisible(x)
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
+#' @describeIn ProjectMassSpecS3 Return analysis names for the project.
+#' @method get_analysis_names ProjectMassSpec
 #' @export
 get_analysis_names.ProjectMassSpec <- function(x) {
   checkmate::assert_class(x, "ProjectMassSpec")
   x$get_analysis_names()
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
+#' @describeIn ProjectMassSpecS3 Return replicate names for the project.
+#' @method get_replicate_names ProjectMassSpec
 #' @export
 get_replicate_names.ProjectMassSpec <- function(x) {
   checkmate::assert_class(x, "ProjectMassSpec")
   x$get_replicate_names()
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
-#' @param value Character vector of replicate names matching the number of analyses.
+#' @describeIn ProjectMassSpecS3 Set replicate names for the project analyses.
+#' @method set_replicate_names ProjectMassSpec
 #' @export
 set_replicate_names.ProjectMassSpec <- function(x, value) {
   checkmate::assert_class(x, "ProjectMassSpec")
   x$set_replicate_names(value)
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
+#' @describeIn ProjectMassSpecS3 Return blank names for the project.
+#' @method get_blank_names ProjectMassSpec
 #' @export
 get_blank_names.ProjectMassSpec <- function(x) {
   checkmate::assert_class(x, "ProjectMassSpec")
   x$get_blank_names()
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
-#' @param value Character vector of blank names matching the number of analyses.
+#' @describeIn ProjectMassSpecS3 Set blank names for the project analyses.
+#' @method set_blank_names ProjectMassSpec
 #' @export
 set_blank_names.ProjectMassSpec <- function(x, value) {
   checkmate::assert_class(x, "ProjectMassSpec")
   x$set_blank_names(value)
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
+#' @describeIn ProjectMassSpecS3 Return concentrations vector for the project.
+#' @method get_concentrations ProjectMassSpec
 #' @export
 get_concentrations.ProjectMassSpec <- function(x) {
   checkmate::assert_class(x, "ProjectMassSpec")
   x$get_concentrations()
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
-#' @param value Numeric vector of concentrations matching the number of analyses.
+#' @describeIn ProjectMassSpecS3 Set concentrations for the project analyses.
+#' @method set_concentrations ProjectMassSpec
 #' @export
 set_concentrations.ProjectMassSpec <- function(x, value) {
   checkmate::assert_class(x, "ProjectMassSpec")
   x$set_concentrations(value)
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
-#' @template arg-analyses
-#' @template arg-ms-levels
-#' @template arg-ms-mass
-#' @template arg-ms-mz
-#' @template arg-ms-rt
-#' @template arg-ms-mobility
-#' @template arg-ms-ppm
-#' @template arg-ms-sec
-#' @template arg-ms-millisec
-#' @template arg-ms-id
-#' @template arg-ms-allTraces
-#' @template arg-ms-isolationWindow
-#' @template arg-ms-minIntensityMS1
-#' @template arg-ms-minIntensityMS2
+#' @describeIn ProjectMassSpecS3 Get raw spectra data for specified analyses; returns a data.table with spectra rows.
+#' @method get_raw_spectra ProjectMassSpec
 #' @export
 get_raw_spectra.ProjectMassSpec <- function(
     x,
-    analyses = NULL,
-    levels = NULL,
-    mass = NULL,
-    mz = NULL,
-    rt = NULL,
-    mobility = NULL,
+  analyses = character(),
+  levels = integer(),
+  mass = numeric(),
+  mz = numeric(),
+  rt = numeric(),
+  mobility = numeric(),
     ppm = 20,
     sec = 60,
     millisec = 5,
-    id = NULL,
+  id = character(),
     allTraces = TRUE,
     isolationWindow = 1.3,
     minIntensityMS1 = 0,
@@ -1006,17 +853,8 @@ get_raw_spectra.ProjectMassSpec <- function(
   )
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
-#' @template arg-analyses
-#' @template arg-ms-mass
-#' @template arg-ms-mz
-#' @template arg-ms-rt
-#' @template arg-ms-mobility
-#' @template arg-ms-ppm
-#' @template arg-ms-sec
-#' @template arg-ms-millisec
-#' @template arg-ms-id
+#' @describeIn ProjectMassSpecS3 Get extracted ion chromatograms (EIC) for specified analyses.
+#' @method get_raw_spectra_eic ProjectMassSpec
 #' @export
 get_raw_spectra_eic.ProjectMassSpec <- function(
     x,
@@ -1043,24 +881,8 @@ get_raw_spectra_eic.ProjectMassSpec <- function(
   )
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
-#' @template arg-analyses
-#' @template arg-ms-mass
-#' @template arg-ms-mz
-#' @template arg-ms-rt
-#' @template arg-ms-mobility
-#' @template arg-ms-ppm
-#' @template arg-ms-sec
-#' @template arg-ms-millisec
-#' @template arg-ms-id
-#' @template arg-plot-downsize
-#' @template arg-plot-xLab
-#' @template arg-plot-yLab
-#' @template arg-plot-title
-#' @template arg-plot-groupBy
-#' @template arg-plot-interactive
-#' @template arg-plot-colorPalette
+#' @describeIn ProjectMassSpecS3 Plot extracted ion chromatograms (EIC) for specified analyses and targets.
+#' @method plot_spectra_eic ProjectMassSpec
 #' @export
 plot_spectra_eic.ProjectMassSpec <- function(
     x,
@@ -1101,20 +923,8 @@ plot_spectra_eic.ProjectMassSpec <- function(
   )
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
-#' @template arg-analyses
-#' @template arg-ms-mass
-#' @template arg-ms-mz
-#' @template arg-ms-rt
-#' @template arg-ms-mobility
-#' @template arg-ms-ppm
-#' @template arg-ms-sec
-#' @template arg-ms-millisec
-#' @template arg-ms-id
-#' @template arg-ms-mzClust
-#' @template arg-ms-presence
-#' @template arg-ms-minIntensity
+#' @describeIn ProjectMassSpecS3 Get clustered MS1 spectra for specified analyses and targets.
+#' @method get_raw_spectra_ms1 ProjectMassSpec
 #' @export
 get_raw_spectra_ms1.ProjectMassSpec <- function(
     x,
@@ -1147,21 +957,8 @@ get_raw_spectra_ms1.ProjectMassSpec <- function(
   )
 }
 
-#' @rdname ProjectMassSpecS3
-#' @param x A `ProjectMassSpec` object.
-#' @template arg-analyses
-#' @template arg-ms-mass
-#' @template arg-ms-mz
-#' @template arg-ms-rt
-#' @template arg-ms-mobility
-#' @template arg-ms-ppm
-#' @template arg-ms-sec
-#' @template arg-ms-millisec
-#' @template arg-ms-id
-#' @template arg-ms-isolationWindow
-#' @template arg-ms-mzClust
-#' @template arg-ms-presence
-#' @template arg-ms-minIntensity
+#' @describeIn ProjectMassSpecS3 Get clustered MS2 spectra for specified analyses and targets.
+#' @method get_raw_spectra_ms2 ProjectMassSpec
 #' @export
 get_raw_spectra_ms2.ProjectMassSpec <- function(
     x,

@@ -2,8 +2,8 @@
 // Suspect screening implementations for NTS_DATA
 
 #include "suspect_screening.h"
+#include "../mass_spec/project_mass_spec.h"
 #include "nts.h"
-#include "../mass_spec/utils.h"
 #include <unordered_map>
 #include <unordered_set>
 #include <algorithm>
@@ -38,16 +38,16 @@ namespace nts::suspect_screening
       tmp.reserve(input.size());
       for (double v : input)
         tmp.push_back(static_cast<float>(v));
-       std::string enc = mass_spec::utils::encode_little_endian_from_float(tmp, 4);
-       return mass_spec::utils::encode_base64(enc);
+       std::string enc = mass_spec::reader::utils::encode_little_endian_from_float(tmp, 4);
+       return mass_spec::reader::utils::encode_base64(enc);
     }
 
     std::vector<float> decode_floats(const std::string &encoded)
     {
       if (encoded.empty())
         return {};
-       std::string decoded = mass_spec::utils::decode_base64(encoded);
-       return mass_spec::utils::decode_little_endian_to_float(decoded, 4);
+       std::string decoded = mass_spec::reader::utils::decode_base64(encoded);
+       return mass_spec::reader::utils::decode_little_endian_to_float(decoded, 4);
     }
 
     template <typename T>
@@ -71,7 +71,7 @@ namespace nts::suspect_screening
       int minSharedFragments,
       bool filtered)
   {
-    SUSPECTS out;
+    api::NTS_SUSPECTS out;
     if (suspects.empty() || nts_data.analyses.empty())
       return;
 
@@ -107,7 +107,7 @@ namespace nts::suspect_screening
       if (!analyses_set.empty() && analyses_set.find(analysis) == analyses_set.end())
         continue;
 
-      const FEATURES &fts = nts_data.features[a];
+      const nts::api::NTS_FEATURES &fts = nts_data.features[a];
       for (int i = 0; i < fts.size(); ++i)
       {
         if (!filtered && fts.filtered[i])
@@ -154,11 +154,11 @@ namespace nts::suspect_screening
       if (!sus)
         continue;
 
-      const FEATURES &fts = nts_data.features[ref.analysis_idx];
+      const nts::api::NTS_FEATURES &fts = nts_data.features[ref.analysis_idx];
       const int i = ref.feature_idx;
       const size_t idx = static_cast<size_t>(i);
 
-      SUSPECT row;
+      api::NTS_SUSPECT_ROW row;
       row.analysis = nts_data.analyses[ref.analysis_idx];
       row.feature = get_or_default(fts.feature, idx, std::string());
       row.candidate_rank = 1;
@@ -349,12 +349,12 @@ namespace nts::suspect_screening
     // Distribute suspects to the appropriate analysis in nts_data.suspects
     for (size_t i = 0; i < nts_data.analyses.size(); ++i)
     {
-      nts_data.suspects[i] = SUSPECTS();
+      nts_data.suspects[i] = api::NTS_SUSPECTS();
     }
 
     for (size_t i = 0; i < out.analysis.size(); ++i)
     {
-      SUSPECT s;
+      api::NTS_SUSPECT_ROW s;
       s.analysis = out.analysis[i];
       s.feature = out.feature[i];
       s.candidate_rank = out.candidate_rank[i];

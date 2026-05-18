@@ -48,6 +48,17 @@ clear_cache <- function(x, ...) {
   UseMethod("clear_cache")
 }
 
+#' @title S3 generic `delete_cache`
+#' @description S3 generic to delete cache rows from `x`.
+#' @param x An object from which cache rows will be deleted.
+#' @param ... Additional arguments passed to the method.
+#' @export
+#' @noRd
+#'
+delete_cache <- function(x, ...) {
+  UseMethod("delete_cache")
+}
+
 # MARK: D -----
 
 # MARK: E -----
@@ -78,6 +89,17 @@ get_analysis_names <- function(x, ...) {
   UseMethod("get_analysis_names")
 }
 
+#' @title S3 generic `get_analyses`
+#' @description S3 generic to get analyses from `x`.
+#' @param x An object from which the analyses will be retrieved.
+#' @param ... Additional arguments passed to the method.
+#' @export
+#' @noRd
+#'
+get_analyses <- function(x, ...) {
+  UseMethod("get_analyses")
+}
+
 #' @title S3 generic `get_blank_names`
 #' @description S3 generic to get blanks from `x`.
 #' @param x An object from which the blanks will be retrieved.
@@ -87,6 +109,28 @@ get_analysis_names <- function(x, ...) {
 #'
 get_blank_names <- function(x, ...) {
   UseMethod("get_blank_names")
+}
+
+#' @title S3 generic `get_cache`
+#' @description S3 generic to get cache rows from `x`.
+#' @param x An object from which the cache rows will be retrieved.
+#' @param ... Additional arguments passed to the method.
+#' @export
+#' @noRd
+#'
+get_cache <- function(x, ...) {
+  UseMethod("get_cache")
+}
+
+#' @title S3 generic `get_cache_size`
+#' @description S3 generic to get the cache row count from `x`.
+#' @param x An object from which the cache size will be retrieved.
+#' @param ... Additional arguments passed to the method.
+#' @export
+#' @noRd
+#'
+get_cache_size <- function(x, ...) {
+  UseMethod("get_cache_size")
 }
 
 #' @title S3 generic `get_cache_info`
@@ -399,6 +443,161 @@ get_raw_chromatograms <- function(x, ...) {
   UseMethod("get_raw_chromatograms")
 }
 
+#' @title S3 generic `get_ptr`
+#' @description Return native pointer from `x`.
+#' @param x An object.
+#' @export
+#' @noRd
+get_ptr <- function(x, ...) {
+  UseMethod("get_ptr")
+}
+
+#' @title S3 generic `get_db`
+#' @description Return database path from `x`.
+#' @param x An object.
+#' @export
+#' @noRd
+get_db <- function(x, ...) {
+  UseMethod("get_db")
+}
+
+#' @title S3 generic `get_project_id`
+#' @description Return project id from `x`.
+#' @param x An object.
+#' @export
+#' @noRd
+get_project_id <- function(x, ...) {
+  UseMethod("get_project_id")
+}
+
+#' @title S3 generic `validate`
+#' @description Validate `x`.
+#' @param x An object.
+#' @export
+#' @noRd
+validate <- function(x, ...) {
+  UseMethod("validate")
+}
+
+#' @title S3 generic `get_metadata`
+#' @description Get metadata from `x`.
+#' @param x An object.
+#' @export
+#' @noRd
+get_metadata <- function(x, ...) {
+  UseMethod("get_metadata")
+}
+
+#' @title S3 generic `set_metadata`
+#' @description Set metadata on `x`.
+#' @param x An object.
+#' @export
+#' @noRd
+set_metadata <- function(x, ...) {
+  UseMethod("set_metadata")
+}
+
+#' @title S3 generic `get_domain`
+#' @description Get domain from `x`.
+#' @param x An object.
+#' @export
+#' @noRd
+get_domain <- function(x, ...) {
+  UseMethod("get_domain")
+}
+
+#' @title S3 generic `get_workflow`
+#' @description Get workflow from `x`.
+#' @param x An object.
+#' @export
+#' @noRd
+get_workflow <- function(x, ...) {
+  UseMethod("get_workflow")
+}
+
+#' @title S3 generic `set_workflow`
+#' @description Set workflow on `x`.
+#' @param x An object.
+#' @export
+#' @noRd
+set_workflow <- function(x, ...) {
+  UseMethod("set_workflow")
+}
+
+#' @title S3 generic `get_audit`
+#' @description Get audit entries from `x`.
+#' @param x An object.
+#' @export
+#' @noRd
+get_audit <- function(x, ...) {
+  UseMethod("get_audit")
+}
+
+#' @title S3 generic `list_tables`
+#' @description List database tables for `x`.
+#' @param x An object.
+#' @export
+#' @noRd
+list_tables <- function(x, ...) {
+  UseMethod("list_tables")
+}
+
+#' @title S3 generic `available_processing_methods`
+#' @description Return available processing methods from `x`.
+#' @param x An object.
+#' @export
+#' @noRd
+available_processing_methods <- function(x, ...) {
+  UseMethod("available_processing_methods")
+}
+
+#' @title S3 generic `run_processing_step`
+#' @description Run a processing step on `x`.
+#' @param x An object.
+#' @param step Processing step.
+#' @export
+#' @noRd
+run_processing_step <- function(x, step, ...) {
+  UseMethod("run_processing_step")
+}
+
+#' @title S3 generic `run_workflow`
+#' @description Run workflow on `x`.
+#' @param x An object.
+#' @param workflow Workflow object or list.
+#' @export
+#' @noRd
+run_workflow <- function(x, workflow = NULL, ...) {
+  UseMethod("run_workflow")
+}
+
+#' @title S3 generic `report_quarto`
+#' @description Render a Quarto report for `x`.
+#' @param x An object.
+#' @export
+#' @noRd
+report_quarto <- function(x, ...) {
+  UseMethod("report_quarto")
+}
+
+#' @title S3 generic `run_app`
+#' @description Run the app using `x` as context.
+#' @param x An object.
+#' @export
+#' @noRd
+run_app <- function(x, ...) {
+  UseMethod("run_app")
+}
+
+#' @title S3 generic `copy`
+#' @description Copy `x` to another db/project id.
+#' @param x An object.
+#' @export
+#' @noRd
+copy <- function(x, ...) {
+  UseMethod("copy")
+}
+
 #' @title Generic `get_raw_spectra`
 #' @description S3 generic to get raw spectra from `x`.
 #' @param x An object from which the raw spectra will be retrieved.
@@ -430,17 +629,6 @@ get_replicate_names <- function(x, ...) {
 #'
 get_spectra <- function(x, ...) {
   UseMethod("get_spectra")
-}
-
-#' @title Generic `get_raw_spectra_bpc`
-#' @description S3 generic to get raw spectra BPC from `x`.
-#' @param x An object from which the raw spectra BPC will be retrieved.
-#' @param ... Additional arguments passed to the method.
-#' @export
-#' @noRd
-#'
-get_raw_spectra_bpc <- function(x, ...) {
-  UseMethod("get_raw_spectra_bpc")
 }
 
 #' @title Generic `get_raw_spectra_eic`
@@ -507,17 +695,6 @@ get_raw_spectra_ms2 <- function(x, ...) {
 #'
 get_spectra_peaks <- function(x, ...) {
   UseMethod("get_spectra_peaks")
-}
-
-#' @title Generic `get_raw_spectra_tic`
-#' @description S3 generic to get raw spectra TIC from `x`.
-#' @param x An object from which the raw spectra TIC will be retrieved.
-#' @param ... Additional arguments passed to the method.
-#' @export
-#' @noRd
-#'
-get_raw_spectra_tic <- function(x, ...) {
-  UseMethod("get_raw_spectra_tic")
 }
 
 #' @title Generic `get_suspects`

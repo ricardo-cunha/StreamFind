@@ -61,23 +61,20 @@ object.}
 \item{interactive}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
 
 \item{colorPalette}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{...}{Additional arguments passed to the method or ignored by the implementation.}
 }
 \description{
 S3 interface methods for \code{ProjectMassSpecChromatograms}.
 These methods are thin wrappers over the \code{ProjectMassSpecChromatograms} R6
 methods and expose the chromatogram-specific package generics.
 }
-\details{
-Available methods are:
-
-Header methods:
+\section{Functions}{
 \itemize{
-\item \code{get_chromatograms_headers()}: Fetch chromatogram headers for the specified analyses.
-}
+\item \code{get_chromatograms_headers(ProjectMassSpecChromatograms)}: Return chromatogram headers for selected analyses.
 
-Chromatogram methods:
-\itemize{
-\item \code{get_chromatograms()}: Get chromatograms for the specified analyses and chromatogram IDs/indices.
-\item \code{plot_chromatograms()}: Plot chromatograms for the specified analyses and chromatogram IDs/indices.
-}
-}
+\item \code{get_chromatograms(ProjectMassSpecChromatograms)}: Get chromatograms for selected analyses.
+
+\item \code{plot_chromatograms(ProjectMassSpecChromatograms)}: Plot chromatograms for selected analyses.
+
+}}

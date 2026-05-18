@@ -1,5 +1,5 @@
 #include "nts_componentization.h"
-#include "nts_utils.h"
+#include "../mass_spec/project_mass_spec.h"
 #include "nts.h"
 #include <iomanip>
 #include <algorithm>
@@ -15,8 +15,8 @@ namespace nts
     std::vector<float> decode_eic_base64(const std::string &base64_str) {
       if (base64_str.empty()) return std::vector<float>();
       try {
-        std::string decoded = mass_spec::utils::decode_base64(base64_str);
-        return mass_spec::utils::decode_little_endian_to_float(decoded, 4);
+        std::string decoded = mass_spec::reader::utils::decode_base64(base64_str);
+        return mass_spec::reader::utils::decode_little_endian_to_float(decoded, 4);
       } catch (...) {
         return std::vector<float>();
       }
@@ -137,7 +137,7 @@ namespace nts
 
       for (size_t i = 0; i < nts_data.features.size(); ++i)
       {
-        FEATURES &fts = nts_data.features[i];
+        nts::api::NTS_FEATURES &fts = nts_data.features[i];
         const int n = fts.size();
 
         if (n == 0)
@@ -161,7 +161,7 @@ namespace nts
         std::map<int, std::vector<int>> polarity_groups;
         for (int j = 0; j < n; ++j)
         {
-          const FEATURE &ft = fts.get_feature(j);
+          const nts::api::NTS_FEATURE_ROW &ft = fts.get_feature(j);
           polarity_groups[ft.polarity].push_back(j);
         }
 
@@ -191,8 +191,12 @@ namespace nts
           sorted_features.reserve(feature_indices.size());
 
           for (int j : feature_indices) {
-            const FEATURE &ft = fts.get_feature(j);
-            sorted_features.push_back({j, ft.rt, ft.intensity});
+            nts::api::NTS_FEATURE_ROW ft = fts.get_feature(j);
+            FeatureIntensity fi;
+            fi.idx = j;
+            fi.rt = static_cast<float>(ft.rt);
+            fi.intensity = static_cast<float>(ft.intensity);
+            sorted_features.push_back(fi);
           }
 
           // Sort by descending intensity
@@ -237,7 +241,7 @@ namespace nts
             bool debug_this_cluster = false;
             if (should_debug) {
               for (const int idx : cluster) {
-                const FEATURE &ft = fts.get_feature(idx);
+                nts::api::NTS_FEATURE_ROW ft = fts.get_feature(idx);
                 if (ft.rt >= (debugRT + left_offset) && ft.rt <= (debugRT + right_offset)) {
                   debug_this_cluster = true;
                   break;
@@ -250,7 +254,7 @@ namespace nts
                           << " with RT window [" << window_start << ", "
                           << window_end << "]\n");
                 for (const int idx : cluster) {
-                  const FEATURE &ft = fts.get_feature(idx);
+                  nts::api::NTS_FEATURE_ROW ft = fts.get_feature(idx);
                   const bool in_debug_window = ft.rt >= (debugRT + left_offset) && ft.rt <= (debugRT + right_offset);
                   DEBUG_LOG("  Feature " << ft.feature << ": RT=" << ft.rt
                             << ", mz=" << ft.mz << ", intensity=" << ft.intensity
@@ -265,7 +269,7 @@ namespace nts
               const std::string component_id = oss.str();
 
               for (const int idx : cluster) {
-                FEATURE ft = fts.get_feature(idx);
+                nts::api::NTS_FEATURE_ROW ft = fts.get_feature(idx);
                 ft.feature_component = component_id;
                 fts.set_feature(idx, ft);
 
@@ -292,7 +296,7 @@ namespace nts
             feature_eics.reserve(cluster.size());
 
             for (const int idx : cluster) {
-              const FEATURE &ft = fts.get_feature(idx);
+              const nts::api::NTS_FEATURE_ROW &ft = fts.get_feature(idx);
               FeatureEIC feic;
               feic.idx = idx;
               feic.rt = ft.rt;
@@ -309,7 +313,7 @@ namespace nts
               const std::string component_id = oss.str();
 
               for (const int idx : cluster) {
-                FEATURE ft = fts.get_feature(idx);
+                nts::api::NTS_FEATURE_ROW ft = fts.get_feature(idx);
                 ft.feature_component = component_id;
                 fts.set_feature(idx, ft);
 
@@ -403,7 +407,7 @@ namespace nts
                 }
                 if (already_in_cluster) continue;
 
-                const FEATURE &ft = fts.get_feature(feat_idx);
+                const nts::api::NTS_FEATURE_ROW &ft = fts.get_feature(feat_idx);
 
                 // Check if within sub-seed's RT window
                 if (ft.rt >= sub_window_start && ft.rt <= sub_window_end) {
@@ -474,7 +478,7 @@ namespace nts
 
               for (int sub_idx : sub_cluster) {
                 const int feature_idx = feature_eics[sub_idx].idx;
-                FEATURE ft = fts.get_feature(feature_idx);
+                nts::api::NTS_FEATURE_ROW ft = fts.get_feature(feature_idx);
                 ft.feature_component = component_id;
                 fts.set_feature(feature_idx, ft);
 

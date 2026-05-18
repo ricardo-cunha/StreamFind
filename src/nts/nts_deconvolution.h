@@ -7,13 +7,11 @@
 
 #include <vector>
 #include <string>
-#include "../mass_spec/reader.h"
-#include "nts_utils.h"
+#include <cstddef>
 
-namespace nts {
-  struct NTS_DATA;  // Forward declaration
-  struct FEATURE;   // Forward declaration
-}
+namespace mass_spec { namespace reader { class MS_FILE; } }
+
+namespace nts { namespace api { struct NTS_FEATURE_ROW; struct NTS_FEATURES; } struct NTS_DATA; }
 
 namespace nts {
 namespace deconvolution {
@@ -59,7 +57,7 @@ namespace deconvolution {
     std::vector<float> &final_noise);
 
   void denoise_spectra(
-    mass_spec::MS_FILE &ana,
+    mass_spec::reader::MS_FILE &ana,
     const int &spectrumIdx,
     const float &rt,
     const float &noiseThreshold,
@@ -167,7 +165,7 @@ namespace deconvolution {
     const std::vector<float> &mz,
     const std::vector<float> &intensity);
 
-  std::vector<nts::FEATURE> process_polarity_clusters(
+  std::vector<nts::api::NTS_FEATURE_ROW> process_polarity_clusters(
       const std::vector<float> &clust_rt,
       const std::vector<float> &clust_mz,
       const std::vector<float> &clust_intensity,

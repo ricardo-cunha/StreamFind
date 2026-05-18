@@ -1,5 +1,4 @@
 #include "nts_annotation.h"
-#include "nts_utils.h"
 #include "nts.h"
 #include <fstream>
 #include <sstream>
@@ -115,7 +114,7 @@ namespace nts
     }
 
     // MARK: ISOTOPE_CHAIN Implementation
-    ISOTOPE_CHAIN::ISOTOPE_CHAIN(const int &z, FEATURE mono_ion, float mono_mzr)
+    ISOTOPE_CHAIN::ISOTOPE_CHAIN(const int &z, const nts::api::NTS_FEATURE_ROW &mono_ion, float mono_mzr)
     {
       chain.resize(1);
       candidate_indices.resize(1);
@@ -232,7 +231,7 @@ namespace nts
         return chain[i1].mz < chain[i2].mz;
       });
 
-      std::vector<FEATURE> chain_sorted;
+      std::vector<nts::api::NTS_FEATURE_ROW> chain_sorted;
       std::vector<int> indices_sorted;
 
       for (size_t i = 0; i < chain.size(); i++)
@@ -279,8 +278,8 @@ namespace nts
       return max_mzr;
     }
 
-    void CANDIDATE_CHAIN::find_isotopic_candidates(const FEATURE &ft,
-                                                    const FEATURES &fts,
+    void CANDIDATE_CHAIN::find_isotopic_candidates(const nts::api::NTS_FEATURE_ROW &ft,
+                                                    const nts::api::NTS_FEATURES &fts,
                                                     const int &ft_index,
                                                     const int &maxIsotopes,
                                                     const std::vector<int> *component_indices,
@@ -348,7 +347,7 @@ namespace nts
       bool is_Mplus = false;
       float mzr = this->get_max_mzr(ppm);
       const int number_candidates = chain.size();
-      FEATURE mono_ion = chain[0];
+      const nts::api::NTS_FEATURE_ROW &mono_ion = chain[0];
 
       if (debug)
       {
@@ -428,7 +427,7 @@ namespace nts
 
           for (int candidate_idx = 1; candidate_idx < number_candidates; ++candidate_idx)
           {
-            const FEATURE &candidate = chain[candidate_idx];
+              const nts::api::NTS_FEATURE_ROW &candidate = chain[candidate_idx];
             const float mz = candidate.mz;
             const float rt = candidate.rt;
             const float intensity = candidate.intensity;
@@ -681,7 +680,7 @@ namespace nts
           for (size_t i = 1; i < sel_iso_chain.chain.size(); i++)
           {
             const int candidate_idx = sel_iso_chain.candidate_indices[i];
-            FEATURE &temp_candidate = chain[candidate_idx];
+            nts::api::NTS_FEATURE_ROW &temp_candidate = chain[candidate_idx];
 
             // Format: isotope MZXXX EL [M+n] where XXX=monoisotopic mass, EL=element, n=step
             std::ostringstream oss;
@@ -692,10 +691,10 @@ namespace nts
       }
     }
 
-    void CANDIDATE_CHAIN::find_adduct_candidates(const FEATURE &ft,
-                                                  const FEATURES &fts,
-                                                  const int &ft_index,
-                                                  const std::vector<int> *component_indices)
+    void CANDIDATE_CHAIN::find_adduct_candidates(const nts::api::NTS_FEATURE_ROW &ft,
+                            const nts::api::NTS_FEATURES &fts,
+                            const int &ft_index,
+                            const std::vector<int> *component_indices)
     {
       const std::string &feature = ft.feature;
       const int &polarity = ft.polarity;
@@ -800,10 +799,10 @@ namespace nts
       }
     }
 
-    void CANDIDATE_CHAIN::find_fragment_candidates(const FEATURE &ft,
-                                                    const FEATURES &fts,
-                                                    const int &ft_index,
-                                                    const std::vector<int> *component_indices)
+    void CANDIDATE_CHAIN::find_fragment_candidates(const nts::api::NTS_FEATURE_ROW &ft,
+                            const nts::api::NTS_FEATURES &fts,
+                            const int &ft_index,
+                            const std::vector<int> *component_indices)
     {
       const std::string &feature = ft.feature;
       const int &polarity = ft.polarity;
@@ -915,7 +914,7 @@ namespace nts
 
       for (int a = 0; a < number_analyses; a++)
       {
-        nts::FEATURES &fts = nts_data.features[a];
+        nts::api::NTS_FEATURES &fts = nts_data.features[a];
         const int number_features = fts.size();
 
         if (number_features == 0)
@@ -929,7 +928,7 @@ namespace nts
 
         for (int f = 0; f < number_features; f++)
         {
-          const nts::FEATURE &ft = fts.get_feature(f);
+          nts::api::NTS_FEATURE_ROW ft = fts.get_feature(f);
           if (ft.feature_component.empty())
             continue;
 
@@ -943,7 +942,7 @@ namespace nts
         component_groups.clear();
         for (int f = 0; f < number_features; f++)
         {
-          const nts::FEATURE &ft = fts.get_feature(f);
+          nts::api::NTS_FEATURE_ROW ft = fts.get_feature(f);
           if (ft.feature_component.empty())
             continue;
 
@@ -983,7 +982,7 @@ namespace nts
             for (size_t i = 0; i < component_indices.size(); i++)
             {
               const int idx = component_indices[i];
-              const nts::FEATURE &ft = fts.get_feature(idx);
+                nts::api::NTS_FEATURE_ROW ft = fts.get_feature(idx);
               DEBUG_LOG("  [" << i << "] idx=" << idx << " " << ft.feature
                         << ": mz=" << ft.mz << ", rt=" << ft.rt
                         << ", intensity=" << ft.intensity
@@ -1003,7 +1002,7 @@ namespace nts
             for (size_t i = 0; i < sorted_indices.size(); i++)
             {
               const int idx = sorted_indices[i];
-              const nts::FEATURE &ft = fts.get_feature(idx);
+                nts::api::NTS_FEATURE_ROW ft = fts.get_feature(idx);
               DEBUG_LOG("  [" << i << "] idx=" << idx << " " << ft.feature
                         << ": mz=" << ft.mz << ", rt=" << ft.rt << std::endl);
             }
@@ -1029,7 +1028,7 @@ namespace nts
           }
           for (int idx : component_indices)
           {
-            nts::FEATURE ft = fts.get_feature(idx);
+            nts::api::NTS_FEATURE_ROW ft = fts.get_feature(idx);
             ft.adduct = "";
             fts.set_feature(idx, ft);
           }
@@ -1050,7 +1049,7 @@ namespace nts
               continue;
             }
 
-            nts::FEATURE main_ft = fts.get_feature(main_ft_idx);
+            nts::api::NTS_FEATURE_ROW main_ft = fts.get_feature(main_ft_idx);
 
             CANDIDATE_CHAIN candidates_chain;
             // Pass component_indices to restrict search to component features only
@@ -1135,7 +1134,7 @@ namespace nts
           for (size_t i = 0; i < component_indices.size(); i++)
           {
             const int main_ft_idx = component_indices[i];
-            nts::FEATURE main_ft = fts.get_feature(main_ft_idx);
+            nts::api::NTS_FEATURE_ROW main_ft = fts.get_feature(main_ft_idx);
 
             // Only annotate fragments for features with [M+H]+ or [M-H]- annotation
             if (main_ft.adduct != "[M+H]+" && main_ft.adduct != "[M-H]-")
@@ -1218,7 +1217,7 @@ namespace nts
           for (size_t i = 0; i < component_indices.size(); i++)
           {
             const int main_ft_idx = component_indices[i];
-            nts::FEATURE main_ft = fts.get_feature(main_ft_idx);
+            nts::api::NTS_FEATURE_ROW main_ft = fts.get_feature(main_ft_idx);
 
             // Skip if annotated as isotope
             if (main_ft.adduct.find("isotope") == 0)
@@ -1318,7 +1317,7 @@ namespace nts
             for (size_t i = 0; i < component_indices.size(); i++)
             {
               const int idx = component_indices[i];
-              const nts::FEATURE &ft = fts.get_feature(idx);
+              nts::api::NTS_FEATURE_ROW ft = fts.get_feature(idx);
               DEBUG_LOG("  [" << i << "] idx=" << idx << " " << ft.feature
                         << ": mz=" << ft.mz << ", rt=" << ft.rt
                         << ", intensity=" << ft.intensity
@@ -1357,7 +1356,7 @@ namespace nts
 
           for (const int idx : component_indices)
           {
-            nts::FEATURE ft = fts.get_feature(idx);
+            nts::api::NTS_FEATURE_ROW ft = fts.get_feature(idx);
             if (ft.adduct.empty())
             {
               if (debug_this_component)
@@ -1377,7 +1376,7 @@ namespace nts
             for (size_t i = 0; i < component_indices.size(); i++)
             {
               const int idx = component_indices[i];
-              const nts::FEATURE &ft = fts.get_feature(idx);
+              nts::api::NTS_FEATURE_ROW ft = fts.get_feature(idx);
               DEBUG_LOG("  [" << i << "] idx=" << idx << " " << ft.feature
                         << ": mz=" << ft.mz << ", rt=" << ft.rt
                         << ", intensity=" << ft.intensity

@@ -1,23 +1,25 @@
 #' @title Project Mass Spec Chromatograms R6 Class
-#' @description R6 child of `ProjectMassSpec` exposing the chromatogram-focused
-#'   Mass Spec interface backed by the native C++ chromatograms facade.
-#' @details
-#' This is a public user-facing project class.
-#'
-#' In addition to the methods documented on this page, it inherits shared project
-#' runtime methods such as `run_app()`, `run_workflow()`, `report_quarto()`,
-#' `metadata`, `workflow`, `get_audit()`, and `list_tables()`, plus shared Mass
-#' Spec methods such as `import_files()`, `list_analyses()`, `get_analysis_names()`,
-#' `get_replicate_names()`, `set_replicate_names()`, `get_blank_names()`,
-#' `set_blank_names()`, and `get_concentrations()`.
-#'
-#' See `?Project` for shared project/runtime methods and `?ProjectMassSpec` for
-#' inherited shared Mass Spec methods.
-#'
-#' Use `?ProjectMassSpecChromatograms` as the main entry point for the
-#' chromatogram-specific interface on top of those base classes.
-#' @param db Path to the project DuckDB file.
-#' @param project_id Active project identifier.
+#' @description R6 child of `ProjectMassSpec` exposing the chromatogram-focused MassSpec interface.
+#' @template arg-db-path
+#' @template arg-project-id
+#' @template arg-file-paths
+#' @template arg-analyses
+#' @template arg-replicates
+#' @template arg-blanks
+#' @template arg-analyses
+#' @template arg-chromatograms
+#' @template arg-ms-rtmin
+#' @template arg-ms-rtmax
+#' @template arg-ms-minIntensity
+#' @template arg-plot-downsize
+#' @template arg-plot-xLab
+#' @template arg-plot-yLab
+#' @template arg-plot-title
+#' @template arg-plot-groupBy
+#' @template arg-plot-interactive
+#' @template arg-plot-colorPalette
+#' @template arg-ellipsis
+#' @keywords internal
 #' @export
 ProjectMassSpecChromatograms <- R6::R6Class(
   classname = "ProjectMassSpecChromatograms",
@@ -28,17 +30,36 @@ ProjectMassSpecChromatograms <- R6::R6Class(
   ),
   public = list(
     #' @description Create a chromatogram-specific Mass Spec project wrapper.
-    #' @param db Path to the DuckDB project file.
-    #' @param project_id Active project identifier.
-    #' @param .ptr Existing native project pointer for internal use.
-    #' @param .mass_spec_ptr Existing native shared Mass Spec pointer for internal use.
-    #' @param .mass_spec_chromatograms_ptr Existing native chromatograms pointer for internal use.
-    initialize = function(db, project_id, .ptr = NULL, .mass_spec_ptr = NULL, .mass_spec_chromatograms_ptr = NULL) {
-      super$initialize(db = db, project_id = project_id, .ptr = .ptr, .mass_spec_ptr = .mass_spec_ptr)
+    initialize = function(db,
+                          project_id,
+                          ...,
+                          file_paths = character(),
+                          replicates = character(),
+                          blanks = character()) {
+      dots <- list(...)
+      ptr_res <- .pull_internal_init_arg(dots, ".ptr")
+      .ptr <- ptr_res$value
+      mass_spec_ptr_res <- .pull_internal_init_arg(ptr_res$dots, ".mass_spec_ptr")
+      .mass_spec_ptr <- mass_spec_ptr_res$value
+      chromatograms_ptr_res <- .pull_internal_init_arg(mass_spec_ptr_res$dots, ".mass_spec_chromatograms_ptr")
+      .mass_spec_chromatograms_ptr <- chromatograms_ptr_res$value
+      .assert_only_internal_init_args(chromatograms_ptr_res$dots, "ProjectMassSpecChromatograms$initialize()")
+      super$initialize(
+        db = db,
+        project_id = project_id,
+        .ptr = .ptr,
+        .mass_spec_ptr = .mass_spec_ptr,
+        file_paths = character(),
+        replicates = character(),
+        blanks = character()
+      )
       private$.mass_spec_chromatograms_ptr <- if (is.null(.mass_spec_chromatograms_ptr)) {
-        rcpp_project_mass_spec_chromatograms_new(self$get_ptr())
+        rcpp_project_mass_spec_chromatograms_new(self$get_ptr(), file_paths, replicates, blanks)
       } else {
         .mass_spec_chromatograms_ptr
+      }
+      if (length(file_paths) > 0 && !is.null(.mass_spec_chromatograms_ptr)) {
+        self$add_analyses(file_paths = file_paths, replicates = replicates, blanks = blanks)
       }
     },
     #' @description Return the native chromatograms pointer.
@@ -46,14 +67,12 @@ ProjectMassSpecChromatograms <- R6::R6Class(
       private$.mass_spec_chromatograms_ptr
     },
     #' @description Return chromatogram-project processing-step metadata.
-    #' @return A named list of `ProcessingStep` metadata objects.
     available_processing_methods = function() {
       list()
     },
     #' @description Return chromatogram headers for selected analyses.
-    #' @template arg-analyses
     get_chromatograms_headers = function(analyses = NULL) {
-      analyses_info <- data.table::as.data.table(self$list_analyses())
+      analyses_info <- data.table::as.data.table(self$get_analyses())
       all_names <- analyses_info$analysis
       sel_names <- .resolve_analyses_selection(analyses, all_names)
       if (length(sel_names) == 0) {
@@ -73,11 +92,6 @@ ProjectMassSpecChromatograms <- R6::R6Class(
       hd
     },
     #' @description Get chromatograms for selected analyses.
-    #' @template arg-analyses
-    #' @template arg-chromatograms
-    #' @template arg-ms-rtmin
-    #' @template arg-ms-rtmax
-    #' @template arg-ms-minIntensity
     get_chromatograms = function(
         analyses = NULL,
         chromatograms = NULL,
@@ -123,18 +137,6 @@ ProjectMassSpecChromatograms <- R6::R6Class(
       chrom_dt
     },
     #' @description Plot chromatograms for selected analyses.
-    #' @template arg-analyses
-    #' @template arg-chromatograms
-    #' @template arg-ms-rtmin
-    #' @template arg-ms-rtmax
-    #' @template arg-ms-minIntensity
-    #' @template arg-plot-downsize
-    #' @template arg-plot-xLab
-    #' @template arg-plot-yLab
-    #' @template arg-plot-title
-    #' @template arg-plot-groupBy
-    #' @template arg-plot-interactive
-    #' @template arg-plot-colorPalette
     plot_chromatograms = function(
         analyses = NULL,
         chromatograms = NULL,
@@ -182,7 +184,6 @@ ProjectMassSpecChromatograms <- R6::R6Class(
       )
     },
     #' @description Print a short summary.
-    #' @param ... Additional arguments ignored.
     print = function(...) {
       cat("\nProjectMassSpecChromatograms\n")
       cat("db: ", self$db, "\n", sep = "")
@@ -191,14 +192,13 @@ ProjectMassSpecChromatograms <- R6::R6Class(
       if (!inherits(domain, "try-error") && !is.null(domain)) {
         cat("domain: ", domain, "\n", sep = "")
       }
-      analyses <- try(self$list_analyses(), silent = TRUE)
+      analyses <- try(self$get_analyses(), silent = TRUE)
       if (!inherits(analyses, "try-error")) {
         cat("analyses: ", nrow(analyses), "\n", sep = "")
       }
       invisible(self)
     },
     #' @description Show a short summary.
-    #' @param ... Additional arguments ignored.
     show = function(...) {
       self$print(...)
     }
@@ -210,34 +210,30 @@ ProjectMassSpecChromatograms <- R6::R6Class(
 #' @description S3 interface methods for `ProjectMassSpecChromatograms`.
 #' These methods are thin wrappers over the `ProjectMassSpecChromatograms` R6
 #' methods and expose the chromatogram-specific package generics.
-#' @details
-#' Available methods are:
-#'
-#' Header methods:
-#' - `get_chromatograms_headers()`: Fetch chromatogram headers for the specified analyses.
-#'
-#' Chromatogram methods:
-#' - `get_chromatograms()`: Get chromatograms for the specified analyses and chromatogram IDs/indices.
-#' - `plot_chromatograms()`: Plot chromatograms for the specified analyses and chromatogram IDs/indices.
-#' @aliases get_chromatograms_headers.ProjectMassSpecChromatograms
-#'   get_chromatograms.ProjectMassSpecChromatograms
-#'   plot_chromatograms.ProjectMassSpecChromatograms
-#' @param x A `ProjectMassSpecChromatograms` object.
-#' @rdname ProjectMassSpecChromatogramsS3
-#' @template arg-analyses
-#' @export
-get_chromatograms_headers.ProjectMassSpecChromatograms <- function(x, analyses = NULL) {
-  checkmate::assert_class(x, "ProjectMassSpecChromatograms")
-  x$get_chromatograms_headers(analyses = analyses)
-}
-
-#' @rdname ProjectMassSpecChromatogramsS3
 #' @param x A `ProjectMassSpecChromatograms` object.
 #' @template arg-analyses
 #' @template arg-chromatograms
 #' @template arg-ms-rtmin
 #' @template arg-ms-rtmax
 #' @template arg-ms-minIntensity
+#' @template arg-plot-downsize
+#' @template arg-plot-xLab
+#' @template arg-plot-yLab
+#' @template arg-plot-title
+#' @template arg-plot-groupBy
+#' @template arg-plot-interactive
+#' @template arg-plot-colorPalette
+#' @template arg-ellipsis
+NULL
+
+#' @describeIn ProjectMassSpecChromatogramsS3 Return chromatogram headers for selected analyses.
+#' @export
+get_chromatograms_headers.ProjectMassSpecChromatograms <- function(x, analyses = NULL) {
+  checkmate::assert_class(x, "ProjectMassSpecChromatograms")
+  x$get_chromatograms_headers(analyses = analyses)
+}
+
+#' @describeIn ProjectMassSpecChromatogramsS3 Get chromatograms for selected analyses.
 #' @export
 get_chromatograms.ProjectMassSpecChromatograms <- function(
     x,
@@ -256,20 +252,7 @@ get_chromatograms.ProjectMassSpecChromatograms <- function(
   )
 }
 
-#' @rdname ProjectMassSpecChromatogramsS3
-#' @param x A `ProjectMassSpecChromatograms` object.
-#' @template arg-analyses
-#' @template arg-chromatograms
-#' @template arg-ms-rtmin
-#' @template arg-ms-rtmax
-#' @template arg-ms-minIntensity
-#' @template arg-plot-downsize
-#' @template arg-plot-xLab
-#' @template arg-plot-yLab
-#' @template arg-plot-title
-#' @template arg-plot-groupBy
-#' @template arg-plot-interactive
-#' @template arg-plot-colorPalette
+#' @describeIn ProjectMassSpecChromatogramsS3 Plot chromatograms for selected analyses.
 #' @export
 plot_chromatograms.ProjectMassSpecChromatograms <- function(
     x,

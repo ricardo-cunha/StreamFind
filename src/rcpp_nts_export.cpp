@@ -3,12 +3,55 @@
 #include <cstdlib>
 #include <cmath>
 #include <Rcpp.h>
-#include "mass_spec/targets.h"
-#include "nts/nts.h"
-#include "nts/project_non_target_analysis.h"
+
 #include "project/project.h"
+#include "mass_spec/project_mass_spec.h"
+#include "nts/nts.h"
 
 using namespace Rcpp;
+
+// MARK: ns nts_rcpp
+namespace nts_rcpp
+{
+  template <typename Fn>
+  inline auto project_call(Fn &&fn)
+  {
+    try
+    {
+      return project::api::project_call(std::forward<Fn>(fn));
+    }
+    catch (const std::exception &e)
+    {
+      Rcpp::stop(e.what());
+    }
+  }
+
+  project::PROJECT &project_from_xptr(SEXP extptr)
+  {
+    Rcpp::XPtr<project::PROJECT> ptr(extptr);
+    if (ptr.get() == nullptr)
+    {
+      stop("Project pointer is null");
+    }
+    return *ptr;
+  }
+
+  nts::PROJECT_NON_TARGET_ANALYSIS &project_non_target_analysis_from_xptr(SEXP extptr)
+  {
+    Rcpp::XPtr<nts::PROJECT_NON_TARGET_ANALYSIS> ptr(extptr);
+    if (ptr.get() == nullptr)
+    {
+      stop("Project Non-Target Analysis pointer is null");
+    }
+    return *ptr;
+  }
+
+
+
+
+
+
+} // namespace nts_rcpp
 
 namespace
 {
@@ -53,9 +96,9 @@ namespace
     }
   }
 
-  mass_spec::MS_TARGETS_INPUT ms_targets_input_from_df(DataFrame df)
+  mass_spec::spectra::MS_TARGETS_INPUT ms_targets_input_from_df(DataFrame df)
   {
-    mass_spec::MS_TARGETS_INPUT out;
+    mass_spec::spectra::MS_TARGETS_INPUT out;
     out.size = static_cast<std::size_t>(df.nrows());
     if (out.size == 0)
     {
@@ -83,7 +126,7 @@ namespace
     return out;
   }
 
-  mass_spec::MS_TARGETS_INPUT ms_targets_input_from_object(SEXP value)
+  mass_spec::spectra::MS_TARGETS_INPUT ms_targets_input_from_object(SEXP value)
   {
     if (Rf_isNull(value))
     {
@@ -130,51 +173,16 @@ namespace
     return Rcpp::as<std::vector<std::string>>(Rcpp::as<Rcpp::CharacterVector>(value));
   }
 
-  std::string project_error_code_to_string(project::ERROR_CODE code)
-  {
-    switch (code)
-    {
-    case project::ERROR_CODE::DuckDB:
-      return "DuckDB";
-    case project::ERROR_CODE::InvalidArgument:
-      return "InvalidArgument";
-    case project::ERROR_CODE::SchemaMismatch:
-      return "SchemaMismatch";
-    case project::ERROR_CODE::NotFound:
-      return "NotFound";
-    case project::ERROR_CODE::Io:
-      return "Io";
-    case project::ERROR_CODE::Unknown:
-    default:
-      return "Unknown";
-    }
-  }
 
-  template <typename Fn>
-  auto project_call(Fn &&fn)
-  {
-    try
-    {
-      return fn();
-    }
-    catch (const project::ERROR &e)
-    {
-      stop("Project error [" + project_error_code_to_string(e.code()) + "]: " + e.what());
-    }
-    catch (const std::exception &e)
-    {
-      stop(std::string("Project error [Unknown]: ") + e.what());
-    }
-  }
 
-  project::PROJECT &project_from_xptr(SEXP extptr)
+  ::project::api::PROJECT &project_from_xptr(SEXP extptr)
   {
-    Rcpp::XPtr<project::PROJECT> ptr(extptr);
-    if (ptr.get() == nullptr)
+    void *raw = R_ExternalPtrAddr(extptr);
+    if (raw == nullptr)
     {
       stop("Project pointer is null");
     }
-    return *ptr;
+    return *reinterpret_cast<::project::api::PROJECT *>(raw);
   }
 
   nts::PROJECT_NON_TARGET_ANALYSIS &project_non_target_analysis_from_xptr(SEXP extptr)
@@ -358,9 +366,9 @@ namespace
     return out;
   }
 
-  mass_spec::MS_SPECTRA_HEADERS as_MS_SPECTRA_HEADERS(const Rcpp::List &hd)
+  mass_spec::reader::MS_SPECTRA_HEADERS as_MS_SPECTRA_HEADERS(const Rcpp::List &hd)
   {
-    mass_spec::MS_SPECTRA_HEADERS headers;
+    mass_spec::reader::MS_SPECTRA_HEADERS headers;
     const std::vector<int> &hd_index = hd["index"];
     const std::vector<int> &hd_polarity = hd["polarity"];
     const std::vector<int> &hd_configuration = hd["configuration"];
@@ -384,9 +392,9 @@ namespace
     return headers;
   }
 
-  std::vector<mass_spec::MS_SPECTRA_HEADERS> as_spectra_headers(const Rcpp::List &spectra_headers)
+  std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> as_spectra_headers(const Rcpp::List &spectra_headers)
   {
-    std::vector<mass_spec::MS_SPECTRA_HEADERS> out;
+    std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> out;
     if (spectra_headers.size() == 0)
     {
       return out;
@@ -400,9 +408,9 @@ namespace
     return out;
   }
 
-  nts::FEATURES features_from_list(const Rcpp::List &fts)
+  nts::api::NTS_FEATURES features_from_list(const Rcpp::List &fts)
   {
-    nts::FEATURES out;
+    nts::api::NTS_FEATURES out;
     if (fts.size() == 0)
     {
       return out;
@@ -531,9 +539,9 @@ namespace
     return out;
   }
 
-  std::vector<nts::FEATURES> as_feature_list(const Rcpp::List &feature_list)
+  std::vector<nts::api::NTS_FEATURES> as_feature_list(const Rcpp::List &feature_list)
   {
-    std::vector<nts::FEATURES> out;
+    std::vector<nts::api::NTS_FEATURES> out;
     if (feature_list.size() == 0)
     {
       return out;
@@ -547,9 +555,9 @@ namespace
     return out;
   }
 
-  nts::SUSPECTS suspects_from_list(const Rcpp::List &sus)
+  nts::api::NTS_SUSPECTS suspects_from_list(const Rcpp::List &sus)
   {
-    nts::SUSPECTS out;
+    nts::api::NTS_SUSPECTS out;
     if (sus.size() == 0)
     {
       return out;
@@ -605,9 +613,9 @@ namespace
     return out;
   }
 
-  std::vector<nts::SUSPECTS> as_suspects_list(const Rcpp::List &suspects_list)
+  std::vector<nts::api::NTS_SUSPECTS> as_suspects_list(const Rcpp::List &suspects_list)
   {
-    std::vector<nts::SUSPECTS> out;
+    std::vector<nts::api::NTS_SUSPECTS> out;
     if (suspects_list.size() == 0)
     {
       return out;
@@ -621,9 +629,9 @@ namespace
     return out;
   }
 
-  nts::INTERNAL_STANDARDS internal_standards_from_list(const Rcpp::List &istd)
+  nts::api::NTS_INTERNAL_STANDARDS internal_standards_from_list(const Rcpp::List &istd)
   {
-    nts::INTERNAL_STANDARDS out;
+    nts::api::NTS_INTERNAL_STANDARDS out;
     if (istd.size() == 0)
     {
       return out;
@@ -679,9 +687,9 @@ namespace
     return out;
   }
 
-  std::vector<nts::INTERNAL_STANDARDS> as_internal_standards_list(const Rcpp::List &internal_standards_list)
+  std::vector<nts::api::NTS_INTERNAL_STANDARDS> as_internal_standards_list(const Rcpp::List &internal_standards_list)
   {
-    std::vector<nts::INTERNAL_STANDARDS> out;
+    std::vector<nts::api::NTS_INTERNAL_STANDARDS> out;
     if (internal_standards_list.size() == 0)
     {
       return out;
@@ -695,7 +703,7 @@ namespace
     return out;
   }
 
-  Rcpp::List features_to_list_dt(const nts::FEATURES &fts)
+  Rcpp::List features_to_list_dt(const nts::api::NTS_FEATURES &fts)
   {
     int n = fts.feature.size();
     if (n == 0)
@@ -754,7 +762,7 @@ namespace
     return out;
   }
 
-  Rcpp::List nts_feature_rows_to_dt(const std::vector<nts::NTS_FEATURE_ROW> &rows)
+  Rcpp::List nts_feature_rows_to_dt(const std::vector<nts::api::NTS_FEATURE_ROW> &rows)
   {
     const std::size_t n = rows.size();
     if (n == 0)
@@ -917,7 +925,7 @@ namespace
     return out;
   }
 
-  Rcpp::List nts_feature_count_rows_to_dt(const std::vector<nts::NTS_FEATURE_COUNT_ROW> &rows)
+  Rcpp::List nts_feature_count_rows_to_dt(const std::vector<nts::api::NTS_FEATURE_COUNT_ROW> &rows)
   {
     const std::size_t n = rows.size();
     if (n == 0)
@@ -946,7 +954,7 @@ namespace
     return out;
   }
 
-  Rcpp::List nts_suspect_rows_to_dt(const std::vector<nts::NTS_SUSPECT_ROW> &rows)
+  Rcpp::List nts_suspect_rows_to_dt(const std::vector<nts::api::NTS_SUSPECT_ROW> &rows)
   {
     const std::size_t n = rows.size();
     if (n == 0)
@@ -1029,17 +1037,17 @@ namespace
     return out;
   }
 
-  Rcpp::List nts_internal_standard_rows_to_dt(const std::vector<nts::NTS_INTERNAL_STANDARD_ROW> &rows)
+  Rcpp::List nts_internal_standard_rows_to_dt(const std::vector<nts::api::NTS_INTERNAL_STANDARD_ROW> &rows)
   {
     if (rows.empty())
     {
       return get_empty_dt();
     }
-    std::vector<nts::NTS_SUSPECT_ROW> suspect_rows;
+    std::vector<nts::api::NTS_SUSPECT_ROW> suspect_rows;
     suspect_rows.reserve(rows.size());
     for (const auto &row : rows)
     {
-      nts::NTS_SUSPECT_ROW value;
+      nts::api::NTS_SUSPECT_ROW value;
       value.project_id = row.project_id;
       value.analysis = row.analysis;
       value.feature = row.feature;
@@ -1077,7 +1085,7 @@ namespace
     return nts_suspect_rows_to_dt(suspect_rows);
   }
 
-  Rcpp::List nts_transformation_product_rows_to_dt(const std::vector<nts::NTS_TRANSFORMATION_PRODUCT_ROW> &rows)
+  Rcpp::List nts_transformation_product_rows_to_dt(const std::vector<nts::api::NTS_TRANSFORMATION_PRODUCT_ROW> &rows)
   {
     const std::size_t n = rows.size();
     if (n == 0)
@@ -1178,7 +1186,7 @@ namespace
     return out;
   }
 
-  Rcpp::List suspects_to_list_dt(const nts::SUSPECTS &sus)
+  Rcpp::List suspects_to_list_dt(const nts::api::NTS_SUSPECTS &sus)
   {
     int n = sus.analysis.size();
     if (n == 0)
@@ -1243,7 +1251,7 @@ namespace
     return out;
   }
 
-  Rcpp::List internal_standards_to_list_dt(const nts::INTERNAL_STANDARDS &istd)
+  Rcpp::List internal_standards_to_list_dt(const nts::api::NTS_INTERNAL_STANDARDS &istd)
   {
     int n = istd.analysis.size();
     if (n == 0)
@@ -1539,8 +1547,8 @@ namespace
 // [[Rcpp::export]]
 SEXP rcpp_project_non_target_analysis_new(SEXP project_xptr)
 {
-  return project_call([&]() {
-    auto *ptr = new nts::PROJECT_NON_TARGET_ANALYSIS(project_from_xptr(project_xptr).context());
+  return nts_rcpp::project_call([&]() {
+    auto *ptr = new nts::PROJECT_NON_TARGET_ANALYSIS(nts_rcpp::project_from_xptr(project_xptr).context());
     Rcpp::XPtr<nts::PROJECT_NON_TARGET_ANALYSIS> out(ptr, true);
     out.attr("class") = "StreamFindProjectNonTargetAnalysis";
     return SEXP(out);
@@ -1548,604 +1556,32 @@ SEXP rcpp_project_non_target_analysis_new(SEXP project_xptr)
 }
 
 // [[Rcpp::export]]
-Rcpp::List rcpp_project_non_target_analysis_get_features(SEXP nts_xptr,
-                                                         CharacterVector analyses,
-                                                         bool include_filtered)
+Rcpp::List rcpp_project_non_target_analysis_get_features(
+  SEXP nts_xptr,
+  CharacterVector analyses,
+  bool include_filtered)
 {
-  return project_call([&]() {
+  return  nts_rcpp::project_call([&]() {
     return nts_feature_rows_to_dt(
-        project_non_target_analysis_from_xptr(nts_xptr).get_features(
-            Rcpp::as<std::vector<std::string>>(analyses), include_filtered));
+      nts_rcpp::project_non_target_analysis_from_xptr(nts_xptr).get_features(
+        Rcpp::as<std::vector<std::string>>(analyses), include_filtered
+      )
+    );
   });
 }
 
 // [[Rcpp::export]]
-Rcpp::List rcpp_project_non_target_analysis_get_features_count(SEXP nts_xptr,
-                                                               CharacterVector analyses,
-                                                               bool include_filtered)
+Rcpp::List rcpp_project_non_target_analysis_get_features_count(
+  SEXP nts_xptr,
+  CharacterVector analyses,
+  bool include_filtered)
 {
-  return project_call([&]() {
+  return nts_rcpp::project_call([&]() {
     return nts_feature_count_rows_to_dt(
-        project_non_target_analysis_from_xptr(nts_xptr).get_features_count(
-            Rcpp::as<std::vector<std::string>>(analyses), include_filtered));
-  });
-}
-
-// [[Rcpp::export]]
-Rcpp::List rcpp_project_non_target_analysis_get_suspects(SEXP nts_xptr,
-                                                         CharacterVector analyses,
-                                                         SEXP features,
-                                                         SEXP groups,
-                                                         SEXP targets,
-                                                         double ppm = 20.0,
-                                                         double sec = 60.0,
-                                                         double millisec = 5.0)
-{
-  return project_call([&]() {
-    return nts_suspect_rows_to_dt(
-        project_non_target_analysis_from_xptr(nts_xptr).get_suspects(
-            Rcpp::as<std::vector<std::string>>(analyses),
-            as_character_selection(features, "feature"),
-            as_character_selection(groups, "feature_group", "group"),
-            ms_targets_input_from_object(targets),
-            ppm,
-            sec,
-            millisec));
-  });
-}
-
-// [[Rcpp::export]]
-Rcpp::List rcpp_project_non_target_analysis_get_internal_standards(SEXP nts_xptr,
-                                                                   CharacterVector analyses,
-                                                                   SEXP features,
-                                                                   SEXP groups,
-                                                                   SEXP targets,
-                                                                   double ppm = 20.0,
-                                                                   double sec = 60.0,
-                                                                   double millisec = 5.0)
-{
-  return project_call([&]() {
-    return nts_internal_standard_rows_to_dt(
-        project_non_target_analysis_from_xptr(nts_xptr).get_internal_standards(
-            Rcpp::as<std::vector<std::string>>(analyses),
-            as_character_selection(features, "feature"),
-            as_character_selection(groups, "feature_group", "group"),
-            ms_targets_input_from_object(targets),
-            ppm,
-            sec,
-            millisec));
-  });
-}
-
-// [[Rcpp::export]]
-Rcpp::List rcpp_project_non_target_analysis_get_transformation_products(SEXP nts_xptr)
-{
-  return project_call([&]() {
-    return nts_transformation_product_rows_to_dt(
-        project_non_target_analysis_from_xptr(nts_xptr).get_transformation_products());
-  });
-}
-
-// [[Rcpp::export]]
-bool rcpp_project_non_target_analysis_find_features(SEXP nts_xptr,
-                                                    CharacterVector analyses,
-                                                    NumericVector rt_windows_min,
-                                                    NumericVector rt_windows_max,
-                                                    float ppm_threshold = 15.0,
-                                                    float noise_threshold = 15.0,
-                                                    float min_snr = 3.0,
-                                                    int min_traces = 3,
-                                                    float baseline_window = 200.0,
-                                                    float max_width = 100.0,
-                                                    float base_quantile = 0.10,
-                                                    std::string debug_analysis = "",
-                                                    float debug_mz = 0.0,
-                                                    int debug_spec_idx = -1)
-{
-  return project_call([&]() {
-    return project_non_target_analysis_from_xptr(nts_xptr).find_features(
-        Rcpp::as<std::vector<std::string>>(analyses),
-        Rcpp::as<std::vector<float>>(rt_windows_min),
-        Rcpp::as<std::vector<float>>(rt_windows_max),
-        ppm_threshold,
-        noise_threshold,
-        min_snr,
-        min_traces,
-        baseline_window,
-        max_width,
-        base_quantile,
-        debug_analysis,
-        debug_mz,
-        debug_spec_idx);
-  });
-}
-
-// [[Rcpp::export]]
-bool rcpp_project_non_target_analysis_suspect_screening(SEXP nts_xptr,
-                                                        Rcpp::List suspects,
-                                                        CharacterVector analyses,
-                                                        double ppm = 5.0,
-                                                        double sec = 10.0,
-                                                        double ppmMS2 = 10.0,
-                                                        double mzrMS2 = 0.008,
-                                                        double minCosineSimilarity = 0.7,
-                                                        int minSharedFragments = 3,
-                                                        bool filtered = false)
-{
-  return project_call([&]() {
-    return project_non_target_analysis_from_xptr(nts_xptr).suspect_screening(
-        as_suspect_queries(suspects),
-        Rcpp::as<std::vector<std::string>>(analyses),
-        ppm,
-        sec,
-        ppmMS2,
-        mzrMS2,
-        minCosineSimilarity,
-        minSharedFragments,
-        filtered);
-  });
-}
-
-// [[Rcpp::export]]
-bool rcpp_project_non_target_analysis_find_internal_standards(SEXP nts_xptr,
-                                                              Rcpp::List suspects,
-                                                              CharacterVector analyses,
-                                                              double ppm = 5.0,
-                                                              double sec = 10.0,
-                                                              double ppmMS2 = 10.0,
-                                                              double mzrMS2 = 0.008,
-                                                              double minCosineSimilarity = 0.7,
-                                                              int minSharedFragments = 3,
-                                                              bool filtered = true)
-{
-  return project_call([&]() {
-    return project_non_target_analysis_from_xptr(nts_xptr).find_internal_standards(
-        as_suspect_queries(suspects),
-        Rcpp::as<std::vector<std::string>>(analyses),
-        ppm,
-        sec,
-        ppmMS2,
-        mzrMS2,
-        minCosineSimilarity,
-        minSharedFragments,
-        filtered);
-  });
-}
-
-// [[Rcpp::export]]
-bool rcpp_project_non_target_analysis_load_features_ms1(SEXP nts_xptr,
-                                                        CharacterVector analyses,
-                                                        bool filtered = false,
-                                                        NumericVector rtWindow = NumericVector::create(-2.0, 2.0),
-                                                        NumericVector mzWindow = NumericVector::create(-1.0, 6.0),
-                                                        float minTracesIntensity = 250.0,
-                                                        float mzClust = 0.005,
-                                                        float presence = 0.8)
-{
-  return project_call([&]() {
-    return project_non_target_analysis_from_xptr(nts_xptr).load_features_ms1(
-        Rcpp::as<std::vector<std::string>>(analyses),
-        filtered,
-        Rcpp::as<std::vector<float>>(rtWindow),
-        Rcpp::as<std::vector<float>>(mzWindow),
-        minTracesIntensity,
-        mzClust,
-        presence);
-  });
-}
-
-// [[Rcpp::export]]
-bool rcpp_project_non_target_analysis_load_features_ms2(SEXP nts_xptr,
-                                                        CharacterVector analyses,
-                                                        bool filtered = false,
-                                                        float minTracesIntensity = 10.0,
-                                                        float isolationWindow = 1.3,
-                                                        float mzClust = 0.005,
-                                                        float presence = 0.8)
-{
-  return project_call([&]() {
-    return project_non_target_analysis_from_xptr(nts_xptr).load_features_ms2(
-        Rcpp::as<std::vector<std::string>>(analyses),
-        filtered,
-        minTracesIntensity,
-        isolationWindow,
-        mzClust,
-        presence);
-  });
-}
-
-// [[Rcpp::export]]
-bool rcpp_project_non_target_analysis_create_components(SEXP nts_xptr,
-                                                        CharacterVector analyses,
-                                                        NumericVector rtWindow = NumericVector::create(0.0, 0.0),
-                                                        float minCorrelation = 0.8,
-                                                        float debugRT = 0.0,
-                                                        std::string debugAnalysis = "")
-{
-  return project_call([&]() {
-    return project_non_target_analysis_from_xptr(nts_xptr).create_components(
-        Rcpp::as<std::vector<std::string>>(analyses),
-        Rcpp::as<std::vector<float>>(rtWindow),
-        minCorrelation,
-        debugRT,
-        debugAnalysis);
-  });
-}
-
-// [[Rcpp::export]]
-bool rcpp_project_non_target_analysis_annotate_components(SEXP nts_xptr,
-                                                          CharacterVector analyses,
-                                                          int maxIsotopes = 5,
-                                                          int maxCharge = 1,
-                                                          int maxGaps = 1,
-                                                          float ppm = 10.0,
-                                                          std::string debugComponent = "",
-                                                          std::string debugAnalysis = "")
-{
-  return project_call([&]() {
-    return project_non_target_analysis_from_xptr(nts_xptr).annotate_components(
-        Rcpp::as<std::vector<std::string>>(analyses),
-        maxIsotopes,
-        maxCharge,
-        maxGaps,
-        ppm,
-        debugComponent,
-        debugAnalysis);
-  });
-}
-
-// [[Rcpp::export]]
-bool rcpp_project_non_target_analysis_group_features(SEXP nts_xptr,
-                                                     CharacterVector analyses,
-                                                     std::string method = "internal_standards",
-                                                     float rtDeviation = 5.0,
-                                                     float ppm = 10.0,
-                                                     int minSamples = 1,
-                                                     float binSize = 5.0,
-                                                     bool filtered = false,
-                                                     bool debug = false,
-                                                     float debugRT = 0.0)
-{
-  return project_call([&]() {
-    return project_non_target_analysis_from_xptr(nts_xptr).group_features(
-        Rcpp::as<std::vector<std::string>>(analyses),
-        method,
-        rtDeviation,
-        ppm,
-        minSamples,
-        binSize,
-        filtered,
-        debug,
-        debugRT);
-  });
-}
-
-// [[Rcpp::export]]
-bool rcpp_project_non_target_analysis_fill_features(SEXP nts_xptr,
-                                                    CharacterVector analyses,
-                                                    bool withinReplicate = false,
-                                                    bool filtered = false,
-                                                    float rtExpand = 10.0,
-                                                    float mzExpand = 0.01,
-                                                    float maxPeakWidth = 30.0,
-                                                    float minTracesIntensity = 1000.0,
-                                                    int minNumberTraces = 5,
-                                                    float minIntensity = 5000.0,
-                                                    float rtApexDeviation = 5.0,
-                                                    float minSignalToNoiseRatio = 3.0,
-                                                    float minGaussianFit = 0.2,
-                                                    std::string debugFG = "")
-{
-  return project_call([&]() {
-    return project_non_target_analysis_from_xptr(nts_xptr).fill_features(
-        Rcpp::as<std::vector<std::string>>(analyses),
-        withinReplicate,
-        filtered,
-        rtExpand,
-        mzExpand,
-        maxPeakWidth,
-        minTracesIntensity,
-        minNumberTraces,
-        minIntensity,
-        rtApexDeviation,
-        minSignalToNoiseRatio,
-        minGaussianFit,
-        debugFG);
-  });
-}
-
-// [[Rcpp::export]]
-bool rcpp_project_non_target_analysis_blank_subtraction(SEXP nts_xptr,
-                                                        CharacterVector analyses,
-                                                        float blankThreshold = 5.0,
-                                                        float rtExpand = 10.0,
-                                                        float mzExpand = 0.005)
-{
-  return project_call([&]() {
-    return project_non_target_analysis_from_xptr(nts_xptr).blank_subtraction(
-        Rcpp::as<std::vector<std::string>>(analyses),
-        blankThreshold,
-        rtExpand,
-        mzExpand);
-  });
-}
-
-// [[Rcpp::export]]
-bool rcpp_project_non_target_analysis_filter_features(SEXP nts_xptr,
-                                                      CharacterVector analyses,
-                                                      double minSN = NA_REAL,
-                                                      double minIntensity = NA_REAL,
-                                                      double minArea = NA_REAL,
-                                                      double minWidth = NA_REAL,
-                                                      double maxWidth = NA_REAL,
-                                                      double maxPPM = NA_REAL,
-                                                      double minFwhmRT = NA_REAL,
-                                                      double maxFwhmRT = NA_REAL,
-                                                      double minFwhmMZ = NA_REAL,
-                                                      double maxFwhmMZ = NA_REAL,
-                                                      double minGaussianA = NA_REAL,
-                                                      double minGaussianMu = NA_REAL,
-                                                      double maxGaussianMu = NA_REAL,
-                                                      double minGaussianSigma = NA_REAL,
-                                                      double maxGaussianSigma = NA_REAL,
-                                                      double minGaussianR2 = NA_REAL,
-                                                      double maxJaggedness = NA_REAL,
-                                                      double minSharpness = NA_REAL,
-                                                      double minAsymmetry = NA_REAL,
-                                                      double maxAsymmetry = NA_REAL,
-                                                      int maxModality = NA_INTEGER,
-                                                      double minPlates = NA_REAL,
-                                                      LogicalVector onlyFilled = LogicalVector::create(NA_LOGICAL),
-                                                      bool removeFilled = false,
-                                                      int minSizeEIC = NA_INTEGER,
-                                                      int minSizeMS1 = NA_INTEGER,
-                                                      int minSizeMS2 = NA_INTEGER,
-                                                      double minRelPresenceReplicate = NA_REAL,
-                                                      bool removeIsotopes = false,
-                                                      bool removeAdducts = false,
-                                                      bool removeLosses = false)
-{
-  return project_call([&]() {
-    const bool hasOnlyFilled = (onlyFilled.size() > 0 && onlyFilled[0] != NA_LOGICAL);
-    const bool onlyFilledValue = hasOnlyFilled ? static_cast<bool>(onlyFilled[0]) : false;
-    return project_non_target_analysis_from_xptr(nts_xptr).filter_features(
-        Rcpp::as<std::vector<std::string>>(analyses),
-        minSN,
-        minIntensity,
-        minArea,
-        minWidth,
-        maxWidth,
-        maxPPM,
-        minFwhmRT,
-        maxFwhmRT,
-        minFwhmMZ,
-        maxFwhmMZ,
-        minGaussianA,
-        minGaussianMu,
-        maxGaussianMu,
-        minGaussianSigma,
-        maxGaussianSigma,
-        minGaussianR2,
-        maxJaggedness,
-        minSharpness,
-        minAsymmetry,
-        maxAsymmetry,
-        maxModality,
-        minPlates,
-        hasOnlyFilled,
-        onlyFilledValue,
-        removeFilled,
-        minSizeEIC,
-        minSizeEIC != NA_INTEGER,
-        minSizeMS1,
-        minSizeMS1 != NA_INTEGER,
-        minSizeMS2,
-        minSizeMS2 != NA_INTEGER,
-        minRelPresenceReplicate,
-        removeIsotopes,
-        removeAdducts,
-        removeLosses);
-  });
-}
-
-// [[Rcpp::export]]
-bool rcpp_project_non_target_analysis_filter_suspects(SEXP nts_xptr,
-                                                      CharacterVector analyses,
-                                                      CharacterVector names = CharacterVector::create(),
-                                                      double minScore = NA_REAL,
-                                                      double maxErrorRT = NA_REAL,
-                                                      double maxErrorMass = NA_REAL,
-                                                      IntegerVector idLevels = IntegerVector::create(),
-                                                      int minSharedFragments = 0,
-                                                      double minCosineSimilarity = NA_REAL)
-{
-  return project_call([&]() {
-    return project_non_target_analysis_from_xptr(nts_xptr).filter_suspects(
-        Rcpp::as<std::vector<std::string>>(analyses),
-        Rcpp::as<std::vector<std::string>>(names),
-        minScore,
-        maxErrorRT,
-        maxErrorMass,
-        Rcpp::as<std::vector<int>>(idLevels),
-        minSharedFragments,
-        minCosineSimilarity);
-  });
-}
-
-// [[Rcpp::export]]
-bool rcpp_project_non_target_analysis_filter_internal_standards(SEXP nts_xptr,
-                                                                CharacterVector analyses,
-                                                                CharacterVector names = CharacterVector::create(),
-                                                                double minScore = NA_REAL,
-                                                                double maxErrorRT = NA_REAL,
-                                                                double maxErrorMass = NA_REAL,
-                                                                IntegerVector idLevels = IntegerVector::create(),
-                                                                int minSharedFragments = 0,
-                                                                double minCosineSimilarity = NA_REAL)
-{
-  return project_call([&]() {
-    return project_non_target_analysis_from_xptr(nts_xptr).filter_internal_standards(
-        Rcpp::as<std::vector<std::string>>(analyses),
-        Rcpp::as<std::vector<std::string>>(names),
-        minScore,
-        maxErrorRT,
-        maxErrorMass,
-        Rcpp::as<std::vector<int>>(idLevels),
-        minSharedFragments,
-        minCosineSimilarity);
-  });
-}
-
-// [[Rcpp::export]]
-bool rcpp_project_non_target_analysis_filter_features_ms2(SEXP nts_xptr,
-                                                          CharacterVector analyses,
-                                                          int top = 0,
-                                                          double minIntensity = NA_REAL,
-                                                          double relMinIntensity = NA_REAL,
-                                                          bool blankClean = false,
-                                                          double mzClust = 0.005,
-                                                          double blankPresenceThreshold = 0.8,
-                                                          double globalPresenceThreshold = 0.1)
-{
-  return project_call([&]() {
-    return project_non_target_analysis_from_xptr(nts_xptr).filter_features_ms2(
-        Rcpp::as<std::vector<std::string>>(analyses),
-        top,
-        minIntensity,
-        relMinIntensity,
-        blankClean,
-        mzClust,
-        blankPresenceThreshold,
-        globalPresenceThreshold);
-  });
-}
-
-// [[Rcpp::export]]
-bool rcpp_project_non_target_analysis_metfrag_screening(SEXP nts_xptr,
-                                                        std::string metfrag_path,
-                                                        CharacterVector analyses,
-                                                        std::string database_type = "LocalCSV",
-                                                        std::string database_path = "",
-                                                        double ppm = 5.0,
-                                                        double sec = 10.0,
-                                                        double ppmMS2 = 10.0,
-                                                        double mzrMS2 = 0.008,
-                                                        int top_n = 1,
-                                                        bool filtered = false,
-                                                        std::string java_path = "java",
-                                                        std::string run_dir = "",
-                                                        bool debug = false,
-                                                        Rcpp::List extra_params = R_NilValue)
-{
-  return project_call([&]() {
-    std::vector<std::pair<std::string, std::string>> extra_params_cpp;
-    if (extra_params.size() > 0) {
-      Rcpp::CharacterVector ep_names = extra_params.names();
-      for (int i = 0; i < extra_params.size(); ++i) {
-        std::string key = Rcpp::as<std::string>(ep_names[i]);
-        std::string val = Rcpp::as<std::string>(extra_params[i]);
-        if (!key.empty()) {
-          extra_params_cpp.emplace_back(key, val);
-        }
-      }
-    }
-    return project_non_target_analysis_from_xptr(nts_xptr).metfrag_screening(
-        metfrag_path,
-        Rcpp::as<std::vector<std::string>>(analyses),
-        database_type,
-        database_path,
-        ppm,
-        sec,
-        ppmMS2,
-        mzrMS2,
-        top_n,
-        filtered,
-        java_path,
-        run_dir,
-        debug,
-        extra_params_cpp);
-  });
-}
-
-// [[Rcpp::export]]
-bool rcpp_project_non_target_analysis_assign_transformation_products(SEXP nts_xptr,
-                                                                     Rcpp::List transformation_products,
-                                                                     std::string chromatographic_phase = "reverse_phase",
-                                                                     double mzrMS2 = 0.008)
-{
-  return project_call([&]() {
-    namespace atp = nts::assign_transformation_products;
-    std::vector<atp::TPInputRow> tp_rows;
-    if (transformation_products.size() > 0) {
-      auto get_str = [&](const char *col) {
-        Rcpp::CharacterVector v = transformation_products[col];
-        std::vector<std::string> out;
-        out.reserve(v.size());
-        for (int i = 0; i < v.size(); ++i)
-          out.push_back((v[i] == NA_STRING) ? "" : Rcpp::as<std::string>(v[i]));
-        return out;
-      };
-      auto get_dbl = [&](const char *col) {
-        Rcpp::NumericVector v = transformation_products[col];
-        std::vector<double> out;
-        out.reserve(v.size());
-        for (int i = 0; i < v.size(); ++i)
-          out.push_back(Rcpp::NumericVector::is_na(v[i]) ? std::numeric_limits<double>::quiet_NaN() : static_cast<double>(v[i]));
-        return out;
-      };
-      auto name = get_str("name");
-      auto formula = get_str("formula");
-      auto mass = get_dbl("mass");
-      auto SMILES = get_str("SMILES");
-      auto InChI = get_str("InChI");
-      auto InChIKey = get_str("InChIKey");
-      auto xLogP = get_dbl("xLogP");
-      auto transformation = get_str("transformation");
-      auto precursor_name = get_str("precursor_name");
-      auto precursor_formula = get_str("precursor_formula");
-      auto precursor_mass = get_dbl("precursor_mass");
-      auto precursor_SMILES = get_str("precursor_SMILES");
-      auto precursor_InChI = get_str("precursor_InChI");
-      auto precursor_InChIKey = get_str("precursor_InChIKey");
-      auto precursor_xLogP = get_dbl("precursor_xLogP");
-      auto main_precursor_name = get_str("main_precursor_name");
-      auto main_precursor_formula = get_str("main_precursor_formula");
-      auto main_precursor_mass = get_dbl("main_precursor_mass");
-      auto main_precursor_SMILES = get_str("main_precursor_SMILES");
-      auto main_precursor_InChI = get_str("main_precursor_InChI");
-      auto main_precursor_InChIKey = get_str("main_precursor_InChIKey");
-      auto main_precursor_xLogP = get_dbl("main_precursor_xLogP");
-      for (int i = 0; i < static_cast<int>(name.size()); ++i) {
-        atp::TPInputRow row;
-        row.name = name[i];
-        row.formula = formula[i];
-        row.mass = mass[i];
-        row.SMILES = SMILES[i];
-        row.InChI = InChI[i];
-        row.InChIKey = InChIKey[i];
-        row.xLogP = xLogP[i];
-        row.transformation = transformation[i];
-        row.precursor_name = precursor_name[i];
-        row.precursor_formula = precursor_formula[i];
-        row.precursor_mass = precursor_mass[i];
-        row.precursor_SMILES = precursor_SMILES[i];
-        row.precursor_InChI = precursor_InChI[i];
-        row.precursor_InChIKey = precursor_InChIKey[i];
-        row.precursor_xLogP = precursor_xLogP[i];
-        row.main_precursor_name = main_precursor_name[i];
-        row.main_precursor_formula = main_precursor_formula[i];
-        row.main_precursor_mass = main_precursor_mass[i];
-        row.main_precursor_SMILES = main_precursor_SMILES[i];
-        row.main_precursor_InChI = main_precursor_InChI[i];
-        row.main_precursor_InChIKey = main_precursor_InChIKey[i];
-        row.main_precursor_xLogP = main_precursor_xLogP[i];
-        tp_rows.push_back(row);
-      }
-    }
-    return project_non_target_analysis_from_xptr(nts_xptr).assign_transformation_products(
-        tp_rows,
-        chromatographic_phase,
-        mzrMS2);
+      nts_rcpp::project_non_target_analysis_from_xptr(nts_xptr).get_features_count(
+        Rcpp::as<std::vector<std::string>>(analyses), include_filtered
+      )
+    );
   });
 }
 
@@ -2167,10 +1603,10 @@ Rcpp::List rcpp_nts_find_features(Rcpp::List info,
                                    int debugSpecIdx = -1) {
   validate_per_analysis_list(info, spectra_headers, "spectra_headers");
   nts::NTS_INFO info_cpp = as_nts_info(info);
-  std::vector<mass_spec::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
-  std::vector<nts::FEATURES> features_cpp;
-  std::vector<nts::SUSPECTS> suspects_cpp;
-  std::vector<nts::INTERNAL_STANDARDS> internal_standards_cpp;
+  std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
+  std::vector<nts::api::NTS_FEATURES> features_cpp;
+  std::vector<nts::api::NTS_SUSPECTS> suspects_cpp;
+  std::vector<nts::api::NTS_INTERNAL_STANDARDS> internal_standards_cpp;
   nts::NTS_DATA nts_data(info_cpp, headers_cpp, features_cpp, suspects_cpp, internal_standards_cpp);
   nts_data.find_features(
     rtWindowsMin,
@@ -2204,10 +1640,10 @@ Rcpp::List rcpp_nts_load_features_ms1(Rcpp::List info,
   validate_per_analysis_list(info, spectra_headers, "spectra_headers");
   validate_per_analysis_list(info, feature_list, "feature_list");
   nts::NTS_INFO info_cpp = as_nts_info(info);
-  std::vector<mass_spec::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
-  std::vector<nts::FEATURES> features_cpp = as_feature_list(feature_list);
-  std::vector<nts::SUSPECTS> suspects_cpp;
-  std::vector<nts::INTERNAL_STANDARDS> internal_standards_cpp;
+  std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
+  std::vector<nts::api::NTS_FEATURES> features_cpp = as_feature_list(feature_list);
+  std::vector<nts::api::NTS_SUSPECTS> suspects_cpp;
+  std::vector<nts::api::NTS_INTERNAL_STANDARDS> internal_standards_cpp;
   nts::NTS_DATA nts_data(info_cpp, headers_cpp, features_cpp, suspects_cpp, internal_standards_cpp);
   nts_data.load_features_ms1(
       filtered,
@@ -2233,10 +1669,10 @@ Rcpp::List rcpp_nts_load_features_ms2(Rcpp::List info,
   validate_per_analysis_list(info, spectra_headers, "spectra_headers");
   validate_per_analysis_list(info, feature_list, "feature_list");
   nts::NTS_INFO info_cpp = as_nts_info(info);
-  std::vector<mass_spec::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
-  std::vector<nts::FEATURES> features_cpp = as_feature_list(feature_list);
-  std::vector<nts::SUSPECTS> suspects_cpp;
-  std::vector<nts::INTERNAL_STANDARDS> internal_standards_cpp;
+  std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
+  std::vector<nts::api::NTS_FEATURES> features_cpp = as_feature_list(feature_list);
+  std::vector<nts::api::NTS_SUSPECTS> suspects_cpp;
+  std::vector<nts::api::NTS_INTERNAL_STANDARDS> internal_standards_cpp;
   nts::NTS_DATA nts_data(info_cpp, headers_cpp, features_cpp, suspects_cpp, internal_standards_cpp);
   nts_data.load_features_ms2(
       filtered,
@@ -2260,10 +1696,10 @@ Rcpp::List rcpp_nts_create_components(Rcpp::List info,
   validate_per_analysis_list(info, spectra_headers, "spectra_headers");
   validate_per_analysis_list(info, feature_list, "feature_list");
   nts::NTS_INFO info_cpp = as_nts_info(info);
-  std::vector<mass_spec::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
-  std::vector<nts::FEATURES> features_cpp = as_feature_list(feature_list);
-  std::vector<nts::SUSPECTS> suspects_cpp;
-  std::vector<nts::INTERNAL_STANDARDS> internal_standards_cpp;
+  std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
+  std::vector<nts::api::NTS_FEATURES> features_cpp = as_feature_list(feature_list);
+  std::vector<nts::api::NTS_SUSPECTS> suspects_cpp;
+  std::vector<nts::api::NTS_INTERNAL_STANDARDS> internal_standards_cpp;
   nts::NTS_DATA nts_data(info_cpp, headers_cpp, features_cpp, suspects_cpp, internal_standards_cpp);
   nts_data.create_components(rtWindow, minCorrelation, debugRT, debugAnalysis);
   return features_as_list_of_dt(nts_data);
@@ -2284,10 +1720,10 @@ Rcpp::List rcpp_nts_annotate_components(Rcpp::List info,
   validate_per_analysis_list(info, spectra_headers, "spectra_headers");
   validate_per_analysis_list(info, feature_list, "feature_list");
   nts::NTS_INFO info_cpp = as_nts_info(info);
-  std::vector<mass_spec::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
-  std::vector<nts::FEATURES> features_cpp = as_feature_list(feature_list);
-  std::vector<nts::SUSPECTS> suspects_cpp;
-  std::vector<nts::INTERNAL_STANDARDS> internal_standards_cpp;
+  std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
+  std::vector<nts::api::NTS_FEATURES> features_cpp = as_feature_list(feature_list);
+  std::vector<nts::api::NTS_SUSPECTS> suspects_cpp;
+  std::vector<nts::api::NTS_INTERNAL_STANDARDS> internal_standards_cpp;
   nts::NTS_DATA nts_data(info_cpp, headers_cpp, features_cpp, suspects_cpp, internal_standards_cpp);
   nts_data.annotate_components(maxIsotopes, maxCharge, maxGaps, ppm, debugComponent, debugAnalysis);
   return features_as_list_of_dt(nts_data);
@@ -2314,10 +1750,10 @@ Rcpp::List rcpp_nts_group_features(Rcpp::List info,
     validate_per_analysis_list(info, internal_standards_list, "internal_standards_list");
   }
   nts::NTS_INFO info_cpp = as_nts_info(info);
-  std::vector<mass_spec::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
-  std::vector<nts::FEATURES> features_cpp = as_feature_list(feature_list);
-  std::vector<nts::SUSPECTS> suspects_cpp;
-  std::vector<nts::INTERNAL_STANDARDS> internal_standards_nts_cpp = as_internal_standards_list(internal_standards_list);
+  std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
+  std::vector<nts::api::NTS_FEATURES> features_cpp = as_feature_list(feature_list);
+  std::vector<nts::api::NTS_SUSPECTS> suspects_cpp;
+  std::vector<nts::api::NTS_INTERNAL_STANDARDS> internal_standards_nts_cpp = as_internal_standards_list(internal_standards_list);
   nts::NTS_DATA nts_data(info_cpp, headers_cpp, features_cpp, suspects_cpp, internal_standards_nts_cpp);
   nts_data.group_features(method, rtDeviation, ppm, minSamples, binSize, debug, debugRT);
   return features_as_list_of_dt(nts_data);
@@ -2344,10 +1780,10 @@ Rcpp::List rcpp_nts_fill_features(Rcpp::List info,
   validate_per_analysis_list(info, spectra_headers, "spectra_headers");
   validate_per_analysis_list(info, feature_list, "feature_list");
   nts::NTS_INFO info_cpp = as_nts_info(info);
-  std::vector<mass_spec::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
-  std::vector<nts::FEATURES> features_cpp = as_feature_list(feature_list);
-  std::vector<nts::SUSPECTS> suspects_cpp;
-  std::vector<nts::INTERNAL_STANDARDS> internal_standards_cpp;
+  std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
+  std::vector<nts::api::NTS_FEATURES> features_cpp = as_feature_list(feature_list);
+  std::vector<nts::api::NTS_SUSPECTS> suspects_cpp;
+  std::vector<nts::api::NTS_INTERNAL_STANDARDS> internal_standards_cpp;
   nts::NTS_DATA nts_data(info_cpp, headers_cpp, features_cpp, suspects_cpp, internal_standards_cpp);
   nts_data.fill_features(
       withinReplicate,
@@ -2377,10 +1813,10 @@ Rcpp::List rcpp_nts_blank_subtraction(Rcpp::List info,
   validate_per_analysis_list(info, spectra_headers, "spectra_headers");
   validate_per_analysis_list(info, feature_list, "feature_list");
   nts::NTS_INFO info_cpp = as_nts_info(info);
-  std::vector<mass_spec::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
-  std::vector<nts::FEATURES> features_cpp = as_feature_list(feature_list);
-  std::vector<nts::SUSPECTS> suspects_cpp;
-  std::vector<nts::INTERNAL_STANDARDS> internal_standards_cpp;
+  std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
+  std::vector<nts::api::NTS_FEATURES> features_cpp = as_feature_list(feature_list);
+  std::vector<nts::api::NTS_SUSPECTS> suspects_cpp;
+  std::vector<nts::api::NTS_INTERNAL_STANDARDS> internal_standards_cpp;
   nts::NTS_DATA nts_data(info_cpp, headers_cpp, features_cpp, suspects_cpp, internal_standards_cpp);
   nts_data.subtract_blank(blankThreshold, rtExpand, mzExpand);
   return features_as_list_of_dt(nts_data);
@@ -2425,10 +1861,10 @@ Rcpp::List rcpp_nts_filter_features(
 {
   validate_per_analysis_list(info, feature_list, "feature_list");
   nts::NTS_INFO info_cpp = as_nts_info(info);
-  std::vector<mass_spec::MS_SPECTRA_HEADERS> headers_cpp;
-  std::vector<nts::FEATURES> features_cpp = as_feature_list(feature_list);
-  std::vector<nts::SUSPECTS> suspects_cpp;
-  std::vector<nts::INTERNAL_STANDARDS> internal_standards_cpp;
+  std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> headers_cpp;
+  std::vector<nts::api::NTS_FEATURES> features_cpp = as_feature_list(feature_list);
+  std::vector<nts::api::NTS_SUSPECTS> suspects_cpp;
+  std::vector<nts::api::NTS_INTERNAL_STANDARDS> internal_standards_cpp;
   nts::NTS_DATA nts_data(info_cpp, headers_cpp, features_cpp, suspects_cpp, internal_standards_cpp);
 
   bool hasOnlyFilled = (onlyFilled.size() > 0 && onlyFilled[0] != NA_LOGICAL);
@@ -2492,10 +1928,10 @@ Rcpp::List rcpp_nts_filter_suspects(
     double minCosineSimilarity = NA_REAL)
 {
   nts::NTS_INFO info_cpp = as_nts_info(info);
-  std::vector<mass_spec::MS_SPECTRA_HEADERS> headers_cpp;
-  std::vector<nts::FEATURES> features_cpp;
-  std::vector<nts::SUSPECTS> suspects_cpp = as_suspects_list(suspect_list);
-  std::vector<nts::INTERNAL_STANDARDS> internal_standards_cpp;
+  std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> headers_cpp;
+  std::vector<nts::api::NTS_FEATURES> features_cpp;
+  std::vector<nts::api::NTS_SUSPECTS> suspects_cpp = as_suspects_list(suspect_list);
+  std::vector<nts::api::NTS_INTERNAL_STANDARDS> internal_standards_cpp;
   nts::NTS_DATA nts_data(info_cpp, headers_cpp, features_cpp, suspects_cpp, internal_standards_cpp);
 
   std::vector<std::string> names_cpp = Rcpp::as<std::vector<std::string>>(names);
@@ -2519,10 +1955,10 @@ Rcpp::List rcpp_nts_filter_internal_standards(
     double minCosineSimilarity = NA_REAL)
 {
   nts::NTS_INFO info_cpp = as_nts_info(info);
-  std::vector<mass_spec::MS_SPECTRA_HEADERS> headers_cpp;
-  std::vector<nts::FEATURES> features_cpp;
-  std::vector<nts::SUSPECTS> suspects_cpp;
-  std::vector<nts::INTERNAL_STANDARDS> internal_standards_cpp = as_internal_standards_list(internal_standards_list);
+  std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> headers_cpp;
+  std::vector<nts::api::NTS_FEATURES> features_cpp;
+  std::vector<nts::api::NTS_SUSPECTS> suspects_cpp;
+  std::vector<nts::api::NTS_INTERNAL_STANDARDS> internal_standards_cpp = as_internal_standards_list(internal_standards_list);
   nts::NTS_DATA nts_data(info_cpp, headers_cpp, features_cpp, suspects_cpp, internal_standards_cpp);
 
   std::vector<std::string> names_cpp = Rcpp::as<std::vector<std::string>>(names);
@@ -2549,10 +1985,10 @@ Rcpp::List rcpp_nts_suspect_screening(
     bool filtered = false)
 {
   nts::NTS_INFO info_cpp = as_nts_info(info);
-  std::vector<mass_spec::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
-  std::vector<nts::FEATURES> features_cpp = as_feature_list(feature_list);
-  std::vector<nts::SUSPECTS> suspects_nts_cpp;
-  std::vector<nts::INTERNAL_STANDARDS> internal_standards_cpp;
+  std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
+  std::vector<nts::api::NTS_FEATURES> features_cpp = as_feature_list(feature_list);
+  std::vector<nts::api::NTS_SUSPECTS> suspects_nts_cpp;
+  std::vector<nts::api::NTS_INTERNAL_STANDARDS> internal_standards_cpp;
   nts::NTS_DATA nts_data(info_cpp, headers_cpp, features_cpp, suspects_nts_cpp, internal_standards_cpp);
 
   std::vector<std::string> analyses_sel;
@@ -2574,13 +2010,13 @@ Rcpp::List rcpp_nts_suspect_screening(
       filtered);
 
   // Combine all suspects from all analyses into a single data.table
-  nts::SUSPECTS suspects_combined;
+  nts::api::NTS_SUSPECTS suspects_combined;
   for (size_t i = 0; i < nts_data.suspects.size(); ++i)
   {
-    const nts::SUSPECTS &sus = nts_data.suspects[i];
+    const nts::api::NTS_SUSPECTS &sus = nts_data.suspects[i];
     for (size_t j = 0; j < sus.analysis.size(); ++j)
     {
-      nts::SUSPECT s;
+      nts::api::NTS_SUSPECT_ROW s;
       s.analysis = sus.analysis[j];
       s.feature = sus.feature[j];
       s.candidate_rank = sus.candidate_rank[j];
@@ -2633,10 +2069,10 @@ Rcpp::List rcpp_nts_filter_features_ms2(
 {
   validate_per_analysis_list(info, feature_list, "feature_list");
   nts::NTS_INFO info_cpp = as_nts_info(info);
-  std::vector<mass_spec::MS_SPECTRA_HEADERS> headers_cpp;
-  std::vector<nts::FEATURES> features_cpp = as_feature_list(feature_list);
-  std::vector<nts::SUSPECTS> suspects_cpp;
-  std::vector<nts::INTERNAL_STANDARDS> internal_standards_cpp;
+  std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> headers_cpp;
+  std::vector<nts::api::NTS_FEATURES> features_cpp = as_feature_list(feature_list);
+  std::vector<nts::api::NTS_SUSPECTS> suspects_cpp;
+  std::vector<nts::api::NTS_INTERNAL_STANDARDS> internal_standards_cpp;
   nts::NTS_DATA nts_data(info_cpp, headers_cpp, features_cpp, suspects_cpp, internal_standards_cpp);
 
   nts::filter_features_ms2::filter_features_ms2_impl(
@@ -2677,10 +2113,10 @@ Rcpp::List rcpp_nts_metfrag_screening(
 {
   validate_per_analysis_list(info, feature_list, "feature_list");
   nts::NTS_INFO info_cpp = as_nts_info(info);
-  std::vector<mass_spec::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
-  std::vector<nts::FEATURES> features_cpp = as_feature_list(feature_list);
-  std::vector<nts::SUSPECTS> suspects_cpp;
-  std::vector<nts::INTERNAL_STANDARDS> internal_standards_cpp;
+  std::vector<mass_spec::reader::MS_SPECTRA_HEADERS> headers_cpp = as_spectra_headers(spectra_headers);
+  std::vector<nts::api::NTS_FEATURES> features_cpp = as_feature_list(feature_list);
+  std::vector<nts::api::NTS_SUSPECTS> suspects_cpp;
+  std::vector<nts::api::NTS_INTERNAL_STANDARDS> internal_standards_cpp;
   nts::NTS_DATA nts_data(info_cpp, headers_cpp, features_cpp, suspects_cpp, internal_standards_cpp);
 
   std::vector<std::string> analyses_sel;

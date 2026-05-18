@@ -2,6 +2,7 @@
 // Feature blank subtraction implementations for NTS_DATA
 
 #include "nts_blank_subtraction.h"
+#include "../mass_spec/project_mass_spec.h"
 #include "nts.h"
 #include <unordered_map>
 #include <algorithm>
@@ -27,7 +28,7 @@ namespace nts::blank_subtraction
 
     for (size_t a = 0; a < nts_data.analyses.size(); ++a)
     {
-      FEATURES &fts = nts_data.features[a];
+      nts::api::NTS_FEATURES &fts = nts_data.features[a];
       const int n_features = fts.size();
       if (n_features == 0)
         continue;
@@ -45,7 +46,7 @@ namespace nts::blank_subtraction
         continue;
 
       // Build targets for this analysis' features
-      mass_spec::MS_TARGETS targets;
+      mass_spec::spectra::MS_TARGETS targets;
       targets.resize_all(n_features);
 
       std::unordered_map<std::string, std::vector<int>> id_to_indices;
@@ -83,9 +84,9 @@ namespace nts::blank_subtraction
         if (blank_idx >= nts_data.files.size() || blank_idx >= nts_data.headers.size())
           continue;
 
-        mass_spec::MS_FILE ana(nts_data.files[blank_idx]);
+        mass_spec::reader::MS_FILE ana(nts_data.files[blank_idx]);
         const auto &headers = nts_data.headers[blank_idx];
-        mass_spec::MS_TARGETS_SPECTRA eics = ana.get_spectra_targets(targets, headers, minTracesIntensity, 0.0f);
+        mass_spec::spectra::MS_TARGETS_SPECTRA eics = ana.get_spectra_targets(targets, headers, minTracesIntensity, 0.0f);
 
         std::unordered_map<std::string, float> max_by_id;
         max_by_id.reserve(id_to_indices.size());

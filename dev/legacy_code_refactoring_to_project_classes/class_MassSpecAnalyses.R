@@ -856,7 +856,6 @@ plot_chromatograms.MassSpecAnalyses <- function(
   analyses <- analyses[order(incoming_names)]
   project_mass_spec$import_files(
     file_paths = vapply(analyses, function(ana) ana$file, ""),
-    analyses = vapply(analyses, function(ana) ana$name, ""),
     replicates = vapply(analyses, function(ana) {
       if (is.null(ana$replicate) || is.na(ana$replicate)) "" else as.character(ana$replicate)
     }, ""),
@@ -869,10 +868,11 @@ plot_chromatograms.MassSpecAnalyses <- function(
     conn <- DBI::dbConnect(duckdb::duckdb(), project_mass_spec$db)
     on.exit(DBI::dbDisconnect(conn), add = TRUE)
     for (ana in analyses) {
+      analysis_name <- tools::file_path_sans_ext(basename(ana$file))
       concentration <- if (is.null(ana$concentration) || is.na(ana$concentration)) NA_real_ else as.numeric(ana$concentration)
       DBI::dbExecute(conn,
         "UPDATE MS_ANALYSES SET concentration = ? WHERE project_id = ? AND analysis = ?",
-        params = list(concentration, project_mass_spec$project_id, ana$name)
+        params = list(concentration, project_mass_spec$project_id, analysis_name)
       )
     }
   }

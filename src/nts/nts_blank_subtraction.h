@@ -6,7 +6,6 @@
 
 #include <vector>
 #include <string>
-#include "../mass_spec/reader.h"
 
 namespace nts
 {

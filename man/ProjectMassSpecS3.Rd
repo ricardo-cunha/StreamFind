@@ -2,11 +2,13 @@
 % Please edit documentation in R/class_ProjectMassSpec.R
 \name{ProjectMassSpecS3}
 \alias{ProjectMassSpecS3}
-\alias{get_raw_spectra_tic.ProjectMassSpec}
-\alias{get_raw_spectra_bpc.ProjectMassSpec}
+\alias{get_analyses.ProjectMassSpec}
 \alias{plot_spectra_tic.ProjectMassSpec}
 \alias{plot_spectra_bpc.ProjectMassSpec}
 \alias{get_spectra_headers.ProjectMassSpec}
+\alias{info.ProjectMassSpec}
+\alias{add_analyses.ProjectMassSpec}
+\alias{remove_analyses.ProjectMassSpec}
 \alias{get_analysis_names.ProjectMassSpec}
 \alias{get_replicate_names.ProjectMassSpec}
 \alias{set_replicate_names.ProjectMassSpec}
@@ -19,14 +21,9 @@
 \alias{plot_spectra_eic.ProjectMassSpec}
 \alias{get_raw_spectra_ms1.ProjectMassSpec}
 \alias{get_raw_spectra_ms2.ProjectMassSpec}
-\alias{info.ProjectMassSpec}
-\alias{add_analyses.ProjectMassSpec}
-\alias{remove_analyses.ProjectMassSpec}
 \title{ProjectMassSpec S3 Methods}
 \usage{
-\method{get_raw_spectra_tic}{ProjectMassSpec}(x, analyses = NULL, levels = c(1, 2), rt = NULL)
-
-\method{get_raw_spectra_bpc}{ProjectMassSpec}(x, analyses = NULL, levels = c(1, 2), rt = NULL)
+\method{get_analyses}{ProjectMassSpec}(x)
 
 \method{plot_spectra_tic}{ProjectMassSpec}(
   x,
@@ -188,10 +185,6 @@ time values (in seconds).}
 
 \item{colorPalette}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
-\item{...}{Character or integer analysis selection.}
-
-\item{value}{Numeric vector of concentrations matching the number of analyses.}
-
 \item{mass}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
 and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
 and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
@@ -239,54 +232,48 @@ data (i.e., MS1 data).}
 
 \item{minIntensityMS2}{Numeric value with the minimum intensity of level 2
 data (i.e., MS2 data).}
-
-\item{mzClust}{Numeric (length 1) with the mass deviation threshold (in Da) to cluster mass traces. Highly dependent
-on the mass resolution of the MS data.}
-
-\item{presence}{Numeric (length 1) with the required presence ratio from 0 (i.e., doesn't need to be present in any
-spectra) to 1 (i.e., must be present in all spectra) for traces during clustering of spectra.}
-
-\item{minIntensity}{Numeric (length 1) with the minimum intensity.}
 }
 \description{
 S3 interface methods for \code{ProjectMassSpec}.
-These methods are thin wrappers over the \code{ProjectMassSpec} R6 methods and expose
-the shared-project Mass Spec API through the package generics.
 }
-\details{
-Available methods are:
-
-Metadata methods:
+\section{Functions}{
 \itemize{
-\item \code{get_analysis_names()}: Get analysis names.
-\item \code{get_replicate_names()}: Get replicate names.
-\item \code{set_replicate_names()}: Set replicate names.
-\item \code{get_blank_names()}: Get blank names.
-\item \code{set_blank_names()}: Set blank names.
-\item \code{get_concentrations()}: Get concentrations.
-\item \code{set_concentrations()}: Set concentrations.
-}
+\item \code{get_analyses(ProjectMassSpec)}: Return imported analyses.
 
-Header methods:
-\itemize{
-\item \code{get_spectra_headers()}: Fetch spectra headers for the specified analyses.
-\item \code{get_spectra_tic()}: Fetch spectra TIC rows for the specified analyses.
-}
+\item \code{plot_spectra_tic(ProjectMassSpec)}: Plot total ion current (TIC) spectra for specified analyses.
 
-Spectra trace methods:
-\itemize{
-\item \code{get_raw_spectra_tic()}: Get the total ion current (TIC) spectra for the specified analyses.
-\item \code{get_raw_spectra_bpc()}: Get the base peak chromatograms (BPC) spectra for the specified analyses.
-\item \code{plot_spectra_tic()}: Plot total ion current (TIC) spectra for the specified analyses.
-\item \code{plot_spectra_bpc()}: Plot base peak chromatogram (BPC) spectra for the specified analyses.
-}
+\item \code{plot_spectra_bpc(ProjectMassSpec)}: Plot base peak chromatogram (BPC) spectra for specified analyses.
 
-Spectra extraction methods:
-\itemize{
-\item \code{get_raw_spectra()}: Get raw spectra data from specified analyses, returning a \code{data.table} with the spectra data.
-\item \code{get_raw_spectra_eic()}: Get extracted ion chromatograms (EIC) for the specified analyses and targets.
-\item \code{plot_spectra_eic()}: Plot extracted ion chromatograms (EIC) for the specified analyses and targets.
-\item \code{get_raw_spectra_ms1()}: Get MS1 spectra for the specified analyses and targets.
-\item \code{get_raw_spectra_ms2()}: Get MS2 spectra for the specified analyses and targets.
-}
-}
+\item \code{get_spectra_headers(ProjectMassSpec)}: Fetch spectra headers for specified analyses.
+
+\item \code{info(ProjectMassSpec)}: Print a short information table for the project analyses.
+
+\item \code{add_analyses(ProjectMassSpec)}: Import one or more data files into the project as analyses.
+
+\item \code{remove_analyses(ProjectMassSpec)}: Remove analyses from the project by name or index.
+
+\item \code{get_analysis_names(ProjectMassSpec)}: Return analysis names for the project.
+
+\item \code{get_replicate_names(ProjectMassSpec)}: Return replicate names for the project.
+
+\item \code{set_replicate_names(ProjectMassSpec)}: Set replicate names for the project analyses.
+
+\item \code{get_blank_names(ProjectMassSpec)}: Return blank names for the project.
+
+\item \code{set_blank_names(ProjectMassSpec)}: Set blank names for the project analyses.
+
+\item \code{get_concentrations(ProjectMassSpec)}: Return concentrations vector for the project.
+
+\item \code{set_concentrations(ProjectMassSpec)}: Set concentrations for the project analyses.
+
+\item \code{get_raw_spectra(ProjectMassSpec)}: Get raw spectra data for specified analyses; returns a data.table with spectra rows.
+
+\item \code{get_raw_spectra_eic(ProjectMassSpec)}: Get extracted ion chromatograms (EIC) for specified analyses.
+
+\item \code{plot_spectra_eic(ProjectMassSpec)}: Plot extracted ion chromatograms (EIC) for specified analyses and targets.
+
+\item \code{get_raw_spectra_ms1(ProjectMassSpec)}: Get clustered MS1 spectra for specified analyses and targets.
+
+\item \code{get_raw_spectra_ms2(ProjectMassSpec)}: Get clustered MS2 spectra for specified analyses and targets.
+
+}}

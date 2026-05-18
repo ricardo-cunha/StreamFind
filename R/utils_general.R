@@ -27,6 +27,36 @@
   character()
 }
 
+#' @noRd
+.pull_internal_init_arg <- function(dots, name) {
+  if (!name %in% names(dots)) {
+    return(list(value = NULL, dots = dots))
+  }
+  value <- dots[[name]]
+  dots[[name]] <- NULL
+  list(value = value, dots = dots)
+}
+
+#' @noRd
+.assert_only_internal_init_args <- function(dots, context = "initialize") {
+  if (length(dots) == 0) {
+    return(invisible(NULL))
+  }
+  dot_names <- names(dots)
+  if (is.null(dot_names)) {
+    dot_names <- rep("", length(dots))
+  }
+  unexpected <- ifelse(nzchar(dot_names), dot_names, "<unnamed>")
+  stop(
+    sprintf(
+      "Unused arguments in %s: %s",
+      context,
+      paste(unexpected, collapse = ", ")
+    ),
+    call. = FALSE
+  )
+}
+
 # MARK: .infer_processing_owner_class
 #' @noRd
 .infer_processing_owner_class <- function(type = NA_character_, input_class = NA_character_, output_class = NA_character_) {

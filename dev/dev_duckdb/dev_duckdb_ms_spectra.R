@@ -1,24 +1,42 @@
 # MARK: Project Mass Spec shared DuckDB test
 
-dbsus <- data.table::fread(
-  file.path(
-    "dev",
-    "dev_duckdb",
-    "suspects_with_ms2_template.csv"
-  )
-)[, c("name", "mass")]
-
-library(StreamFind)
+standards <- StreamFindData::get_ms_tof_spiked_chemicals()
+standards <- standards[grepl("S", standards$tag), ]
+cols <- c("name", "formula", "mass", "rt", "tag")
+internal_standards <- standards[standards$tag %in% "IS", ]
+internal_standards <- internal_standards[, cols, with = FALSE]
+internal_standards <- internal_standards[!internal_standards$name %in% c("Ibuprofen-d3", "Naproxen-d3"), ]
+standards <- standards[standards$tag %in% "S", ]
+standards <- standards[, cols, with = FALSE]
+db_with_ms2 <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+db_with_ms2 <- db_with_ms2[db_with_ms2$tag %in% "S", ]
+db_with_ms2 <- db_with_ms2[, c("name", "formula", "mass", "SMILES", "rt", "polarity", "fragments"), with = FALSE]
+db_with_ms2$polarity[db_with_ms2$polarity == 1] <- "positive"
+db_with_ms2$polarity[is.na(db_with_ms2$polarity)] <- "positive"
+db_with_ms2$polarity[db_with_ms2$polarity == -1] <- "negative"
 
 db <- file.path("dev", "dev_duckdb", "data", "ms_project_test.duckdb")
 if (file.exists(db)) file.remove(db)
 
-proj <- ProjectMassSpec$new(
+ms_files <- c(
+  "D:\\example_files\\ms_basic\\00_hrms_mix1_pos_cent-r001.mzML",
+  "D:\\example_files\\ms_basic\\00_hrms_mix1_pos_cent-r002.mzML",
+  "D:\\example_files\\ms_basic\\00_hrms_mix1_pos_cent-r003.mzML"
+)
+
+proj <- NewProjectMassSpecSpectra(
+  db = db,
+  project_id = "ms-demo",
+  file_paths = ms_files
+)
+
+proj <- NewProjectMassSpecSpectra(
   db = db,
   project_id = "ms-demo"
 )
 
-proj$project_id
+proj$get_cache()
+proj$get_project_id()
 proj$get_domain()
 proj$set_metadata(
   list(
@@ -28,17 +46,39 @@ proj$set_metadata(
 )
 proj$get_metadata()
 proj$list_tables()
-# proj$list_analyses()
-# proj$get_spectra_headers()
-# proj$get_chromatograms_headers()
+proj$get_analyses()
+proj$get_spectra_headers()
+proj$get_spectra_tic()
+proj$plot_spectra_bpc(interactive = FALSE, levels = 1)
 
-# Optional import test.
-# Replace with real mzML/mzXML files before running this block.
-ms_files <- c(
-  "E:\\example_files\\ms_basic\\00_hrms_mix1_pos_cent-r001.mzML",
-  "E:\\example_files\\ms_basic\\00_hrms_mix1_pos_cent-r002.mzML",
-  "E:\\example_files\\ms_basic\\00_hrms_mix1_pos_cent-r003.mzML"
+devtools::load_all()
+db <- file.path("dev", "dev_duckdb", "data", "ms_project_test.duckdb")
+proj <- NewProjectMassSpecSpectra(
+  db = db,
+  project_id = "ms-demo"
 )
+proj
+
+spec <- proj$get_raw_spectra(
+  analyses = character(),
+  levels = 1,
+  mass = internal_standards$mass[4],
+  mz = numeric(),
+  rt = numeric(),
+  mobility = numeric(),
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = character(),
+  allTraces = TRUE,
+  isolationWindow = 1.3,
+  minIntensityMS1 = 0,
+  minIntensityMS2 = 0
+)
+
+plot(spec$rt, spec$intensity)
+
+
 
 proj$import_files(ms_files)
 
@@ -51,9 +91,7 @@ head(proj$get_spectra_headers())
 head(proj$get_chromatograms_headers())
 
 
-proj$get_spectra_eic(
-  mass = dbsus$mass[2],
-)
+
 
 
 plot_spectra_bpc(proj)

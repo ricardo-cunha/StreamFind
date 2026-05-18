@@ -81,18 +81,18 @@ namespace SF_UTILITY
 
   float gaussian_function(const float &A, const float &mu,
                           const float &sigma, const float &x);
-  
+
   float gaussian_function_with_baseline(const float &A, const float &mu,
                                         const float &sigma, const float &baseline,
                                         const float &x);
-  
+
   // Skew-Gaussian (Azzalini skew-normal) functions
   float standard_normal_pdf(const float &z);
   float standard_normal_cdf(const float &z);
   float skew_gaussian_function(const float &A, const float &xi,
                                const float &omega, const float &alpha,
                                const float &t);
-  
+
   // EMG (Exponentially Modified Gaussian) function for chromatographic tailing
   float emg_function(const float &A, const float &mu, const float &sigma,
                     const float &lambda, const float &baseline, const float &t);
@@ -275,27 +275,27 @@ namespace SF_UTILITY
 
   float calculate_gaussian_rsquared(const std::vector<float> &x, const std::vector<float> &y,
                                    float A, float mu, float sigma, float baseline);
-  
+
   // Skew-Gaussian fitting functions
   void fit_skew_gaussian(const std::vector<float> &t, const std::vector<float> &y,
                         float &A, float &xi, float &omega, float &alpha);
-  
+
   float calculate_skew_gaussian_rsquared(const std::vector<float> &t, const std::vector<float> &y,
                                         float A, float xi, float omega, float alpha);
-  
+
   // EMG fitting functions (Exponentially Modified Gaussian)
   void fit_emg(const std::vector<float> &t, const std::vector<float> &y,
               float &A, float &mu, float &sigma, float &lambda, float &baseline);
-  
+
   float calculate_emg_rsquared(const std::vector<float> &t, const std::vector<float> &y,
                               float A, float mu, float sigma, float lambda, float baseline);
 
   // MARK: POLARITY-SPECIFIC PROCESSING FUNCTIONS
-  
+
   // Process clusters for a specific polarity and return features
   std::vector<NTS2::FEATURE> process_polarity_clusters(
       const std::vector<float> &clust_rt,
-      const std::vector<float> &clust_mz, 
+      const std::vector<float> &clust_mz,
       const std::vector<float> &clust_intensity,
       const std::vector<float> &clust_noise,
       const std::vector<int> &clust_cluster,

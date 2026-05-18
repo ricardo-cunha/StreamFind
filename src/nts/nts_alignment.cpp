@@ -3,7 +3,6 @@
 
 #include "nts_alignment.h"
 #include "nts.h"
-#include "nts_utils.h"
 #include <algorithm>
 #include <cmath>
 #include <sstream>
@@ -460,7 +459,7 @@ void group_features_impl(
 
   for (size_t a = 0; a < nts_data.analyses.size(); ++a)
   {
-    const nts::FEATURES &fts_i = nts_data.features[a];
+    const nts::api::NTS_FEATURES &fts_i = nts_data.features[a];
     for (int i = 0; i < fts_i.size(); ++i)
     {
       AlignmentFeature af;
@@ -496,7 +495,7 @@ void group_features_impl(
 
     for (size_t a = 0; a < nts_data.internal_standards.size(); ++a)
     {
-      const nts::INTERNAL_STANDARDS &istd_data = nts_data.internal_standards[a];
+      const nts::api::NTS_INTERNAL_STANDARDS &istd_data = nts_data.internal_standards[a];
       for (int i = 0; i < istd_data.size(); ++i)
       {
         istd_rts_by_name[istd_data.name[i]].push_back(istd_data.exp_rt[i]);
@@ -519,7 +518,7 @@ void group_features_impl(
     // Create alignment::InternalStandard vector with calculated shifts
     for (size_t a = 0; a < nts_data.internal_standards.size(); ++a)
     {
-      const nts::INTERNAL_STANDARDS &istd_data = nts_data.internal_standards[a];
+      const nts::api::NTS_INTERNAL_STANDARDS &istd_data = nts_data.internal_standards[a];
       for (int i = 0; i < istd_data.size(); ++i)
       {
         InternalStandard istd;
@@ -779,7 +778,7 @@ void group_features_impl(
     {
       if (nts_data.analyses[a] == af.analysis)
       {
-        nts::FEATURES &fts_i = nts_data.features[a];
+        nts::api::NTS_FEATURES &fts_i = nts_data.features[a];
         for (int i = 0; i < fts_i.size(); ++i)
         {
           if (fts_i.feature[i] == af.feature)
