@@ -169,21 +169,20 @@ ProjectMassSpec <- R6::R6Class(
       ))
     },
     #' @description Get raw spectra data for selected analyses.
-    get_raw_spectra = function(
-        analyses = character(),
-        levels = integer(),
-        mass = numeric(),
-        mz = numeric(),
-        rt = numeric(),
-        mobility = numeric(),
-        ppm = 20,
-        sec = 60,
-        millisec = 5,
-        id = character(),
-        allTraces = TRUE,
-        isolationWindow = 1.3,
-        minIntensityMS1 = 0,
-        minIntensityMS2 = 0) {
+    get_raw_spectra = function(analyses = character(),
+                               levels = integer(),
+                               mass = numeric(),
+                               mz = numeric(),
+                               rt = numeric(),
+                               mobility = numeric(),
+                               ppm = 20,
+                               sec = 60,
+                               millisec = 5,
+                               id = character(),
+                               allTraces = TRUE,
+                               isolationWindow = 1.3,
+                               minIntensityMS1 = 0,
+                               minIntensityMS2 = 0) {
       if (is.null(analyses)) {
         analyses <- character()
       }
@@ -248,27 +247,21 @@ ProjectMassSpec <- R6::R6Class(
       ))
       if (nrow(spec) > 0) {
         if (!any(spec$mobility > 0)) spec$mobility <- NULL
-        if ("id" %in% colnames(spec)) {
-          data.table::setorder(spec, analysis, id, rt, mz)
-        } else {
-          data.table::setorder(spec, analysis, rt, mz)
-        }
         data.table::setcolorder(spec, c("analysis", "replicate"))
       }
       spec
     },
     #' @description Plot total ion current traces for selected analyses.
-    plot_spectra_tic = function(
-        analyses = NULL,
-        levels = c(1, 2),
-        rt = NULL,
-        downsize = NULL,
-        xLab = NULL,
-        yLab = NULL,
-        title = NULL,
-        groupBy = "analysis",
-        interactive = TRUE,
-        colorPalette = NULL) {
+    plot_spectra_tic = function(analyses = NULL,
+                                levels = c(1, 2),
+                                rt = NULL,
+                                downsize = NULL,
+                                xLab = NULL,
+                                yLab = NULL,
+                                title = NULL,
+                                groupBy = "analysis",
+                                interactive = TRUE,
+                                colorPalette = NULL) {
       tic <- data.table::as.data.table(self$get_spectra_tic(analyses, levels, rt))
       if (nrow(tic) == 0) {
         message("\U2717 TIC not found for the analyses!")
@@ -303,17 +296,16 @@ ProjectMassSpec <- R6::R6Class(
       )
     },
     #' @description Plot base peak chromatogram traces for selected analyses.
-    plot_spectra_bpc = function(
-        analyses = NULL,
-        levels = c(1, 2),
-        rt = NULL,
-        downsize = NULL,
-        xLab = NULL,
-        yLab = NULL,
-        title = NULL,
-        groupBy = "analysis",
-        interactive = TRUE,
-        colorPalette = NULL) {
+    plot_spectra_bpc = function(analyses = NULL,
+                                levels = c(1, 2),
+                                rt = NULL,
+                                downsize = NULL,
+                                xLab = NULL,
+                                yLab = NULL,
+                                title = NULL,
+                                groupBy = "analysis",
+                                interactive = TRUE,
+                                colorPalette = NULL) {
       bpc <- data.table::as.data.table(self$get_spectra_tic(analyses, levels, rt))
       if (nrow(bpc) == 0) {
         message("\U2717 BPC not found for the analyses!")
@@ -348,16 +340,15 @@ ProjectMassSpec <- R6::R6Class(
       )
     },
     #' @description Get extracted ion chromatograms for selected analyses.
-    get_raw_spectra_eic = function(
-        analyses = NULL,
-        mass = NULL,
-        mz = NULL,
-        rt = NULL,
-        mobility = NULL,
-        ppm = 20,
-        sec = 60,
-        millisec = 5,
-        id = NULL) {
+    get_raw_spectra_eic = function(analyses = NULL,
+                                   mass = NULL,
+                                   mz = NULL,
+                                   rt = NULL,
+                                   mobility = NULL,
+                                   ppm = 20,
+                                   sec = 60,
+                                   millisec = 5,
+                                   id = NULL) {
       eic <- self$get_raw_spectra(
         analyses = analyses,
         levels = 1,
@@ -393,23 +384,22 @@ ProjectMassSpec <- R6::R6Class(
       eic
     },
     #' @description Plot extracted ion chromatograms for selected analyses.
-    plot_spectra_eic = function(
-        analyses = NULL,
-        mass = NULL,
-        mz = NULL,
-        rt = NULL,
-        mobility = NULL,
-        ppm = 20,
-        sec = 60,
-        millisec = 5,
-        id = NULL,
-        downsize = NULL,
-        xLab = NULL,
-        yLab = NULL,
-        title = NULL,
-        groupBy = c("analysis", "id"),
-        interactive = TRUE,
-        colorPalette = NULL) {
+    plot_raw_spectra_eic = function(analyses = NULL,
+                                    mass = NULL,
+                                    mz = NULL,
+                                    rt = NULL,
+                                    mobility = NULL,
+                                    ppm = 20,
+                                    sec = 60,
+                                    millisec = 5,
+                                    id = NULL,
+                                    downsize = NULL,
+                                    xLab = NULL,
+                                    yLab = NULL,
+                                    title = NULL,
+                                    groupBy = c("analysis", "id"),
+                                    interactive = TRUE,
+                                    colorPalette = NULL) {
       eic <- self$get_raw_spectra_eic(analyses, mass, mz, rt, mobility, ppm, sec, millisec, id)
       if (nrow(eic) == 0) {
         message("\U2717 EIC not found for the analyses!")
@@ -445,19 +435,18 @@ ProjectMassSpec <- R6::R6Class(
       )
     },
     #' @description Get clustered MS1 spectra for selected analyses.
-    get_raw_spectra_ms1 = function(
-        analyses = NULL,
-        mass = NULL,
-        mz = NULL,
-        rt = NULL,
-        mobility = NULL,
-        ppm = 20,
-        sec = 60,
-        millisec = 5,
-        id = NULL,
-        mzClust = 0.003,
-        presence = 0.8,
-        minIntensity = 1000) {
+    get_raw_spectra_ms1 = function(analyses = NULL,
+                                   mass = NULL,
+                                   mz = NULL,
+                                   rt = NULL,
+                                   mobility = NULL,
+                                   ppm = 20,
+                                   sec = 60,
+                                   millisec = 5,
+                                   id = NULL,
+                                   mzClust = 0.003,
+                                   presence = 0.8,
+                                   minIntensity = 1000) {
       ms1 <- self$get_raw_spectra(
         analyses = analyses,
         levels = 1,
@@ -516,20 +505,19 @@ ProjectMassSpec <- R6::R6Class(
       ms1_df
     },
     #' @description Get clustered MS2 spectra for selected analyses.
-    get_raw_spectra_ms2 = function(
-        analyses = NULL,
-        mass = NULL,
-        mz = NULL,
-        rt = NULL,
-        mobility = NULL,
-        ppm = 20,
-        sec = 60,
-        millisec = 5,
-        id = NULL,
-        isolationWindow = 1.3,
-        mzClust = 0.005,
-        presence = 0.8,
-        minIntensity = 0) {
+    get_raw_spectra_ms2 = function(analyses = NULL,
+                                   mass = NULL,
+                                   mz = NULL,
+                                   rt = NULL,
+                                   mobility = NULL,
+                                   ppm = 20,
+                                   sec = 60,
+                                   millisec = 5,
+                                   id = NULL,
+                                   isolationWindow = 1.3,
+                                   mzClust = 0.005,
+                                   presence = 0.8,
+                                   minIntensity = 0) {
       ms2 <- self$get_raw_spectra(
         analyses = analyses,
         levels = 2,
@@ -649,17 +637,18 @@ get_analyses.ProjectMassSpec <- function(x) {
 #' @method plot_spectra_tic ProjectMassSpec
 #' @export
 plot_spectra_tic.ProjectMassSpec <- function(
-    x,
-    analyses = NULL,
-    levels = c(1, 2),
-    rt = NULL,
-    downsize = NULL,
-    xLab = NULL,
-    yLab = NULL,
-    title = NULL,
-    groupBy = "analysis",
-    interactive = TRUE,
-    colorPalette = NULL) {
+  x,
+  analyses = NULL,
+  levels = c(1, 2),
+  rt = NULL,
+  downsize = NULL,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colorPalette = NULL
+) {
   checkmate::assert_class(x, "ProjectMassSpec")
   x$plot_spectra_tic(
     analyses = analyses,
@@ -679,17 +668,18 @@ plot_spectra_tic.ProjectMassSpec <- function(
 #' @method plot_spectra_bpc ProjectMassSpec
 #' @export
 plot_spectra_bpc.ProjectMassSpec <- function(
-    x,
-    analyses = NULL,
-    levels = c(1, 2),
-    rt = NULL,
-    downsize = NULL,
-    xLab = NULL,
-    yLab = NULL,
-    title = NULL,
-    groupBy = "analysis",
-    interactive = TRUE,
-    colorPalette = NULL) {
+  x,
+  analyses = NULL,
+  levels = c(1, 2),
+  rt = NULL,
+  downsize = NULL,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colorPalette = NULL
+) {
   checkmate::assert_class(x, "ProjectMassSpec")
   x$plot_spectra_bpc(
     analyses = analyses,
@@ -819,21 +809,22 @@ set_concentrations.ProjectMassSpec <- function(x, value) {
 #' @method get_raw_spectra ProjectMassSpec
 #' @export
 get_raw_spectra.ProjectMassSpec <- function(
-    x,
+  x,
   analyses = character(),
   levels = integer(),
   mass = numeric(),
   mz = numeric(),
   rt = numeric(),
   mobility = numeric(),
-    ppm = 20,
-    sec = 60,
-    millisec = 5,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
   id = character(),
-    allTraces = TRUE,
-    isolationWindow = 1.3,
-    minIntensityMS1 = 0,
-    minIntensityMS2 = 0) {
+  allTraces = TRUE,
+  isolationWindow = 1.3,
+  minIntensityMS1 = 0,
+  minIntensityMS2 = 0
+) {
   checkmate::assert_class(x, "ProjectMassSpec")
   x$get_raw_spectra(
     analyses = analyses,
@@ -857,16 +848,17 @@ get_raw_spectra.ProjectMassSpec <- function(
 #' @method get_raw_spectra_eic ProjectMassSpec
 #' @export
 get_raw_spectra_eic.ProjectMassSpec <- function(
-    x,
-    analyses = NULL,
-    mass = NULL,
-    mz = NULL,
-    rt = NULL,
-    mobility = NULL,
-    ppm = 20,
-    sec = 60,
-    millisec = 5,
-    id = NULL) {
+  x,
+  analyses = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = NULL
+) {
   checkmate::assert_class(x, "ProjectMassSpec")
   x$get_raw_spectra_eic(
     analyses = analyses,
@@ -882,28 +874,29 @@ get_raw_spectra_eic.ProjectMassSpec <- function(
 }
 
 #' @describeIn ProjectMassSpecS3 Plot extracted ion chromatograms (EIC) for specified analyses and targets.
-#' @method plot_spectra_eic ProjectMassSpec
+#' @method plot_raw_spectra_eic ProjectMassSpec
 #' @export
-plot_spectra_eic.ProjectMassSpec <- function(
-    x,
-    analyses = NULL,
-    mass = NULL,
-    mz = NULL,
-    rt = NULL,
-    mobility = NULL,
-    ppm = 20,
-    sec = 60,
-    millisec = 5,
-    id = NULL,
-    downsize = NULL,
-    xLab = NULL,
-    yLab = NULL,
-    title = NULL,
-    groupBy = c("analysis", "id"),
-    interactive = TRUE,
-    colorPalette = NULL) {
+plot_raw_spectra_eic.ProjectMassSpec <- function(
+  x,
+  analyses = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = NULL,
+  downsize = NULL,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = c("analysis", "id"),
+  interactive = TRUE,
+  colorPalette = NULL
+) {
   checkmate::assert_class(x, "ProjectMassSpec")
-  x$plot_spectra_eic(
+  x$plot_raw_spectra_eic(
     analyses = analyses,
     mass = mass,
     mz = mz,
@@ -927,19 +920,20 @@ plot_spectra_eic.ProjectMassSpec <- function(
 #' @method get_raw_spectra_ms1 ProjectMassSpec
 #' @export
 get_raw_spectra_ms1.ProjectMassSpec <- function(
-    x,
-    analyses = NULL,
-    mass = NULL,
-    mz = NULL,
-    rt = NULL,
-    mobility = NULL,
-    ppm = 20,
-    sec = 60,
-    millisec = 5,
-    id = NULL,
-    mzClust = 0.003,
-    presence = 0.8,
-    minIntensity = 1000) {
+  x,
+  analyses = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = NULL,
+  mzClust = 0.003,
+  presence = 0.8,
+  minIntensity = 1000
+) {
   checkmate::assert_class(x, "ProjectMassSpec")
   x$get_raw_spectra_ms1(
     analyses = analyses,
@@ -961,20 +955,21 @@ get_raw_spectra_ms1.ProjectMassSpec <- function(
 #' @method get_raw_spectra_ms2 ProjectMassSpec
 #' @export
 get_raw_spectra_ms2.ProjectMassSpec <- function(
-    x,
-    analyses = NULL,
-    mass = NULL,
-    mz = NULL,
-    rt = NULL,
-    mobility = NULL,
-    ppm = 20,
-    sec = 60,
-    millisec = 5,
-    id = NULL,
-    isolationWindow = 1.3,
-    mzClust = 0.005,
-    presence = 0.8,
-    minIntensity = 0) {
+  x,
+  analyses = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = NULL,
+  isolationWindow = 1.3,
+  mzClust = 0.005,
+  presence = 0.8,
+  minIntensity = 0
+) {
   checkmate::assert_class(x, "ProjectMassSpec")
   x$get_raw_spectra_ms2(
     analyses = analyses,

@@ -31,7 +31,7 @@ Internal R6 child of \code{Project} exposing shared Mass Spec tables and native 
 \item \href{#method-ProjectMassSpec-plot_spectra_tic}{\code{ProjectMassSpec$plot_spectra_tic()}}
 \item \href{#method-ProjectMassSpec-plot_spectra_bpc}{\code{ProjectMassSpec$plot_spectra_bpc()}}
 \item \href{#method-ProjectMassSpec-get_raw_spectra_eic}{\code{ProjectMassSpec$get_raw_spectra_eic()}}
-\item \href{#method-ProjectMassSpec-plot_spectra_eic}{\code{ProjectMassSpec$plot_spectra_eic()}}
+\item \href{#method-ProjectMassSpec-plot_raw_spectra_eic}{\code{ProjectMassSpec$plot_raw_spectra_eic()}}
 \item \href{#method-ProjectMassSpec-get_raw_spectra_ms1}{\code{ProjectMassSpec$get_raw_spectra_ms1()}}
 \item \href{#method-ProjectMassSpec-get_raw_spectra_ms2}{\code{ProjectMassSpec$get_raw_spectra_ms2()}}
 \item \href{#method-ProjectMassSpec-print}{\code{ProjectMassSpec$print()}}
@@ -301,16 +301,16 @@ time values (in seconds).}
 Get raw spectra data for selected analyses.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$get_raw_spectra(
-  analyses = NULL,
-  levels = NULL,
-  mass = NULL,
-  mz = NULL,
-  rt = NULL,
-  mobility = NULL,
+  analyses = character(),
+  levels = integer(),
+  mass = numeric(),
+  mz = numeric(),
+  rt = numeric(),
+  mobility = numeric(),
   ppm = 20,
   sec = 60,
   millisec = 5,
-  id = NULL,
+  id = character(),
   allTraces = TRUE,
   isolationWindow = 1.3,
   minIntensityMS1 = 0,
@@ -550,12 +550,12 @@ combination of the \emph{m/z} and retention time ranges or values.}
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ProjectMassSpec-plot_spectra_eic"></a>}}
-\if{latex}{\out{\hypertarget{method-ProjectMassSpec-plot_spectra_eic}{}}}
-\subsection{Method \code{plot_spectra_eic()}}{
+\if{html}{\out{<a id="method-ProjectMassSpec-plot_raw_spectra_eic"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectMassSpec-plot_raw_spectra_eic}{}}}
+\subsection{Method \code{plot_raw_spectra_eic()}}{
 Plot extracted ion chromatograms for selected analyses.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$plot_spectra_eic(
+\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$plot_raw_spectra_eic(
   analyses = NULL,
   mass = NULL,
   mz = NULL,

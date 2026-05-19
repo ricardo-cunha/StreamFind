@@ -51,8 +51,10 @@ ProjectClasses <- function(project_class = NULL) {
   registry[[project_class]]
 }
 
-#' @title Construct a Mass Spec Spectra Project
-#' @description User-facing constructor wrapper for `ProjectMassSpecSpectra`.
+#' @title Open or Create a Mass Spec Spectra Project
+#' @description Open an existing `ProjectMassSpecSpectra` or construct a new one.
+#'   This wrapper is safer named to reflect that a connection to an existing
+#'   project may be returned rather than always creating a fresh project.
 #' @param db Path to the project DuckDB file.
 #' @param project_id Active project identifier.
 #' @param file_paths Character vector with Mass Spec file paths.
@@ -60,7 +62,7 @@ ProjectClasses <- function(project_class = NULL) {
 #' @param blanks Optional character vector with blank names.
 #' @return A `ProjectMassSpecSpectra` object.
 #' @export
-NewProjectMassSpecSpectra <- function(
+OpenProjectMassSpecSpectra <- function(
     db,
     project_id,
     file_paths = character(),
@@ -76,7 +78,10 @@ NewProjectMassSpecSpectra <- function(
 }
 
 #' @title Construct a Mass Spec Chromatograms Project
-#' @description User-facing constructor wrapper for `ProjectMassSpecChromatograms`.
+#' @title Open or Create a Mass Spec Chromatograms Project
+#' @description Open an existing `ProjectMassSpecChromatograms` or construct a new one.
+#'   This wrapper is named to reflect that a connection to an existing project
+#'   may be returned rather than always creating a fresh project.
 #' @param db Path to the project DuckDB file.
 #' @param project_id Active project identifier.
 #' @param file_paths Character vector with Mass Spec file paths.
@@ -84,7 +89,7 @@ NewProjectMassSpecSpectra <- function(
 #' @param blanks Optional character vector with blank names.
 #' @return A `ProjectMassSpecChromatograms` object.
 #' @export
-NewProjectMassSpecChromatograms <- function(
+OpenProjectMassSpecChromatograms <- function(
     db,
     project_id,
     file_paths = character(),
@@ -99,12 +104,14 @@ NewProjectMassSpecChromatograms <- function(
   )
 }
 
-#' @title Construct a Non-Target Analysis Project
-#' @description User-facing constructor wrapper for `ProjectNonTargetAnalysis`.
+#' @title Open or Create a Non-Target Analysis Project
+#' @description Open an existing `ProjectNonTargetAnalysis` or construct a new one.
+#'   This wrapper is named to reflect that a connection to an existing project
+#'   may be returned rather than always creating a fresh project.
 #' @param db Path to the project DuckDB file.
 #' @param project_id Active project identifier.
 #' @return A `ProjectNonTargetAnalysis` object.
 #' @export
-NewProjectNonTargetAnalysis <- function(db, project_id) {
+OpenProjectNonTargetAnalysis <- function(db, project_id) {
   ProjectNonTargetAnalysis$new(db = db, project_id = project_id)
 }

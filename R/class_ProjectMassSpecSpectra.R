@@ -115,3 +115,11 @@ show.ProjectMassSpecSpectra <- function(x, ...) {
   checkmate::assert_class(x, "ProjectMassSpecSpectra")
   x$show(...)
 }
+
+#' @describeIn ProjectMassSpecSpectraS3 Plot extracted ion chromatograms (EIC) for specified analyses and targets.
+#' @method plot_raw_spectra_eic ProjectMassSpecSpectra
+#' @export
+plot_raw_spectra_eic.ProjectMassSpecSpectra <- function(x, ...) {
+  checkmate::assert_class(x, "ProjectMassSpecSpectra")
+  plot_raw_spectra_eic.ProjectMassSpec(x, ...)
+}

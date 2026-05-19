@@ -18,7 +18,7 @@
 \alias{set_concentrations.ProjectMassSpec}
 \alias{get_raw_spectra.ProjectMassSpec}
 \alias{get_raw_spectra_eic.ProjectMassSpec}
-\alias{plot_spectra_eic.ProjectMassSpec}
+\alias{plot_raw_spectra_eic.ProjectMassSpec}
 \alias{get_raw_spectra_ms1.ProjectMassSpec}
 \alias{get_raw_spectra_ms2.ProjectMassSpec}
 \title{ProjectMassSpec S3 Methods}
@@ -77,16 +77,16 @@
 
 \method{get_raw_spectra}{ProjectMassSpec}(
   x,
-  analyses = NULL,
-  levels = NULL,
-  mass = NULL,
-  mz = NULL,
-  rt = NULL,
-  mobility = NULL,
+  analyses = character(),
+  levels = integer(),
+  mass = numeric(),
+  mz = numeric(),
+  rt = numeric(),
+  mobility = numeric(),
   ppm = 20,
   sec = 60,
   millisec = 5,
-  id = NULL,
+  id = character(),
   allTraces = TRUE,
   isolationWindow = 1.3,
   minIntensityMS1 = 0,
@@ -106,7 +106,7 @@
   id = NULL
 )
 
-\method{plot_spectra_eic}{ProjectMassSpec}(
+\method{plot_raw_spectra_eic}{ProjectMassSpec}(
   x,
   analyses = NULL,
   mass = NULL,
@@ -270,7 +270,7 @@ S3 interface methods for \code{ProjectMassSpec}.
 
 \item \code{get_raw_spectra_eic(ProjectMassSpec)}: Get extracted ion chromatograms (EIC) for specified analyses.
 
-\item \code{plot_spectra_eic(ProjectMassSpec)}: Plot extracted ion chromatograms (EIC) for specified analyses and targets.
+\item \code{plot_raw_spectra_eic(ProjectMassSpec)}: Plot extracted ion chromatograms (EIC) for specified analyses and targets.
 
 \item \code{get_raw_spectra_ms1(ProjectMassSpec)}: Get clustered MS1 spectra for specified analyses and targets.
 

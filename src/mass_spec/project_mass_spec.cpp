@@ -2,10 +2,13 @@
 #include "reader.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cmath>
 #include <filesystem>
+#include <iomanip>
 #include <numeric>
 #include <set>
+#include <sstream>
 #include <utility>
 #include <map>
 #include <limits>
@@ -1424,6 +1427,7 @@ namespace mass_spec
                                                         const std::string &replicate,
                                                         const std::string &blank)
     {
+      const auto import_started = std::chrono::steady_clock::now();
       if (file_path.empty())
       {
         throw project::error::ERROR(project::error::ERROR_CODE::InvalidArgument, "Mass spec import requires a file path");
@@ -1440,33 +1444,61 @@ namespace mass_spec
       const std::string chromatograms_cache_key = cache_key_base + "|chromatograms_headers";
       project::cache::CACHE cache(ctx_);
 
+      const auto cache_lookup_started = std::chrono::steady_clock::now();
       std::optional<MS_ANALYSES_TABLE> analyses_table = cache.get_object<MS_ANALYSES_TABLE>(con, analyses_cache_key);
       std::optional<MS_SPECTRA_HEADERS_TABLE> spectra_headers_table = cache.get_object<MS_SPECTRA_HEADERS_TABLE>(con, spectra_cache_key);
       std::optional<MS_CHROMATOGRAMS_HEADERS_TABLE> chromatograms_headers_table = cache.get_object<MS_CHROMATOGRAMS_HEADERS_TABLE>(con, chromatograms_cache_key);
+      const auto cache_lookup_finished = std::chrono::steady_clock::now();
       const bool cache_hit = analyses_table && spectra_headers_table && chromatograms_headers_table;
+      const auto format_elapsed_seconds = [](const std::chrono::steady_clock::time_point &start,
+                                             const std::chrono::steady_clock::time_point &end)
+      {
+        std::ostringstream stream;
+        stream << std::fixed << std::setprecision(2)
+               << std::chrono::duration<double>(end - start).count();
+        return stream.str();
+      };
+      const auto format_done_message = [&](const std::chrono::steady_clock::time_point &start,
+                                           const std::chrono::steady_clock::time_point &end)
+      {
+        return std::string("Done! (") + format_elapsed_seconds(start, end) + " s)";
+      };
+
+      std::cout << "Importing file '" << file_path << "'." << std::endl;
 
       if (cache_hit)
       {
-        std::cout << "Mass spec import cache hit for analysis '" << analysis_name << "' from file '" << file_path << "'." << std::endl;
+        std::cout << "  Loading cached data... "
+                  << format_done_message(cache_lookup_started, cache_lookup_finished)
+                  << std::endl;
       }
       else
       {
-        std::cout << "Parsing file for analysis '" << analysis_name << "' from '" << file_path << "'." << std::endl;
+        const auto parse_started = std::chrono::steady_clock::now();
         reader::MS_FILE file(file_path);
         const reader::MS_SUMMARY summary = file.get_summary();
         const reader::MS_SPECTRA_HEADERS spectra_headers = file.get_spectra_headers();
         const reader::MS_CHROMATOGRAMS_HEADERS chromatograms_headers = file.get_chromatograms_headers();
+        const auto parse_finished = std::chrono::steady_clock::now();
+        std::cout << "  Reading headers... "
+            << format_done_message(parse_started, parse_finished)
+                  << std::endl;
 
         analyses_table = build_analysis_table(ctx_->project_id, analysis_name, replicate, blank, summary);
         spectra_headers_table = build_spectra_headers_table(ctx_->project_id, analysis_name, spectra_headers);
         chromatograms_headers_table = build_chromatograms_headers_table(ctx_->project_id, analysis_name, chromatograms_headers);
 
+        const auto cache_write_started = std::chrono::steady_clock::now();
         cache.put_object(con, "MS_ANALYSES_TABLE", analyses_cache_key, "Cached mass spec analyses table import payload", *analyses_table);
         cache.put_object(con, "MS_SPECTRA_HEADERS_TABLE", spectra_cache_key, "Cached mass spec spectra headers import payload", *spectra_headers_table);
         cache.put_object(con, "MS_CHROMATOGRAMS_HEADERS_TABLE", chromatograms_cache_key, "Cached mass spec chromatograms headers import payload", *chromatograms_headers_table);
-        std::cout << "Mass spec import cached analysis '" << analysis_name << "'." << std::endl;
+        const auto cache_write_finished = std::chrono::steady_clock::now();
+        std::cout << "  Caching data... "
+            << format_done_message(cache_write_started, cache_write_finished)
+                  << std::endl;
       }
 
+      const auto delete_started = std::chrono::steady_clock::now();
       project::db::run_prepared(con, "DELETE FROM MS_SPECTRA_HEADERS WHERE project_id = ? AND analysis = ?", "delete MS spectra headers", [&](duckdb_prepared_statement statement)
                                 {
                          duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str());
@@ -1479,13 +1511,23 @@ namespace mass_spec
                                 {
                          duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str());
                          duckdb_bind_varchar(statement, 2, analysis_name.c_str()); }, [](duckdb_result &) {});
+      const auto delete_finished = std::chrono::steady_clock::now();
+                  std::cout << "  Removing existing DuckDB rows... "
+                    << format_done_message(delete_started, delete_finished)
+            << std::endl;
 
+      const auto load_started = std::chrono::steady_clock::now();
       insert_analysis_table(con, *analyses_table);
       insert_spectra_headers_table(con, *spectra_headers_table);
       insert_chromatograms_headers_table(con, *chromatograms_headers_table);
-      std::cout << "Mass spec import loaded analysis '" << analysis_name << "' into DuckDB from "
-                << (cache_hit ? "cache." : "parsed file.")
+      const auto load_finished = std::chrono::steady_clock::now();
+      std::cout << "  Saving data... "
+                << format_done_message(load_started, load_finished)
                 << std::endl;
+      const auto import_finished = std::chrono::steady_clock::now();
+      std::cout << "  Total import time: "
+        << format_elapsed_seconds(import_started, import_finished) << " s"
+            << std::endl;
     }
 
     void PROJECT_MASS_SPEC::remove_analysis(const std::string &analysis)
@@ -1947,14 +1989,40 @@ namespace mass_spec
 
     std::vector<MS_RAW_SPECTRUM_ROW> PROJECT_MASS_SPEC::get_raw_spectra(const spectra::MS_TARGETS_REQUEST &request) const
     {
+      const auto format_elapsed_seconds = [](const std::chrono::steady_clock::time_point &start,
+                                             const std::chrono::steady_clock::time_point &end)
+      {
+        std::ostringstream stream;
+        stream << std::fixed << std::setprecision(2)
+               << std::chrono::duration<double>(end - start).count();
+        return stream.str();
+      };
+      const auto format_done_message = [&](const std::chrono::steady_clock::time_point &start,
+                                           const std::chrono::steady_clock::time_point &end)
+      {
+        return std::string("Done! (") + format_elapsed_seconds(start, end) + " s)";
+      };
+
+      const auto prepare_targets_started = std::chrono::steady_clock::now();
       const auto analyses_rows = this->get_analyses();
       const auto selected_analyses = spectra::resolve_selected_analyses(request, analyses_rows);
       if (selected_analyses.empty())
       {
+        const auto prepare_targets_finished = std::chrono::steady_clock::now();
+        std::cout << "Prepare targets for extraction... "
+                  << format_done_message(prepare_targets_started, prepare_targets_finished)
+                  << std::endl;
         return {};
       }
 
       const auto headers = get_spectra_headers(selected_analyses);
+      std::unordered_map<std::string, std::vector<const MS_SPECTRA_HEADER_ROW *>> headers_by_analysis;
+      headers_by_analysis.reserve(selected_analyses.size());
+      for (const auto &header : headers)
+      {
+        headers_by_analysis[header.analysis].push_back(&header);
+      }
+
       auto targets_by_analysis = spectra::build_targets_by_analysis(request, selected_analyses, collect_unique_polarities(headers));
       if (!targets_by_analysis.empty() && targets_by_analysis.size() != selected_analyses.size())
       {
@@ -1977,9 +2045,15 @@ namespace mass_spec
         all_traces = true;
       }
 
+      const auto prepare_targets_finished = std::chrono::steady_clock::now();
+      std::cout << "Prepare targets for extraction... "
+                << format_done_message(prepare_targets_started, prepare_targets_finished)
+                << std::endl;
+
       std::vector<MS_RAW_SPECTRUM_ROW> out;
       for (std::size_t analysis_index = 0; analysis_index < selected_analyses.size(); ++analysis_index)
       {
+        const auto analysis_started = std::chrono::steady_clock::now();
         const auto &analysis = selected_analyses[analysis_index];
         const auto analysis_it = std::find_if(analyses_rows.begin(), analyses_rows.end(), [&](const auto &row)
                                               { return row.analysis == analysis; });
@@ -1998,11 +2072,16 @@ namespace mass_spec
                                                      request.isolation_window);
         }
 
-        const auto headers_rows = get_spectra_headers(std::vector<std::string>{analysis});
-        if (headers_rows.empty())
+        const auto headers_rows_it = headers_by_analysis.find(analysis);
+        if (headers_rows_it == headers_by_analysis.end() || headers_rows_it->second.empty())
         {
+          const auto analysis_finished = std::chrono::steady_clock::now();
+          std::cout << "Extracting spectra for analysis '" << analysis << "'... "
+                    << format_done_message(analysis_started, analysis_finished)
+                    << std::endl;
           continue;
         }
+        const auto &headers_rows = headers_rows_it->second;
 
         for (std::size_t i = 0; i < analysis_targets.id.size(); ++i)
         {
@@ -2039,20 +2118,20 @@ namespace mass_spec
         {
           std::vector<int> indices;
           indices.reserve(headers_rows.size());
-          for (const auto &header : headers_rows)
+          for (const auto *header : headers_rows)
           {
             bool keep = selected_levels.empty();
             for (int level : selected_levels)
             {
-              if (header.level == level)
+              if (header->level == level)
               {
                 keep = true;
                 break;
               }
             }
-            if (keep && header.configuration < 3)
+            if (keep && header->configuration < 3)
             {
-              indices.push_back(header.index);
+              indices.push_back(header->index);
             }
           }
 
@@ -2089,24 +2168,28 @@ namespace mass_spec
               out.push_back(row);
             }
           }
+          const auto analysis_finished = std::chrono::steady_clock::now();
+          std::cout << "Extracting spectra for analysis '" << analysis << "'... "
+                    << format_done_message(analysis_started, analysis_finished)
+                    << std::endl;
           continue;
         }
 
-        std::vector<std::vector<const MS_SPECTRA_HEADER_ROW *>> matched_headers(analysis_targets.id.size());
+        std::vector<std::vector<int>> matched_headers(analysis_targets.id.size());
         std::vector<int> matched_indices;
         std::unordered_map<int, std::size_t> matched_index_lookup;
         matched_index_lookup.reserve(headers_rows.size());
 
         for (std::size_t header_position = 0; header_position < headers_rows.size(); ++header_position)
         {
-          const auto &header = headers_rows[header_position];
+          const auto *header = headers_rows[header_position];
           for (std::size_t target_index = 0; target_index < analysis_targets.id.size(); ++target_index)
           {
-            if (!spectra::header_matches_target(header, analysis_targets, target_index))
+            if (!spectra::header_matches_target(*header, analysis_targets, target_index))
             {
               continue;
             }
-            matched_headers[target_index].push_back(&header);
+            matched_headers[target_index].push_back(static_cast<int>(header_position));
             if (matched_index_lookup.find(static_cast<int>(header_position)) == matched_index_lookup.end())
             {
               matched_index_lookup.emplace(static_cast<int>(header_position), matched_indices.size());
@@ -2117,17 +2200,26 @@ namespace mass_spec
 
         if (matched_indices.empty())
         {
+          const auto analysis_finished = std::chrono::steady_clock::now();
+          std::cout << "Extracting spectra for analysis '" << analysis << "'... "
+                    << format_done_message(analysis_started, analysis_finished)
+                    << std::endl;
           continue;
         }
 
         const auto spectra_data = file.get_spectra(matched_indices);
+
         out.reserve(out.size() + matched_indices.size());
         for (std::size_t target_index = 0; target_index < analysis_targets.id.size(); ++target_index)
         {
           const auto [mmin, mmax] = spectra::target_mz_bounds(analysis_targets, target_index);
-          for (const auto *header : matched_headers[target_index])
+          for (int header_position : matched_headers[target_index])
           {
-            const auto header_position = static_cast<int>(header - headers_rows.data());
+            if (header_position < 0 || static_cast<std::size_t>(header_position) >= headers_rows.size())
+            {
+              continue;
+            }
+            const auto *header = headers_rows[header_position];
             const auto raw_index_it = matched_index_lookup.find(header_position);
             if (raw_index_it == matched_index_lookup.end())
             {
@@ -2174,6 +2266,10 @@ namespace mass_spec
             }
           }
         }
+        const auto analysis_finished = std::chrono::steady_clock::now();
+        std::cout << "Extracting spectra for analysis '" << analysis << "'... "
+                  << format_done_message(analysis_started, analysis_finished)
+                  << std::endl;
       }
 
       std::sort(out.begin(), out.end(), [](const auto &lhs, const auto &rhs)

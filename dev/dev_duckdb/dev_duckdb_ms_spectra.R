@@ -18,19 +18,30 @@ db_with_ms2$polarity[db_with_ms2$polarity == -1] <- "negative"
 db <- file.path("dev", "dev_duckdb", "data", "ms_project_test.duckdb")
 if (file.exists(db)) file.remove(db)
 
+#main_drive <- "D:"
+main_drive <- "E:"
+
 ms_files <- c(
-  "D:\\example_files\\ms_basic\\00_hrms_mix1_pos_cent-r001.mzML",
-  "D:\\example_files\\ms_basic\\00_hrms_mix1_pos_cent-r002.mzML",
-  "D:\\example_files\\ms_basic\\00_hrms_mix1_pos_cent-r003.mzML"
+  file.path(main_drive, "example_files", "ms_basic", "00_hrms_mix1_pos_cent-r001.mzML"),
+  file.path(main_drive, "example_files", "ms_basic", "00_hrms_mix1_pos_cent-r002.mzML"),
+  file.path(main_drive, "example_files", "ms_basic", "00_hrms_mix1_pos_cent-r003.mzML")
 )
 
-proj <- NewProjectMassSpecSpectra(
+ms_files_mzxml <- c(
+  file.path(main_drive, "example_files", "ms_basic_mzxml", "00_hrms_mix1_pos_mzxml_cent-r001.mzXML"),
+  file.path(main_drive, "example_files", "ms_basic_mzxml", "00_hrms_mix1_pos_mzxml_cent-r002.mzXML"),
+  file.path(main_drive, "example_files", "ms_basic_mzxml", "00_hrms_mix1_pos_mzxml_cent-r003.mzXML")
+)
+
+proj$get_cache()
+
+proj <- OpenProjectMassSpecSpectra(
   db = db,
   project_id = "ms-demo",
   file_paths = ms_files
 )
 
-proj <- NewProjectMassSpecSpectra(
+proj <- OpenProjectMassSpecSpectra(
   db = db,
   project_id = "ms-demo"
 )
@@ -49,11 +60,14 @@ proj$list_tables()
 proj$get_analyses()
 proj$get_spectra_headers()
 proj$get_spectra_tic()
+proj$plot_spectra_tic(interactive = FALSE, levels = 1)
 proj$plot_spectra_bpc(interactive = FALSE, levels = 1)
 
 devtools::load_all()
 db <- file.path("dev", "dev_duckdb", "data", "ms_project_test.duckdb")
-proj <- NewProjectMassSpecSpectra(
+
+
+proj <- OpenProjectMassSpecSpectra(
   db = db,
   project_id = "ms-demo"
 )
@@ -62,7 +76,7 @@ proj
 spec <- proj$get_raw_spectra(
   analyses = character(),
   levels = 1,
-  mass = internal_standards$mass[4],
+  mass = internal_standards[4, ],
   mz = numeric(),
   rt = numeric(),
   mobility = numeric(),
@@ -76,9 +90,22 @@ spec <- proj$get_raw_spectra(
   minIntensityMS2 = 0
 )
 
-plot(spec$rt, spec$intensity)
+
+plot_spectra_eic(
+  proj,
+  mass = internal_standards[4:5, ],
+  interactive = FALSE
+)
+
+get_raw_spectra_ms2(
+  proj,
+  mass = internal_standards[4:5, ]
+)
 
 
+plot(spec$rt, spec$intensity, type = "l")
+
+htmlwidgets::saveWidget()
 
 proj$import_files(ms_files)
 

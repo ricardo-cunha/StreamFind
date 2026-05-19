@@ -6,6 +6,7 @@
 \alias{available_processing_methods.ProjectMassSpecSpectra}
 \alias{print.ProjectMassSpecSpectra}
 \alias{show.ProjectMassSpecSpectra}
+\alias{plot_raw_spectra_eic.ProjectMassSpecSpectra}
 \title{ProjectMassSpecSpectra S3 Methods}
 \usage{
 get_mass_spec_spectra_ptr.ProjectMassSpecSpectra(x)
@@ -15,6 +16,8 @@ get_mass_spec_spectra_ptr.ProjectMassSpecSpectra(x)
 \method{print}{ProjectMassSpecSpectra}(x, ...)
 
 \method{show}{ProjectMassSpecSpectra}(x, ...)
+
+\method{plot_raw_spectra_eic}{ProjectMassSpecSpectra}(x, ...)
 }
 \arguments{
 \item{x}{A \code{ProjectMassSpecSpectra} object.}
@@ -35,5 +38,7 @@ methods and expose the spectra-specific package generics.
 \item \code{print(ProjectMassSpecSpectra)}: Print a short summary.
 
 \item \code{show(ProjectMassSpecSpectra)}: Show a short summary.
+
+\item \code{plot_raw_spectra_eic(ProjectMassSpecSpectra)}: Plot extracted ion chromatograms (EIC) for specified analyses and targets.
 
 }}

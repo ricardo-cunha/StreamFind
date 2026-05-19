@@ -1231,15 +1231,15 @@ plot_spectra_charges <- function(x, ...) {
   UseMethod("plot_spectra_charges")
 }
 
-#' @title Generic `plot_spectra_eic`
-#' @description S3 generic to plot spectra EIC from `x`.
-#' @param x An object from which the spectra EIC will be plotted.
+#' @title Generic `plot_raw_spectra_eic`
+#' @description S3 generic to plot raw spectra EIC from `x`.
+#' @param x An object from which the raw spectra EIC will be plotted.
 #' @param ... Additional arguments passed to the method.
 #' @export
 #' @noRd
 #'
-plot_spectra_eic <- function(x, ...) {
-  UseMethod("plot_spectra_eic")
+plot_raw_spectra_eic <- function(x, ...) {
+  UseMethod("plot_raw_spectra_eic")
 }
 
 #' @title Generic `plot_spectra_ms1`

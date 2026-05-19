@@ -130,6 +130,74 @@ namespace mass_spec
         return result;
       }
 
+      std::vector<float> decode_big_endian_to_float(const std::string &str, int precision)
+      {
+        if (precision != 4 && precision != 8)
+          throw std::invalid_argument("Precision must be 4 or 8");
+        const size_t bytes_size = str.size() / precision;
+        std::vector<float> result(bytes_size);
+        for (size_t i = 0; i < bytes_size; ++i)
+        {
+          if (precision == 8)
+          {
+            std::uint64_t value = 0;
+            for (int j = 0; j < precision; ++j)
+            {
+              value = (value << 8) | static_cast<unsigned char>(str[i * precision + j]);
+            }
+            double v;
+            std::memcpy(&v, &value, sizeof(double));
+            result[i] = static_cast<float>(v);
+          }
+          else
+          {
+            std::uint32_t value = 0;
+            for (int j = 0; j < precision; ++j)
+            {
+              value = (value << 8) | static_cast<unsigned char>(str[i * precision + j]);
+            }
+            float v;
+            std::memcpy(&v, &value, sizeof(float));
+            result[i] = v;
+          }
+        }
+        return result;
+      }
+
+      std::vector<double> decode_big_endian_to_double(const std::string &str, int precision)
+      {
+        if (precision != 4 && precision != 8)
+          throw std::invalid_argument("Precision must be 4 or 8");
+        const size_t bytes_size = str.size() / precision;
+        std::vector<double> result(bytes_size);
+        for (size_t i = 0; i < bytes_size; ++i)
+        {
+          if (precision == 8)
+          {
+            std::uint64_t value = 0;
+            for (int j = 0; j < precision; ++j)
+            {
+              value = (value << 8) | static_cast<unsigned char>(str[i * precision + j]);
+            }
+            double v;
+            std::memcpy(&v, &value, sizeof(double));
+            result[i] = v;
+          }
+          else
+          {
+            std::uint32_t value = 0;
+            for (int j = 0; j < precision; ++j)
+            {
+              value = (value << 8) | static_cast<unsigned char>(str[i * precision + j]);
+            }
+            float v;
+            std::memcpy(&v, &value, sizeof(float));
+            result[i] = static_cast<double>(v);
+          }
+        }
+        return result;
+      }
+
       std::string encode_base64(const std::string &input)
       {
         std::string out;
@@ -258,6 +326,16 @@ namespace mass_spec
     namespace mzxml
     {
 
+      int parse_polarity(const pugi::xml_node &scan)
+      {
+        const std::string polarity = scan.attribute("polarity").as_string();
+        if (polarity == "+" || polarity == "positive" || polarity == "1")
+          return 1;
+        if (polarity == "-" || polarity == "negative" || polarity == "-1")
+          return -1;
+        return 0;
+      }
+
       float parse_rt(const std::string &rt)
       {
         if (rt.empty())
@@ -274,15 +352,50 @@ namespace mass_spec
         std::string encoded = peaks_node.child_value();
         if (encoded.empty())
           return {};
+        if (precision == 32 || precision == 64)
+        {
+          precision /= 8;
+        }
+        const std::string byte_order = peaks_node.attribute("byteOrder").as_string();
+        const bool big_endian = byte_order == "network" || byte_order == "big" || byte_order == "big endian";
         std::string decoded = utils::decode_base64(encoded);
         if (compressed)
           decoded = utils::decompress_zlib(decoded);
         if (decoded.empty())
           return {};
-        return utils::decode_little_endian_to_float(decoded, precision);
+        return big_endian ? utils::decode_big_endian_to_float(decoded, precision)
+                          : utils::decode_little_endian_to_float(decoded, precision);
       }
 
-      MS_SPECTRUM make_spectrum(const pugi::xml_node &scan)
+      void populate_spectrum_binary_data(const pugi::xml_node &scan, MS_SPECTRUM &s)
+      {
+        auto peaks = scan.child("peaks");
+        if (!peaks)
+        {
+          s.binary_names.clear();
+          s.binary_data.clear();
+          s.binary_arrays_count = 0;
+          return;
+        }
+
+        int precision = peaks.attribute("precision").as_int(32);
+        bool compressed = std::string(peaks.attribute("compressionType").as_string()).find("zlib") != std::string::npos;
+        std::vector<float> vals = decode_peaks(peaks, precision, compressed);
+        std::vector<float> mz;
+        std::vector<float> intensity;
+        mz.reserve(vals.size() / 2);
+        intensity.reserve(vals.size() / 2);
+        for (size_t i = 0; i + 1 < vals.size(); i += 2)
+        {
+          mz.push_back(vals[i]);
+          intensity.push_back(vals[i + 1]);
+        }
+        s.binary_names = {"mz", "intensity"};
+        s.binary_data = {std::move(mz), std::move(intensity)};
+        s.binary_arrays_count = static_cast<int>(s.binary_data.size());
+      }
+
+      MS_SPECTRUM make_spectrum(const pugi::xml_node &scan, bool decode_binary_arrays)
       {
         MS_SPECTRUM s{};
         s.index = scan.attribute("num").as_int();
@@ -290,7 +403,7 @@ namespace mass_spec
         s.array_length = scan.attribute("peaksCount").as_int();
         s.level = scan.attribute("msLevel").as_int(1);
         s.mode = 0;
-        s.polarity = 0;
+        s.polarity = parse_polarity(scan);
         s.lowmz = scan.attribute("lowMz").as_float(0.0f);
         s.highmz = scan.attribute("highMz").as_float(0.0f);
         s.bpmz = scan.attribute("basePeakMz").as_float(0.0f);
@@ -308,22 +421,9 @@ namespace mass_spec
           s.activation_ce = prec.attribute("collisionEnergy").as_float(0.0f);
         }
 
-        auto peaks = scan.child("peaks");
-        if (peaks)
+        if (decode_binary_arrays)
         {
-          int precision = peaks.attribute("precision").as_int(32);
-          bool compressed = std::string(peaks.attribute("compressionType").as_string()).find("zlib") != std::string::npos;
-          std::vector<float> vals = decode_peaks(peaks, precision, compressed);
-          std::vector<float> mz;
-          std::vector<float> intensity;
-          for (size_t i = 0; i + 1 < vals.size(); i += 2)
-          {
-            mz.push_back(vals[i]);
-            intensity.push_back(vals[i + 1]);
-          }
-          s.binary_names = {"mz", "intensity"};
-          s.binary_data = {std::move(mz), std::move(intensity)};
-          s.binary_arrays_count = static_cast<int>(s.binary_data.size());
+          populate_spectrum_binary_data(scan, s);
         }
 
         return s;
@@ -335,8 +435,24 @@ namespace mass_spec
         std::string file_path;
         std::string file_name;
         std::vector<MS_SPECTRUM> spectra;
+        std::vector<pugi::xml_node> scan_nodes;
+        std::vector<bool> spectrum_binary_loaded;
         bool loaded = false;
       };
+
+      void ensure_spectrum_binary_loaded(Impl &impl, std::size_t index)
+      {
+        if (index >= impl.spectra.size())
+        {
+          return;
+        }
+
+        if (!impl.spectrum_binary_loaded[index] && index < impl.scan_nodes.size())
+        {
+          populate_spectrum_binary_data(impl.scan_nodes[index], impl.spectra[index]);
+          impl.spectrum_binary_loaded[index] = true;
+        }
+      }
 
       Reader::Reader(const std::string &file) : MS_READER(file), pimpl(std::make_unique<Impl>())
       {
@@ -350,7 +466,11 @@ namespace mass_spec
         for (auto msrun : root.children("msRun"))
         {
           for (auto scan : msrun.children("scan"))
-            pimpl->spectra.push_back(make_spectrum(scan));
+          {
+            pimpl->scan_nodes.push_back(scan);
+            pimpl->spectra.push_back(make_spectrum(scan, false));
+            pimpl->spectrum_binary_loaded.push_back(false);
+          }
         }
         pimpl->loaded = true;
       }
@@ -601,14 +721,25 @@ namespace mass_spec
         out.reserve(indices.size());
         for (int i : indices)
           if (i >= 0 && static_cast<size_t>(i) < pimpl->spectra.size())
+          {
+            ensure_spectrum_binary_loaded(*pimpl, static_cast<std::size_t>(i));
             out.push_back(pimpl->spectra[i].binary_data);
+          }
         return out;
       }
 
       std::vector<std::vector<std::vector<float>>> Reader::get_chromatograms(std::vector<int>) { return {}; }
       std::vector<std::vector<std::string>> Reader::get_software() { return {}; }
       std::vector<std::vector<std::string>> Reader::get_hardware() { return {}; }
-      MS_SPECTRUM Reader::get_spectrum(const int &idx) { return (idx >= 0 && static_cast<size_t>(idx) < pimpl->spectra.size()) ? pimpl->spectra[idx] : MS_SPECTRUM{}; }
+      MS_SPECTRUM Reader::get_spectrum(const int &idx)
+      {
+        if (idx < 0 || static_cast<size_t>(idx) >= pimpl->spectra.size())
+        {
+          return MS_SPECTRUM{};
+        }
+        ensure_spectrum_binary_loaded(*pimpl, static_cast<std::size_t>(idx));
+        return pimpl->spectra[idx];
+      }
 
     } // namespace mzxml
 
@@ -705,7 +836,68 @@ namespace mass_spec
         return out;
       }
 
-      MS_SPECTRUM make_spectrum(const pugi::xml_node &spectrum_node)
+      void populate_spectrum_binary_data(const pugi::xml_node &spectrum_node, MS_SPECTRUM &s)
+      {
+        auto bdal = spectrum_node.child("binaryDataArrayList");
+        if (!bdal)
+        {
+          s.binary_names.clear();
+          s.binary_data.clear();
+          s.binary_arrays_count = 0;
+          return;
+        }
+
+        std::vector<float> mz;
+        std::vector<float> intensity;
+        for (auto bda : bdal.children("binaryDataArray"))
+        {
+          ParsedArray arr = parse_array(bda);
+          if (arr.name.find("m/z array") != std::string::npos)
+            mz = std::move(arr.values);
+          else if (arr.name.find("intensity array") != std::string::npos)
+            intensity = std::move(arr.values);
+        }
+
+        s.binary_names = {"mz", "intensity"};
+        s.binary_data = {std::move(mz), std::move(intensity)};
+        s.binary_arrays_count = static_cast<int>(s.binary_data.size());
+
+        if (!s.binary_data.empty() && !s.binary_data[0].empty())
+        {
+          if (s.lowmz == 0.0f)
+          {
+            s.lowmz = *std::min_element(s.binary_data[0].begin(), s.binary_data[0].end());
+          }
+          if (s.highmz == 0.0f)
+          {
+            s.highmz = *std::max_element(s.binary_data[0].begin(), s.binary_data[0].end());
+          }
+        }
+        if (s.tic == 0.0f && s.binary_data.size() > 1)
+        {
+          for (float intensity_value : s.binary_data[1])
+          {
+            s.tic += intensity_value;
+            if (intensity_value > s.bpint)
+            {
+              s.bpint = intensity_value;
+            }
+          }
+        }
+        if (s.bpmz == 0.0f && s.bpint > 0.0f && s.binary_data.size() > 1)
+        {
+          for (size_t i = 0; i < s.binary_data[1].size() && i < s.binary_data[0].size(); ++i)
+          {
+            if (s.binary_data[1][i] == s.bpint)
+            {
+              s.bpmz = s.binary_data[0][i];
+              break;
+            }
+          }
+        }
+      }
+
+      MS_SPECTRUM make_spectrum(const pugi::xml_node &spectrum_node, bool decode_binary_arrays)
       {
         MS_SPECTRUM s{};
         s.index = spectrum_node.attribute("index").as_int();
@@ -785,55 +977,9 @@ namespace mass_spec
         s.precursor_charge = prec_charge;
         s.activation_ce = ce;
 
-        auto bdal = spectrum_node.child("binaryDataArrayList");
-        if (bdal)
+        if (decode_binary_arrays)
         {
-          std::vector<float> mz;
-          std::vector<float> intensity;
-          for (auto bda : bdal.children("binaryDataArray"))
-          {
-            ParsedArray arr = parse_array(bda);
-            if (arr.name.find("m/z array") != std::string::npos)
-              mz = std::move(arr.values);
-            else if (arr.name.find("intensity array") != std::string::npos)
-              intensity = std::move(arr.values);
-          }
-          s.binary_names = {"mz", "intensity"};
-          s.binary_data = {std::move(mz), std::move(intensity)};
-          s.binary_arrays_count = static_cast<int>(s.binary_data.size());
-          if (!s.binary_data.empty() && !s.binary_data[0].empty())
-          {
-            if (s.lowmz == 0.0f)
-            {
-              s.lowmz = *std::min_element(s.binary_data[0].begin(), s.binary_data[0].end());
-            }
-            if (s.highmz == 0.0f)
-            {
-              s.highmz = *std::max_element(s.binary_data[0].begin(), s.binary_data[0].end());
-            }
-          }
-          if (s.tic == 0.0f && s.binary_data.size() > 1)
-          {
-            for (float intensity_value : s.binary_data[1])
-            {
-              s.tic += intensity_value;
-              if (intensity_value > s.bpint)
-              {
-                s.bpint = intensity_value;
-              }
-            }
-          }
-          if (s.bpmz == 0.0f && s.bpint > 0.0f && s.binary_data.size() > 1)
-          {
-            for (size_t i = 0; i < s.binary_data[1].size() && i < s.binary_data[0].size(); ++i)
-            {
-              if (s.binary_data[1][i] == s.bpint)
-              {
-                s.bpmz = s.binary_data[0][i];
-                break;
-              }
-            }
-          }
+          populate_spectrum_binary_data(spectrum_node, s);
         }
         return s;
       }
@@ -902,9 +1048,49 @@ namespace mass_spec
         std::string file_path;
         std::string file_name;
         std::vector<MS_SPECTRUM> spectra;
+        std::vector<pugi::xml_node> spectrum_nodes;
         std::vector<pugi::xml_node> chrom_nodes;
+        std::vector<bool> spectrum_binary_loaded;
+        std::vector<bool> spectrum_stats_resolved;
         bool loaded = false;
       };
+
+      bool spectrum_needs_derived_metrics(const MS_SPECTRUM &s)
+      {
+        return s.lowmz == 0.0f || s.highmz == 0.0f || s.tic == 0.0f || s.bpmz == 0.0f;
+      }
+
+      void ensure_spectrum_stats(Impl &impl, std::size_t index)
+      {
+        if (index >= impl.spectra.size() || impl.spectrum_stats_resolved[index])
+        {
+          return;
+        }
+
+        if (spectrum_needs_derived_metrics(impl.spectra[index]) && index < impl.spectrum_nodes.size())
+        {
+          populate_spectrum_binary_data(impl.spectrum_nodes[index], impl.spectra[index]);
+          impl.spectrum_binary_loaded[index] = true;
+        }
+
+        impl.spectrum_stats_resolved[index] = true;
+      }
+
+      void ensure_spectrum_binary_loaded(Impl &impl, std::size_t index)
+      {
+        if (index >= impl.spectra.size())
+        {
+          return;
+        }
+
+        if (!impl.spectrum_binary_loaded[index] && index < impl.spectrum_nodes.size())
+        {
+          populate_spectrum_binary_data(impl.spectrum_nodes[index], impl.spectra[index]);
+          impl.spectrum_binary_loaded[index] = true;
+        }
+
+        impl.spectrum_stats_resolved[index] = true;
+      }
 
       Reader::Reader(const std::string &file) : MS_READER(file), pimpl(std::make_unique<Impl>())
       {
@@ -915,7 +1101,12 @@ namespace mass_spec
           throw std::runtime_error(std::string("Failed to parse mzML file: ") + result.description());
         auto root = pimpl->doc.document_element();
         for (auto node : root.select_nodes("//spectrumList/spectrum"))
-          pimpl->spectra.push_back(make_spectrum(node.node()));
+        {
+          pimpl->spectrum_nodes.push_back(node.node());
+          pimpl->spectra.push_back(make_spectrum(node.node(), false));
+          pimpl->spectrum_binary_loaded.push_back(false);
+          pimpl->spectrum_stats_resolved.push_back(false);
+        }
         for (auto node : root.select_nodes("//chromatogramList/chromatogram"))
           pimpl->chrom_nodes.push_back(node.node());
         pimpl->loaded = true;
@@ -940,6 +1131,7 @@ namespace mass_spec
         {
           if (i < 0 || static_cast<size_t>(i) >= pimpl->spectra.size())
             continue;
+          ensure_spectrum_binary_loaded(*pimpl, static_cast<std::size_t>(i));
           out.push_back(pimpl->spectra[i].binary_data);
         }
         return out;
@@ -1175,6 +1367,7 @@ namespace mass_spec
         {
           if (i < 0 || static_cast<size_t>(i) >= pimpl->spectra.size())
             continue;
+          ensure_spectrum_stats(*pimpl, static_cast<std::size_t>(i));
           const auto &s = pimpl->spectra[i];
           h.index[j] = s.index;
           h.scan[j] = s.scan;
@@ -1231,7 +1424,15 @@ namespace mass_spec
 
       std::vector<std::vector<std::string>> Reader::get_software() { return {}; }
       std::vector<std::vector<std::string>> Reader::get_hardware() { return {}; }
-      MS_SPECTRUM Reader::get_spectrum(const int &idx) { return (idx >= 0 && static_cast<size_t>(idx) < pimpl->spectra.size()) ? pimpl->spectra[idx] : MS_SPECTRUM{}; }
+      MS_SPECTRUM Reader::get_spectrum(const int &idx)
+      {
+        if (idx < 0 || static_cast<size_t>(idx) >= pimpl->spectra.size())
+        {
+          return MS_SPECTRUM{};
+        }
+        ensure_spectrum_binary_loaded(*pimpl, static_cast<std::size_t>(idx));
+        return pimpl->spectra[idx];
+      }
 
     } // namespace mzml
 
