@@ -27,6 +27,9 @@ Internal R6 child of \code{Project} exposing shared Mass Spec tables and native 
 \item \href{#method-ProjectMassSpec-set_concentrations}{\code{ProjectMassSpec$set_concentrations()}}
 \item \href{#method-ProjectMassSpec-get_spectra_headers}{\code{ProjectMassSpec$get_spectra_headers()}}
 \item \href{#method-ProjectMassSpec-get_spectra_tic}{\code{ProjectMassSpec$get_spectra_tic()}}
+\item \href{#method-ProjectMassSpec-get_chromatograms_headers}{\code{ProjectMassSpec$get_chromatograms_headers()}}
+\item \href{#method-ProjectMassSpec-get_raw_chromatograms}{\code{ProjectMassSpec$get_raw_chromatograms()}}
+\item \href{#method-ProjectMassSpec-plot_raw_chromatograms}{\code{ProjectMassSpec$plot_raw_chromatograms()}}
 \item \href{#method-ProjectMassSpec-get_raw_spectra}{\code{ProjectMassSpec$get_raw_spectra()}}
 \item \href{#method-ProjectMassSpec-plot_spectra_tic}{\code{ProjectMassSpec$plot_spectra_tic()}}
 \item \href{#method-ProjectMassSpec-plot_spectra_bpc}{\code{ProjectMassSpec$plot_spectra_bpc()}}
@@ -34,6 +37,8 @@ Internal R6 child of \code{Project} exposing shared Mass Spec tables and native 
 \item \href{#method-ProjectMassSpec-plot_raw_spectra_eic}{\code{ProjectMassSpec$plot_raw_spectra_eic()}}
 \item \href{#method-ProjectMassSpec-get_raw_spectra_ms1}{\code{ProjectMassSpec$get_raw_spectra_ms1()}}
 \item \href{#method-ProjectMassSpec-get_raw_spectra_ms2}{\code{ProjectMassSpec$get_raw_spectra_ms2()}}
+\item \href{#method-ProjectMassSpec-plot_raw_spectra_ms1}{\code{ProjectMassSpec$plot_raw_spectra_ms1()}}
+\item \href{#method-ProjectMassSpec-plot_raw_spectra_ms2}{\code{ProjectMassSpec$plot_raw_spectra_ms2()}}
 \item \href{#method-ProjectMassSpec-print}{\code{ProjectMassSpec$print()}}
 \item \href{#method-ProjectMassSpec-show}{\code{ProjectMassSpec$show()}}
 }
@@ -290,6 +295,109 @@ object.}
 \item{\code{rt}}{A vector with target retention time values (in seconds) or
 a two columns data.table or data.frame with minimum and maximum retention
 time values (in seconds).}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectMassSpec-get_chromatograms_headers"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectMassSpec-get_chromatograms_headers}{}}}
+\subsection{Method \code{get_chromatograms_headers()}}{
+Return chromatogram headers for selected analyses.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$get_chromatograms_headers(analyses = NULL)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectMassSpec-get_raw_chromatograms"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectMassSpec-get_raw_chromatograms}{}}}
+\subsection{Method \code{get_raw_chromatograms()}}{
+Get raw chromatograms for selected analyses.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$get_raw_chromatograms(
+  analyses = NULL,
+  chromatograms = NULL,
+  rtmin = 0,
+  rtmax = 0,
+  minIntensity = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{chromatograms}}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectMassSpec-plot_raw_chromatograms"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectMassSpec-plot_raw_chromatograms}{}}}
+\subsection{Method \code{plot_raw_chromatograms()}}{
+Plot raw chromatograms for selected analyses.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$plot_raw_chromatograms(
+  analyses = NULL,
+  chromatograms = NULL,
+  rtmin = 0,
+  rtmax = 0,
+  minIntensity = NULL,
+  downsize = NULL,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colorPalette = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{chromatograms}}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
+
+\item{\code{downsize}}{An integer of length one to downsize the TIC plot. The default is 1.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 }
 \if{html}{\out{</div>}}
 }
@@ -731,7 +839,7 @@ Get clustered MS2 spectra for selected analyses.
   id = NULL,
   isolationWindow = 1.3,
   mzClust = 0.005,
-  presence = 0.8,
+  presence = 0,
   minIntensity = 0
 )}\if{html}{\out{</div>}}
 }
@@ -795,6 +903,211 @@ on the mass resolution of the MS data.}
 spectra) to 1 (i.e., must be present in all spectra) for traces during clustering of spectra.}
 
 \item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectMassSpec-plot_raw_spectra_ms1"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectMassSpec-plot_raw_spectra_ms1}{}}}
+\subsection{Method \code{plot_raw_spectra_ms1()}}{
+Plot clustered MS1 spectra for selected analyses.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$plot_raw_spectra_ms1(
+  analyses = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = NULL,
+  mzClust = 0.003,
+  presence = 0.8,
+  minIntensity = 1000,
+  normalized = FALSE,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "id",
+  showText = TRUE,
+  interactive = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
+
+\item{\code{mzClust}}{Numeric (length 1) with the mass deviation threshold (in Da) to cluster mass traces. Highly dependent
+on the mass resolution of the MS data.}
+
+\item{\code{presence}}{Numeric (length 1) with the required presence ratio from 0 (i.e., doesn't need to be present in any
+spectra) to 1 (i.e., must be present in all spectra) for traces during clustering of spectra.}
+
+\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
+
+\item{\code{normalized}}{A logical value indicating whether the result should be normalized.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{showText}}{Logical (length 1), set to \code{TRUE} to show the text annotations.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectMassSpec-plot_raw_spectra_ms2"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectMassSpec-plot_raw_spectra_ms2}{}}}
+\subsection{Method \code{plot_raw_spectra_ms2()}}{
+Plot clustered MS2 spectra for selected analyses.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$plot_raw_spectra_ms2(
+  analyses = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = NULL,
+  isolationWindow = 1.3,
+  mzClust = 0.005,
+  presence = 0,
+  minIntensity = 0,
+  normalized = TRUE,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "id",
+  showText = TRUE,
+  interactive = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
+
+\item{\code{isolationWindow}}{Numeric value with the isolation window (in Da)
+applied for ion isolation and fragmentation during acquisition of tandem
+data (i.e., MS2 data).}
+
+\item{\code{isolationWindow}}{Numeric value with the isolation window (in Da)
+applied for ion isolation and fragmentation during acquisition of tandem
+data (i.e., MS2 data).}
+
+\item{\code{mzClust}}{Numeric (length 1) with the mass deviation threshold (in Da) to cluster mass traces. Highly dependent
+on the mass resolution of the MS data.}
+
+\item{\code{presence}}{Numeric (length 1) with the required presence ratio from 0 (i.e., doesn't need to be present in any
+spectra) to 1 (i.e., must be present in all spectra) for traces during clustering of spectra.}
+
+\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
+
+\item{\code{normalized}}{A logical value indicating whether the result should be normalized.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{showText}}{Logical (length 1), set to \code{TRUE} to show the text annotations.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
 }
 \if{html}{\out{</div>}}
 }

@@ -420,7 +420,7 @@ void group_features(
 
 // MARK: group_features_impl
 void group_features_impl(
-    nts::NTS_DATA &nts_data,
+  nts::PROJECT_NON_TARGET_ANALYSIS &nts_data,
     const std::string &method,
     float rt_deviation,
     float ppm_threshold,
@@ -456,14 +456,17 @@ void group_features_impl(
 
   // Collect all features from all analyses
   std::vector<AlignmentFeature> all_features;
+  const auto &analysis_names = nts_data.analysis_names();
+  auto &feature_buffers = nts_data.feature_buffers();
+  auto &internal_standard_buffers = nts_data.internal_standard_buffers();
 
-  for (size_t a = 0; a < nts_data.analyses.size(); ++a)
+  for (size_t a = 0; a < analysis_names.size(); ++a)
   {
-    const nts::api::NTS_FEATURES &fts_i = nts_data.features[a];
+    const nts::api::NTS_FEATURES &fts_i = feature_buffers[a];
     for (int i = 0; i < fts_i.size(); ++i)
     {
       AlignmentFeature af;
-      af.analysis = nts_data.analyses[a];
+      af.analysis = analysis_names[a];
       af.feature = fts_i.feature[i];
       af.rt = fts_i.rt[i];
       af.mass = fts_i.mass[i];
@@ -487,15 +490,15 @@ void group_features_impl(
 
   // Prepare internal standards for alignment if using internal_standards method
   std::vector<InternalStandard> internal_standards;
-  if (method == "internal_standards" && !nts_data.internal_standards.empty())
+  if (method == "internal_standards" && !internal_standard_buffers.empty())
   {
     // Calculate average RT for each internal standard name across all analyses
     std::map<std::string, std::vector<float>> istd_rts_by_name;
     std::map<std::string, std::vector<std::string>> istd_analyses_by_name;
 
-    for (size_t a = 0; a < nts_data.internal_standards.size(); ++a)
+    for (size_t a = 0; a < internal_standard_buffers.size(); ++a)
     {
-      const nts::api::NTS_INTERNAL_STANDARDS &istd_data = nts_data.internal_standards[a];
+      const nts::api::NTS_INTERNAL_STANDARDS &istd_data = internal_standard_buffers[a];
       for (int i = 0; i < istd_data.size(); ++i)
       {
         istd_rts_by_name[istd_data.name[i]].push_back(istd_data.exp_rt[i]);
@@ -516,9 +519,9 @@ void group_features_impl(
     }
 
     // Create alignment::InternalStandard vector with calculated shifts
-    for (size_t a = 0; a < nts_data.internal_standards.size(); ++a)
+    for (size_t a = 0; a < internal_standard_buffers.size(); ++a)
     {
-      const nts::api::NTS_INTERNAL_STANDARDS &istd_data = nts_data.internal_standards[a];
+      const nts::api::NTS_INTERNAL_STANDARDS &istd_data = internal_standard_buffers[a];
       for (int i = 0; i < istd_data.size(); ++i)
       {
         InternalStandard istd;
@@ -774,11 +777,11 @@ void group_features_impl(
   for (const auto &af : all_features)
   {
     // Find the analysis and feature
-    for (size_t a = 0; a < nts_data.analyses.size(); ++a)
+    for (size_t a = 0; a < analysis_names.size(); ++a)
     {
-      if (nts_data.analyses[a] == af.analysis)
+      if (analysis_names[a] == af.analysis)
       {
-        nts::api::NTS_FEATURES &fts_i = nts_data.features[a];
+        nts::api::NTS_FEATURES &fts_i = feature_buffers[a];
         for (int i = 0; i < fts_i.size(); ++i)
         {
           if (fts_i.feature[i] == af.feature)

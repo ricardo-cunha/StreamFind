@@ -116,7 +116,7 @@ namespace nts
 
     // MARK: create_components_impl
     void create_components_impl(
-        nts::NTS_DATA &nts_data,
+      nts::PROJECT_NON_TARGET_ANALYSIS &nts_data,
         const std::vector<float> &rtWindow,
         float minCorrelation,
         float debugRT,
@@ -134,10 +134,12 @@ namespace nts
       }
 
       bool debug_triggered = false;
+      auto &feature_buffers = nts_data.feature_buffers();
+      const auto &analysis_names = nts_data.analysis_names();
 
-      for (size_t i = 0; i < nts_data.features.size(); ++i)
+      for (size_t i = 0; i < feature_buffers.size(); ++i)
       {
-        nts::api::NTS_FEATURES &fts = nts_data.features[i];
+        nts::api::NTS_FEATURES &fts = feature_buffers[i];
         const int n = fts.size();
 
         if (n == 0)
@@ -146,12 +148,12 @@ namespace nts
         }
 
         const bool debug_this_analysis = debugAnalysis.empty() ||
-                                         (i < nts_data.analyses.size() && nts_data.analyses[i] == debugAnalysis);
+                                         (i < analysis_names.size() && analysis_names[i] == debugAnalysis);
         const bool should_debug = debug_mode && debug_this_analysis;
 
         if (should_debug && !debug_triggered) {
           debug_triggered = true;
-          const std::string analysis_name = i < nts_data.analyses.size() ? nts_data.analyses[i] : std::to_string(i);
+          const std::string analysis_name = i < analysis_names.size() ? analysis_names[i] : std::to_string(i);
           std::cout << "Debugging components: Analysis '" << analysis_name
                       << "' RT=" << debugRT << " (window " << left_offset << " to " << right_offset
                       << ") -> [" << (debugRT + left_offset) << ", " << (debugRT + right_offset) << "]" << std::endl;
@@ -248,7 +250,7 @@ namespace nts
                 }
               }
               if (debug_this_cluster) {
-                DEBUG_LOG("\n--- Analysis " << (i < nts_data.analyses.size() ? nts_data.analyses[i] : std::to_string(i))
+                DEBUG_LOG("\n--- Analysis " << (i < analysis_names.size() ? analysis_names[i] : std::to_string(i))
                           << " [Polarity=" << polarity << "]: Processing Cluster starting from highest intensity feature ---\n");
                 DEBUG_LOG("  Seed feature: RT=" << seed_rt << ", intensity=" << seed_intensity
                           << " with RT window [" << window_start << ", "

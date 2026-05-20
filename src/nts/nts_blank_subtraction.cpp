@@ -1,5 +1,5 @@
 // nts_blank_subtraction.cpp
-// Feature blank subtraction implementations for NTS_DATA
+// Feature blank subtraction implementations for PROJECT_NON_TARGET_ANALYSIS
 
 #include "nts_blank_subtraction.h"
 #include "../mass_spec/project_mass_spec.h"
@@ -10,30 +10,36 @@
 namespace nts::blank_subtraction
 {
   void subtract_blank_impl(
-      NTS_DATA &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nts_data,
       float blankThreshold,
       float rtExpand,
       float mzExpand,
       float minTracesIntensity)
   {
-    if (nts_data.analyses.empty())
+    const auto &analysis_names = nts_data.analysis_names();
+    const auto &replicate_names = nts_data.replicate_names();
+    const auto &blank_names = nts_data.blank_names();
+    const auto &file_paths = nts_data.file_paths();
+    auto &feature_buffers = nts_data.feature_buffers();
+
+    if (analysis_names.empty())
       return;
 
     // Map replicate -> analysis indices for blank lookup
     std::unordered_map<std::string, std::vector<size_t>> replicate_to_indices;
-    for (size_t i = 0; i < nts_data.analyses.size(); ++i)
+    for (size_t i = 0; i < analysis_names.size(); ++i)
     {
-      replicate_to_indices[nts_data.replicates[i]].push_back(i);
+      replicate_to_indices[replicate_names[i]].push_back(i);
     }
 
-    for (size_t a = 0; a < nts_data.analyses.size(); ++a)
+    for (size_t a = 0; a < analysis_names.size(); ++a)
     {
-      nts::api::NTS_FEATURES &fts = nts_data.features[a];
+      nts::api::NTS_FEATURES &fts = feature_buffers[a];
       const int n_features = fts.size();
       if (n_features == 0)
         continue;
 
-      const std::string &blank_rep = nts_data.blanks[a];
+      const std::string &blank_rep = blank_names[a];
       if (blank_rep.empty())
         continue;
 
@@ -81,11 +87,11 @@ namespace nts::blank_subtraction
       for (size_t b = 0; b < blank_indices.size(); ++b)
       {
         size_t blank_idx = blank_indices[b];
-        if (blank_idx >= nts_data.files.size() || blank_idx >= nts_data.headers.size())
+        if (blank_idx >= file_paths.size())
           continue;
 
-        mass_spec::reader::MS_FILE ana(nts_data.files[blank_idx]);
-        const auto &headers = nts_data.headers[blank_idx];
+        mass_spec::reader::MS_FILE ana(file_paths[blank_idx]);
+        const auto headers = nts_data.spectra_headers_at(blank_idx);
         mass_spec::spectra::MS_TARGETS_SPECTRA eics = ana.get_spectra_targets(targets, headers, minTracesIntensity, 0.0f);
 
         std::unordered_map<std::string, float> max_by_id;

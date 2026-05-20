@@ -7,7 +7,8 @@
 namespace nts {
   struct FEATURE;    // Forward declaration
   struct FEATURES;   // Forward declaration
-  struct NTS_DATA;   // Forward declaration
+  namespace api { class PROJECT_NON_TARGET_ANALYSIS; }
+  using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS;
 }
 
 namespace nts
@@ -32,7 +33,7 @@ namespace nts
 
     // Main implementation function
     void create_components_impl(
-        nts::NTS_DATA &nts_data,
+      nts::PROJECT_NON_TARGET_ANALYSIS &nts_data,
         const std::vector<float> &rtWindow,
         float minCorrelation = 0.8f,
         float debugRT = 0.0f,

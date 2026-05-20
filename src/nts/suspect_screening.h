@@ -1,5 +1,5 @@
 // suspect_screening.h
-// Suspect screening for NTS_DATA
+// Suspect screening for PROJECT_NON_TARGET_ANALYSIS
 
 #ifndef NTS_SUSPECT_SCREENING_H
 #define NTS_SUSPECT_SCREENING_H
@@ -9,8 +9,8 @@
 
 namespace nts
 {
-  struct NTS_DATA;
-  namespace api { struct NTS_SUSPECTS; }
+  namespace api { struct NTS_SUSPECTS; class PROJECT_NON_TARGET_ANALYSIS; }
+  using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS;
 
   namespace suspect_screening
   {
@@ -35,7 +35,7 @@ namespace nts
     };
 
     void suspect_screening_impl(
-        NTS_DATA &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nts_data,
         const std::vector<std::string> &analyses,
         const std::vector<SuspectQuery> &suspects,
         double ppm,

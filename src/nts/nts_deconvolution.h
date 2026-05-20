@@ -1,5 +1,5 @@
 // nts_deconvolution.h
-// Feature detection utilities specifically used by NTS_DATA::find_features
+// Feature detection utilities specifically used by PROJECT_NON_TARGET_ANALYSIS::find_features
 // This file contains spectral processing, peak detection, and quality metrics functions
 
 #ifndef NTS_DECONVOLUTION_H
@@ -11,7 +11,7 @@
 
 namespace mass_spec { namespace reader { class MS_FILE; } }
 
-namespace nts { namespace api { struct NTS_FEATURE_ROW; struct NTS_FEATURES; } struct NTS_DATA; }
+namespace nts { namespace api { struct NTS_FEATURE_ROW; struct NTS_FEATURES; class PROJECT_NON_TARGET_ANALYSIS; } using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS; }
 
 namespace nts {
 namespace deconvolution {
@@ -183,7 +183,7 @@ namespace deconvolution {
       float debugMZ = 0.0f);
 
   void find_features_impl(
-      nts::NTS_DATA &nts_data,
+      nts::PROJECT_NON_TARGET_ANALYSIS &nts_data,
       const std::vector<float> &rtWindowsMin,
       const std::vector<float> &rtWindowsMax,
       const float &ppmThreshold,

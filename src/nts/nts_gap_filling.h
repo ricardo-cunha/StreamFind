@@ -1,5 +1,5 @@
 // nts_gap_filling.h
-// Feature gap filling declarations for NTS_DATA
+// Feature gap filling declarations for PROJECT_NON_TARGET_ANALYSIS
 // This file contains structures and functions for filling missing features across analyses
 
 #ifndef NTS_GAP_FILLING_H
@@ -14,7 +14,8 @@ namespace nts
 {
   // Forward declaration
   namespace api { struct NTS_FEATURE_ROW; struct NTS_FEATURES; }
-  struct NTS_DATA;
+  namespace api { class PROJECT_NON_TARGET_ANALYSIS; }
+  using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS;
 
   namespace gap_filling
   {
@@ -126,7 +127,7 @@ namespace nts
 
     // Main implementation function
     void fill_features_impl(
-        NTS_DATA &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nts_data,
         bool withinReplicate,
         bool filtered,
         float rtExpand,

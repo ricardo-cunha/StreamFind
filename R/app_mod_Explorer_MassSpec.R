@@ -461,7 +461,7 @@
       selected <- input$chromAnalysesTable_rows_selected
       if (length(selected) == 0) return()
       if (!reactive_has_results_chromatograms()) return()
-      p <- plot_chromatograms(
+      p <- plot_raw_chromatograms(
         reactive_analyses(),
         analyses = selected,
         groupBy = strsplit(input$summary_chrom_group_by, "\\+")[[1]],
@@ -481,7 +481,7 @@
       selected <- input$chromAnalysesTable_rows_selected
       if (length(selected) == 0) return()
       if (!reactive_has_results_chromatograms()) return()
-      plot_chromatograms(
+      plot_raw_chromatograms(
         reactive_analyses(),
         analyses = selected,
         groupBy = strsplit(input$summary_chrom_group_by, "\\+")[[1]],
@@ -500,7 +500,7 @@
       if (length(selected) == 0) {
         return()
       }
-      csv <- get_chromatograms(reactive_analyses(), analyses = selected)
+      csv <- get_raw_chromatograms(reactive_analyses(), analyses = selected)
       fileinfo <- shinyFiles::parseSavePath(
         reactive_volumes(),
         input$chrom_plot_save

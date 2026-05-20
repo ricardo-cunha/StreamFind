@@ -3,8 +3,11 @@
 #' @template arg-db-path
 #' @template arg-project-id
 #' @template arg-analyses
+#' @template arg-chromatograms
 #' @template arg-ms-levels
 #' @template arg-ms-rt
+#' @template arg-ms-rtmin
+#' @template arg-ms-rtmax
 #' @template arg-ms-mass
 #' @template arg-ms-mz
 #' @template arg-ms-mobility
@@ -23,6 +26,8 @@
 #' @template arg-plot-groupBy
 #' @template arg-plot-interactive
 #' @template arg-plot-colorPalette
+#' @template arg-normalized
+#' @template arg-showText
 #' @template arg-ms-mzClust
 #' @template arg-ms-presence
 #' @template arg-ms-minIntensity
@@ -167,6 +172,115 @@ ProjectMassSpec <- R6::R6Class(
         as.integer(levels),
         as.numeric(rt)
       ))
+    },
+    #' @description Return chromatogram headers for selected analyses.
+    get_chromatograms_headers = function(analyses = NULL) {
+      if (is.null(analyses)) {
+        analyses <- character()
+      }
+      analyses_info <- data.table::as.data.table(self$get_analyses())
+      hd <- data.table::as.data.table(rcpp_project_mass_spec_get_chromatograms_headers(private$.mass_spec_ptr, analyses))
+      if (nrow(hd) == 0) {
+        return(data.table::data.table())
+      }
+      replicates <- analyses_info$replicate
+      names(replicates) <- analyses_info$analysis
+      if ("project_id" %in% colnames(hd)) {
+        hd[, project_id := NULL]
+      }
+      hd$replicate <- replicates[hd$analysis]
+      data.table::setcolorder(hd, c("analysis", "replicate"))
+      hd
+    },
+    #' @description Get raw chromatograms for selected analyses.
+    get_raw_chromatograms = function(analyses = NULL,
+                                     chromatograms = NULL,
+                                     rtmin = 0,
+                                     rtmax = 0,
+                                     minIntensity = NULL) {
+      chrom_hd <- self$get_chromatograms_headers(analyses)
+      if (nrow(chrom_hd) == 0) {
+        message("\U2717 No chromatograms found for the analyses!")
+        return(data.table::data.table())
+      }
+      if (is.numeric(chromatograms)) {
+        chrom_hd <- chrom_hd[as.integer(chrom_hd$index) == as.integer(chromatograms), ]
+      } else if (is.character(chromatograms)) {
+        chrom_hd <- chrom_hd[chrom_hd$id %in% chromatograms, ]
+      }
+      if (nrow(chrom_hd) == 0) {
+        message("\U2717 No chromatograms found for the specified IDs/indices!")
+        return(data.table::data.table())
+      }
+      sel_analyses <- unique(chrom_hd$analysis)
+      chrom_hd_list <- split(chrom_hd, chrom_hd$analysis)
+      chrom_list <- lapply(sel_analyses, function(aname) {
+        chrom_hd_a <- chrom_hd_list[[aname]]
+        data.table::as.data.table(rcpp_project_mass_spec_get_raw_chromatograms(
+          private$.mass_spec_ptr,
+          aname,
+          as.integer(chrom_hd_a$index)
+        ))
+      })
+      chrom_dt <- data.table::rbindlist(chrom_list, fill = TRUE)
+      if (nrow(chrom_dt) == 0) {
+        message("\U2717 No chromatogram data found for the specified analyses!")
+        return(data.table::data.table())
+      }
+      if (is.numeric(minIntensity)) {
+        chrom_dt <- chrom_dt[chrom_dt$intensity > minIntensity, ]
+      }
+      if (is.numeric(rtmin) && is.numeric(rtmax) && rtmax > 0) {
+        chrom_dt <- chrom_dt[chrom_dt$rt >= rtmin & chrom_dt$rt <= rtmax]
+      }
+      data.table::setcolorder(chrom_dt, c("analysis", "replicate"))
+      chrom_dt
+    },
+    #' @description Plot raw chromatograms for selected analyses.
+    plot_raw_chromatograms = function(analyses = NULL,
+                                      chromatograms = NULL,
+                                      rtmin = 0,
+                                      rtmax = 0,
+                                      minIntensity = NULL,
+                                      downsize = NULL,
+                                      xLab = NULL,
+                                      yLab = NULL,
+                                      title = NULL,
+                                      groupBy = "analysis",
+                                      interactive = TRUE,
+                                      colorPalette = NULL) {
+      chrom <- self$get_raw_chromatograms(analyses, chromatograms, rtmin, rtmax, minIntensity)
+      if (nrow(chrom) == 0) {
+        message("\U2717 No chromatogram data found for plotting!")
+        return(NULL)
+      }
+      if (!is.null(downsize) && downsize > 0 && nrow(chrom) > downsize) {
+        chrom <- data.table::as.data.table(chrom)
+        chrom$rt <- floor(chrom$rt / downsize) * downsize
+        chrom <- chrom[, lapply(.SD, function(col) {
+          if (is.numeric(col)) {
+            mean(col, na.rm = TRUE)
+          } else if (is.character(col)) {
+            col[1]
+          } else {
+            col[1]
+          }
+        }), by = .(rt, analysis, id)]
+      }
+      if (is.null(xLab)) xLab <- "Retention time / seconds"
+      if (is.null(yLab)) yLab <- "Intensity / counts"
+      .plot_lines_tabular_data(
+        data = chrom,
+        xvar = "rt",
+        yvar = "intensity",
+        groupBy = groupBy,
+        basicGroupBy = c("analysis", "id"),
+        interactive = interactive,
+        title = title,
+        xLab = xLab,
+        yLab = yLab,
+        colorPalette = colorPalette
+      )
     },
     #' @description Get raw spectra data for selected analyses.
     get_raw_spectra = function(analyses = character(),
@@ -349,39 +463,18 @@ ProjectMassSpec <- R6::R6Class(
                                    sec = 60,
                                    millisec = 5,
                                    id = NULL) {
-      eic <- self$get_raw_spectra(
-        analyses = analyses,
-        levels = 1,
-        mass = mass,
-        mz = mz,
-        rt = rt,
-        mobility = mobility,
-        ppm = ppm,
-        sec = sec,
-        millisec = millisec,
-        id = id,
-        allTraces = TRUE,
-        isolationWindow = 1.3,
-        minIntensityMS1 = 0,
-        minIntensityMS2 = 0
-      )
-      if (nrow(eic) > 0) {
-        intensity <- NULL
-        eic <- data.table::as.data.table(eic)
-        if (!"id" %in% colnames(eic)) {
-          eic$id <- NA_character_
-        }
-        if (!"polarity" %in% colnames(eic)) {
-          eic$polarity <- 0
-        }
-        cols_summary <- c("analysis", "replicate", "polarity", "id", "rt")
-        mz <- NULL
-        eic <- eic[, .(intensity = max(intensity), mz = mean(mz)), by = cols_summary]
-        sel_cols <- c("analysis", "replicate", "id", "polarity", "rt", "mz", "intensity")
-        eic <- eic[, sel_cols, with = FALSE]
-        eic <- unique(eic)
-      }
-      eic
+      data.table::as.data.table(rcpp_project_mass_spec_get_raw_spectra_eic(
+        private$.mass_spec_ptr,
+        analyses,
+        mass,
+        mz,
+        rt,
+        mobility,
+        as.character(id),
+        ppm,
+        sec,
+        millisec
+      ))
     },
     #' @description Plot extracted ion chromatograms for selected analyses.
     plot_raw_spectra_eic = function(analyses = NULL,
@@ -447,62 +540,21 @@ ProjectMassSpec <- R6::R6Class(
                                    mzClust = 0.003,
                                    presence = 0.8,
                                    minIntensity = 1000) {
-      ms1 <- self$get_raw_spectra(
-        analyses = analyses,
-        levels = 1,
-        mass = mass,
-        mz = mz,
-        rt = rt,
-        mobility = mobility,
-        ppm = ppm,
-        sec = sec,
-        millisec = millisec,
-        id = id,
-        allTraces = TRUE,
-        minIntensityMS1 = minIntensity,
-        minIntensityMS2 = 0
-      )
-      if (nrow(ms1) == 0) {
-        return(ms1)
-      }
-      if (!"id" %in% colnames(ms1)) {
-        hd <- self$get_spectra_headers(analyses)
-        has_ion_mobility <- any(hd$mobility > 0)
-        if (has_ion_mobility) {
-          ms1$id <- paste(
-            round(min(ms1$mz), 4), "-",
-            round(max(ms1$mz), 4), "/",
-            round(max(ms1$rt), 0), "-",
-            round(min(ms1$rt), 0), "/",
-            round(max(ms1$mobility), 0), "-",
-            round(min(ms1$mobility), 0),
-            sep = ""
-          )
-        } else {
-          ms1$id <- paste(
-            round(min(ms1$mz), 4), "-",
-            round(max(ms1$mz), 4), "/",
-            round(max(ms1$rt), 0), "-",
-            round(min(ms1$rt), 0),
-            sep = ""
-          )
-        }
-      }
-      if (!is.numeric(mzClust)) {
-        mzClust <- 0.01
-      }
-      ms1$unique_id <- paste0(ms1$analysis, "_", ms1$id, "_", ms1$polarity)
-      ms1_list <- rcpp_ms_cluster_spectra(ms1, mzClust, presence, FALSE)
-      ms1_df <- data.table::rbindlist(ms1_list, fill = TRUE)
-      ms1_df <- ms1_df[order(ms1_df$mz), ]
-      ms1_df <- ms1_df[order(ms1_df$id), ]
-      ms1_df <- ms1_df[order(ms1_df$analysis), ]
-      analyses_info <- data.table::as.data.table(self$get_analyses())
-      rpls <- analyses_info$replicate
-      names(rpls) <- analyses_info$analysis
-      ms1_df$replicate <- rpls[ms1_df$analysis]
-      data.table::setcolorder(ms1_df, c("analysis", "replicate"))
-      ms1_df
+      data.table::as.data.table(rcpp_project_mass_spec_get_raw_spectra_ms1(
+        private$.mass_spec_ptr,
+        analyses,
+        mass,
+        mz,
+        rt,
+        mobility,
+        as.character(id),
+        ppm,
+        sec,
+        millisec,
+        as.numeric(mzClust),
+        as.numeric(presence),
+        as.numeric(minIntensity)
+      ))
     },
     #' @description Get clustered MS2 spectra for selected analyses.
     get_raw_spectra_ms2 = function(analyses = NULL,
@@ -516,11 +568,97 @@ ProjectMassSpec <- R6::R6Class(
                                    id = NULL,
                                    isolationWindow = 1.3,
                                    mzClust = 0.005,
-                                   presence = 0.8,
+                                   presence = 0,
                                    minIntensity = 0) {
-      ms2 <- self$get_raw_spectra(
+      data.table::as.data.table(rcpp_project_mass_spec_get_raw_spectra_ms2(
+        private$.mass_spec_ptr,
+        analyses,
+        mass,
+        mz,
+        rt,
+        mobility,
+        as.character(id),
+        ppm,
+        sec,
+        millisec,
+        as.numeric(isolationWindow),
+        as.numeric(mzClust),
+        as.numeric(presence),
+        as.numeric(minIntensity)
+      ))
+    },
+    #' @description Plot clustered MS1 spectra for selected analyses.
+    plot_raw_spectra_ms1 = function(analyses = NULL,
+                                    mass = NULL,
+                                    mz = NULL,
+                                    rt = NULL,
+                                    mobility = NULL,
+                                    ppm = 20,
+                                    sec = 60,
+                                    millisec = 5,
+                                    id = NULL,
+                                    mzClust = 0.003,
+                                    presence = 0.8,
+                                    minIntensity = 1000,
+                                    normalized = FALSE,
+                                    xLab = NULL,
+                                    yLab = NULL,
+                                    title = NULL,
+                                    groupBy = "id",
+                                    showText = TRUE,
+                                    interactive = TRUE) {
+      ms1 <- self$get_raw_spectra_ms1(
         analyses = analyses,
-        levels = 2,
+        mass = mass,
+        mz = mz,
+        rt = rt,
+        mobility = mobility,
+        ppm = ppm,
+        sec = sec,
+        millisec = millisec,
+        id = id,
+        mzClust = mzClust,
+        presence = presence,
+        minIntensity = minIntensity
+      )
+      if (nrow(ms1) == 0) {
+        message("\U2717 MS1 traces not found for the targets!")
+        return(NULL)
+      }
+      .plot_raw_spectra_tabular_data(
+        data = ms1,
+        groupBy = groupBy,
+        normalized = normalized,
+        interactive = interactive,
+        title = title,
+        xLab = xLab,
+        yLab = yLab,
+        showText = showText
+      )
+    },
+    #' @description Plot clustered MS2 spectra for selected analyses.
+    plot_raw_spectra_ms2 = function(analyses = NULL,
+                                    mass = NULL,
+                                    mz = NULL,
+                                    rt = NULL,
+                                    mobility = NULL,
+                                    ppm = 20,
+                                    sec = 60,
+                                    millisec = 5,
+                                    id = NULL,
+                                    isolationWindow = 1.3,
+                                    mzClust = 0.005,
+                                    presence = 0,
+                                    minIntensity = 0,
+                                    normalized = TRUE,
+                                    xLab = NULL,
+                                    yLab = NULL,
+                                    title = NULL,
+                                    groupBy = "id",
+                                    showText = TRUE,
+                                    interactive = TRUE) {
+      ms2 <- self$get_raw_spectra_ms2(
+        analyses = analyses,
         mass = mass,
         mz = mz,
         rt = rt,
@@ -530,57 +668,31 @@ ProjectMassSpec <- R6::R6Class(
         millisec = millisec,
         id = id,
         isolationWindow = isolationWindow,
-        allTraces = FALSE,
-        minIntensityMS1 = 0,
-        minIntensityMS2 = minIntensity
+        mzClust = mzClust,
+        presence = presence,
+        minIntensity = minIntensity
       )
       if (nrow(ms2) == 0) {
-        return(ms2)
+        message("\U2717 MS2 traces not found for the targets!")
+        return(NULL)
       }
-      if (!"id" %in% colnames(ms2)) {
-        hd <- self$get_spectra_headers(analyses)
-        has_ion_mobility <- any(hd$mobility > 0)
-        if (has_ion_mobility) {
-          ms2$id <- paste(
-            round(min(ms2$mz), 4), "-",
-            round(max(ms2$mz), 4), "/",
-            round(max(ms2$rt), 0), "-",
-            round(min(ms2$rt), 0), "/",
-            round(max(ms2$mobility), 0), "-",
-            round(min(ms2$mobility), 0),
-            sep = ""
-          )
-        } else {
-          ms2$id <- paste(
-            round(min(ms2$mz), 4), "-",
-            round(max(ms2$mz), 4), "/",
-            round(max(ms2$rt), 0), "-",
-            round(min(ms2$rt), 0),
-            sep = ""
-          )
-        }
-      }
-      if (!is.numeric(mzClust)) {
-        mzClust <- 0.01
-      }
-      ms2$unique_id <- paste0(ms2$analysis, "_", ms2$id, "_", ms2$polarity)
-      ms2_list <- rcpp_ms_cluster_spectra(ms2, mzClust, presence, FALSE)
-      ms2_df <- data.table::rbindlist(ms2_list, fill = TRUE)
-      ms2_df <- ms2_df[order(ms2_df$mz), ]
-      ms2_df <- ms2_df[order(ms2_df$id), ]
-      ms2_df <- ms2_df[order(ms2_df$analysis), ]
-      analyses_info <- data.table::as.data.table(self$get_analyses())
-      rpls <- analyses_info$replicate
-      names(rpls) <- analyses_info$analysis
-      ms2_df$replicate <- rpls[ms2_df$analysis]
-      data.table::setcolorder(ms2_df, c("analysis", "replicate"))
-      ms2_df
+      .plot_raw_spectra_tabular_data(
+        data = ms2,
+        groupBy = groupBy,
+        normalized = normalized,
+        interactive = interactive,
+        title = title,
+        xLab = xLab,
+        yLab = yLab,
+        showText = showText,
+        precursorTol = mzClust
+      )
     },
     #' @description Print a short summary.
     print = function(...) {
       cat("\nProjectMassSpec\n")
-      cat("db: ", self$db, "\n", sep = "")
-      cat("project_id: ", self$project_id, "\n", sep = "")
+      cat("db: ", self$get_db(), "\n", sep = "")
+      cat("project_id: ", self$get_project_id(), "\n", sep = "")
       domain <- try(self$get_domain(), silent = TRUE)
       if (!inherits(domain, "try-error") && !is.null(domain)) {
         cat("domain: ", domain, "\n", sep = "")
@@ -603,8 +715,11 @@ ProjectMassSpec <- R6::R6Class(
 #' @description S3 interface methods for `ProjectMassSpec`.
 #' @param x A `ProjectMassSpec` object.
 #' @template arg-analyses
+#' @template arg-chromatograms
 #' @template arg-ms-levels
 #' @template arg-ms-rt
+#' @template arg-ms-rtmin
+#' @template arg-ms-rtmax
 #' @template arg-ms-mass
 #' @template arg-ms-mz
 #' @template arg-ms-mobility
@@ -623,7 +738,73 @@ ProjectMassSpec <- R6::R6Class(
 #' @template arg-plot-groupBy
 #' @template arg-plot-interactive
 #' @template arg-plot-colorPalette
+#' @template arg-normalized
+#' @template arg-showText
 NULL
+
+#' @describeIn ProjectMassSpecS3 Return chromatogram headers for selected analyses.
+#' @method get_chromatograms_headers ProjectMassSpec
+#' @export
+get_chromatograms_headers.ProjectMassSpec <- function(x, analyses = NULL) {
+  checkmate::assert_class(x, "ProjectMassSpec")
+  x$get_chromatograms_headers(analyses = analyses)
+}
+
+#' @describeIn ProjectMassSpecS3 Get raw chromatograms for selected analyses.
+#' @method get_raw_chromatograms ProjectMassSpec
+#' @export
+get_raw_chromatograms.ProjectMassSpec <- function(
+  x,
+  analyses = NULL,
+  chromatograms = NULL,
+  rtmin = 0,
+  rtmax = 0,
+  minIntensity = NULL
+) {
+  checkmate::assert_class(x, "ProjectMassSpec")
+  x$get_raw_chromatograms(
+    analyses = analyses,
+    chromatograms = chromatograms,
+    rtmin = rtmin,
+    rtmax = rtmax,
+    minIntensity = minIntensity
+  )
+}
+
+#' @describeIn ProjectMassSpecS3 Plot raw chromatograms for selected analyses.
+#' @method plot_raw_chromatograms ProjectMassSpec
+#' @export
+plot_raw_chromatograms.ProjectMassSpec <- function(
+  x,
+  analyses = NULL,
+  chromatograms = NULL,
+  rtmin = 0,
+  rtmax = 0,
+  minIntensity = NULL,
+  downsize = NULL,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colorPalette = NULL
+) {
+  checkmate::assert_class(x, "ProjectMassSpec")
+  x$plot_raw_chromatograms(
+    analyses = analyses,
+    chromatograms = chromatograms,
+    rtmin = rtmin,
+    rtmax = rtmax,
+    minIntensity = minIntensity,
+    downsize = downsize,
+    xLab = xLab,
+    yLab = yLab,
+    title = title,
+    groupBy = groupBy,
+    interactive = interactive,
+    colorPalette = colorPalette
+  )
+}
 
 #' @describeIn ProjectMassSpecS3 Return imported analyses.
 #' @method get_analyses ProjectMassSpec
@@ -916,6 +1097,106 @@ plot_raw_spectra_eic.ProjectMassSpec <- function(
   )
 }
 
+#' @describeIn ProjectMassSpecS3 Plot clustered MS1 spectra for specified analyses and targets.
+#' @method plot_raw_spectra_ms1 ProjectMassSpec
+#' @export
+plot_raw_spectra_ms1.ProjectMassSpec <- function(
+  x,
+  analyses = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = NULL,
+  mzClust = 0.003,
+  presence = 0.8,
+  minIntensity = 1000,
+  normalized = FALSE,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "id",
+  showText = TRUE,
+  interactive = TRUE
+) {
+  checkmate::assert_class(x, "ProjectMassSpec")
+  x$plot_raw_spectra_ms1(
+    analyses = analyses,
+    mass = mass,
+    mz = mz,
+    rt = rt,
+    mobility = mobility,
+    ppm = ppm,
+    sec = sec,
+    millisec = millisec,
+    id = id,
+    mzClust = mzClust,
+    presence = presence,
+    minIntensity = minIntensity,
+    normalized = normalized,
+    xLab = xLab,
+    yLab = yLab,
+    title = title,
+    groupBy = groupBy,
+    showText = showText,
+    interactive = interactive
+  )
+}
+
+#' @describeIn ProjectMassSpecS3 Plot clustered MS2 spectra for specified analyses and targets.
+#' @method plot_raw_spectra_ms2 ProjectMassSpec
+#' @export
+plot_raw_spectra_ms2.ProjectMassSpec <- function(
+  x,
+  analyses = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = NULL,
+  isolationWindow = 1.3,
+  mzClust = 0.005,
+  presence = 0,
+  minIntensity = 0,
+  normalized = TRUE,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "id",
+  showText = TRUE,
+  interactive = TRUE
+) {
+  checkmate::assert_class(x, "ProjectMassSpec")
+  x$plot_raw_spectra_ms2(
+    analyses = analyses,
+    mass = mass,
+    mz = mz,
+    rt = rt,
+    mobility = mobility,
+    ppm = ppm,
+    sec = sec,
+    millisec = millisec,
+    id = id,
+    isolationWindow = isolationWindow,
+    mzClust = mzClust,
+    presence = presence,
+    minIntensity = minIntensity,
+    normalized = normalized,
+    xLab = xLab,
+    yLab = yLab,
+    title = title,
+    groupBy = groupBy,
+    showText = showText,
+    interactive = interactive
+  )
+}
+
 #' @describeIn ProjectMassSpecS3 Get clustered MS1 spectra for specified analyses and targets.
 #' @method get_raw_spectra_ms1 ProjectMassSpec
 #' @export
@@ -967,7 +1248,7 @@ get_raw_spectra_ms2.ProjectMassSpec <- function(
   id = NULL,
   isolationWindow = 1.3,
   mzClust = 0.005,
-  presence = 0.8,
+  presence = 0,
   minIntensity = 0
 ) {
   checkmate::assert_class(x, "ProjectMassSpec")

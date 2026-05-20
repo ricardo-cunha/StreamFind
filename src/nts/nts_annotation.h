@@ -14,7 +14,8 @@
 
 namespace nts {
   namespace api { struct NTS_FEATURE_ROW; struct NTS_FEATURES; }
-  struct NTS_DATA;   // Forward declaration
+  namespace api { class PROJECT_NON_TARGET_ANALYSIS; }
+  using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS;
 }
 
 namespace nts
@@ -212,7 +213,7 @@ namespace nts
     bool is_max_gap_reached(const int &current_step, const int &maxGaps, const std::vector<int> &steps);
 
     void annotate_components_impl(
-        nts::NTS_DATA &nts_data,
+      nts::PROJECT_NON_TARGET_ANALYSIS &nts_data,
         int maxIsotopes,
         int maxCharge,
         int maxGaps,

@@ -60,8 +60,8 @@ ProjectMassSpecSpectra <- R6::R6Class(
     #' @description Print a short summary.
     print = function(...) {
       cat("\nProjectMassSpecSpectra\n")
-      cat("db: ", self$db, "\n", sep = "")
-      cat("project_id: ", self$project_id, "\n", sep = "")
+      cat("db: ", self$get_db(), "\n", sep = "")
+      cat("project_id: ", self$get_project_id(), "\n", sep = "")
       domain <- try(self$get_domain(), silent = TRUE)
       if (!inherits(domain, "try-error") && !is.null(domain)) {
         cat("domain: ", domain, "\n", sep = "")

@@ -1,5 +1,5 @@
 // nts_filters.h
-// Filtering for NTS_DATA structures
+// Filtering for PROJECT_NON_TARGET_ANALYSIS structures
 
 #ifndef NTS_FILTERS_H
 #define NTS_FILTERS_H
@@ -9,12 +9,13 @@
 
 namespace nts
 {
-  struct NTS_DATA;
+  namespace api { class PROJECT_NON_TARGET_ANALYSIS; }
+  using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS;
 
   namespace filter_features
   {
     void filter_features_impl(
-        NTS_DATA &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nts_data,
         double minSN,
         double minIntensity,
         double minArea,
@@ -56,7 +57,7 @@ namespace nts
   namespace filter_suspects
   {
     void filter_suspects_impl(
-        NTS_DATA &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nts_data,
         const std::vector<std::string> &names,
         double minScore,
         double maxErrorRT,
@@ -69,7 +70,7 @@ namespace nts
   namespace filter_internal_standards
   {
     void filter_internal_standards_impl(
-        NTS_DATA &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nts_data,
         const std::vector<std::string> &names,
         double minScore,
         double maxErrorRT,
@@ -88,7 +89,7 @@ namespace nts
     //   3. Keep only top-N peaks (if top > 0), apply minIntensity and relMinIntensity thresholds.
     // All encoded peak lists are updated in-place (ms2_mz, ms2_intensity, ms2_size).
     void filter_features_ms2_impl(
-        NTS_DATA &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nts_data,
         int top,                        // 0 = no limit
         float minIntensity,             // NaN = no limit
         float relMinIntensity,          // NaN = no limit

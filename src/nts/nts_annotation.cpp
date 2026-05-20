@@ -885,7 +885,7 @@ namespace nts
 
     // MARK: annotate_components_impl
     void annotate_components_impl(
-        nts::NTS_DATA &nts_data,
+      nts::PROJECT_NON_TARGET_ANALYSIS &nts_data,
         int maxIsotopes,
         int maxCharge,
         int maxGaps,
@@ -904,7 +904,9 @@ namespace nts
       ISOTOPE_COMBINATIONS combinations(isotopes, max_number_elements);
       std::cout << "Done!" << std::endl;
 
-      const int number_analyses = nts_data.features.size();
+      auto &feature_buffers = nts_data.feature_buffers();
+      const auto &analysis_names = nts_data.analysis_names();
+      const int number_analyses = static_cast<int>(feature_buffers.size());
 
       if (number_analyses == 0)
       {
@@ -914,14 +916,14 @@ namespace nts
 
       for (int a = 0; a < number_analyses; a++)
       {
-        nts::api::NTS_FEATURES &fts = nts_data.features[a];
+        nts::api::NTS_FEATURES &fts = feature_buffers[a];
         const int number_features = fts.size();
 
         if (number_features == 0)
           continue;
 
         bool should_debug = (!debugComponent.empty() && !debugAnalysis.empty() &&
-                            nts_data.analyses[a] == debugAnalysis);
+                            analysis_names[a] == debugAnalysis);
 
         // Group features by component
         std::unordered_map<std::string, std::vector<int>> component_groups;
@@ -949,7 +951,7 @@ namespace nts
           component_groups[ft.feature_component].push_back(f);
         }
 
-        std::cout << "Annotating " << component_groups.size() << " components in analysis " << nts_data.analyses[a] << std::endl;
+        std::cout << "Annotating " << component_groups.size() << " components in analysis " << analysis_names[a] << std::endl;
 
         // MARK: Annotate Isotopes
         // Annotate isotopes for each component

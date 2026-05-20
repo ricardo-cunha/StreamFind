@@ -60,7 +60,7 @@ namespace nts::suspect_screening
   }
 
   void suspect_screening_impl(
-      NTS_DATA &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nts_data,
       const std::vector<std::string> &analyses,
       const std::vector<SuspectQuery> &suspects,
       double ppm,
@@ -72,7 +72,11 @@ namespace nts::suspect_screening
       bool filtered)
   {
     api::NTS_SUSPECTS out;
-    if (suspects.empty() || nts_data.analyses.empty())
+    const auto &analysis_names = nts_data.analysis_names();
+    const auto &feature_buffers = nts_data.feature_buffers();
+    auto &suspect_buffers = nts_data.suspect_buffers();
+
+    if (suspects.empty() || analysis_names.empty())
       return;
 
     std::unordered_set<std::string> analyses_set;
@@ -101,13 +105,13 @@ namespace nts::suspect_screening
     std::vector<FeatureRef> matched;
 
     // Assign suspect names to matching features (last match wins, mimicking R logic)
-    for (size_t a = 0; a < nts_data.analyses.size(); ++a)
+    for (size_t a = 0; a < analysis_names.size(); ++a)
     {
-      const std::string &analysis = nts_data.analyses[a];
+      const std::string &analysis = analysis_names[a];
       if (!analyses_set.empty() && analyses_set.find(analysis) == analyses_set.end())
         continue;
 
-      const nts::api::NTS_FEATURES &fts = nts_data.features[a];
+      const nts::api::NTS_FEATURES &fts = feature_buffers[a];
       for (int i = 0; i < fts.size(); ++i)
       {
         if (!filtered && fts.filtered[i])
@@ -154,12 +158,12 @@ namespace nts::suspect_screening
       if (!sus)
         continue;
 
-      const nts::api::NTS_FEATURES &fts = nts_data.features[ref.analysis_idx];
+      const nts::api::NTS_FEATURES &fts = feature_buffers[ref.analysis_idx];
       const int i = ref.feature_idx;
       const size_t idx = static_cast<size_t>(i);
 
       api::NTS_SUSPECT_ROW row;
-      row.analysis = nts_data.analyses[ref.analysis_idx];
+      row.analysis = analysis_names[ref.analysis_idx];
       row.feature = get_or_default(fts.feature, idx, std::string());
       row.candidate_rank = 1;
       row.name = ref.assigned_name;
@@ -347,9 +351,9 @@ namespace nts::suspect_screening
     }
 
     // Distribute suspects to the appropriate analysis in nts_data.suspects
-    for (size_t i = 0; i < nts_data.analyses.size(); ++i)
+    for (size_t i = 0; i < analysis_names.size(); ++i)
     {
-      nts_data.suspects[i] = api::NTS_SUSPECTS();
+      suspect_buffers[i] = api::NTS_SUSPECTS();
     }
 
     for (size_t i = 0; i < out.analysis.size(); ++i)
@@ -387,11 +391,11 @@ namespace nts::suspect_screening
       s.exp_ms2_intensity = out.exp_ms2_intensity[i];
 
       // Find which analysis index this suspect belongs to
-      for (size_t a = 0; a < nts_data.analyses.size(); ++a)
+      for (size_t a = 0; a < analysis_names.size(); ++a)
       {
-        if (nts_data.analyses[a] == s.analysis)
+        if (analysis_names[a] == s.analysis)
         {
-          nts_data.suspects[a].append(s);
+          suspect_buffers[a].append(s);
           break;
         }
       }

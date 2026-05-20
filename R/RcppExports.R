@@ -65,68 +65,80 @@ rcpp_project_non_target_analysis_new <- function(project_xptr) {
     .Call(`_StreamFind_rcpp_project_non_target_analysis_new`, project_xptr)
 }
 
-rcpp_project_non_target_analysis_get_features <- function(nts_xptr, analyses, include_filtered) {
-    .Call(`_StreamFind_rcpp_project_non_target_analysis_get_features`, nts_xptr, analyses, include_filtered)
+rcpp_project_non_target_analysis_get_features <- function(nts_xptr, analyses, features, groups, components, mass, mz, rt, mobility, ppm, sec, millisec, include_filtered) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_get_features`, nts_xptr, analyses, features, groups, components, mass, mz, rt, mobility, ppm, sec, millisec, include_filtered)
 }
 
 rcpp_project_non_target_analysis_get_features_count <- function(nts_xptr, analyses, include_filtered) {
     .Call(`_StreamFind_rcpp_project_non_target_analysis_get_features_count`, nts_xptr, analyses, include_filtered)
 }
 
-rcpp_nts_find_features <- function(info, spectra_headers, rtWindowsMin, rtWindowsMax, ppmThreshold = 15.0, noiseThreshold = 15.0, minSNR = 3.0, minTraces = 3L, baselineWindow = 200.0, maxWidth = 100.0, baseQuantile = 0.10, debugAnalysis = "", debugMZ = 0.0, debugSpecIdx = -1L) {
-    .Call(`_StreamFind_rcpp_nts_find_features`, info, spectra_headers, rtWindowsMin, rtWindowsMax, ppmThreshold, noiseThreshold, minSNR, minTraces, baselineWindow, maxWidth, baseQuantile, debugAnalysis, debugMZ, debugSpecIdx)
+rcpp_project_non_target_analysis_get_suspects <- function(nts_xptr, analyses, features, groups, mass, mz, rt, mobility, ppm, sec, millisec) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_get_suspects`, nts_xptr, analyses, features, groups, mass, mz, rt, mobility, ppm, sec, millisec)
 }
 
-rcpp_nts_load_features_ms1 <- function(info, spectra_headers, feature_list, filtered, rtWindow, mzWindow, minTracesIntensity, mzClust, presence) {
-    .Call(`_StreamFind_rcpp_nts_load_features_ms1`, info, spectra_headers, feature_list, filtered, rtWindow, mzWindow, minTracesIntensity, mzClust, presence)
+rcpp_project_non_target_analysis_get_internal_standards <- function(nts_xptr, analyses, features, groups, mass, mz, rt, mobility, ppm, sec, millisec) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_get_internal_standards`, nts_xptr, analyses, features, groups, mass, mz, rt, mobility, ppm, sec, millisec)
 }
 
-rcpp_nts_load_features_ms2 <- function(info, spectra_headers, feature_list, filtered, minTracesIntensity, isolationWindow, mzClust, presence) {
-    .Call(`_StreamFind_rcpp_nts_load_features_ms2`, info, spectra_headers, feature_list, filtered, minTracesIntensity, isolationWindow, mzClust, presence)
+rcpp_project_non_target_analysis_get_transformation_products <- function(nts_xptr) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_get_transformation_products`, nts_xptr)
 }
 
-rcpp_nts_create_components <- function(info, spectra_headers, feature_list, rtWindow, minCorrelation = 0.8, debugRT = 0.0, debugAnalysis = "") {
-    .Call(`_StreamFind_rcpp_nts_create_components`, info, spectra_headers, feature_list, rtWindow, minCorrelation, debugRT, debugAnalysis)
+rcpp_nts_find_features <- function(nts_xptr, rtWindowsMin, rtWindowsMax, ppmThreshold = 15.0, noiseThreshold = 15.0, minSNR = 3.0, minTraces = 3L, baselineWindow = 200.0, maxWidth = 100.0, baseQuantile = 0.10, debugAnalysis = "", debugMZ = 0.0, debugSpecIdx = -1L) {
+    .Call(`_StreamFind_rcpp_nts_find_features`, nts_xptr, rtWindowsMin, rtWindowsMax, ppmThreshold, noiseThreshold, minSNR, minTraces, baselineWindow, maxWidth, baseQuantile, debugAnalysis, debugMZ, debugSpecIdx)
 }
 
-rcpp_nts_annotate_components <- function(info, spectra_headers, feature_list, maxIsotopes = 5L, maxCharge = 1L, maxGaps = 1L, ppm = 10.0, debugComponent = "", debugAnalysis = "") {
-    .Call(`_StreamFind_rcpp_nts_annotate_components`, info, spectra_headers, feature_list, maxIsotopes, maxCharge, maxGaps, ppm, debugComponent, debugAnalysis)
+rcpp_nts_load_features_ms1 <- function(nts_xptr, filtered, rtWindow, mzWindow, minTracesIntensity, mzClust, presence) {
+    .Call(`_StreamFind_rcpp_nts_load_features_ms1`, nts_xptr, filtered, rtWindow, mzWindow, minTracesIntensity, mzClust, presence)
 }
 
-rcpp_nts_group_features <- function(info, spectra_headers, feature_list, method = "obi_warp", internal_standards_list = NULL, rtDeviation = 5.0, ppm = 5.0, minSamples = 1L, binSize = 5.0, debug = FALSE, debugRT = 0.0) {
-    .Call(`_StreamFind_rcpp_nts_group_features`, info, spectra_headers, feature_list, method, internal_standards_list, rtDeviation, ppm, minSamples, binSize, debug, debugRT)
+rcpp_nts_load_features_ms2 <- function(nts_xptr, filtered, minTracesIntensity, isolationWindow, mzClust, presence) {
+    .Call(`_StreamFind_rcpp_nts_load_features_ms2`, nts_xptr, filtered, minTracesIntensity, isolationWindow, mzClust, presence)
 }
 
-rcpp_nts_fill_features <- function(info, spectra_headers, feature_list, withinReplicate = FALSE, filtered = FALSE, rtExpand = 10.0, mzExpand = 0.01, maxPeakWidth = 30.0, minTracesIntensity = 1000.0, minNumberTraces = 5L, minIntensity = 5000.0, rtApexDeviation = 5.0, minSignalToNoiseRatio = 3.0, minGaussianFit = 0.2, debugFG = "") {
-    .Call(`_StreamFind_rcpp_nts_fill_features`, info, spectra_headers, feature_list, withinReplicate, filtered, rtExpand, mzExpand, maxPeakWidth, minTracesIntensity, minNumberTraces, minIntensity, rtApexDeviation, minSignalToNoiseRatio, minGaussianFit, debugFG)
+rcpp_nts_create_components <- function(nts_xptr, rtWindow, minCorrelation = 0.8, debugRT = 0.0, debugAnalysis = "") {
+    .Call(`_StreamFind_rcpp_nts_create_components`, nts_xptr, rtWindow, minCorrelation, debugRT, debugAnalysis)
 }
 
-rcpp_nts_blank_subtraction <- function(info, spectra_headers, feature_list, blankThreshold = 5.0, rtExpand = 10.0, mzExpand = 0.005) {
-    .Call(`_StreamFind_rcpp_nts_blank_subtraction`, info, spectra_headers, feature_list, blankThreshold, rtExpand, mzExpand)
+rcpp_nts_annotate_components <- function(nts_xptr, maxIsotopes = 5L, maxCharge = 1L, maxGaps = 1L, ppm = 10.0, debugComponent = "", debugAnalysis = "") {
+    .Call(`_StreamFind_rcpp_nts_annotate_components`, nts_xptr, maxIsotopes, maxCharge, maxGaps, ppm, debugComponent, debugAnalysis)
 }
 
-rcpp_nts_filter_features <- function(info, feature_list, minSN = NA_real_, minIntensity = NA_real_, minArea = NA_real_, minWidth = NA_real_, maxWidth = NA_real_, maxPPM = NA_real_, minFwhmRT = NA_real_, maxFwhmRT = NA_real_, minFwhmMZ = NA_real_, maxFwhmMZ = NA_real_, minGaussianA = NA_real_, minGaussianMu = NA_real_, maxGaussianMu = NA_real_, minGaussianSigma = NA_real_, maxGaussianSigma = NA_real_, minGaussianR2 = NA_real_, maxJaggedness = NA_real_, minSharpness = NA_real_, minAsymmetry = NA_real_, maxAsymmetry = NA_real_, maxModality = NA_integer_, minPlates = NA_real_, onlyFilled = as.logical( c(NA_LOGICAL)), removeFilled = FALSE, minSizeEIC = NA_integer_, minSizeMS1 = NA_integer_, minSizeMS2 = NA_integer_, minRelPresenceReplicate = NA_real_, removeIsotopes = FALSE, removeAdducts = FALSE, removeLosses = FALSE) {
-    .Call(`_StreamFind_rcpp_nts_filter_features`, info, feature_list, minSN, minIntensity, minArea, minWidth, maxWidth, maxPPM, minFwhmRT, maxFwhmRT, minFwhmMZ, maxFwhmMZ, minGaussianA, minGaussianMu, maxGaussianMu, minGaussianSigma, maxGaussianSigma, minGaussianR2, maxJaggedness, minSharpness, minAsymmetry, maxAsymmetry, maxModality, minPlates, onlyFilled, removeFilled, minSizeEIC, minSizeMS1, minSizeMS2, minRelPresenceReplicate, removeIsotopes, removeAdducts, removeLosses)
+rcpp_nts_group_features <- function(nts_xptr, method = "obi_warp", rtDeviation = 5.0, ppm = 5.0, minSamples = 1L, binSize = 5.0, debug = FALSE, debugRT = 0.0) {
+    .Call(`_StreamFind_rcpp_nts_group_features`, nts_xptr, method, rtDeviation, ppm, minSamples, binSize, debug, debugRT)
 }
 
-rcpp_nts_filter_suspects <- function(info, suspect_list, names = as.character( c()), minScore = NA_real_, maxErrorRT = NA_real_, maxErrorMass = NA_real_, idLevels = as.integer( c()), minSharedFragments = 0L, minCosineSimilarity = NA_real_) {
-    .Call(`_StreamFind_rcpp_nts_filter_suspects`, info, suspect_list, names, minScore, maxErrorRT, maxErrorMass, idLevels, minSharedFragments, minCosineSimilarity)
+rcpp_nts_fill_features <- function(nts_xptr, withinReplicate = FALSE, filtered = FALSE, rtExpand = 10.0, mzExpand = 0.01, maxPeakWidth = 30.0, minTracesIntensity = 1000.0, minNumberTraces = 5L, minIntensity = 5000.0, rtApexDeviation = 5.0, minSignalToNoiseRatio = 3.0, minGaussianFit = 0.2, debugFG = "") {
+    .Call(`_StreamFind_rcpp_nts_fill_features`, nts_xptr, withinReplicate, filtered, rtExpand, mzExpand, maxPeakWidth, minTracesIntensity, minNumberTraces, minIntensity, rtApexDeviation, minSignalToNoiseRatio, minGaussianFit, debugFG)
 }
 
-rcpp_nts_filter_internal_standards <- function(info, internal_standards_list, names = as.character( c()), minScore = NA_real_, maxErrorRT = NA_real_, maxErrorMass = NA_real_, idLevels = as.integer( c()), minSharedFragments = 0L, minCosineSimilarity = NA_real_) {
-    .Call(`_StreamFind_rcpp_nts_filter_internal_standards`, info, internal_standards_list, names, minScore, maxErrorRT, maxErrorMass, idLevels, minSharedFragments, minCosineSimilarity)
+rcpp_nts_blank_subtraction <- function(nts_xptr, blankThreshold = 5.0, rtExpand = 10.0, mzExpand = 0.005) {
+    .Call(`_StreamFind_rcpp_nts_blank_subtraction`, nts_xptr, blankThreshold, rtExpand, mzExpand)
 }
 
-rcpp_nts_suspect_screening <- function(info, spectra_headers, feature_list, suspects, analyses = as.character( c("")), ppm = 5.0, sec = 10.0, ppmMS2 = 10.0, mzrMS2 = 0.008, minCosineSimilarity = 0.7, minSharedFragments = 3L, filtered = FALSE) {
-    .Call(`_StreamFind_rcpp_nts_suspect_screening`, info, spectra_headers, feature_list, suspects, analyses, ppm, sec, ppmMS2, mzrMS2, minCosineSimilarity, minSharedFragments, filtered)
+rcpp_nts_filter_features <- function(nts_xptr, minSN = NA_real_, minIntensity = NA_real_, minArea = NA_real_, minWidth = NA_real_, maxWidth = NA_real_, maxPPM = NA_real_, minFwhmRT = NA_real_, maxFwhmRT = NA_real_, minFwhmMZ = NA_real_, maxFwhmMZ = NA_real_, minGaussianA = NA_real_, minGaussianMu = NA_real_, maxGaussianMu = NA_real_, minGaussianSigma = NA_real_, maxGaussianSigma = NA_real_, minGaussianR2 = NA_real_, maxJaggedness = NA_real_, minSharpness = NA_real_, minAsymmetry = NA_real_, maxAsymmetry = NA_real_, maxModality = NA_integer_, minPlates = NA_real_, onlyFilled = as.logical( c(NA_LOGICAL)), removeFilled = FALSE, minSizeEIC = NA_integer_, minSizeMS1 = NA_integer_, minSizeMS2 = NA_integer_, minRelPresenceReplicate = NA_real_, removeIsotopes = FALSE, removeAdducts = FALSE, removeLosses = FALSE) {
+    .Call(`_StreamFind_rcpp_nts_filter_features`, nts_xptr, minSN, minIntensity, minArea, minWidth, maxWidth, maxPPM, minFwhmRT, maxFwhmRT, minFwhmMZ, maxFwhmMZ, minGaussianA, minGaussianMu, maxGaussianMu, minGaussianSigma, maxGaussianSigma, minGaussianR2, maxJaggedness, minSharpness, minAsymmetry, maxAsymmetry, maxModality, minPlates, onlyFilled, removeFilled, minSizeEIC, minSizeMS1, minSizeMS2, minRelPresenceReplicate, removeIsotopes, removeAdducts, removeLosses)
 }
 
-rcpp_nts_filter_features_ms2 <- function(info, feature_list, top = 0L, minIntensity = NA_real_, relMinIntensity = NA_real_, blankClean = FALSE, mzClust = 0.005, blankPresenceThreshold = 0.8, globalPresenceThreshold = 0.1) {
-    .Call(`_StreamFind_rcpp_nts_filter_features_ms2`, info, feature_list, top, minIntensity, relMinIntensity, blankClean, mzClust, blankPresenceThreshold, globalPresenceThreshold)
+rcpp_nts_filter_suspects <- function(nts_xptr, names = as.character( c()), minScore = NA_real_, maxErrorRT = NA_real_, maxErrorMass = NA_real_, idLevels = as.integer( c()), minSharedFragments = 0L, minCosineSimilarity = NA_real_) {
+    .Call(`_StreamFind_rcpp_nts_filter_suspects`, nts_xptr, names, minScore, maxErrorRT, maxErrorMass, idLevels, minSharedFragments, minCosineSimilarity)
 }
 
-rcpp_nts_metfrag_screening <- function(info, spectra_headers, feature_list, metfrag_path, database_type = "LocalCSV", database_path = "", analyses = as.character( c("")), ppm = 5.0, sec = 10.0, ppmMS2 = 10.0, mzrMS2 = 0.008, top_n = 1L, filtered = FALSE, java_path = "java", run_dir = "", debug = FALSE, extra_params = NULL) {
-    .Call(`_StreamFind_rcpp_nts_metfrag_screening`, info, spectra_headers, feature_list, metfrag_path, database_type, database_path, analyses, ppm, sec, ppmMS2, mzrMS2, top_n, filtered, java_path, run_dir, debug, extra_params)
+rcpp_nts_filter_internal_standards <- function(nts_xptr, names = as.character( c()), minScore = NA_real_, maxErrorRT = NA_real_, maxErrorMass = NA_real_, idLevels = as.integer( c()), minSharedFragments = 0L, minCosineSimilarity = NA_real_) {
+    .Call(`_StreamFind_rcpp_nts_filter_internal_standards`, nts_xptr, names, minScore, maxErrorRT, maxErrorMass, idLevels, minSharedFragments, minCosineSimilarity)
+}
+
+rcpp_nts_suspect_screening <- function(nts_xptr, suspects, analyses = as.character( c("")), ppm = 5.0, sec = 10.0, ppmMS2 = 10.0, mzrMS2 = 0.008, minCosineSimilarity = 0.7, minSharedFragments = 3L, filtered = FALSE) {
+    .Call(`_StreamFind_rcpp_nts_suspect_screening`, nts_xptr, suspects, analyses, ppm, sec, ppmMS2, mzrMS2, minCosineSimilarity, minSharedFragments, filtered)
+}
+
+rcpp_nts_filter_features_ms2 <- function(nts_xptr, top = 0L, minIntensity = NA_real_, relMinIntensity = NA_real_, blankClean = FALSE, mzClust = 0.005, blankPresenceThreshold = 0.8, globalPresenceThreshold = 0.1) {
+    .Call(`_StreamFind_rcpp_nts_filter_features_ms2`, nts_xptr, top, minIntensity, relMinIntensity, blankClean, mzClust, blankPresenceThreshold, globalPresenceThreshold)
+}
+
+rcpp_nts_metfrag_screening <- function(nts_xptr, metfrag_path, database_type = "LocalCSV", database_path = "", analyses = as.character( c("")), ppm = 5.0, sec = 10.0, ppmMS2 = 10.0, mzrMS2 = 0.008, top_n = 1L, filtered = FALSE, java_path = "java", run_dir = "", debug = FALSE, extra_params = NULL) {
+    .Call(`_StreamFind_rcpp_nts_metfrag_screening`, nts_xptr, metfrag_path, database_type, database_path, analyses, ppm, sec, ppmMS2, mzrMS2, top_n, filtered, java_path, run_dir, debug, extra_params)
 }
 
 rcpp_nts_assign_transformation_products <- function(suspects, transformation_products, chromatographic_phase = "reverse_phase", mzrMS2 = 0.008) {
@@ -139,10 +151,6 @@ rcpp_project_new <- function(db_path, project_id) {
 
 rcpp_project_get_domain <- function(project_xptr) {
     .Call(`_StreamFind_rcpp_project_get_domain`, project_xptr)
-}
-
-rcpp_project_set_domain <- function(project_xptr, domain) {
-    invisible(.Call(`_StreamFind_rcpp_project_set_domain`, project_xptr, domain))
 }
 
 rcpp_project_copy <- function(project_xptr, db_path, project_id) {
@@ -249,8 +257,20 @@ rcpp_project_mass_spec_get_raw_spectra <- function(mass_spec_xptr, analyses, lev
     .Call(`_StreamFind_rcpp_project_mass_spec_get_raw_spectra`, mass_spec_xptr, analyses, levels, mass, mz, rt, mobility, id, ppm, sec, millisec, all_traces, isolation_window, min_intensity_ms1, min_intensity_ms2)
 }
 
-rcpp_project_mass_spec_extract_chromatograms <- function(mass_spec_xptr, analysis, indices) {
-    .Call(`_StreamFind_rcpp_project_mass_spec_extract_chromatograms`, mass_spec_xptr, analysis, indices)
+rcpp_project_mass_spec_get_raw_spectra_eic <- function(mass_spec_xptr, analyses, mass, mz, rt, mobility, id, ppm, sec, millisec) {
+    .Call(`_StreamFind_rcpp_project_mass_spec_get_raw_spectra_eic`, mass_spec_xptr, analyses, mass, mz, rt, mobility, id, ppm, sec, millisec)
+}
+
+rcpp_project_mass_spec_get_raw_spectra_ms1 <- function(mass_spec_xptr, analyses, mass, mz, rt, mobility, id, ppm, sec, millisec, mz_clust, presence, min_intensity) {
+    .Call(`_StreamFind_rcpp_project_mass_spec_get_raw_spectra_ms1`, mass_spec_xptr, analyses, mass, mz, rt, mobility, id, ppm, sec, millisec, mz_clust, presence, min_intensity)
+}
+
+rcpp_project_mass_spec_get_raw_spectra_ms2 <- function(mass_spec_xptr, analyses, mass, mz, rt, mobility, id, ppm, sec, millisec, isolation_window, mz_clust, presence, min_intensity) {
+    .Call(`_StreamFind_rcpp_project_mass_spec_get_raw_spectra_ms2`, mass_spec_xptr, analyses, mass, mz, rt, mobility, id, ppm, sec, millisec, isolation_window, mz_clust, presence, min_intensity)
+}
+
+rcpp_project_mass_spec_get_raw_chromatograms <- function(mass_spec_xptr, analysis, indices) {
+    .Call(`_StreamFind_rcpp_project_mass_spec_get_raw_chromatograms`, mass_spec_xptr, analysis, indices)
 }
 
 rcpp_project_mass_spec_spectra_new <- function(project_xptr, file_paths, replicates, blanks) {

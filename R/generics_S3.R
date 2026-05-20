@@ -443,6 +443,17 @@ get_raw_chromatograms <- function(x, ...) {
   UseMethod("get_raw_chromatograms")
 }
 
+#' @title Generic `plot_raw_chromatograms`
+#' @description S3 generic to plot raw chromatograms from `x`.
+#' @param x An object from which the raw chromatograms will be plotted.
+#' @param ... Additional arguments passed to the method.
+#' @export
+#' @noRd
+#'
+plot_raw_chromatograms <- function(x, ...) {
+  UseMethod("plot_raw_chromatograms")
+}
+
 #' @title S3 generic `get_ptr`
 #' @description Return native pointer from `x`.
 #' @param x An object.
@@ -1240,6 +1251,28 @@ plot_spectra_charges <- function(x, ...) {
 #'
 plot_raw_spectra_eic <- function(x, ...) {
   UseMethod("plot_raw_spectra_eic")
+}
+
+#' @title Generic `plot_raw_spectra_ms1`
+#' @description S3 generic to plot raw spectra MS1 from `x`.
+#' @param x An object from which the raw spectra MS1 will be plotted.
+#' @param ... Additional arguments passed to the method.
+#' @export
+#' @noRd
+#'
+plot_raw_spectra_ms1 <- function(x, ...) {
+  UseMethod("plot_raw_spectra_ms1")
+}
+
+#' @title Generic `plot_raw_spectra_ms2`
+#' @description S3 generic to plot raw spectra MS2 from `x`.
+#' @param x An object from which the raw spectra MS2 will be plotted.
+#' @param ... Additional arguments passed to the method.
+#' @export
+#' @noRd
+#'
+plot_raw_spectra_ms2 <- function(x, ...) {
+  UseMethod("plot_raw_spectra_ms2")
 }
 
 #' @title Generic `plot_spectra_ms1`

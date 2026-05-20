@@ -1,20 +1,83 @@
-# Development script for testing the project-first NTS framework.
-#
-# This script shows how to:
-# 1. inspect the public project-class registry
-# 2. open a ProjectNonTargetAnalysis project
-# 3. import analyses into the shared project database
-# 4. run NTS methods directly on the project object
-# 5. run a workflow via project-owned ProcessingStep metadata
-# 6. inspect downstream NTS results
+standards <- StreamFindData::get_ms_tof_spiked_chemicals()
+standards <- standards[grepl("S", standards$tag), ]
+cols <- c("name", "formula", "mass", "rt", "tag")
+internal_standards <- standards[standards$tag %in% "IS", ]
+internal_standards <- internal_standards[, cols, with = FALSE]
+internal_standards <- internal_standards[!internal_standards$name %in% c("Ibuprofen-d3", "Naproxen-d3"), ]
+standards <- standards[standards$tag %in% "S", ]
+standards <- standards[, cols, with = FALSE]
+db_with_ms2 <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+db_with_ms2 <- db_with_ms2[db_with_ms2$tag %in% "S", ]
+db_with_ms2 <- db_with_ms2[, c("name", "formula", "mass", "SMILES", "rt", "polarity", "fragments"), with = FALSE]
+db_with_ms2$polarity[db_with_ms2$polarity == 1] <- "positive"
+db_with_ms2$polarity[is.na(db_with_ms2$polarity)] <- "positive"
+db_with_ms2$polarity[db_with_ms2$polarity == -1] <- "negative"
 
-library(StreamFind)
-library(data.table)
+db <- file.path("dev", "dev_duckdb", "data", "ms_project_test.duckdb")
+if (file.exists(db)) file.remove(db)
 
-# Optional helper package used by the existing dev data setup.
-if (!requireNamespace("StreamFindData", quietly = TRUE)) {
-  stop("Install StreamFindData to use this development script.")
-}
+#main_drive <- "D:"
+main_drive <- "E:"
+
+ms_files <- c(
+  file.path(main_drive, "example_files", "ms_basic", "00_hrms_mix1_pos_cent-r001.mzML"),
+  file.path(main_drive, "example_files", "ms_basic", "00_hrms_mix1_pos_cent-r002.mzML"),
+  file.path(main_drive, "example_files", "ms_basic", "00_hrms_mix1_pos_cent-r003.mzML")
+)
+
+ms_files_mzxml <- c(
+  file.path(main_drive, "example_files", "ms_basic_mzxml", "00_hrms_mix1_pos_mzxml_cent-r001.mzXML"),
+  file.path(main_drive, "example_files", "ms_basic_mzxml", "00_hrms_mix1_pos_mzxml_cent-r002.mzXML"),
+  file.path(main_drive, "example_files", "ms_basic_mzxml", "00_hrms_mix1_pos_mzxml_cent-r003.mzXML")
+)
+
+proj <- OpenProjectMassSpecSpectra(
+  db = db,
+  project_id = "ms-demo",
+  file_paths = ms_files
+)
+
+proj <- OpenProjectMassSpecSpectra(
+  db = db,
+  project_id = "ms-demo"
+)
+
+proj$get_cache()
+proj$get_project_id()
+proj$get_domain()
+proj$set_metadata(
+  list(
+    name = "Mass Spec shared DB demo",
+    description = "Shared DuckDB project with MS domain tables"
+  )
+)
+proj$get_metadata()
+proj$list_tables()
+proj$get_analyses()
+proj$get_spectra_headers()
+proj$get_spectra_tic()
+proj$plot_spectra_tic(interactive = FALSE, levels = 1)
+proj$plot_spectra_bpc(interactive = FALSE, levels = 1)
+
+devtools::load_all()
+db <- file.path("dev", "dev_duckdb", "data", "ms_project_test.duckdb")
+
+
+proj <- OpenProjectMassSpecSpectra(
+  db = db,
+  project_id = "ms-demo"
+)
+
+
+
+
+
+
+
+
+
+
+
 
 project_db <- file.path("dev", "dev_duckdb", "data_nts.duckdb")
 project_id <- "demo_nts"

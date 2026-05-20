@@ -2,6 +2,9 @@
 % Please edit documentation in R/class_ProjectMassSpec.R
 \name{ProjectMassSpecS3}
 \alias{ProjectMassSpecS3}
+\alias{get_chromatograms_headers.ProjectMassSpec}
+\alias{get_raw_chromatograms.ProjectMassSpec}
+\alias{plot_raw_chromatograms.ProjectMassSpec}
 \alias{get_analyses.ProjectMassSpec}
 \alias{plot_spectra_tic.ProjectMassSpec}
 \alias{plot_spectra_bpc.ProjectMassSpec}
@@ -19,10 +22,39 @@
 \alias{get_raw_spectra.ProjectMassSpec}
 \alias{get_raw_spectra_eic.ProjectMassSpec}
 \alias{plot_raw_spectra_eic.ProjectMassSpec}
+\alias{plot_raw_spectra_ms1.ProjectMassSpec}
+\alias{plot_raw_spectra_ms2.ProjectMassSpec}
 \alias{get_raw_spectra_ms1.ProjectMassSpec}
 \alias{get_raw_spectra_ms2.ProjectMassSpec}
 \title{ProjectMassSpec S3 Methods}
 \usage{
+\method{get_chromatograms_headers}{ProjectMassSpec}(x, analyses = NULL)
+
+\method{get_raw_chromatograms}{ProjectMassSpec}(
+  x,
+  analyses = NULL,
+  chromatograms = NULL,
+  rtmin = 0,
+  rtmax = 0,
+  minIntensity = NULL
+)
+
+\method{plot_raw_chromatograms}{ProjectMassSpec}(
+  x,
+  analyses = NULL,
+  chromatograms = NULL,
+  rtmin = 0,
+  rtmax = 0,
+  minIntensity = NULL,
+  downsize = NULL,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colorPalette = NULL
+)
+
 \method{get_analyses}{ProjectMassSpec}(x)
 
 \method{plot_spectra_tic}{ProjectMassSpec}(
@@ -126,6 +158,53 @@
   colorPalette = NULL
 )
 
+\method{plot_raw_spectra_ms1}{ProjectMassSpec}(
+  x,
+  analyses = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = NULL,
+  mzClust = 0.003,
+  presence = 0.8,
+  minIntensity = 1000,
+  normalized = FALSE,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "id",
+  showText = TRUE,
+  interactive = TRUE
+)
+
+\method{plot_raw_spectra_ms2}{ProjectMassSpec}(
+  x,
+  analyses = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = NULL,
+  isolationWindow = 1.3,
+  mzClust = 0.005,
+  presence = 0,
+  minIntensity = 0,
+  normalized = TRUE,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "id",
+  showText = TRUE,
+  interactive = TRUE
+)
+
 \method{get_raw_spectra_ms1}{ProjectMassSpec}(
   x,
   analyses = NULL,
@@ -155,7 +234,7 @@
   id = NULL,
   isolationWindow = 1.3,
   mzClust = 0.005,
-  presence = 0.8,
+  presence = 0,
   minIntensity = 0
 )
 }
@@ -165,11 +244,11 @@
 \item{analyses}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
-\item{levels}{Integer vector with the levels of MS data.}
+\item{chromatograms}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
 
-\item{rt}{A vector with target retention time values (in seconds) or
-a two columns data.table or data.frame with minimum and maximum retention
-time values (in seconds).}
+\item{rtmin}{Numeric (length 1) with the minimum retention time.}
+
+\item{rtmax}{Numeric (length 1) with the maximum retention time.}
 
 \item{downsize}{An integer of length one to downsize the TIC plot. The default is 1.}
 
@@ -184,6 +263,12 @@ time values (in seconds).}
 \item{interactive}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
 
 \item{colorPalette}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{levels}{Integer vector with the levels of MS data.}
+
+\item{rt}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
 
 \item{mass}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
 and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
@@ -232,12 +317,22 @@ data (i.e., MS1 data).}
 
 \item{minIntensityMS2}{Numeric value with the minimum intensity of level 2
 data (i.e., MS2 data).}
+
+\item{normalized}{A logical value indicating whether the result should be normalized.}
+
+\item{showText}{Logical (length 1), set to \code{TRUE} to show the text annotations.}
 }
 \description{
 S3 interface methods for \code{ProjectMassSpec}.
 }
 \section{Functions}{
 \itemize{
+\item \code{get_chromatograms_headers(ProjectMassSpec)}: Return chromatogram headers for selected analyses.
+
+\item \code{get_raw_chromatograms(ProjectMassSpec)}: Get raw chromatograms for selected analyses.
+
+\item \code{plot_raw_chromatograms(ProjectMassSpec)}: Plot raw chromatograms for selected analyses.
+
 \item \code{get_analyses(ProjectMassSpec)}: Return imported analyses.
 
 \item \code{plot_spectra_tic(ProjectMassSpec)}: Plot total ion current (TIC) spectra for specified analyses.
@@ -271,6 +366,10 @@ S3 interface methods for \code{ProjectMassSpec}.
 \item \code{get_raw_spectra_eic(ProjectMassSpec)}: Get extracted ion chromatograms (EIC) for specified analyses.
 
 \item \code{plot_raw_spectra_eic(ProjectMassSpec)}: Plot extracted ion chromatograms (EIC) for specified analyses and targets.
+
+\item \code{plot_raw_spectra_ms1(ProjectMassSpec)}: Plot clustered MS1 spectra for specified analyses and targets.
+
+\item \code{plot_raw_spectra_ms2(ProjectMassSpec)}: Plot clustered MS2 spectra for specified analyses and targets.
 
 \item \code{get_raw_spectra_ms1(ProjectMassSpec)}: Get clustered MS1 spectra for specified analyses and targets.
 

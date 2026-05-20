@@ -71,7 +71,7 @@ namespace nts::filter_features
   }
 
   void filter_features_impl(
-      NTS_DATA &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nts_data,
       double minSN,
       double minIntensity,
       double minArea,
@@ -109,7 +109,11 @@ namespace nts::filter_features
       bool removeAdducts,
       bool removeLosses)
   {
-    if (nts_data.analyses.empty())
+    const auto &analysis_names = nts_data.analysis_names();
+    const auto &replicate_names = nts_data.replicate_names();
+    auto &feature_buffers = nts_data.feature_buffers();
+
+    if (analysis_names.empty())
       return;
 
     FilterParams params;
@@ -147,15 +151,15 @@ namespace nts::filter_features
 
     // Precompute replicate mapping
     std::unordered_map<std::string, std::string> analysis_to_replicate;
-    analysis_to_replicate.reserve(nts_data.analyses.size());
-    for (size_t i = 0; i < nts_data.analyses.size(); ++i)
+    analysis_to_replicate.reserve(analysis_names.size());
+    for (size_t i = 0; i < analysis_names.size(); ++i)
     {
-      analysis_to_replicate[nts_data.analyses[i]] = nts_data.replicates[i];
+      analysis_to_replicate[analysis_names[i]] = replicate_names[i];
     }
 
     // Precompute replicate counts
     std::unordered_map<std::string, int> replicate_counts;
-    for (const auto &rep : nts_data.replicates)
+    for (const auto &rep : replicate_names)
     {
       replicate_counts[rep] += 1;
     }
@@ -166,11 +170,11 @@ namespace nts::filter_features
     {
       std::unordered_map<std::string, std::unordered_set<std::string>> grp_analyses;
 
-      for (size_t a = 0; a < nts_data.analyses.size(); ++a)
+      for (size_t a = 0; a < analysis_names.size(); ++a)
       {
-        const std::string &analysis = nts_data.analyses[a];
-        const std::string &replicate = nts_data.replicates[a];
-        const nts::api::NTS_FEATURES &fts = nts_data.features[a];
+        const std::string &analysis = analysis_names[a];
+        const std::string &replicate = replicate_names[a];
+        const nts::api::NTS_FEATURES &fts = feature_buffers[a];
 
         for (int i = 0; i < fts.size(); ++i)
         {
@@ -206,10 +210,10 @@ namespace nts::filter_features
 
     auto apply_filter = [&](const std::string &name, const std::function<bool(const nts::api::NTS_FEATURES &, int, const std::string &replicate)> &predicate) {
       int updated = 0;
-      for (size_t a = 0; a < nts_data.analyses.size(); ++a)
+      for (size_t a = 0; a < analysis_names.size(); ++a)
       {
-        nts::api::NTS_FEATURES &fts = nts_data.features[a];
-        const std::string &replicate = nts_data.replicates[a];
+        nts::api::NTS_FEATURES &fts = feature_buffers[a];
+        const std::string &replicate = replicate_names[a];
         for (int i = 0; i < fts.size(); ++i)
         {
           if (fts.filtered[i])
@@ -494,7 +498,7 @@ namespace nts::filter_features
 namespace nts::filter_suspects
 {
   void filter_suspects_impl(
-      NTS_DATA &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nts_data,
       const std::vector<std::string> &names,
       double minScore,
       double maxErrorRT,
@@ -503,9 +507,10 @@ namespace nts::filter_suspects
       int minSharedFragments,
       double minCosineSimilarity)
   {
-    for (size_t a = 0; a < nts_data.suspects.size(); ++a)
+    auto &suspect_buffers = nts_data.suspect_buffers();
+    for (size_t a = 0; a < suspect_buffers.size(); ++a)
     {
-      nts::api::NTS_SUSPECTS &sus = nts_data.suspects[a];
+      nts::api::NTS_SUSPECTS &sus = suspect_buffers[a];
       if (sus.size() == 0)
         continue;
 
@@ -622,7 +627,7 @@ namespace nts::filter_suspects
         }
       }
 
-      nts_data.suspects[a] = filtered;
+      suspect_buffers[a] = filtered;
     }
   }
 } // namespace nts::filter_suspects
@@ -631,7 +636,7 @@ namespace nts::filter_suspects
 namespace nts::filter_internal_standards
 {
   void filter_internal_standards_impl(
-      NTS_DATA &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nts_data,
       const std::vector<std::string> &names,
       double minScore,
       double maxErrorRT,
@@ -640,9 +645,10 @@ namespace nts::filter_internal_standards
       int minSharedFragments,
       double minCosineSimilarity)
   {
-    for (size_t a = 0; a < nts_data.internal_standards.size(); ++a)
+    auto &internal_standard_buffers = nts_data.internal_standard_buffers();
+    for (size_t a = 0; a < internal_standard_buffers.size(); ++a)
     {
-      nts::api::NTS_INTERNAL_STANDARDS &istd = nts_data.internal_standards[a];
+      nts::api::NTS_INTERNAL_STANDARDS &istd = internal_standard_buffers[a];
       if (istd.size() == 0)
         continue;
 
@@ -759,7 +765,7 @@ namespace nts::filter_internal_standards
         }
       }
 
-      nts_data.internal_standards[a] = filtered;
+      internal_standard_buffers[a] = filtered;
     }
   }
 } // namespace nts::filter_internal_standards
@@ -917,7 +923,7 @@ namespace nts::filter_features_ms2
   } // anonymous namespace
 
   void filter_features_ms2_impl(
-      NTS_DATA &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nts_data,
       int top,
       float minIntensity,
       float relMinIntensity,
@@ -926,20 +932,25 @@ namespace nts::filter_features_ms2
       float blankPresenceThreshold,
       float globalPresenceThreshold)
   {
-    if (nts_data.analyses.empty())
+    const auto &analysis_names = nts_data.analysis_names();
+    const auto &replicate_names = nts_data.replicate_names();
+    const auto &blank_names = nts_data.blank_names();
+    auto &feature_buffers = nts_data.feature_buffers();
+
+    if (analysis_names.empty())
       return;
 
     // Build blank analysis set
     std::unordered_set<std::string> blank_analyses_set;
-    for (size_t i = 0; i < nts_data.analyses.size(); ++i)
+    for (size_t i = 0; i < analysis_names.size(); ++i)
     {
       // An analysis is a blank if its replicate name is listed as blank
       // (replicates[i] is in blanks[*])
-      for (const auto &b : nts_data.blanks)
+      for (const auto &b : blank_names)
       {
-        if (nts_data.replicates[i] == b)
+        if (replicate_names[i] == b)
         {
-          blank_analyses_set.insert(nts_data.analyses[i]);
+          blank_analyses_set.insert(analysis_names[i]);
           break;
         }
       }
@@ -953,13 +964,13 @@ namespace nts::filter_features_ms2
       std::vector<std::string> blank_uids;
       std::vector<float> blank_all_mz;
 
-      for (size_t a = 0; a < nts_data.analyses.size(); ++a)
+      for (size_t a = 0; a < analysis_names.size(); ++a)
       {
-        const std::string &ana = nts_data.analyses[a];
+        const std::string &ana = analysis_names[a];
         if (blank_analyses_set.find(ana) == blank_analyses_set.end())
           continue;
 
-        const nts::api::NTS_FEATURES &fts = nts_data.features[a];
+        const nts::api::NTS_FEATURES &fts = feature_buffers[a];
         for (int i = 0; i < fts.size(); ++i)
         {
           if (fts.ms2_size[i] <= 0 || fts.ms2_mz[i].empty())
@@ -986,15 +997,15 @@ namespace nts::filter_features_ms2
           // Collect all analyses MS2 for global check
           std::vector<std::string> global_uids;
           std::vector<float> global_all_mz;
-          for (size_t a = 0; a < nts_data.analyses.size(); ++a)
+          for (size_t a = 0; a < analysis_names.size(); ++a)
           {
-            const nts::api::NTS_FEATURES &fts = nts_data.features[a];
+            const nts::api::NTS_FEATURES &fts = feature_buffers[a];
             for (int i = 0; i < fts.size(); ++i)
             {
               if (fts.ms2_size[i] <= 0 || fts.ms2_mz[i].empty())
                 continue;
               std::vector<float> mz = decode_ms2(fts.ms2_mz[i]);
-              std::string uid = nts_data.analyses[a] + "_" + fts.feature[i];
+              std::string uid = analysis_names[a] + "_" + fts.feature[i];
               for (float m : mz)
               {
                 global_uids.push_back(uid);
@@ -1021,9 +1032,9 @@ namespace nts::filter_features_ms2
     // Apply filters to every feature in every analysis
     const bool has_background = !background_mz.empty();
 
-    for (size_t a = 0; a < nts_data.analyses.size(); ++a)
+    for (size_t a = 0; a < analysis_names.size(); ++a)
     {
-      nts::api::NTS_FEATURES &fts = nts_data.features[a];
+      nts::api::NTS_FEATURES &fts = feature_buffers[a];
       for (int i = 0; i < fts.size(); ++i)
       {
         if (fts.ms2_size[i] <= 0 || fts.ms2_mz[i].empty())

@@ -33,8 +33,6 @@ ms_files_mzxml <- c(
   file.path(main_drive, "example_files", "ms_basic_mzxml", "00_hrms_mix1_pos_mzxml_cent-r003.mzXML")
 )
 
-proj$get_cache()
-
 proj <- OpenProjectMassSpecSpectra(
   db = db,
   project_id = "ms-demo",
@@ -71,6 +69,7 @@ proj <- OpenProjectMassSpecSpectra(
   db = db,
   project_id = "ms-demo"
 )
+
 proj
 
 spec <- proj$get_raw_spectra(
@@ -90,20 +89,34 @@ spec <- proj$get_raw_spectra(
   minIntensityMS2 = 0
 )
 
+plot(spec$rt, spec$intensity, type = "l")
 
-plot_spectra_eic(
+plot_raw_spectra_eic(
   proj,
   mass = internal_standards[4:5, ],
   interactive = FALSE
 )
 
-get_raw_spectra_ms2(
+plot_raw_spectra_ms2(
   proj,
-  mass = internal_standards[4:5, ]
+  mass = internal_standards[4:5, ],
+  presence = 0.5
 )
 
+plot_raw_spectra_ms1(
+  proj,
+  mass = internal_standards[4:5, ],
+  presence = 0.5
+)
 
-plot(spec$rt, spec$intensity, type = "l")
+get_chromatograms_headers(proj)
+
+plot_raw_chromatograms(
+  proj,
+  analyses = 1,
+  chromatograms = "TIC",
+  interactive = FALSE
+)
 
 htmlwidgets::saveWidget()
 

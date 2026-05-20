@@ -408,6 +408,10 @@ namespace mass_spec
       double intensity = 0.0;
     };
 
+    std::vector<MS_RAW_SPECTRUM_ROW> merge_raw_spectra_rows(const std::vector<MS_RAW_SPECTRUM_ROW> &spectra,
+                                                            float mz_clust,
+                                                            float presence);
+
     class PROJECT_MASS_SPEC
     {
     public:
@@ -442,8 +446,16 @@ namespace mass_spec
                                                       double rt_min = 0.0,
                                                       double rt_max = 0.0) const;
       std::vector<MS_RAW_SPECTRUM_ROW> get_raw_spectra(const spectra::MS_TARGETS_REQUEST &request) const;
-      std::vector<std::vector<std::vector<float>>> get_chromatograms_data(const std::string &analysis,
-                                                                          const std::vector<int> &indices) const;
+      std::vector<MS_RAW_SPECTRUM_ROW> get_raw_spectra_eic(const spectra::MS_TARGETS_REQUEST &request) const;
+      std::vector<MS_RAW_SPECTRUM_ROW> get_raw_spectra_ms1(const spectra::MS_TARGETS_REQUEST &request,
+                           float mz_clust = 0.003f,
+                           float presence = 0.8f) const;
+      std::vector<MS_RAW_SPECTRUM_ROW> get_raw_spectra_ms2(const spectra::MS_TARGETS_REQUEST &request,
+                           float isolation_window = 1.3f,
+                           float mz_clust = 0.005f,
+                           float presence = 0.0f) const;
+      std::vector<std::vector<std::vector<float>>> get_raw_chromatograms(const std::string &analysis,
+                             const std::vector<int> &indices) const;
 
     private:
       std::shared_ptr<project::api::CONTEXT> ctx_;

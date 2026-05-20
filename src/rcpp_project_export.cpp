@@ -103,15 +103,6 @@ std::string rcpp_project_get_domain(SEXP project_xptr)
 }
 
 // [[Rcpp::export]]
-void rcpp_project_set_domain(SEXP project_xptr, std::string domain)
-{
-  project_rcpp::project_call([&]()
-                             {
-    project_rcpp::project_from_xptr(project_xptr).set_domain(domain);
-    return 0; });
-}
-
-// [[Rcpp::export]]
 SEXP rcpp_project_copy(SEXP project_xptr, std::string db_path, std::string project_id)
 {
   return project_rcpp::project_call([&]()
@@ -533,6 +524,58 @@ namespace mass_spec_rcpp
                              Named("intensity") = intensity);
   }
 
+  DataFrame ms_processed_spectrum_rows_to_df(const std::vector<mass_spec::api::MS_RAW_SPECTRUM_ROW> &rows,
+                                             bool include_precursor = false)
+  {
+    CharacterVector analysis(rows.size());
+    CharacterVector replicate(rows.size());
+    CharacterVector id(rows.size());
+    IntegerVector polarity(rows.size());
+    NumericVector pre_mz(rows.size());
+    NumericVector rt(rows.size());
+    NumericVector mz(rows.size());
+    NumericVector intensity(rows.size());
+    bool has_precursor = false;
+    for (std::size_t i = 0; i < rows.size(); ++i)
+    {
+      analysis[i] = rows[i].analysis;
+      if (rows[i].replicate.empty())
+        replicate[i] = CharacterVector::get_na();
+      else
+        replicate[i] = rows[i].replicate;
+      if (rows[i].id.empty())
+        id[i] = CharacterVector::get_na();
+      else
+        id[i] = rows[i].id;
+      polarity[i] = rows[i].polarity;
+      pre_mz[i] = rows[i].pre_mz;
+      rt[i] = rows[i].rt;
+      mz[i] = rows[i].mz;
+      intensity[i] = rows[i].intensity;
+      has_precursor = has_precursor || std::abs(rows[i].pre_mz) > 0.0;
+    }
+
+    if (include_precursor && has_precursor)
+    {
+      return DataFrame::create(Named("analysis") = analysis,
+                               Named("replicate") = replicate,
+                               Named("id") = id,
+                               Named("polarity") = polarity,
+                               Named("pre_mz") = pre_mz,
+                               Named("rt") = rt,
+                               Named("mz") = mz,
+                               Named("intensity") = intensity);
+    }
+
+    return DataFrame::create(Named("analysis") = analysis,
+                             Named("replicate") = replicate,
+                             Named("id") = id,
+                             Named("polarity") = polarity,
+                             Named("rt") = rt,
+                             Named("mz") = mz,
+                             Named("intensity") = intensity);
+  }
+
   DataFrame ms_chromatograms_to_df(const std::string &analysis,
                                    const std::string &replicate,
                                    const std::vector<mass_spec::api::MS_CHROMATOGRAM_HEADER_ROW> &headers,
@@ -828,6 +871,40 @@ namespace mass_spec_rcpp
     return {};
   }
 
+  mass_spec::spectra::MS_TARGETS_REQUEST build_raw_spectra_request(mass_spec::PROJECT_MASS_SPEC &mass_spec,
+                                                                   SEXP analyses,
+                                                                   std::vector<int> levels,
+                                                                   SEXP mass,
+                                                                   SEXP mz,
+                                                                   SEXP rt,
+                                                                   SEXP mobility,
+                                                                   CharacterVector id,
+                                                                   double ppm,
+                                                                   double sec,
+                                                                   double millisec,
+                                                                   bool all_traces,
+                                                                   double isolation_window,
+                                                                   float min_intensity_ms1,
+                                                                   float min_intensity_ms2)
+  {
+    mass_spec::spectra::MS_TARGETS_REQUEST request;
+    request.analyses = resolve_analysis_selection(analyses, mass_spec);
+    request.levels = std::move(levels);
+    request.mass = ms_targets_input_from_object(mass, "mass");
+    request.mz = ms_targets_input_from_object(mz, "mz");
+    request.rt = ms_targets_input_from_object(rt, "rt");
+    request.mobility = ms_targets_input_from_object(mobility, "mobility");
+    request.id = analyses_from_character_vector(id);
+    request.ppm = ppm;
+    request.sec = sec;
+    request.millisec = millisec;
+    request.all_traces = all_traces;
+    request.isolation_window = isolation_window;
+    request.min_intensity_ms1 = min_intensity_ms1;
+    request.min_intensity_ms2 = min_intensity_ms2;
+    return request;
+  }
+
   struct GroupKey
   {
     std::string analysis;
@@ -1032,21 +1109,23 @@ DataFrame rcpp_project_mass_spec_get_raw_spectra(SEXP mass_spec_xptr,
 {
   return project::api::project_call([&]() {
     auto& mass_spec = mass_spec_rcpp::project_mass_spec_from_xptr(mass_spec_xptr);
-    mass_spec::spectra::MS_TARGETS_REQUEST request;
-    request.analyses = mass_spec_rcpp::resolve_analysis_selection(analyses, mass_spec);
-    request.levels = std::move(levels);
-    request.mass = mass_spec_rcpp::ms_targets_input_from_object(mass, "mass");
-    request.mz = mass_spec_rcpp::ms_targets_input_from_object(mz, "mz");
-    request.rt = mass_spec_rcpp::ms_targets_input_from_object(rt, "rt");
-    request.mobility = mass_spec_rcpp::ms_targets_input_from_object(mobility, "mobility");
-    request.id = mass_spec_rcpp::analyses_from_character_vector(id);
-    request.ppm = ppm;
-    request.sec = sec;
-    request.millisec = millisec;
-    request.all_traces = all_traces;
-    request.isolation_window = isolation_window;
-    request.min_intensity_ms1 = min_intensity_ms1;
-    request.min_intensity_ms2 = min_intensity_ms2;
+    auto request = mass_spec_rcpp::build_raw_spectra_request(
+        mass_spec,
+        analyses,
+        std::move(levels),
+        mass,
+        mz,
+        rt,
+        mobility,
+        id,
+        ppm,
+        sec,
+        millisec,
+        all_traces,
+        isolation_window,
+        min_intensity_ms1,
+        min_intensity_ms2
+    );
     return mass_spec_rcpp::ms_raw_spectrum_rows_to_df(
         mass_spec.get_raw_spectra(request)
     );
@@ -1054,7 +1133,119 @@ DataFrame rcpp_project_mass_spec_get_raw_spectra(SEXP mass_spec_xptr,
 }
 
 // [[Rcpp::export]]
-DataFrame rcpp_project_mass_spec_extract_chromatograms(SEXP mass_spec_xptr,
+DataFrame rcpp_project_mass_spec_get_raw_spectra_eic(SEXP mass_spec_xptr,
+                                                     SEXP analyses,
+                                                     SEXP mass,
+                                                     SEXP mz,
+                                                     SEXP rt,
+                                                     SEXP mobility,
+                                                     CharacterVector id,
+                                                     double ppm,
+                                                     double sec,
+                                                     double millisec)
+{
+  return project::api::project_call([&]() {
+    auto& mass_spec = mass_spec_rcpp::project_mass_spec_from_xptr(mass_spec_xptr);
+    auto request = mass_spec_rcpp::build_raw_spectra_request(
+        mass_spec,
+        analyses,
+        {1},
+        mass,
+        mz,
+        rt,
+        mobility,
+        id,
+        ppm,
+        sec,
+        millisec,
+        true,
+        1.3,
+        0.0f,
+        0.0f
+    );
+    return mass_spec_rcpp::ms_processed_spectrum_rows_to_df(mass_spec.get_raw_spectra_eic(request));
+  });
+}
+
+// [[Rcpp::export]]
+DataFrame rcpp_project_mass_spec_get_raw_spectra_ms1(SEXP mass_spec_xptr,
+                                                     SEXP analyses,
+                                                     SEXP mass,
+                                                     SEXP mz,
+                                                     SEXP rt,
+                                                     SEXP mobility,
+                                                     CharacterVector id,
+                                                     double ppm,
+                                                     double sec,
+                                                     double millisec,
+                                                     float mz_clust,
+                                                     float presence,
+                                                     float min_intensity)
+{
+  return project::api::project_call([&]() {
+    auto& mass_spec = mass_spec_rcpp::project_mass_spec_from_xptr(mass_spec_xptr);
+    auto request = mass_spec_rcpp::build_raw_spectra_request(
+        mass_spec,
+        analyses,
+        {1},
+        mass,
+        mz,
+        rt,
+        mobility,
+        id,
+        ppm,
+        sec,
+        millisec,
+        true,
+        1.3,
+        min_intensity,
+        0.0f
+    );
+    return mass_spec_rcpp::ms_processed_spectrum_rows_to_df(mass_spec.get_raw_spectra_ms1(request, mz_clust, presence));
+  });
+}
+
+// [[Rcpp::export]]
+DataFrame rcpp_project_mass_spec_get_raw_spectra_ms2(SEXP mass_spec_xptr,
+                                                     SEXP analyses,
+                                                     SEXP mass,
+                                                     SEXP mz,
+                                                     SEXP rt,
+                                                     SEXP mobility,
+                                                     CharacterVector id,
+                                                     double ppm,
+                                                     double sec,
+                                                     double millisec,
+                                                     float isolation_window,
+                                                     float mz_clust,
+                                                     float presence,
+                                                     float min_intensity)
+{
+  return project::api::project_call([&]() {
+    auto& mass_spec = mass_spec_rcpp::project_mass_spec_from_xptr(mass_spec_xptr);
+    auto request = mass_spec_rcpp::build_raw_spectra_request(
+        mass_spec,
+        analyses,
+        {2},
+        mass,
+        mz,
+        rt,
+        mobility,
+        id,
+        ppm,
+        sec,
+        millisec,
+        false,
+        isolation_window,
+        0.0f,
+        min_intensity
+    );
+    return mass_spec_rcpp::ms_processed_spectrum_rows_to_df(mass_spec.get_raw_spectra_ms2(request, isolation_window, mz_clust, presence), true);
+  });
+}
+
+// [[Rcpp::export]]
+DataFrame rcpp_project_mass_spec_get_raw_chromatograms(SEXP mass_spec_xptr,
                                                        std::string analysis,
                                                        std::vector<int> indices)
 {
@@ -1062,34 +1253,34 @@ DataFrame rcpp_project_mass_spec_extract_chromatograms(SEXP mass_spec_xptr,
     auto& mass_spec = mass_spec_rcpp::project_mass_spec_from_xptr(mass_spec_xptr);
     const auto analyses = mass_spec.get_analyses();
     const auto analysis_it = std::find_if(analyses.begin(), analyses.end(), [&](const auto& row) {
-        return row.analysis == analysis;
+      return row.analysis == analysis;
     });
     if (analysis_it == analyses.end()) {
-        stop("Mass spec analysis not found: " + analysis);
+      stop("Mass spec analysis not found: " + analysis);
     }
     const auto all_headers = mass_spec.get_chromatograms_headers({analysis});
     std::vector<mass_spec::api::MS_CHROMATOGRAM_HEADER_ROW> selected_headers;
     if (indices.empty()) {
-        selected_headers = all_headers;
-        indices.reserve(all_headers.size());
-        for (const auto& header : all_headers) {
-            indices.push_back(header.index);
-        }
+      selected_headers = all_headers;
+      indices.reserve(all_headers.size());
+      for (const auto& header : all_headers) {
+        indices.push_back(header.index);
+      }
     } else {
-        for (int index : indices) {
-            const auto it = std::find_if(all_headers.begin(), all_headers.end(), [&](const auto& header) {
-                return header.index == index;
-            });
-            if (it != all_headers.end()) {
-                selected_headers.push_back(*it);
-            }
+      for (int index : indices) {
+        const auto it = std::find_if(all_headers.begin(), all_headers.end(), [&](const auto& header) {
+          return header.index == index;
+        });
+        if (it != all_headers.end()) {
+          selected_headers.push_back(*it);
         }
+      }
     }
     return mass_spec_rcpp::ms_chromatograms_to_df(
       analysis,
       analysis_it->replicate,
       selected_headers,
-      mass_spec.get_chromatograms_data(analysis, indices)
+      mass_spec.get_raw_chromatograms(analysis, indices)
     );
   });
 }

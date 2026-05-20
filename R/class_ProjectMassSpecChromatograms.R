@@ -91,103 +91,11 @@ ProjectMassSpecChromatograms <- R6::R6Class(
       data.table::setcolorder(hd, c("analysis", "replicate"))
       hd
     },
-    #' @description Get chromatograms for selected analyses.
-    get_chromatograms = function(
-        analyses = NULL,
-        chromatograms = NULL,
-        rtmin = 0,
-        rtmax = 0,
-        minIntensity = NULL) {
-      chrom_hd <- self$get_chromatograms_headers(analyses)
-      if (nrow(chrom_hd) == 0) {
-        message("\U2717 No chromatograms found for the analyses!")
-        return(data.table::data.table())
-      }
-      if (is.numeric(chromatograms)) {
-        chrom_hd <- chrom_hd[as.integer(chrom_hd$index) == as.integer(chromatograms), ]
-      } else if (is.character(chromatograms)) {
-        chrom_hd <- chrom_hd[chrom_hd$id %in% chromatograms, ]
-      }
-      if (nrow(chrom_hd) == 0) {
-        message("\U2717 No chromatograms found for the specified IDs/indices!")
-        return(data.table::data.table())
-      }
-      sel_analyses <- unique(chrom_hd$analysis)
-      chrom_hd_list <- split(chrom_hd, chrom_hd$analysis)
-      chrom_list <- lapply(sel_analyses, function(aname) {
-        chrom_hd_a <- chrom_hd_list[[aname]]
-        data.table::as.data.table(rcpp_project_mass_spec_chromatograms_extract(
-          private$.mass_spec_chromatograms_ptr,
-          aname,
-          as.integer(chrom_hd_a$index)
-        ))
-      })
-      chrom_dt <- data.table::rbindlist(chrom_list, fill = TRUE)
-      if (nrow(chrom_dt) == 0) {
-        message("\U2717 No chromatogram data found for the specified analyses!")
-        return(data.table::data.table())
-      }
-      if (is.numeric(minIntensity)) {
-        chrom_dt <- chrom_dt[chrom_dt$intensity > minIntensity, ]
-      }
-      if (is.numeric(rtmin) && is.numeric(rtmax) && rtmax > 0) {
-        chrom_dt <- chrom_dt[chrom_dt$rt >= rtmin & chrom_dt$rt <= rtmax]
-      }
-      data.table::setcolorder(chrom_dt, c("analysis", "replicate"))
-      chrom_dt
-    },
-    #' @description Plot chromatograms for selected analyses.
-    plot_chromatograms = function(
-        analyses = NULL,
-        chromatograms = NULL,
-        rtmin = 0,
-        rtmax = 0,
-        minIntensity = NULL,
-        downsize = NULL,
-        xLab = NULL,
-        yLab = NULL,
-        title = NULL,
-        groupBy = "analysis",
-        interactive = TRUE,
-        colorPalette = NULL) {
-      chrom <- self$get_chromatograms(analyses, chromatograms, rtmin, rtmax, minIntensity)
-      if (nrow(chrom) == 0) {
-        message("\U2717 No chromatogram data found for plotting!")
-        return(NULL)
-      }
-      if (!is.null(downsize) && downsize > 0 && nrow(chrom) > downsize) {
-        chrom <- data.table::as.data.table(chrom)
-        chrom$rt <- floor(chrom$rt / downsize) * downsize
-        chrom <- chrom[, lapply(.SD, function(col) {
-          if (is.numeric(col)) {
-            mean(col, na.rm = TRUE)
-          } else if (is.character(col)) {
-            col[1]
-          } else {
-            col[1]
-          }
-        }), by = .(rt, analysis, id)]
-      }
-      if (is.null(xLab)) xLab <- "Retention time / seconds"
-      if (is.null(yLab)) yLab <- "Intensity / counts"
-      .plot_lines_tabular_data(
-        data = chrom,
-        xvar = "rt",
-        yvar = "intensity",
-        groupBy = groupBy,
-        basicGroupBy = "id",
-        interactive = interactive,
-        title = title,
-        xLab = xLab,
-        yLab = yLab,
-        colorPalette = colorPalette
-      )
-    },
     #' @description Print a short summary.
     print = function(...) {
       cat("\nProjectMassSpecChromatograms\n")
-      cat("db: ", self$db, "\n", sep = "")
-      cat("project_id: ", self$project_id, "\n", sep = "")
+      cat("db: ", self$get_db(), "\n", sep = "")
+      cat("project_id: ", self$get_project_id(), "\n", sep = "")
       domain <- try(self$get_domain(), silent = TRUE)
       if (!inherits(domain, "try-error") && !is.null(domain)) {
         cat("domain: ", domain, "\n", sep = "")
@@ -231,56 +139,4 @@ NULL
 get_chromatograms_headers.ProjectMassSpecChromatograms <- function(x, analyses = NULL) {
   checkmate::assert_class(x, "ProjectMassSpecChromatograms")
   x$get_chromatograms_headers(analyses = analyses)
-}
-
-#' @describeIn ProjectMassSpecChromatogramsS3 Get chromatograms for selected analyses.
-#' @export
-get_chromatograms.ProjectMassSpecChromatograms <- function(
-    x,
-    analyses = NULL,
-    chromatograms = NULL,
-    rtmin = 0,
-    rtmax = 0,
-    minIntensity = NULL) {
-  checkmate::assert_class(x, "ProjectMassSpecChromatograms")
-  x$get_chromatograms(
-    analyses = analyses,
-    chromatograms = chromatograms,
-    rtmin = rtmin,
-    rtmax = rtmax,
-    minIntensity = minIntensity
-  )
-}
-
-#' @describeIn ProjectMassSpecChromatogramsS3 Plot chromatograms for selected analyses.
-#' @export
-plot_chromatograms.ProjectMassSpecChromatograms <- function(
-    x,
-    analyses = NULL,
-    chromatograms = NULL,
-    rtmin = 0,
-    rtmax = 0,
-    minIntensity = NULL,
-    downsize = NULL,
-    xLab = NULL,
-    yLab = NULL,
-    title = NULL,
-    groupBy = "analysis",
-    interactive = TRUE,
-    colorPalette = NULL) {
-  checkmate::assert_class(x, "ProjectMassSpecChromatograms")
-  x$plot_chromatograms(
-    analyses = analyses,
-    chromatograms = chromatograms,
-    rtmin = rtmin,
-    rtmax = rtmax,
-    minIntensity = minIntensity,
-    downsize = downsize,
-    xLab = xLab,
-    yLab = yLab,
-    title = title,
-    groupBy = groupBy,
-    interactive = interactive,
-    colorPalette = colorPalette
-  )
 }

@@ -1144,6 +1144,136 @@ namespace nts
       return value;
     }
 
+    NTS_FEATURE_ROW feature_row_from_table(const NTS_FEATURES_TABLE &table, std::size_t row)
+    {
+      NTS_FEATURE_ROW value;
+      value.project_id = table.project_id[row];
+      value.analysis = table.analysis[row];
+      value.feature = table.feature[row];
+      value.feature_component = table.feature_component[row];
+      value.feature_group = table.feature_group[row];
+      value.adduct = table.adduct[row];
+      value.rt = table.rt[row];
+      value.mz = table.mz[row];
+      value.mass = table.mass[row];
+      value.intensity = table.intensity[row];
+      value.noise = table.noise[row];
+      value.sn = table.sn[row];
+      value.area = table.area[row];
+      value.rtmin = table.rtmin[row];
+      value.rtmax = table.rtmax[row];
+      value.width = table.width[row];
+      value.mzmin = table.mzmin[row];
+      value.mzmax = table.mzmax[row];
+      value.ppm = table.ppm[row];
+      value.fwhm_rt = table.fwhm_rt[row];
+      value.fwhm_mz = table.fwhm_mz[row];
+      value.gaussian_A = table.gaussian_A[row];
+      value.gaussian_mu = table.gaussian_mu[row];
+      value.gaussian_sigma = table.gaussian_sigma[row];
+      value.gaussian_r2 = table.gaussian_r2[row];
+      value.jaggedness = table.jaggedness[row];
+      value.sharpness = table.sharpness[row];
+      value.asymmetry = table.asymmetry[row];
+      value.modality = table.modality[row];
+      value.plates = table.plates[row];
+      value.polarity = table.polarity[row];
+      value.filtered = table.filtered[row];
+      value.filter = table.filter[row];
+      value.filled = table.filled[row];
+      value.correction = table.correction[row];
+      value.eic_size = table.eic_size[row];
+      value.eic_rt = table.eic_rt[row];
+      value.eic_mz = table.eic_mz[row];
+      value.eic_intensity = table.eic_intensity[row];
+      value.eic_baseline = table.eic_baseline[row];
+      value.eic_smoothed = table.eic_smoothed[row];
+      value.ms1_size = table.ms1_size[row];
+      value.ms1_mz = table.ms1_mz[row];
+      value.ms1_intensity = table.ms1_intensity[row];
+      value.ms2_size = table.ms2_size[row];
+      value.ms2_mz = table.ms2_mz[row];
+      value.ms2_intensity = table.ms2_intensity[row];
+      value.created_at = table.created_at[row];
+      return value;
+    }
+
+    NTS_SUSPECT_ROW suspect_row_from_table(const NTS_SUSPECTS_TABLE &table, std::size_t row)
+    {
+      NTS_SUSPECT_ROW value;
+      value.project_id = table.project_id[row];
+      value.analysis = table.analysis[row];
+      value.feature = table.feature[row];
+      value.candidate_rank = table.candidate_rank[row];
+      value.name = table.name[row];
+      value.polarity = table.polarity[row];
+      value.db_mass = table.db_mass[row];
+      value.exp_mass = table.exp_mass[row];
+      value.error_mass = table.error_mass[row];
+      value.db_rt = table.db_rt[row];
+      value.exp_rt = table.exp_rt[row];
+      value.error_rt = table.error_rt[row];
+      value.intensity = table.intensity[row];
+      value.area = table.area[row];
+      value.id_level = table.id_level[row];
+      value.score = table.score[row];
+      value.shared_fragments = table.shared_fragments[row];
+      value.cosine_similarity = table.cosine_similarity[row];
+      value.formula = table.formula[row];
+      value.SMILES = table.SMILES[row];
+      value.InChI = table.InChI[row];
+      value.InChIKey = table.InChIKey[row];
+      value.xLogP = table.xLogP[row];
+      value.database_id = table.database_id[row];
+      value.db_ms2_size = table.db_ms2_size[row];
+      value.db_ms2_mz = table.db_ms2_mz[row];
+      value.db_ms2_intensity = table.db_ms2_intensity[row];
+      value.db_ms2_formula = table.db_ms2_formula[row];
+      value.exp_ms2_size = table.exp_ms2_size[row];
+      value.exp_ms2_mz = table.exp_ms2_mz[row];
+      value.exp_ms2_intensity = table.exp_ms2_intensity[row];
+      value.created_at = table.created_at[row];
+      return value;
+    }
+
+    NTS_INTERNAL_STANDARD_ROW internal_standard_row_from_table(const NTS_INTERNAL_STANDARDS_TABLE &table, std::size_t row)
+    {
+      NTS_INTERNAL_STANDARD_ROW value;
+      value.project_id = table.project_id[row];
+      value.analysis = table.analysis[row];
+      value.feature = table.feature[row];
+      value.candidate_rank = table.candidate_rank[row];
+      value.name = table.name[row];
+      value.polarity = table.polarity[row];
+      value.db_mass = table.db_mass[row];
+      value.exp_mass = table.exp_mass[row];
+      value.error_mass = table.error_mass[row];
+      value.db_rt = table.db_rt[row];
+      value.exp_rt = table.exp_rt[row];
+      value.error_rt = table.error_rt[row];
+      value.intensity = table.intensity[row];
+      value.area = table.area[row];
+      value.id_level = table.id_level[row];
+      value.score = table.score[row];
+      value.shared_fragments = table.shared_fragments[row];
+      value.cosine_similarity = table.cosine_similarity[row];
+      value.formula = table.formula[row];
+      value.SMILES = table.SMILES[row];
+      value.InChI = table.InChI[row];
+      value.InChIKey = table.InChIKey[row];
+      value.xLogP = table.xLogP[row];
+      value.database_id = table.database_id[row];
+      value.db_ms2_size = table.db_ms2_size[row];
+      value.db_ms2_mz = table.db_ms2_mz[row];
+      value.db_ms2_intensity = table.db_ms2_intensity[row];
+      value.db_ms2_formula = table.db_ms2_formula[row];
+      value.exp_ms2_size = table.exp_ms2_size[row];
+      value.exp_ms2_mz = table.exp_ms2_mz[row];
+      value.exp_ms2_intensity = table.exp_ms2_intensity[row];
+      value.created_at = table.created_at[row];
+      return value;
+    }
+
     NTS_TRANSFORMATION_PRODUCT_ROW transformation_product_row_from_result(duckdb_result &result, idx_t row)
     {
       NTS_TRANSFORMATION_PRODUCT_ROW value;
@@ -1181,6 +1311,157 @@ namespace nts
       return value;
     }
 
+    namespace
+    {
+      struct FEATURE_METADATA
+      {
+        std::string feature_group;
+        std::string feature_component;
+        std::string adduct;
+      };
+
+      std::vector<std::string> sanitize_query_values(const std::vector<std::string> &values)
+      {
+        std::vector<std::string> out;
+        out.reserve(values.size());
+        for (const auto &value : values)
+        {
+          const auto trimmed = mass_spec::spectra::sanitize_analyses({value});
+          if (!trimmed.empty())
+          {
+            out.push_back(trimmed.front());
+          }
+          else if (!value.empty())
+          {
+            out.push_back(value);
+          }
+        }
+        return out;
+      }
+
+      bool has_target_filters(const NTS_QUERY_REQUEST &query)
+      {
+        return !query.targets.mass.empty() ||
+               !query.targets.mz.empty() ||
+               !query.targets.rt.empty() ||
+               !query.targets.mobility.empty();
+      }
+
+      std::vector<std::string> collect_feature_row_analyses(const std::vector<NTS_FEATURE_ROW> &rows)
+      {
+        std::vector<std::string> analyses;
+        analyses.reserve(rows.size());
+        for (const auto &row : rows)
+        {
+          if (std::find(analyses.begin(), analyses.end(), row.analysis) == analyses.end())
+          {
+            analyses.push_back(row.analysis);
+          }
+        }
+        return analyses;
+      }
+
+      bool matches_feature_target(const NTS_FEATURE_ROW &row,
+                                  const mass_spec::spectra::MS_TARGETS &targets)
+      {
+        for (std::size_t i = 0; i < targets.id.size(); ++i)
+        {
+          if (targets.polarity[i] != 0 && row.polarity != targets.polarity[i])
+          {
+            continue;
+          }
+          if ((targets.mzmin[i] > 0.0f || targets.mzmax[i] > 0.0f) &&
+              (row.mz < targets.mzmin[i] || row.mz > targets.mzmax[i]))
+          {
+            continue;
+          }
+          if ((targets.rtmin[i] > 0.0f || targets.rtmax[i] > 0.0f) &&
+              (row.rt < targets.rtmin[i] || row.rt > targets.rtmax[i]))
+          {
+            continue;
+          }
+          return true;
+        }
+        return false;
+      }
+
+      std::vector<NTS_FEATURE_ROW> filter_feature_rows_by_targets(const std::vector<NTS_FEATURE_ROW> &rows,
+                                                                  const NTS_QUERY_REQUEST &query)
+      {
+        if (rows.empty() || !has_target_filters(query))
+        {
+          return rows;
+        }
+
+        const auto selected_analyses = mass_spec::spectra::sanitize_analyses(
+            query.analyses.empty() ? collect_feature_row_analyses(rows) : query.analyses);
+        if (selected_analyses.empty())
+        {
+          return {};
+        }
+
+        auto targets_by_analysis = mass_spec::spectra::build_targets_by_analysis(
+            query.targets,
+            selected_analyses,
+            {"1", "-1"});
+
+        std::unordered_map<std::string, mass_spec::spectra::MS_TARGETS> targets_lookup;
+        for (std::size_t i = 0; i < selected_analyses.size() && i < targets_by_analysis.size(); ++i)
+        {
+          if (mass_spec::spectra::has_effective_targets(targets_by_analysis[i]))
+          {
+            targets_lookup.emplace(selected_analyses[i], std::move(targets_by_analysis[i]));
+          }
+        }
+
+        if (targets_lookup.empty())
+        {
+          return {};
+        }
+
+        std::vector<NTS_FEATURE_ROW> out;
+        out.reserve(rows.size());
+        for (const auto &row : rows)
+        {
+          const auto it = targets_lookup.find(row.analysis);
+          if (it == targets_lookup.end())
+          {
+            continue;
+          }
+          if (matches_feature_target(row, it->second))
+          {
+            out.push_back(row);
+          }
+        }
+        return out;
+      }
+
+      std::unordered_set<std::string> feature_keys_from_rows(const std::vector<NTS_FEATURE_ROW> &rows)
+      {
+        std::unordered_set<std::string> out;
+        out.reserve(rows.size());
+        for (const auto &row : rows)
+        {
+          out.insert(row.analysis + "\x1f" + row.feature);
+        }
+        return out;
+      }
+
+      std::unordered_map<std::string, FEATURE_METADATA> feature_metadata_from_rows(const std::vector<NTS_FEATURE_ROW> &rows)
+      {
+        std::unordered_map<std::string, FEATURE_METADATA> out;
+        out.reserve(rows.size());
+        for (const auto &row : rows)
+        {
+          out[row.analysis + "\x1f" + row.feature] = FEATURE_METADATA{
+              row.feature_group,
+              row.feature_component,
+              row.adduct};
+        }
+        return out;
+      }
+    }
+
     // MARK: PROJECT_NON_TARGET_ANALYSIS
     PROJECT_NON_TARGET_ANALYSIS::PROJECT_NON_TARGET_ANALYSIS(std::shared_ptr<project::api::CONTEXT> ctx)
         : ctx_(std::move(ctx))
@@ -1191,6 +1472,518 @@ namespace nts
       mass_spec::PROJECT_MASS_SPEC::validate_schema(ctx_);
       create_schema(ctx_);
       validate_schema(ctx_);
+    }
+
+    mass_spec::reader::MS_SPECTRA_HEADERS PROJECT_NON_TARGET_ANALYSIS::spectra_headers_at(std::size_t index) const
+    {
+      if (index >= analysis_names().size())
+      {
+        throw project::error::ERROR(project::error::ERROR_CODE::InvalidArgument, "NTS spectra_headers_at index out of range");
+      }
+
+      if (spectra_headers_cache_.size() != analysis_names().size())
+      {
+        spectra_headers_cache_.assign(analysis_names().size(), std::nullopt);
+      }
+
+      auto &cached = spectra_headers_cache_[index];
+      if (cached.has_value())
+      {
+        return *cached;
+      }
+
+      mass_spec::reader::MS_SPECTRA_HEADERS header;
+      const auto &analysis = analysis_names()[index];
+      for (std::size_t row = 0; row < static_cast<std::size_t>(spectra_headers_table_.size()); ++row)
+      {
+        if (spectra_headers_table_.analysis[row] != analysis)
+        {
+          continue;
+        }
+
+        header.index.push_back(spectra_headers_table_.index[row]);
+        header.scan.push_back(spectra_headers_table_.scan[row]);
+        header.array_length.push_back(spectra_headers_table_.array_length[row]);
+        header.level.push_back(spectra_headers_table_.level[row]);
+        header.mode.push_back(spectra_headers_table_.mode[row]);
+        header.polarity.push_back(spectra_headers_table_.polarity[row]);
+        header.lowmz.push_back(static_cast<float>(spectra_headers_table_.lowmz[row]));
+        header.highmz.push_back(static_cast<float>(spectra_headers_table_.highmz[row]));
+        header.bpmz.push_back(static_cast<float>(spectra_headers_table_.bpmz[row]));
+        header.bpint.push_back(static_cast<float>(spectra_headers_table_.bpint[row]));
+        header.tic.push_back(static_cast<float>(spectra_headers_table_.tic[row]));
+        header.configuration.push_back(spectra_headers_table_.configuration[row]);
+        header.rt.push_back(static_cast<float>(spectra_headers_table_.rt[row]));
+        header.mobility.push_back(static_cast<float>(spectra_headers_table_.mobility[row]));
+        header.window_mz.push_back(static_cast<float>(spectra_headers_table_.window_mz[row]));
+        header.window_mzlow.push_back(static_cast<float>(spectra_headers_table_.window_mzlow[row]));
+        header.window_mzhigh.push_back(static_cast<float>(spectra_headers_table_.window_mzhigh[row]));
+        header.precursor_mz.push_back(static_cast<float>(spectra_headers_table_.precursor_mz[row]));
+        header.precursor_intensity.push_back(static_cast<float>(spectra_headers_table_.precursor_intensity[row]));
+        header.precursor_charge.push_back(spectra_headers_table_.precursor_charge[row]);
+        header.activation_ce.push_back(static_cast<float>(spectra_headers_table_.activation_ce[row]));
+      }
+
+      cached = std::move(header);
+      return *cached;
+    }
+
+    NTS_FEATURES_TABLE PROJECT_NON_TARGET_ANALYSIS::collect_features_table(const NTS_QUERY_REQUEST &query) const
+    {
+      NTS_FEATURES_TABLE table;
+      const auto rows = get_features(query);
+      for (const auto &row : rows)
+      {
+        table.append(row);
+      }
+      return table;
+    }
+
+    NTS_SUSPECTS_TABLE PROJECT_NON_TARGET_ANALYSIS::collect_suspects_table(const NTS_QUERY_REQUEST &query) const
+    {
+      NTS_SUSPECTS_TABLE table;
+      const auto rows = get_suspects(query);
+      for (const auto &row : rows)
+      {
+        table.append(row);
+      }
+      return table;
+    }
+
+    NTS_INTERNAL_STANDARDS_TABLE PROJECT_NON_TARGET_ANALYSIS::collect_internal_standards_table(const NTS_QUERY_REQUEST &query) const
+    {
+      NTS_INTERNAL_STANDARDS_TABLE table;
+      const auto rows = get_internal_standards(query);
+      for (const auto &row : rows)
+      {
+        table.append(row);
+      }
+      return table;
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::materialize_feature_buffers() const
+    {
+      if (feature_buffers_ready_ && feature_buffers_.size() == analysis_names().size())
+      {
+        return;
+      }
+
+      feature_buffers_.assign(analysis_names().size(), NTS_FEATURES());
+      std::unordered_map<std::string, std::size_t> analysis_index;
+      analysis_index.reserve(analysis_names().size());
+      for (std::size_t i = 0; i < analysis_names().size(); ++i)
+      {
+        feature_buffers_[i].set_analysis(analysis_names()[i]);
+        analysis_index.emplace(analysis_names()[i], i);
+      }
+
+      for (std::size_t row = 0; row < static_cast<std::size_t>(features_table_.size()); ++row)
+      {
+        const auto feature_row = feature_row_from_table(features_table_, row);
+        const auto it = analysis_index.find(feature_row.analysis);
+        if (it != analysis_index.end())
+        {
+          feature_buffers_[it->second].append_feature(feature_row);
+        }
+      }
+
+      feature_buffers_ready_ = true;
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::materialize_suspect_buffers() const
+    {
+      if (suspect_buffers_ready_ && suspect_buffers_.size() == analysis_names().size())
+      {
+        return;
+      }
+
+      suspect_buffers_.assign(analysis_names().size(), NTS_SUSPECTS());
+      std::unordered_map<std::string, std::size_t> analysis_index;
+      analysis_index.reserve(analysis_names().size());
+      for (std::size_t i = 0; i < analysis_names().size(); ++i)
+      {
+        analysis_index.emplace(analysis_names()[i], i);
+      }
+
+      for (std::size_t row = 0; row < static_cast<std::size_t>(suspects_table_.size()); ++row)
+      {
+        const auto suspect_row = suspect_row_from_table(suspects_table_, row);
+        const auto it = analysis_index.find(suspect_row.analysis);
+        if (it != analysis_index.end())
+        {
+          suspect_buffers_[it->second].append(suspect_row);
+        }
+      }
+
+      suspect_buffers_ready_ = true;
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::materialize_internal_standard_buffers() const
+    {
+      if (internal_standard_buffers_ready_ && internal_standard_buffers_.size() == analysis_names().size())
+      {
+        return;
+      }
+
+      internal_standard_buffers_.assign(analysis_names().size(), NTS_INTERNAL_STANDARDS());
+      std::unordered_map<std::string, std::size_t> analysis_index;
+      analysis_index.reserve(analysis_names().size());
+      for (std::size_t i = 0; i < analysis_names().size(); ++i)
+      {
+        analysis_index.emplace(analysis_names()[i], i);
+      }
+
+      for (std::size_t row = 0; row < static_cast<std::size_t>(internal_standards_table_.size()); ++row)
+      {
+        const auto standard_row = internal_standard_row_from_table(internal_standards_table_, row);
+        const auto it = analysis_index.find(standard_row.analysis);
+        if (it != analysis_index.end())
+        {
+          internal_standard_buffers_[it->second].append(standard_row);
+        }
+      }
+
+      internal_standard_buffers_ready_ = true;
+    }
+
+    std::vector<NTS_FEATURES> &PROJECT_NON_TARGET_ANALYSIS::feature_buffers()
+    {
+      materialize_feature_buffers();
+      return feature_buffers_;
+    }
+
+    const std::vector<NTS_FEATURES> &PROJECT_NON_TARGET_ANALYSIS::feature_buffers() const
+    {
+      materialize_feature_buffers();
+      return feature_buffers_;
+    }
+
+    std::vector<NTS_SUSPECTS> &PROJECT_NON_TARGET_ANALYSIS::suspect_buffers()
+    {
+      materialize_suspect_buffers();
+      return suspect_buffers_;
+    }
+
+    const std::vector<NTS_SUSPECTS> &PROJECT_NON_TARGET_ANALYSIS::suspect_buffers() const
+    {
+      materialize_suspect_buffers();
+      return suspect_buffers_;
+    }
+
+    std::vector<NTS_INTERNAL_STANDARDS> &PROJECT_NON_TARGET_ANALYSIS::internal_standard_buffers()
+    {
+      materialize_internal_standard_buffers();
+      return internal_standard_buffers_;
+    }
+
+    const std::vector<NTS_INTERNAL_STANDARDS> &PROJECT_NON_TARGET_ANALYSIS::internal_standard_buffers() const
+    {
+      materialize_internal_standard_buffers();
+      return internal_standard_buffers_;
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::load_processing_metadata()
+    {
+      mass_spec::PROJECT_MASS_SPEC project(ctx_);
+      analyses_table_ = project.collect_analyses();
+      spectra_headers_cache_.assign(analysis_names().size(), std::nullopt);
+      feature_buffers_.clear();
+      suspect_buffers_.clear();
+      internal_standard_buffers_.clear();
+      feature_buffers_ready_ = false;
+      suspect_buffers_ready_ = false;
+      internal_standard_buffers_ready_ = false;
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::load_processing_headers()
+    {
+      mass_spec::PROJECT_MASS_SPEC project(ctx_);
+      spectra_headers_table_ = project.collect_spectra_headers(analysis_names());
+      spectra_headers_cache_.assign(analysis_names().size(), std::nullopt);
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::load_processing_features(bool include_filtered)
+    {
+      NTS_QUERY_REQUEST query;
+      query.analyses = analysis_names();
+      query.include_filtered = include_filtered;
+      features_table_ = collect_features_table(query);
+      feature_buffers_.clear();
+      feature_buffers_ready_ = false;
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::load_processing_suspects()
+    {
+      NTS_QUERY_REQUEST query;
+      query.analyses = analysis_names();
+      suspects_table_ = collect_suspects_table(query);
+      suspect_buffers_.clear();
+      suspect_buffers_ready_ = false;
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::load_processing_internal_standards()
+    {
+      NTS_QUERY_REQUEST query;
+      query.analyses = analysis_names();
+      internal_standards_table_ = collect_internal_standards_table(query);
+      internal_standard_buffers_.clear();
+      internal_standard_buffers_ready_ = false;
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::save_processing_features()
+    {
+      const auto &features = feature_buffers();
+      features_table_ = NTS_FEATURES_TABLE();
+      auto guard = mass_spec::api::connect_checked(ctx_);
+      project::db::run_sql(guard.get(), "BEGIN TRANSACTION", "begin save NTS features transaction");
+      try
+      {
+        project::db::run_prepared(
+            guard.get(),
+            "DELETE FROM NTS_FEATURES WHERE project_id = ?",
+            "delete NTS features",
+            [&](duckdb_prepared_statement statement)
+            { duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str()); },
+            [](duckdb_result &) {});
+
+        for (const auto &feature_table : features)
+        {
+          for (int i = 0; i < feature_table.size(); ++i)
+          {
+            auto row = feature_table.get_feature(i);
+            row.project_id = ctx_->project_id;
+            features_table_.append(row);
+            project::db::run_prepared(
+                guard.get(),
+                "INSERT INTO NTS_FEATURES (project_id, analysis, feature, feature_component, feature_group, adduct, rt, mz, mass, intensity, noise, sn, area, rtmin, rtmax, width, mzmin, mzmax, ppm, fwhm_rt, fwhm_mz, gaussian_A, gaussian_mu, gaussian_sigma, gaussian_r2, jaggedness, sharpness, asymmetry, modality, plates, polarity, filtered, filter, filled, correction, eic_size, eic_rt, eic_mz, eic_intensity, eic_baseline, eic_smoothed, ms1_size, ms1_mz, ms1_intensity, ms2_size, ms2_mz, ms2_intensity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "insert NTS feature",
+                [&](duckdb_prepared_statement statement)
+                {
+                  duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str());
+                  duckdb_bind_varchar(statement, 2, row.analysis.c_str());
+                  duckdb_bind_varchar(statement, 3, row.feature.c_str());
+                  project::db::bind_optional_varchar(statement, 4, row.feature_component);
+                  project::db::bind_optional_varchar(statement, 5, row.feature_group);
+                  project::db::bind_optional_varchar(statement, 6, row.adduct);
+                  duckdb_bind_double(statement, 7, row.rt);
+                  duckdb_bind_double(statement, 8, row.mz);
+                  duckdb_bind_double(statement, 9, row.mass);
+                  duckdb_bind_double(statement, 10, row.intensity);
+                  duckdb_bind_double(statement, 11, row.noise);
+                  duckdb_bind_double(statement, 12, row.sn);
+                  duckdb_bind_double(statement, 13, row.area);
+                  duckdb_bind_double(statement, 14, row.rtmin);
+                  duckdb_bind_double(statement, 15, row.rtmax);
+                  duckdb_bind_double(statement, 16, row.width);
+                  duckdb_bind_double(statement, 17, row.mzmin);
+                  duckdb_bind_double(statement, 18, row.mzmax);
+                  duckdb_bind_double(statement, 19, row.ppm);
+                  duckdb_bind_double(statement, 20, row.fwhm_rt);
+                  duckdb_bind_double(statement, 21, row.fwhm_mz);
+                  duckdb_bind_double(statement, 22, row.gaussian_A);
+                  duckdb_bind_double(statement, 23, row.gaussian_mu);
+                  duckdb_bind_double(statement, 24, row.gaussian_sigma);
+                  duckdb_bind_double(statement, 25, row.gaussian_r2);
+                  duckdb_bind_double(statement, 26, row.jaggedness);
+                  duckdb_bind_double(statement, 27, row.sharpness);
+                  duckdb_bind_double(statement, 28, row.asymmetry);
+                  duckdb_bind_int32(statement, 29, row.modality);
+                  duckdb_bind_double(statement, 30, row.plates);
+                  duckdb_bind_int32(statement, 31, row.polarity);
+                  duckdb_bind_boolean(statement, 32, row.filtered);
+                  project::db::bind_optional_varchar(statement, 33, row.filter);
+                  duckdb_bind_boolean(statement, 34, row.filled);
+                  duckdb_bind_double(statement, 35, row.correction);
+                  duckdb_bind_int32(statement, 36, row.eic_size);
+                  project::db::bind_optional_varchar(statement, 37, row.eic_rt);
+                  project::db::bind_optional_varchar(statement, 38, row.eic_mz);
+                  project::db::bind_optional_varchar(statement, 39, row.eic_intensity);
+                  project::db::bind_optional_varchar(statement, 40, row.eic_baseline);
+                  project::db::bind_optional_varchar(statement, 41, row.eic_smoothed);
+                  duckdb_bind_int32(statement, 42, row.ms1_size);
+                  project::db::bind_optional_varchar(statement, 43, row.ms1_mz);
+                  project::db::bind_optional_varchar(statement, 44, row.ms1_intensity);
+                  duckdb_bind_int32(statement, 45, row.ms2_size);
+                  project::db::bind_optional_varchar(statement, 46, row.ms2_mz);
+                  project::db::bind_optional_varchar(statement, 47, row.ms2_intensity);
+                },
+                [](duckdb_result &) {});
+          }
+        }
+
+        project::db::run_sql(guard.get(), "COMMIT", "commit save NTS features transaction");
+      }
+      catch (...)
+      {
+        try
+        {
+          project::db::run_sql(guard.get(), "ROLLBACK", "rollback save NTS features transaction");
+        }
+        catch (...)
+        {
+        }
+        throw;
+      }
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::save_processing_suspects()
+    {
+      const auto &suspects = suspect_buffers();
+      suspects_table_ = NTS_SUSPECTS_TABLE();
+      auto guard = mass_spec::api::connect_checked(ctx_);
+      project::db::run_sql(guard.get(), "BEGIN TRANSACTION", "begin save NTS suspects transaction");
+      try
+      {
+        project::db::run_prepared(
+            guard.get(),
+            "DELETE FROM NTS_SUSPECTS WHERE project_id = ?",
+            "delete NTS suspects",
+            [&](duckdb_prepared_statement statement)
+            { duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str()); },
+            [](duckdb_result &) {});
+
+        for (const auto &suspect_table : suspects)
+        {
+          for (int i = 0; i < suspect_table.size(); ++i)
+          {
+            auto row = suspect_table.get_suspect(i);
+            row.project_id = ctx_->project_id;
+            suspects_table_.append(row);
+            project::db::run_prepared(
+                guard.get(),
+                "INSERT INTO NTS_SUSPECTS (project_id, analysis, feature, candidate_rank, name, polarity, db_mass, exp_mass, error_mass, db_rt, exp_rt, error_rt, intensity, area, id_level, score, shared_fragments, cosine_similarity, formula, SMILES, InChI, InChIKey, xLogP, database_id, db_ms2_size, db_ms2_mz, db_ms2_intensity, db_ms2_formula, exp_ms2_size, exp_ms2_mz, exp_ms2_intensity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "insert NTS suspect",
+                [&](duckdb_prepared_statement statement)
+                {
+                  duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str());
+                  duckdb_bind_varchar(statement, 2, row.analysis.c_str());
+                  duckdb_bind_varchar(statement, 3, row.feature.c_str());
+                  duckdb_bind_int32(statement, 4, row.candidate_rank);
+                  duckdb_bind_varchar(statement, 5, row.name.c_str());
+                  duckdb_bind_int32(statement, 6, row.polarity);
+                  duckdb_bind_double(statement, 7, row.db_mass);
+                  duckdb_bind_double(statement, 8, row.exp_mass);
+                  duckdb_bind_double(statement, 9, row.error_mass);
+                  duckdb_bind_double(statement, 10, row.db_rt);
+                  duckdb_bind_double(statement, 11, row.exp_rt);
+                  duckdb_bind_double(statement, 12, row.error_rt);
+                  duckdb_bind_double(statement, 13, row.intensity);
+                  duckdb_bind_double(statement, 14, row.area);
+                  duckdb_bind_int32(statement, 15, row.id_level);
+                  duckdb_bind_double(statement, 16, row.score);
+                  duckdb_bind_int32(statement, 17, row.shared_fragments);
+                  duckdb_bind_double(statement, 18, row.cosine_similarity);
+                  project::db::bind_optional_varchar(statement, 19, row.formula);
+                  project::db::bind_optional_varchar(statement, 20, row.SMILES);
+                  project::db::bind_optional_varchar(statement, 21, row.InChI);
+                  project::db::bind_optional_varchar(statement, 22, row.InChIKey);
+                  duckdb_bind_double(statement, 23, row.xLogP);
+                  project::db::bind_optional_varchar(statement, 24, row.database_id);
+                  duckdb_bind_int32(statement, 25, row.db_ms2_size);
+                  project::db::bind_optional_varchar(statement, 26, row.db_ms2_mz);
+                  project::db::bind_optional_varchar(statement, 27, row.db_ms2_intensity);
+                  project::db::bind_optional_varchar(statement, 28, row.db_ms2_formula);
+                  duckdb_bind_int32(statement, 29, row.exp_ms2_size);
+                  project::db::bind_optional_varchar(statement, 30, row.exp_ms2_mz);
+                  project::db::bind_optional_varchar(statement, 31, row.exp_ms2_intensity);
+                },
+                [](duckdb_result &) {});
+          }
+        }
+
+        project::db::run_sql(guard.get(), "COMMIT", "commit save NTS suspects transaction");
+      }
+      catch (...)
+      {
+        try
+        {
+          project::db::run_sql(guard.get(), "ROLLBACK", "rollback save NTS suspects transaction");
+        }
+        catch (...)
+        {
+        }
+        throw;
+      }
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::save_processing_internal_standards()
+    {
+      const auto &internal_standards = internal_standard_buffers();
+      internal_standards_table_ = NTS_INTERNAL_STANDARDS_TABLE();
+      auto guard = mass_spec::api::connect_checked(ctx_);
+      project::db::run_sql(guard.get(), "BEGIN TRANSACTION", "begin save NTS internal standards transaction");
+      try
+      {
+        project::db::run_prepared(
+            guard.get(),
+            "DELETE FROM NTS_INTERNAL_STANDARDS WHERE project_id = ?",
+            "delete NTS internal standards",
+            [&](duckdb_prepared_statement statement)
+            { duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str()); },
+            [](duckdb_result &) {});
+
+        for (const auto &internal_table : internal_standards)
+        {
+          for (int i = 0; i < internal_table.size(); ++i)
+          {
+            auto row = internal_table.get_internal_standard(i);
+            row.project_id = ctx_->project_id;
+            internal_standards_table_.append(row);
+            project::db::run_prepared(
+                guard.get(),
+                "INSERT INTO NTS_INTERNAL_STANDARDS (project_id, analysis, feature, candidate_rank, name, polarity, db_mass, exp_mass, error_mass, db_rt, exp_rt, error_rt, intensity, area, id_level, score, shared_fragments, cosine_similarity, formula, SMILES, InChI, InChIKey, xLogP, database_id, db_ms2_size, db_ms2_mz, db_ms2_intensity, db_ms2_formula, exp_ms2_size, exp_ms2_mz, exp_ms2_intensity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "insert NTS internal standard",
+                [&](duckdb_prepared_statement statement)
+                {
+                  duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str());
+                  duckdb_bind_varchar(statement, 2, row.analysis.c_str());
+                  duckdb_bind_varchar(statement, 3, row.feature.c_str());
+                  duckdb_bind_int32(statement, 4, row.candidate_rank);
+                  duckdb_bind_varchar(statement, 5, row.name.c_str());
+                  duckdb_bind_int32(statement, 6, row.polarity);
+                  duckdb_bind_double(statement, 7, row.db_mass);
+                  duckdb_bind_double(statement, 8, row.exp_mass);
+                  duckdb_bind_double(statement, 9, row.error_mass);
+                  duckdb_bind_double(statement, 10, row.db_rt);
+                  duckdb_bind_double(statement, 11, row.exp_rt);
+                  duckdb_bind_double(statement, 12, row.error_rt);
+                  duckdb_bind_double(statement, 13, row.intensity);
+                  duckdb_bind_double(statement, 14, row.area);
+                  duckdb_bind_int32(statement, 15, row.id_level);
+                  duckdb_bind_double(statement, 16, row.score);
+                  duckdb_bind_int32(statement, 17, row.shared_fragments);
+                  duckdb_bind_double(statement, 18, row.cosine_similarity);
+                  project::db::bind_optional_varchar(statement, 19, row.formula);
+                  project::db::bind_optional_varchar(statement, 20, row.SMILES);
+                  project::db::bind_optional_varchar(statement, 21, row.InChI);
+                  project::db::bind_optional_varchar(statement, 22, row.InChIKey);
+                  duckdb_bind_double(statement, 23, row.xLogP);
+                  project::db::bind_optional_varchar(statement, 24, row.database_id);
+                  duckdb_bind_int32(statement, 25, row.db_ms2_size);
+                  project::db::bind_optional_varchar(statement, 26, row.db_ms2_mz);
+                  project::db::bind_optional_varchar(statement, 27, row.db_ms2_intensity);
+                  project::db::bind_optional_varchar(statement, 28, row.db_ms2_formula);
+                  duckdb_bind_int32(statement, 29, row.exp_ms2_size);
+                  project::db::bind_optional_varchar(statement, 30, row.exp_ms2_mz);
+                  project::db::bind_optional_varchar(statement, 31, row.exp_ms2_intensity);
+                },
+                [](duckdb_result &) {});
+          }
+        }
+
+        project::db::run_sql(guard.get(), "COMMIT", "commit save NTS internal standards transaction");
+      }
+      catch (...)
+      {
+        try
+        {
+          project::db::run_sql(guard.get(), "ROLLBACK", "rollback save NTS internal standards transaction");
+        }
+        catch (...)
+        {
+        }
+        throw;
+      }
     }
 
     void PROJECT_NON_TARGET_ANALYSIS::create_schema(const std::shared_ptr<project::api::CONTEXT> &ctx)
@@ -1590,9 +2383,21 @@ namespace nts
         const std::vector<std::string> &analyses,
         bool include_filtered) const
     {
+      NTS_QUERY_REQUEST query;
+      query.analyses = analyses;
+      query.include_filtered = include_filtered;
+      return get_features(query);
+    }
+
+    std::vector<NTS_FEATURE_ROW> PROJECT_NON_TARGET_ANALYSIS::get_features(
+        const NTS_QUERY_REQUEST &query) const
+    {
       auto guard = mass_spec::api::connect_checked(ctx_);
       std::vector<NTS_FEATURE_ROW> out;
-      const auto selected_analyses = mass_spec::spectra::sanitize_analyses(analyses);
+      const auto selected_analyses = mass_spec::spectra::sanitize_analyses(query.analyses);
+      const auto selected_features = sanitize_query_values(query.features);
+      const auto selected_feature_groups = sanitize_query_values(query.feature_groups);
+      const auto selected_feature_components = sanitize_query_values(query.feature_components);
       std::string sql =
           "SELECT project_id, analysis, feature, feature_component, feature_group, adduct, rt, mz, mass, intensity, "
           "noise, sn, area, rtmin, rtmax, width, mzmin, mzmax, ppm, fwhm_rt, fwhm_mz, gaussian_A, gaussian_mu, "
@@ -1600,7 +2405,7 @@ namespace nts
           "filter, filled, correction, eic_size, eic_rt, eic_mz, eic_intensity, eic_baseline, eic_smoothed, "
           "ms1_size, ms1_mz, ms1_intensity, ms2_size, ms2_mz, ms2_intensity, created_at "
           "FROM NTS_FEATURES WHERE project_id = ?";
-      if (!include_filtered)
+      if (!query.include_filtered)
       {
         sql += " AND filtered = FALSE";
       }
@@ -1608,6 +2413,24 @@ namespace nts
       {
         sql += " AND analysis IN (";
         sql += project::db::placeholders(selected_analyses.size());
+        sql += ")";
+      }
+      if (!selected_features.empty())
+      {
+        sql += " AND feature IN (";
+        sql += project::db::placeholders(selected_features.size());
+        sql += ")";
+      }
+      if (!selected_feature_groups.empty())
+      {
+        sql += " AND feature_group IN (";
+        sql += project::db::placeholders(selected_feature_groups.size());
+        sql += ")";
+      }
+      if (!selected_feature_components.empty())
+      {
+        sql += " AND feature_component IN (";
+        sql += project::db::placeholders(selected_feature_components.size());
         sql += ")";
       }
       sql += " ORDER BY lower(analysis), analysis, mz, rt, feature";
@@ -1618,9 +2441,173 @@ namespace nts
                          duckdb_bind_varchar(statement, bind_index++, ctx_->project_id.c_str());
                          for (const auto& analysis : selected_analyses) {
                            duckdb_bind_varchar(statement, bind_index++, analysis.c_str());
+                         }
+                         for (const auto& feature : selected_features) {
+                           duckdb_bind_varchar(statement, bind_index++, feature.c_str());
+                         }
+                         for (const auto& group : selected_feature_groups) {
+                           duckdb_bind_varchar(statement, bind_index++, group.c_str());
+                         }
+                         for (const auto& component : selected_feature_components) {
+                           duckdb_bind_varchar(statement, bind_index++, component.c_str());
                          } }, [&](duckdb_result &result)
                                 { out = project::db::rows_from_result(&result, [&](idx_t row)
                                                                       { return feature_row_from_result(result, row); }); });
+      return filter_feature_rows_by_targets(out, query);
+    }
+
+    std::vector<NTS_SUSPECT_ROW> PROJECT_NON_TARGET_ANALYSIS::get_suspects(const NTS_QUERY_REQUEST &query) const
+    {
+      auto guard = mass_spec::api::connect_checked(ctx_);
+      std::vector<NTS_SUSPECT_ROW> out;
+      const auto selected_analyses = mass_spec::spectra::sanitize_analyses(query.analyses);
+
+      std::string sql =
+          "SELECT project_id, analysis, feature, candidate_rank, name, polarity, db_mass, exp_mass, error_mass, db_rt, exp_rt, error_rt, intensity, area, id_level, score, shared_fragments, cosine_similarity, formula, SMILES, InChI, InChIKey, xLogP, database_id, db_ms2_size, db_ms2_mz, db_ms2_intensity, db_ms2_formula, exp_ms2_size, exp_ms2_mz, exp_ms2_intensity, created_at "
+          "FROM NTS_SUSPECTS WHERE project_id = ?";
+      if (!selected_analyses.empty())
+      {
+        sql += " AND analysis IN (";
+        sql += project::db::placeholders(selected_analyses.size());
+        sql += ")";
+      }
+      sql += " ORDER BY lower(analysis), analysis, feature, candidate_rank, name";
+
+      project::db::run_prepared(guard.get(), sql, "query NTS suspect rows", [&](duckdb_prepared_statement statement)
+                                {
+                         idx_t bind_index = 1;
+                         duckdb_bind_varchar(statement, bind_index++, ctx_->project_id.c_str());
+                         for (const auto& analysis : selected_analyses) {
+                           duckdb_bind_varchar(statement, bind_index++, analysis.c_str());
+                         } }, [&](duckdb_result &result)
+                                { out = project::db::rows_from_result(&result, [&](idx_t row)
+                                                                      { return suspect_row_from_result(result, row); }); });
+
+      if (out.empty())
+      {
+        return out;
+      }
+
+      auto feature_query = query;
+      feature_query.include_filtered = true;
+      const auto feature_rows = get_features(feature_query);
+
+      if (!query.features.empty() || !query.feature_groups.empty() || !query.feature_components.empty() || has_target_filters(query))
+      {
+        const auto keys = feature_keys_from_rows(feature_rows);
+        if (keys.empty())
+        {
+          return {};
+        }
+        std::vector<NTS_SUSPECT_ROW> filtered;
+        filtered.reserve(out.size());
+        for (const auto &row : out)
+        {
+          if (keys.find(row.analysis + "\x1f" + row.feature) != keys.end())
+          {
+            filtered.push_back(row);
+          }
+        }
+        out = std::move(filtered);
+      }
+
+      const auto metadata = feature_metadata_from_rows(feature_rows);
+      for (auto &row : out)
+      {
+        const auto it = metadata.find(row.analysis + "\x1f" + row.feature);
+        if (it != metadata.end())
+        {
+          row.feature_group = it->second.feature_group;
+        }
+      }
+
+      return out;
+    }
+
+    std::vector<NTS_INTERNAL_STANDARD_ROW> PROJECT_NON_TARGET_ANALYSIS::get_internal_standards(const NTS_QUERY_REQUEST &query) const
+    {
+      auto guard = mass_spec::api::connect_checked(ctx_);
+      std::vector<NTS_INTERNAL_STANDARD_ROW> out;
+      const auto selected_analyses = mass_spec::spectra::sanitize_analyses(query.analyses);
+
+      std::string sql =
+          "SELECT project_id, analysis, feature, candidate_rank, name, polarity, db_mass, exp_mass, error_mass, db_rt, exp_rt, error_rt, intensity, area, id_level, score, shared_fragments, cosine_similarity, formula, SMILES, InChI, InChIKey, xLogP, database_id, db_ms2_size, db_ms2_mz, db_ms2_intensity, db_ms2_formula, exp_ms2_size, exp_ms2_mz, exp_ms2_intensity, created_at "
+          "FROM NTS_INTERNAL_STANDARDS WHERE project_id = ?";
+      if (!selected_analyses.empty())
+      {
+        sql += " AND analysis IN (";
+        sql += project::db::placeholders(selected_analyses.size());
+        sql += ")";
+      }
+      sql += " ORDER BY lower(analysis), analysis, feature, candidate_rank, name";
+
+      project::db::run_prepared(guard.get(), sql, "query NTS internal standard rows", [&](duckdb_prepared_statement statement)
+                                {
+                         idx_t bind_index = 1;
+                         duckdb_bind_varchar(statement, bind_index++, ctx_->project_id.c_str());
+                         for (const auto& analysis : selected_analyses) {
+                           duckdb_bind_varchar(statement, bind_index++, analysis.c_str());
+                         } }, [&](duckdb_result &result)
+                                { out = project::db::rows_from_result(&result, [&](idx_t row)
+                                                                      { return internal_standard_row_from_result(result, row); }); });
+
+      if (out.empty())
+      {
+        return out;
+      }
+
+      auto feature_query = query;
+      feature_query.include_filtered = true;
+      const auto feature_rows = get_features(feature_query);
+
+      if (!query.features.empty() || !query.feature_groups.empty() || !query.feature_components.empty() || has_target_filters(query))
+      {
+        const auto keys = feature_keys_from_rows(feature_rows);
+        if (keys.empty())
+        {
+          return {};
+        }
+        std::vector<NTS_INTERNAL_STANDARD_ROW> filtered;
+        filtered.reserve(out.size());
+        for (const auto &row : out)
+        {
+          if (keys.find(row.analysis + "\x1f" + row.feature) != keys.end())
+          {
+            filtered.push_back(row);
+          }
+        }
+        out = std::move(filtered);
+      }
+
+      const auto metadata = feature_metadata_from_rows(feature_rows);
+      for (auto &row : out)
+      {
+        const auto it = metadata.find(row.analysis + "\x1f" + row.feature);
+        if (it != metadata.end())
+        {
+          row.feature_group = it->second.feature_group;
+          row.feature_component = it->second.feature_component;
+          row.adduct = it->second.adduct;
+        }
+      }
+
+      return out;
+    }
+
+    std::vector<NTS_TRANSFORMATION_PRODUCT_ROW> PROJECT_NON_TARGET_ANALYSIS::get_transformation_products() const
+    {
+      auto guard = mass_spec::api::connect_checked(ctx_);
+      std::vector<NTS_TRANSFORMATION_PRODUCT_ROW> out;
+      const std::string sql =
+          "SELECT project_id, name, formula, mass, SMILES, InChI, InChIKey, xLogP, transformation, precursor_name, precursor_formula, precursor_mass, precursor_SMILES, precursor_InChI, precursor_InChIKey, precursor_xLogP, main_precursor_name, main_precursor_formula, main_precursor_mass, main_precursor_SMILES, main_precursor_InChI, main_precursor_InChIKey, main_precursor_xLogP, feature_group, precursor_feature_group, main_precursor_feature_group, cosine_similarity, main_precursor_cosine_similarity, rt_plausibility, main_precursor_rt_plausibility, created_at "
+          "FROM NTS_TRANSFORMATION_PRODUCTS WHERE project_id = ? "
+          "ORDER BY lower(name), name, lower(transformation), transformation";
+
+      project::db::run_prepared(guard.get(), sql, "query NTS transformation product rows", [&](duckdb_prepared_statement statement)
+                                {
+                         duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str()); }, [&](duckdb_result &result)
+                                { out = project::db::rows_from_result(&result, [&](idx_t row)
+                                                                      { return transformation_product_row_from_result(result, row); }); });
       return out;
     }
 
@@ -1629,7 +2616,7 @@ namespace nts
 } // namespace nts
 
 // MARK: load_features_ms1
-void nts::NTS_DATA::load_features_ms1(
+void nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms1(
     bool filtered,
     const std::vector<float> &rtWindow,
     const std::vector<float> &mzWindow,
@@ -1637,6 +2624,12 @@ void nts::NTS_DATA::load_features_ms1(
     float mzClust,
     float presence)
 {
+  load_processing_metadata();
+  load_processing_headers();
+  load_processing_features(true);
+
+  auto &features = feature_buffers();
+  const auto &files = file_paths();
   const bool hasRtWindow = rtWindow.size() >= 2;
   const bool hasMzWindow = mzWindow.size() >= 2;
 
@@ -1701,7 +2694,7 @@ void nts::NTS_DATA::load_features_ms1(
     if (!std::filesystem::exists(file_i))
       continue;
 
-    const mass_spec::reader::MS_SPECTRA_HEADERS &header_i = headers[i];
+    const auto header_i = spectra_headers_at(i);
 
     mass_spec::reader::MS_FILE ana(file_i);
     mass_spec::spectra::MS_TARGETS_SPECTRA res = ana.get_spectra_targets(targets, header_i, minTracesIntensity, 0);
@@ -1731,16 +2724,24 @@ void nts::NTS_DATA::load_features_ms1(
       fts_i.set_feature(j, ft_j);
     }
   }
+
+  save_processing_features();
 }
 
 // MARK: load_features_ms2
-void nts::NTS_DATA::load_features_ms2(
+void nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
     bool filtered,
     float minTracesIntensity,
     float isolationWindow,
     float mzClust,
     float presence)
 {
+  load_processing_metadata();
+  load_processing_headers();
+  load_processing_features(true);
+
+  auto &features = feature_buffers();
+  const auto &files = file_paths();
   for (size_t i = 0; i < features.size(); i++)
   {
     nts::api::NTS_FEATURES &fts_i = features[i];
@@ -1783,7 +2784,7 @@ void nts::NTS_DATA::load_features_ms2(
     if (!std::filesystem::exists(file_i))
       continue;
 
-    const mass_spec::reader::MS_SPECTRA_HEADERS &header_i = headers[i];
+    const auto header_i = spectra_headers_at(i);
 
     mass_spec::reader::MS_FILE ana(file_i);
     mass_spec::spectra::MS_TARGETS_SPECTRA res = ana.get_spectra_targets(targets, header_i, 0, minTracesIntensity);
@@ -1813,4 +2814,6 @@ void nts::NTS_DATA::load_features_ms2(
       fts_i.set_feature(j, ft_j);
     }
   }
+
+  save_processing_features();
 }

@@ -17,8 +17,6 @@ R6 child of \code{ProjectMassSpec} exposing the chromatogram-focused MassSpec in
 \item \href{#method-ProjectMassSpecChromatograms-get_mass_spec_chromatograms_ptr}{\code{ProjectMassSpecChromatograms$get_mass_spec_chromatograms_ptr()}}
 \item \href{#method-ProjectMassSpecChromatograms-available_processing_methods}{\code{ProjectMassSpecChromatograms$available_processing_methods()}}
 \item \href{#method-ProjectMassSpecChromatograms-get_chromatograms_headers}{\code{ProjectMassSpecChromatograms$get_chromatograms_headers()}}
-\item \href{#method-ProjectMassSpecChromatograms-get_chromatograms}{\code{ProjectMassSpecChromatograms$get_chromatograms()}}
-\item \href{#method-ProjectMassSpecChromatograms-plot_chromatograms}{\code{ProjectMassSpecChromatograms$plot_chromatograms()}}
 \item \href{#method-ProjectMassSpecChromatograms-print}{\code{ProjectMassSpecChromatograms$print()}}
 \item \href{#method-ProjectMassSpecChromatograms-show}{\code{ProjectMassSpecChromatograms$show()}}
 }
@@ -51,6 +49,7 @@ R6 child of \code{ProjectMassSpec} exposing the chromatogram-focused MassSpec in
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_blank_names"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_blank_names'><code>StreamFind::ProjectMassSpec$get_blank_names()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_concentrations"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_concentrations'><code>StreamFind::ProjectMassSpec$get_concentrations()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_mass_spec_ptr"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_mass_spec_ptr'><code>StreamFind::ProjectMassSpec$get_mass_spec_ptr()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_raw_chromatograms"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_raw_chromatograms'><code>StreamFind::ProjectMassSpec$get_raw_chromatograms()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_raw_spectra"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_raw_spectra'><code>StreamFind::ProjectMassSpec$get_raw_spectra()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_raw_spectra_eic"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_raw_spectra_eic'><code>StreamFind::ProjectMassSpec$get_raw_spectra_eic()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_raw_spectra_ms1"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_raw_spectra_ms1'><code>StreamFind::ProjectMassSpec$get_raw_spectra_ms1()</code></a></span></li>
@@ -58,7 +57,10 @@ R6 child of \code{ProjectMassSpec} exposing the chromatogram-focused MassSpec in
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_replicate_names"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_replicate_names'><code>StreamFind::ProjectMassSpec$get_replicate_names()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_spectra_headers"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_spectra_headers'><code>StreamFind::ProjectMassSpec$get_spectra_headers()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="get_spectra_tic"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-get_spectra_tic'><code>StreamFind::ProjectMassSpec$get_spectra_tic()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="plot_raw_chromatograms"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-plot_raw_chromatograms'><code>StreamFind::ProjectMassSpec$plot_raw_chromatograms()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="plot_raw_spectra_eic"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-plot_raw_spectra_eic'><code>StreamFind::ProjectMassSpec$plot_raw_spectra_eic()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="plot_raw_spectra_ms1"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-plot_raw_spectra_ms1'><code>StreamFind::ProjectMassSpec$plot_raw_spectra_ms1()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="plot_raw_spectra_ms2"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-plot_raw_spectra_ms2'><code>StreamFind::ProjectMassSpec$plot_raw_spectra_ms2()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="plot_spectra_bpc"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-plot_spectra_bpc'><code>StreamFind::ProjectMassSpec$plot_spectra_bpc()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="plot_spectra_tic"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-plot_spectra_tic'><code>StreamFind::ProjectMassSpec$plot_spectra_tic()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="ProjectMassSpec" data-id="remove_analyses"><a href='../../StreamFind/html/ProjectMassSpec.html#method-ProjectMassSpec-remove_analyses'><code>StreamFind::ProjectMassSpec$remove_analyses()</code></a></span></li>
@@ -139,97 +141,6 @@ object.}
 
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ProjectMassSpecChromatograms-get_chromatograms"></a>}}
-\if{latex}{\out{\hypertarget{method-ProjectMassSpecChromatograms-get_chromatograms}{}}}
-\subsection{Method \code{get_chromatograms()}}{
-Get chromatograms for selected analyses.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpecChromatograms$get_chromatograms(
-  analyses = NULL,
-  chromatograms = NULL,
-  rtmin = 0,
-  rtmax = 0,
-  minIntensity = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{chromatograms}}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
-
-\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
-
-\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
-
-\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ProjectMassSpecChromatograms-plot_chromatograms"></a>}}
-\if{latex}{\out{\hypertarget{method-ProjectMassSpecChromatograms-plot_chromatograms}{}}}
-\subsection{Method \code{plot_chromatograms()}}{
-Plot chromatograms for selected analyses.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpecChromatograms$plot_chromatograms(
-  analyses = NULL,
-  chromatograms = NULL,
-  rtmin = 0,
-  rtmax = 0,
-  minIntensity = NULL,
-  downsize = NULL,
-  xLab = NULL,
-  yLab = NULL,
-  title = NULL,
-  groupBy = "analysis",
-  interactive = TRUE,
-  colorPalette = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{chromatograms}}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
-
-\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
-
-\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
-
-\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
-
-\item{\code{downsize}}{An integer of length one to downsize the TIC plot. The default is 1.}
-
-\item{\code{xLab}}{X axis label for the plot.}
-
-\item{\code{yLab}}{Y axis label for the plot.}
-
-\item{\code{title}}{Plot title.}
-
-\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
-
-\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
-
-\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 }
 \if{html}{\out{</div>}}
 }

@@ -40,89 +40,13 @@
 #' @template arg-ellipsis
 #' @keywords internal
 #' @export
+
 ProjectNonTargetAnalysis <- R6::R6Class(
   classname = "ProjectNonTargetAnalysis",
   inherit = ProjectMassSpec,
   cloneable = FALSE,
   private = list(
-    .nts_ptr = NULL,
-    .resolve_selected_analyses = function(analyses = NULL) {
-      analyses_info <- data.table::as.data.table(self$list_analyses())
-      all_names <- analyses_info$analysis
-      list(
-        info = analyses_info,
-        selected = .resolve_analyses_selection(analyses, all_names)
-      )
-    },
-    .parse_selection = function(sel, column, aliases = character(0)) {
-      res <- list(values = NULL, analyses = NULL, ids = NULL)
-      if (is.null(sel)) {
-        return(res)
-      }
-      col_opts <- c(column, aliases)
-      if (is.data.frame(sel)) {
-        col_match <- col_opts[col_opts %in% colnames(sel)]
-        if (length(col_match) == 0) {
-          stop(sprintf(
-            "Selection for '%s' must include one of the following columns: %s",
-            column,
-            paste(col_opts, collapse = ", ")
-          ))
-        }
-        res$values <- sel[[col_match[1]]]
-        if ("analysis" %in% colnames(sel)) {
-          res$analyses <- unique(sel$analysis)
-        }
-        if ("name" %in% colnames(sel)) {
-          res$ids <- sel$name
-        }
-      } else {
-        res$values <- sel
-        if (!is.null(names(sel))) {
-          res$ids <- names(sel)
-        }
-      }
-      if (!is.null(res$ids)) {
-        names(res$ids) <- res$values
-      }
-      res
-    },
-    .build_targets = function(analyses_info, sel_names, mass, mz, rt, mobility, ppm, sec, millisec) {
-      pols <- analyses_info$polarity
-      names(pols) <- analyses_info$analysis
-      pols <- pols[sel_names]
-      if (!is.null(pols)) {
-        pols_chr <- as.character(pols)
-        if (any(grepl("[,;/ ]", pols_chr))) {
-          pol_tokens <- unique(unlist(strsplit(pols_chr, "[,;/ ]+")))
-          pol_tokens <- pol_tokens[pol_tokens != ""]
-          pol_tokens[pol_tokens %in% "positive"] <- "1"
-          pol_tokens[pol_tokens %in% "negative"] <- "-1"
-          pols <- pol_tokens
-          names(pols) <- NULL
-        }
-      }
-      MassSpecTargets(mass, mz, rt, mobility, ppm, sec, millisec, NULL, sel_names, pols)
-    },
-    .format_feature_rows = function(rows, analyses_info = NULL) {
-      fts <- data.table::as.data.table(rows)
-      if (nrow(fts) == 0) {
-        return(data.table::data.table())
-      }
-      if ("project_id" %in% colnames(fts)) {
-        fts[, project_id := NULL]
-      }
-      if (!is.null(analyses_info) && nrow(analyses_info) > 0) {
-        rep_map <- data.table::data.table(
-          analysis = analyses_info$analysis,
-          replicate = analyses_info$replicate
-        )
-        fts <- merge(fts, rep_map, by = "analysis", all.x = TRUE)
-        desired_order <- c("analysis", "replicate", "feature")
-        data.table::setcolorder(fts, c(desired_order, setdiff(colnames(fts), desired_order)))
-      }
-      fts
-    }
+    .nts_ptr = NULL
   ),
   public = list(
     #' @description Create an NTS domain wrapper on top of a shared Mass Spec project.
@@ -163,20 +87,21 @@ ProjectNonTargetAnalysis <- R6::R6Class(
         ppm = 20,
         sec = 60,
         millisec = 5) {
-      selection <- private$.resolve_selected_analyses(analyses)
-      analyses_info <- selection$info
-      sel_names <- selection$selected
+      analyses_info <- data.table::as.data.table(self$get_analyses())
+      sel_names <- .resolve_analyses_selection(analyses, analyses_info$analysis)
       if (length(sel_names) == 0) {
         return(data.table::data.table())
       }
-      targets <- private$.build_targets(analyses_info, sel_names, mass, mz, rt, mobility, ppm, sec, millisec)
       suspects <- data.table::as.data.table(
         rcpp_project_non_target_analysis_get_suspects(
           private$.nts_ptr,
           sel_names,
           features,
           groups,
-          targets,
+          mass,
+          mz,
+          rt,
+          mobility,
           ppm,
           sec,
           millisec
@@ -193,14 +118,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
         replicate = analyses_info$replicate
       )
       suspects <- merge(suspects, rep_map, by = "analysis", all.x = TRUE)
-      feature_map <- self$get_features(analyses = sel_names, filtered = TRUE)[
-        , .(analysis, feature, feature_group)
-      ]
-      if (nrow(feature_map) > 0) {
-        suspects <- merge(suspects, feature_map, by = c("analysis", "feature"), all.x = TRUE)
-      } else {
-        suspects[, feature_group := NA_character_]
-      }
       desired_order <- c("analysis", "replicate", "feature", "feature_group")
       data.table::setcolorder(suspects, c(intersect(desired_order, colnames(suspects)), setdiff(colnames(suspects), desired_order)))
       suspects
@@ -217,20 +134,21 @@ ProjectNonTargetAnalysis <- R6::R6Class(
         ppm = 20,
         sec = 60,
         millisec = 5) {
-      selection <- private$.resolve_selected_analyses(analyses)
-      analyses_info <- selection$info
-      sel_names <- selection$selected
+      analyses_info <- data.table::as.data.table(self$get_analyses())
+      sel_names <- .resolve_analyses_selection(analyses, analyses_info$analysis)
       if (length(sel_names) == 0) {
         return(data.table::data.table())
       }
-      targets <- private$.build_targets(analyses_info, sel_names, mass, mz, rt, mobility, ppm, sec, millisec)
       internal_standards <- data.table::as.data.table(
         rcpp_project_non_target_analysis_get_internal_standards(
           private$.nts_ptr,
           sel_names,
           features,
           groups,
-          targets,
+          mass,
+          mz,
+          rt,
+          mobility,
           ppm,
           sec,
           millisec
@@ -247,14 +165,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
         replicate = analyses_info$replicate
       )
       internal_standards <- merge(internal_standards, rep_map, by = "analysis", all.x = TRUE)
-      feature_map <- self$get_features(analyses = sel_names, filtered = TRUE)[
-        , .(analysis, feature, feature_group, feature_component, adduct)
-      ]
-      if (nrow(feature_map) > 0) {
-        internal_standards <- merge(internal_standards, feature_map, by = c("analysis", "feature"), all.x = TRUE)
-      } else {
-        internal_standards[, `:=`(feature_group = NA_character_, feature_component = NA_character_, adduct = NA_character_)]
-      }
       col_order <- c("analysis", "replicate", "feature", "feature_group", "feature_component", "adduct", "polarity")
       data.table::setcolorder(internal_standards, c(intersect(col_order, colnames(internal_standards)), setdiff(colnames(internal_standards), col_order)))
       internal_standards
@@ -328,59 +238,65 @@ ProjectNonTargetAnalysis <- R6::R6Class(
         sec = 60,
         millisec = 5,
         filtered = FALSE) {
-      feat_sel <- private$.parse_selection(features, "feature")
-      grp_sel <- private$.parse_selection(groups, "feature_group", c("group"))
-      comp_sel <- private$.parse_selection(components, "feature_component", c("component"))
-      selection <- private$.resolve_selected_analyses(unique(c(analyses, feat_sel$analyses, grp_sel$analyses, comp_sel$analyses)))
-      analyses_info <- selection$info
-      sel_names <- selection$selected
+      analyses_info <- data.table::as.data.table(self$get_analyses())
+      sel_names <- .resolve_analyses_selection(analyses, analyses_info$analysis)
       if (length(sel_names) == 0) {
         return(data.table::data.table())
       }
-      fts <- private$.format_feature_rows(
-        rcpp_project_non_target_analysis_get_features(private$.nts_ptr, sel_names, filtered)
-      , analyses_info = analyses_info)
+      fts <- data.table::as.data.table(
+        rcpp_project_non_target_analysis_get_features(
+          private$.nts_ptr,
+          sel_names,
+          features,
+          groups,
+          components,
+          mass,
+          mz,
+          rt,
+          mobility,
+          ppm,
+          sec,
+          millisec,
+          filtered
+        )
+      )
       if (nrow(fts) == 0) {
-        return(fts)
+        return(data.table::data.table())
       }
-      if (!is.null(feat_sel$values)) {
-        fts <- fts[feature %in% feat_sel$values]
+      if ("project_id" %in% colnames(fts)) {
+        fts[, project_id := NULL]
       }
-      if (!is.null(grp_sel$values)) {
-        fts <- fts[feature_group %in% grp_sel$values]
+      rep_map <- analyses_info[, .(analysis, replicate)]
+      fts <- merge(fts, rep_map, by = "analysis", all.x = TRUE)
+      if (is.data.frame(features) && "name" %in% colnames(features) && "feature" %in% colnames(features)) {
+        labels <- setNames(features$name, features$feature)
+        fts[, name := unname(labels[feature])]
+      } else if (!is.null(features) && !is.null(names(features))) {
+        labels <- setNames(names(features), as.character(features))
+        fts[, name := unname(labels[feature])]
       }
-      if (!is.null(comp_sel$values)) {
-        fts <- fts[feature_component %in% comp_sel$values]
-      }
-      if (!is.null(mass) || !is.null(mz) || !is.null(rt) || !is.null(mobility)) {
-        targets <- private$.build_targets(analyses_info, sel_names, mass, mz, rt, mobility, ppm, sec, millisec)
-        if (nrow(targets) > 0) {
-          keep_idx <- rep(FALSE, nrow(fts))
-          for (i in seq_len(nrow(targets))) {
-            tgt <- targets[i, ]
-            match_idx <- fts$analysis %in% tgt$analysis
-            if ("polarity" %in% colnames(fts)) {
-              match_idx <- match_idx & fts$polarity %in% tgt$polarity
-            }
-            if ((tgt$mzmin > 0 || tgt$mzmax > 0)) {
-              match_idx <- match_idx & fts$mz >= tgt$mzmin & fts$mz <= tgt$mzmax
-            }
-            if ((tgt$rtmin > 0 || tgt$rtmax > 0)) {
-              match_idx <- match_idx & fts$rt >= tgt$rtmin & fts$rt <= tgt$rtmax
-            }
-            keep_idx <- keep_idx | match_idx
-            if (!is.na(tgt$id) && tgt$id != "") {
-              fts$name[match_idx] <- tgt$id
-            }
-          }
-          fts <- fts[keep_idx]
-        } else {
-          fts <- fts[0]
+      if (is.data.frame(groups) && "name" %in% colnames(groups)) {
+        group_col <- intersect(c("feature_group", "group"), colnames(groups))
+        if (length(group_col) > 0) {
+          labels <- setNames(groups$name, groups[[group_col[1]]])
+          fts[, name := unname(labels[feature_group])]
         }
+      } else if (!is.null(groups) && !is.null(names(groups))) {
+        labels <- setNames(names(groups), as.character(groups))
+        fts[, name := unname(labels[feature_group])]
       }
-      if (!is.null(feat_sel$ids)) fts$name <- feat_sel$ids[fts$feature]
-      if (!is.null(grp_sel$ids)) fts$name <- grp_sel$ids[fts$feature_group]
-      if (!is.null(comp_sel$ids)) fts$name <- comp_sel$ids[fts$feature_component]
+      if (is.data.frame(components) && "name" %in% colnames(components)) {
+        component_col <- intersect(c("feature_component", "component"), colnames(components))
+        if (length(component_col) > 0) {
+          labels <- setNames(components$name, components[[component_col[1]]])
+          fts[, name := unname(labels[feature_component])]
+        }
+      } else if (!is.null(components) && !is.null(names(components))) {
+        labels <- setNames(names(components), as.character(components))
+        fts[, name := unname(labels[feature_component])]
+      }
+      desired_order <- c("analysis", "replicate", "feature")
+      data.table::setcolorder(fts, c(intersect(desired_order, colnames(fts)), setdiff(colnames(fts), desired_order)))
       fts
     },
     #' @description Return feature-group profiles across analyses.
@@ -444,7 +360,7 @@ ProjectNonTargetAnalysis <- R6::R6Class(
     },
     #' @description Return a per-analysis summary of shared `NTS_FEATURES` rows.
     get_features_count = function(analyses = NULL, filtered = FALSE) {
-      analyses_info <- data.table::as.data.table(self$list_analyses())
+      analyses_info <- data.table::as.data.table(self$get_analyses())
       all_names <- analyses_info$analysis
       sel_names <- .resolve_analyses_selection(analyses, all_names)
       if (length(sel_names) == 0) {
@@ -478,7 +394,7 @@ ProjectNonTargetAnalysis <- R6::R6Class(
     },
     #' @description Return a compact per-analysis feature summary.
     info = function() {
-      analyses_info <- data.table::as.data.table(self$list_analyses())
+      analyses_info <- data.table::as.data.table(self$get_analyses())
       if (nrow(analyses_info) == 0) {
         return(data.table::data.table())
       }
@@ -510,7 +426,7 @@ ProjectNonTargetAnalysis <- R6::R6Class(
       if (!is.character(groupBy) || length(groupBy) != 1 || !(groupBy %in% allowed_group_by)) {
         stop("groupBy must be one of: ", paste(allowed_group_by, collapse = ", "))
       }
-      analyses_info <- data.table::as.data.table(self$list_analyses())
+      analyses_info <- data.table::as.data.table(self$get_analyses())
       analyses_info$analysis <- as.character(analyses_info$analysis)
       analyses_info$replicate <- as.character(analyses_info$replicate)
       sel_names <- .resolve_analyses_selection(analyses, analyses_info$analysis)
@@ -613,7 +529,7 @@ ProjectNonTargetAnalysis <- R6::R6Class(
         stop("groupBy must be one of: ", paste(allowed_group_by, collapse = ", "))
       }
 
-      analyses_info <- data.table::as.data.table(self$list_analyses())
+      analyses_info <- data.table::as.data.table(self$get_analyses())
       analysis_in_prof <- unique(as.character(prof$analysis))
       analysis_order <- analyses_info$analysis[analyses_info$analysis %in% analysis_in_prof]
       missing_analyses <- setdiff(analysis_in_prof, analysis_order)
@@ -1186,7 +1102,7 @@ ProjectNonTargetAnalysis <- R6::R6Class(
         return(NULL)
       }
 
-      analyses_info <- data.table::as.data.table(self$list_analyses())
+      analyses_info <- data.table::as.data.table(self$get_analyses())
       rpl_map <- analyses_info$replicate
       names(rpl_map) <- analyses_info$analysis
       ms1$replicate <- rpl_map[ms1$analysis]
@@ -1338,7 +1254,7 @@ ProjectNonTargetAnalysis <- R6::R6Class(
         return(NULL)
       }
 
-      analyses_info <- data.table::as.data.table(self$list_analyses())
+      analyses_info <- data.table::as.data.table(self$get_analyses())
       rpl_map <- analyses_info$replicate
       names(rpl_map) <- analyses_info$analysis
       ms2$replicate <- rpl_map[ms2$analysis]
@@ -1644,7 +1560,7 @@ ProjectNonTargetAnalysis <- R6::R6Class(
         correctIntensity = FALSE,
         fillZerosWithLowerLimit = FALSE,
         lowerLimit = NA_real_) {
-      info_analyses <- data.table::as.data.table(self$list_analyses())
+      info_analyses <- data.table::as.data.table(self$get_analyses())
       all_names <- info_analyses$analysis
       rpls <- info_analyses$replicate
 
@@ -1827,7 +1743,7 @@ ProjectNonTargetAnalysis <- R6::R6Class(
 
       fc_summary_count <- fc[, .(count = .N), by = c("combination", "bondaries", "replicate_out", "replicate_in")]
 
-      info_analyses <- data.table::as.data.table(self$list_analyses())
+      info_analyses <- data.table::as.data.table(self$get_analyses())
       fts_all <- self$get_features(analyses = NULL, filtered = filtered)
       groups_counts <- data.table::data.table(
         analysis = info_analyses$analysis,
@@ -1970,7 +1886,7 @@ ProjectNonTargetAnalysis <- R6::R6Class(
           }
 
           if (showIntensityProfile) {
-            analyses_info <- data.table::as.data.table(self$list_analyses())
+            analyses_info <- data.table::as.data.table(self$get_analyses())
             keep_cols <- intersect(c("analysis", "replicate"), colnames(analyses_info))
             if (length(keep_cols) > 0) {
               analyses_info <- analyses_info[, ..keep_cols]
@@ -1979,7 +1895,7 @@ ProjectNonTargetAnalysis <- R6::R6Class(
               analyses_info$analysis <- as.character(analyses_info$analysis)
               analyses_info$replicate <- as.character(analyses_info$replicate)
               analyses_info <- unique(analyses_info[, .(analysis, replicate)])
-              info_order <- as.character(data.table::as.data.table(self$list_analyses())$analysis)
+              info_order <- as.character(data.table::as.data.table(self$get_analyses())$analysis)
               analyses_info <- analyses_info[match(analyses_info$analysis, info_order), ]
               analyses_info <- analyses_info[!is.na(analysis) & analysis != "" & !is.na(replicate) & replicate != ""]
               rpls <- analyses_info$replicate
@@ -2420,13 +2336,13 @@ ProjectNonTargetAnalysis <- R6::R6Class(
     print = function(...) {
       info <- try(self$info(), silent = TRUE)
       cat("\nProjectNonTargetAnalysis\n")
-      cat("db: ", self$db, "\n", sep = "")
-      cat("project_id: ", self$project_id, "\n", sep = "")
+      cat("db: ", self$get_db(), "\n", sep = "")
+      cat("project_id: ", self$get_project_id(), "\n", sep = "")
       domain <- try(self$get_domain(), silent = TRUE)
       if (!inherits(domain, "try-error") && !is.null(domain)) {
         cat("domain: ", domain, "\n", sep = "")
       }
-      analyses <- try(self$list_analyses(), silent = TRUE)
+      analyses <- try(self$get_analyses(), silent = TRUE)
       if (!inherits(analyses, "try-error")) {
         cat("analyses: ", nrow(analyses), "\n", sep = "")
       }

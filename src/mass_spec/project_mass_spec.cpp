@@ -938,6 +938,242 @@ namespace mass_spec
       return rt_max > 0.0 && rt_max >= rt_min;
     }
 
+    double round_to_digits(double value, int digits)
+    {
+      const double factor = std::pow(10.0, static_cast<double>(digits));
+      return std::round(value * factor) / factor;
+    }
+
+    std::string format_rounded(double value, int digits)
+    {
+      std::ostringstream stream;
+      stream << round_to_digits(value, digits);
+      return stream.str();
+    }
+
+    std::string make_default_raw_spectrum_id(const std::vector<MS_RAW_SPECTRUM_ROW> &rows,
+                                             bool has_ion_mobility)
+    {
+      if (rows.empty())
+      {
+        return std::string();
+      }
+
+      auto mz_bounds = std::minmax_element(rows.begin(), rows.end(), [](const auto &lhs, const auto &rhs)
+                                           { return lhs.mz < rhs.mz; });
+      auto rt_bounds = std::minmax_element(rows.begin(), rows.end(), [](const auto &lhs, const auto &rhs)
+                                           { return lhs.rt < rhs.rt; });
+
+      std::ostringstream out;
+      out << format_rounded(mz_bounds.first->mz, 4) << "-"
+          << format_rounded(mz_bounds.second->mz, 4) << "/"
+          << format_rounded(rt_bounds.second->rt, 0) << "-"
+          << format_rounded(rt_bounds.first->rt, 0);
+
+      if (has_ion_mobility)
+      {
+        auto mobility_bounds = std::minmax_element(rows.begin(), rows.end(), [](const auto &lhs, const auto &rhs)
+                                                   { return lhs.mobility < rhs.mobility; });
+        out << "/"
+            << format_rounded(mobility_bounds.second->mobility, 0) << "-"
+            << format_rounded(mobility_bounds.first->mobility, 0);
+      }
+
+      return out.str();
+    }
+
+    std::vector<MS_RAW_SPECTRUM_ROW> summarize_raw_spectra_eic(const std::vector<MS_RAW_SPECTRUM_ROW> &rows)
+    {
+      struct Summary
+      {
+        MS_RAW_SPECTRUM_ROW row;
+        double mz_sum = 0.0;
+        std::size_t count = 0;
+      };
+
+      std::map<std::tuple<std::string, std::string, int, std::string, double>, Summary> summaries;
+      for (const auto &row : rows)
+      {
+        const auto key = std::make_tuple(row.analysis, row.replicate, row.polarity, row.id, row.rt);
+        auto &summary = summaries[key];
+        if (summary.count == 0)
+        {
+          summary.row.analysis = row.analysis;
+          summary.row.replicate = row.replicate;
+          summary.row.id = row.id;
+          summary.row.polarity = row.polarity;
+          summary.row.level = 1;
+          summary.row.rt = row.rt;
+          summary.row.mobility = row.mobility;
+          summary.row.intensity = row.intensity;
+        }
+        else
+        {
+          summary.row.intensity = std::max(summary.row.intensity, row.intensity);
+          summary.row.mobility += row.mobility;
+        }
+        summary.mz_sum += row.mz;
+        ++summary.count;
+      }
+
+      std::vector<MS_RAW_SPECTRUM_ROW> out;
+      out.reserve(summaries.size());
+      for (auto &[key, summary] : summaries)
+      {
+        if (summary.count == 0)
+        {
+          continue;
+        }
+        summary.row.mz = summary.mz_sum / static_cast<double>(summary.count);
+        summary.row.mobility /= static_cast<double>(summary.count);
+        out.push_back(summary.row);
+      }
+
+      std::sort(out.begin(), out.end(), [](const auto &lhs, const auto &rhs)
+                {
+                  if (lhs.analysis != rhs.analysis) return lhs.analysis < rhs.analysis;
+                  if (lhs.id != rhs.id) return lhs.id < rhs.id;
+                  if (lhs.rt != rhs.rt) return lhs.rt < rhs.rt;
+                  return lhs.mz < rhs.mz;
+                });
+      return out;
+    }
+
+    std::vector<MS_RAW_SPECTRUM_ROW> merge_raw_spectra_rows(const std::vector<MS_RAW_SPECTRUM_ROW> &spectra,
+                                                            float mz_clust,
+                                                            float presence)
+    {
+      struct GroupKey
+      {
+        std::string analysis;
+        std::string id;
+        int polarity = 0;
+
+        bool operator<(const GroupKey &other) const
+        {
+          if (analysis != other.analysis)
+            return analysis < other.analysis;
+          if (id != other.id)
+            return id < other.id;
+          return polarity < other.polarity;
+        }
+      };
+
+      std::map<GroupKey, std::vector<const MS_RAW_SPECTRUM_ROW *>> groups;
+      for (const auto &row : spectra)
+      {
+        groups[{row.analysis, row.id, row.polarity}].push_back(&row);
+      }
+
+      const float mz_tol = std::max(mz_clust, 0.0f);
+      const float presence_thresh = std::clamp(presence, 0.0f, 1.0f);
+
+      std::vector<MS_RAW_SPECTRUM_ROW> out;
+      for (auto &[key, rows] : groups)
+      {
+        if (rows.empty())
+        {
+          continue;
+        }
+
+        std::sort(rows.begin(), rows.end(), [](const auto *lhs, const auto *rhs)
+                  { return lhs->mz < rhs->mz; });
+
+        std::vector<double> rt_values;
+        rt_values.reserve(rows.size());
+        double rt_sum = 0.0;
+        double mobility_sum = 0.0;
+        double pre_mz_sum = 0.0;
+        double pre_mzlow_sum = 0.0;
+        double pre_mzhigh_sum = 0.0;
+        double pre_ce_sum = 0.0;
+        std::size_t pre_count = 0;
+        for (const auto *row : rows)
+        {
+          rt_values.push_back(row->rt);
+          rt_sum += row->rt;
+          mobility_sum += row->mobility;
+          if (std::isfinite(row->pre_mz) || std::isfinite(row->pre_mzlow) || std::isfinite(row->pre_mzhigh) || std::isfinite(row->pre_ce))
+          {
+            pre_mz_sum += row->pre_mz;
+            pre_mzlow_sum += row->pre_mzlow;
+            pre_mzhigh_sum += row->pre_mzhigh;
+            pre_ce_sum += row->pre_ce;
+            ++pre_count;
+          }
+        }
+        std::sort(rt_values.begin(), rt_values.end());
+        const std::size_t total_unique_rt = static_cast<std::size_t>(std::unique(rt_values.begin(), rt_values.end()) - rt_values.begin());
+
+        std::size_t start = 0;
+        while (start < rows.size())
+        {
+          std::size_t end = start + 1;
+          while (end < rows.size() && (rows[end]->mz - rows[end - 1]->mz) <= mz_tol)
+          {
+            ++end;
+          }
+
+          if (presence_thresh > 0.0f && total_unique_rt > 0)
+          {
+            std::vector<double> cluster_rt;
+            cluster_rt.reserve(end - start);
+            for (std::size_t i = start; i < end; ++i)
+            {
+              cluster_rt.push_back(rows[i]->rt);
+            }
+            std::sort(cluster_rt.begin(), cluster_rt.end());
+            const std::size_t unique_rt = static_cast<std::size_t>(std::unique(cluster_rt.begin(), cluster_rt.end()) - cluster_rt.begin());
+            if (static_cast<float>(unique_rt) < presence_thresh * static_cast<float>(total_unique_rt))
+            {
+              start = end;
+              continue;
+            }
+          }
+
+          double weighted_mz = 0.0;
+          double intensity_sum = 0.0;
+          double max_intensity = 0.0;
+          for (std::size_t i = start; i < end; ++i)
+          {
+            weighted_mz += rows[i]->mz * rows[i]->intensity;
+            intensity_sum += rows[i]->intensity;
+            max_intensity = std::max(max_intensity, rows[i]->intensity);
+          }
+
+          if (intensity_sum > 0.0)
+          {
+            MS_RAW_SPECTRUM_ROW row;
+            row.analysis = key.analysis;
+            row.replicate = rows.front()->replicate;
+            row.id = key.id;
+            row.polarity = key.polarity;
+            row.level = rows.front()->level;
+            row.pre_mz = pre_count > 0 ? pre_mz_sum / static_cast<double>(pre_count) : 0.0;
+            row.pre_mzlow = pre_count > 0 ? pre_mzlow_sum / static_cast<double>(pre_count) : 0.0;
+            row.pre_mzhigh = pre_count > 0 ? pre_mzhigh_sum / static_cast<double>(pre_count) : 0.0;
+            row.pre_ce = pre_count > 0 ? pre_ce_sum / static_cast<double>(pre_count) : 0.0;
+            row.rt = rt_sum / static_cast<double>(rows.size());
+            row.mobility = mobility_sum / static_cast<double>(rows.size());
+            row.mz = weighted_mz / intensity_sum;
+            row.intensity = max_intensity;
+            out.push_back(row);
+          }
+
+          start = end;
+        }
+      }
+
+      std::sort(out.begin(), out.end(), [](const auto &lhs, const auto &rhs)
+                {
+                  if (lhs.analysis != rhs.analysis) return lhs.analysis < rhs.analysis;
+                  if (lhs.id != rhs.id) return lhs.id < rhs.id;
+                  if (lhs.polarity != rhs.polarity) return lhs.polarity < rhs.polarity;
+                  return lhs.mz < rhs.mz;
+                });
+      return out;
+    }
+
     std::string build_mass_spec_import_cache_key(const std::string &project_id,
                                                  const std::string &file_path,
                                                  const std::string &replicate,
@@ -2213,6 +2449,7 @@ namespace mass_spec
         for (std::size_t target_index = 0; target_index < analysis_targets.id.size(); ++target_index)
         {
           const auto [mmin, mmax] = spectra::target_mz_bounds(analysis_targets, target_index);
+          const bool precursor_target = target_index < analysis_targets.precursor.size() ? analysis_targets.precursor[target_index] : false;
           for (int header_position : matched_headers[target_index])
           {
             if (header_position < 0 || static_cast<std::size_t>(header_position) >= headers_rows.size())
@@ -2243,7 +2480,7 @@ namespace mass_spec
               {
                 continue;
               }
-              if (mz_value < mmin || mz_value > mmax)
+              if (!precursor_target && (mz_value < mmin || mz_value > mmax))
               {
                 continue;
               }
@@ -2281,8 +2518,80 @@ namespace mass_spec
       return out;
     }
 
-    std::vector<std::vector<std::vector<float>>> PROJECT_MASS_SPEC::get_chromatograms_data(const std::string &analysis,
-                                                                                           const std::vector<int> &indices) const
+    std::vector<MS_RAW_SPECTRUM_ROW> PROJECT_MASS_SPEC::get_raw_spectra_eic(const spectra::MS_TARGETS_REQUEST &request) const
+    {
+      auto normalized_request = request;
+      normalized_request.levels = {1};
+      normalized_request.all_traces = true;
+      return summarize_raw_spectra_eic(get_raw_spectra(normalized_request));
+    }
+
+    std::vector<MS_RAW_SPECTRUM_ROW> PROJECT_MASS_SPEC::get_raw_spectra_ms1(const spectra::MS_TARGETS_REQUEST &request,
+                                                                             float mz_clust,
+                                                                             float presence) const
+    {
+      auto normalized_request = request;
+      normalized_request.levels = {1};
+      normalized_request.all_traces = true;
+
+      auto rows = get_raw_spectra(normalized_request);
+      if (rows.empty())
+      {
+        return rows;
+      }
+
+      const bool has_id = std::any_of(rows.begin(), rows.end(), [](const auto &row)
+                                      { return !row.id.empty(); });
+      if (!has_id)
+      {
+        const auto headers = get_spectra_headers(normalized_request.analyses);
+        const bool has_ion_mobility = std::any_of(headers.begin(), headers.end(), [](const auto &header)
+                                                  { return header.mobility > 0.0; });
+        const std::string default_id = make_default_raw_spectrum_id(rows, has_ion_mobility);
+        for (auto &row : rows)
+        {
+          row.id = default_id;
+        }
+      }
+
+      return merge_raw_spectra_rows(rows, mz_clust, presence);
+    }
+
+    std::vector<MS_RAW_SPECTRUM_ROW> PROJECT_MASS_SPEC::get_raw_spectra_ms2(const spectra::MS_TARGETS_REQUEST &request,
+                                                                             float isolation_window,
+                                                                             float mz_clust,
+                                                                             float presence) const
+    {
+      auto normalized_request = request;
+      normalized_request.levels = {2};
+      normalized_request.all_traces = false;
+      normalized_request.isolation_window = isolation_window;
+
+      auto rows = get_raw_spectra(normalized_request);
+      if (rows.empty())
+      {
+        return rows;
+      }
+
+      const bool has_id = std::any_of(rows.begin(), rows.end(), [](const auto &row)
+                                      { return !row.id.empty(); });
+      if (!has_id)
+      {
+        const auto headers = get_spectra_headers(normalized_request.analyses);
+        const bool has_ion_mobility = std::any_of(headers.begin(), headers.end(), [](const auto &header)
+                                                  { return header.mobility > 0.0; });
+        const std::string default_id = make_default_raw_spectrum_id(rows, has_ion_mobility);
+        for (auto &row : rows)
+        {
+          row.id = default_id;
+        }
+      }
+
+      return merge_raw_spectra_rows(rows, mz_clust, presence);
+    }
+
+    std::vector<std::vector<std::vector<float>>> PROJECT_MASS_SPEC::get_raw_chromatograms(const std::string &analysis,
+                                                                                          const std::vector<int> &indices) const
     {
       const auto analyses_rows = this->get_analyses();
       const auto analysis_it = std::find_if(analyses_rows.begin(), analyses_rows.end(), [&](const auto &row)

@@ -2,7 +2,7 @@
 //
 // Invokes MetFragCL (JAR or native executable) per feature, parses
 // the CSV output, computes cosine similarity for explained peaks,
-// and populates nts::NTS_DATA::suspects.
+// and populates nts::PROJECT_NON_TARGET_ANALYSIS::suspects.
 
 #ifndef NTS_METFRAG_RUNNER_H
 #define NTS_METFRAG_RUNNER_H
@@ -13,7 +13,8 @@
 
 namespace nts
 {
-  struct NTS_DATA;
+  namespace api { class PROJECT_NON_TARGET_ANALYSIS; }
+  using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS;
 
   namespace metfrag_runner
   {
@@ -43,7 +44,7 @@ namespace nts
      * @param params       MetFrag runner configuration.
      */
     void metfrag_screening_impl(
-        NTS_DATA &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nts_data,
         const std::vector<std::string> &analyses,
         const MetFragParams &params);
 

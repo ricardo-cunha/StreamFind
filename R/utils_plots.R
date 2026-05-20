@@ -153,3 +153,182 @@
     return(p)
   }
 }
+
+#' @title plot_raw_spectra_tabular_data
+#' @description Internal utility to plot tabular MS1/MS2 spectra returned by raw spectra helpers.
+#' @param data data.table or data.frame containing at least `mz` and `intensity` columns.
+#' @param groupBy Name of column(s) used to color-label traces.
+#' @param normalized Logical, normalize intensities within each trace.
+#' @param interactive Logical, use plotly if TRUE, ggplot2 if FALSE.
+#' @param title Plot title.
+#' @param xLab X axis label.
+#' @param yLab Y axis label.
+#' @param showText Logical, annotate peaks with m/z labels.
+#' @param precursorTol Optional numeric tolerance used to tag precursor peaks from `pre_mz`.
+#' @return Plot object (plotly or ggplot2)
+#' @noRd
+#'
+.plot_raw_spectra_tabular_data <- function(
+  data,
+  groupBy = "id",
+  normalized = FALSE,
+  interactive = TRUE,
+  title = NULL,
+  xLab = NULL,
+  yLab = NULL,
+  showText = TRUE,
+  precursorTol = NULL
+) {
+  data <- data.table::as.data.table(data)
+  if (nrow(data) == 0) {
+    return(NULL)
+  }
+
+  required_cols <- c("analysis", "mz", "intensity")
+  missing_cols <- setdiff(required_cols, colnames(data))
+  if (length(missing_cols) > 0) {
+    stop("Missing required spectrum columns: ", paste(missing_cols, collapse = ", "))
+  }
+
+  if (!"replicate" %in% colnames(data)) {
+    data[, replicate := NA_character_]
+  }
+  if (!"id" %in% colnames(data)) {
+    data[, id := NA_character_]
+  }
+  if (!"polarity" %in% colnames(data)) {
+    data[, polarity := 0L]
+  }
+
+  if (!(is.character(groupBy) && length(groupBy) >= 1 && all(groupBy %in% colnames(data)))) {
+    stop("groupBy columns not found in data: ", paste(setdiff(groupBy, colnames(data)), collapse = ", "))
+  }
+
+  vals <- lapply(groupBy, function(col) as.character(data[[col]]))
+  data[, var := do.call(paste, c(vals, sep = " - "))]
+  data[, trace_id := do.call(paste, c(.SD, sep = "|")), .SDcols = intersect(c("analysis", "replicate", "id", "polarity", "pre_mz"), colnames(data))]
+  if (!"trace_id" %in% colnames(data) || all(is.na(data$trace_id)) || any(data$trace_id == "")) {
+    data[, trace_id := paste0("trace_", seq_len(.N))]
+  }
+
+  if (normalized) {
+    data[, intensity := {
+      max_intensity <- max(intensity, na.rm = TRUE)
+      if (is.finite(max_intensity) && max_intensity > 0) intensity / max_intensity else intensity
+    }, by = trace_id]
+  }
+
+  if (!"is_pre" %in% colnames(data)) {
+    data[, is_pre := FALSE]
+    if (!is.null(precursorTol) && "pre_mz" %in% colnames(data)) {
+      data[!is.na(pre_mz), is_pre := abs(mz - pre_mz) <= precursorTol]
+    }
+  }
+
+  data[, text_string := if (showText) paste0(round(mz, 4)) else ""]
+  if ("is_pre" %in% colnames(data)) {
+    data[is_pre == TRUE & showText, text_string := paste0("Pre ", text_string)]
+  }
+
+  data[, line_size := 1]
+  if ("is_pre" %in% colnames(data)) {
+    data[is_pre == TRUE, line_size := 2]
+  }
+
+  cl <- .get_colors(unique(data$var))
+
+  if (!interactive) {
+    if (is.null(xLab)) xLab <- expression(italic("m/z ") / " Da")
+    if (is.null(yLab)) yLab <- "Intensity / counts"
+    plot <- ggplot2::ggplot(data, ggplot2::aes(x = mz, y = intensity, group = trace_id)) +
+      ggplot2::geom_segment(ggplot2::aes(xend = mz, yend = 0, color = var, linewidth = line_size))
+
+    if (showText) {
+      plot <- plot + ggplot2::geom_text(
+        ggplot2::aes(label = text_string),
+        vjust = 0.2,
+        hjust = -0.2,
+        angle = 90,
+        size = 2,
+        show.legend = FALSE
+      )
+    }
+
+    return(
+      plot +
+        ggplot2::scale_y_continuous(expand = c(0, 0), limits = c(0, max(data$intensity, na.rm = TRUE) * 1.5)) +
+        ggplot2::labs(title = title, x = xLab, y = yLab) +
+        ggplot2::scale_color_manual(values = cl) +
+        ggplot2::scale_linewidth_continuous(range = c(1, 2), guide = "none") +
+        ggplot2::theme_classic() +
+        ggplot2::labs(color = paste(groupBy, collapse = ", "))
+    )
+  }
+
+  if (is.null(xLab)) xLab <- "<i>m/z</i> / Da"
+  if (is.null(yLab)) yLab <- "Intensity / counts"
+
+  ticks_min <- plyr::round_any(min(data$mz, na.rm = TRUE) * 0.9, 10)
+  ticks_max <- plyr::round_any(max(data$mz, na.rm = TRUE) * 1.1, 10)
+  title_layout <- list(text = title, font = list(size = 12, color = "black"))
+  xaxis <- list(
+    linecolor = "black",
+    title = xLab,
+    titlefont = list(size = 12, color = "black"),
+    range = c(ticks_min, ticks_max),
+    dtick = round((max(data$mz, na.rm = TRUE) / 10), -1),
+    ticks = "outside"
+  )
+  yaxis <- list(
+    linecolor = "black",
+    title = yLab,
+    titlefont = list(size = 12, color = "black"),
+    range = c(0, max(data$intensity, na.rm = TRUE) * 1.5)
+  )
+
+  plot <- plotly::plot_ly()
+  seen_vars <- character(0)
+  for (trace_key in unique(data$trace_id)) {
+    seg <- data[trace_id == trace_key]
+    if (nrow(seg) == 0) next
+    var_val <- seg$var[1]
+    show_legend <- !(var_val %in% seen_vars)
+    if (show_legend) seen_vars <- c(seen_vars, var_val)
+    x_seg <- as.numeric(rbind(seg$mz, seg$mz, rep(NA_real_, nrow(seg))))
+    y_seg <- as.numeric(rbind(rep(0, nrow(seg)), seg$intensity, rep(NA_real_, nrow(seg))))
+    plot <- plot %>% plotly::add_trace(
+      x = as.vector(x_seg),
+      y = as.vector(y_seg),
+      type = "scattergl",
+      mode = "lines",
+      line = list(color = cl[var_val], width = seg$line_size[1]),
+      name = var_val,
+      legendgroup = var_val,
+      showlegend = show_legend,
+      hoverinfo = "skip"
+    )
+    if (showText) {
+      plot <- plot %>% plotly::add_trace(
+        x = seg$mz,
+        y = seg$intensity,
+        type = "scattergl",
+        mode = "markers+text",
+        marker = list(size = 2, color = cl[var_val]),
+        text = paste0(seg$text_string, "  "),
+        textposition = "top center",
+        textfont = list(size = 9, color = cl[var_val]),
+        hoverinfo = "text",
+        name = var_val,
+        legendgroup = var_val,
+        showlegend = FALSE
+      )
+    }
+  }
+
+  plot %>% plotly::layout(
+    title = title_layout,
+    xaxis = xaxis,
+    yaxis = yaxis,
+    uniformtext = list(minsize = 6, mode = "show")
+  )
+}

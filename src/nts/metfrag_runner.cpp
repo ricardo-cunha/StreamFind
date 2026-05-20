@@ -526,11 +526,14 @@ namespace nts::metfrag_runner
 {
 
 void metfrag_screening_impl(
-    NTS_DATA &nts_data,
+  PROJECT_NON_TARGET_ANALYSIS &nts_data,
     const std::vector<std::string> &analyses_sel,
     const MetFragParams &p)
 {
-  const size_t n_ana = nts_data.analyses.size();
+  const auto &analysis_names = nts_data.analysis_names();
+  auto &feature_buffers = nts_data.feature_buffers();
+  auto &suspect_buffers = nts_data.suspect_buffers();
+  const size_t n_ana = analysis_names.size();
 
   // Ensure run directory exists.
   std::string run_dir = p.run_dir.empty() ? "." : p.run_dir;
@@ -552,17 +555,17 @@ void metfrag_screening_impl(
 
   // Reset suspects for all analyses.
   for (size_t ai = 0; ai < n_ana; ++ai)
-    nts_data.suspects[ai] = nts::api::NTS_SUSPECTS();
+    suspect_buffers[ai] = nts::api::NTS_SUSPECTS();
 
   for (size_t ai = 0; ai < n_ana; ++ai)
   {
-    const std::string &ana = nts_data.analyses[ai];
+    const std::string &ana = analysis_names[ai];
 
     if (!analyses_sel.empty() &&
         std::find(analyses_sel.begin(), analyses_sel.end(), ana) == analyses_sel.end())
       continue;
 
-    nts::api::NTS_FEATURES &feats = nts_data.features[ai];
+    nts::api::NTS_FEATURES &feats = feature_buffers[ai];
     const int n_feat = feats.size();
 
     std::cout << ai + 1 << "/" << n_ana
@@ -744,7 +747,7 @@ void metfrag_screening_impl(
         s.exp_ms2_mz         = feats.ms2_mz[fi];
         s.exp_ms2_intensity  = feats.ms2_intensity[fi];
 
-        nts_data.suspects[ai].append(s);
+        suspect_buffers[ai].append(s);
         ++rank;
         ++n_suspects_found;
       }

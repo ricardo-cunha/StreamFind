@@ -588,7 +588,7 @@ nts::gap_filling::FILLED_FEATURE_INFO nts::gap_filling::pick_peak_from_eic(
 
 // MARK: fill_features_impl
 void nts::gap_filling::fill_features_impl(
-    nts::NTS_DATA &nts_data,
+  nts::PROJECT_NON_TARGET_ANALYSIS &nts_data,
     bool withinReplicate,
     bool filtered,
     float rtExpand,
@@ -623,11 +623,16 @@ void nts::gap_filling::fill_features_impl(
 
   std::cout << "Starting feature gap filling..." << std::endl;
 
+    auto &feature_buffers = nts_data.feature_buffers();
+    const auto &analysis_names = nts_data.analysis_names();
+    const auto &replicate_names = nts_data.replicate_names();
+    const auto &file_paths = nts_data.file_paths();
+
   // Analyze feature groups to identify gaps
   auto group_infos = analyze_feature_groups(
-      nts_data.features,
-      nts_data.analyses,
-      nts_data.replicates,
+      feature_buffers,
+      analysis_names,
+      replicate_names,
       withinReplicate,
       1); // minSamples = 1
 
@@ -648,16 +653,16 @@ void nts::gap_filling::fill_features_impl(
 
   // Build analysis file map
   std::unordered_map<std::string, std::string> analysis_file_map;
-  for (size_t i = 0; i < nts_data.analyses.size(); ++i)
+  for (size_t i = 0; i < analysis_names.size(); ++i)
   {
-    analysis_file_map[nts_data.analyses[i]] = nts_data.files[i];
+    analysis_file_map[analysis_names[i]] = file_paths[i];
   }
 
   // Build analysis index map
   std::unordered_map<std::string, size_t> analysis_index_map;
-  for (size_t i = 0; i < nts_data.analyses.size(); ++i)
+  for (size_t i = 0; i < analysis_names.size(); ++i)
   {
-    analysis_index_map[nts_data.analyses[i]] = i;
+    analysis_index_map[analysis_names[i]] = i;
   }
 
   // Group feature gaps by file for batch extraction
@@ -688,9 +693,9 @@ void nts::gap_filling::fill_features_impl(
   {
     // Determine polarity from existing features
     int polarity = 0;
-    for (size_t i = 0; i < nts_data.features.size(); ++i)
+    for (size_t i = 0; i < feature_buffers.size(); ++i)
     {
-      const auto &fts = nts_data.features[i];
+      const auto &fts = feature_buffers[i];
       for (int j = 0; j < fts.size(); ++j)
       {
         if (fts.feature_group[j] == group_info.feature_group)
@@ -724,7 +729,7 @@ void nts::gap_filling::fill_features_impl(
         continue;
 
       size_t analysis_idx = analysis_idx_it->second;
-      if (analysis_idx >= nts_data.headers.size())
+      if (analysis_idx >= static_cast<size_t>(nts_data.size()))
         continue;
 
       std::string target_id = "GAP_" + group_info.feature_group + "_" + missing_analysis;
@@ -754,7 +759,7 @@ void nts::gap_filling::fill_features_impl(
     mass_spec::reader::MS_FILE ana(file_path);
 
     // Get headers for first gap (all gaps in same file share same headers)
-    const auto &headers = nts_data.headers[gaps[0].analysis_idx];
+    const auto headers = nts_data.spectra_headers_at(gaps[0].analysis_idx);
 
 
     // Build MS_TARGETS for all gaps in this file, but skip those already present as filtered features
@@ -766,7 +771,7 @@ void nts::gap_filling::fill_features_impl(
     {
       const auto &gap = gaps[i];
       const auto &ranges = group_ranges_map[gap.feature_group];
-      nts::api::NTS_FEATURES &analysis_features = nts_data.features[gap.analysis_idx];
+      nts::api::NTS_FEATURES &analysis_features = feature_buffers[gap.analysis_idx];
       bool found_filtered_feature = false;
 
       for (int j = 0; j < analysis_features.size(); ++j)
@@ -1020,7 +1025,7 @@ void nts::gap_filling::fill_features_impl(
       new_feature.ms2_intensity = "";
 
       // Add to features
-      nts_data.features[gap.analysis_idx].append_feature(new_feature);
+      feature_buffers[gap.analysis_idx].append_feature(new_feature);
       filled_gaps++;
 
       if (is_debug_fg)

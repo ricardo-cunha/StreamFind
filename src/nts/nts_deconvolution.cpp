@@ -1,5 +1,5 @@
 // nts_deconvolution.cpp
-// Feature detection implementations specifically for NTS_DATA::find_features
+// Feature detection implementations specifically for PROJECT_NON_TARGET_ANALYSIS::find_features
 // This file contains spectral processing, peak detection, and quality metrics functions
 
 #include "nts_deconvolution.h"
@@ -1968,7 +1968,7 @@ std::vector<nts::api::NTS_FEATURE_ROW> nts::deconvolution::process_polarity_clus
 
 // MARK: find_features_impl
 void nts::deconvolution::find_features_impl(
-    nts::NTS_DATA &nts_data,
+  nts::PROJECT_NON_TARGET_ANALYSIS &nts_data,
     const std::vector<float> &rtWindowsMin,
     const std::vector<float> &rtWindowsMax,
     const float &ppmThreshold,
@@ -1988,15 +1988,19 @@ void nts::deconvolution::find_features_impl(
     return;
   }
 
-  for (size_t a = 0; a < nts_data.analyses.size(); ++a)
+  const auto &analysis_names = nts_data.analysis_names();
+  const auto &file_paths = nts_data.file_paths();
+  auto &feature_buffers = nts_data.feature_buffers();
+
+  for (size_t a = 0; a < analysis_names.size(); ++a)
   {
     std::cout << std::endl;
-    std::cout << a + 1 << "/" << nts_data.analyses.size() << " Processing analysis " << nts_data.analyses[a] << std::endl;
+    std::cout << a + 1 << "/" << analysis_names.size() << " Processing analysis " << analysis_names[a] << std::endl;
 
     // Only enable debugging for matching analysis
-    float current_debugMZ = (debugAnalysis.empty() || debugAnalysis == nts_data.analyses[a]) ? debugMZ : 0.0f;
-    int current_debugSpecIdx = (debugAnalysis.empty() || debugAnalysis == nts_data.analyses[a]) ? debugSpecIdx : -1;
-    const mass_spec::reader::MS_SPECTRA_HEADERS &header = nts_data.headers[a];
+    float current_debugMZ = (debugAnalysis.empty() || debugAnalysis == analysis_names[a]) ? debugMZ : 0.0f;
+    int current_debugSpecIdx = (debugAnalysis.empty() || debugAnalysis == analysis_names[a]) ? debugSpecIdx : -1;
+    const auto header = nts_data.spectra_headers_at(a);
     std::vector<int> idx_load;
     std::vector<float> rt_load;
     std::vector<int> polarity_load;
@@ -2032,7 +2036,7 @@ void nts::deconvolution::find_features_impl(
       }
     }
 
-    mass_spec::reader::MS_FILE ana(nts_data.files[a]);
+    mass_spec::reader::MS_FILE ana(file_paths[a]);
 
     // Separate data by polarity
     std::vector<float> spec_pos_rt, spec_pos_mz, spec_pos_intensity, spec_pos_noise;
@@ -2122,7 +2126,7 @@ void nts::deconvolution::find_features_impl(
         pos_clust_noise, pos_clust_cluster, pos_number_clusters,
         +1, "[M+H]+", -1.007276f, // positive: subtract proton
         minTraces, minSNR, baselineWindow, maxWidth,
-        nts_data.analyses[a],
+        analysis_names[a],
         current_debugMZ
       );
     }
@@ -2147,7 +2151,7 @@ void nts::deconvolution::find_features_impl(
         neg_clust_noise, neg_clust_cluster, neg_number_clusters,
         -1, "[M-H]-", 1.007276f, // negative: add proton
         minTraces, minSNR, baselineWindow, maxWidth,
-        nts_data.analyses[a],
+        analysis_names[a],
         current_debugMZ
       );
     }
@@ -2161,12 +2165,12 @@ void nts::deconvolution::find_features_impl(
     std::cout << "  4/5 Found " << all_features.size() << " total features ("
                 << pos_features.size() << " positive, " << neg_features.size() << " negative)" << std::endl;
 
-    nts_data.features[a] = nts::api::NTS_FEATURES();
-    nts_data.features[a].analysis = nts_data.analyses[a];
+    feature_buffers[a] = nts::api::NTS_FEATURES();
+    feature_buffers[a].analysis = analysis_names[a];
 
     for (const auto& feature : all_features)
     {
-      nts_data.features[a].append_feature(feature);
+      feature_buffers[a].append_feature(feature);
     }
 
     std::cout << "  5/5 Processing complete" << std::endl;
