@@ -12,8 +12,7 @@
 //        - cosine similarity (best pair across matching suspects)
 
 #include "assign_transformation_products.h"
-#include "../mass_spec/project_mass_spec.h"
-#include "../mass_spec/reader.h"
+#include "nts.h"
 
 #include <algorithm>
 #include <cmath>
@@ -103,61 +102,15 @@ namespace nts::assign_transformation_products
     }
   } // anonymous
 
-  // ── TRANSFORMATION_PRODUCTS::append_row ────────────────────────────────────
-
-  void TRANSFORMATION_PRODUCTS::append_row(
-      const TPInputRow  &src,
-      const std::string &prod_fg,
-      const std::string &prec_fg,
-      const std::string &main_fg,
-      double             cos_sim,
-      double             main_cos_sim,
-      double             rt_plaus,
-      double             main_rt_plaus)
-  {
-    name.push_back(src.name);
-    formula.push_back(src.formula);
-    mass.push_back(src.mass);
-    SMILES.push_back(src.SMILES);
-    InChI.push_back(src.InChI);
-    InChIKey.push_back(src.InChIKey);
-    xLogP.push_back(src.xLogP);
-    transformation.push_back(src.transformation);
-
-    precursor_name.push_back(src.precursor_name);
-    precursor_formula.push_back(src.precursor_formula);
-    precursor_mass.push_back(src.precursor_mass);
-    precursor_SMILES.push_back(src.precursor_SMILES);
-    precursor_InChI.push_back(src.precursor_InChI);
-    precursor_InChIKey.push_back(src.precursor_InChIKey);
-    precursor_xLogP.push_back(src.precursor_xLogP);
-
-    main_precursor_name.push_back(src.main_precursor_name);
-    main_precursor_formula.push_back(src.main_precursor_formula);
-    main_precursor_mass.push_back(src.main_precursor_mass);
-    main_precursor_SMILES.push_back(src.main_precursor_SMILES);
-    main_precursor_InChI.push_back(src.main_precursor_InChI);
-    main_precursor_InChIKey.push_back(src.main_precursor_InChIKey);
-    main_precursor_xLogP.push_back(src.main_precursor_xLogP);
-
-    feature_group.push_back(prod_fg);
-    precursor_feature_group.push_back(prec_fg);
-    main_precursor_feature_group.push_back(main_fg);
-    cosine_similarity.push_back(cos_sim);
-    main_precursor_cosine_similarity.push_back(main_cos_sim);
-    rt_plausibility.push_back(rt_plaus);
-    main_precursor_rt_plausibility.push_back(main_rt_plaus);
-  }
-
   // ── Main implementation ─────────────────────────────────────────────────────
 
-  TRANSFORMATION_PRODUCTS assign_transformation_products_impl(
-      const std::vector<FlatSuspect> &suspects,
-      const std::vector<TPInputRow>  &tp_rows,
-      const std::string              &chromatographic_phase,
-      double                          mzrMS2)
+  nts::api::NTS_TRANSFORMATION_PRODUCTS assign_transformation_products_impl(
+      const std::vector<nts::api::NTS_SUSPECT_ROW> &suspects,
+      const std::vector<nts::api::NTS_TRANSFORMATION_PRODUCT_ROW> &tp_rows,
+      const std::string &chromatographic_phase,
+      double mzrMS2)
   {
-    TRANSFORMATION_PRODUCTS out;
+    nts::api::NTS_TRANSFORMATION_PRODUCTS out;
     if (tp_rows.empty()) return out;
 
     const double nan = std::numeric_limits<double>::quiet_NaN();
@@ -207,8 +160,8 @@ namespace nts::assign_transformation_products
           {
             double cos_sim      = nan;
             double main_cos_sim = nan;
-            double rt_plaus     = nan;
-            double main_rt_plaus= nan;
+            double rt_plaus = nan;
+            double main_rt_plaus = nan;
 
             // ── Product vs Precursor ────────────────────────────────────────
             if (!prod_fg.empty() && !prec_fg.empty())
@@ -283,8 +236,37 @@ namespace nts::assign_transformation_products
               }
             }
 
-            out.append_row(tp, prod_fg, prec_fg, main_fg,
-                           cos_sim, main_cos_sim, rt_plaus, main_rt_plaus);
+            nts::api::NTS_TRANSFORMATION_PRODUCT_ROW row;
+            row.name = tp.name;
+            row.formula = tp.formula;
+            row.mass = tp.mass;
+            row.SMILES = tp.SMILES;
+            row.InChI = tp.InChI;
+            row.InChIKey = tp.InChIKey;
+            row.xLogP = tp.xLogP;
+            row.transformation = tp.transformation;
+            row.precursor_name = tp.precursor_name;
+            row.precursor_formula = tp.precursor_formula;
+            row.precursor_mass = tp.precursor_mass;
+            row.precursor_SMILES = tp.precursor_SMILES;
+            row.precursor_InChI = tp.precursor_InChI;
+            row.precursor_InChIKey = tp.precursor_InChIKey;
+            row.precursor_xLogP = tp.precursor_xLogP;
+            row.main_precursor_name = tp.main_precursor_name;
+            row.main_precursor_formula = tp.main_precursor_formula;
+            row.main_precursor_mass = tp.main_precursor_mass;
+            row.main_precursor_SMILES = tp.main_precursor_SMILES;
+            row.main_precursor_InChI = tp.main_precursor_InChI;
+            row.main_precursor_InChIKey = tp.main_precursor_InChIKey;
+            row.main_precursor_xLogP = tp.main_precursor_xLogP;
+            row.feature_group = prod_fg;
+            row.precursor_feature_group = prec_fg;
+            row.main_precursor_feature_group = main_fg;
+            row.cosine_similarity = cos_sim;
+            row.main_precursor_cosine_similarity = main_cos_sim;
+            row.rt_plausibility = rt_plaus;
+            row.main_precursor_rt_plausibility = main_rt_plaus;
+            out.append(row);
           }
         }
       }

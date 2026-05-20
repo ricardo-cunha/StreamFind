@@ -85,6 +85,10 @@ rcpp_project_non_target_analysis_get_transformation_products <- function(nts_xpt
     .Call(`_StreamFind_rcpp_project_non_target_analysis_get_transformation_products`, nts_xptr)
 }
 
+rcpp_project_non_target_analysis_assign_transformation_products <- function(nts_xptr, transformation_products, chromatographic_phase = "reverse_phase", mzrMS2 = 0.008) {
+    .Call(`_StreamFind_rcpp_project_non_target_analysis_assign_transformation_products`, nts_xptr, transformation_products, chromatographic_phase, mzrMS2)
+}
+
 rcpp_nts_find_features <- function(nts_xptr, rtWindowsMin, rtWindowsMax, ppmThreshold = 15.0, noiseThreshold = 15.0, minSNR = 3.0, minTraces = 3L, baselineWindow = 200.0, maxWidth = 100.0, baseQuantile = 0.10, debugAnalysis = "", debugMZ = 0.0, debugSpecIdx = -1L) {
     .Call(`_StreamFind_rcpp_nts_find_features`, nts_xptr, rtWindowsMin, rtWindowsMax, ppmThreshold, noiseThreshold, minSNR, minTraces, baselineWindow, maxWidth, baseQuantile, debugAnalysis, debugMZ, debugSpecIdx)
 }

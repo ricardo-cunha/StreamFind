@@ -1014,6 +1014,275 @@ namespace nts
       return value;
     }
 
+    std::vector<std::uint8_t> NTS_INTERNAL_STANDARDS::serialize_object() const
+    {
+      std::vector<std::uint8_t> out;
+      project::cache::write_vector(out, analysis);
+      project::cache::write_vector(out, feature);
+      project::cache::write_vector(out, candidate_rank);
+      project::cache::write_vector(out, name);
+      project::cache::write_vector(out, polarity);
+      project::cache::write_vector(out, db_mass);
+      project::cache::write_vector(out, exp_mass);
+      project::cache::write_vector(out, error_mass);
+      project::cache::write_vector(out, db_rt);
+      project::cache::write_vector(out, exp_rt);
+      project::cache::write_vector(out, error_rt);
+      project::cache::write_vector(out, intensity);
+      project::cache::write_vector(out, area);
+      project::cache::write_vector(out, id_level);
+      project::cache::write_vector(out, score);
+      project::cache::write_vector(out, shared_fragments);
+      project::cache::write_vector(out, cosine_similarity);
+      project::cache::write_vector(out, formula);
+      project::cache::write_vector(out, SMILES);
+      project::cache::write_vector(out, InChI);
+      project::cache::write_vector(out, InChIKey);
+      project::cache::write_vector(out, xLogP);
+      project::cache::write_vector(out, database_id);
+      project::cache::write_vector(out, db_ms2_size);
+      project::cache::write_vector(out, db_ms2_mz);
+      project::cache::write_vector(out, db_ms2_intensity);
+      project::cache::write_vector(out, db_ms2_formula);
+      project::cache::write_vector(out, exp_ms2_size);
+      project::cache::write_vector(out, exp_ms2_mz);
+      project::cache::write_vector(out, exp_ms2_intensity);
+      return out;
+    }
+
+    NTS_INTERNAL_STANDARDS NTS_INTERNAL_STANDARDS::deserialize_object(const std::vector<std::uint8_t> &bytes)
+    {
+      project::cache::BINARY_READER reader(bytes);
+      NTS_INTERNAL_STANDARDS value;
+      project::cache::read_vector(reader, value.analysis);
+      project::cache::read_vector(reader, value.feature);
+      project::cache::read_vector(reader, value.candidate_rank);
+      project::cache::read_vector(reader, value.name);
+      project::cache::read_vector(reader, value.polarity);
+      project::cache::read_vector(reader, value.db_mass);
+      project::cache::read_vector(reader, value.exp_mass);
+      project::cache::read_vector(reader, value.error_mass);
+      project::cache::read_vector(reader, value.db_rt);
+      project::cache::read_vector(reader, value.exp_rt);
+      project::cache::read_vector(reader, value.error_rt);
+      project::cache::read_vector(reader, value.intensity);
+      project::cache::read_vector(reader, value.area);
+      project::cache::read_vector(reader, value.id_level);
+      project::cache::read_vector(reader, value.score);
+      project::cache::read_vector(reader, value.shared_fragments);
+      project::cache::read_vector(reader, value.cosine_similarity);
+      project::cache::read_vector(reader, value.formula);
+      project::cache::read_vector(reader, value.SMILES);
+      project::cache::read_vector(reader, value.InChI);
+      project::cache::read_vector(reader, value.InChIKey);
+      project::cache::read_vector(reader, value.xLogP);
+      project::cache::read_vector(reader, value.database_id);
+      project::cache::read_vector(reader, value.db_ms2_size);
+      project::cache::read_vector(reader, value.db_ms2_mz);
+      project::cache::read_vector(reader, value.db_ms2_intensity);
+      project::cache::read_vector(reader, value.db_ms2_formula);
+      project::cache::read_vector(reader, value.exp_ms2_size);
+      project::cache::read_vector(reader, value.exp_ms2_mz);
+      project::cache::read_vector(reader, value.exp_ms2_intensity);
+      if (!reader.empty())
+      {
+        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTS_INTERNAL_STANDARDS: trailing bytes remain");
+      }
+      return value;
+    }
+
+    std::vector<std::uint8_t> NTS_FEATURES_CACHE::serialize_object() const
+    {
+      std::vector<std::uint8_t> out;
+      project::cache::write_scalar<std::uint64_t>(out, static_cast<std::uint64_t>(buffers.size()));
+      for (const auto &buffer : buffers)
+      {
+        const auto bytes = buffer.serialize_object();
+        project::cache::write_scalar<std::uint64_t>(out, static_cast<std::uint64_t>(bytes.size()));
+        if (!bytes.empty())
+        {
+          project::cache::append_bytes(out, bytes.data(), bytes.size());
+        }
+      }
+      return out;
+    }
+
+    NTS_FEATURES_CACHE NTS_FEATURES_CACHE::deserialize_object(const std::vector<std::uint8_t> &bytes)
+    {
+      project::cache::BINARY_READER reader(bytes);
+      NTS_FEATURES_CACHE value;
+      const auto count = project::cache::read_scalar<std::uint64_t>(reader);
+      value.buffers.reserve(static_cast<std::size_t>(count));
+      for (std::uint64_t i = 0; i < count; ++i)
+      {
+        const auto size = project::cache::read_scalar<std::uint64_t>(reader);
+        std::vector<std::uint8_t> item(size);
+        if (size > 0)
+        {
+          reader.read_bytes(item.data(), static_cast<std::size_t>(size));
+        }
+        value.buffers.push_back(NTS_FEATURES::deserialize_object(item));
+      }
+      if (!reader.empty())
+      {
+        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTS_FEATURES_CACHE: trailing bytes remain");
+      }
+      return value;
+    }
+
+    std::vector<std::uint8_t> NTS_SUSPECTS_CACHE::serialize_object() const
+    {
+      std::vector<std::uint8_t> out;
+      project::cache::write_scalar<std::uint64_t>(out, static_cast<std::uint64_t>(buffers.size()));
+      for (const auto &buffer : buffers)
+      {
+        const auto bytes = buffer.serialize_object();
+        project::cache::write_scalar<std::uint64_t>(out, static_cast<std::uint64_t>(bytes.size()));
+        if (!bytes.empty())
+        {
+          project::cache::append_bytes(out, bytes.data(), bytes.size());
+        }
+      }
+      return out;
+    }
+
+    NTS_SUSPECTS_CACHE NTS_SUSPECTS_CACHE::deserialize_object(const std::vector<std::uint8_t> &bytes)
+    {
+      project::cache::BINARY_READER reader(bytes);
+      NTS_SUSPECTS_CACHE value;
+      const auto count = project::cache::read_scalar<std::uint64_t>(reader);
+      value.buffers.reserve(static_cast<std::size_t>(count));
+      for (std::uint64_t i = 0; i < count; ++i)
+      {
+        const auto size = project::cache::read_scalar<std::uint64_t>(reader);
+        std::vector<std::uint8_t> item(size);
+        if (size > 0)
+        {
+          reader.read_bytes(item.data(), static_cast<std::size_t>(size));
+        }
+        value.buffers.push_back(NTS_SUSPECTS::deserialize_object(item));
+      }
+      if (!reader.empty())
+      {
+        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTS_SUSPECTS_CACHE: trailing bytes remain");
+      }
+      return value;
+    }
+
+    std::vector<std::uint8_t> NTS_INTERNAL_STANDARDS_CACHE::serialize_object() const
+    {
+      std::vector<std::uint8_t> out;
+      project::cache::write_scalar<std::uint64_t>(out, static_cast<std::uint64_t>(buffers.size()));
+      for (const auto &buffer : buffers)
+      {
+        const auto bytes = buffer.serialize_object();
+        project::cache::write_scalar<std::uint64_t>(out, static_cast<std::uint64_t>(bytes.size()));
+        if (!bytes.empty())
+        {
+          project::cache::append_bytes(out, bytes.data(), bytes.size());
+        }
+      }
+      return out;
+    }
+
+    NTS_INTERNAL_STANDARDS_CACHE NTS_INTERNAL_STANDARDS_CACHE::deserialize_object(const std::vector<std::uint8_t> &bytes)
+    {
+      project::cache::BINARY_READER reader(bytes);
+      NTS_INTERNAL_STANDARDS_CACHE value;
+      const auto count = project::cache::read_scalar<std::uint64_t>(reader);
+      value.buffers.reserve(static_cast<std::size_t>(count));
+      for (std::uint64_t i = 0; i < count; ++i)
+      {
+        const auto size = project::cache::read_scalar<std::uint64_t>(reader);
+        std::vector<std::uint8_t> item(size);
+        if (size > 0)
+        {
+          reader.read_bytes(item.data(), static_cast<std::size_t>(size));
+        }
+        value.buffers.push_back(NTS_INTERNAL_STANDARDS::deserialize_object(item));
+      }
+      if (!reader.empty())
+      {
+        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTS_INTERNAL_STANDARDS_CACHE: trailing bytes remain");
+      }
+      return value;
+    }
+
+    std::vector<std::uint8_t> NTS_TRANSFORMATION_PRODUCTS::serialize_object() const
+    {
+      std::vector<std::uint8_t> out;
+      project::cache::write_vector(out, name);
+      project::cache::write_vector(out, formula);
+      project::cache::write_vector(out, mass);
+      project::cache::write_vector(out, SMILES);
+      project::cache::write_vector(out, InChI);
+      project::cache::write_vector(out, InChIKey);
+      project::cache::write_vector(out, xLogP);
+      project::cache::write_vector(out, transformation);
+      project::cache::write_vector(out, precursor_name);
+      project::cache::write_vector(out, precursor_formula);
+      project::cache::write_vector(out, precursor_mass);
+      project::cache::write_vector(out, precursor_SMILES);
+      project::cache::write_vector(out, precursor_InChI);
+      project::cache::write_vector(out, precursor_InChIKey);
+      project::cache::write_vector(out, precursor_xLogP);
+      project::cache::write_vector(out, main_precursor_name);
+      project::cache::write_vector(out, main_precursor_formula);
+      project::cache::write_vector(out, main_precursor_mass);
+      project::cache::write_vector(out, main_precursor_SMILES);
+      project::cache::write_vector(out, main_precursor_InChI);
+      project::cache::write_vector(out, main_precursor_InChIKey);
+      project::cache::write_vector(out, main_precursor_xLogP);
+      project::cache::write_vector(out, feature_group);
+      project::cache::write_vector(out, precursor_feature_group);
+      project::cache::write_vector(out, main_precursor_feature_group);
+      project::cache::write_vector(out, cosine_similarity);
+      project::cache::write_vector(out, main_precursor_cosine_similarity);
+      project::cache::write_vector(out, rt_plausibility);
+      project::cache::write_vector(out, main_precursor_rt_plausibility);
+      return out;
+    }
+
+    NTS_TRANSFORMATION_PRODUCTS NTS_TRANSFORMATION_PRODUCTS::deserialize_object(const std::vector<std::uint8_t> &bytes)
+    {
+      project::cache::BINARY_READER reader(bytes);
+      NTS_TRANSFORMATION_PRODUCTS value;
+      project::cache::read_vector(reader, value.name);
+      project::cache::read_vector(reader, value.formula);
+      project::cache::read_vector(reader, value.mass);
+      project::cache::read_vector(reader, value.SMILES);
+      project::cache::read_vector(reader, value.InChI);
+      project::cache::read_vector(reader, value.InChIKey);
+      project::cache::read_vector(reader, value.xLogP);
+      project::cache::read_vector(reader, value.transformation);
+      project::cache::read_vector(reader, value.precursor_name);
+      project::cache::read_vector(reader, value.precursor_formula);
+      project::cache::read_vector(reader, value.precursor_mass);
+      project::cache::read_vector(reader, value.precursor_SMILES);
+      project::cache::read_vector(reader, value.precursor_InChI);
+      project::cache::read_vector(reader, value.precursor_InChIKey);
+      project::cache::read_vector(reader, value.precursor_xLogP);
+      project::cache::read_vector(reader, value.main_precursor_name);
+      project::cache::read_vector(reader, value.main_precursor_formula);
+      project::cache::read_vector(reader, value.main_precursor_mass);
+      project::cache::read_vector(reader, value.main_precursor_SMILES);
+      project::cache::read_vector(reader, value.main_precursor_InChI);
+      project::cache::read_vector(reader, value.main_precursor_InChIKey);
+      project::cache::read_vector(reader, value.main_precursor_xLogP);
+      project::cache::read_vector(reader, value.feature_group);
+      project::cache::read_vector(reader, value.precursor_feature_group);
+      project::cache::read_vector(reader, value.main_precursor_feature_group);
+      project::cache::read_vector(reader, value.cosine_similarity);
+      project::cache::read_vector(reader, value.main_precursor_cosine_similarity);
+      project::cache::read_vector(reader, value.rt_plausibility);
+      project::cache::read_vector(reader, value.main_precursor_rt_plausibility);
+      if (!reader.empty())
+      {
+        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTS_TRANSFORMATION_PRODUCTS: trailing bytes remain");
+      }
+      return value;
+    }
+
     NTS_FEATURE_ROW feature_row_from_result(duckdb_result &result, idx_t row)
     {
       NTS_FEATURE_ROW value;
@@ -1274,6 +1543,43 @@ namespace nts
       return value;
     }
 
+    NTS_TRANSFORMATION_PRODUCT_ROW transformation_product_row_from_table(const NTS_TRANSFORMATION_PRODUCTS_TABLE &table, std::size_t row)
+    {
+      NTS_TRANSFORMATION_PRODUCT_ROW value;
+      value.project_id = table.project_id[row];
+      value.name = table.name[row];
+      value.formula = table.formula[row];
+      value.mass = table.mass[row];
+      value.SMILES = table.SMILES[row];
+      value.InChI = table.InChI[row];
+      value.InChIKey = table.InChIKey[row];
+      value.xLogP = table.xLogP[row];
+      value.transformation = table.transformation[row];
+      value.precursor_name = table.precursor_name[row];
+      value.precursor_formula = table.precursor_formula[row];
+      value.precursor_mass = table.precursor_mass[row];
+      value.precursor_SMILES = table.precursor_SMILES[row];
+      value.precursor_InChI = table.precursor_InChI[row];
+      value.precursor_InChIKey = table.precursor_InChIKey[row];
+      value.precursor_xLogP = table.precursor_xLogP[row];
+      value.main_precursor_name = table.main_precursor_name[row];
+      value.main_precursor_formula = table.main_precursor_formula[row];
+      value.main_precursor_mass = table.main_precursor_mass[row];
+      value.main_precursor_SMILES = table.main_precursor_SMILES[row];
+      value.main_precursor_InChI = table.main_precursor_InChI[row];
+      value.main_precursor_InChIKey = table.main_precursor_InChIKey[row];
+      value.main_precursor_xLogP = table.main_precursor_xLogP[row];
+      value.feature_group = table.feature_group[row];
+      value.precursor_feature_group = table.precursor_feature_group[row];
+      value.main_precursor_feature_group = table.main_precursor_feature_group[row];
+      value.cosine_similarity = table.cosine_similarity[row];
+      value.main_precursor_cosine_similarity = table.main_precursor_cosine_similarity[row];
+      value.rt_plausibility = table.rt_plausibility[row];
+      value.main_precursor_rt_plausibility = table.main_precursor_rt_plausibility[row];
+      value.created_at = table.created_at[row];
+      return value;
+    }
+
     NTS_TRANSFORMATION_PRODUCT_ROW transformation_product_row_from_result(duckdb_result &result, idx_t row)
     {
       NTS_TRANSFORMATION_PRODUCT_ROW value;
@@ -1460,6 +1766,35 @@ namespace nts
         }
         return out;
       }
+
+      std::string bytes_to_hex(const std::vector<std::uint8_t> &bytes)
+      {
+        static constexpr char hex[] = "0123456789abcdef";
+        std::string out;
+        out.reserve(bytes.size() * 2);
+        for (const auto byte : bytes)
+        {
+          out.push_back(hex[(byte >> 4) & 0x0F]);
+          out.push_back(hex[byte & 0x0F]);
+        }
+        return out;
+      }
+
+      std::string stable_hash_hex(const std::string &text)
+      {
+        constexpr std::uint64_t offset_basis = 14695981039346656037ull;
+        constexpr std::uint64_t prime = 1099511628211ull;
+        std::uint64_t hash = offset_basis;
+        for (const unsigned char ch : text)
+        {
+          hash ^= static_cast<std::uint64_t>(ch);
+          hash *= prime;
+        }
+
+        std::ostringstream stream;
+        stream << std::hex << std::setfill('0') << std::setw(16) << hash;
+        return stream.str();
+      }
     }
 
     // MARK: PROJECT_NON_TARGET_ANALYSIS
@@ -1561,6 +1896,17 @@ namespace nts
       return table;
     }
 
+    NTS_TRANSFORMATION_PRODUCTS_TABLE PROJECT_NON_TARGET_ANALYSIS::collect_transformation_products_table() const
+    {
+      NTS_TRANSFORMATION_PRODUCTS_TABLE table;
+      const auto rows = get_transformation_products();
+      for (const auto &row : rows)
+      {
+        table.append(row);
+      }
+      return table;
+    }
+
     void PROJECT_NON_TARGET_ANALYSIS::materialize_feature_buffers() const
     {
       if (feature_buffers_ready_ && feature_buffers_.size() == analysis_names().size())
@@ -1646,6 +1992,21 @@ namespace nts
       internal_standard_buffers_ready_ = true;
     }
 
+    void PROJECT_NON_TARGET_ANALYSIS::materialize_transformation_products_buffer() const
+    {
+      if (transformation_products_ready_)
+      {
+        return;
+      }
+
+      transformation_products_buffer_ = NTS_TRANSFORMATION_PRODUCTS();
+      for (std::size_t row = 0; row < static_cast<std::size_t>(transformation_products_table_.size()); ++row)
+      {
+        transformation_products_buffer_.append(transformation_product_row_from_table(transformation_products_table_, row));
+      }
+      transformation_products_ready_ = true;
+    }
+
     std::vector<NTS_FEATURES> &PROJECT_NON_TARGET_ANALYSIS::feature_buffers()
     {
       materialize_feature_buffers();
@@ -1682,6 +2043,18 @@ namespace nts
       return internal_standard_buffers_;
     }
 
+    NTS_TRANSFORMATION_PRODUCTS &PROJECT_NON_TARGET_ANALYSIS::transformation_products()
+    {
+      materialize_transformation_products_buffer();
+      return transformation_products_buffer_;
+    }
+
+    const NTS_TRANSFORMATION_PRODUCTS &PROJECT_NON_TARGET_ANALYSIS::transformation_products() const
+    {
+      materialize_transformation_products_buffer();
+      return transformation_products_buffer_;
+    }
+
     void PROJECT_NON_TARGET_ANALYSIS::load_processing_metadata()
     {
       mass_spec::PROJECT_MASS_SPEC project(ctx_);
@@ -1690,9 +2063,11 @@ namespace nts
       feature_buffers_.clear();
       suspect_buffers_.clear();
       internal_standard_buffers_.clear();
+      transformation_products_buffer_ = NTS_TRANSFORMATION_PRODUCTS();
       feature_buffers_ready_ = false;
       suspect_buffers_ready_ = false;
       internal_standard_buffers_ready_ = false;
+      transformation_products_ready_ = false;
     }
 
     void PROJECT_NON_TARGET_ANALYSIS::load_processing_headers()
@@ -1728,6 +2103,13 @@ namespace nts
       internal_standards_table_ = collect_internal_standards_table(query);
       internal_standard_buffers_.clear();
       internal_standard_buffers_ready_ = false;
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::load_processing_transformation_products()
+    {
+      transformation_products_table_ = collect_transformation_products_table();
+      transformation_products_buffer_ = NTS_TRANSFORMATION_PRODUCTS();
+      transformation_products_ready_ = false;
     }
 
     void PROJECT_NON_TARGET_ANALYSIS::save_processing_features()
@@ -1984,6 +2366,530 @@ namespace nts
         }
         throw;
       }
+    }
+
+    std::string PROJECT_NON_TARGET_ANALYSIS::build_processing_cache_key(
+        const std::string &step,
+        const std::string &args_key,
+        const std::vector<std::string> &dependency_keys) const
+    {
+      std::ostringstream payload;
+      payload << "project=" << ctx_->project_id
+              << "|step=" << step
+              << "|args=" << args_key
+              << "|analyses=" << bytes_to_hex(analyses_table_.serialize_object());
+      for (const auto &dependency_key : dependency_keys)
+      {
+        payload << "|dep=" << dependency_key;
+      }
+      return std::string("nts|") + step + "|" + stable_hash_hex(payload.str());
+    }
+
+    NTS_FEATURES_CACHE PROJECT_NON_TARGET_ANALYSIS::feature_cache_snapshot() const
+    {
+      return NTS_FEATURES_CACHE{feature_buffers()};
+    }
+
+    NTS_SUSPECTS_CACHE PROJECT_NON_TARGET_ANALYSIS::suspect_cache_snapshot() const
+    {
+      return NTS_SUSPECTS_CACHE{suspect_buffers()};
+    }
+
+    NTS_INTERNAL_STANDARDS_CACHE PROJECT_NON_TARGET_ANALYSIS::internal_standard_cache_snapshot() const
+    {
+      return NTS_INTERNAL_STANDARDS_CACHE{internal_standard_buffers()};
+    }
+
+    std::string PROJECT_NON_TARGET_ANALYSIS::feature_state_cache_key() const
+    {
+      return stable_hash_hex(bytes_to_hex(feature_cache_snapshot().serialize_object()));
+    }
+
+    std::string PROJECT_NON_TARGET_ANALYSIS::suspect_state_cache_key() const
+    {
+      return stable_hash_hex(bytes_to_hex(suspect_cache_snapshot().serialize_object()));
+    }
+
+    std::string PROJECT_NON_TARGET_ANALYSIS::internal_standard_state_cache_key() const
+    {
+      return stable_hash_hex(bytes_to_hex(internal_standard_cache_snapshot().serialize_object()));
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::restore_feature_cache(const std::string &hash)
+    {
+      project::cache::CACHE cache(ctx_);
+      const auto cached = cache.get_object<NTS_FEATURES_CACHE>(hash);
+      if (!cached.has_value())
+      {
+        return false;
+      }
+      feature_buffers_ = cached->buffers;
+      feature_buffers_ready_ = true;
+      save_processing_features();
+      return true;
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::restore_suspect_cache(const std::string &hash)
+    {
+      project::cache::CACHE cache(ctx_);
+      const auto cached = cache.get_object<NTS_SUSPECTS_CACHE>(hash);
+      if (!cached.has_value())
+      {
+        return false;
+      }
+      suspect_buffers_ = cached->buffers;
+      suspect_buffers_ready_ = true;
+      save_processing_suspects();
+      return true;
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::restore_internal_standard_cache(const std::string &hash)
+    {
+      project::cache::CACHE cache(ctx_);
+      const auto cached = cache.get_object<NTS_INTERNAL_STANDARDS_CACHE>(hash);
+      if (!cached.has_value())
+      {
+        return false;
+      }
+      internal_standard_buffers_ = cached->buffers;
+      internal_standard_buffers_ready_ = true;
+      save_processing_internal_standards();
+      return true;
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::restore_transformation_products_cache(const std::string &hash)
+    {
+      project::cache::CACHE cache(ctx_);
+      const auto cached = cache.get_object<NTS_TRANSFORMATION_PRODUCTS>(hash);
+      if (!cached.has_value())
+      {
+        return false;
+      }
+      transformation_products_buffer_ = *cached;
+      transformation_products_ready_ = true;
+      save_processing_transformation_products(*cached);
+      return true;
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::store_feature_cache(const std::string &hash, const std::string &description)
+    {
+      project::cache::CACHE(ctx_).put_object("NTS_FEATURES_CACHE", hash, description, feature_cache_snapshot());
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::store_suspect_cache(const std::string &hash, const std::string &description)
+    {
+      project::cache::CACHE(ctx_).put_object("NTS_SUSPECTS_CACHE", hash, description, suspect_cache_snapshot());
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::store_internal_standard_cache(const std::string &hash, const std::string &description)
+    {
+      project::cache::CACHE(ctx_).put_object("NTS_INTERNAL_STANDARDS_CACHE", hash, description, internal_standard_cache_snapshot());
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::store_transformation_products_cache(
+        const std::string &hash,
+        const std::string &description,
+        const NTS_TRANSFORMATION_PRODUCTS &products)
+    {
+      project::cache::CACHE(ctx_).put_object("NTS_TRANSFORMATION_PRODUCTS", hash, description, products);
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::run_cached_features_algorithm(
+        const std::string &step,
+        const std::string &args_key,
+        const std::vector<std::string> &dependency_keys,
+        const std::string &description,
+        const std::function<void()> &algorithm)
+    {
+      try
+      {
+        const auto cache_key = build_processing_cache_key(step, args_key, dependency_keys);
+        if (restore_feature_cache(cache_key))
+        {
+          return true;
+        }
+        algorithm();
+        save_processing_features();
+        store_feature_cache(cache_key, description);
+        return true;
+      }
+      catch (...)
+      {
+        return false;
+      }
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::run_cached_suspects_algorithm(
+        const std::string &step,
+        const std::string &args_key,
+        const std::vector<std::string> &dependency_keys,
+        const std::string &description,
+        const std::function<void()> &algorithm)
+    {
+      try
+      {
+        const auto cache_key = build_processing_cache_key(step, args_key, dependency_keys);
+        if (restore_suspect_cache(cache_key))
+        {
+          return true;
+        }
+        algorithm();
+        save_processing_suspects();
+        store_suspect_cache(cache_key, description);
+        return true;
+      }
+      catch (...)
+      {
+        return false;
+      }
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::run_cached_internal_standards_algorithm(
+        const std::string &step,
+        const std::string &args_key,
+        const std::vector<std::string> &dependency_keys,
+        const std::string &description,
+        const std::function<void()> &algorithm)
+    {
+      try
+      {
+        const auto cache_key = build_processing_cache_key(step, args_key, dependency_keys);
+        if (restore_internal_standard_cache(cache_key))
+        {
+          return true;
+        }
+        algorithm();
+        save_processing_internal_standards();
+        store_internal_standard_cache(cache_key, description);
+        return true;
+      }
+      catch (...)
+      {
+        return false;
+      }
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::run_cached_transformation_products_algorithm(
+        const std::string &step,
+        const std::string &args_key,
+        const std::vector<std::string> &dependency_keys,
+        const std::string &description,
+      const std::function<NTS_TRANSFORMATION_PRODUCTS()> &algorithm)
+    {
+      try
+      {
+        const auto cache_key = build_processing_cache_key(step, args_key, dependency_keys);
+        if (restore_transformation_products_cache(cache_key))
+        {
+          return true;
+        }
+        const auto products = algorithm();
+        save_processing_transformation_products(products);
+        store_transformation_products_cache(cache_key, description, products);
+        return true;
+      }
+      catch (...)
+      {
+        return false;
+      }
+    }
+
+    void PROJECT_NON_TARGET_ANALYSIS::save_processing_transformation_products(
+        const NTS_TRANSFORMATION_PRODUCTS &products)
+    {
+      transformation_products_table_ = NTS_TRANSFORMATION_PRODUCTS_TABLE();
+      transformation_products_buffer_ = products;
+      transformation_products_ready_ = true;
+      auto guard = mass_spec::api::connect_checked(ctx_);
+      project::db::run_sql(guard.get(), "BEGIN TRANSACTION", "begin save NTS transformation products transaction");
+      try
+      {
+        project::db::run_prepared(
+            guard.get(),
+            "DELETE FROM NTS_TRANSFORMATION_PRODUCTS WHERE project_id = ?",
+            "delete NTS transformation products",
+            [&](duckdb_prepared_statement statement)
+            { duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str()); },
+            [](duckdb_result &) {});
+
+        for (int i = 0; i < products.size(); ++i)
+        {
+          auto row = products.get_transformation_product(i);
+          row.project_id = ctx_->project_id;
+          transformation_products_table_.append(row);
+          project::db::run_prepared(
+              guard.get(),
+              "INSERT INTO NTS_TRANSFORMATION_PRODUCTS (project_id, name, formula, mass, SMILES, InChI, InChIKey, xLogP, transformation, precursor_name, precursor_formula, precursor_mass, precursor_SMILES, precursor_InChI, precursor_InChIKey, precursor_xLogP, main_precursor_name, main_precursor_formula, main_precursor_mass, main_precursor_SMILES, main_precursor_InChI, main_precursor_InChIKey, main_precursor_xLogP, feature_group, precursor_feature_group, main_precursor_feature_group, cosine_similarity, main_precursor_cosine_similarity, rt_plausibility, main_precursor_rt_plausibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              "insert NTS transformation product",
+              [&](duckdb_prepared_statement statement)
+              {
+                duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str());
+                project::db::bind_optional_varchar(statement, 2, row.name);
+                project::db::bind_optional_varchar(statement, 3, row.formula);
+                duckdb_bind_double(statement, 4, row.mass);
+                project::db::bind_optional_varchar(statement, 5, row.SMILES);
+                project::db::bind_optional_varchar(statement, 6, row.InChI);
+                project::db::bind_optional_varchar(statement, 7, row.InChIKey);
+                duckdb_bind_double(statement, 8, row.xLogP);
+                project::db::bind_optional_varchar(statement, 9, row.transformation);
+                project::db::bind_optional_varchar(statement, 10, row.precursor_name);
+                project::db::bind_optional_varchar(statement, 11, row.precursor_formula);
+                duckdb_bind_double(statement, 12, row.precursor_mass);
+                project::db::bind_optional_varchar(statement, 13, row.precursor_SMILES);
+                project::db::bind_optional_varchar(statement, 14, row.precursor_InChI);
+                project::db::bind_optional_varchar(statement, 15, row.precursor_InChIKey);
+                duckdb_bind_double(statement, 16, row.precursor_xLogP);
+                project::db::bind_optional_varchar(statement, 17, row.main_precursor_name);
+                project::db::bind_optional_varchar(statement, 18, row.main_precursor_formula);
+                duckdb_bind_double(statement, 19, row.main_precursor_mass);
+                project::db::bind_optional_varchar(statement, 20, row.main_precursor_SMILES);
+                project::db::bind_optional_varchar(statement, 21, row.main_precursor_InChI);
+                project::db::bind_optional_varchar(statement, 22, row.main_precursor_InChIKey);
+                duckdb_bind_double(statement, 23, row.main_precursor_xLogP);
+                project::db::bind_optional_varchar(statement, 24, row.feature_group);
+                project::db::bind_optional_varchar(statement, 25, row.precursor_feature_group);
+                project::db::bind_optional_varchar(statement, 26, row.main_precursor_feature_group);
+                duckdb_bind_double(statement, 27, row.cosine_similarity);
+                duckdb_bind_double(statement, 28, row.main_precursor_cosine_similarity);
+                duckdb_bind_double(statement, 29, row.rt_plausibility);
+                duckdb_bind_double(statement, 30, row.main_precursor_rt_plausibility);
+              },
+              [](duckdb_result &) {});
+        }
+
+        project::db::run_sql(guard.get(), "COMMIT", "commit save NTS transformation products transaction");
+      }
+      catch (...)
+      {
+        try
+        {
+          project::db::run_sql(guard.get(), "ROLLBACK", "rollback save NTS transformation products transaction");
+        }
+        catch (...)
+        {
+        }
+        throw;
+      }
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::find_features(
+        const std::vector<float> &rtWindowsMin,
+        const std::vector<float> &rtWindowsMax,
+        const float &ppmThreshold,
+        const float &noiseThreshold,
+        const float &minSNR,
+        const int &minTraces,
+        const float &baselineWindow,
+        const float &maxWidth,
+        const float &baseQuantile,
+        const std::string &debugAnalysis,
+        const float &debugMZ,
+        const int &debugSpecIdx)
+    {
+      load_processing_metadata();
+      load_processing_headers();
+      return run_cached_features_algorithm(
+          "find_features",
+          cache_join_key({cache_vector_key(rtWindowsMin), cache_vector_key(rtWindowsMax), cache_scalar_key(ppmThreshold), cache_scalar_key(noiseThreshold), cache_scalar_key(minSNR), cache_scalar_key(minTraces), cache_scalar_key(baselineWindow), cache_scalar_key(maxWidth), cache_scalar_key(baseQuantile), debugAnalysis, cache_scalar_key(debugMZ), cache_scalar_key(debugSpecIdx)}),
+          {},
+          "Cached NTS features for find_features",
+          [&]() {
+            features_table_ = NTS_FEATURES_TABLE();
+            feature_buffers_.assign(analysis_names().size(), NTS_FEATURES());
+            for (std::size_t i = 0; i < analysis_names().size(); ++i)
+            {
+              feature_buffers_[i].set_analysis(analysis_names()[i]);
+            }
+            feature_buffers_ready_ = true;
+            deconvolution::find_features_impl(*this, rtWindowsMin, rtWindowsMax, ppmThreshold, noiseThreshold, minSNR, minTraces, baselineWindow, maxWidth, baseQuantile, debugAnalysis, debugMZ, debugSpecIdx);
+          });
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::create_components(const std::vector<float> &rtWindow, float minCorrelation, float debugRT, const std::string &debugAnalysis)
+    {
+      load_processing_metadata();
+      load_processing_features(true);
+      return run_cached_features_algorithm(
+          "create_components",
+          cache_join_key({cache_vector_key(rtWindow), cache_scalar_key(minCorrelation), cache_scalar_key(debugRT), debugAnalysis}),
+          {feature_state_cache_key()},
+          "Cached NTS features for create_components",
+          [&]() { componentization::create_components_impl(*this, rtWindow, minCorrelation, debugRT, debugAnalysis); });
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::annotate_components(int maxIsotopes, int maxCharge, int maxGaps, float ppm, const std::string &debugComponent, const std::string &debugAnalysis)
+    {
+      load_processing_metadata();
+      load_processing_features(true);
+      return run_cached_features_algorithm(
+          "annotate_components",
+          cache_join_key({cache_scalar_key(maxIsotopes), cache_scalar_key(maxCharge), cache_scalar_key(maxGaps), cache_scalar_key(ppm), debugComponent, debugAnalysis}),
+          {feature_state_cache_key()},
+          "Cached NTS features for annotate_components",
+          [&]() { annotation::annotate_components_impl(*this, maxIsotopes, maxCharge, maxGaps, ppm, debugComponent, debugAnalysis); });
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::group_features(const std::string &method, float rtDeviation, float ppm, int minSamples, float binSize, bool debug, float debugRT)
+    {
+      load_processing_metadata();
+      load_processing_features(true);
+      std::vector<std::string> dependencies{feature_state_cache_key()};
+      if (method == "internal_standards")
+      {
+        load_processing_internal_standards();
+        dependencies.push_back(internal_standard_state_cache_key());
+      }
+      else
+      {
+        internal_standards_table_ = NTS_INTERNAL_STANDARDS_TABLE();
+        internal_standard_buffers_.assign(analysis_names().size(), NTS_INTERNAL_STANDARDS());
+        internal_standard_buffers_ready_ = true;
+      }
+      return run_cached_features_algorithm(
+          "group_features",
+          cache_join_key({method, cache_scalar_key(rtDeviation), cache_scalar_key(ppm), cache_scalar_key(minSamples), cache_scalar_key(binSize), cache_bool_key(debug), cache_scalar_key(debugRT)}),
+          dependencies,
+          "Cached NTS features for group_features",
+          [&]() { alignment::group_features_impl(*this, method, rtDeviation, ppm, minSamples, binSize, debug, debugRT); });
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::fill_features(bool withinReplicate, bool filtered, float rtExpand, float mzExpand, float maxPeakWidth, float minTracesIntensity, int minNumberTraces, float minIntensity, float rtApexDeviation, float minSignalToNoiseRatio, float minGaussianFit, std::string debugFG)
+    {
+      load_processing_metadata();
+      load_processing_headers();
+      load_processing_features(true);
+      return run_cached_features_algorithm(
+          "fill_features",
+          cache_join_key({cache_bool_key(withinReplicate), cache_bool_key(filtered), cache_scalar_key(rtExpand), cache_scalar_key(mzExpand), cache_scalar_key(maxPeakWidth), cache_scalar_key(minTracesIntensity), cache_scalar_key(minNumberTraces), cache_scalar_key(minIntensity), cache_scalar_key(rtApexDeviation), cache_scalar_key(minSignalToNoiseRatio), cache_scalar_key(minGaussianFit), debugFG}),
+          {feature_state_cache_key()},
+          "Cached NTS features for fill_features",
+          [&]() { gap_filling::fill_features_impl(*this, withinReplicate, filtered, rtExpand, mzExpand, maxPeakWidth, minTracesIntensity, minNumberTraces, minIntensity, rtApexDeviation, minSignalToNoiseRatio, minGaussianFit, debugFG); });
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::subtract_blank(float blankThreshold, float rtExpand, float mzExpand, float minTracesIntensity)
+    {
+      load_processing_metadata();
+      load_processing_headers();
+      load_processing_features(true);
+      return run_cached_features_algorithm(
+          "subtract_blank",
+          cache_join_key({cache_scalar_key(blankThreshold), cache_scalar_key(rtExpand), cache_scalar_key(mzExpand), cache_scalar_key(minTracesIntensity)}),
+          {feature_state_cache_key()},
+          "Cached NTS features for subtract_blank",
+          [&]() { blank_subtraction::subtract_blank_impl(*this, blankThreshold, rtExpand, mzExpand, minTracesIntensity); });
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::filter_features(double minSN, double minIntensity, double minArea, double minWidth, double maxWidth, double maxPPM, double minFwhmRT, double maxFwhmRT, double minFwhmMZ, double maxFwhmMZ, double minGaussianA, double minGaussianMu, double maxGaussianMu, double minGaussianSigma, double maxGaussianSigma, double minGaussianR2, double maxJaggedness, double minSharpness, double minAsymmetry, double maxAsymmetry, int maxModality, bool hasMaxModality, double minPlates, bool hasOnlyFilled, bool onlyFilledValue, bool removeFilled, int minSizeEIC, bool hasMinSizeEIC, int minSizeMS1, bool hasMinSizeMS1, int minSizeMS2, bool hasMinSizeMS2, double minRelPresenceReplicate, bool removeIsotopes, bool removeAdducts, bool removeLosses)
+    {
+      load_processing_metadata();
+      load_processing_features(true);
+      return run_cached_features_algorithm(
+          "filter_features",
+          cache_join_key({cache_scalar_key(minSN), cache_scalar_key(minIntensity), cache_scalar_key(minArea), cache_scalar_key(minWidth), cache_scalar_key(maxWidth), cache_scalar_key(maxPPM), cache_scalar_key(minFwhmRT), cache_scalar_key(maxFwhmRT), cache_scalar_key(minFwhmMZ), cache_scalar_key(maxFwhmMZ), cache_scalar_key(minGaussianA), cache_scalar_key(minGaussianMu), cache_scalar_key(maxGaussianMu), cache_scalar_key(minGaussianSigma), cache_scalar_key(maxGaussianSigma), cache_scalar_key(minGaussianR2), cache_scalar_key(maxJaggedness), cache_scalar_key(minSharpness), cache_scalar_key(minAsymmetry), cache_scalar_key(maxAsymmetry), cache_scalar_key(maxModality), cache_bool_key(hasMaxModality), cache_scalar_key(minPlates), cache_bool_key(hasOnlyFilled), cache_bool_key(onlyFilledValue), cache_bool_key(removeFilled), cache_scalar_key(minSizeEIC), cache_bool_key(hasMinSizeEIC), cache_scalar_key(minSizeMS1), cache_bool_key(hasMinSizeMS1), cache_scalar_key(minSizeMS2), cache_bool_key(hasMinSizeMS2), cache_scalar_key(minRelPresenceReplicate), cache_bool_key(removeIsotopes), cache_bool_key(removeAdducts), cache_bool_key(removeLosses)}),
+          {feature_state_cache_key()},
+          "Cached NTS features for filter_features",
+          [&]() { filter_features::filter_features_impl(*this, minSN, minIntensity, minArea, minWidth, maxWidth, maxPPM, minFwhmRT, maxFwhmRT, minFwhmMZ, maxFwhmMZ, minGaussianA, minGaussianMu, maxGaussianMu, minGaussianSigma, maxGaussianSigma, minGaussianR2, maxJaggedness, minSharpness, minAsymmetry, maxAsymmetry, maxModality, hasMaxModality, minPlates, hasOnlyFilled, onlyFilledValue, removeFilled, minSizeEIC, hasMinSizeEIC, minSizeMS1, hasMinSizeMS1, minSizeMS2, hasMinSizeMS2, minRelPresenceReplicate, removeIsotopes, removeAdducts, removeLosses); });
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::suspect_screening(const std::vector<std::string> &analyses, const std::vector<suspect_screening::SuspectQuery> &suspects, double ppm, double sec, double ppmMS2, double mzrMS2, double minCosineSimilarity, int minSharedFragments, bool filtered)
+    {
+      load_processing_metadata();
+      load_processing_features(true);
+      load_processing_suspects();
+      std::vector<std::string> suspect_keys;
+      suspect_keys.reserve(suspects.size());
+      for (const auto &suspect : suspects)
+      {
+        suspect_keys.push_back(cache_join_key({suspect.name, cache_bool_key(suspect.has_mass), cache_scalar_key(suspect.mass), cache_scalar_key(suspect.rt), suspect.formula, suspect.SMILES, suspect.InChI, suspect.InChIKey, cache_scalar_key(suspect.score), cache_bool_key(suspect.has_xLogP), cache_scalar_key(suspect.xLogP), suspect.database_id, cache_vector_key(suspect.fragments_mz_pos), cache_vector_key(suspect.fragments_intensity_pos), cache_vector_key(suspect.fragments_mz_neg), cache_vector_key(suspect.fragments_intensity_neg)}));
+      }
+      return run_cached_suspects_algorithm(
+          "suspect_screening",
+          cache_join_key({cache_vector_key(analyses), cache_scalar_key(ppm), cache_scalar_key(sec), cache_scalar_key(ppmMS2), cache_scalar_key(mzrMS2), cache_scalar_key(minCosineSimilarity), cache_scalar_key(minSharedFragments), cache_bool_key(filtered), cache_join_key(suspect_keys)}),
+          {feature_state_cache_key(), suspect_state_cache_key()},
+          "Cached NTS suspects for suspect_screening",
+          [&]() { suspect_screening::suspect_screening_impl(*this, analyses, suspects, ppm, sec, ppmMS2, mzrMS2, minCosineSimilarity, minSharedFragments, filtered); });
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::filter_suspects(const std::vector<std::string> &names, double minScore, double maxErrorRT, double maxErrorMass, const std::vector<int> &idLevels, int minSharedFragments, double minCosineSimilarity)
+    {
+      load_processing_metadata();
+      load_processing_suspects();
+      return run_cached_suspects_algorithm(
+          "filter_suspects",
+          cache_join_key({cache_vector_key(names), cache_scalar_key(minScore), cache_scalar_key(maxErrorRT), cache_scalar_key(maxErrorMass), cache_vector_key(idLevels), cache_scalar_key(minSharedFragments), cache_scalar_key(minCosineSimilarity)}),
+          {suspect_state_cache_key()},
+          "Cached NTS suspects for filter_suspects",
+          [&]() { filter_suspects::filter_suspects_impl(*this, names, minScore, maxErrorRT, maxErrorMass, idLevels, minSharedFragments, minCosineSimilarity); });
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::filter_internal_standards(const std::vector<std::string> &names, double minScore, double maxErrorRT, double maxErrorMass, const std::vector<int> &idLevels, int minSharedFragments, double minCosineSimilarity)
+    {
+      load_processing_metadata();
+      load_processing_internal_standards();
+      return run_cached_internal_standards_algorithm(
+          "filter_internal_standards",
+          cache_join_key({cache_vector_key(names), cache_scalar_key(minScore), cache_scalar_key(maxErrorRT), cache_scalar_key(maxErrorMass), cache_vector_key(idLevels), cache_scalar_key(minSharedFragments), cache_scalar_key(minCosineSimilarity)}),
+          {internal_standard_state_cache_key()},
+          "Cached NTS internal standards for filter_internal_standards",
+          [&]() { filter_internal_standards::filter_internal_standards_impl(*this, names, minScore, maxErrorRT, maxErrorMass, idLevels, minSharedFragments, minCosineSimilarity); });
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::filter_features_ms2(int top, float minIntensity, float relMinIntensity, bool blankClean, float mzClust, float blankPresenceThreshold, float globalPresenceThreshold)
+    {
+      load_processing_metadata();
+      load_processing_features(true);
+      return run_cached_features_algorithm(
+          "filter_features_ms2",
+          cache_join_key({cache_scalar_key(top), cache_scalar_key(minIntensity), cache_scalar_key(relMinIntensity), cache_bool_key(blankClean), cache_scalar_key(mzClust), cache_scalar_key(blankPresenceThreshold), cache_scalar_key(globalPresenceThreshold)}),
+          {feature_state_cache_key()},
+          "Cached NTS features for filter_features_ms2",
+          [&]() { filter_features_ms2::filter_features_ms2_impl(*this, top, minIntensity, relMinIntensity, blankClean, mzClust, blankPresenceThreshold, globalPresenceThreshold); });
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::metfrag_screening(const std::vector<std::string> &analyses, const metfrag_runner::MetFragParams &params)
+    {
+      load_processing_metadata();
+      load_processing_features(true);
+      load_processing_suspects();
+      std::vector<std::string> extra_params;
+      extra_params.reserve(params.extra_params.size());
+      for (const auto &entry : params.extra_params)
+      {
+        extra_params.push_back(cache_join_key({entry.first, entry.second}));
+      }
+      return run_cached_suspects_algorithm(
+          "metfrag_screening",
+          cache_join_key({cache_vector_key(analyses), params.metfrag_path, params.database_type, params.database_path, cache_scalar_key(params.ppm), cache_scalar_key(params.sec), cache_scalar_key(params.ppmMS2), cache_scalar_key(params.mzrMS2), cache_scalar_key(params.top_n), cache_bool_key(params.filtered), params.java_path, params.run_dir, cache_bool_key(params.debug), cache_join_key(extra_params)}),
+          {feature_state_cache_key(), suspect_state_cache_key()},
+          "Cached NTS suspects for metfrag_screening",
+          [&]() { metfrag_runner::metfrag_screening_impl(*this, analyses, params); });
+    }
+
+    bool PROJECT_NON_TARGET_ANALYSIS::assign_transformation_products(const std::vector<NTS_TRANSFORMATION_PRODUCT_ROW> &transformation_products, const std::string &chromatographic_phase, double mzrMS2)
+    {
+      load_processing_metadata();
+      load_processing_features(true);
+      load_processing_suspects();
+      std::vector<std::string> input_rows;
+      input_rows.reserve(transformation_products.size());
+      for (const auto &row : transformation_products)
+      {
+        input_rows.push_back(cache_join_key({row.name, row.formula, cache_scalar_key(row.mass), row.SMILES, row.InChI, row.InChIKey, cache_scalar_key(row.xLogP), row.transformation, row.precursor_name, row.precursor_formula, cache_scalar_key(row.precursor_mass), row.precursor_SMILES, row.precursor_InChI, row.precursor_InChIKey, cache_scalar_key(row.precursor_xLogP), row.main_precursor_name, row.main_precursor_formula, cache_scalar_key(row.main_precursor_mass), row.main_precursor_SMILES, row.main_precursor_InChI, row.main_precursor_InChIKey, cache_scalar_key(row.main_precursor_xLogP)}));
+      }
+      return run_cached_transformation_products_algorithm(
+          "assign_transformation_products",
+          cache_join_key({chromatographic_phase, cache_scalar_key(mzrMS2), cache_join_key(input_rows)}),
+          {feature_state_cache_key(), suspect_state_cache_key()},
+          "Cached NTS transformation products for assign_transformation_products",
+          [&]() {
+            NTS_QUERY_REQUEST query;
+            query.analyses = analysis_names();
+            return assign_transformation_products::assign_transformation_products_impl(
+                get_suspects(query),
+                transformation_products,
+                chromatographic_phase,
+                mzrMS2);
+          });
     }
 
     void PROJECT_NON_TARGET_ANALYSIS::create_schema(const std::shared_ptr<project::api::CONTEXT> &ctx)
@@ -2616,7 +3522,7 @@ namespace nts
 } // namespace nts
 
 // MARK: load_features_ms1
-void nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms1(
+bool nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms1(
     bool filtered,
     const std::vector<float> &rtWindow,
     const std::vector<float> &mzWindow,
@@ -2627,109 +3533,108 @@ void nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms1(
   load_processing_metadata();
   load_processing_headers();
   load_processing_features(true);
+  return run_cached_features_algorithm(
+      "load_features_ms1",
+      cache_join_key({cache_bool_key(filtered), cache_vector_key(rtWindow), cache_vector_key(mzWindow), cache_scalar_key(minTracesIntensity), cache_scalar_key(mzClust), cache_scalar_key(presence)}),
+      {feature_state_cache_key()},
+      "Cached NTS features for load_features_ms1",
+      [&]() {
+        auto &features = feature_buffers();
+        const auto &files = file_paths();
+        const bool hasRtWindow = rtWindow.size() >= 2;
+        const bool hasMzWindow = mzWindow.size() >= 2;
 
-  auto &features = feature_buffers();
-  const auto &files = file_paths();
-  const bool hasRtWindow = rtWindow.size() >= 2;
-  const bool hasMzWindow = mzWindow.size() >= 2;
+        for (size_t i = 0; i < features.size(); i++)
+        {
+          nts::api::NTS_FEATURES &fts_i = features[i];
 
-  for (size_t i = 0; i < features.size(); i++)
-  {
-    nts::api::NTS_FEATURES &fts_i = features[i];
+          if (fts_i.size() == 0)
+            continue;
 
-    if (fts_i.size() == 0)
-      continue;
+          mass_spec::spectra::MS_TARGETS targets;
+          int counter = 0;
 
-    mass_spec::spectra::MS_TARGETS targets;
-    int counter = 0;
+          for (int j = 0; j < fts_i.size(); j++)
+          {
+            const nts::api::NTS_FEATURE_ROW &ft_j = fts_i.get_feature(j);
 
-    for (int j = 0; j < fts_i.size(); j++)
-    {
-      const nts::api::NTS_FEATURE_ROW &ft_j = fts_i.get_feature(j);
+            if (ft_j.filtered && !filtered)
+              continue;
 
-      if (ft_j.filtered && !filtered)
-        continue;
+            if (ft_j.ms1_size > 0 && !ft_j.ms1_mz.empty() && !ft_j.ms1_intensity.empty())
+              continue;
 
-      if (ft_j.ms1_size > 0 && !ft_j.ms1_mz.empty() && !ft_j.ms1_intensity.empty())
-        continue;
+            float mzmin = ft_j.mzmin;
+            float mzmax = ft_j.mzmax;
+            float rtmin = ft_j.rtmin;
+            float rtmax = ft_j.rtmax;
 
-      float mzmin = ft_j.mzmin;
-      float mzmax = ft_j.mzmax;
-      float rtmin = ft_j.rtmin;
-      float rtmax = ft_j.rtmax;
+            if (hasMzWindow)
+            {
+              mzmin = ft_j.mzmin + mzWindow[0];
+              mzmax = ft_j.mzmax + mzWindow[1];
+            }
 
-      if (hasMzWindow)
-      {
-        mzmin = ft_j.mzmin + mzWindow[0]; // left boundary adjustment
-        mzmax = ft_j.mzmax + mzWindow[1]; // right boundary adjustment
-      }
+            if (hasRtWindow)
+            {
+              rtmin = ft_j.rtmin + rtWindow[0];
+              rtmax = ft_j.rtmax + rtWindow[1];
+            }
 
-      if (hasRtWindow)
-      {
-        rtmin = ft_j.rtmin + rtWindow[0]; // left boundary adjustment
-        rtmax = ft_j.rtmax + rtWindow[1]; // right boundary adjustment
-      }
+            targets.index.push_back(counter);
+            targets.id.push_back(ft_j.feature);
+            targets.level.push_back(1);
+            targets.polarity.push_back(ft_j.polarity);
+            targets.precursor.push_back(false);
+            targets.mz.push_back(ft_j.mz);
+            targets.mzmin.push_back(mzmin);
+            targets.mzmax.push_back(mzmax);
+            targets.rt.push_back(ft_j.rt);
+            targets.rtmin.push_back(rtmin);
+            targets.rtmax.push_back(rtmax);
+            targets.mobilitymin.push_back(0);
+            targets.mobilitymax.push_back(0);
+            counter++;
+          }
 
-      targets.index.push_back(counter);
-      targets.id.push_back(ft_j.feature);
-      targets.level.push_back(1);
-      targets.polarity.push_back(ft_j.polarity);
-      targets.precursor.push_back(false);
-      targets.mz.push_back(ft_j.mz);
-      targets.mzmin.push_back(mzmin);
-      targets.mzmax.push_back(mzmax);
-      targets.rt.push_back(ft_j.rt);
-      targets.rtmin.push_back(rtmin);
-      targets.rtmax.push_back(rtmax);
-      targets.mobilitymin.push_back(0);
-      targets.mobilitymax.push_back(0);
-      counter++;
-    }
+          if (targets.id.empty())
+            continue;
 
-    if (targets.id.size() == 0)
-      continue;
+          const std::string &file_i = files[i];
+          if (!std::filesystem::exists(file_i))
+            continue;
 
-    const std::string &file_i = files[i];
+          const auto header_i = spectra_headers_at(i);
+          mass_spec::reader::MS_FILE ana(file_i);
+          mass_spec::spectra::MS_TARGETS_SPECTRA res = ana.get_spectra_targets(targets, header_i, minTracesIntensity, 0);
 
-    if (!std::filesystem::exists(file_i))
-      continue;
+          for (int j = 0; j < fts_i.size(); j++)
+          {
+            nts::api::NTS_FEATURE_ROW ft_j = fts_i.get_feature(j);
 
-    const auto header_i = spectra_headers_at(i);
+            if (ft_j.filtered && !filtered)
+              continue;
 
-    mass_spec::reader::MS_FILE ana(file_i);
-    mass_spec::spectra::MS_TARGETS_SPECTRA res = ana.get_spectra_targets(targets, header_i, minTracesIntensity, 0);
+            if (ft_j.ms1_size > 0 && !ft_j.ms1_mz.empty() && !ft_j.ms1_intensity.empty())
+              continue;
 
-    for (int j = 0; j < fts_i.size(); j++)
-    {
-      nts::api::NTS_FEATURE_ROW ft_j = fts_i.get_feature(j);
+            const mass_spec::spectra::MS_TARGETS_SPECTRA &res_j = res[ft_j.feature];
+            const auto clustered = nts::api::merge_NTS_FEATURE_SPECTRA(res_j, mzClust, presence);
+            const int n_res_j = static_cast<int>(clustered.mz.size());
+            if (n_res_j == 0)
+              continue;
 
-      if (ft_j.filtered && !filtered)
-        continue;
-
-      if (ft_j.ms1_size > 0 && !ft_j.ms1_mz.empty() && !ft_j.ms1_intensity.empty())
-        continue;
-
-      const mass_spec::spectra::MS_TARGETS_SPECTRA &res_j = res[ft_j.feature];
-
-      const auto clustered = nts::api::merge_NTS_FEATURE_SPECTRA(res_j, mzClust, presence);
-      const int n_res_j = static_cast<int>(clustered.mz.size());
-
-      if (n_res_j == 0)
-        continue;
-
-      ft_j.ms1_size = n_res_j;
-      ft_j.ms1_mz = utils::encode_floats_base64(clustered.mz);
-      ft_j.ms1_intensity = utils::encode_floats_base64(clustered.intensity);
-
-      fts_i.set_feature(j, ft_j);
-    }
-  }
-
-  save_processing_features();
+            ft_j.ms1_size = n_res_j;
+            ft_j.ms1_mz = utils::encode_floats_base64(clustered.mz);
+            ft_j.ms1_intensity = utils::encode_floats_base64(clustered.intensity);
+            fts_i.set_feature(j, ft_j);
+          }
+        }
+      });
 }
 
 // MARK: load_features_ms2
-void nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
+bool nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
     bool filtered,
     float minTracesIntensity,
     float isolationWindow,
@@ -2739,81 +3644,80 @@ void nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
   load_processing_metadata();
   load_processing_headers();
   load_processing_features(true);
+  return run_cached_features_algorithm(
+      "load_features_ms2",
+      cache_join_key({cache_bool_key(filtered), cache_scalar_key(minTracesIntensity), cache_scalar_key(isolationWindow), cache_scalar_key(mzClust), cache_scalar_key(presence)}),
+      {feature_state_cache_key()},
+      "Cached NTS features for load_features_ms2",
+      [&]() {
+        auto &features = feature_buffers();
+        const auto &files = file_paths();
+        for (size_t i = 0; i < features.size(); i++)
+        {
+          nts::api::NTS_FEATURES &fts_i = features[i];
 
-  auto &features = feature_buffers();
-  const auto &files = file_paths();
-  for (size_t i = 0; i < features.size(); i++)
-  {
-    nts::api::NTS_FEATURES &fts_i = features[i];
+          if (fts_i.size() == 0)
+            continue;
 
-    if (fts_i.size() == 0)
-      continue;
+          mass_spec::spectra::MS_TARGETS targets;
+          int counter = 0;
 
-    mass_spec::spectra::MS_TARGETS targets;
-    int counter = 0;
+          for (int j = 0; j < fts_i.size(); j++)
+          {
+            const nts::api::NTS_FEATURE_ROW &ft_j = fts_i.get_feature(j);
 
-    for (int j = 0; j < fts_i.size(); j++)
-    {
-      const nts::api::NTS_FEATURE_ROW &ft_j = fts_i.get_feature(j);
+            if (ft_j.filtered && !filtered)
+              continue;
 
-      if (ft_j.filtered && !filtered)
-        continue;
+            if (ft_j.ms2_size > 0 && !ft_j.ms2_mz.empty() && !ft_j.ms2_intensity.empty())
+              continue;
 
-      if (ft_j.ms2_size > 0 && !ft_j.ms2_mz.empty() && !ft_j.ms2_intensity.empty())
-        continue;
+            targets.index.push_back(counter);
+            targets.id.push_back(ft_j.feature);
+            targets.level.push_back(2);
+            targets.polarity.push_back(ft_j.polarity);
+            targets.precursor.push_back(true);
+            targets.mzmin.push_back(ft_j.mzmin - (isolationWindow / 2));
+            targets.mzmax.push_back(ft_j.mzmax + (isolationWindow / 2));
+            targets.rtmin.push_back(ft_j.rtmin - 1);
+            targets.rtmax.push_back(ft_j.rtmax + 1);
+            targets.mobilitymin.push_back(0);
+            targets.mobilitymax.push_back(0);
+            counter++;
+          }
 
-      targets.index.push_back(counter);
-      targets.id.push_back(ft_j.feature);
-      targets.level.push_back(2);
-      targets.polarity.push_back(ft_j.polarity);
-      targets.precursor.push_back(true);
-      targets.mzmin.push_back(ft_j.mzmin - (isolationWindow / 2));
-      targets.mzmax.push_back(ft_j.mzmax + (isolationWindow / 2));
-      targets.rtmin.push_back(ft_j.rtmin - 1);
-      targets.rtmax.push_back(ft_j.rtmax + 1);
-      targets.mobilitymin.push_back(0);
-      targets.mobilitymax.push_back(0);
-      counter++;
-    }
+          if (targets.id.empty())
+            continue;
 
-    if (targets.id.size() == 0)
-      continue;
+          const std::string &file_i = files[i];
+          if (!std::filesystem::exists(file_i))
+            continue;
 
-    const std::string &file_i = files[i];
+          const auto header_i = spectra_headers_at(i);
+          mass_spec::reader::MS_FILE ana(file_i);
+          mass_spec::spectra::MS_TARGETS_SPECTRA res = ana.get_spectra_targets(targets, header_i, 0, minTracesIntensity);
 
-    if (!std::filesystem::exists(file_i))
-      continue;
+          for (int j = 0; j < fts_i.size(); j++)
+          {
+            nts::api::NTS_FEATURE_ROW ft_j = fts_i.get_feature(j);
 
-    const auto header_i = spectra_headers_at(i);
+            if (ft_j.filtered && !filtered)
+              continue;
 
-    mass_spec::reader::MS_FILE ana(file_i);
-    mass_spec::spectra::MS_TARGETS_SPECTRA res = ana.get_spectra_targets(targets, header_i, 0, minTracesIntensity);
+            if (ft_j.ms2_size > 0 && !ft_j.ms2_mz.empty() && !ft_j.ms2_intensity.empty())
+              continue;
 
-    for (int j = 0; j < fts_i.size(); j++)
-    {
-      nts::api::NTS_FEATURE_ROW ft_j = fts_i.get_feature(j);
+            const mass_spec::spectra::MS_TARGETS_SPECTRA &res_j = res[ft_j.feature];
+            const auto clustered = nts::api::merge_NTS_FEATURE_SPECTRA(res_j, mzClust, presence);
+            const int n_res_j = static_cast<int>(clustered.mz.size());
+            if (n_res_j == 0)
+              continue;
 
-      if (ft_j.filtered && !filtered)
-        continue;
-
-      if (ft_j.ms2_size > 0 && !ft_j.ms2_mz.empty() && !ft_j.ms2_intensity.empty())
-        continue;
-
-      const mass_spec::spectra::MS_TARGETS_SPECTRA &res_j = res[ft_j.feature];
-
-      const auto clustered = nts::api::merge_NTS_FEATURE_SPECTRA(res_j, mzClust, presence);
-      const int n_res_j = static_cast<int>(clustered.mz.size());
-
-      if (n_res_j == 0)
-        continue;
-
-      ft_j.ms2_size = n_res_j;
-      ft_j.ms2_mz = utils::encode_floats_base64(clustered.mz);
-      ft_j.ms2_intensity = utils::encode_floats_base64(clustered.intensity);
-
-      fts_i.set_feature(j, ft_j);
-    }
-  }
-
-  save_processing_features();
+            ft_j.ms2_size = n_res_j;
+            ft_j.ms2_mz = utils::encode_floats_base64(clustered.mz);
+            ft_j.ms2_intensity = utils::encode_floats_base64(clustered.intensity);
+            fts_i.set_feature(j, ft_j);
+          }
+        }
+      });
 }

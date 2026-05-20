@@ -278,8 +278,22 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_project_non_target_analysis_assign_transformation_products
+bool rcpp_project_non_target_analysis_assign_transformation_products(SEXP nts_xptr, Rcpp::List transformation_products, std::string chromatographic_phase, double mzrMS2);
+RcppExport SEXP _StreamFind_rcpp_project_non_target_analysis_assign_transformation_products(SEXP nts_xptrSEXP, SEXP transformation_productsSEXP, SEXP chromatographic_phaseSEXP, SEXP mzrMS2SEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type nts_xptr(nts_xptrSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type transformation_products(transformation_productsSEXP);
+    Rcpp::traits::input_parameter< std::string >::type chromatographic_phase(chromatographic_phaseSEXP);
+    Rcpp::traits::input_parameter< double >::type mzrMS2(mzrMS2SEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_project_non_target_analysis_assign_transformation_products(nts_xptr, transformation_products, chromatographic_phase, mzrMS2));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_nts_find_features
-Rcpp::List rcpp_nts_find_features(SEXP nts_xptr, std::vector<float> rtWindowsMin, std::vector<float> rtWindowsMax, float ppmThreshold, float noiseThreshold, float minSNR, int minTraces, float baselineWindow, float maxWidth, float baseQuantile, std::string debugAnalysis, float debugMZ, int debugSpecIdx);
+bool rcpp_nts_find_features(SEXP nts_xptr, std::vector<float> rtWindowsMin, std::vector<float> rtWindowsMax, float ppmThreshold, float noiseThreshold, float minSNR, int minTraces, float baselineWindow, float maxWidth, float baseQuantile, std::string debugAnalysis, float debugMZ, int debugSpecIdx);
 RcppExport SEXP _StreamFind_rcpp_nts_find_features(SEXP nts_xptrSEXP, SEXP rtWindowsMinSEXP, SEXP rtWindowsMaxSEXP, SEXP ppmThresholdSEXP, SEXP noiseThresholdSEXP, SEXP minSNRSEXP, SEXP minTracesSEXP, SEXP baselineWindowSEXP, SEXP maxWidthSEXP, SEXP baseQuantileSEXP, SEXP debugAnalysisSEXP, SEXP debugMZSEXP, SEXP debugSpecIdxSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -302,7 +316,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_nts_load_features_ms1
-Rcpp::List rcpp_nts_load_features_ms1(SEXP nts_xptr, bool filtered, std::vector<float> rtWindow, std::vector<float> mzWindow, float minTracesIntensity, float mzClust, float presence);
+bool rcpp_nts_load_features_ms1(SEXP nts_xptr, bool filtered, std::vector<float> rtWindow, std::vector<float> mzWindow, float minTracesIntensity, float mzClust, float presence);
 RcppExport SEXP _StreamFind_rcpp_nts_load_features_ms1(SEXP nts_xptrSEXP, SEXP filteredSEXP, SEXP rtWindowSEXP, SEXP mzWindowSEXP, SEXP minTracesIntensitySEXP, SEXP mzClustSEXP, SEXP presenceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -319,7 +333,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_nts_load_features_ms2
-Rcpp::List rcpp_nts_load_features_ms2(SEXP nts_xptr, bool filtered, float minTracesIntensity, float isolationWindow, float mzClust, float presence);
+bool rcpp_nts_load_features_ms2(SEXP nts_xptr, bool filtered, float minTracesIntensity, float isolationWindow, float mzClust, float presence);
 RcppExport SEXP _StreamFind_rcpp_nts_load_features_ms2(SEXP nts_xptrSEXP, SEXP filteredSEXP, SEXP minTracesIntensitySEXP, SEXP isolationWindowSEXP, SEXP mzClustSEXP, SEXP presenceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -335,7 +349,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_nts_create_components
-Rcpp::List rcpp_nts_create_components(SEXP nts_xptr, std::vector<float> rtWindow, float minCorrelation, float debugRT, std::string debugAnalysis);
+bool rcpp_nts_create_components(SEXP nts_xptr, std::vector<float> rtWindow, float minCorrelation, float debugRT, std::string debugAnalysis);
 RcppExport SEXP _StreamFind_rcpp_nts_create_components(SEXP nts_xptrSEXP, SEXP rtWindowSEXP, SEXP minCorrelationSEXP, SEXP debugRTSEXP, SEXP debugAnalysisSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -350,7 +364,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_nts_annotate_components
-Rcpp::List rcpp_nts_annotate_components(SEXP nts_xptr, int maxIsotopes, int maxCharge, int maxGaps, float ppm, std::string debugComponent, std::string debugAnalysis);
+bool rcpp_nts_annotate_components(SEXP nts_xptr, int maxIsotopes, int maxCharge, int maxGaps, float ppm, std::string debugComponent, std::string debugAnalysis);
 RcppExport SEXP _StreamFind_rcpp_nts_annotate_components(SEXP nts_xptrSEXP, SEXP maxIsotopesSEXP, SEXP maxChargeSEXP, SEXP maxGapsSEXP, SEXP ppmSEXP, SEXP debugComponentSEXP, SEXP debugAnalysisSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -367,7 +381,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_nts_group_features
-Rcpp::List rcpp_nts_group_features(SEXP nts_xptr, std::string method, float rtDeviation, float ppm, int minSamples, float binSize, bool debug, float debugRT);
+bool rcpp_nts_group_features(SEXP nts_xptr, std::string method, float rtDeviation, float ppm, int minSamples, float binSize, bool debug, float debugRT);
 RcppExport SEXP _StreamFind_rcpp_nts_group_features(SEXP nts_xptrSEXP, SEXP methodSEXP, SEXP rtDeviationSEXP, SEXP ppmSEXP, SEXP minSamplesSEXP, SEXP binSizeSEXP, SEXP debugSEXP, SEXP debugRTSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -385,7 +399,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_nts_fill_features
-Rcpp::List rcpp_nts_fill_features(SEXP nts_xptr, bool withinReplicate, bool filtered, float rtExpand, float mzExpand, float maxPeakWidth, float minTracesIntensity, int minNumberTraces, float minIntensity, float rtApexDeviation, float minSignalToNoiseRatio, float minGaussianFit, std::string debugFG);
+bool rcpp_nts_fill_features(SEXP nts_xptr, bool withinReplicate, bool filtered, float rtExpand, float mzExpand, float maxPeakWidth, float minTracesIntensity, int minNumberTraces, float minIntensity, float rtApexDeviation, float minSignalToNoiseRatio, float minGaussianFit, std::string debugFG);
 RcppExport SEXP _StreamFind_rcpp_nts_fill_features(SEXP nts_xptrSEXP, SEXP withinReplicateSEXP, SEXP filteredSEXP, SEXP rtExpandSEXP, SEXP mzExpandSEXP, SEXP maxPeakWidthSEXP, SEXP minTracesIntensitySEXP, SEXP minNumberTracesSEXP, SEXP minIntensitySEXP, SEXP rtApexDeviationSEXP, SEXP minSignalToNoiseRatioSEXP, SEXP minGaussianFitSEXP, SEXP debugFGSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -408,7 +422,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_nts_blank_subtraction
-Rcpp::List rcpp_nts_blank_subtraction(SEXP nts_xptr, float blankThreshold, float rtExpand, float mzExpand);
+bool rcpp_nts_blank_subtraction(SEXP nts_xptr, float blankThreshold, float rtExpand, float mzExpand);
 RcppExport SEXP _StreamFind_rcpp_nts_blank_subtraction(SEXP nts_xptrSEXP, SEXP blankThresholdSEXP, SEXP rtExpandSEXP, SEXP mzExpandSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -422,7 +436,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_nts_filter_features
-Rcpp::List rcpp_nts_filter_features(SEXP nts_xptr, double minSN, double minIntensity, double minArea, double minWidth, double maxWidth, double maxPPM, double minFwhmRT, double maxFwhmRT, double minFwhmMZ, double maxFwhmMZ, double minGaussianA, double minGaussianMu, double maxGaussianMu, double minGaussianSigma, double maxGaussianSigma, double minGaussianR2, double maxJaggedness, double minSharpness, double minAsymmetry, double maxAsymmetry, int maxModality, double minPlates, Rcpp::LogicalVector onlyFilled, bool removeFilled, int minSizeEIC, int minSizeMS1, int minSizeMS2, double minRelPresenceReplicate, bool removeIsotopes, bool removeAdducts, bool removeLosses);
+bool rcpp_nts_filter_features(SEXP nts_xptr, double minSN, double minIntensity, double minArea, double minWidth, double maxWidth, double maxPPM, double minFwhmRT, double maxFwhmRT, double minFwhmMZ, double maxFwhmMZ, double minGaussianA, double minGaussianMu, double maxGaussianMu, double minGaussianSigma, double maxGaussianSigma, double minGaussianR2, double maxJaggedness, double minSharpness, double minAsymmetry, double maxAsymmetry, int maxModality, double minPlates, Rcpp::LogicalVector onlyFilled, bool removeFilled, int minSizeEIC, int minSizeMS1, int minSizeMS2, double minRelPresenceReplicate, bool removeIsotopes, bool removeAdducts, bool removeLosses);
 RcppExport SEXP _StreamFind_rcpp_nts_filter_features(SEXP nts_xptrSEXP, SEXP minSNSEXP, SEXP minIntensitySEXP, SEXP minAreaSEXP, SEXP minWidthSEXP, SEXP maxWidthSEXP, SEXP maxPPMSEXP, SEXP minFwhmRTSEXP, SEXP maxFwhmRTSEXP, SEXP minFwhmMZSEXP, SEXP maxFwhmMZSEXP, SEXP minGaussianASEXP, SEXP minGaussianMuSEXP, SEXP maxGaussianMuSEXP, SEXP minGaussianSigmaSEXP, SEXP maxGaussianSigmaSEXP, SEXP minGaussianR2SEXP, SEXP maxJaggednessSEXP, SEXP minSharpnessSEXP, SEXP minAsymmetrySEXP, SEXP maxAsymmetrySEXP, SEXP maxModalitySEXP, SEXP minPlatesSEXP, SEXP onlyFilledSEXP, SEXP removeFilledSEXP, SEXP minSizeEICSEXP, SEXP minSizeMS1SEXP, SEXP minSizeMS2SEXP, SEXP minRelPresenceReplicateSEXP, SEXP removeIsotopesSEXP, SEXP removeAdductsSEXP, SEXP removeLossesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -464,7 +478,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_nts_filter_suspects
-Rcpp::List rcpp_nts_filter_suspects(SEXP nts_xptr, Rcpp::CharacterVector names, double minScore, double maxErrorRT, double maxErrorMass, Rcpp::IntegerVector idLevels, int minSharedFragments, double minCosineSimilarity);
+bool rcpp_nts_filter_suspects(SEXP nts_xptr, Rcpp::CharacterVector names, double minScore, double maxErrorRT, double maxErrorMass, Rcpp::IntegerVector idLevels, int minSharedFragments, double minCosineSimilarity);
 RcppExport SEXP _StreamFind_rcpp_nts_filter_suspects(SEXP nts_xptrSEXP, SEXP namesSEXP, SEXP minScoreSEXP, SEXP maxErrorRTSEXP, SEXP maxErrorMassSEXP, SEXP idLevelsSEXP, SEXP minSharedFragmentsSEXP, SEXP minCosineSimilaritySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -482,7 +496,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_nts_filter_internal_standards
-Rcpp::List rcpp_nts_filter_internal_standards(SEXP nts_xptr, Rcpp::CharacterVector names, double minScore, double maxErrorRT, double maxErrorMass, Rcpp::IntegerVector idLevels, int minSharedFragments, double minCosineSimilarity);
+bool rcpp_nts_filter_internal_standards(SEXP nts_xptr, Rcpp::CharacterVector names, double minScore, double maxErrorRT, double maxErrorMass, Rcpp::IntegerVector idLevels, int minSharedFragments, double minCosineSimilarity);
 RcppExport SEXP _StreamFind_rcpp_nts_filter_internal_standards(SEXP nts_xptrSEXP, SEXP namesSEXP, SEXP minScoreSEXP, SEXP maxErrorRTSEXP, SEXP maxErrorMassSEXP, SEXP idLevelsSEXP, SEXP minSharedFragmentsSEXP, SEXP minCosineSimilaritySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -500,7 +514,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_nts_suspect_screening
-Rcpp::List rcpp_nts_suspect_screening(SEXP nts_xptr, Rcpp::List suspects, Rcpp::CharacterVector analyses, double ppm, double sec, double ppmMS2, double mzrMS2, double minCosineSimilarity, int minSharedFragments, bool filtered);
+bool rcpp_nts_suspect_screening(SEXP nts_xptr, Rcpp::List suspects, Rcpp::CharacterVector analyses, double ppm, double sec, double ppmMS2, double mzrMS2, double minCosineSimilarity, int minSharedFragments, bool filtered);
 RcppExport SEXP _StreamFind_rcpp_nts_suspect_screening(SEXP nts_xptrSEXP, SEXP suspectsSEXP, SEXP analysesSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP ppmMS2SEXP, SEXP mzrMS2SEXP, SEXP minCosineSimilaritySEXP, SEXP minSharedFragmentsSEXP, SEXP filteredSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -520,7 +534,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_nts_filter_features_ms2
-Rcpp::List rcpp_nts_filter_features_ms2(SEXP nts_xptr, int top, double minIntensity, double relMinIntensity, bool blankClean, double mzClust, double blankPresenceThreshold, double globalPresenceThreshold);
+bool rcpp_nts_filter_features_ms2(SEXP nts_xptr, int top, double minIntensity, double relMinIntensity, bool blankClean, double mzClust, double blankPresenceThreshold, double globalPresenceThreshold);
 RcppExport SEXP _StreamFind_rcpp_nts_filter_features_ms2(SEXP nts_xptrSEXP, SEXP topSEXP, SEXP minIntensitySEXP, SEXP relMinIntensitySEXP, SEXP blankCleanSEXP, SEXP mzClustSEXP, SEXP blankPresenceThresholdSEXP, SEXP globalPresenceThresholdSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -538,7 +552,7 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_nts_metfrag_screening
-Rcpp::List rcpp_nts_metfrag_screening(SEXP nts_xptr, std::string metfrag_path, std::string database_type, std::string database_path, Rcpp::CharacterVector analyses, double ppm, double sec, double ppmMS2, double mzrMS2, int top_n, bool filtered, std::string java_path, std::string run_dir, bool debug, Rcpp::List extra_params);
+bool rcpp_nts_metfrag_screening(SEXP nts_xptr, std::string metfrag_path, std::string database_type, std::string database_path, Rcpp::CharacterVector analyses, double ppm, double sec, double ppmMS2, double mzrMS2, int top_n, bool filtered, std::string java_path, std::string run_dir, bool debug, Rcpp::List extra_params);
 RcppExport SEXP _StreamFind_rcpp_nts_metfrag_screening(SEXP nts_xptrSEXP, SEXP metfrag_pathSEXP, SEXP database_typeSEXP, SEXP database_pathSEXP, SEXP analysesSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP ppmMS2SEXP, SEXP mzrMS2SEXP, SEXP top_nSEXP, SEXP filteredSEXP, SEXP java_pathSEXP, SEXP run_dirSEXP, SEXP debugSEXP, SEXP extra_paramsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
@@ -1041,6 +1055,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_StreamFind_rcpp_project_non_target_analysis_get_suspects", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_get_suspects, 11},
     {"_StreamFind_rcpp_project_non_target_analysis_get_internal_standards", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_get_internal_standards, 11},
     {"_StreamFind_rcpp_project_non_target_analysis_get_transformation_products", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_get_transformation_products, 1},
+    {"_StreamFind_rcpp_project_non_target_analysis_assign_transformation_products", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_assign_transformation_products, 4},
     {"_StreamFind_rcpp_nts_find_features", (DL_FUNC) &_StreamFind_rcpp_nts_find_features, 13},
     {"_StreamFind_rcpp_nts_load_features_ms1", (DL_FUNC) &_StreamFind_rcpp_nts_load_features_ms1, 7},
     {"_StreamFind_rcpp_nts_load_features_ms2", (DL_FUNC) &_StreamFind_rcpp_nts_load_features_ms2, 6},
