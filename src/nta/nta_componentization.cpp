@@ -1,13 +1,13 @@
-#include "nts_componentization.h"
-#include "../mass_spec/project_mass_spec.h"
-#include "nts.h"
+#include "nta_componentization.h"
+#include "../mass_spec/mass_spec.h"
+#include "nta.h"
 #include <iomanip>
 #include <algorithm>
 #include <fstream>
 #include <sstream>
 #include <cmath>
 
-namespace nts
+namespace nta
 {
   namespace componentization
   {
@@ -116,7 +116,7 @@ namespace nts
 
     // MARK: create_components_impl
     void create_components_impl(
-      nts::PROJECT_NON_TARGET_ANALYSIS &nts_data,
+      nta::PROJECT_NON_TARGET_ANALYSIS &nta_data,
         const std::vector<float> &rtWindow,
         float minCorrelation,
         float debugRT,
@@ -134,12 +134,12 @@ namespace nts
       }
 
       bool debug_triggered = false;
-      auto &feature_buffers = nts_data.feature_buffers();
-      const auto &analysis_names = nts_data.analysis_names();
+      auto &feature_buffers = nta_data.feature_buffers();
+      const auto &analysis_names = nta_data.analysis_names();
 
       for (size_t i = 0; i < feature_buffers.size(); ++i)
       {
-        nts::api::NTS_FEATURES &fts = feature_buffers[i];
+        nta::api::NTA_FEATURES &fts = feature_buffers[i];
         const int n = fts.size();
 
         if (n == 0)
@@ -163,7 +163,7 @@ namespace nts
         std::map<int, std::vector<int>> polarity_groups;
         for (int j = 0; j < n; ++j)
         {
-          const nts::api::NTS_FEATURE_ROW &ft = fts.get_feature(j);
+          const nta::api::NTA_FEATURE_ROW &ft = fts.get_feature(j);
           polarity_groups[ft.polarity].push_back(j);
         }
 
@@ -193,7 +193,7 @@ namespace nts
           sorted_features.reserve(feature_indices.size());
 
           for (int j : feature_indices) {
-            nts::api::NTS_FEATURE_ROW ft = fts.get_feature(j);
+            nta::api::NTA_FEATURE_ROW ft = fts.get_feature(j);
             FeatureIntensity fi;
             fi.idx = j;
             fi.rt = static_cast<float>(ft.rt);
@@ -243,7 +243,7 @@ namespace nts
             bool debug_this_cluster = false;
             if (should_debug) {
               for (const int idx : cluster) {
-                nts::api::NTS_FEATURE_ROW ft = fts.get_feature(idx);
+                nta::api::NTA_FEATURE_ROW ft = fts.get_feature(idx);
                 if (ft.rt >= (debugRT + left_offset) && ft.rt <= (debugRT + right_offset)) {
                   debug_this_cluster = true;
                   break;
@@ -256,7 +256,7 @@ namespace nts
                           << " with RT window [" << window_start << ", "
                           << window_end << "]\n");
                 for (const int idx : cluster) {
-                  nts::api::NTS_FEATURE_ROW ft = fts.get_feature(idx);
+                  nta::api::NTA_FEATURE_ROW ft = fts.get_feature(idx);
                   const bool in_debug_window = ft.rt >= (debugRT + left_offset) && ft.rt <= (debugRT + right_offset);
                   DEBUG_LOG("  Feature " << ft.feature << ": RT=" << ft.rt
                             << ", mz=" << ft.mz << ", intensity=" << ft.intensity
@@ -271,7 +271,7 @@ namespace nts
               const std::string component_id = oss.str();
 
               for (const int idx : cluster) {
-                nts::api::NTS_FEATURE_ROW ft = fts.get_feature(idx);
+                nta::api::NTA_FEATURE_ROW ft = fts.get_feature(idx);
                 ft.feature_component = component_id;
                 fts.set_feature(idx, ft);
 
@@ -298,7 +298,7 @@ namespace nts
             feature_eics.reserve(cluster.size());
 
             for (const int idx : cluster) {
-              const nts::api::NTS_FEATURE_ROW &ft = fts.get_feature(idx);
+              const nta::api::NTA_FEATURE_ROW &ft = fts.get_feature(idx);
               FeatureEIC feic;
               feic.idx = idx;
               feic.rt = ft.rt;
@@ -315,7 +315,7 @@ namespace nts
               const std::string component_id = oss.str();
 
               for (const int idx : cluster) {
-                nts::api::NTS_FEATURE_ROW ft = fts.get_feature(idx);
+                nta::api::NTA_FEATURE_ROW ft = fts.get_feature(idx);
                 ft.feature_component = component_id;
                 fts.set_feature(idx, ft);
 
@@ -409,7 +409,7 @@ namespace nts
                 }
                 if (already_in_cluster) continue;
 
-                const nts::api::NTS_FEATURE_ROW &ft = fts.get_feature(feat_idx);
+                const nta::api::NTA_FEATURE_ROW &ft = fts.get_feature(feat_idx);
 
                 // Check if within sub-seed's RT window
                 if (ft.rt >= sub_window_start && ft.rt <= sub_window_end) {
@@ -480,7 +480,7 @@ namespace nts
 
               for (int sub_idx : sub_cluster) {
                 const int feature_idx = feature_eics[sub_idx].idx;
-                nts::api::NTS_FEATURE_ROW ft = fts.get_feature(feature_idx);
+                nta::api::NTA_FEATURE_ROW ft = fts.get_feature(feature_idx);
                 ft.feature_component = component_id;
                 fts.set_feature(feature_idx, ft);
 
@@ -506,4 +506,4 @@ namespace nts
     }
 
   } // namespace componentization
-} // namespace nts
+} // namespace nta

@@ -1,19 +1,19 @@
-// nts_gap_filling.h
+// nta_gap_filling.h
 // Feature gap filling declarations for PROJECT_NON_TARGET_ANALYSIS
 // This file contains structures and functions for filling missing features across analyses
 
-#ifndef NTS_GAP_FILLING_H
-#define NTS_GAP_FILLING_H
+#ifndef NTA_GAP_FILLING_H
+#define NTA_GAP_FILLING_H
 
 #include <vector>
 #include <string>
 #include <unordered_map>
 #include "../mass_spec/reader.h"
 
-namespace nts
+namespace nta
 {
   // Forward declaration
-  namespace api { struct NTS_FEATURE_ROW; struct NTS_FEATURES; }
+  namespace api { struct NTA_FEATURE_ROW; struct NTA_FEATURES; }
   namespace api { class PROJECT_NON_TARGET_ANALYSIS; }
   using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS;
 
@@ -91,7 +91,7 @@ namespace nts
 
     // Analyze feature groups to identify gaps
     std::vector<FEATURE_GROUP_INFO> analyze_feature_groups(
-        const std::vector<api::NTS_FEATURES> &features,
+        const std::vector<api::NTA_FEATURES> &features,
         const std::vector<std::string> &analyses,
         const std::vector<std::string> &replicates,
         bool withinReplicate,
@@ -127,7 +127,7 @@ namespace nts
 
     // Main implementation function
     void fill_features_impl(
-      PROJECT_NON_TARGET_ANALYSIS &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nta_data,
         bool withinReplicate,
         bool filtered,
         float rtExpand,
@@ -142,6 +142,6 @@ namespace nts
         std::string debugFG = "");
 
   } // namespace gap_filling
-} // namespace nts
+} // namespace nta
 
-#endif // NTS_GAP_FILLING_H
+#endif // NTA_GAP_FILLING_H

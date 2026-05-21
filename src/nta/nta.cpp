@@ -1,16 +1,16 @@
-#include "nts.h"
-#include "nts_annotation.h"
-#include "nts_componentization.h"
-#include "nts_alignment.h"
+#include "nta.h"
+#include "nta_annotation.h"
+#include "nta_componentization.h"
+#include "nta_alignment.h"
 #include <iomanip>
 #include <algorithm>
 #include <sstream>
 #include <filesystem>
 #include <cmath>
 
-#include "nts.h"
+#include "nta.h"
 
-namespace nts
+namespace nta
 {
 
   namespace api
@@ -711,13 +711,13 @@ namespace nts
   // MARK: ns api
   namespace api
   {
-    // MARK: merge_NTS_FEATURE_SPECTRA
-    NTS_FEATURE_SPECTRUM merge_NTS_FEATURE_SPECTRA(
+    // MARK: merge_NTA_FEATURE_SPECTRA
+    NTA_FEATURE_SPECTRUM merge_NTA_FEATURE_SPECTRA(
         const mass_spec::spectra::MS_TARGETS_SPECTRA &spectra,
         const float &mzClust,
         const float &presence)
     {
-      NTS_FEATURE_SPECTRUM out;
+      NTA_FEATURE_SPECTRUM out;
 
       const size_t n = spectra.mz.size();
       if (n == 0)
@@ -811,24 +811,24 @@ namespace nts
       return out;
     };
 
-    // NTS_FEATURE_SPECTRUM constructors / initializers
-    NTS_FEATURE_SPECTRUM::NTS_FEATURE_SPECTRUM(
+    // NTA_FEATURE_SPECTRUM constructors / initializers
+    NTA_FEATURE_SPECTRUM::NTA_FEATURE_SPECTRUM(
         const mass_spec::spectra::MS_TARGETS_SPECTRA &spectra,
         float mzClust,
         float presence)
     {
-      *this = ::nts::api::merge_NTS_FEATURE_SPECTRA(spectra, mzClust, presence);
+      *this = ::nta::api::merge_NTA_FEATURE_SPECTRA(spectra, mzClust, presence);
     }
 
-    void NTS_FEATURE_SPECTRUM::init_from_targets(
+    void NTA_FEATURE_SPECTRUM::init_from_targets(
         const mass_spec::spectra::MS_TARGETS_SPECTRA &spectra,
         float mzClust,
         float presence)
     {
-      *this = ::nts::api::merge_NTS_FEATURE_SPECTRA(spectra, mzClust, presence);
+      *this = ::nta::api::merge_NTA_FEATURE_SPECTRA(spectra, mzClust, presence);
     }
 
-    std::vector<std::uint8_t> NTS_FEATURES::serialize_object() const
+    std::vector<std::uint8_t> NTA_FEATURES::serialize_object() const
     {
       std::vector<std::uint8_t> out;
       project::cache::write_string(out, analysis);
@@ -880,10 +880,10 @@ namespace nts
       return out;
     }
 
-    NTS_FEATURES NTS_FEATURES::deserialize_object(const std::vector<std::uint8_t> &bytes)
+    NTA_FEATURES NTA_FEATURES::deserialize_object(const std::vector<std::uint8_t> &bytes)
     {
       project::cache::BINARY_READER reader(bytes);
-      NTS_FEATURES value;
+      NTA_FEATURES value;
       value.analysis = project::cache::read_string(reader);
       project::cache::read_vector(reader, value.feature);
       project::cache::read_vector(reader, value.feature_group);
@@ -932,12 +932,12 @@ namespace nts
       project::cache::read_vector(reader, value.ms2_intensity);
       if (!reader.empty())
       {
-        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTS_FEATURES: trailing bytes remain");
+        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTA_FEATURES: trailing bytes remain");
       }
       return value;
     }
 
-    std::vector<std::uint8_t> NTS_SUSPECTS::serialize_object() const
+    std::vector<std::uint8_t> NTA_SUSPECTS::serialize_object() const
     {
       std::vector<std::uint8_t> out;
       project::cache::write_vector(out, analysis);
@@ -973,10 +973,10 @@ namespace nts
       return out;
     }
 
-    NTS_SUSPECTS NTS_SUSPECTS::deserialize_object(const std::vector<std::uint8_t> &bytes)
+    NTA_SUSPECTS NTA_SUSPECTS::deserialize_object(const std::vector<std::uint8_t> &bytes)
     {
       project::cache::BINARY_READER reader(bytes);
-      NTS_SUSPECTS value;
+      NTA_SUSPECTS value;
       project::cache::read_vector(reader, value.analysis);
       project::cache::read_vector(reader, value.feature);
       project::cache::read_vector(reader, value.candidate_rank);
@@ -1009,12 +1009,12 @@ namespace nts
       project::cache::read_vector(reader, value.exp_ms2_intensity);
       if (!reader.empty())
       {
-        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTS_SUSPECTS: trailing bytes remain");
+        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTA_SUSPECTS: trailing bytes remain");
       }
       return value;
     }
 
-    std::vector<std::uint8_t> NTS_INTERNAL_STANDARDS::serialize_object() const
+    std::vector<std::uint8_t> NTA_INTERNAL_STANDARDS::serialize_object() const
     {
       std::vector<std::uint8_t> out;
       project::cache::write_vector(out, analysis);
@@ -1050,10 +1050,10 @@ namespace nts
       return out;
     }
 
-    NTS_INTERNAL_STANDARDS NTS_INTERNAL_STANDARDS::deserialize_object(const std::vector<std::uint8_t> &bytes)
+    NTA_INTERNAL_STANDARDS NTA_INTERNAL_STANDARDS::deserialize_object(const std::vector<std::uint8_t> &bytes)
     {
       project::cache::BINARY_READER reader(bytes);
-      NTS_INTERNAL_STANDARDS value;
+      NTA_INTERNAL_STANDARDS value;
       project::cache::read_vector(reader, value.analysis);
       project::cache::read_vector(reader, value.feature);
       project::cache::read_vector(reader, value.candidate_rank);
@@ -1086,12 +1086,12 @@ namespace nts
       project::cache::read_vector(reader, value.exp_ms2_intensity);
       if (!reader.empty())
       {
-        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTS_INTERNAL_STANDARDS: trailing bytes remain");
+        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTA_INTERNAL_STANDARDS: trailing bytes remain");
       }
       return value;
     }
 
-    std::vector<std::uint8_t> NTS_FEATURES_CACHE::serialize_object() const
+    std::vector<std::uint8_t> NTA_FEATURES_CACHE::serialize_object() const
     {
       std::vector<std::uint8_t> out;
       project::cache::write_scalar<std::uint64_t>(out, static_cast<std::uint64_t>(buffers.size()));
@@ -1107,10 +1107,10 @@ namespace nts
       return out;
     }
 
-    NTS_FEATURES_CACHE NTS_FEATURES_CACHE::deserialize_object(const std::vector<std::uint8_t> &bytes)
+    NTA_FEATURES_CACHE NTA_FEATURES_CACHE::deserialize_object(const std::vector<std::uint8_t> &bytes)
     {
       project::cache::BINARY_READER reader(bytes);
-      NTS_FEATURES_CACHE value;
+      NTA_FEATURES_CACHE value;
       const auto count = project::cache::read_scalar<std::uint64_t>(reader);
       value.buffers.reserve(static_cast<std::size_t>(count));
       for (std::uint64_t i = 0; i < count; ++i)
@@ -1121,16 +1121,16 @@ namespace nts
         {
           reader.read_bytes(item.data(), static_cast<std::size_t>(size));
         }
-        value.buffers.push_back(NTS_FEATURES::deserialize_object(item));
+        value.buffers.push_back(NTA_FEATURES::deserialize_object(item));
       }
       if (!reader.empty())
       {
-        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTS_FEATURES_CACHE: trailing bytes remain");
+        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTA_FEATURES_CACHE: trailing bytes remain");
       }
       return value;
     }
 
-    std::vector<std::uint8_t> NTS_SUSPECTS_CACHE::serialize_object() const
+    std::vector<std::uint8_t> NTA_SUSPECTS_CACHE::serialize_object() const
     {
       std::vector<std::uint8_t> out;
       project::cache::write_scalar<std::uint64_t>(out, static_cast<std::uint64_t>(buffers.size()));
@@ -1146,10 +1146,10 @@ namespace nts
       return out;
     }
 
-    NTS_SUSPECTS_CACHE NTS_SUSPECTS_CACHE::deserialize_object(const std::vector<std::uint8_t> &bytes)
+    NTA_SUSPECTS_CACHE NTA_SUSPECTS_CACHE::deserialize_object(const std::vector<std::uint8_t> &bytes)
     {
       project::cache::BINARY_READER reader(bytes);
-      NTS_SUSPECTS_CACHE value;
+      NTA_SUSPECTS_CACHE value;
       const auto count = project::cache::read_scalar<std::uint64_t>(reader);
       value.buffers.reserve(static_cast<std::size_t>(count));
       for (std::uint64_t i = 0; i < count; ++i)
@@ -1160,16 +1160,16 @@ namespace nts
         {
           reader.read_bytes(item.data(), static_cast<std::size_t>(size));
         }
-        value.buffers.push_back(NTS_SUSPECTS::deserialize_object(item));
+        value.buffers.push_back(NTA_SUSPECTS::deserialize_object(item));
       }
       if (!reader.empty())
       {
-        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTS_SUSPECTS_CACHE: trailing bytes remain");
+        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTA_SUSPECTS_CACHE: trailing bytes remain");
       }
       return value;
     }
 
-    std::vector<std::uint8_t> NTS_INTERNAL_STANDARDS_CACHE::serialize_object() const
+    std::vector<std::uint8_t> NTA_INTERNAL_STANDARDS_CACHE::serialize_object() const
     {
       std::vector<std::uint8_t> out;
       project::cache::write_scalar<std::uint64_t>(out, static_cast<std::uint64_t>(buffers.size()));
@@ -1185,10 +1185,10 @@ namespace nts
       return out;
     }
 
-    NTS_INTERNAL_STANDARDS_CACHE NTS_INTERNAL_STANDARDS_CACHE::deserialize_object(const std::vector<std::uint8_t> &bytes)
+    NTA_INTERNAL_STANDARDS_CACHE NTA_INTERNAL_STANDARDS_CACHE::deserialize_object(const std::vector<std::uint8_t> &bytes)
     {
       project::cache::BINARY_READER reader(bytes);
-      NTS_INTERNAL_STANDARDS_CACHE value;
+      NTA_INTERNAL_STANDARDS_CACHE value;
       const auto count = project::cache::read_scalar<std::uint64_t>(reader);
       value.buffers.reserve(static_cast<std::size_t>(count));
       for (std::uint64_t i = 0; i < count; ++i)
@@ -1199,16 +1199,16 @@ namespace nts
         {
           reader.read_bytes(item.data(), static_cast<std::size_t>(size));
         }
-        value.buffers.push_back(NTS_INTERNAL_STANDARDS::deserialize_object(item));
+        value.buffers.push_back(NTA_INTERNAL_STANDARDS::deserialize_object(item));
       }
       if (!reader.empty())
       {
-        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTS_INTERNAL_STANDARDS_CACHE: trailing bytes remain");
+        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTA_INTERNAL_STANDARDS_CACHE: trailing bytes remain");
       }
       return value;
     }
 
-    std::vector<std::uint8_t> NTS_TRANSFORMATION_PRODUCTS::serialize_object() const
+    std::vector<std::uint8_t> NTA_TRANSFORMATION_PRODUCTS::serialize_object() const
     {
       std::vector<std::uint8_t> out;
       project::cache::write_vector(out, name);
@@ -1243,10 +1243,10 @@ namespace nts
       return out;
     }
 
-    NTS_TRANSFORMATION_PRODUCTS NTS_TRANSFORMATION_PRODUCTS::deserialize_object(const std::vector<std::uint8_t> &bytes)
+    NTA_TRANSFORMATION_PRODUCTS NTA_TRANSFORMATION_PRODUCTS::deserialize_object(const std::vector<std::uint8_t> &bytes)
     {
       project::cache::BINARY_READER reader(bytes);
-      NTS_TRANSFORMATION_PRODUCTS value;
+      NTA_TRANSFORMATION_PRODUCTS value;
       project::cache::read_vector(reader, value.name);
       project::cache::read_vector(reader, value.formula);
       project::cache::read_vector(reader, value.mass);
@@ -1278,14 +1278,14 @@ namespace nts
       project::cache::read_vector(reader, value.main_precursor_rt_plausibility);
       if (!reader.empty())
       {
-        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTS_TRANSFORMATION_PRODUCTS: trailing bytes remain");
+        throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTA_TRANSFORMATION_PRODUCTS: trailing bytes remain");
       }
       return value;
     }
 
-    NTS_FEATURE_ROW feature_row_from_result(duckdb_result &result, idx_t row)
+    NTA_FEATURE_ROW feature_row_from_result(duckdb_result &result, idx_t row)
     {
-      NTS_FEATURE_ROW value;
+      NTA_FEATURE_ROW value;
       value.project_id = project::db::result_varchar(&result, 0, row);
       value.analysis = project::db::result_varchar(&result, 1, row);
       value.feature = project::db::result_varchar(&result, 2, row);
@@ -1337,9 +1337,9 @@ namespace nts
       return value;
     }
 
-    NTS_SUSPECT_ROW suspect_row_from_result(duckdb_result &result, idx_t row)
+    NTA_SUSPECT_ROW suspect_row_from_result(duckdb_result &result, idx_t row)
     {
-      NTS_SUSPECT_ROW value;
+      NTA_SUSPECT_ROW value;
       value.project_id = project::db::result_varchar(&result, 0, row);
       value.analysis = project::db::result_varchar(&result, 1, row);
       value.feature = project::db::result_varchar(&result, 2, row);
@@ -1375,9 +1375,9 @@ namespace nts
       return value;
     }
 
-    NTS_INTERNAL_STANDARD_ROW internal_standard_row_from_result(duckdb_result &result, idx_t row)
+    NTA_INTERNAL_STANDARD_ROW internal_standard_row_from_result(duckdb_result &result, idx_t row)
     {
-      NTS_INTERNAL_STANDARD_ROW value;
+      NTA_INTERNAL_STANDARD_ROW value;
       value.project_id = project::db::result_varchar(&result, 0, row);
       value.analysis = project::db::result_varchar(&result, 1, row);
       value.feature = project::db::result_varchar(&result, 2, row);
@@ -1413,9 +1413,9 @@ namespace nts
       return value;
     }
 
-    NTS_FEATURE_ROW feature_row_from_table(const NTS_FEATURES_TABLE &table, std::size_t row)
+    NTA_FEATURE_ROW feature_row_from_table(const NTA_FEATURES_TABLE &table, std::size_t row)
     {
-      NTS_FEATURE_ROW value;
+      NTA_FEATURE_ROW value;
       value.project_id = table.project_id[row];
       value.analysis = table.analysis[row];
       value.feature = table.feature[row];
@@ -1467,9 +1467,9 @@ namespace nts
       return value;
     }
 
-    NTS_SUSPECT_ROW suspect_row_from_table(const NTS_SUSPECTS_TABLE &table, std::size_t row)
+    NTA_SUSPECT_ROW suspect_row_from_table(const NTA_SUSPECTS_TABLE &table, std::size_t row)
     {
-      NTS_SUSPECT_ROW value;
+      NTA_SUSPECT_ROW value;
       value.project_id = table.project_id[row];
       value.analysis = table.analysis[row];
       value.feature = table.feature[row];
@@ -1505,9 +1505,9 @@ namespace nts
       return value;
     }
 
-    NTS_INTERNAL_STANDARD_ROW internal_standard_row_from_table(const NTS_INTERNAL_STANDARDS_TABLE &table, std::size_t row)
+    NTA_INTERNAL_STANDARD_ROW internal_standard_row_from_table(const NTA_INTERNAL_STANDARDS_TABLE &table, std::size_t row)
     {
-      NTS_INTERNAL_STANDARD_ROW value;
+      NTA_INTERNAL_STANDARD_ROW value;
       value.project_id = table.project_id[row];
       value.analysis = table.analysis[row];
       value.feature = table.feature[row];
@@ -1543,9 +1543,9 @@ namespace nts
       return value;
     }
 
-    NTS_TRANSFORMATION_PRODUCT_ROW transformation_product_row_from_table(const NTS_TRANSFORMATION_PRODUCTS_TABLE &table, std::size_t row)
+    NTA_TRANSFORMATION_PRODUCT_ROW transformation_product_row_from_table(const NTA_TRANSFORMATION_PRODUCTS_TABLE &table, std::size_t row)
     {
-      NTS_TRANSFORMATION_PRODUCT_ROW value;
+      NTA_TRANSFORMATION_PRODUCT_ROW value;
       value.project_id = table.project_id[row];
       value.name = table.name[row];
       value.formula = table.formula[row];
@@ -1580,9 +1580,9 @@ namespace nts
       return value;
     }
 
-    NTS_TRANSFORMATION_PRODUCT_ROW transformation_product_row_from_result(duckdb_result &result, idx_t row)
+    NTA_TRANSFORMATION_PRODUCT_ROW transformation_product_row_from_result(duckdb_result &result, idx_t row)
     {
-      NTS_TRANSFORMATION_PRODUCT_ROW value;
+      NTA_TRANSFORMATION_PRODUCT_ROW value;
       value.project_id = project::db::result_varchar(&result, 0, row);
       value.name = project::db::result_varchar(&result, 1, row);
       value.formula = project::db::result_varchar(&result, 2, row);
@@ -1643,7 +1643,7 @@ namespace nts
         return out;
       }
 
-      bool has_target_filters(const NTS_QUERY_REQUEST &query)
+      bool has_target_filters(const NTA_QUERY_REQUEST &query)
       {
         return !query.targets.mass.empty() ||
                !query.targets.mz.empty() ||
@@ -1651,7 +1651,7 @@ namespace nts
                !query.targets.mobility.empty();
       }
 
-      std::vector<std::string> collect_feature_row_analyses(const std::vector<NTS_FEATURE_ROW> &rows)
+      std::vector<std::string> collect_feature_row_analyses(const std::vector<NTA_FEATURE_ROW> &rows)
       {
         std::vector<std::string> analyses;
         analyses.reserve(rows.size());
@@ -1665,7 +1665,7 @@ namespace nts
         return analyses;
       }
 
-      bool matches_feature_target(const NTS_FEATURE_ROW &row,
+      bool matches_feature_target(const NTA_FEATURE_ROW &row,
                                   const mass_spec::spectra::MS_TARGETS &targets)
       {
         for (std::size_t i = 0; i < targets.id.size(); ++i)
@@ -1689,8 +1689,8 @@ namespace nts
         return false;
       }
 
-      std::vector<NTS_FEATURE_ROW> filter_feature_rows_by_targets(const std::vector<NTS_FEATURE_ROW> &rows,
-                                                                  const NTS_QUERY_REQUEST &query)
+      std::vector<NTA_FEATURE_ROW> filter_feature_rows_by_targets(const std::vector<NTA_FEATURE_ROW> &rows,
+                                                                  const NTA_QUERY_REQUEST &query)
       {
         if (rows.empty() || !has_target_filters(query))
         {
@@ -1723,7 +1723,7 @@ namespace nts
           return {};
         }
 
-        std::vector<NTS_FEATURE_ROW> out;
+        std::vector<NTA_FEATURE_ROW> out;
         out.reserve(rows.size());
         for (const auto &row : rows)
         {
@@ -1740,7 +1740,7 @@ namespace nts
         return out;
       }
 
-      std::unordered_set<std::string> feature_keys_from_rows(const std::vector<NTS_FEATURE_ROW> &rows)
+      std::unordered_set<std::string> feature_keys_from_rows(const std::vector<NTA_FEATURE_ROW> &rows)
       {
         std::unordered_set<std::string> out;
         out.reserve(rows.size());
@@ -1751,7 +1751,7 @@ namespace nts
         return out;
       }
 
-      std::unordered_map<std::string, FEATURE_METADATA> feature_metadata_from_rows(const std::vector<NTS_FEATURE_ROW> &rows)
+      std::unordered_map<std::string, FEATURE_METADATA> feature_metadata_from_rows(const std::vector<NTA_FEATURE_ROW> &rows)
       {
         std::unordered_map<std::string, FEATURE_METADATA> out;
         out.reserve(rows.size());
@@ -1860,9 +1860,9 @@ namespace nts
       return *cached;
     }
 
-    NTS_FEATURES_TABLE PROJECT_NON_TARGET_ANALYSIS::collect_features_table(const NTS_QUERY_REQUEST &query) const
+    NTA_FEATURES_TABLE PROJECT_NON_TARGET_ANALYSIS::collect_features_table(const NTA_QUERY_REQUEST &query) const
     {
-      NTS_FEATURES_TABLE table;
+      NTA_FEATURES_TABLE table;
       const auto rows = get_features(query);
       for (const auto &row : rows)
       {
@@ -1871,9 +1871,9 @@ namespace nts
       return table;
     }
 
-    NTS_SUSPECTS_TABLE PROJECT_NON_TARGET_ANALYSIS::collect_suspects_table(const NTS_QUERY_REQUEST &query) const
+    NTA_SUSPECTS_TABLE PROJECT_NON_TARGET_ANALYSIS::collect_suspects_table(const NTA_QUERY_REQUEST &query) const
     {
-      NTS_SUSPECTS_TABLE table;
+      NTA_SUSPECTS_TABLE table;
       const auto rows = get_suspects(query);
       for (const auto &row : rows)
       {
@@ -1882,9 +1882,9 @@ namespace nts
       return table;
     }
 
-    NTS_INTERNAL_STANDARDS_TABLE PROJECT_NON_TARGET_ANALYSIS::collect_internal_standards_table(const NTS_QUERY_REQUEST &query) const
+    NTA_INTERNAL_STANDARDS_TABLE PROJECT_NON_TARGET_ANALYSIS::collect_internal_standards_table(const NTA_QUERY_REQUEST &query) const
     {
-      NTS_INTERNAL_STANDARDS_TABLE table;
+      NTA_INTERNAL_STANDARDS_TABLE table;
       const auto rows = get_internal_standards(query);
       for (const auto &row : rows)
       {
@@ -1893,9 +1893,9 @@ namespace nts
       return table;
     }
 
-    NTS_TRANSFORMATION_PRODUCTS_TABLE PROJECT_NON_TARGET_ANALYSIS::collect_transformation_products_table() const
+    NTA_TRANSFORMATION_PRODUCTS_TABLE PROJECT_NON_TARGET_ANALYSIS::collect_transformation_products_table() const
     {
-      NTS_TRANSFORMATION_PRODUCTS_TABLE table;
+      NTA_TRANSFORMATION_PRODUCTS_TABLE table;
       const auto rows = get_transformation_products();
       for (const auto &row : rows)
       {
@@ -1911,7 +1911,7 @@ namespace nts
         return;
       }
 
-      feature_buffers_.assign(analysis_names().size(), NTS_FEATURES());
+      feature_buffers_.assign(analysis_names().size(), NTA_FEATURES());
       std::unordered_map<std::string, std::size_t> analysis_index;
       analysis_index.reserve(analysis_names().size());
       for (std::size_t i = 0; i < analysis_names().size(); ++i)
@@ -1940,7 +1940,7 @@ namespace nts
         return;
       }
 
-      suspect_buffers_.assign(analysis_names().size(), NTS_SUSPECTS());
+      suspect_buffers_.assign(analysis_names().size(), NTA_SUSPECTS());
       std::unordered_map<std::string, std::size_t> analysis_index;
       analysis_index.reserve(analysis_names().size());
       for (std::size_t i = 0; i < analysis_names().size(); ++i)
@@ -1968,7 +1968,7 @@ namespace nts
         return;
       }
 
-      internal_standard_buffers_.assign(analysis_names().size(), NTS_INTERNAL_STANDARDS());
+      internal_standard_buffers_.assign(analysis_names().size(), NTA_INTERNAL_STANDARDS());
       std::unordered_map<std::string, std::size_t> analysis_index;
       analysis_index.reserve(analysis_names().size());
       for (std::size_t i = 0; i < analysis_names().size(); ++i)
@@ -1996,7 +1996,7 @@ namespace nts
         return;
       }
 
-      transformation_products_buffer_ = NTS_TRANSFORMATION_PRODUCTS();
+      transformation_products_buffer_ = NTA_TRANSFORMATION_PRODUCTS();
       for (std::size_t row = 0; row < static_cast<std::size_t>(transformation_products_table_.size()); ++row)
       {
         transformation_products_buffer_.append(transformation_product_row_from_table(transformation_products_table_, row));
@@ -2004,49 +2004,49 @@ namespace nts
       transformation_products_ready_ = true;
     }
 
-    std::vector<NTS_FEATURES> &PROJECT_NON_TARGET_ANALYSIS::feature_buffers()
+    std::vector<NTA_FEATURES> &PROJECT_NON_TARGET_ANALYSIS::feature_buffers()
     {
       materialize_feature_buffers();
       return feature_buffers_;
     }
 
-    const std::vector<NTS_FEATURES> &PROJECT_NON_TARGET_ANALYSIS::feature_buffers() const
+    const std::vector<NTA_FEATURES> &PROJECT_NON_TARGET_ANALYSIS::feature_buffers() const
     {
       materialize_feature_buffers();
       return feature_buffers_;
     }
 
-    std::vector<NTS_SUSPECTS> &PROJECT_NON_TARGET_ANALYSIS::suspect_buffers()
+    std::vector<NTA_SUSPECTS> &PROJECT_NON_TARGET_ANALYSIS::suspect_buffers()
     {
       materialize_suspect_buffers();
       return suspect_buffers_;
     }
 
-    const std::vector<NTS_SUSPECTS> &PROJECT_NON_TARGET_ANALYSIS::suspect_buffers() const
+    const std::vector<NTA_SUSPECTS> &PROJECT_NON_TARGET_ANALYSIS::suspect_buffers() const
     {
       materialize_suspect_buffers();
       return suspect_buffers_;
     }
 
-    std::vector<NTS_INTERNAL_STANDARDS> &PROJECT_NON_TARGET_ANALYSIS::internal_standard_buffers()
+    std::vector<NTA_INTERNAL_STANDARDS> &PROJECT_NON_TARGET_ANALYSIS::internal_standard_buffers()
     {
       materialize_internal_standard_buffers();
       return internal_standard_buffers_;
     }
 
-    const std::vector<NTS_INTERNAL_STANDARDS> &PROJECT_NON_TARGET_ANALYSIS::internal_standard_buffers() const
+    const std::vector<NTA_INTERNAL_STANDARDS> &PROJECT_NON_TARGET_ANALYSIS::internal_standard_buffers() const
     {
       materialize_internal_standard_buffers();
       return internal_standard_buffers_;
     }
 
-    NTS_TRANSFORMATION_PRODUCTS &PROJECT_NON_TARGET_ANALYSIS::transformation_products()
+    NTA_TRANSFORMATION_PRODUCTS &PROJECT_NON_TARGET_ANALYSIS::transformation_products()
     {
       materialize_transformation_products_buffer();
       return transformation_products_buffer_;
     }
 
-    const NTS_TRANSFORMATION_PRODUCTS &PROJECT_NON_TARGET_ANALYSIS::transformation_products() const
+    const NTA_TRANSFORMATION_PRODUCTS &PROJECT_NON_TARGET_ANALYSIS::transformation_products() const
     {
       materialize_transformation_products_buffer();
       return transformation_products_buffer_;
@@ -2060,7 +2060,7 @@ namespace nts
       feature_buffers_.clear();
       suspect_buffers_.clear();
       internal_standard_buffers_.clear();
-      transformation_products_buffer_ = NTS_TRANSFORMATION_PRODUCTS();
+      transformation_products_buffer_ = NTA_TRANSFORMATION_PRODUCTS();
       feature_buffers_ready_ = false;
       suspect_buffers_ready_ = false;
       internal_standard_buffers_ready_ = false;
@@ -2076,7 +2076,7 @@ namespace nts
 
     void PROJECT_NON_TARGET_ANALYSIS::load_processing_features(bool include_filtered)
     {
-      NTS_QUERY_REQUEST query;
+      NTA_QUERY_REQUEST query;
       query.analyses = analysis_names();
       query.include_filtered = include_filtered;
       features_table_ = collect_features_table(query);
@@ -2086,7 +2086,7 @@ namespace nts
 
     void PROJECT_NON_TARGET_ANALYSIS::load_processing_suspects()
     {
-      NTS_QUERY_REQUEST query;
+      NTA_QUERY_REQUEST query;
       query.analyses = analysis_names();
       suspects_table_ = collect_suspects_table(query);
       suspect_buffers_.clear();
@@ -2095,7 +2095,7 @@ namespace nts
 
     void PROJECT_NON_TARGET_ANALYSIS::load_processing_internal_standards()
     {
-      NTS_QUERY_REQUEST query;
+      NTA_QUERY_REQUEST query;
       query.analyses = analysis_names();
       internal_standards_table_ = collect_internal_standards_table(query);
       internal_standard_buffers_.clear();
@@ -2105,14 +2105,14 @@ namespace nts
     void PROJECT_NON_TARGET_ANALYSIS::load_processing_transformation_products()
     {
       transformation_products_table_ = collect_transformation_products_table();
-      transformation_products_buffer_ = NTS_TRANSFORMATION_PRODUCTS();
+      transformation_products_buffer_ = NTA_TRANSFORMATION_PRODUCTS();
       transformation_products_ready_ = false;
     }
 
     void PROJECT_NON_TARGET_ANALYSIS::save_processing_features()
     {
       const auto &features = feature_buffers();
-      features_table_ = NTS_FEATURES_TABLE();
+      features_table_ = NTA_FEATURES_TABLE();
       auto guard = mass_spec::api::connect_checked(ctx_);
       std::cout << "Saving features to duckdb... ";
       project::db::run_sql(guard.get(), "BEGIN TRANSACTION", "begin save NTS features transaction");
@@ -2120,7 +2120,7 @@ namespace nts
       {
         project::db::run_prepared(
             guard.get(),
-            "DELETE FROM NTS_FEATURES WHERE project_id = ?",
+            "DELETE FROM NTA_FEATURES WHERE project_id = ?",
             "delete NTS features",
             [&](duckdb_prepared_statement statement)
             { duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str()); },
@@ -2135,7 +2135,7 @@ namespace nts
             features_table_.append(row);
             project::db::run_prepared(
                 guard.get(),
-                "INSERT INTO NTS_FEATURES (project_id, analysis, feature, feature_component, feature_group, adduct, rt, mz, mass, intensity, noise, sn, area, rtmin, rtmax, width, mzmin, mzmax, ppm, fwhm_rt, fwhm_mz, gaussian_A, gaussian_mu, gaussian_sigma, gaussian_r2, jaggedness, sharpness, asymmetry, modality, plates, polarity, filtered, filter, filled, correction, eic_size, eic_rt, eic_mz, eic_intensity, eic_baseline, eic_smoothed, ms1_size, ms1_mz, ms1_intensity, ms2_size, ms2_mz, ms2_intensity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO NTA_FEATURES (project_id, analysis, feature, feature_component, feature_group, adduct, rt, mz, mass, intensity, noise, sn, area, rtmin, rtmax, width, mzmin, mzmax, ppm, fwhm_rt, fwhm_mz, gaussian_A, gaussian_mu, gaussian_sigma, gaussian_r2, jaggedness, sharpness, asymmetry, modality, plates, polarity, filtered, filter, filled, correction, eic_size, eic_rt, eic_mz, eic_intensity, eic_baseline, eic_smoothed, ms1_size, ms1_mz, ms1_intensity, ms2_size, ms2_mz, ms2_intensity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 "insert NTS feature",
                 [&](duckdb_prepared_statement statement)
                 {
@@ -2210,7 +2210,7 @@ namespace nts
     void PROJECT_NON_TARGET_ANALYSIS::save_processing_suspects()
     {
       const auto &suspects = suspect_buffers();
-      suspects_table_ = NTS_SUSPECTS_TABLE();
+      suspects_table_ = NTA_SUSPECTS_TABLE();
       auto guard = mass_spec::api::connect_checked(ctx_);
       std::cout << "Saving suspects to duckdb... ";
       project::db::run_sql(guard.get(), "BEGIN TRANSACTION", "begin save NTS suspects transaction");
@@ -2218,7 +2218,7 @@ namespace nts
       {
         project::db::run_prepared(
             guard.get(),
-            "DELETE FROM NTS_SUSPECTS WHERE project_id = ?",
+            "DELETE FROM NTA_SUSPECTS WHERE project_id = ?",
             "delete NTS suspects",
             [&](duckdb_prepared_statement statement)
             { duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str()); },
@@ -2233,7 +2233,7 @@ namespace nts
             suspects_table_.append(row);
             project::db::run_prepared(
                 guard.get(),
-                "INSERT INTO NTS_SUSPECTS (project_id, analysis, feature, candidate_rank, name, polarity, db_mass, exp_mass, error_mass, db_rt, exp_rt, error_rt, intensity, area, id_level, score, shared_fragments, cosine_similarity, formula, SMILES, InChI, InChIKey, xLogP, database_id, db_ms2_size, db_ms2_mz, db_ms2_intensity, db_ms2_formula, exp_ms2_size, exp_ms2_mz, exp_ms2_intensity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO NTA_SUSPECTS (project_id, analysis, feature, candidate_rank, name, polarity, db_mass, exp_mass, error_mass, db_rt, exp_rt, error_rt, intensity, area, id_level, score, shared_fragments, cosine_similarity, formula, SMILES, InChI, InChIKey, xLogP, database_id, db_ms2_size, db_ms2_mz, db_ms2_intensity, db_ms2_formula, exp_ms2_size, exp_ms2_mz, exp_ms2_intensity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 "insert NTS suspect",
                 [&](duckdb_prepared_statement statement)
                 {
@@ -2292,7 +2292,7 @@ namespace nts
     void PROJECT_NON_TARGET_ANALYSIS::save_processing_internal_standards()
     {
       const auto &internal_standards = internal_standard_buffers();
-      internal_standards_table_ = NTS_INTERNAL_STANDARDS_TABLE();
+      internal_standards_table_ = NTA_INTERNAL_STANDARDS_TABLE();
       auto guard = mass_spec::api::connect_checked(ctx_);
       std::cout << "Saving internal standards to duckdb... ";
       project::db::run_sql(guard.get(), "BEGIN TRANSACTION", "begin save NTS internal standards transaction");
@@ -2300,7 +2300,7 @@ namespace nts
       {
         project::db::run_prepared(
             guard.get(),
-            "DELETE FROM NTS_INTERNAL_STANDARDS WHERE project_id = ?",
+            "DELETE FROM NTA_INTERNAL_STANDARDS WHERE project_id = ?",
             "delete NTS internal standards",
             [&](duckdb_prepared_statement statement)
             { duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str()); },
@@ -2315,7 +2315,7 @@ namespace nts
             internal_standards_table_.append(row);
             project::db::run_prepared(
                 guard.get(),
-                "INSERT INTO NTS_INTERNAL_STANDARDS (project_id, analysis, feature, candidate_rank, name, polarity, db_mass, exp_mass, error_mass, db_rt, exp_rt, error_rt, intensity, area, id_level, score, shared_fragments, cosine_similarity, formula, SMILES, InChI, InChIKey, xLogP, database_id, db_ms2_size, db_ms2_mz, db_ms2_intensity, db_ms2_formula, exp_ms2_size, exp_ms2_mz, exp_ms2_intensity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                "INSERT INTO NTA_INTERNAL_STANDARDS (project_id, analysis, feature, candidate_rank, name, polarity, db_mass, exp_mass, error_mass, db_rt, exp_rt, error_rt, intensity, area, id_level, score, shared_fragments, cosine_similarity, formula, SMILES, InChI, InChIKey, xLogP, database_id, db_ms2_size, db_ms2_mz, db_ms2_intensity, db_ms2_formula, exp_ms2_size, exp_ms2_mz, exp_ms2_intensity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                 "insert NTS internal standard",
                 [&](duckdb_prepared_statement statement)
                 {
@@ -2385,22 +2385,22 @@ namespace nts
       {
         payload << "|dep=" << dependency_key;
       }
-      return std::string("nts|") + step + "|" + stable_hash_hex(payload.str());
+      return std::string("nta|") + step + "|" + stable_hash_hex(payload.str());
     }
 
-    NTS_FEATURES_CACHE PROJECT_NON_TARGET_ANALYSIS::feature_cache_snapshot() const
+    NTA_FEATURES_CACHE PROJECT_NON_TARGET_ANALYSIS::feature_cache_snapshot() const
     {
-      return NTS_FEATURES_CACHE{feature_buffers()};
+      return NTA_FEATURES_CACHE{feature_buffers()};
     }
 
-    NTS_SUSPECTS_CACHE PROJECT_NON_TARGET_ANALYSIS::suspect_cache_snapshot() const
+    NTA_SUSPECTS_CACHE PROJECT_NON_TARGET_ANALYSIS::suspect_cache_snapshot() const
     {
-      return NTS_SUSPECTS_CACHE{suspect_buffers()};
+      return NTA_SUSPECTS_CACHE{suspect_buffers()};
     }
 
-    NTS_INTERNAL_STANDARDS_CACHE PROJECT_NON_TARGET_ANALYSIS::internal_standard_cache_snapshot() const
+    NTA_INTERNAL_STANDARDS_CACHE PROJECT_NON_TARGET_ANALYSIS::internal_standard_cache_snapshot() const
     {
-      return NTS_INTERNAL_STANDARDS_CACHE{internal_standard_buffers()};
+      return NTA_INTERNAL_STANDARDS_CACHE{internal_standard_buffers()};
     }
 
     std::string PROJECT_NON_TARGET_ANALYSIS::feature_state_cache_key() const
@@ -2421,7 +2421,7 @@ namespace nts
     bool PROJECT_NON_TARGET_ANALYSIS::restore_feature_cache(const std::string &hash)
     {
       project::cache::CACHE cache(ctx_);
-      const auto cached = cache.get_object<NTS_FEATURES_CACHE>(hash);
+      const auto cached = cache.get_object<NTA_FEATURES_CACHE>(hash);
       if (!cached.has_value())
       {
         return false;
@@ -2437,7 +2437,7 @@ namespace nts
     bool PROJECT_NON_TARGET_ANALYSIS::restore_suspect_cache(const std::string &hash)
     {
       project::cache::CACHE cache(ctx_);
-      const auto cached = cache.get_object<NTS_SUSPECTS_CACHE>(hash);
+      const auto cached = cache.get_object<NTA_SUSPECTS_CACHE>(hash);
       if (!cached.has_value())
       {
         return false;
@@ -2452,7 +2452,7 @@ namespace nts
     bool PROJECT_NON_TARGET_ANALYSIS::restore_internal_standard_cache(const std::string &hash)
     {
       project::cache::CACHE cache(ctx_);
-      const auto cached = cache.get_object<NTS_INTERNAL_STANDARDS_CACHE>(hash);
+      const auto cached = cache.get_object<NTA_INTERNAL_STANDARDS_CACHE>(hash);
       if (!cached.has_value())
       {
         return false;
@@ -2467,7 +2467,7 @@ namespace nts
     bool PROJECT_NON_TARGET_ANALYSIS::restore_transformation_products_cache(const std::string &hash)
     {
       project::cache::CACHE cache(ctx_);
-      const auto cached = cache.get_object<NTS_TRANSFORMATION_PRODUCTS>(hash);
+      const auto cached = cache.get_object<NTA_TRANSFORMATION_PRODUCTS>(hash);
       if (!cached.has_value())
       {
         return false;
@@ -2482,31 +2482,31 @@ namespace nts
     void PROJECT_NON_TARGET_ANALYSIS::store_feature_cache(const std::string &hash, const std::string &description)
     {
       std::cout << "Caching features... ";
-      project::cache::CACHE(ctx_).put_object("NTS_FEATURES_CACHE", hash, description, feature_cache_snapshot());
+      project::cache::CACHE(ctx_).put_object("NTA_FEATURES_CACHE", hash, description, feature_cache_snapshot());
       std::cout << "Done!" << std::endl;
     }
 
     void PROJECT_NON_TARGET_ANALYSIS::store_suspect_cache(const std::string &hash, const std::string &description)
     {
       std::cout << "Caching suspects... ";
-      project::cache::CACHE(ctx_).put_object("NTS_SUSPECTS_CACHE", hash, description, suspect_cache_snapshot());
+      project::cache::CACHE(ctx_).put_object("NTA_SUSPECTS_CACHE", hash, description, suspect_cache_snapshot());
       std::cout << "Done!" << std::endl;
     }
 
     void PROJECT_NON_TARGET_ANALYSIS::store_internal_standard_cache(const std::string &hash, const std::string &description)
     {
       std::cout << "Caching internal standards... ";
-      project::cache::CACHE(ctx_).put_object("NTS_INTERNAL_STANDARDS_CACHE", hash, description, internal_standard_cache_snapshot());
+      project::cache::CACHE(ctx_).put_object("NTA_INTERNAL_STANDARDS_CACHE", hash, description, internal_standard_cache_snapshot());
       std::cout << "Done!" << std::endl;
     }
 
     void PROJECT_NON_TARGET_ANALYSIS::store_transformation_products_cache(
         const std::string &hash,
         const std::string &description,
-        const NTS_TRANSFORMATION_PRODUCTS &products)
+        const NTA_TRANSFORMATION_PRODUCTS &products)
     {
       std::cout << "Caching transformation products... ";
-      project::cache::CACHE(ctx_).put_object("NTS_TRANSFORMATION_PRODUCTS", hash, description, products);
+      project::cache::CACHE(ctx_).put_object("NTA_TRANSFORMATION_PRODUCTS", hash, description, products);
       std::cout << "Done!" << std::endl;
     }
 
@@ -2590,7 +2590,7 @@ namespace nts
         const std::string &args_key,
         const std::vector<std::string> &dependency_keys,
         const std::string &description,
-      const std::function<NTS_TRANSFORMATION_PRODUCTS()> &algorithm)
+      const std::function<NTA_TRANSFORMATION_PRODUCTS()> &algorithm)
     {
       try
       {
@@ -2611,9 +2611,9 @@ namespace nts
     }
 
     void PROJECT_NON_TARGET_ANALYSIS::save_processing_transformation_products(
-        const NTS_TRANSFORMATION_PRODUCTS &products)
+        const NTA_TRANSFORMATION_PRODUCTS &products)
     {
-      transformation_products_table_ = NTS_TRANSFORMATION_PRODUCTS_TABLE();
+      transformation_products_table_ = NTA_TRANSFORMATION_PRODUCTS_TABLE();
       transformation_products_buffer_ = products;
       transformation_products_ready_ = true;
       auto guard = mass_spec::api::connect_checked(ctx_);
@@ -2623,7 +2623,7 @@ namespace nts
       {
         project::db::run_prepared(
             guard.get(),
-            "DELETE FROM NTS_TRANSFORMATION_PRODUCTS WHERE project_id = ?",
+            "DELETE FROM NTA_TRANSFORMATION_PRODUCTS WHERE project_id = ?",
             "delete NTS transformation products",
             [&](duckdb_prepared_statement statement)
             { duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str()); },
@@ -2636,7 +2636,7 @@ namespace nts
           transformation_products_table_.append(row);
           project::db::run_prepared(
               guard.get(),
-              "INSERT INTO NTS_TRANSFORMATION_PRODUCTS (project_id, name, formula, mass, SMILES, InChI, InChIKey, xLogP, transformation, precursor_name, precursor_formula, precursor_mass, precursor_SMILES, precursor_InChI, precursor_InChIKey, precursor_xLogP, main_precursor_name, main_precursor_formula, main_precursor_mass, main_precursor_SMILES, main_precursor_InChI, main_precursor_InChIKey, main_precursor_xLogP, feature_group, precursor_feature_group, main_precursor_feature_group, cosine_similarity, main_precursor_cosine_similarity, rt_plausibility, main_precursor_rt_plausibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+              "INSERT INTO NTA_TRANSFORMATION_PRODUCTS (project_id, name, formula, mass, SMILES, InChI, InChIKey, xLogP, transformation, precursor_name, precursor_formula, precursor_mass, precursor_SMILES, precursor_InChI, precursor_InChIKey, precursor_xLogP, main_precursor_name, main_precursor_formula, main_precursor_mass, main_precursor_SMILES, main_precursor_InChI, main_precursor_InChIKey, main_precursor_xLogP, feature_group, precursor_feature_group, main_precursor_feature_group, cosine_similarity, main_precursor_cosine_similarity, rt_plausibility, main_precursor_rt_plausibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
               "insert NTS transformation product",
               [&](duckdb_prepared_statement statement)
               {
@@ -2712,8 +2712,8 @@ namespace nts
           {},
           "Cached NTS features for find_features",
           [&]() {
-            features_table_ = NTS_FEATURES_TABLE();
-            feature_buffers_.assign(analysis_names().size(), NTS_FEATURES());
+            features_table_ = NTA_FEATURES_TABLE();
+            feature_buffers_.assign(analysis_names().size(), NTA_FEATURES());
             for (std::size_t i = 0; i < analysis_names().size(); ++i)
             {
               feature_buffers_[i].set_analysis(analysis_names()[i]);
@@ -2759,8 +2759,8 @@ namespace nts
       }
       else
       {
-        internal_standards_table_ = NTS_INTERNAL_STANDARDS_TABLE();
-        internal_standard_buffers_.assign(analysis_names().size(), NTS_INTERNAL_STANDARDS());
+        internal_standards_table_ = NTA_INTERNAL_STANDARDS_TABLE();
+        internal_standard_buffers_.assign(analysis_names().size(), NTA_INTERNAL_STANDARDS());
         internal_standard_buffers_ready_ = true;
       }
       return run_cached_features_algorithm(
@@ -2883,7 +2883,7 @@ namespace nts
           [&]() { metfrag_runner::metfrag_screening_impl(*this, analyses, params); });
     }
 
-    bool PROJECT_NON_TARGET_ANALYSIS::assign_transformation_products(const std::vector<NTS_TRANSFORMATION_PRODUCT_ROW> &transformation_products, const std::string &chromatographic_phase, double mzrMS2)
+    bool PROJECT_NON_TARGET_ANALYSIS::assign_transformation_products(const std::vector<NTA_TRANSFORMATION_PRODUCT_ROW> &transformation_products, const std::string &chromatographic_phase, double mzrMS2)
     {
       load_processing_metadata();
       load_processing_features(true);
@@ -2900,7 +2900,7 @@ namespace nts
           {feature_state_cache_key(), suspect_state_cache_key()},
           "Cached NTS transformation products for assign_transformation_products",
           [&]() {
-            NTS_QUERY_REQUEST query;
+            NTA_QUERY_REQUEST query;
             query.analyses = analysis_names();
             return assign_transformation_products::assign_transformation_products_impl(
                 get_suspects(query),
@@ -2915,7 +2915,7 @@ namespace nts
       auto guard = mass_spec::api::connect_checked(ctx);
       project::db::run_sql(
           guard.get(),
-          "CREATE TABLE IF NOT EXISTS NTS_FEATURES ("
+          "CREATE TABLE IF NOT EXISTS NTA_FEATURES ("
           "project_id VARCHAR NOT NULL, "
           "analysis VARCHAR NOT NULL, "
           "feature VARCHAR NOT NULL, "
@@ -2966,10 +2966,10 @@ namespace nts
           "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
           "PRIMARY KEY(project_id, analysis, feature)"
           ")",
-          "create NTS_FEATURES table");
+          "create NTA_FEATURES table");
       project::db::run_sql(
           guard.get(),
-          "CREATE TABLE IF NOT EXISTS NTS_INTERNAL_STANDARDS ("
+          "CREATE TABLE IF NOT EXISTS NTA_INTERNAL_STANDARDS ("
           "project_id VARCHAR NOT NULL, "
           "analysis VARCHAR NOT NULL, "
           "feature VARCHAR NOT NULL, "
@@ -3004,10 +3004,10 @@ namespace nts
           "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
           "PRIMARY KEY(project_id, analysis, feature, candidate_rank, name)"
           ")",
-          "create NTS_INTERNAL_STANDARDS table");
+          "create NTA_INTERNAL_STANDARDS table");
       project::db::run_sql(
           guard.get(),
-          "CREATE TABLE IF NOT EXISTS NTS_SUSPECTS ("
+          "CREATE TABLE IF NOT EXISTS NTA_SUSPECTS ("
           "project_id VARCHAR NOT NULL, "
           "analysis VARCHAR NOT NULL, "
           "feature VARCHAR NOT NULL, "
@@ -3042,10 +3042,10 @@ namespace nts
           "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
           "PRIMARY KEY(project_id, analysis, feature, candidate_rank, name)"
           ")",
-          "create NTS_SUSPECTS table");
+          "create NTA_SUSPECTS table");
       project::db::run_sql(
           guard.get(),
-          "CREATE TABLE IF NOT EXISTS NTS_TRANSFORMATION_PRODUCTS ("
+          "CREATE TABLE IF NOT EXISTS NTA_TRANSFORMATION_PRODUCTS ("
           "project_id VARCHAR NOT NULL, "
           "name VARCHAR, "
           "formula VARCHAR, "
@@ -3078,7 +3078,7 @@ namespace nts
           "main_precursor_rt_plausibility DOUBLE, "
           "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
           ")",
-          "create NTS_TRANSFORMATION_PRODUCTS table");
+          "create NTA_TRANSFORMATION_PRODUCTS table");
     }
 
     void PROJECT_NON_TARGET_ANALYSIS::validate_schema(const std::shared_ptr<project::api::CONTEXT> &ctx)
@@ -3241,12 +3241,12 @@ namespace nts
            {"created_at", "TIMESTAMP", false}});
     };
 
-    std::vector<NTS_FEATURE_COUNT_ROW> PROJECT_NON_TARGET_ANALYSIS::get_features_count(
+    std::vector<NTA_FEATURE_COUNT_ROW> PROJECT_NON_TARGET_ANALYSIS::get_features_count(
         const std::vector<std::string> &analyses,
         bool include_filtered) const
     {
       auto guard = mass_spec::api::connect_checked(ctx_);
-      std::vector<NTS_FEATURE_COUNT_ROW> out;
+      std::vector<NTA_FEATURE_COUNT_ROW> out;
       const auto selected_analyses = mass_spec::spectra::sanitize_analyses(analyses);
       if (selected_analyses.empty())
       {
@@ -3258,7 +3258,7 @@ namespace nts
           "SUM(CASE WHEN filtered THEN 1 ELSE 0 END) AS filtered_count, "
           "COUNT(DISTINCT CASE WHEN feature_group IS NOT NULL AND feature_group != '' THEN feature_group END) AS groups_count, "
           "COUNT(DISTINCT CASE WHEN feature_component IS NOT NULL AND feature_component != '' THEN feature_component END) AS components_count "
-          "FROM NTS_FEATURES WHERE project_id = ? AND analysis IN (";
+          "FROM NTA_FEATURES WHERE project_id = ? AND analysis IN (";
       sql += project::db::placeholders(selected_analyses.size());
       sql += ")";
       if (!include_filtered)
@@ -3267,7 +3267,7 @@ namespace nts
       }
       sql += " GROUP BY analysis ORDER BY lower(analysis), analysis";
 
-      std::unordered_map<std::string, NTS_FEATURE_COUNT_ROW> rows_by_analysis;
+      std::unordered_map<std::string, NTA_FEATURE_COUNT_ROW> rows_by_analysis;
       project::db::run_prepared(guard.get(), sql, "query NTS feature counts", [&](duckdb_prepared_statement statement)
                                 {
       idx_t bind_index = 1;
@@ -3278,7 +3278,7 @@ namespace nts
                                 {
       const idx_t count = duckdb_row_count(&result);
       for (idx_t row = 0; row < count; ++row) {
-        NTS_FEATURE_COUNT_ROW value;
+        NTA_FEATURE_COUNT_ROW value;
         value.analysis = project::db::result_varchar(&result, 0, row);
         value.total = duckdb_value_int64(&result, 1, row);
         value.filtered = duckdb_value_int64(&result, 2, row);
@@ -3293,7 +3293,7 @@ namespace nts
         const auto it = rows_by_analysis.find(analysis);
         if (it == rows_by_analysis.end())
         {
-          out.push_back(NTS_FEATURE_COUNT_ROW{analysis, 0, 0, 0, 0});
+          out.push_back(NTA_FEATURE_COUNT_ROW{analysis, 0, 0, 0, 0});
         }
         else
         {
@@ -3303,21 +3303,21 @@ namespace nts
       return out;
     }
 
-    std::vector<NTS_FEATURE_ROW> PROJECT_NON_TARGET_ANALYSIS::get_features(
+    std::vector<NTA_FEATURE_ROW> PROJECT_NON_TARGET_ANALYSIS::get_features(
         const std::vector<std::string> &analyses,
         bool include_filtered) const
     {
-      NTS_QUERY_REQUEST query;
+      NTA_QUERY_REQUEST query;
       query.analyses = analyses;
       query.include_filtered = include_filtered;
       return get_features(query);
     }
 
-    std::vector<NTS_FEATURE_ROW> PROJECT_NON_TARGET_ANALYSIS::get_features(
-        const NTS_QUERY_REQUEST &query) const
+    std::vector<NTA_FEATURE_ROW> PROJECT_NON_TARGET_ANALYSIS::get_features(
+        const NTA_QUERY_REQUEST &query) const
     {
       auto guard = mass_spec::api::connect_checked(ctx_);
-      std::vector<NTS_FEATURE_ROW> out;
+      std::vector<NTA_FEATURE_ROW> out;
       const auto selected_analyses = mass_spec::spectra::sanitize_analyses(query.analyses);
       const auto selected_features = sanitize_query_values(query.features);
       const auto selected_feature_groups = sanitize_query_values(query.feature_groups);
@@ -3328,7 +3328,7 @@ namespace nts
           "gaussian_sigma, gaussian_r2, jaggedness, sharpness, asymmetry, modality, plates, polarity, filtered, "
           "filter, filled, correction, eic_size, eic_rt, eic_mz, eic_intensity, eic_baseline, eic_smoothed, "
           "ms1_size, ms1_mz, ms1_intensity, ms2_size, ms2_mz, ms2_intensity, created_at "
-          "FROM NTS_FEATURES WHERE project_id = ?";
+          "FROM NTA_FEATURES WHERE project_id = ?";
       if (!query.include_filtered)
       {
         sql += " AND filtered = FALSE";
@@ -3380,15 +3380,15 @@ namespace nts
       return filter_feature_rows_by_targets(out, query);
     }
 
-    std::vector<NTS_SUSPECT_ROW> PROJECT_NON_TARGET_ANALYSIS::get_suspects(const NTS_QUERY_REQUEST &query) const
+    std::vector<NTA_SUSPECT_ROW> PROJECT_NON_TARGET_ANALYSIS::get_suspects(const NTA_QUERY_REQUEST &query) const
     {
       auto guard = mass_spec::api::connect_checked(ctx_);
-      std::vector<NTS_SUSPECT_ROW> out;
+      std::vector<NTA_SUSPECT_ROW> out;
       const auto selected_analyses = mass_spec::spectra::sanitize_analyses(query.analyses);
 
       std::string sql =
           "SELECT project_id, analysis, feature, candidate_rank, name, polarity, db_mass, exp_mass, error_mass, db_rt, exp_rt, error_rt, intensity, area, id_level, score, shared_fragments, cosine_similarity, formula, SMILES, InChI, InChIKey, xLogP, database_id, db_ms2_size, db_ms2_mz, db_ms2_intensity, db_ms2_formula, exp_ms2_size, exp_ms2_mz, exp_ms2_intensity, created_at "
-          "FROM NTS_SUSPECTS WHERE project_id = ?";
+          "FROM NTA_SUSPECTS WHERE project_id = ?";
       if (!selected_analyses.empty())
       {
         sql += " AND analysis IN (";
@@ -3423,7 +3423,7 @@ namespace nts
         {
           return {};
         }
-        std::vector<NTS_SUSPECT_ROW> filtered;
+        std::vector<NTA_SUSPECT_ROW> filtered;
         filtered.reserve(out.size());
         for (const auto &row : out)
         {
@@ -3448,15 +3448,15 @@ namespace nts
       return out;
     }
 
-    std::vector<NTS_INTERNAL_STANDARD_ROW> PROJECT_NON_TARGET_ANALYSIS::get_internal_standards(const NTS_QUERY_REQUEST &query) const
+    std::vector<NTA_INTERNAL_STANDARD_ROW> PROJECT_NON_TARGET_ANALYSIS::get_internal_standards(const NTA_QUERY_REQUEST &query) const
     {
       auto guard = mass_spec::api::connect_checked(ctx_);
-      std::vector<NTS_INTERNAL_STANDARD_ROW> out;
+      std::vector<NTA_INTERNAL_STANDARD_ROW> out;
       const auto selected_analyses = mass_spec::spectra::sanitize_analyses(query.analyses);
 
       std::string sql =
           "SELECT project_id, analysis, feature, candidate_rank, name, polarity, db_mass, exp_mass, error_mass, db_rt, exp_rt, error_rt, intensity, area, id_level, score, shared_fragments, cosine_similarity, formula, SMILES, InChI, InChIKey, xLogP, database_id, db_ms2_size, db_ms2_mz, db_ms2_intensity, db_ms2_formula, exp_ms2_size, exp_ms2_mz, exp_ms2_intensity, created_at "
-          "FROM NTS_INTERNAL_STANDARDS WHERE project_id = ?";
+          "FROM NTA_INTERNAL_STANDARDS WHERE project_id = ?";
       if (!selected_analyses.empty())
       {
         sql += " AND analysis IN (";
@@ -3491,7 +3491,7 @@ namespace nts
         {
           return {};
         }
-        std::vector<NTS_INTERNAL_STANDARD_ROW> filtered;
+        std::vector<NTA_INTERNAL_STANDARD_ROW> filtered;
         filtered.reserve(out.size());
         for (const auto &row : out)
         {
@@ -3518,13 +3518,13 @@ namespace nts
       return out;
     }
 
-    std::vector<NTS_TRANSFORMATION_PRODUCT_ROW> PROJECT_NON_TARGET_ANALYSIS::get_transformation_products() const
+    std::vector<NTA_TRANSFORMATION_PRODUCT_ROW> PROJECT_NON_TARGET_ANALYSIS::get_transformation_products() const
     {
       auto guard = mass_spec::api::connect_checked(ctx_);
-      std::vector<NTS_TRANSFORMATION_PRODUCT_ROW> out;
+      std::vector<NTA_TRANSFORMATION_PRODUCT_ROW> out;
       const std::string sql =
           "SELECT project_id, name, formula, mass, SMILES, InChI, InChIKey, xLogP, transformation, precursor_name, precursor_formula, precursor_mass, precursor_SMILES, precursor_InChI, precursor_InChIKey, precursor_xLogP, main_precursor_name, main_precursor_formula, main_precursor_mass, main_precursor_SMILES, main_precursor_InChI, main_precursor_InChIKey, main_precursor_xLogP, feature_group, precursor_feature_group, main_precursor_feature_group, cosine_similarity, main_precursor_cosine_similarity, rt_plausibility, main_precursor_rt_plausibility, created_at "
-          "FROM NTS_TRANSFORMATION_PRODUCTS WHERE project_id = ? "
+          "FROM NTA_TRANSFORMATION_PRODUCTS WHERE project_id = ? "
           "ORDER BY lower(name), name, lower(transformation), transformation";
 
       project::db::run_prepared(guard.get(), sql, "query NTS transformation product rows", [&](duckdb_prepared_statement statement)
@@ -3537,10 +3537,10 @@ namespace nts
 
   } // namespace api
 
-} // namespace nts
+} // namespace nta
 
 // MARK: load_features_ms1
-bool nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms1(
+bool nta::PROJECT_NON_TARGET_ANALYSIS::load_features_ms1(
     bool filtered,
     const std::vector<float> &rtWindow,
     const std::vector<float> &mzWindow,
@@ -3564,7 +3564,7 @@ bool nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms1(
 
         for (size_t i = 0; i < features.size(); i++)
         {
-          nts::api::NTS_FEATURES &fts_i = features[i];
+          nta::api::NTA_FEATURES &fts_i = features[i];
 
           if (fts_i.size() == 0)
             continue;
@@ -3574,7 +3574,7 @@ bool nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms1(
 
           for (int j = 0; j < fts_i.size(); j++)
           {
-            const nts::api::NTS_FEATURE_ROW &ft_j = fts_i.get_feature(j);
+            const nta::api::NTA_FEATURE_ROW &ft_j = fts_i.get_feature(j);
 
             if (ft_j.filtered && !filtered)
               continue;
@@ -3628,7 +3628,7 @@ bool nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms1(
 
           for (int j = 0; j < fts_i.size(); j++)
           {
-            nts::api::NTS_FEATURE_ROW ft_j = fts_i.get_feature(j);
+            nta::api::NTA_FEATURE_ROW ft_j = fts_i.get_feature(j);
 
             if (ft_j.filtered && !filtered)
               continue;
@@ -3637,7 +3637,7 @@ bool nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms1(
               continue;
 
             const mass_spec::spectra::MS_TARGETS_SPECTRA &res_j = res[ft_j.feature];
-            const auto clustered = nts::api::merge_NTS_FEATURE_SPECTRA(res_j, mzClust, presence);
+            const auto clustered = nta::api::merge_NTA_FEATURE_SPECTRA(res_j, mzClust, presence);
             const int n_res_j = static_cast<int>(clustered.mz.size());
             if (n_res_j == 0)
               continue;
@@ -3652,7 +3652,7 @@ bool nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms1(
 }
 
 // MARK: load_features_ms2
-bool nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
+bool nta::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
     bool filtered,
     float minTracesIntensity,
     float isolationWindow,
@@ -3672,7 +3672,7 @@ bool nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
         const auto &files = file_paths();
         for (size_t i = 0; i < features.size(); i++)
         {
-          nts::api::NTS_FEATURES &fts_i = features[i];
+          nta::api::NTA_FEATURES &fts_i = features[i];
 
           if (fts_i.size() == 0)
             continue;
@@ -3682,7 +3682,7 @@ bool nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
 
           for (int j = 0; j < fts_i.size(); j++)
           {
-            const nts::api::NTS_FEATURE_ROW &ft_j = fts_i.get_feature(j);
+            const nta::api::NTA_FEATURE_ROW &ft_j = fts_i.get_feature(j);
 
             if (ft_j.filtered && !filtered)
               continue;
@@ -3717,7 +3717,7 @@ bool nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
 
           for (int j = 0; j < fts_i.size(); j++)
           {
-            nts::api::NTS_FEATURE_ROW ft_j = fts_i.get_feature(j);
+            nta::api::NTA_FEATURE_ROW ft_j = fts_i.get_feature(j);
 
             if (ft_j.filtered && !filtered)
               continue;
@@ -3726,7 +3726,7 @@ bool nts::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
               continue;
 
             const mass_spec::spectra::MS_TARGETS_SPECTRA &res_j = res[ft_j.feature];
-            const auto clustered = nts::api::merge_NTS_FEATURE_SPECTRA(res_j, mzClust, presence);
+            const auto clustered = nta::api::merge_NTA_FEATURE_SPECTRA(res_j, mzClust, presence);
             const int n_res_j = static_cast<int>(clustered.mz.size());
             if (n_res_j == 0)
               continue;

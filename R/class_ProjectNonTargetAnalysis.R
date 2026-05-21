@@ -49,7 +49,7 @@ ProjectNonTargetAnalysis <- R6::R6Class(
   inherit = ProjectMassSpec,
   cloneable = FALSE,
   private = list(
-    .nts_ptr = NULL
+    .nta_ptr = NULL
   ),
   public = list(
     #' @description Create an NTS domain wrapper on top of a shared Mass Spec project.
@@ -64,22 +64,22 @@ ProjectNonTargetAnalysis <- R6::R6Class(
       .ptr <- ptr_res$value
       mass_spec_ptr_res <- .pull_internal_init_arg(ptr_res$dots, ".mass_spec_ptr")
       .mass_spec_ptr <- mass_spec_ptr_res$value
-      nts_ptr_res <- .pull_internal_init_arg(mass_spec_ptr_res$dots, ".nts_ptr")
-      .nts_ptr <- nts_ptr_res$value
-      .assert_only_internal_init_args(nts_ptr_res$dots, "ProjectNonTargetAnalysis$initialize()")
+      nta_ptr_res <- .pull_internal_init_arg(mass_spec_ptr_res$dots, ".nta_ptr")
+      .nta_ptr <- nta_ptr_res$value
+      .assert_only_internal_init_args(nta_ptr_res$dots, "ProjectNonTargetAnalysis$initialize()")
       super$initialize(db = db, project_id = project_id, .ptr = .ptr, .mass_spec_ptr = .mass_spec_ptr, file_paths = file_paths, replicates = replicates, blanks = blanks)
-      private$.nts_ptr <- if (is.null(.nts_ptr)) {
+      private$.nta_ptr <- if (is.null(.nta_ptr)) {
         rcpp_project_non_target_analysis_new(self$get_ptr())
       } else {
-        .nts_ptr
+        .nta_ptr
       }
-      if (!is.null(.nts_ptr) && length(file_paths) > 0) {
+      if (!is.null(.nta_ptr) && length(file_paths) > 0) {
         self$add_analyses(file_paths = file_paths, replicates = replicates, blanks = blanks)
       }
     },
     #' @description Return the native NTS pointer.
     get_nts_ptr = function() {
-      private$.nts_ptr
+      private$.nta_ptr
     },
     #' @description Return project-owned NTS method metadata.
     #' @return A named list of `Method` metadata objects.

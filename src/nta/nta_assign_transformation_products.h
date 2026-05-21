@@ -1,4 +1,4 @@
-// assign_transformation_products.h
+// nta_assign_transformation_products.h
 // C++ implementation of the AssignTransformationProducts algorithm.
 // Accepts a flat suspects list (with feature_group pre-joined) and a
 // transformation-products input table; returns an expanded output table
@@ -10,21 +10,21 @@
 #include <string>
 #include <vector>
 
-namespace nts::api
+namespace nta::api
 {
-  struct NTS_SUSPECT_ROW;
-  struct NTS_TRANSFORMATION_PRODUCT_ROW;
-  struct NTS_TRANSFORMATION_PRODUCTS;
+  struct NTA_SUSPECT_ROW;
+  struct NTA_TRANSFORMATION_PRODUCT_ROW;
+  struct NTA_TRANSFORMATION_PRODUCTS;
 }
 
-namespace nts::assign_transformation_products
+namespace nta::assign_transformation_products
 {
-  nts::api::NTS_TRANSFORMATION_PRODUCTS assign_transformation_products_impl(
-      const std::vector<nts::api::NTS_SUSPECT_ROW> &suspects,
-      const std::vector<nts::api::NTS_TRANSFORMATION_PRODUCT_ROW> &transformation_products,
+  nta::api::NTA_TRANSFORMATION_PRODUCTS assign_transformation_products_impl(
+      const std::vector<nta::api::NTA_SUSPECT_ROW> &suspects,
+      const std::vector<nta::api::NTA_TRANSFORMATION_PRODUCT_ROW> &transformation_products,
       const std::string &chromatographic_phase,
       double mzrMS2);
 
-} // namespace nts::assign_transformation_products
+} // namespace nta::assign_transformation_products
 
 #endif // ASSIGN_TRANSFORMATION_PRODUCTS_H

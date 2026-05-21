@@ -111,8 +111,8 @@ run.Method_NonTargetAnalysis_FindFeatures <- function(x, proj, ...) {
 
   params <- x$parameters
   rt_windows <- data.table::as.data.table(params$rtWindows)
-  success <- rcpp_nts_find_features(
-    nts_xptr = proj$get_nts_ptr(),
+  success <- rcpp_project_nta_find_features(
+    nta_xptr = proj$get_nts_ptr(),
     rtWindowsMin = as.numeric(rt_windows$rtmin),
     rtWindowsMax = as.numeric(rt_windows$rtmax),
     ppmThreshold = as.numeric(params$ppmThreshold),

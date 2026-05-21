@@ -1,9 +1,9 @@
-// nts_deconvolution.h
+// nta_deconvolution.h
 // Feature detection utilities specifically used by PROJECT_NON_TARGET_ANALYSIS::find_features
 // This file contains spectral processing, peak detection, and quality metrics functions
 
-#ifndef NTS_DECONVOLUTION_H
-#define NTS_DECONVOLUTION_H
+#ifndef NTA_DECONVOLUTION_H
+#define NTA_DECONVOLUTION_H
 
 #include <vector>
 #include <string>
@@ -11,9 +11,9 @@
 
 namespace mass_spec { namespace reader { class MS_FILE; } }
 
-namespace nts { namespace api { struct NTS_FEATURE_ROW; struct NTS_FEATURES; class PROJECT_NON_TARGET_ANALYSIS; } using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS; }
+namespace nta { namespace api { struct NTA_FEATURE_ROW; struct NTA_FEATURES; class PROJECT_NON_TARGET_ANALYSIS; } using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS; }
 
-namespace nts {
+namespace nta {
 namespace deconvolution {
 
   struct VectorStats
@@ -165,7 +165,7 @@ namespace deconvolution {
     const std::vector<float> &mz,
     const std::vector<float> &intensity);
 
-  std::vector<nts::api::NTS_FEATURE_ROW> process_polarity_clusters(
+  std::vector<nta::api::NTA_FEATURE_ROW> process_polarity_clusters(
       const std::vector<float> &clust_rt,
       const std::vector<float> &clust_mz,
       const std::vector<float> &clust_intensity,
@@ -183,7 +183,7 @@ namespace deconvolution {
       float debugMZ = 0.0f);
 
   void find_features_impl(
-      nts::PROJECT_NON_TARGET_ANALYSIS &nts_data,
+      nta::PROJECT_NON_TARGET_ANALYSIS &nta_data,
       const std::vector<float> &rtWindowsMin,
       const std::vector<float> &rtWindowsMax,
       const float &ppmThreshold,
@@ -198,6 +198,6 @@ namespace deconvolution {
       const int &debugSpecIdx);
 
 } // namespace deconvolution
-} // namespace nts
+} // namespace nta
 
-#endif // NTS_DECONVOLUTION_H
+#endif // NTA_DECONVOLUTION_H

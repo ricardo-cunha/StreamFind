@@ -1,15 +1,15 @@
-// suspect_screening.h
+// nta_suspect_screening
 // Suspect screening for PROJECT_NON_TARGET_ANALYSIS
 
-#ifndef NTS_SUSPECT_SCREENING_H
-#define NTS_SUSPECT_SCREENING_H
+#ifndef NTA_SUSPECT_SCREENING_H
+#define NTA_SUSPECT_SCREENING_H
 
 #include <string>
 #include <vector>
 
-namespace nts
+namespace nta
 {
-  namespace api { struct NTS_SUSPECTS; class PROJECT_NON_TARGET_ANALYSIS; }
+  namespace api { struct NTA_SUSPECTS; class PROJECT_NON_TARGET_ANALYSIS; }
   using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS;
 
   namespace suspect_screening
@@ -35,7 +35,7 @@ namespace nts
     };
 
     void suspect_screening_impl(
-      PROJECT_NON_TARGET_ANALYSIS &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nta_data,
         const std::vector<std::string> &analyses,
         const std::vector<SuspectQuery> &suspects,
         double ppm,
@@ -46,6 +46,6 @@ namespace nts
         int minSharedFragments,
         bool filtered);
   } // namespace suspect_screening
-} // namespace nts
+} // namespace nta
 
-#endif // NTS_SUSPECT_SCREENING_H
+#endif // NTA_SUSPECT_SCREENING_H

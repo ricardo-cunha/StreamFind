@@ -1,7 +1,7 @@
 #include <Rcpp.h>
 
 #include "mass_spec/reader.h"
-#include "mass_spec/project_mass_spec.h"
+#include "mass_spec/mass_spec.h"
 #include "project/project.h"
 
 using namespace Rcpp;

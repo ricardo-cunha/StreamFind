@@ -1,8 +1,8 @@
-// nts_alignment.cpp
+// nta_alignment.cpp
 // Implementation of feature alignment and grouping functions
 
-#include "nts_alignment.h"
-#include "nts.h"
+#include "nta_alignment.h"
+#include "nta.h"
 #include <algorithm>
 #include <cmath>
 #include <sstream>
@@ -14,7 +14,7 @@
 #include <numeric>
 #include <limits>
 
-namespace nts {
+namespace nta {
 namespace alignment {
 
 // Helper function to interpolate RT shift at a given RT
@@ -420,7 +420,7 @@ void group_features(
 
 // MARK: group_features_impl
 void group_features_impl(
-  nts::PROJECT_NON_TARGET_ANALYSIS &nts_data,
+  nta::PROJECT_NON_TARGET_ANALYSIS &nta_data,
     const std::string &method,
     float rt_deviation,
     float ppm_threshold,
@@ -456,13 +456,13 @@ void group_features_impl(
 
   // Collect all features from all analyses
   std::vector<AlignmentFeature> all_features;
-  const auto &analysis_names = nts_data.analysis_names();
-  auto &feature_buffers = nts_data.feature_buffers();
-  auto &internal_standard_buffers = nts_data.internal_standard_buffers();
+  const auto &analysis_names = nta_data.analysis_names();
+  auto &feature_buffers = nta_data.feature_buffers();
+  auto &internal_standard_buffers = nta_data.internal_standard_buffers();
 
   for (size_t a = 0; a < analysis_names.size(); ++a)
   {
-    const nts::api::NTS_FEATURES &fts_i = feature_buffers[a];
+    const nta::api::NTA_FEATURES &fts_i = feature_buffers[a];
     for (int i = 0; i < fts_i.size(); ++i)
     {
       AlignmentFeature af;
@@ -498,7 +498,7 @@ void group_features_impl(
 
     for (size_t a = 0; a < internal_standard_buffers.size(); ++a)
     {
-      const nts::api::NTS_INTERNAL_STANDARDS &istd_data = internal_standard_buffers[a];
+      const nta::api::NTA_INTERNAL_STANDARDS &istd_data = internal_standard_buffers[a];
       for (int i = 0; i < istd_data.size(); ++i)
       {
         istd_rts_by_name[istd_data.name[i]].push_back(istd_data.exp_rt[i]);
@@ -521,7 +521,7 @@ void group_features_impl(
     // Create alignment::InternalStandard vector with calculated shifts
     for (size_t a = 0; a < internal_standard_buffers.size(); ++a)
     {
-      const nts::api::NTS_INTERNAL_STANDARDS &istd_data = internal_standard_buffers[a];
+      const nta::api::NTA_INTERNAL_STANDARDS &istd_data = internal_standard_buffers[a];
       for (int i = 0; i < istd_data.size(); ++i)
       {
         InternalStandard istd;
@@ -773,7 +773,7 @@ void group_features_impl(
     debug_log << std::endl;
   }
 
-  // Update feature_group in NTS_DATA
+  // Update feature_group in NTA_DATA
   for (const auto &af : all_features)
   {
     // Find the analysis and feature
@@ -781,7 +781,7 @@ void group_features_impl(
     {
       if (analysis_names[a] == af.analysis)
       {
-        nts::api::NTS_FEATURES &fts_i = feature_buffers[a];
+        nta::api::NTA_FEATURES &fts_i = feature_buffers[a];
         for (int i = 0; i < fts_i.size(); ++i)
         {
           if (fts_i.feature[i] == af.feature)
@@ -815,4 +815,4 @@ void group_features_impl(
 }
 
 } // namespace alignment
-} // namespace nts
+} // namespace nta

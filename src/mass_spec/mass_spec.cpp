@@ -1,4 +1,4 @@
-#include "project_mass_spec.h"
+#include "mass_spec.h"
 #include "reader.h"
 
 #include <algorithm>

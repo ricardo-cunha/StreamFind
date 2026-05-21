@@ -11,7 +11,7 @@ SOURCES += $(wildcard json_core/*.cpp)
 SOURCES += $(wildcard asm/*.cpp)
 SOURCES += $(wildcard project/*.cpp)
 SOURCES += $(wildcard external/simdutf/*.cpp)
-SOURCES += $(wildcard nts/*.cpp)
+SOURCES += $(wildcard nta/*.cpp)
 SOURCES += $(wildcard mass_spec/*.cpp)
 
 # Keep simdutf compiled through the wrapper rather than as raw source files.

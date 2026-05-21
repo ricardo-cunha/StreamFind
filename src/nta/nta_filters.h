@@ -1,13 +1,13 @@
-// nts_filters.h
+// nta_filters.h
 // Filtering for PROJECT_NON_TARGET_ANALYSIS structures
 
-#ifndef NTS_FILTERS_H
-#define NTS_FILTERS_H
+#ifndef NTA_FILTERS_H
+#define NTA_FILTERS_H
 
 #include <vector>
 #include <string>
 
-namespace nts
+namespace nta
 {
   namespace api { class PROJECT_NON_TARGET_ANALYSIS; }
   using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS;
@@ -15,7 +15,7 @@ namespace nts
   namespace filter_features
   {
     void filter_features_impl(
-      PROJECT_NON_TARGET_ANALYSIS &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nta_data,
         double minSN,
         double minIntensity,
         double minArea,
@@ -57,7 +57,7 @@ namespace nts
   namespace filter_suspects
   {
     void filter_suspects_impl(
-      PROJECT_NON_TARGET_ANALYSIS &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nta_data,
         const std::vector<std::string> &names,
         double minScore,
         double maxErrorRT,
@@ -70,7 +70,7 @@ namespace nts
   namespace filter_internal_standards
   {
     void filter_internal_standards_impl(
-      PROJECT_NON_TARGET_ANALYSIS &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nta_data,
         const std::vector<std::string> &names,
         double minScore,
         double maxErrorRT,
@@ -89,7 +89,7 @@ namespace nts
     //   3. Keep only top-N peaks (if top > 0), apply minIntensity and relMinIntensity thresholds.
     // All encoded peak lists are updated in-place (ms2_mz, ms2_intensity, ms2_size).
     void filter_features_ms2_impl(
-      PROJECT_NON_TARGET_ANALYSIS &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nta_data,
         int top,                        // 0 = no limit
         float minIntensity,             // NaN = no limit
         float relMinIntensity,          // NaN = no limit
@@ -98,6 +98,6 @@ namespace nts
         float blankPresenceThreshold,
         float globalPresenceThreshold);
   } // namespace filter_features_ms2
-} // namespace nts
+} // namespace nta
 
-#endif // NTS_FILTERS_H
+#endif // NTA_FILTERS_H

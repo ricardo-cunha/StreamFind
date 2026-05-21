@@ -1,8 +1,8 @@
 // metfrag_runner.cpp — MetFragCL subprocess runner implementation
 
-#include "metfrag_runner.h"
-#include "nts.h"
-#include "../mass_spec/project_mass_spec.h"
+#include "nta_metfrag_runner.h"
+#include "nta.h"
+#include "../mass_spec/mass_spec.h"
 
 #include <algorithm>
 #include <cmath>
@@ -522,17 +522,17 @@ namespace
 
 // ── Public implementation ─────────────────────────────────────────────────────
 
-namespace nts::metfrag_runner
+namespace nta::metfrag_runner
 {
 
 void metfrag_screening_impl(
-  PROJECT_NON_TARGET_ANALYSIS &nts_data,
+  PROJECT_NON_TARGET_ANALYSIS &nta_data,
     const std::vector<std::string> &analyses_sel,
     const MetFragParams &p)
 {
-  const auto &analysis_names = nts_data.analysis_names();
-  auto &feature_buffers = nts_data.feature_buffers();
-  auto &suspect_buffers = nts_data.suspect_buffers();
+  const auto &analysis_names = nta_data.analysis_names();
+  auto &feature_buffers = nta_data.feature_buffers();
+  auto &suspect_buffers = nta_data.suspect_buffers();
   const size_t n_ana = analysis_names.size();
 
   // Ensure run directory exists.
@@ -555,7 +555,7 @@ void metfrag_screening_impl(
 
   // Reset suspects for all analyses.
   for (size_t ai = 0; ai < n_ana; ++ai)
-    suspect_buffers[ai] = nts::api::NTS_SUSPECTS();
+    suspect_buffers[ai] = nta::api::NTA_SUSPECTS();
 
   for (size_t ai = 0; ai < n_ana; ++ai)
   {
@@ -565,7 +565,7 @@ void metfrag_screening_impl(
         std::find(analyses_sel.begin(), analyses_sel.end(), ana) == analyses_sel.end())
       continue;
 
-    nts::api::NTS_FEATURES &feats = feature_buffers[ai];
+    nta::api::NTA_FEATURES &feats = feature_buffers[ai];
     const int n_feat = feats.size();
 
     std::cout << ai + 1 << "/" << n_ana
@@ -677,8 +677,8 @@ void metfrag_screening_impl(
         // Encode explained fragments for SUSPECT storage.
         std::vector<float> db_mzf(db_mz.begin(), db_mz.end());
         std::vector<float> db_intf(db_int.begin(), db_int.end());
-        std::string db_ms2_mz_enc  = nts::utils::encode_floats_base64(db_mzf);
-        std::string db_ms2_int_enc = nts::utils::encode_floats_base64(db_intf);
+        std::string db_ms2_mz_enc  = nta::utils::encode_floats_base64(db_mzf);
+        std::string db_ms2_int_enc = nta::utils::encode_floats_base64(db_intf);
 
         // Cosine similarity between explained peaks and experimental MS2.
         int shared = 0;
@@ -715,7 +715,7 @@ void metfrag_screening_impl(
         else if (rt_match)              id_level = 3;
 
         // Populate SUSPECT.
-        nts::api::NTS_SUSPECT_ROW s;
+        nta::api::NTA_SUSPECT_ROW s;
         s.analysis           = ana;
         s.feature            = feats.feature[fi];
         s.candidate_rank     = rank;
@@ -757,4 +757,4 @@ void metfrag_screening_impl(
   } // analyses
 }
 
-} // namespace nts::metfrag_runner
+} // namespace nta::metfrag_runner

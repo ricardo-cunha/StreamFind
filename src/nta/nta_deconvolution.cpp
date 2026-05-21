@@ -1,9 +1,9 @@
-// nts_deconvolution.cpp
+// nta_deconvolution.cpp
 // Feature detection implementations specifically for PROJECT_NON_TARGET_ANALYSIS::find_features
 // This file contains spectral processing, peak detection, and quality metrics functions
 
-#include "nts_deconvolution.h"
-#include "nts.h"
+#include "nta_deconvolution.h"
+#include "nta.h"
 #include <algorithm>
 #include <numeric>
 #include <cmath>
@@ -16,7 +16,7 @@
 #include <sstream>
 
 // MARK: VectorStats
-nts::deconvolution::VectorStats::VectorStats(const std::vector<float> &input_data)
+nta::deconvolution::VectorStats::VectorStats(const std::vector<float> &input_data)
 {
   count = input_data.size();
   if (count == 0)
@@ -25,19 +25,19 @@ nts::deconvolution::VectorStats::VectorStats(const std::vector<float> &input_dat
     min_val = max_val = signal_noise_ratio = 0.0f;
     return;
   }
-  mean = nts::utils::mean(input_data);
-  std_dev = nts::utils::standard_deviation(input_data, mean);
+  mean = nta::utils::mean(input_data);
+  std_dev = nta::utils::standard_deviation(input_data, mean);
   coefficient_variation = (mean != 0.0f) ? std_dev / mean : 0.0f;
   auto [min_it, max_it] = std::minmax_element(input_data.begin(), input_data.end());
   min_val = *min_it;
   max_val = *max_it;
-  float q25_val = nts::utils::quantile(input_data, 0.25f);
-  float q90_val = nts::utils::quantile(input_data, 0.90f);
+  float q25_val = nta::utils::quantile(input_data, 0.25f);
+  float q90_val = nta::utils::quantile(input_data, 0.90f);
   signal_noise_ratio = (q25_val != 0.0f) ? q90_val / q25_val : 0.0f;
 };
 
 // MARK: AdaptiveNoiseParams
-nts::deconvolution::AdaptiveNoiseParams::AdaptiveNoiseParams(const VectorStats &stats, int data_size, float base_quantile)
+nta::deconvolution::AdaptiveNoiseParams::AdaptiveNoiseParams(const VectorStats &stats, int data_size, float base_quantile)
 {
   bins = std::max(10, std::min(200, static_cast<int>(std::sqrt(data_size) * 1.5)));
   // Adaptive quantile estimation based on coefficient of variation
@@ -86,7 +86,7 @@ nts::deconvolution::AdaptiveNoiseParams::AdaptiveNoiseParams(const VectorStats &
 };
 
 // MARK: calculate_bin_assignments
-std::vector<int> nts::deconvolution::calculate_bin_assignments(const std::vector<float> &data, int num_bins)
+std::vector<int> nta::deconvolution::calculate_bin_assignments(const std::vector<float> &data, int num_bins)
 {
   const size_t n = data.size();
   std::vector<int> assignments(n);
@@ -105,7 +105,7 @@ std::vector<int> nts::deconvolution::calculate_bin_assignments(const std::vector
 };
 
 // MARK: calculate_noise_levels
-std::vector<float> nts::deconvolution::calculate_noise_levels(const std::vector<float> &intensities,
+std::vector<float> nta::deconvolution::calculate_noise_levels(const std::vector<float> &intensities,
                                                       const AdaptiveNoiseParams &params,
                                                       float noise_threshold)
 {
@@ -122,7 +122,7 @@ std::vector<float> nts::deconvolution::calculate_noise_levels(const std::vector<
   {
     if (!bin_data[bin_idx].empty())
     {
-      float quantile_val = nts::utils::quantile(bin_data[bin_idx], params.quantile);
+      float quantile_val = nta::utils::quantile(bin_data[bin_idx], params.quantile);
       float adjusted_threshold = quantile_val * params.threshold_multiplier;
       bin_quantiles[bin_idx] = std::max(adjusted_threshold, noise_threshold);
     }
@@ -135,7 +135,7 @@ std::vector<float> nts::deconvolution::calculate_noise_levels(const std::vector<
 };
 
 // MARK: cluster_by_mz
-std::vector<int> nts::deconvolution::cluster_by_mz(
+std::vector<int> nta::deconvolution::cluster_by_mz(
   const std::vector<float> &mz_values,
   const float &ppmThreshold)
 {
@@ -149,11 +149,11 @@ std::vector<int> nts::deconvolution::cluster_by_mz(
   {
     thresholds[i] = (mz_values[i] * ppmThreshold) / 1e6f;
   }
-  return nts::utils::cluster_by_threshold_float(mz_values, thresholds);
+  return nta::utils::cluster_by_threshold_float(mz_values, thresholds);
 };
 
 // MARK: filter_and_cluster
-void nts::deconvolution::filter_and_cluster(
+void nta::deconvolution::filter_and_cluster(
   const std::vector<float> &raw_mz,
   const std::vector<float> &raw_intensity,
   const std::vector<float> &raw_noise,
@@ -162,7 +162,7 @@ void nts::deconvolution::filter_and_cluster(
   std::vector<float> &final_intensity,
   std::vector<float> &final_noise)
 {
-  auto valid_indices = nts::utils::filter_above_threshold(raw_intensity, raw_noise);
+  auto valid_indices = nta::utils::filter_above_threshold(raw_intensity, raw_noise);
   if (valid_indices.empty())
     return;
 
@@ -179,8 +179,8 @@ void nts::deconvolution::filter_and_cluster(
     filtered_noise.push_back(raw_noise[idx]);
   }
 
-  auto sort_indices = nts::utils::get_sort_indices_float(filtered_mz);
-  nts::utils::reorder_multiple_vectors(sort_indices, filtered_mz, filtered_intensity, filtered_noise);
+  auto sort_indices = nta::utils::get_sort_indices_float(filtered_mz);
+  nta::utils::reorder_multiple_vectors(sort_indices, filtered_mz, filtered_intensity, filtered_noise);
   auto clusters = cluster_by_mz(filtered_mz, ppmThreshold);
 
   // Aggregate by cluster (keep max intensity per cluster)
@@ -215,7 +215,7 @@ void nts::deconvolution::filter_and_cluster(
 };
 
 // MARK: denoise_spectra
-void nts::deconvolution::denoise_spectra(
+void nta::deconvolution::denoise_spectra(
   mass_spec::reader::MS_FILE &ana,
   const int &spectrumIdx,
   const float &rt,
@@ -267,11 +267,11 @@ void nts::deconvolution::denoise_spectra(
     std::ostringstream header;
     header << "=== Denoising Debug Log for Spectrum " << spectrumIdx
            << " (RT=" << rt << "s) ===" << std::endl;
-    nts::utils::init_debug_log(log_filename.str(), header.str());
+    nta::utils::init_debug_log(log_filename.str(), header.str());
 
     // Calculate noise level statistics for debug output
-    float noise_mean = nts::utils::mean(raw_noise);
-    float noise_stddev = nts::utils::standard_deviation(raw_noise, noise_mean);
+    float noise_mean = nta::utils::mean(raw_noise);
+    float noise_stddev = nta::utils::standard_deviation(raw_noise, noise_mean);
     int zeros_removed = raw_n_traces - static_cast<int>(non_zero_intensities.size());
     float max_quantile = std::max(0.30f, baseQuantile * 1.2f);
 
@@ -299,7 +299,7 @@ void nts::deconvolution::denoise_spectra(
   }
 
   std::vector<float> final_mz, final_intensity, final_noise;
-  nts::deconvolution::filter_and_cluster(raw_mz, raw_intensity, raw_noise, ppmThreshold, final_mz, final_intensity, final_noise);
+  nta::deconvolution::filter_and_cluster(raw_mz, raw_intensity, raw_noise, ppmThreshold, final_mz, final_intensity, final_noise);
 
   total_clean_points += final_mz.size();
 
@@ -324,7 +324,7 @@ void nts::deconvolution::denoise_spectra(
     DEBUG_LOG(std::endl << "Denoising summary: " << raw_n_traces << " -> " << final_mz.size()
               << " traces (" << std::setprecision(1) << reduction_percent << "% reduction)" << std::endl);
 
-    nts::utils::close_debug_log();
+    nta::utils::close_debug_log();
   }
 
   // Add to output vectors
@@ -338,7 +338,7 @@ void nts::deconvolution::denoise_spectra(
 };
 
 // MARK: filter_valid_clusters
-std::vector<size_t> nts::deconvolution::filter_valid_clusters(
+std::vector<size_t> nta::deconvolution::filter_valid_clusters(
   const std::vector<SpectraPoint> &data,
   const std::vector<int> &clusters,
   int minTraces, float minSNR)
@@ -376,19 +376,19 @@ std::vector<size_t> nts::deconvolution::filter_valid_clusters(
 };
 
 // MARK: sort_by_rt_inplace
-void nts::deconvolution::sort_by_rt_inplace(std::vector<float> &rt, std::vector<float> &mz,
+void nta::deconvolution::sort_by_rt_inplace(std::vector<float> &rt, std::vector<float> &mz,
                                     std::vector<float> &intensity, std::vector<float> &noise,
                                     std::vector<int> &cluster)
 {
   if (rt.empty())
     return;
 
-  auto indices = nts::utils::get_sort_indices_float(rt);
-  nts::utils::reorder_multiple_vectors(indices, rt, mz, intensity, noise, cluster);
+  auto indices = nta::utils::get_sort_indices_float(rt);
+  nta::utils::reorder_multiple_vectors(indices, rt, mz, intensity, noise, cluster);
 };
 
 // MARK: cluster_spectra_by_mz
-void nts::deconvolution::cluster_spectra_by_mz(const std::vector<float> &spec_rt,
+void nta::deconvolution::cluster_spectra_by_mz(const std::vector<float> &spec_rt,
                                        const std::vector<float> &spec_mz,
                                        const std::vector<float> &spec_intensity,
                                        const std::vector<float> &spec_noise,
@@ -405,7 +405,7 @@ void nts::deconvolution::cluster_spectra_by_mz(const std::vector<float> &spec_rt
   if (n == 0)
     return;
 
-  auto mz_indices = nts::utils::get_sort_indices_float(spec_mz);
+  auto mz_indices = nta::utils::get_sort_indices_float(spec_mz);
   std::vector<float> sorted_mz(n);
   for (size_t i = 0; i < n; ++i)
   {
@@ -481,7 +481,7 @@ void nts::deconvolution::cluster_spectra_by_mz(const std::vector<float> &spec_rt
 };
 
 // MARK: find_peak_candidates
-std::vector<int> nts::deconvolution::find_peak_candidates(
+std::vector<int> nta::deconvolution::find_peak_candidates(
   const std::vector<float> &first_derivative,
   const std::vector<float> &raw_intensity,
   int refineWindow)
@@ -510,7 +510,7 @@ std::vector<int> nts::deconvolution::find_peak_candidates(
 };
 
 // MARK: validate_peak_candidates
-std::vector<int> nts::deconvolution::validate_peak_candidates(
+std::vector<int> nta::deconvolution::validate_peak_candidates(
   const std::vector<int> &candidates,
   const std::vector<float> &first_derivative,
   const std::vector<float> &second_derivative,
@@ -710,7 +710,7 @@ std::vector<int> nts::deconvolution::validate_peak_candidates(
 };
 
 // MARK: calculate_peak_boundaries
-std::pair<int, int> nts::deconvolution::calculate_peak_boundaries(
+std::pair<int, int> nta::deconvolution::calculate_peak_boundaries(
   int peak_idx,
   const std::vector<float> &rt,
   const std::vector<float> &smoothed_intensity,
@@ -875,7 +875,7 @@ std::pair<int, int> nts::deconvolution::calculate_peak_boundaries(
 };
 
 // MARK: calculate_fwhm_rt
-float nts::deconvolution::calculate_fwhm_rt(const std::vector<float> &rt, const std::vector<float> &intensity)
+float nta::deconvolution::calculate_fwhm_rt(const std::vector<float> &rt, const std::vector<float> &intensity)
 {
   if (rt.empty() || intensity.empty() || rt.size() != intensity.size())
     return 0.0f;
@@ -906,7 +906,7 @@ float nts::deconvolution::calculate_fwhm_rt(const std::vector<float> &rt, const 
 };
 
 // MARK: calculate_fwhm_combined
-std::tuple<float, float, float> nts::deconvolution::calculate_fwhm_combined(
+std::tuple<float, float, float> nta::deconvolution::calculate_fwhm_combined(
   const std::vector<float> &rt,
   const std::vector<float> &mz,
   const std::vector<float> &intensity)
@@ -984,7 +984,7 @@ std::tuple<float, float, float> nts::deconvolution::calculate_fwhm_combined(
 };
 
 // MARK: process_polarity_clusters
-std::vector<nts::api::NTS_FEATURE_ROW> nts::deconvolution::process_polarity_clusters(
+std::vector<nta::api::NTA_FEATURE_ROW> nta::deconvolution::process_polarity_clusters(
     const std::vector<float> &clust_rt,
     const std::vector<float> &clust_mz,
     const std::vector<float> &clust_intensity,
@@ -1008,7 +1008,7 @@ std::vector<nts::api::NTS_FEATURE_ROW> nts::deconvolution::process_polarity_clus
     std::ostringstream header;
     header << "=== Peak Detection Debug Log (m/z = " << std::fixed << std::setprecision(4)
            << debugMZ << ") ===\n";
-    nts::utils::init_debug_log(filename, header.str());
+    nta::utils::init_debug_log(filename, header.str());
   }
 
   std::map<int, std::vector<int>> cluster_indices;
@@ -1017,7 +1017,7 @@ std::vector<nts::api::NTS_FEATURE_ROW> nts::deconvolution::process_polarity_clus
     cluster_indices[clust_cluster[i]].push_back(static_cast<int>(i));
   }
 
-  std::vector<nts::api::NTS_FEATURE_ROW> polarity_features;
+  std::vector<nta::api::NTA_FEATURE_ROW> polarity_features;
 
   for (const auto& [cluster_id, indices] : cluster_indices)
   {
@@ -1132,12 +1132,12 @@ std::vector<nts::api::NTS_FEATURE_ROW> nts::deconvolution::process_polarity_clus
       DEBUG_LOG("      baseline_window_size: " << baseline_window_size << " points" << std::endl);
     }
 
-    auto baseline = nts::utils::calculate_baseline(cluster_intensity, baseline_window_size);
+    auto baseline = nta::utils::calculate_baseline(cluster_intensity, baseline_window_size);
     // Use gentle smoothing for derivatives (window_size=2 means averaging 3 points: [i-1, i, i+1])
     // This reduces noise while preserving sharp peaks
 
-    auto smoothed_intensity = nts::utils::smooth_intensity_savitzky_golay(cluster_intensity, 4, 2);
-    // auto smoothed_intensity = nts::utils::smooth_intensity(cluster_intensity, 4);
+    auto smoothed_intensity = nta::utils::smooth_intensity_savitzky_golay(cluster_intensity, 4, 2);
+    // auto smoothed_intensity = nta::utils::smooth_intensity(cluster_intensity, 4);
 
     // DEBUG: Log smoothed and baseline data for inspection
     if (cluster_matches_debug_mz)
@@ -1160,7 +1160,7 @@ std::vector<nts::api::NTS_FEATURE_ROW> nts::deconvolution::process_polarity_clus
     }
 
     std::vector<float> first_derivative, second_derivative;
-    nts::utils::calculate_derivatives(smoothed_intensity, first_derivative, second_derivative);
+    nta::utils::calculate_derivatives(smoothed_intensity, first_derivative, second_derivative);
     auto candidates = find_peak_candidates(first_derivative, smoothed_intensity, 0);
 
     if (cluster_matches_debug_mz)
@@ -1710,8 +1710,8 @@ std::vector<nts::api::NTS_FEATURE_ROW> nts::deconvolution::process_polarity_clus
       if (gaussian_sigma <= 0) gaussian_sigma = (fit_rt.back() - fit_rt.front()) / 4.0f;
 
       // Optimize Gaussian parameters (with baseline)
-      nts::utils::fit_gaussian(fit_rt, fit_smoothed, gaussian_A, gaussian_mu, gaussian_sigma, gaussian_baseline);
-      float gaussian_r2 = nts::utils::calculate_gaussian_rsquared(
+      nta::utils::fit_gaussian(fit_rt, fit_smoothed, gaussian_A, gaussian_mu, gaussian_sigma, gaussian_baseline);
+      float gaussian_r2 = nta::utils::calculate_gaussian_rsquared(
         fit_rt, fit_smoothed, gaussian_A, gaussian_mu, gaussian_sigma, gaussian_baseline);
 
       if (cluster_matches_debug_mz)
@@ -1729,14 +1729,14 @@ std::vector<nts::api::NTS_FEATURE_ROW> nts::deconvolution::process_polarity_clus
         // Print fitted values vs actual in horizontal format for easy plotting
         DEBUG_LOG("          Fitted vs Actual intensities:" << std::endl);
         float ss_total = 0.0f, ss_residual = 0.0f;
-        float mean_y = nts::utils::mean(fit_smoothed);
+        float mean_y = nta::utils::mean(fit_smoothed);
 
         // Calculate all predictions and errors first
         std::vector<float> predictions;
         std::vector<float> errors;
         for (size_t i = 0; i < fit_rt.size(); ++i)
         {
-          float pred = nts::utils::gaussian_function_with_baseline(gaussian_A, gaussian_mu, gaussian_sigma, gaussian_baseline, fit_rt[i]);
+          float pred = nta::utils::gaussian_function_with_baseline(gaussian_A, gaussian_mu, gaussian_sigma, gaussian_baseline, fit_rt[i]);
           float residual = fit_smoothed[i] - pred;
           predictions.push_back(pred);
           errors.push_back(residual);
@@ -1789,12 +1789,12 @@ std::vector<nts::api::NTS_FEATURE_ROW> nts::deconvolution::process_polarity_clus
       std::string fit_type = "Gaussian";
 
       // Calculate quality metrics
-      float peak_area_val = nts::utils::calculate_area(peak_rt, peak_intensity);
-      float jaggedness = nts::utils::calculate_jaggedness(peak_intensity);
-      float sharpness = nts::utils::calculate_sharpness(peak_rt, peak_intensity, peak_area_val);
-      float asymmetry = nts::utils::calculate_asymmetry(peak_rt, peak_intensity);
-      int modality = nts::utils::calculate_modality(peak_smoothed, 0.1f); // 10% prominence threshold
-      float plates = nts::utils::calculate_theoretical_plates(rt_at_max, fwhm_rt_val);
+      float peak_area_val = nta::utils::calculate_area(peak_rt, peak_intensity);
+      float jaggedness = nta::utils::calculate_jaggedness(peak_intensity);
+      float sharpness = nta::utils::calculate_sharpness(peak_rt, peak_intensity, peak_area_val);
+      float asymmetry = nta::utils::calculate_asymmetry(peak_rt, peak_intensity);
+      int modality = nta::utils::calculate_modality(peak_smoothed, 0.1f); // 10% prominence threshold
+      float plates = nta::utils::calculate_theoretical_plates(rt_at_max, fwhm_rt_val);
 
       if (cluster_matches_debug_mz)
       {
@@ -1844,7 +1844,7 @@ std::vector<nts::api::NTS_FEATURE_ROW> nts::deconvolution::process_polarity_clus
       }
 
       // Create FEATURE structure
-      nts::api::NTS_FEATURE_ROW feature;
+      nta::api::NTA_FEATURE_ROW feature;
 
       // Basic identification with polarity-specific naming
       std::string polarity_suffix = (polarity_sign > 0) ? "POS" : "NEG";
@@ -1961,14 +1961,14 @@ std::vector<nts::api::NTS_FEATURE_ROW> nts::deconvolution::process_polarity_clus
   }
 
   // Close debug log at the end of processing to allow new log files to be created
-  nts::utils::close_debug_log();
+  nta::utils::close_debug_log();
 
   return polarity_features;
 };
 
 // MARK: find_features_impl
-void nts::deconvolution::find_features_impl(
-  nts::PROJECT_NON_TARGET_ANALYSIS &nts_data,
+void nta::deconvolution::find_features_impl(
+  nta::PROJECT_NON_TARGET_ANALYSIS &nta_data,
     const std::vector<float> &rtWindowsMin,
     const std::vector<float> &rtWindowsMax,
     const float &ppmThreshold,
@@ -1988,9 +1988,9 @@ void nts::deconvolution::find_features_impl(
     return;
   }
 
-  const auto &analysis_names = nts_data.analysis_names();
-  const auto &file_paths = nts_data.file_paths();
-  auto &feature_buffers = nts_data.feature_buffers();
+  const auto &analysis_names = nta_data.analysis_names();
+  const auto &file_paths = nta_data.file_paths();
+  auto &feature_buffers = nta_data.feature_buffers();
 
   for (size_t a = 0; a < analysis_names.size(); ++a)
   {
@@ -2000,7 +2000,7 @@ void nts::deconvolution::find_features_impl(
     // Only enable debugging for matching analysis
     float current_debugMZ = (debugAnalysis.empty() || debugAnalysis == analysis_names[a]) ? debugMZ : 0.0f;
     int current_debugSpecIdx = (debugAnalysis.empty() || debugAnalysis == analysis_names[a]) ? debugSpecIdx : -1;
-    const auto header = nts_data.spectra_headers_at(a);
+    const auto header = nta_data.spectra_headers_at(a);
     std::vector<int> idx_load;
     std::vector<float> rt_load;
     std::vector<int> polarity_load;
@@ -2104,7 +2104,7 @@ void nts::deconvolution::find_features_impl(
                 << "% noise removed, baseQuantile=" << baseQuantile << ")" << std::endl;
 
     // Process positive and negative polarities separately
-    std::vector<nts::api::NTS_FEATURE_ROW> pos_features, neg_features;
+    std::vector<nta::api::NTA_FEATURE_ROW> pos_features, neg_features;
 
     // Process positive polarity
     if (spec_pos_rt.size() > 0) {
@@ -2157,7 +2157,7 @@ void nts::deconvolution::find_features_impl(
     }
 
     // Combine features from both polarities
-    std::vector<nts::api::NTS_FEATURE_ROW> all_features;
+    std::vector<nta::api::NTA_FEATURE_ROW> all_features;
     all_features.reserve(pos_features.size() + neg_features.size());
     all_features.insert(all_features.end(), pos_features.begin(), pos_features.end());
     all_features.insert(all_features.end(), neg_features.begin(), neg_features.end());
@@ -2165,7 +2165,7 @@ void nts::deconvolution::find_features_impl(
     std::cout << "  4/5 Found " << all_features.size() << " total features ("
                 << pos_features.size() << " positive, " << neg_features.size() << " negative)" << std::endl;
 
-    feature_buffers[a] = nts::api::NTS_FEATURES();
+    feature_buffers[a] = nta::api::NTA_FEATURES();
     feature_buffers[a].analysis = analysis_names[a];
 
     for (const auto& feature : all_features)

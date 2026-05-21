@@ -1,17 +1,17 @@
-// nts_alignment.h
+// nta_alignment.h
 // Feature alignment and grouping functions for PROJECT_NON_TARGET_ANALYSIS
 
-#ifndef NTS_ALIGNMENT_H
-#define NTS_ALIGNMENT_H
+#ifndef NTA_ALIGNMENT_H
+#define NTA_ALIGNMENT_H
 
 #include <vector>
 #include <string>
 #include <map>
 #include <cstddef>
 
-namespace nts { namespace api { struct NTS_FEATURE_ROW; struct NTS_FEATURES; class PROJECT_NON_TARGET_ANALYSIS; } using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS; }
+namespace nta { namespace api { struct NTA_FEATURE_ROW; struct NTA_FEATURES; class PROJECT_NON_TARGET_ANALYSIS; } using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS; }
 
-namespace nts {
+namespace nta {
 namespace alignment {
 
 // Struct to hold internal standard information
@@ -78,7 +78,7 @@ float interpolate_rt_shift(
 
 // Implementation function for PROJECT_NON_TARGET_ANALYSIS::group_features
 void group_features_impl(
-  nts::PROJECT_NON_TARGET_ANALYSIS &nts_data,
+  nta::PROJECT_NON_TARGET_ANALYSIS &nta_data,
   const std::string &method,
   float rt_deviation,
   float ppm_threshold,
@@ -89,6 +89,6 @@ void group_features_impl(
 );
 
 } // namespace alignment
-} // namespace nts
+} // namespace nta
 
-#endif // NTS_ALIGNMENT_H
+#endif // NTA_ALIGNMENT_H

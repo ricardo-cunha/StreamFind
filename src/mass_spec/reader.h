@@ -1,7 +1,7 @@
 #ifndef MASS_SPEC_READER_H
 #define MASS_SPEC_READER_H
 
-#include "project_mass_spec.h"
+#include "mass_spec.h"
 
 #include <algorithm>
 #include <cmath>

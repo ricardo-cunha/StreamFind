@@ -1,5 +1,5 @@
-#ifndef NTS_ANNOTATION_H
-#define NTS_ANNOTATION_H
+#ifndef NTA_ANNOTATION_H
+#define NTA_ANNOTATION_H
 
 #include <vector>
 #include <string>
@@ -12,13 +12,13 @@
 
 #include <string>
 
-namespace nts {
-  namespace api { struct NTS_FEATURE_ROW; struct NTS_FEATURES; }
+namespace nta {
+  namespace api { struct NTA_FEATURE_ROW; struct NTA_FEATURES; }
   namespace api { class PROJECT_NON_TARGET_ANALYSIS; }
   using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS;
 }
 
-namespace nts
+namespace nta
 {
   namespace annotation
   {
@@ -90,7 +90,7 @@ namespace nts
     // MARK: ISOTOPE_CHAIN
     struct ISOTOPE_CHAIN
     {
-      std::vector<nts::api::NTS_FEATURE_ROW> chain;
+      std::vector<nta::api::NTA_FEATURE_ROW> chain;
       std::vector<int> candidate_indices;
       std::vector<int> charge;
       std::vector<int> step;
@@ -108,7 +108,7 @@ namespace nts
       float number_carbons;
       int length;
 
-      ISOTOPE_CHAIN(const int &z, const nts::api::NTS_FEATURE_ROW &mono_ion, float mono_mzr);
+      ISOTOPE_CHAIN(const int &z, const nta::api::NTA_FEATURE_ROW &mono_ion, float mono_mzr);
     };
 
     // MARK: ADDUCT
@@ -173,7 +173,7 @@ namespace nts
     // MARK: CANDIDATE_CHAIN
     struct CANDIDATE_CHAIN
     {
-      std::vector<nts::api::NTS_FEATURE_ROW> chain;
+      std::vector<nta::api::NTA_FEATURE_ROW> chain;
       std::vector<int> indices;
 
       void clear();
@@ -182,8 +182,8 @@ namespace nts
       std::vector<float> get_chain_mzr(float ppm) const;
       float get_max_mzr(float ppm) const;
 
-      void find_isotopic_candidates(const nts::api::NTS_FEATURE_ROW &ft,
-                                     const nts::api::NTS_FEATURES &fts,
+      void find_isotopic_candidates(const nta::api::NTA_FEATURE_ROW &ft,
+                                     const nta::api::NTA_FEATURES &fts,
                                      const int &ft_index,
                                      const int &maxIsotopes,
                                      const std::vector<int> *component_indices = nullptr,
@@ -194,15 +194,15 @@ namespace nts
                               const int &maxCharge,
                               const int &maxGaps,                             float ppm,                              bool debug = false);
 
-      void find_adduct_candidates(const nts::api::NTS_FEATURE_ROW &ft,
-                                   const nts::api::NTS_FEATURES &fts,
+      void find_adduct_candidates(const nta::api::NTA_FEATURE_ROW &ft,
+                                   const nta::api::NTA_FEATURES &fts,
                                    const int &ft_index,
                                    const std::vector<int> *component_indices = nullptr);
 
       void annotate_adducts(float ppm, bool debug = false);
 
-      void find_fragment_candidates(const nts::api::NTS_FEATURE_ROW &ft,
-                                     const nts::api::NTS_FEATURES &fts,
+      void find_fragment_candidates(const nta::api::NTA_FEATURE_ROW &ft,
+                                     const nta::api::NTA_FEATURES &fts,
                                      const int &ft_index,
                                      const std::vector<int> *component_indices = nullptr);
 
@@ -213,7 +213,7 @@ namespace nts
     bool is_max_gap_reached(const int &current_step, const int &maxGaps, const std::vector<int> &steps);
 
     void annotate_components_impl(
-      nts::PROJECT_NON_TARGET_ANALYSIS &nts_data,
+      nta::PROJECT_NON_TARGET_ANALYSIS &nta_data,
         int maxIsotopes,
         int maxCharge,
         int maxGaps,
@@ -222,6 +222,6 @@ namespace nts
         const std::string &debugAnalysis = "");
 
   } // namespace annotation
-} // namespace nts
+} // namespace nta
 
 #endif

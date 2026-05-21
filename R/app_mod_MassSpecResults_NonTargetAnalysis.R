@@ -486,17 +486,17 @@
       )
     }
 
-    # MARK: nts_data
-    nts_data <- shiny::reactiveVal()
+    # MARK: nta_data
+    nta_data <- shiny::reactiveVal()
 
     shiny::observe({
       shiny::validate(shiny::need(!is.null(x), "NTA data is not available"))
-      nts_data(x)
+      nta_data(x)
     })
 
     # MARK: features_data
     features_data <- shiny::reactive({
-      nts <- nts_data()
+      nts <- nta_data()
       fts <- data.table::as.data.table(get_features(nts, filtered = TRUE))
       if (nrow(fts) == 0) return(fts)
       digits_for_col <- function(col) {
@@ -525,14 +525,14 @@
 
     # MARK: internal_standards_data
     internal_standards_data <- shiny::reactive({
-      nts <- nts_data()
+      nts <- nta_data()
       istd <- get_internal_standards(nts)
       istd
     })
 
     # MARK: suspects_data
     suspects_data <- shiny::reactive({
-      nts <- nts_data()
+      nts <- nta_data()
       sps <- data.table::as.data.table(get_suspects(nts))
       if (nrow(sps) == 0) return(sps)
       sps <- data.table::copy(sps)
@@ -624,7 +624,7 @@
 
     # MARK: summary_data
     summary_data <- shiny::reactive({
-      nts <- nts_data()
+      nts <- nta_data()
       info_analyses <- info(nts)
       all_fts <- features_data()
       if (nrow(all_fts) == 0) {
@@ -721,7 +721,7 @@
 
     # MARK: summary_chart
     output$features_chart <- plotly::renderPlotly({
-      nts <- nts_data()
+      nts <- nta_data()
       shiny::validate(shiny::need(!is.null(nts), "NTA data is not available"))
       group_by <- if (identical(chart_color_by(), "replicate")) "replicate" else "analysis"
       p <- plot_features_count(nts, groupBy = group_by, showLegend = FALSE)
@@ -1109,7 +1109,7 @@
           "Select one or more points to view EIC."
         )
       )
-      nts <- nts_data()
+      nts <- nta_data()
       p <- plot_features(
         nts,
         features = selected_features_scatter(),
@@ -1136,7 +1136,7 @@
           "Select one or more points to view MS1."
         )
       )
-      nts <- nts_data()
+      nts <- nta_data()
       p <- plot_features_ms1(
         nts,
         features = selected_features_scatter(),
@@ -1162,7 +1162,7 @@
           "Select one or more points to view MS2."
         )
       )
-      nts <- nts_data()
+      nts <- nta_data()
       p <- plot_features_ms2(
         nts,
         features = selected_features_scatter(),
@@ -1187,7 +1187,7 @@
           "Select one or more points to view XIC."
         )
       )
-      nts <- nts_data()
+      nts <- nta_data()
       p <- map_features(
         nts,
         features = selected_features_scatter(),
@@ -1213,7 +1213,7 @@
           "Select one or more points to view profile."
         )
       )
-      nts <- nts_data()
+      nts <- nta_data()
       sel <- selected_features_scatter()
       fts <- get_features(nts, features = sel, filtered = TRUE)
       if (nrow(fts) == 0 || !"feature_group" %in% colnames(fts)) {
@@ -1312,7 +1312,7 @@
 
     # MARK: suspects_table_scatter
     output$suspects_table_scatter <- DT::renderDT({
-      nts <- nts_data()
+      nts <- nta_data()
       suspects <- data.table::copy(suspects_data())
       sel <- selected_features_scatter()
       shiny::validate(shiny::need(!is.null(sel) && nrow(sel) > 0, "Select one or more points to view suspects."))

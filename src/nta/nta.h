@@ -1,5 +1,5 @@
-#ifndef NTS_H
-#define NTS_H
+#ifndef NTA_H
+#define NTA_H
 
 #include <vector>
 #include <fstream>
@@ -9,25 +9,25 @@
 #include <unordered_map>
 #include <iostream>
 
-#include "nts_deconvolution.h"
-#include "nts_annotation.h"
-#include "nts_componentization.h"
-#include "nts_alignment.h"
-#include "nts_gap_filling.h"
-#include "nts_blank_subtraction.h"
-#include "nts_filters.h"
-#include "suspect_screening.h"
-#include "metfrag_runner.h"
-#include "assign_transformation_products.h"
+#include "nta_deconvolution.h"
+#include "nta_annotation.h"
+#include "nta_componentization.h"
+#include "nta_alignment.h"
+#include "nta_gap_filling.h"
+#include "nta_blank_subtraction.h"
+#include "nta_filters.h"
+#include "nta_suspect_screening.h"
+#include "nta_metfrag_runner.h"
+#include "nta_assign_transformation_products.h"
 
 #include "../project/project.h"
-#include "../mass_spec/project_mass_spec.h"
+#include "../mass_spec/mass_spec.h"
 #include "../mass_spec/reader.h"
 
-namespace nts
+namespace nta
 {
 
-  struct NTS_INFO;
+  struct NTA_INFO;
 
   // MARK: ns utils
   namespace utils
@@ -161,13 +161,13 @@ namespace nts
   // MARK: ns api
   namespace api
   {
-    struct NTS_FEATURE_SPECTRUM
+    struct NTA_FEATURE_SPECTRUM
     {
       std::vector<float> mz;
       std::vector<float> intensity;
       // Optional constructor to initialize from targets spectra
-      NTS_FEATURE_SPECTRUM() = default;
-      NTS_FEATURE_SPECTRUM(const mass_spec::spectra::MS_TARGETS_SPECTRA &spectra,
+      NTA_FEATURE_SPECTRUM() = default;
+      NTA_FEATURE_SPECTRUM(const mass_spec::spectra::MS_TARGETS_SPECTRA &spectra,
                            float mzClust,
                            float presence);
 
@@ -177,14 +177,14 @@ namespace nts
                              float presence);
     };
 
-    // MARK: merge_NTS_FEATURE_SPECTRA
-    NTS_FEATURE_SPECTRUM merge_NTS_FEATURE_SPECTRA(
+    // MARK: merge_NTA_FEATURE_SPECTRA
+    NTA_FEATURE_SPECTRUM merge_NTA_FEATURE_SPECTRA(
         const mass_spec::spectra::MS_TARGETS_SPECTRA &spectra,
         const float &mzClust,
         const float &presence);
 
-    // MARK: NTS_FEATURE_ROW
-    struct NTS_FEATURE_ROW : public project::api::ROW
+    // MARK: NTA_FEATURE_ROW
+    struct NTA_FEATURE_ROW : public project::api::ROW
     {
       std::string analysis;
       std::string feature;
@@ -234,7 +234,7 @@ namespace nts
       std::string ms2_intensity;
     };
 
-    struct NTS_FEATURES_COUNT_ROW
+    struct NTA_FEATURES_COUNT_ROW
     {
       std::string analysis;
       int total = 0;
@@ -243,8 +243,8 @@ namespace nts
       int components = 0;
     };
 
-    // MARK: NTS_FEATURES
-    struct NTS_FEATURES
+    // MARK: NTA_FEATURES
+    struct NTA_FEATURES
     {
       std::string analysis;
       std::vector<std::string> feature;
@@ -300,11 +300,11 @@ namespace nts
 
       std::vector<std::uint8_t> serialize_object() const;
 
-      static NTS_FEATURES deserialize_object(const std::vector<std::uint8_t> &bytes);
+      static NTA_FEATURES deserialize_object(const std::vector<std::uint8_t> &bytes);
 
-      NTS_FEATURE_ROW get_feature(const int &i) const
+      NTA_FEATURE_ROW get_feature(const int &i) const
       {
-        NTS_FEATURE_ROW feature_i;
+        NTA_FEATURE_ROW feature_i;
         feature_i.analysis = analysis;
         feature_i.feature = feature[i];
         feature_i.feature_group = feature_group[i];
@@ -354,7 +354,7 @@ namespace nts
         return feature_i;
       };
 
-      void set_feature(const int &i, const NTS_FEATURE_ROW &feature_i)
+      void set_feature(const int &i, const NTA_FEATURE_ROW &feature_i)
       {
         feature[i] = feature_i.feature;
         feature_group[i] = feature_i.feature_group;
@@ -403,7 +403,7 @@ namespace nts
         ms2_intensity[i] = feature_i.ms2_intensity;
       };
 
-      void append_feature(const NTS_FEATURE_ROW &feature_i)
+      void append_feature(const NTA_FEATURE_ROW &feature_i)
       {
         feature.push_back(feature_i.feature);
         feature_group.push_back(feature_i.feature_group);
@@ -614,7 +614,7 @@ namespace nts
       };
     };
 
-    struct NTS_FEATURES_TABLE
+    struct NTA_FEATURES_TABLE
     {
       std::vector<std::string> project_id;
       std::vector<std::string> analysis;
@@ -667,7 +667,7 @@ namespace nts
 
       int size() const { return static_cast<int>(feature.size()); }
 
-      void append(const NTS_FEATURE_ROW &row)
+      void append(const NTA_FEATURE_ROW &row)
       {
         project_id.push_back(row.project_id);
         analysis.push_back(row.analysis);
@@ -720,18 +720,18 @@ namespace nts
       }
     };
 
-    struct NTS_FEATURES_CACHE
+    struct NTA_FEATURES_CACHE
     {
-      std::vector<NTS_FEATURES> buffers;
+      std::vector<NTA_FEATURES> buffers;
 
       std::vector<std::uint8_t> serialize_object() const;
 
-      static NTS_FEATURES_CACHE deserialize_object(const std::vector<std::uint8_t> &bytes);
+      static NTA_FEATURES_CACHE deserialize_object(const std::vector<std::uint8_t> &bytes);
     };
 
-    NTS_FEATURE_ROW feature_row_from_table(const NTS_FEATURES_TABLE &table, std::size_t row);
+    NTA_FEATURE_ROW feature_row_from_table(const NTA_FEATURES_TABLE &table, std::size_t row);
 
-    struct NTS_FEATURE_COUNT_ROW
+    struct NTA_FEATURE_COUNT_ROW
     {
       std::string analysis;
       int total = 0;
@@ -740,8 +740,8 @@ namespace nts
       int components = 0;
     };
 
-    // MARK: NTS_SUSPECT_ROW
-    struct NTS_SUSPECT_ROW : public project::api::ROW
+    // MARK: NTA_SUSPECT_ROW
+    struct NTA_SUSPECT_ROW : public project::api::ROW
     {
       std::string analysis;
       std::string feature;
@@ -776,8 +776,8 @@ namespace nts
       std::string exp_ms2_intensity;
     };
 
-    // MARK: NTS_SUSPECTS
-    struct NTS_SUSPECTS
+    // MARK: NTA_SUSPECTS
+    struct NTA_SUSPECTS
     {
       std::vector<std::string> analysis;
       std::vector<std::string> feature;
@@ -817,11 +817,11 @@ namespace nts
 
       std::vector<std::uint8_t> serialize_object() const;
 
-      static NTS_SUSPECTS deserialize_object(const std::vector<std::uint8_t> &bytes);
+      static NTA_SUSPECTS deserialize_object(const std::vector<std::uint8_t> &bytes);
 
-      NTS_SUSPECT_ROW get_suspect(const int &i) const
+      NTA_SUSPECT_ROW get_suspect(const int &i) const
       {
-        NTS_SUSPECT_ROW suspect_i;
+        NTA_SUSPECT_ROW suspect_i;
         suspect_i.analysis = analysis[i];
         suspect_i.feature = feature[i];
         suspect_i.candidate_rank = candidate_rank[i];
@@ -855,7 +855,7 @@ namespace nts
         return suspect_i;
       }
 
-      void append(const NTS_SUSPECT_ROW &s)
+      void append(const NTA_SUSPECT_ROW &s)
       {
         analysis.push_back(s.analysis);
         feature.push_back(s.feature);
@@ -890,7 +890,7 @@ namespace nts
       }
     };
 
-    struct NTS_SUSPECTS_TABLE
+    struct NTA_SUSPECTS_TABLE
     {
       std::vector<std::string> project_id;
       std::vector<std::string> analysis;
@@ -927,7 +927,7 @@ namespace nts
 
       int size() const { return static_cast<int>(analysis.size()); }
 
-      void append(const NTS_SUSPECT_ROW &row)
+      void append(const NTA_SUSPECT_ROW &row)
       {
         project_id.push_back(row.project_id);
         analysis.push_back(row.analysis);
@@ -964,19 +964,19 @@ namespace nts
       }
     };
 
-    struct NTS_SUSPECTS_CACHE
+    struct NTA_SUSPECTS_CACHE
     {
-      std::vector<NTS_SUSPECTS> buffers;
+      std::vector<NTA_SUSPECTS> buffers;
 
       std::vector<std::uint8_t> serialize_object() const;
 
-      static NTS_SUSPECTS_CACHE deserialize_object(const std::vector<std::uint8_t> &bytes);
+      static NTA_SUSPECTS_CACHE deserialize_object(const std::vector<std::uint8_t> &bytes);
     };
 
-    NTS_SUSPECT_ROW suspect_row_from_table(const NTS_SUSPECTS_TABLE &table, std::size_t row);
+    NTA_SUSPECT_ROW suspect_row_from_table(const NTA_SUSPECTS_TABLE &table, std::size_t row);
 
-    // MARK: NTS_INTERNAL_STANDARD_ROW
-    struct NTS_INTERNAL_STANDARD_ROW : public project::api::ROW
+    // MARK: NTA_INTERNAL_STANDARD_ROW
+    struct NTA_INTERNAL_STANDARD_ROW : public project::api::ROW
     {
       std::string analysis;
       std::string feature;
@@ -1013,8 +1013,8 @@ namespace nts
       std::string exp_ms2_intensity;
     };
 
-    // MARK: NTS_INTERNAL_STANDARDS
-    struct NTS_INTERNAL_STANDARDS
+    // MARK: NTA_INTERNAL_STANDARDS
+    struct NTA_INTERNAL_STANDARDS
     {
       std::vector<std::string> analysis;
       std::vector<std::string> feature;
@@ -1054,11 +1054,11 @@ namespace nts
 
       std::vector<std::uint8_t> serialize_object() const;
 
-      static NTS_INTERNAL_STANDARDS deserialize_object(const std::vector<std::uint8_t> &bytes);
+      static NTA_INTERNAL_STANDARDS deserialize_object(const std::vector<std::uint8_t> &bytes);
 
-      NTS_INTERNAL_STANDARD_ROW get_internal_standard(const int &i) const
+      NTA_INTERNAL_STANDARD_ROW get_internal_standard(const int &i) const
       {
-        NTS_INTERNAL_STANDARD_ROW standard_i;
+        NTA_INTERNAL_STANDARD_ROW standard_i;
         standard_i.analysis = analysis[i];
         standard_i.feature = feature[i];
         standard_i.candidate_rank = candidate_rank[i];
@@ -1092,7 +1092,7 @@ namespace nts
         return standard_i;
       }
 
-      void append(const NTS_INTERNAL_STANDARD_ROW &is)
+      void append(const NTA_INTERNAL_STANDARD_ROW &is)
       {
         analysis.push_back(is.analysis);
         feature.push_back(is.feature);
@@ -1127,7 +1127,7 @@ namespace nts
       }
     };
 
-    struct NTS_INTERNAL_STANDARDS_TABLE
+    struct NTA_INTERNAL_STANDARDS_TABLE
     {
       std::vector<std::string> project_id;
       std::vector<std::string> analysis;
@@ -1164,7 +1164,7 @@ namespace nts
 
       int size() const { return static_cast<int>(analysis.size()); }
 
-      void append(const NTS_INTERNAL_STANDARD_ROW &row)
+      void append(const NTA_INTERNAL_STANDARD_ROW &row)
       {
         project_id.push_back(row.project_id);
         analysis.push_back(row.analysis);
@@ -1201,19 +1201,19 @@ namespace nts
       }
     };
 
-    struct NTS_INTERNAL_STANDARDS_CACHE
+    struct NTA_INTERNAL_STANDARDS_CACHE
     {
-      std::vector<NTS_INTERNAL_STANDARDS> buffers;
+      std::vector<NTA_INTERNAL_STANDARDS> buffers;
 
       std::vector<std::uint8_t> serialize_object() const;
 
-      static NTS_INTERNAL_STANDARDS_CACHE deserialize_object(const std::vector<std::uint8_t> &bytes);
+      static NTA_INTERNAL_STANDARDS_CACHE deserialize_object(const std::vector<std::uint8_t> &bytes);
     };
 
-    NTS_INTERNAL_STANDARD_ROW internal_standard_row_from_table(const NTS_INTERNAL_STANDARDS_TABLE &table, std::size_t row);
+    NTA_INTERNAL_STANDARD_ROW internal_standard_row_from_table(const NTA_INTERNAL_STANDARDS_TABLE &table, std::size_t row);
 
-    // MARK: NTS_TRANSFORMATION_PRODUCT_ROW
-    struct NTS_TRANSFORMATION_PRODUCT_ROW : public project::api::ROW
+    // MARK: NTA_TRANSFORMATION_PRODUCT_ROW
+    struct NTA_TRANSFORMATION_PRODUCT_ROW : public project::api::ROW
     {
       std::string name;
       std::string formula;
@@ -1246,7 +1246,7 @@ namespace nts
       double main_precursor_rt_plausibility = 0.0;
     };
 
-    struct NTS_TRANSFORMATION_PRODUCTS
+    struct NTA_TRANSFORMATION_PRODUCTS
     {
       std::vector<std::string> name;
       std::vector<std::string> formula;
@@ -1285,11 +1285,11 @@ namespace nts
 
       std::vector<std::uint8_t> serialize_object() const;
 
-      static NTS_TRANSFORMATION_PRODUCTS deserialize_object(const std::vector<std::uint8_t> &bytes);
+      static NTA_TRANSFORMATION_PRODUCTS deserialize_object(const std::vector<std::uint8_t> &bytes);
 
-      NTS_TRANSFORMATION_PRODUCT_ROW get_transformation_product(const int &i) const
+      NTA_TRANSFORMATION_PRODUCT_ROW get_transformation_product(const int &i) const
       {
-        NTS_TRANSFORMATION_PRODUCT_ROW row;
+        NTA_TRANSFORMATION_PRODUCT_ROW row;
         row.name = name[i];
         row.formula = formula[i];
         row.mass = mass[i];
@@ -1322,7 +1322,7 @@ namespace nts
         return row;
       }
 
-      void append(const NTS_TRANSFORMATION_PRODUCT_ROW &row)
+      void append(const NTA_TRANSFORMATION_PRODUCT_ROW &row)
       {
         name.push_back(row.name);
         formula.push_back(row.formula);
@@ -1356,7 +1356,7 @@ namespace nts
       }
     };
 
-    struct NTS_TRANSFORMATION_PRODUCTS_TABLE
+    struct NTA_TRANSFORMATION_PRODUCTS_TABLE
     {
       std::vector<std::string> project_id;
       std::vector<std::string> name;
@@ -1395,7 +1395,7 @@ namespace nts
         return static_cast<int>(name.size());
       }
 
-      void append(const NTS_TRANSFORMATION_PRODUCT_ROW &row)
+      void append(const NTA_TRANSFORMATION_PRODUCT_ROW &row)
       {
         project_id.push_back(row.project_id);
         name.push_back(row.name);
@@ -1431,11 +1431,11 @@ namespace nts
       }
     };
 
-    NTS_TRANSFORMATION_PRODUCT_ROW transformation_product_row_from_table(
-        const NTS_TRANSFORMATION_PRODUCTS_TABLE &table,
+    NTA_TRANSFORMATION_PRODUCT_ROW transformation_product_row_from_table(
+        const NTA_TRANSFORMATION_PRODUCTS_TABLE &table,
         std::size_t row);
 
-    struct NTS_QUERY_REQUEST
+    struct NTA_QUERY_REQUEST
     {
       std::vector<std::string> analyses;
       std::vector<std::string> features;
@@ -1453,14 +1453,14 @@ namespace nts
       mass_spec::api::MS_ANALYSES_TABLE analyses_table_;
       mass_spec::api::MS_SPECTRA_HEADERS_TABLE spectra_headers_table_;
       mutable std::vector<std::optional<mass_spec::reader::MS_SPECTRA_HEADERS>> spectra_headers_cache_;
-      NTS_FEATURES_TABLE features_table_;
-      NTS_SUSPECTS_TABLE suspects_table_;
-      NTS_INTERNAL_STANDARDS_TABLE internal_standards_table_;
-      NTS_TRANSFORMATION_PRODUCTS_TABLE transformation_products_table_;
-      mutable std::vector<NTS_FEATURES> feature_buffers_;
-      mutable std::vector<NTS_SUSPECTS> suspect_buffers_;
-      mutable std::vector<NTS_INTERNAL_STANDARDS> internal_standard_buffers_;
-      mutable NTS_TRANSFORMATION_PRODUCTS transformation_products_buffer_;
+      NTA_FEATURES_TABLE features_table_;
+      NTA_SUSPECTS_TABLE suspects_table_;
+      NTA_INTERNAL_STANDARDS_TABLE internal_standards_table_;
+      NTA_TRANSFORMATION_PRODUCTS_TABLE transformation_products_table_;
+      mutable std::vector<NTA_FEATURES> feature_buffers_;
+      mutable std::vector<NTA_SUSPECTS> suspect_buffers_;
+      mutable std::vector<NTA_INTERNAL_STANDARDS> internal_standard_buffers_;
+      mutable NTA_TRANSFORMATION_PRODUCTS transformation_products_buffer_;
       mutable bool feature_buffers_ready_ = false;
       mutable bool suspect_buffers_ready_ = false;
       mutable bool internal_standard_buffers_ready_ = false;
@@ -1473,22 +1473,22 @@ namespace nts
 
       const mass_spec::api::MS_ANALYSES_TABLE &analyses_table() const noexcept { return analyses_table_; }
       const mass_spec::api::MS_SPECTRA_HEADERS_TABLE &spectra_headers_table() const noexcept { return spectra_headers_table_; }
-      const NTS_FEATURES_TABLE &features_table() const noexcept { return features_table_; }
-      const NTS_SUSPECTS_TABLE &suspects_table() const noexcept { return suspects_table_; }
-      const NTS_INTERNAL_STANDARDS_TABLE &internal_standards_table() const noexcept { return internal_standards_table_; }
-      const NTS_TRANSFORMATION_PRODUCTS_TABLE &transformation_products_table() const noexcept { return transformation_products_table_; }
+      const NTA_FEATURES_TABLE &features_table() const noexcept { return features_table_; }
+      const NTA_SUSPECTS_TABLE &suspects_table() const noexcept { return suspects_table_; }
+      const NTA_INTERNAL_STANDARDS_TABLE &internal_standards_table() const noexcept { return internal_standards_table_; }
+      const NTA_TRANSFORMATION_PRODUCTS_TABLE &transformation_products_table() const noexcept { return transformation_products_table_; }
       const std::vector<std::string> &analysis_names() const noexcept { return analyses_table_.analysis; }
       const std::vector<std::string> &replicate_names() const noexcept { return analyses_table_.replicate; }
       const std::vector<std::string> &blank_names() const noexcept { return analyses_table_.blank; }
       const std::vector<std::string> &file_paths() const noexcept { return analyses_table_.file_path; }
-      std::vector<NTS_FEATURES> &feature_buffers();
-      const std::vector<NTS_FEATURES> &feature_buffers() const;
-      std::vector<NTS_SUSPECTS> &suspect_buffers();
-      const std::vector<NTS_SUSPECTS> &suspect_buffers() const;
-      std::vector<NTS_INTERNAL_STANDARDS> &internal_standard_buffers();
-      const std::vector<NTS_INTERNAL_STANDARDS> &internal_standard_buffers() const;
-      NTS_TRANSFORMATION_PRODUCTS &transformation_products();
-      const NTS_TRANSFORMATION_PRODUCTS &transformation_products() const;
+      std::vector<NTA_FEATURES> &feature_buffers();
+      const std::vector<NTA_FEATURES> &feature_buffers() const;
+      std::vector<NTA_SUSPECTS> &suspect_buffers();
+      const std::vector<NTA_SUSPECTS> &suspect_buffers() const;
+      std::vector<NTA_INTERNAL_STANDARDS> &internal_standard_buffers();
+      const std::vector<NTA_INTERNAL_STANDARDS> &internal_standard_buffers() const;
+      NTA_TRANSFORMATION_PRODUCTS &transformation_products();
+      const NTA_TRANSFORMATION_PRODUCTS &transformation_products() const;
       mass_spec::reader::MS_SPECTRA_HEADERS spectra_headers_at(std::size_t index) const;
 
       int size() const
@@ -1496,18 +1496,18 @@ namespace nts
         return static_cast<int>(analysis_names().size());
       }
 
-      std::vector<NTS_FEATURE_COUNT_ROW> get_features_count(
+      std::vector<NTA_FEATURE_COUNT_ROW> get_features_count(
           const std::vector<std::string> &analyses = {},
           bool include_filtered = false) const;
 
 
-      std::vector<NTS_FEATURE_ROW> get_features(
+      std::vector<NTA_FEATURE_ROW> get_features(
         const std::vector<std::string> &analyses = {},
         bool include_filtered = false) const;
-      std::vector<NTS_FEATURE_ROW> get_features(const NTS_QUERY_REQUEST &query) const;
-      std::vector<NTS_SUSPECT_ROW> get_suspects(const NTS_QUERY_REQUEST &query) const;
-      std::vector<NTS_INTERNAL_STANDARD_ROW> get_internal_standards(const NTS_QUERY_REQUEST &query) const;
-      std::vector<NTS_TRANSFORMATION_PRODUCT_ROW> get_transformation_products() const;
+      std::vector<NTA_FEATURE_ROW> get_features(const NTA_QUERY_REQUEST &query) const;
+      std::vector<NTA_SUSPECT_ROW> get_suspects(const NTA_QUERY_REQUEST &query) const;
+      std::vector<NTA_INTERNAL_STANDARD_ROW> get_internal_standards(const NTA_QUERY_REQUEST &query) const;
+      std::vector<NTA_TRANSFORMATION_PRODUCT_ROW> get_transformation_products() const;
 
       bool find_features(
         const std::vector<float> &rtWindowsMin,
@@ -1662,20 +1662,20 @@ namespace nts
         const metfrag_runner::MetFragParams &params);
 
       bool assign_transformation_products(
-        const std::vector<NTS_TRANSFORMATION_PRODUCT_ROW> &transformation_products,
+        const std::vector<NTA_TRANSFORMATION_PRODUCT_ROW> &transformation_products,
         const std::string &chromatographic_phase = "reverse_phase",
         double mzrMS2 = 0.008);
 
     private:
-      static constexpr const char *features_table_name() { return "NTS_FEATURES"; }
-      static constexpr const char *internal_standards_table_name() { return "NTS_INTERNAL_STANDARDS"; }
-      static constexpr const char *suspects_table_name() { return "NTS_SUSPECTS"; }
-      static constexpr const char *transformation_products_table_name() { return "NTS_TRANSFORMATION_PRODUCTS"; }
+      static constexpr const char *features_table_name() { return "NTA_FEATURES"; }
+      static constexpr const char *internal_standards_table_name() { return "NTA_INTERNAL_STANDARDS"; }
+      static constexpr const char *suspects_table_name() { return "NTA_SUSPECTS"; }
+      static constexpr const char *transformation_products_table_name() { return "NTA_TRANSFORMATION_PRODUCTS"; }
 
-      NTS_FEATURES_TABLE collect_features_table(const NTS_QUERY_REQUEST &query) const;
-      NTS_SUSPECTS_TABLE collect_suspects_table(const NTS_QUERY_REQUEST &query) const;
-      NTS_INTERNAL_STANDARDS_TABLE collect_internal_standards_table(const NTS_QUERY_REQUEST &query) const;
-      NTS_TRANSFORMATION_PRODUCTS_TABLE collect_transformation_products_table() const;
+      NTA_FEATURES_TABLE collect_features_table(const NTA_QUERY_REQUEST &query) const;
+      NTA_SUSPECTS_TABLE collect_suspects_table(const NTA_QUERY_REQUEST &query) const;
+      NTA_INTERNAL_STANDARDS_TABLE collect_internal_standards_table(const NTA_QUERY_REQUEST &query) const;
+      NTA_TRANSFORMATION_PRODUCTS_TABLE collect_transformation_products_table() const;
 
       void materialize_feature_buffers() const;
       void materialize_suspect_buffers() const;
@@ -1725,9 +1725,9 @@ namespace nts
                                              const std::string &args_key,
                                              const std::vector<std::string> &dependency_keys = {}) const;
 
-      NTS_FEATURES_CACHE feature_cache_snapshot() const;
-      NTS_SUSPECTS_CACHE suspect_cache_snapshot() const;
-      NTS_INTERNAL_STANDARDS_CACHE internal_standard_cache_snapshot() const;
+      NTA_FEATURES_CACHE feature_cache_snapshot() const;
+      NTA_SUSPECTS_CACHE suspect_cache_snapshot() const;
+      NTA_INTERNAL_STANDARDS_CACHE internal_standard_cache_snapshot() const;
 
       std::string feature_state_cache_key() const;
       std::string suspect_state_cache_key() const;
@@ -1759,7 +1759,7 @@ namespace nts
           const std::string &args_key,
           const std::vector<std::string> &dependency_keys,
           const std::string &description,
-          const std::function<NTS_TRANSFORMATION_PRODUCTS()> &algorithm);
+          const std::function<NTA_TRANSFORMATION_PRODUCTS()> &algorithm);
 
       void store_feature_cache(const std::string &hash, const std::string &description);
       void store_suspect_cache(const std::string &hash, const std::string &description);
@@ -1767,7 +1767,7 @@ namespace nts
 
       void store_transformation_products_cache(const std::string &hash,
                                                const std::string &description,
-                                               const NTS_TRANSFORMATION_PRODUCTS &products);
+                                               const NTA_TRANSFORMATION_PRODUCTS &products);
 
       void load_processing_metadata();
       void load_processing_headers();
@@ -1780,15 +1780,15 @@ namespace nts
       void save_processing_suspects();
       void save_processing_internal_standards();
 
-      void save_processing_transformation_products(const NTS_TRANSFORMATION_PRODUCTS &products);
+      void save_processing_transformation_products(const NTA_TRANSFORMATION_PRODUCTS &products);
     };
 
   } // namespace api
 
   using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS;
 
-  // MARK: NTS_INFO
-  struct NTS_INFO
+  // MARK: NTA_INFO
+  struct NTA_INFO
   {
     std::vector<std::string> analyses;
     std::vector<std::string> replicates;
@@ -1800,19 +1800,19 @@ namespace nts
       return analyses.size();
     }
   };
-}; // namespace nts
+}; // namespace nta
 
-// Include internal NTS module headers now that `nts::api` types are defined
+// Include internal NTS module headers now that `nta::api` types are defined
 // (sub-modules already included above)
 
 // Macro to write verbose debug output ONLY to log file (not console)
 #define DEBUG_LOG(x)                       \
   do                                       \
   {                                        \
-    if (::nts::utils::debug_log.is_open()) \
+    if (::nta::utils::debug_log.is_open()) \
     {                                      \
-      ::nts::utils::debug_log << x;        \
-      ::nts::utils::debug_log.flush();     \
+      ::nta::utils::debug_log << x;        \
+      ::nta::utils::debug_log.flush();     \
     }                                      \
   } while (0)
 
@@ -1820,10 +1820,10 @@ namespace nts
 #define DEBUG_OUT(x)                       \
   do                                       \
   {                                        \
-    if (::nts::utils::debug_log.is_open()) \
+    if (::nta::utils::debug_log.is_open()) \
     {                                      \
-      ::nts::utils::debug_log << x;        \
-      ::nts::utils::debug_log.flush();     \
+      ::nta::utils::debug_log << x;        \
+      ::nta::utils::debug_log.flush();     \
     }                                      \
     std::cout << x;                        \
   } while (0)

@@ -1,11 +1,11 @@
-// nts_gap_filling.cpp
-// Feature gap filling implementations for NTS_DATA
+// nta_gap_filling.cpp
+// Feature gap filling implementations for NTA_DATA
 // This file contains the logic for identifying and filling missing features across analyses
 
-#include "nts_gap_filling.h"
-#include "nts.h"
-#include "nts_deconvolution.h"
-#include "nts.h"
+#include "nta_gap_filling.h"
+#include "nta.h"
+#include "nta_deconvolution.h"
+#include "nta.h"
 #include <algorithm>
 #include <numeric>
 #include <cmath>
@@ -18,8 +18,8 @@
 #include <sstream>
 
 // MARK: analyze_feature_groups
-std::vector<nts::gap_filling::FEATURE_GROUP_INFO> nts::gap_filling::analyze_feature_groups(
-    const std::vector<nts::api::NTS_FEATURES> &features,
+std::vector<nta::gap_filling::FEATURE_GROUP_INFO> nta::gap_filling::analyze_feature_groups(
+    const std::vector<nta::api::NTA_FEATURES> &features,
     const std::vector<std::string> &analyses,
     const std::vector<std::string> &replicates,
     bool withinReplicate,
@@ -170,7 +170,7 @@ std::vector<nts::gap_filling::FEATURE_GROUP_INFO> nts::gap_filling::analyze_feat
 }
 
 // MARK: extract_eic_for_gap_filling
-nts::gap_filling::EIC_DATA nts::gap_filling::extract_eic_for_gap_filling(
+nta::gap_filling::EIC_DATA nta::gap_filling::extract_eic_for_gap_filling(
     mass_spec::reader::MS_FILE &ana,
     const mass_spec::reader::MS_SPECTRA_HEADERS &headers,
     float target_mz,
@@ -237,7 +237,7 @@ nts::gap_filling::EIC_DATA nts::gap_filling::extract_eic_for_gap_filling(
 }
 
 // MARK: pick_peak_from_eic
-nts::gap_filling::FILLED_FEATURE_INFO nts::gap_filling::pick_peak_from_eic(
+nta::gap_filling::FILLED_FEATURE_INFO nta::gap_filling::pick_peak_from_eic(
     const EIC_DATA &eic_data,
     const std::string &analysis,
     const std::string &feature_group,
@@ -291,8 +291,8 @@ nts::gap_filling::FILLED_FEATURE_INFO nts::gap_filling::pick_peak_from_eic(
   std::vector<float> sorted_intensity = eic_data.intensity;
   std::vector<float> sorted_noise = eic_data.noise;
 
-  auto sort_indices = nts::utils::get_sort_indices_float(sorted_rt);
-  nts::utils::reorder_multiple_vectors(sort_indices, sorted_rt, sorted_mz, sorted_intensity, sorted_noise);
+  auto sort_indices = nta::utils::get_sort_indices_float(sorted_rt);
+  nta::utils::reorder_multiple_vectors(sort_indices, sorted_rt, sorted_mz, sorted_intensity, sorted_noise);
 
   // Aggregate intensity by RT (sum intensities at same RT) and keep max m/z
   std::map<float, float> rt_intensity_map;
@@ -340,7 +340,7 @@ nts::gap_filling::FILLED_FEATURE_INFO nts::gap_filling::pick_peak_from_eic(
   if (unique_rt.size() >= 5)
   {
     // Use window=3 and order=1 (linear) for minimal smoothing that preserves peak shape
-    smoothed = nts::utils::smooth_intensity_savitzky_golay(unique_intensity, 3, 1);
+    smoothed = nta::utils::smooth_intensity_savitzky_golay(unique_intensity, 3, 1);
     if (debug)
     {
       DEBUG_LOG("  Applied light smoothing (window=3, order=1) for " << unique_rt.size() << " points" << std::endl);
@@ -477,24 +477,24 @@ nts::gap_filling::FILLED_FEATURE_INFO nts::gap_filling::pick_peak_from_eic(
   }
 
   // Calculate FWHM (both RT and m/z) - do this before Gaussian fit as it's more reliable
-  float fwhm = nts::deconvolution::calculate_fwhm_rt(peak_rt, peak_intensity);
-  auto [fwhm_rt_calc, fwhm_mz_calc, mean_mz_fwhm] = nts::deconvolution::calculate_fwhm_combined(
+  float fwhm = nta::deconvolution::calculate_fwhm_rt(peak_rt, peak_intensity);
+  auto [fwhm_rt_calc, fwhm_mz_calc, mean_mz_fwhm] = nta::deconvolution::calculate_fwhm_combined(
       peak_rt, peak_mz, peak_intensity);
 
   // Calculate average m/z in peak window
   float avg_mz = std::accumulate(peak_mz.begin(), peak_mz.end(), 0.0f) / peak_mz.size();
 
   // Calculate quality metrics using raw vectors (before encoding)
-  float peak_area_val = nts::utils::calculate_area(peak_rt, peak_intensity);
-  float jaggedness_val = nts::utils::calculate_jaggedness(peak_intensity);
-  float sharpness_val = nts::utils::calculate_sharpness(peak_rt, peak_intensity, peak_area_val);
-  float asymmetry_val = nts::utils::calculate_asymmetry(peak_rt, peak_intensity);
+  float peak_area_val = nta::utils::calculate_area(peak_rt, peak_intensity);
+  float jaggedness_val = nta::utils::calculate_jaggedness(peak_intensity);
+  float sharpness_val = nta::utils::calculate_sharpness(peak_rt, peak_intensity, peak_area_val);
+  float asymmetry_val = nta::utils::calculate_asymmetry(peak_rt, peak_intensity);
   // For modality, use smoothed data if we smoothed earlier
   std::vector<float> smoothed_for_modality = (peak_rt.size() >= 5)
-      ? nts::utils::smooth_intensity_savitzky_golay(peak_intensity, 3, 1)
+      ? nta::utils::smooth_intensity_savitzky_golay(peak_intensity, 3, 1)
       : peak_intensity;
-  float modality_val = nts::utils::calculate_modality(smoothed_for_modality, 0.1f);
-  float plates_val = nts::utils::calculate_theoretical_plates(apex_rt, fwhm);
+  float modality_val = nta::utils::calculate_modality(smoothed_for_modality, 0.1f);
+  float plates_val = nta::utils::calculate_theoretical_plates(apex_rt, fwhm);
 
   // Fit Gaussian - provide initial values for optimization
   float gaussian_baseline = std::min(peak_intensity.front(), peak_intensity.back());
@@ -503,10 +503,10 @@ nts::gap_filling::FILLED_FEATURE_INFO nts::gap_filling::pick_peak_from_eic(
   float gaussian_sigma = fwhm / 2.355f; // FWHM = 2.355 * sigma for Gaussian
   if (gaussian_sigma <= 0) gaussian_sigma = (peak_rt.back() - peak_rt.front()) / 4.0f;
 
-  nts::utils::fit_gaussian(peak_rt, peak_intensity, gaussian_A, gaussian_mu, gaussian_sigma, gaussian_baseline);
+  nta::utils::fit_gaussian(peak_rt, peak_intensity, gaussian_A, gaussian_mu, gaussian_sigma, gaussian_baseline);
 
   // Calculate R² for the fit
-  float gaussian_r2 = nts::utils::calculate_gaussian_rsquared(
+  float gaussian_r2 = nta::utils::calculate_gaussian_rsquared(
       peak_rt, peak_intensity, gaussian_A, gaussian_mu, gaussian_sigma, gaussian_baseline);
 
   if (debug)
@@ -577,18 +577,18 @@ nts::gap_filling::FILLED_FEATURE_INFO nts::gap_filling::pick_peak_from_eic(
   filled_feature.eic_size = peak_rt.size();
 
   // Encode EIC data
-  filled_feature.eic_rt = nts::utils::encode_floats_base64(peak_rt, 4);
-  filled_feature.eic_mz = nts::utils::encode_floats_base64(peak_mz, 4);
-  filled_feature.eic_intensity = nts::utils::encode_floats_base64(peak_intensity, 4);
-  filled_feature.eic_baseline = nts::utils::encode_floats_base64(peak_baseline, 4);
-  filled_feature.eic_smoothed = nts::utils::encode_floats_base64(peak_intensity, 4);
+  filled_feature.eic_rt = nta::utils::encode_floats_base64(peak_rt, 4);
+  filled_feature.eic_mz = nta::utils::encode_floats_base64(peak_mz, 4);
+  filled_feature.eic_intensity = nta::utils::encode_floats_base64(peak_intensity, 4);
+  filled_feature.eic_baseline = nta::utils::encode_floats_base64(peak_baseline, 4);
+  filled_feature.eic_smoothed = nta::utils::encode_floats_base64(peak_intensity, 4);
 
   return filled_feature;
 }
 
 // MARK: fill_features_impl
-void nts::gap_filling::fill_features_impl(
-  nts::PROJECT_NON_TARGET_ANALYSIS &nts_data,
+void nta::gap_filling::fill_features_impl(
+  nta::PROJECT_NON_TARGET_ANALYSIS &nta_data,
     bool withinReplicate,
     bool filtered,
     float rtExpand,
@@ -607,7 +607,7 @@ void nts::gap_filling::fill_features_impl(
   if (debug)
   {
     std::string log_file = "log/gap_filling_debug_" + debugFG + ".log";
-    nts::utils::init_debug_log(log_file, "=== Gap Filling Debug Log for Feature Group: " + debugFG + " ===");
+    nta::utils::init_debug_log(log_file, "=== Gap Filling Debug Log for Feature Group: " + debugFG + " ===");
     DEBUG_LOG("\n=== Parameters ===" << std::endl);
     DEBUG_LOG("  rtExpand: " << rtExpand << std::endl);
     DEBUG_LOG("  mzExpand: " << mzExpand << std::endl);
@@ -623,10 +623,10 @@ void nts::gap_filling::fill_features_impl(
 
   std::cout << "Starting feature gap filling..." << std::endl;
 
-    auto &feature_buffers = nts_data.feature_buffers();
-    const auto &analysis_names = nts_data.analysis_names();
-    const auto &replicate_names = nts_data.replicate_names();
-    const auto &file_paths = nts_data.file_paths();
+    auto &feature_buffers = nta_data.feature_buffers();
+    const auto &analysis_names = nta_data.analysis_names();
+    const auto &replicate_names = nta_data.replicate_names();
+    const auto &file_paths = nta_data.file_paths();
 
   // Analyze feature groups to identify gaps
   auto group_infos = analyze_feature_groups(
@@ -729,7 +729,7 @@ void nts::gap_filling::fill_features_impl(
         continue;
 
       size_t analysis_idx = analysis_idx_it->second;
-      if (analysis_idx >= static_cast<size_t>(nts_data.size()))
+      if (analysis_idx >= static_cast<size_t>(nta_data.size()))
         continue;
 
       std::string target_id = "GAP_" + group_info.feature_group + "_" + missing_analysis;
@@ -759,7 +759,7 @@ void nts::gap_filling::fill_features_impl(
     mass_spec::reader::MS_FILE ana(file_path);
 
     // Get headers for first gap (all gaps in same file share same headers)
-    const auto headers = nts_data.spectra_headers_at(gaps[0].analysis_idx);
+    const auto headers = nta_data.spectra_headers_at(gaps[0].analysis_idx);
 
 
     // Build MS_TARGETS for all gaps in this file, but skip those already present as filtered features
@@ -771,7 +771,7 @@ void nts::gap_filling::fill_features_impl(
     {
       const auto &gap = gaps[i];
       const auto &ranges = group_ranges_map[gap.feature_group];
-      nts::api::NTS_FEATURES &analysis_features = feature_buffers[gap.analysis_idx];
+      nta::api::NTA_FEATURES &analysis_features = feature_buffers[gap.analysis_idx];
       bool found_filtered_feature = false;
 
       for (int j = 0; j < analysis_features.size(); ++j)
@@ -965,7 +965,7 @@ void nts::gap_filling::fill_features_impl(
       }
 
       // Create FEATURE from FILLED_FEATURE_INFO
-      nts::api::NTS_FEATURE_ROW new_feature;
+      nta::api::NTA_FEATURE_ROW new_feature;
       new_feature.analysis = filled_feature.analysis;
 
       // Increment filled feature count for this analysis
@@ -1047,6 +1047,6 @@ void nts::gap_filling::fill_features_impl(
     DEBUG_LOG("\n=== Gap Filling Complete ===" << std::endl);
     DEBUG_LOG("Total gaps processed: " << total_gaps << std::endl);
     DEBUG_LOG("Gaps filled: " << filled_gaps << std::endl);
-    nts::utils::close_debug_log();
+    nta::utils::close_debug_log();
   }
 }

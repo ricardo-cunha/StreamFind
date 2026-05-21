@@ -1,17 +1,17 @@
-#ifndef NTS_COMPONENTIZATION_H
-#define NTS_COMPONENTIZATION_H
+#ifndef NTA_COMPONENTIZATION_H
+#define NTA_COMPONENTIZATION_H
 
 #include <vector>
 #include <string>
 
-namespace nts {
+namespace nta {
   struct FEATURE;    // Forward declaration
   struct FEATURES;   // Forward declaration
   namespace api { class PROJECT_NON_TARGET_ANALYSIS; }
   using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS;
 }
 
-namespace nts
+namespace nta
 {
   namespace componentization
   {
@@ -33,13 +33,13 @@ namespace nts
 
     // Main implementation function
     void create_components_impl(
-      nts::PROJECT_NON_TARGET_ANALYSIS &nts_data,
+      nta::PROJECT_NON_TARGET_ANALYSIS &nta_data,
         const std::vector<float> &rtWindow,
         float minCorrelation = 0.8f,
         float debugRT = 0.0f,
         const std::string &debugAnalysis = "");
 
   } // namespace componentization
-} // namespace nts
+} // namespace nta
 
 #endif

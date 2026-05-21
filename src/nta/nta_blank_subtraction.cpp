@@ -1,26 +1,26 @@
-// nts_blank_subtraction.cpp
+// nta_blank_subtraction.cpp
 // Feature blank subtraction implementations for PROJECT_NON_TARGET_ANALYSIS
 
-#include "nts_blank_subtraction.h"
-#include "../mass_spec/project_mass_spec.h"
-#include "nts.h"
+#include "nta_blank_subtraction.h"
+#include "../mass_spec/mass_spec.h"
+#include "nta.h"
 #include <unordered_map>
 #include <algorithm>
 
-namespace nts::blank_subtraction
+namespace nta::blank_subtraction
 {
   void subtract_blank_impl(
-      PROJECT_NON_TARGET_ANALYSIS &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nta_data,
       float blankThreshold,
       float rtExpand,
       float mzExpand,
       float minTracesIntensity)
   {
-    const auto &analysis_names = nts_data.analysis_names();
-    const auto &replicate_names = nts_data.replicate_names();
-    const auto &blank_names = nts_data.blank_names();
-    const auto &file_paths = nts_data.file_paths();
-    auto &feature_buffers = nts_data.feature_buffers();
+    const auto &analysis_names = nta_data.analysis_names();
+    const auto &replicate_names = nta_data.replicate_names();
+    const auto &blank_names = nta_data.blank_names();
+    const auto &file_paths = nta_data.file_paths();
+    auto &feature_buffers = nta_data.feature_buffers();
 
     if (analysis_names.empty())
       return;
@@ -34,7 +34,7 @@ namespace nts::blank_subtraction
 
     for (size_t a = 0; a < analysis_names.size(); ++a)
     {
-      nts::api::NTS_FEATURES &fts = feature_buffers[a];
+      nta::api::NTA_FEATURES &fts = feature_buffers[a];
       const int n_features = fts.size();
       if (n_features == 0)
         continue;
@@ -91,7 +91,7 @@ namespace nts::blank_subtraction
           continue;
 
         mass_spec::reader::MS_FILE ana(file_paths[blank_idx]);
-        const auto headers = nts_data.spectra_headers_at(blank_idx);
+        const auto headers = nta_data.spectra_headers_at(blank_idx);
         mass_spec::spectra::MS_TARGETS_SPECTRA eics = ana.get_spectra_targets(targets, headers, minTracesIntensity, 0.0f);
 
         std::unordered_map<std::string, float> max_by_id;
@@ -137,4 +137,4 @@ namespace nts::blank_subtraction
       }
     }
   }
-} // namespace nts::blank_subtraction
+} // namespace nta::blank_subtraction

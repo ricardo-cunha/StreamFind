@@ -1,87 +1,5 @@
-standards <- StreamFindData::get_ms_tof_spiked_chemicals()
-standards <- standards[grepl("S", standards$tag), ]
-cols <- c("name", "formula", "mass", "rt", "tag")
-internal_standards <- standards[standards$tag %in% "IS", ]
-internal_standards <- internal_standards[, cols, with = FALSE]
-internal_standards <- internal_standards[!internal_standards$name %in% c("Ibuprofen-d3", "Naproxen-d3"), ]
-standards <- standards[standards$tag %in% "S", ]
-standards <- standards[, cols, with = FALSE]
-db_with_ms2 <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
-db_with_ms2 <- db_with_ms2[db_with_ms2$tag %in% "S", ]
-db_with_ms2 <- db_with_ms2[, c("name", "formula", "mass", "SMILES", "rt", "polarity", "fragments"), with = FALSE]
-db_with_ms2$polarity[db_with_ms2$polarity == 1] <- "positive"
-db_with_ms2$polarity[is.na(db_with_ms2$polarity)] <- "positive"
-db_with_ms2$polarity[db_with_ms2$polarity == -1] <- "negative"
-
-
-
-#main_drive <- "D:"
-main_drive <- "E:"
-
-ms_files <- c(
-  file.path(main_drive, "example_files", "ms_basic", "00_hrms_mix1_pos_cent-r001.mzML"),
-  file.path(main_drive, "example_files", "ms_basic", "00_hrms_mix1_pos_cent-r002.mzML"),
-  file.path(main_drive, "example_files", "ms_basic", "00_hrms_mix1_pos_cent-r003.mzML")
-)
-
-ms_files_mzxml <- c(
-  file.path(main_drive, "example_files", "ms_basic_mzxml", "00_hrms_mix1_pos_mzxml_cent-r001.mzXML"),
-  file.path(main_drive, "example_files", "ms_basic_mzxml", "00_hrms_mix1_pos_mzxml_cent-r002.mzXML"),
-  file.path(main_drive, "example_files", "ms_basic_mzxml", "00_hrms_mix1_pos_mzxml_cent-r003.mzXML")
-)
-
-proj <- open_ProjectMassSpecSpectra(
-  db = db,
-  project_id = "ms-demo",
-  file_paths = ms_files
-)
-
-proj <- OpenProjectMassSpecSpectra(
-  db = db,
-  project_id = "ms-demo"
-)
-
-info(proj)
-get_cache(proj)
-proj$get_project_id()
-proj$get_domain()
-proj$set_metadata(
-  list(
-    name = "Mass Spec shared DB demo",
-    description = "Shared DuckDB project with MS domain tables"
-  )
-)
-proj$get_metadata()
-proj$list_tables()
-proj$get_analyses()
-get_spectra_headers(proj)
-get_spectra_tic(proj, rtmin = 200, rtmax = 400)
-proj$plot_spectra_tic(interactive = FALSE, levels = 1)
-proj$plot_spectra_bpc(interactive = FALSE, levels = 1)
-
-devtools::load_all()
-db <- file.path("dev", "dev_duckdb", "data", "ms_project_test.duckdb")
-
-
-proj <- OpenProjectMassSpecSpectra(
-  db = db,
-  project_id = "ms-demo",
-
-)
-
-
-
-
-
-
-
-
-
-
-
-
-project_db <- file.path("dev", "dev_duckdb", "data_nts.duckdb")
-project_id <- "demo_nts"
+project_db <- file.path("dev", "dev_duckdb", "data_nta.duckdb")
+project_id <- "demo_nta"
 
 #if (file.exists(project_db)) file.remove(project_db)
 
@@ -98,13 +16,13 @@ ms_files <- ms_files[grepl("ww_", ms_files)]
 # 2. Open the NTS project
 # -----------------------------------------------------------------------------
 
-nts <- open_ProjectNonTargetAnalysis(
+nta <- open_ProjectNonTargetAnalysis(
   db = project_db,
   project_id = project_id,
   file_paths = ms_files
 )
 
-nts$set_replicate_names(c(
+nta$set_replicate_names(c(
   rep("neg_blank", 3),
   rep("pos_blank", 3),
   rep("neg_influent", 3),
@@ -113,7 +31,7 @@ nts$set_replicate_names(c(
   rep("pos_effluent", 3)
 ))
 
-nts$set_blank_names(c(
+nta$set_blank_names(c(
   rep("neg_blank", 3),
   rep("pos_blank", 3),
   rep("neg_blank", 3),
@@ -122,17 +40,17 @@ nts$set_blank_names(c(
   rep("pos_blank", 3)
 ))
 
-print(nts)
+print(nta)
 
-nts$get_domain()
-nts$list_tables()
-info(nts)
+nta$get_domain()
+nta$list_tables()
+info(nta)
 
 # -----------------------------------------------------------------------------
 # 4. Inspect the project-owned processing registry
 # -----------------------------------------------------------------------------
 
-registry <- nts$available_processing_methods()
+registry <- nta$available_processing_methods()
 names(registry)
 projects_overview()$ProjectNonTargetAnalysis$processing_methods
 
@@ -140,7 +58,7 @@ projects_overview()$ProjectNonTargetAnalysis$processing_methods
 # 5. Run methods
 # -----------------------------------------------------------------------------
 
-nts <- open_ProjectNonTargetAnalysis(
+nta <- open_ProjectNonTargetAnalysis(
   db = project_db,
   project_id = project_id
 )
@@ -159,13 +77,14 @@ ffm <- Method_NonTargetAnalysis_FindFeatures(
   debugSpecIdx = -1L
 )
 
-run_method(nts, ffm)
+run_method(nta, ffm)
 
-get_cache(nts)
-print(nts)
+get_cache(nta)
+print(nta)
+nta$list_tables()
 
 t(get_features(
-  nts,
+  nta,
   analyses = 11,
   mass = internal_standards[4, ],
   ppm = 20,
@@ -173,7 +92,7 @@ t(get_features(
 ))
 
 plot_features(
-  nts,
+  nta,
   analyses = 11,
   mass = internal_standards[4:6, ],
   ppm = 20,
@@ -191,7 +110,7 @@ plot_features(
 
 
 
-features <- nts$find_features(
+features <- nta$find_features(
   rtWindows = data.frame(rtmin = numeric(), rtmax = numeric()),
   ppmThreshold = 10,
   noiseThreshold = 250,
@@ -207,7 +126,7 @@ features <- nts$find_features(
 
 head(features)
 
-nts$load_features_ms1(
+nta$load_features_ms1(
   rtWindow = c(-1, 1),
   mzWindow = c(-1, 6),
   mzClust = 0.008,
@@ -216,7 +135,7 @@ nts$load_features_ms1(
   filtered = FALSE
 )
 
-nts$load_features_ms2(
+nta$load_features_ms2(
   isolationWindow = 1.3,
   mzClust = 0.008,
   presence = 0.5,
@@ -224,14 +143,14 @@ nts$load_features_ms2(
   filtered = FALSE
 )
 
-nts$create_components(
+nta$create_componenta(
   rtWindow = c(-5, 5),
   minCorrelation = 0.8,
   debugRT = 0,
   debugAnalysis = ""
 )
 
-nts$annotate_components(
+nta$annotate_componenta(
   maxIsotopes = 8,
   maxCharge = 1,
   maxGaps = 1,
@@ -240,14 +159,14 @@ nts$annotate_components(
   debugAnalysis = ""
 )
 
-nts$find_internal_standards(
+nta$find_internal_standards(
   suspects = internal_standards,
   ppm = 10,
   sec = 15,
   ppmMS2 = 10,
   mzrMS2 = 0.008,
   minCosineSimilarity = 0.7,
-  minSharedFragments = 3,
+  minSharedFragmenta = 3,
   filtered = TRUE
 )
 
@@ -293,14 +212,14 @@ workflow <- Workflow(list(
     minIntensity = 10,
     filtered = FALSE
   )),
-  configure_step(registry$CreateComponents_native, list(
+  configure_step(registry$CreateComponenta_native, list(
     analyses = character(),
     rtWindow = c(-5, 5),
     minCorrelation = 0.8,
     debugRT = 0,
     debugAnalysis = ""
   )),
-  configure_step(registry$AnnotateComponents_native, list(
+  configure_step(registry$AnnotateComponenta_native, list(
     analyses = character(),
     maxIsotopes = 8,
     maxCharge = 1,
@@ -317,7 +236,7 @@ workflow <- Workflow(list(
     ppmMS2 = 10,
     mzrMS2 = 0.008,
     minCosineSimilarity = 0.7,
-    minSharedFragments = 3,
+    minSharedFragmenta = 3,
     filtered = TRUE
   )),
   configure_step(registry$FilterInternalStandards_native, list(
@@ -350,7 +269,7 @@ workflow <- Workflow(list(
   )),
   configure_step(registry$SuspectScreening_metfrag, list(
     analyses = character(),
-    metfrag_path = "C:\\Users\\cunha\\Documents\\patRoon_deps\\MetFragCommandLine-2.5.0.jar",
+    metfrag_path = "C:\\Users\\cunha\\Documenta\\patRoon_deps\\MetFragCommandLine-2.5.0.jar",
     database_type = "LocalCSV",
     database_path = file.path("dev", "dev_duckdb", "transformation_products_template.csv"),
     ppm = 10,
@@ -375,23 +294,23 @@ workflow <- Workflow(list(
   ))
 ))
 
-nts$run_workflow(workflow)
+nta$run_workflow(workflow)
 
 # -----------------------------------------------------------------------------
 # 7. Inspect downstream results using the project object
 # -----------------------------------------------------------------------------
 
-features_all <- get_features(nts)
+features_all <- get_features(nta)
 features_subset <- get_features(
-  nts,
+  nta,
   mass = suspects$mass[1],
   ppm = 20,
   filtered = FALSE
 )
 
-suspects_found <- get_suspects(nts)
-internal_standards_found <- get_internal_standards(nts)
-transformation_products_found <- get_transformation_products(nts)
+suspects_found <- get_suspects(nta)
+internal_standards_found <- get_internal_standards(nta)
+transformation_products_found <- get_transformation_products(nta)
 
 head(features_all)
 head(features_subset)
@@ -403,7 +322,7 @@ head(transformation_products_found)
 # 8. Optional interactive/manual checks
 # -----------------------------------------------------------------------------
 
-# nts$run_app()
-# plot_features_ms1(nts, interactive = TRUE)
-# plot_suspects_ms2(nts, features = get_suspects(nts)[1, ], interactive = TRUE)
-# plot_transformation_products(nts, groups = unique(transformation_products_found$feature_group)[1], showMS2 = TRUE)
+# nta$run_app()
+# plot_features_ms1(nta, interactive = TRUE)
+# plot_suspects_ms2(nta, features = get_suspects(nta)[1, ], interactive = TRUE)
+# plot_transformation_products(nta, groups = unique(transformation_products_found$feature_group)[1], showMS2 = TRUE)

@@ -11,15 +11,15 @@
 //        - RT plausibility  (sign(ΔlogP) * sign(ΔRT), ±1/0/NA)
 //        - cosine similarity (best pair across matching suspects)
 
-#include "assign_transformation_products.h"
-#include "nts.h"
+#include "nta_assign_transformation_products.h"
+#include "nta.h"
 
 #include <algorithm>
 #include <cmath>
 #include <limits>
 #include <unordered_map>
 
-namespace nts::assign_transformation_products
+namespace nta::assign_transformation_products
 {
 
   // ── Internal helpers ────────────────────────────────────────────────────────
@@ -104,13 +104,13 @@ namespace nts::assign_transformation_products
 
   // ── Main implementation ─────────────────────────────────────────────────────
 
-  nts::api::NTS_TRANSFORMATION_PRODUCTS assign_transformation_products_impl(
-      const std::vector<nts::api::NTS_SUSPECT_ROW> &suspects,
-      const std::vector<nts::api::NTS_TRANSFORMATION_PRODUCT_ROW> &tp_rows,
+  nta::api::NTA_TRANSFORMATION_PRODUCTS assign_transformation_products_impl(
+      const std::vector<nta::api::NTA_SUSPECT_ROW> &suspects,
+      const std::vector<nta::api::NTA_TRANSFORMATION_PRODUCT_ROW> &tp_rows,
       const std::string &chromatographic_phase,
       double mzrMS2)
   {
-    nts::api::NTS_TRANSFORMATION_PRODUCTS out;
+    nta::api::NTA_TRANSFORMATION_PRODUCTS out;
     if (tp_rows.empty()) return out;
 
     const double nan = std::numeric_limits<double>::quiet_NaN();
@@ -236,7 +236,7 @@ namespace nts::assign_transformation_products
               }
             }
 
-            nts::api::NTS_TRANSFORMATION_PRODUCT_ROW row;
+            nta::api::NTA_TRANSFORMATION_PRODUCT_ROW row;
             row.name = tp.name;
             row.formula = tp.formula;
             row.mass = tp.mass;
@@ -275,4 +275,4 @@ namespace nts::assign_transformation_products
     return out;
   }
 
-} // namespace nts::assign_transformation_products
+} // namespace nta::assign_transformation_products

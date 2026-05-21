@@ -1,17 +1,17 @@
-// metfrag_runner.h — MetFragCL subprocess runner for NTS data
+// nta_metfrag_runner.h — MetFragCL subprocess runner for NTS data
 //
 // Invokes MetFragCL (JAR or native executable) per feature, parses
 // the CSV output, computes cosine similarity for explained peaks,
-// and populates nts::PROJECT_NON_TARGET_ANALYSIS::suspects.
+// and populates nta::PROJECT_NON_TARGET_ANALYSIS::suspects.
 
-#ifndef NTS_METFRAG_RUNNER_H
-#define NTS_METFRAG_RUNNER_H
+#ifndef NTA_METFRAG_RUNNER_H
+#define NTA_METFRAG_RUNNER_H
 
 #include <string>
 #include <utility>
 #include <vector>
 
-namespace nts
+namespace nta
 {
   namespace api { class PROJECT_NON_TARGET_ANALYSIS; }
   using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS;
@@ -36,19 +36,19 @@ namespace nts
     };
 
     /**
-     * Run MetFragCL screening for all (or selected) analyses in nts_data.
-     * Results are written to nts_data.suspects[i] for each analysis index i.
+     * Run MetFragCL screening for all (or selected) analyses in nta_data.
+     * Results are written to nta_data.suspects[i] for each analysis index i.
      *
-     * @param nts_data     NTS data with loaded features.
+     * @param nta_data     NTS data with loaded features.
      * @param analyses     If non-empty, only these analysis names are processed.
      * @param params       MetFrag runner configuration.
      */
     void metfrag_screening_impl(
-      PROJECT_NON_TARGET_ANALYSIS &nts_data,
+      PROJECT_NON_TARGET_ANALYSIS &nta_data,
         const std::vector<std::string> &analyses,
         const MetFragParams &params);
 
   } // namespace metfrag_runner
-} // namespace nts
+} // namespace nta
 
-#endif // NTS_METFRAG_RUNNER_H
+#endif // NTA_METFRAG_RUNNER_H

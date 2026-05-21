@@ -1,3 +1,6 @@
+#ifndef MASS_SPEC_H
+#define MASS_SPEC_H
+
 #pragma once
 
 #include "../project/project.h"
@@ -510,3 +513,5 @@ namespace mass_spec
   using PROJECT_MASS_SPEC_CHROMATOGRAMS = api::PROJECT_MASS_SPEC_CHROMATOGRAMS;
 
 } // namespace mass_spec
+
+#endif // MASS_SPEC_H
