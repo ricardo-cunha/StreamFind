@@ -43,20 +43,16 @@ seconds.}
 
 \item{baseQuantile}{Numeric(1) quantile used to estimate the baseline.}
 
-\item{debugAnalysis}{Character(1) analysis name for debug logging. Use an
-empty string to disable or to include all analyses depending on the native
-implementation.}
+\item{debugAnalysis}{Character(1) analysis name for debug logging.}
 
-\item{debugMZ}{Numeric(1) target m/z for debug logging. Use \code{0} to disable.}
+\item{debugMZ}{Numeric(1) target m/z for debug logging.}
 
-\item{debugSpecIdx}{Integer(1) spectrum index for debug logging. Use \code{-1} to
-disable.}
+\item{debugSpecIdx}{Integer(1) spectrum index for debug logging.}
 }
 \value{
-A \code{Method} object of class
-\code{Method_NonTargetAnalysis_FindFeatures}.
+A \code{Method} object of class \code{Method_NonTargetAnalysis_FindFeatures}.
 }
 \description{
-Create a \code{Method} child object for the native
-non-target-analysis feature finding routine.
+Create a \code{Method} child object for the native non-target
+feature-finding routine.
 }

@@ -40,6 +40,10 @@ validate_object.Workflow <- function(x, ...) {
     TRUE
   }, logical(1))
   methods <- vapply(x, function(step) step$method, character(1))
+  owner_classes <- vapply(x, function(step) step$owner_class, character(1))
+  if (length(unique(owner_classes)) != 1) {
+    stop("Workflow methods must all share the same owner_class.")
+  }
   permitted <- vapply(x, function(step) step$number_permitted, numeric(1))
   singleton_methods <- methods[is.finite(permitted) & permitted == 1]
   if (length(unique(singleton_methods)) != length(singleton_methods)) {
@@ -79,7 +83,7 @@ info.Workflow <- function(x, ...) {
 #' @export
 #' @noRd
 `[.Workflow` <- function(x, i) {
-  NextMethod()
+  Workflow(NextMethod())
 }
 
 #' @export
@@ -123,7 +127,7 @@ save.Workflow <- function(x, file = "workflow.rds", ...) {
 #' @noRd
 read.Workflow <- function(x, file, ...) {
   if (grepl("\\.json$", file, ignore.case = TRUE) && file.exists(file)) {
-    return(Workflow(jsonlite::fromJSON(file, simplifyVector = FALSE)))
+    return(Workflow(jsonlite::fromJSON(file)))
   }
   if (grepl("\\.rds$", file, ignore.case = TRUE) && file.exists(file)) {
     return(readRDS(file))
@@ -134,7 +138,22 @@ read.Workflow <- function(x, file, ...) {
 #' @export
 #' @noRd
 show.Workflow <- function(x, ...) {
-  cat("\nWorkflow\n")
-  cat("steps: ", length(x), "\n", sep = "")
+  owner_class <- if (length(x) > 0) {
+    unique(vapply(x, function(step) step$owner_class, character(1)))[[1]]
+  } else {
+    NA_character_
+  }
+  header <- if (is.na(owner_class) || !nzchar(owner_class)) {
+    paste0("Workflow (", length(x), ")")
+  } else {
+    paste0(owner_class, " - Workflow (", length(x), ")")
+  }
+  cat("\n", header, "\n", sep = "")
+  if (length(x) > 0) {
+    methods <- vapply(x, function(step) step$method, character(1))
+    for (i in seq_along(methods)) {
+      cat(i, ": ", methods[[i]], "\n", sep = "")
+    }
+  }
   invisible(x)
 }

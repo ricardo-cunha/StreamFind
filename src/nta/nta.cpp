@@ -16,8 +16,6 @@ namespace nta
   namespace api
   {
 
-
-
   } // namespace api
 
   // MARK: ns utils
@@ -1624,159 +1622,159 @@ namespace nta
       std::string adduct;
     };
 
-      std::vector<std::string> sanitize_query_values(const std::vector<std::string> &values)
+    std::vector<std::string> sanitize_query_values(const std::vector<std::string> &values)
+    {
+      std::vector<std::string> out;
+      out.reserve(values.size());
+      for (const auto &value : values)
       {
-        std::vector<std::string> out;
-        out.reserve(values.size());
-        for (const auto &value : values)
+        const auto trimmed = mass_spec::spectra::sanitize_analyses({value});
+        if (!trimmed.empty())
         {
-          const auto trimmed = mass_spec::spectra::sanitize_analyses({value});
-          if (!trimmed.empty())
-          {
-            out.push_back(trimmed.front());
-          }
-          else if (!value.empty())
-          {
-            out.push_back(value);
-          }
+          out.push_back(trimmed.front());
         }
-        return out;
+        else if (!value.empty())
+        {
+          out.push_back(value);
+        }
+      }
+      return out;
+    }
+
+    bool has_target_filters(const NTA_QUERY_REQUEST &query)
+    {
+      return !query.targets.mass.empty() ||
+             !query.targets.mz.empty() ||
+             !query.targets.rt.empty() ||
+             !query.targets.mobility.empty();
+    }
+
+    std::vector<std::string> collect_feature_row_analyses(const std::vector<NTA_FEATURE_ROW> &rows)
+    {
+      std::vector<std::string> analyses;
+      analyses.reserve(rows.size());
+      for (const auto &row : rows)
+      {
+        if (std::find(analyses.begin(), analyses.end(), row.analysis) == analyses.end())
+        {
+          analyses.push_back(row.analysis);
+        }
+      }
+      return analyses;
+    }
+
+    bool matches_feature_target(const NTA_FEATURE_ROW &row,
+                                const mass_spec::spectra::MS_TARGETS &targets)
+    {
+      for (std::size_t i = 0; i < targets.id.size(); ++i)
+      {
+        if (targets.polarity[i] != 0 && row.polarity != targets.polarity[i])
+        {
+          continue;
+        }
+        if ((targets.mzmin[i] > 0.0f || targets.mzmax[i] > 0.0f) &&
+            (row.mz < targets.mzmin[i] || row.mz > targets.mzmax[i]))
+        {
+          continue;
+        }
+        if ((targets.rtmin[i] > 0.0f || targets.rtmax[i] > 0.0f) &&
+            (row.rt < targets.rtmin[i] || row.rt > targets.rtmax[i]))
+        {
+          continue;
+        }
+        return true;
+      }
+      return false;
+    }
+
+    std::vector<NTA_FEATURE_ROW> filter_feature_rows_by_targets(const std::vector<NTA_FEATURE_ROW> &rows,
+                                                                const NTA_QUERY_REQUEST &query)
+    {
+      if (rows.empty() || !has_target_filters(query))
+      {
+        return rows;
       }
 
-      bool has_target_filters(const NTA_QUERY_REQUEST &query)
+      const auto selected_analyses = mass_spec::spectra::sanitize_analyses(
+          query.analyses.empty() ? collect_feature_row_analyses(rows) : query.analyses);
+      if (selected_analyses.empty())
       {
-        return !query.targets.mass.empty() ||
-               !query.targets.mz.empty() ||
-               !query.targets.rt.empty() ||
-               !query.targets.mobility.empty();
+        return {};
       }
 
-      std::vector<std::string> collect_feature_row_analyses(const std::vector<NTA_FEATURE_ROW> &rows)
+      auto targets_by_analysis = mass_spec::spectra::build_targets_by_analysis(
+          query.targets,
+          selected_analyses,
+          {"1", "-1"});
+
+      std::unordered_map<std::string, mass_spec::spectra::MS_TARGETS> targets_lookup;
+      for (std::size_t i = 0; i < selected_analyses.size() && i < targets_by_analysis.size(); ++i)
       {
-        std::vector<std::string> analyses;
-        analyses.reserve(rows.size());
-        for (const auto &row : rows)
+        if (mass_spec::spectra::has_effective_targets(targets_by_analysis[i]))
         {
-          if (std::find(analyses.begin(), analyses.end(), row.analysis) == analyses.end())
-          {
-            analyses.push_back(row.analysis);
-          }
+          targets_lookup.emplace(selected_analyses[i], std::move(targets_by_analysis[i]));
         }
-        return analyses;
       }
 
-      bool matches_feature_target(const NTA_FEATURE_ROW &row,
-                                  const mass_spec::spectra::MS_TARGETS &targets)
+      if (targets_lookup.empty())
       {
-        for (std::size_t i = 0; i < targets.id.size(); ++i)
-        {
-          if (targets.polarity[i] != 0 && row.polarity != targets.polarity[i])
-          {
-            continue;
-          }
-          if ((targets.mzmin[i] > 0.0f || targets.mzmax[i] > 0.0f) &&
-              (row.mz < targets.mzmin[i] || row.mz > targets.mzmax[i]))
-          {
-            continue;
-          }
-          if ((targets.rtmin[i] > 0.0f || targets.rtmax[i] > 0.0f) &&
-              (row.rt < targets.rtmin[i] || row.rt > targets.rtmax[i]))
-          {
-            continue;
-          }
-          return true;
-        }
-        return false;
+        return {};
       }
 
-      std::vector<NTA_FEATURE_ROW> filter_feature_rows_by_targets(const std::vector<NTA_FEATURE_ROW> &rows,
-                                                                  const NTA_QUERY_REQUEST &query)
+      std::vector<NTA_FEATURE_ROW> out;
+      out.reserve(rows.size());
+      for (const auto &row : rows)
       {
-        if (rows.empty() || !has_target_filters(query))
+        const auto it = targets_lookup.find(row.analysis);
+        if (it == targets_lookup.end())
         {
-          return rows;
+          continue;
         }
-
-        const auto selected_analyses = mass_spec::spectra::sanitize_analyses(
-            query.analyses.empty() ? collect_feature_row_analyses(rows) : query.analyses);
-        if (selected_analyses.empty())
+        if (matches_feature_target(row, it->second))
         {
-          return {};
+          out.push_back(row);
         }
-
-        auto targets_by_analysis = mass_spec::spectra::build_targets_by_analysis(
-            query.targets,
-            selected_analyses,
-            {"1", "-1"});
-
-        std::unordered_map<std::string, mass_spec::spectra::MS_TARGETS> targets_lookup;
-        for (std::size_t i = 0; i < selected_analyses.size() && i < targets_by_analysis.size(); ++i)
-        {
-          if (mass_spec::spectra::has_effective_targets(targets_by_analysis[i]))
-          {
-            targets_lookup.emplace(selected_analyses[i], std::move(targets_by_analysis[i]));
-          }
-        }
-
-        if (targets_lookup.empty())
-        {
-          return {};
-        }
-
-        std::vector<NTA_FEATURE_ROW> out;
-        out.reserve(rows.size());
-        for (const auto &row : rows)
-        {
-          const auto it = targets_lookup.find(row.analysis);
-          if (it == targets_lookup.end())
-          {
-            continue;
-          }
-          if (matches_feature_target(row, it->second))
-          {
-            out.push_back(row);
-          }
-        }
-        return out;
       }
+      return out;
+    }
 
-      std::unordered_set<std::string> feature_keys_from_rows(const std::vector<NTA_FEATURE_ROW> &rows)
+    std::unordered_set<std::string> feature_keys_from_rows(const std::vector<NTA_FEATURE_ROW> &rows)
+    {
+      std::unordered_set<std::string> out;
+      out.reserve(rows.size());
+      for (const auto &row : rows)
       {
-        std::unordered_set<std::string> out;
-        out.reserve(rows.size());
-        for (const auto &row : rows)
-        {
-          out.insert(row.analysis + "\x1f" + row.feature);
-        }
-        return out;
+        out.insert(row.analysis + "\x1f" + row.feature);
       }
+      return out;
+    }
 
-      std::unordered_map<std::string, FEATURE_METADATA> feature_metadata_from_rows(const std::vector<NTA_FEATURE_ROW> &rows)
+    std::unordered_map<std::string, FEATURE_METADATA> feature_metadata_from_rows(const std::vector<NTA_FEATURE_ROW> &rows)
+    {
+      std::unordered_map<std::string, FEATURE_METADATA> out;
+      out.reserve(rows.size());
+      for (const auto &row : rows)
       {
-        std::unordered_map<std::string, FEATURE_METADATA> out;
-        out.reserve(rows.size());
-        for (const auto &row : rows)
-        {
-          out[row.analysis + "\x1f" + row.feature] = FEATURE_METADATA{
-              row.feature_group,
-              row.feature_component,
-              row.adduct};
-        }
-        return out;
+        out[row.analysis + "\x1f" + row.feature] = FEATURE_METADATA{
+            row.feature_group,
+            row.feature_component,
+            row.adduct};
       }
+      return out;
+    }
 
-      std::string bytes_to_hex(const std::vector<std::uint8_t> &bytes)
+    std::string bytes_to_hex(const std::vector<std::uint8_t> &bytes)
+    {
+      static constexpr char hex[] = "0123456789abcdef";
+      std::string out;
+      out.reserve(bytes.size() * 2);
+      for (const auto byte : bytes)
       {
-        static constexpr char hex[] = "0123456789abcdef";
-        std::string out;
-        out.reserve(bytes.size() * 2);
-        for (const auto byte : bytes)
-        {
-          out.push_back(hex[(byte >> 4) & 0x0F]);
-          out.push_back(hex[byte & 0x0F]);
-        }
-        return out;
+        out.push_back(hex[(byte >> 4) & 0x0F]);
+        out.push_back(hex[byte & 0x0F]);
       }
+      return out;
+    }
 
     std::string stable_hash_hex(const std::string &text)
     {
@@ -2590,7 +2588,7 @@ namespace nta
         const std::string &args_key,
         const std::vector<std::string> &dependency_keys,
         const std::string &description,
-      const std::function<NTA_TRANSFORMATION_PRODUCTS()> &algorithm)
+        const std::function<NTA_TRANSFORMATION_PRODUCTS()> &algorithm)
     {
       try
       {
@@ -2688,226 +2686,6 @@ namespace nta
         }
         throw;
       }
-    }
-
-    bool PROJECT_NON_TARGET_ANALYSIS::find_features(
-        const std::vector<float> &rtWindowsMin,
-        const std::vector<float> &rtWindowsMax,
-        const float &ppmThreshold,
-        const float &noiseThreshold,
-        const float &minSNR,
-        const int &minTraces,
-        const float &baselineWindow,
-        const float &maxWidth,
-        const float &baseQuantile,
-        const std::string &debugAnalysis,
-        const float &debugMZ,
-        const int &debugSpecIdx)
-    {
-      load_processing_metadata();
-      load_processing_headers();
-      return run_cached_features_algorithm(
-          "find_features",
-          cache_join_key({cache_vector_key(rtWindowsMin), cache_vector_key(rtWindowsMax), cache_scalar_key(ppmThreshold), cache_scalar_key(noiseThreshold), cache_scalar_key(minSNR), cache_scalar_key(minTraces), cache_scalar_key(baselineWindow), cache_scalar_key(maxWidth), cache_scalar_key(baseQuantile), debugAnalysis, cache_scalar_key(debugMZ), cache_scalar_key(debugSpecIdx)}),
-          {},
-          "Cached NTS features for find_features",
-          [&]() {
-            features_table_ = NTA_FEATURES_TABLE();
-            feature_buffers_.assign(analysis_names().size(), NTA_FEATURES());
-            for (std::size_t i = 0; i < analysis_names().size(); ++i)
-            {
-              feature_buffers_[i].set_analysis(analysis_names()[i]);
-            }
-            feature_buffers_ready_ = true;
-            deconvolution::find_features_impl(*this, rtWindowsMin, rtWindowsMax, ppmThreshold, noiseThreshold, minSNR, minTraces, baselineWindow, maxWidth, baseQuantile, debugAnalysis, debugMZ, debugSpecIdx);
-          });
-    }
-
-    bool PROJECT_NON_TARGET_ANALYSIS::create_components(const std::vector<float> &rtWindow, float minCorrelation, float debugRT, const std::string &debugAnalysis)
-    {
-      load_processing_metadata();
-      load_processing_features(true);
-      return run_cached_features_algorithm(
-          "create_components",
-          cache_join_key({cache_vector_key(rtWindow), cache_scalar_key(minCorrelation), cache_scalar_key(debugRT), debugAnalysis}),
-          {feature_state_cache_key()},
-          "Cached NTS features for create_components",
-          [&]() { componentization::create_components_impl(*this, rtWindow, minCorrelation, debugRT, debugAnalysis); });
-    }
-
-    bool PROJECT_NON_TARGET_ANALYSIS::annotate_components(int maxIsotopes, int maxCharge, int maxGaps, float ppm, const std::string &debugComponent, const std::string &debugAnalysis)
-    {
-      load_processing_metadata();
-      load_processing_features(true);
-      return run_cached_features_algorithm(
-          "annotate_components",
-          cache_join_key({cache_scalar_key(maxIsotopes), cache_scalar_key(maxCharge), cache_scalar_key(maxGaps), cache_scalar_key(ppm), debugComponent, debugAnalysis}),
-          {feature_state_cache_key()},
-          "Cached NTS features for annotate_components",
-          [&]() { annotation::annotate_components_impl(*this, maxIsotopes, maxCharge, maxGaps, ppm, debugComponent, debugAnalysis); });
-    }
-
-    bool PROJECT_NON_TARGET_ANALYSIS::group_features(const std::string &method, float rtDeviation, float ppm, int minSamples, float binSize, bool debug, float debugRT)
-    {
-      load_processing_metadata();
-      load_processing_features(true);
-      std::vector<std::string> dependencies{feature_state_cache_key()};
-      if (method == "internal_standards")
-      {
-        load_processing_internal_standards();
-        dependencies.push_back(internal_standard_state_cache_key());
-      }
-      else
-      {
-        internal_standards_table_ = NTA_INTERNAL_STANDARDS_TABLE();
-        internal_standard_buffers_.assign(analysis_names().size(), NTA_INTERNAL_STANDARDS());
-        internal_standard_buffers_ready_ = true;
-      }
-      return run_cached_features_algorithm(
-          "group_features",
-          cache_join_key({method, cache_scalar_key(rtDeviation), cache_scalar_key(ppm), cache_scalar_key(minSamples), cache_scalar_key(binSize), cache_bool_key(debug), cache_scalar_key(debugRT)}),
-          dependencies,
-          "Cached NTS features for group_features",
-          [&]() { alignment::group_features_impl(*this, method, rtDeviation, ppm, minSamples, binSize, debug, debugRT); });
-    }
-
-    bool PROJECT_NON_TARGET_ANALYSIS::fill_features(bool withinReplicate, bool filtered, float rtExpand, float mzExpand, float maxPeakWidth, float minTracesIntensity, int minNumberTraces, float minIntensity, float rtApexDeviation, float minSignalToNoiseRatio, float minGaussianFit, std::string debugFG)
-    {
-      load_processing_metadata();
-      load_processing_headers();
-      load_processing_features(true);
-      return run_cached_features_algorithm(
-          "fill_features",
-          cache_join_key({cache_bool_key(withinReplicate), cache_bool_key(filtered), cache_scalar_key(rtExpand), cache_scalar_key(mzExpand), cache_scalar_key(maxPeakWidth), cache_scalar_key(minTracesIntensity), cache_scalar_key(minNumberTraces), cache_scalar_key(minIntensity), cache_scalar_key(rtApexDeviation), cache_scalar_key(minSignalToNoiseRatio), cache_scalar_key(minGaussianFit), debugFG}),
-          {feature_state_cache_key()},
-          "Cached NTS features for fill_features",
-          [&]() { gap_filling::fill_features_impl(*this, withinReplicate, filtered, rtExpand, mzExpand, maxPeakWidth, minTracesIntensity, minNumberTraces, minIntensity, rtApexDeviation, minSignalToNoiseRatio, minGaussianFit, debugFG); });
-    }
-
-    bool PROJECT_NON_TARGET_ANALYSIS::subtract_blank(float blankThreshold, float rtExpand, float mzExpand, float minTracesIntensity)
-    {
-      load_processing_metadata();
-      load_processing_headers();
-      load_processing_features(true);
-      return run_cached_features_algorithm(
-          "subtract_blank",
-          cache_join_key({cache_scalar_key(blankThreshold), cache_scalar_key(rtExpand), cache_scalar_key(mzExpand), cache_scalar_key(minTracesIntensity)}),
-          {feature_state_cache_key()},
-          "Cached NTS features for subtract_blank",
-          [&]() { blank_subtraction::subtract_blank_impl(*this, blankThreshold, rtExpand, mzExpand, minTracesIntensity); });
-    }
-
-    bool PROJECT_NON_TARGET_ANALYSIS::filter_features(double minSN, double minIntensity, double minArea, double minWidth, double maxWidth, double maxPPM, double minFwhmRT, double maxFwhmRT, double minFwhmMZ, double maxFwhmMZ, double minGaussianA, double minGaussianMu, double maxGaussianMu, double minGaussianSigma, double maxGaussianSigma, double minGaussianR2, double maxJaggedness, double minSharpness, double minAsymmetry, double maxAsymmetry, int maxModality, bool hasMaxModality, double minPlates, bool hasOnlyFilled, bool onlyFilledValue, bool removeFilled, int minSizeEIC, bool hasMinSizeEIC, int minSizeMS1, bool hasMinSizeMS1, int minSizeMS2, bool hasMinSizeMS2, double minRelPresenceReplicate, bool removeIsotopes, bool removeAdducts, bool removeLosses)
-    {
-      load_processing_metadata();
-      load_processing_features(true);
-      return run_cached_features_algorithm(
-          "filter_features",
-          cache_join_key({cache_scalar_key(minSN), cache_scalar_key(minIntensity), cache_scalar_key(minArea), cache_scalar_key(minWidth), cache_scalar_key(maxWidth), cache_scalar_key(maxPPM), cache_scalar_key(minFwhmRT), cache_scalar_key(maxFwhmRT), cache_scalar_key(minFwhmMZ), cache_scalar_key(maxFwhmMZ), cache_scalar_key(minGaussianA), cache_scalar_key(minGaussianMu), cache_scalar_key(maxGaussianMu), cache_scalar_key(minGaussianSigma), cache_scalar_key(maxGaussianSigma), cache_scalar_key(minGaussianR2), cache_scalar_key(maxJaggedness), cache_scalar_key(minSharpness), cache_scalar_key(minAsymmetry), cache_scalar_key(maxAsymmetry), cache_scalar_key(maxModality), cache_bool_key(hasMaxModality), cache_scalar_key(minPlates), cache_bool_key(hasOnlyFilled), cache_bool_key(onlyFilledValue), cache_bool_key(removeFilled), cache_scalar_key(minSizeEIC), cache_bool_key(hasMinSizeEIC), cache_scalar_key(minSizeMS1), cache_bool_key(hasMinSizeMS1), cache_scalar_key(minSizeMS2), cache_bool_key(hasMinSizeMS2), cache_scalar_key(minRelPresenceReplicate), cache_bool_key(removeIsotopes), cache_bool_key(removeAdducts), cache_bool_key(removeLosses)}),
-          {feature_state_cache_key()},
-          "Cached NTS features for filter_features",
-          [&]() { filter_features::filter_features_impl(*this, minSN, minIntensity, minArea, minWidth, maxWidth, maxPPM, minFwhmRT, maxFwhmRT, minFwhmMZ, maxFwhmMZ, minGaussianA, minGaussianMu, maxGaussianMu, minGaussianSigma, maxGaussianSigma, minGaussianR2, maxJaggedness, minSharpness, minAsymmetry, maxAsymmetry, maxModality, hasMaxModality, minPlates, hasOnlyFilled, onlyFilledValue, removeFilled, minSizeEIC, hasMinSizeEIC, minSizeMS1, hasMinSizeMS1, minSizeMS2, hasMinSizeMS2, minRelPresenceReplicate, removeIsotopes, removeAdducts, removeLosses); });
-    }
-
-    bool PROJECT_NON_TARGET_ANALYSIS::suspect_screening(const std::vector<std::string> &analyses, const std::vector<suspect_screening::SuspectQuery> &suspects, double ppm, double sec, double ppmMS2, double mzrMS2, double minCosineSimilarity, int minSharedFragments, bool filtered)
-    {
-      load_processing_metadata();
-      load_processing_features(true);
-      load_processing_suspects();
-      std::vector<std::string> suspect_keys;
-      suspect_keys.reserve(suspects.size());
-      for (const auto &suspect : suspects)
-      {
-        suspect_keys.push_back(cache_join_key({suspect.name, cache_bool_key(suspect.has_mass), cache_scalar_key(suspect.mass), cache_scalar_key(suspect.rt), suspect.formula, suspect.SMILES, suspect.InChI, suspect.InChIKey, cache_scalar_key(suspect.score), cache_bool_key(suspect.has_xLogP), cache_scalar_key(suspect.xLogP), suspect.database_id, cache_vector_key(suspect.fragments_mz_pos), cache_vector_key(suspect.fragments_intensity_pos), cache_vector_key(suspect.fragments_mz_neg), cache_vector_key(suspect.fragments_intensity_neg)}));
-      }
-      return run_cached_suspects_algorithm(
-          "suspect_screening",
-          cache_join_key({cache_vector_key(analyses), cache_scalar_key(ppm), cache_scalar_key(sec), cache_scalar_key(ppmMS2), cache_scalar_key(mzrMS2), cache_scalar_key(minCosineSimilarity), cache_scalar_key(minSharedFragments), cache_bool_key(filtered), cache_join_key(suspect_keys)}),
-          {feature_state_cache_key(), suspect_state_cache_key()},
-          "Cached NTS suspects for suspect_screening",
-          [&]() { suspect_screening::suspect_screening_impl(*this, analyses, suspects, ppm, sec, ppmMS2, mzrMS2, minCosineSimilarity, minSharedFragments, filtered); });
-    }
-
-    bool PROJECT_NON_TARGET_ANALYSIS::filter_suspects(const std::vector<std::string> &names, double minScore, double maxErrorRT, double maxErrorMass, const std::vector<int> &idLevels, int minSharedFragments, double minCosineSimilarity)
-    {
-      load_processing_metadata();
-      load_processing_suspects();
-      return run_cached_suspects_algorithm(
-          "filter_suspects",
-          cache_join_key({cache_vector_key(names), cache_scalar_key(minScore), cache_scalar_key(maxErrorRT), cache_scalar_key(maxErrorMass), cache_vector_key(idLevels), cache_scalar_key(minSharedFragments), cache_scalar_key(minCosineSimilarity)}),
-          {suspect_state_cache_key()},
-          "Cached NTS suspects for filter_suspects",
-          [&]() { filter_suspects::filter_suspects_impl(*this, names, minScore, maxErrorRT, maxErrorMass, idLevels, minSharedFragments, minCosineSimilarity); });
-    }
-
-    bool PROJECT_NON_TARGET_ANALYSIS::filter_internal_standards(const std::vector<std::string> &names, double minScore, double maxErrorRT, double maxErrorMass, const std::vector<int> &idLevels, int minSharedFragments, double minCosineSimilarity)
-    {
-      load_processing_metadata();
-      load_processing_internal_standards();
-      return run_cached_internal_standards_algorithm(
-          "filter_internal_standards",
-          cache_join_key({cache_vector_key(names), cache_scalar_key(minScore), cache_scalar_key(maxErrorRT), cache_scalar_key(maxErrorMass), cache_vector_key(idLevels), cache_scalar_key(minSharedFragments), cache_scalar_key(minCosineSimilarity)}),
-          {internal_standard_state_cache_key()},
-          "Cached NTS internal standards for filter_internal_standards",
-          [&]() { filter_internal_standards::filter_internal_standards_impl(*this, names, minScore, maxErrorRT, maxErrorMass, idLevels, minSharedFragments, minCosineSimilarity); });
-    }
-
-    bool PROJECT_NON_TARGET_ANALYSIS::filter_features_ms2(int top, float minIntensity, float relMinIntensity, bool blankClean, float mzClust, float blankPresenceThreshold, float globalPresenceThreshold)
-    {
-      load_processing_metadata();
-      load_processing_features(true);
-      return run_cached_features_algorithm(
-          "filter_features_ms2",
-          cache_join_key({cache_scalar_key(top), cache_scalar_key(minIntensity), cache_scalar_key(relMinIntensity), cache_bool_key(blankClean), cache_scalar_key(mzClust), cache_scalar_key(blankPresenceThreshold), cache_scalar_key(globalPresenceThreshold)}),
-          {feature_state_cache_key()},
-          "Cached NTS features for filter_features_ms2",
-          [&]() { filter_features_ms2::filter_features_ms2_impl(*this, top, minIntensity, relMinIntensity, blankClean, mzClust, blankPresenceThreshold, globalPresenceThreshold); });
-    }
-
-    bool PROJECT_NON_TARGET_ANALYSIS::metfrag_screening(const std::vector<std::string> &analyses, const metfrag_runner::MetFragParams &params)
-    {
-      load_processing_metadata();
-      load_processing_features(true);
-      load_processing_suspects();
-      std::vector<std::string> extra_params;
-      extra_params.reserve(params.extra_params.size());
-      for (const auto &entry : params.extra_params)
-      {
-        extra_params.push_back(cache_join_key({entry.first, entry.second}));
-      }
-      return run_cached_suspects_algorithm(
-          "metfrag_screening",
-          cache_join_key({cache_vector_key(analyses), params.metfrag_path, params.database_type, params.database_path, cache_scalar_key(params.ppm), cache_scalar_key(params.sec), cache_scalar_key(params.ppmMS2), cache_scalar_key(params.mzrMS2), cache_scalar_key(params.top_n), cache_bool_key(params.filtered), params.java_path, params.run_dir, cache_bool_key(params.debug), cache_join_key(extra_params)}),
-          {feature_state_cache_key(), suspect_state_cache_key()},
-          "Cached NTS suspects for metfrag_screening",
-          [&]() { metfrag_runner::metfrag_screening_impl(*this, analyses, params); });
-    }
-
-    bool PROJECT_NON_TARGET_ANALYSIS::assign_transformation_products(const std::vector<NTA_TRANSFORMATION_PRODUCT_ROW> &transformation_products, const std::string &chromatographic_phase, double mzrMS2)
-    {
-      load_processing_metadata();
-      load_processing_features(true);
-      load_processing_suspects();
-      std::vector<std::string> input_rows;
-      input_rows.reserve(transformation_products.size());
-      for (const auto &row : transformation_products)
-      {
-        input_rows.push_back(cache_join_key({row.name, row.formula, cache_scalar_key(row.mass), row.SMILES, row.InChI, row.InChIKey, cache_scalar_key(row.xLogP), row.transformation, row.precursor_name, row.precursor_formula, cache_scalar_key(row.precursor_mass), row.precursor_SMILES, row.precursor_InChI, row.precursor_InChIKey, cache_scalar_key(row.precursor_xLogP), row.main_precursor_name, row.main_precursor_formula, cache_scalar_key(row.main_precursor_mass), row.main_precursor_SMILES, row.main_precursor_InChI, row.main_precursor_InChIKey, cache_scalar_key(row.main_precursor_xLogP)}));
-      }
-      return run_cached_transformation_products_algorithm(
-          "assign_transformation_products",
-          cache_join_key({chromatographic_phase, cache_scalar_key(mzrMS2), cache_join_key(input_rows)}),
-          {feature_state_cache_key(), suspect_state_cache_key()},
-          "Cached NTS transformation products for assign_transformation_products",
-          [&]() {
-            NTA_QUERY_REQUEST query;
-            query.analyses = analysis_names();
-            return assign_transformation_products::assign_transformation_products_impl(
-                get_suspects(query),
-                transformation_products,
-                chromatographic_phase,
-                mzrMS2);
-          });
     }
 
     void PROJECT_NON_TARGET_ANALYSIS::create_schema(const std::shared_ptr<project::api::CONTEXT> &ctx)
@@ -3528,8 +3306,7 @@ namespace nta
           "ORDER BY lower(name), name, lower(transformation), transformation";
 
       project::db::run_prepared(guard.get(), sql, "query NTS transformation product rows", [&](duckdb_prepared_statement statement)
-                                {
-                         duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str()); }, [&](duckdb_result &result)
+                                { duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str()); }, [&](duckdb_result &result)
                                 { out = project::db::rows_from_result(&result, [&](idx_t row)
                                                                       { return transformation_product_row_from_result(result, row); }); });
       return out;
@@ -3540,7 +3317,7 @@ namespace nta
 } // namespace nta
 
 // MARK: load_features_ms1
-bool nta::PROJECT_NON_TARGET_ANALYSIS::load_features_ms1(
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::load_features_ms1(
     bool filtered,
     const std::vector<float> &rtWindow,
     const std::vector<float> &mzWindow,
@@ -3556,7 +3333,8 @@ bool nta::PROJECT_NON_TARGET_ANALYSIS::load_features_ms1(
       cache_join_key({cache_bool_key(filtered), cache_vector_key(rtWindow), cache_vector_key(mzWindow), cache_scalar_key(minTracesIntensity), cache_scalar_key(mzClust), cache_scalar_key(presence)}),
       {feature_state_cache_key()},
       "Cached NTS features for load_features_ms1",
-      [&]() {
+      [&]()
+      {
         auto &features = feature_buffers();
         const auto &files = file_paths();
         const bool hasRtWindow = rtWindow.size() >= 2;
@@ -3649,10 +3427,10 @@ bool nta::PROJECT_NON_TARGET_ANALYSIS::load_features_ms1(
           }
         }
       });
-}
+};
 
 // MARK: load_features_ms2
-bool nta::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
     bool filtered,
     float minTracesIntensity,
     float isolationWindow,
@@ -3667,7 +3445,8 @@ bool nta::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
       cache_join_key({cache_bool_key(filtered), cache_scalar_key(minTracesIntensity), cache_scalar_key(isolationWindow), cache_scalar_key(mzClust), cache_scalar_key(presence)}),
       {feature_state_cache_key()},
       "Cached NTS features for load_features_ms2",
-      [&]() {
+      [&]()
+      {
         auto &features = feature_buffers();
         const auto &files = file_paths();
         for (size_t i = 0; i < features.size(); i++)
@@ -3738,4 +3517,237 @@ bool nta::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
           }
         }
       });
-}
+};
+
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::find_features(
+    const std::vector<float> &rtWindowsMin,
+    const std::vector<float> &rtWindowsMax,
+    const float &ppmThreshold,
+    const float &noiseThreshold,
+    const float &minSNR,
+    const int &minTraces,
+    const float &baselineWindow,
+    const float &maxWidth,
+    const float &baseQuantile,
+    const std::string &debugAnalysis,
+    const float &debugMZ,
+    const int &debugSpecIdx)
+{
+  load_processing_metadata();
+  load_processing_headers();
+  return run_cached_features_algorithm(
+      "find_features",
+      cache_join_key({cache_vector_key(rtWindowsMin), cache_vector_key(rtWindowsMax), cache_scalar_key(ppmThreshold), cache_scalar_key(noiseThreshold), cache_scalar_key(minSNR), cache_scalar_key(minTraces), cache_scalar_key(baselineWindow), cache_scalar_key(maxWidth), cache_scalar_key(baseQuantile), debugAnalysis, cache_scalar_key(debugMZ), cache_scalar_key(debugSpecIdx)}),
+      {},
+      "Cached NTS features for find_features",
+      [&]()
+      {
+        features_table_ = NTA_FEATURES_TABLE();
+        feature_buffers_.assign(analysis_names().size(), NTA_FEATURES());
+        for (std::size_t i = 0; i < analysis_names().size(); ++i)
+        {
+          feature_buffers_[i].set_analysis(analysis_names()[i]);
+        }
+        feature_buffers_ready_ = true;
+        deconvolution::find_features_impl(*this, rtWindowsMin, rtWindowsMax, ppmThreshold, noiseThreshold, minSNR, minTraces, baselineWindow, maxWidth, baseQuantile, debugAnalysis, debugMZ, debugSpecIdx);
+      });
+};
+
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::create_components(const std::vector<float> &rtWindow, float minCorrelation, float debugRT, const std::string &debugAnalysis)
+{
+  load_processing_metadata();
+  load_processing_features(true);
+  return run_cached_features_algorithm(
+      "create_components",
+      cache_join_key({cache_vector_key(rtWindow), cache_scalar_key(minCorrelation), cache_scalar_key(debugRT), debugAnalysis}),
+      {feature_state_cache_key()},
+      "Cached NTS features for create_components",
+      [&]()
+      { componentization::create_components_impl(*this, rtWindow, minCorrelation, debugRT, debugAnalysis); });
+};
+
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::annotate_components(int maxIsotopes, int maxCharge, int maxGaps, float ppm, const std::string &debugComponent, const std::string &debugAnalysis)
+{
+  load_processing_metadata();
+  load_processing_features(true);
+  return run_cached_features_algorithm(
+      "annotate_components",
+      cache_join_key({cache_scalar_key(maxIsotopes), cache_scalar_key(maxCharge), cache_scalar_key(maxGaps), cache_scalar_key(ppm), debugComponent, debugAnalysis}),
+      {feature_state_cache_key()},
+      "Cached NTS features for annotate_components",
+      [&]()
+      { annotation::annotate_components_impl(*this, maxIsotopes, maxCharge, maxGaps, ppm, debugComponent, debugAnalysis); });
+};
+
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::group_features(const std::string &method, float rtDeviation, float ppm, int minSamples, float binSize, bool debug, float debugRT)
+{
+  load_processing_metadata();
+  load_processing_features(true);
+  std::vector<std::string> dependencies{feature_state_cache_key()};
+  if (method == "internal_standards")
+  {
+    load_processing_internal_standards();
+    dependencies.push_back(internal_standard_state_cache_key());
+  }
+  else
+  {
+    internal_standards_table_ = NTA_INTERNAL_STANDARDS_TABLE();
+    internal_standard_buffers_.assign(analysis_names().size(), NTA_INTERNAL_STANDARDS());
+    internal_standard_buffers_ready_ = true;
+  }
+  return run_cached_features_algorithm(
+      "group_features",
+      cache_join_key({method, cache_scalar_key(rtDeviation), cache_scalar_key(ppm), cache_scalar_key(minSamples), cache_scalar_key(binSize), cache_bool_key(debug), cache_scalar_key(debugRT)}),
+      dependencies,
+      "Cached NTS features for group_features",
+      [&]()
+      { alignment::group_features_impl(*this, method, rtDeviation, ppm, minSamples, binSize, debug, debugRT); });
+};
+
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::fill_features(bool withinReplicate, bool filtered, float rtExpand, float mzExpand, float maxPeakWidth, float minTracesIntensity, int minNumberTraces, float minIntensity, float rtApexDeviation, float minSignalToNoiseRatio, float minGaussianFit, std::string debugFG)
+{
+  load_processing_metadata();
+  load_processing_headers();
+  load_processing_features(true);
+  return run_cached_features_algorithm(
+      "fill_features",
+      cache_join_key({cache_bool_key(withinReplicate), cache_bool_key(filtered), cache_scalar_key(rtExpand), cache_scalar_key(mzExpand), cache_scalar_key(maxPeakWidth), cache_scalar_key(minTracesIntensity), cache_scalar_key(minNumberTraces), cache_scalar_key(minIntensity), cache_scalar_key(rtApexDeviation), cache_scalar_key(minSignalToNoiseRatio), cache_scalar_key(minGaussianFit), debugFG}),
+      {feature_state_cache_key()},
+      "Cached NTS features for fill_features",
+      [&]()
+      { gap_filling::fill_features_impl(*this, withinReplicate, filtered, rtExpand, mzExpand, maxPeakWidth, minTracesIntensity, minNumberTraces, minIntensity, rtApexDeviation, minSignalToNoiseRatio, minGaussianFit, debugFG); });
+};
+
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::subtract_blank(float blankThreshold, float rtExpand, float mzExpand, float minTracesIntensity)
+{
+  load_processing_metadata();
+  load_processing_headers();
+  load_processing_features(true);
+  return run_cached_features_algorithm(
+      "subtract_blank",
+      cache_join_key({cache_scalar_key(blankThreshold), cache_scalar_key(rtExpand), cache_scalar_key(mzExpand), cache_scalar_key(minTracesIntensity)}),
+      {feature_state_cache_key()},
+      "Cached NTS features for subtract_blank",
+      [&]()
+      { blank_subtraction::subtract_blank_impl(*this, blankThreshold, rtExpand, mzExpand, minTracesIntensity); });
+};
+
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::filter_features(double minSN, double minIntensity, double minArea, double minWidth, double maxWidth, double maxPPM, double minFwhmRT, double maxFwhmRT, double minFwhmMZ, double maxFwhmMZ, double minGaussianA, double minGaussianMu, double maxGaussianMu, double minGaussianSigma, double maxGaussianSigma, double minGaussianR2, double maxJaggedness, double minSharpness, double minAsymmetry, double maxAsymmetry, int maxModality, bool hasMaxModality, double minPlates, bool hasOnlyFilled, bool onlyFilledValue, bool removeFilled, int minSizeEIC, bool hasMinSizeEIC, int minSizeMS1, bool hasMinSizeMS1, int minSizeMS2, bool hasMinSizeMS2, double minRelPresenceReplicate, bool removeIsotopes, bool removeAdducts, bool removeLosses)
+{
+  load_processing_metadata();
+  load_processing_features(true);
+  return run_cached_features_algorithm(
+      "filter_features",
+      cache_join_key({cache_scalar_key(minSN), cache_scalar_key(minIntensity), cache_scalar_key(minArea), cache_scalar_key(minWidth), cache_scalar_key(maxWidth), cache_scalar_key(maxPPM), cache_scalar_key(minFwhmRT), cache_scalar_key(maxFwhmRT), cache_scalar_key(minFwhmMZ), cache_scalar_key(maxFwhmMZ), cache_scalar_key(minGaussianA), cache_scalar_key(minGaussianMu), cache_scalar_key(maxGaussianMu), cache_scalar_key(minGaussianSigma), cache_scalar_key(maxGaussianSigma), cache_scalar_key(minGaussianR2), cache_scalar_key(maxJaggedness), cache_scalar_key(minSharpness), cache_scalar_key(minAsymmetry), cache_scalar_key(maxAsymmetry), cache_scalar_key(maxModality), cache_bool_key(hasMaxModality), cache_scalar_key(minPlates), cache_bool_key(hasOnlyFilled), cache_bool_key(onlyFilledValue), cache_bool_key(removeFilled), cache_scalar_key(minSizeEIC), cache_bool_key(hasMinSizeEIC), cache_scalar_key(minSizeMS1), cache_bool_key(hasMinSizeMS1), cache_scalar_key(minSizeMS2), cache_bool_key(hasMinSizeMS2), cache_scalar_key(minRelPresenceReplicate), cache_bool_key(removeIsotopes), cache_bool_key(removeAdducts), cache_bool_key(removeLosses)}),
+      {feature_state_cache_key()},
+      "Cached NTS features for filter_features",
+      [&]()
+      { filter_features::filter_features_impl(*this, minSN, minIntensity, minArea, minWidth, maxWidth, maxPPM, minFwhmRT, maxFwhmRT, minFwhmMZ, maxFwhmMZ, minGaussianA, minGaussianMu, maxGaussianMu, minGaussianSigma, maxGaussianSigma, minGaussianR2, maxJaggedness, minSharpness, minAsymmetry, maxAsymmetry, maxModality, hasMaxModality, minPlates, hasOnlyFilled, onlyFilledValue, removeFilled, minSizeEIC, hasMinSizeEIC, minSizeMS1, hasMinSizeMS1, minSizeMS2, hasMinSizeMS2, minRelPresenceReplicate, removeIsotopes, removeAdducts, removeLosses); });
+};
+
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::suspect_screening(const std::vector<std::string> &analyses, const std::vector<suspect_screening::SuspectQuery> &suspects, double ppm, double sec, double ppmMS2, double mzrMS2, double minCosineSimilarity, int minSharedFragments, bool filtered)
+{
+  load_processing_metadata();
+  load_processing_features(true);
+  load_processing_suspects();
+  std::vector<std::string> suspect_keys;
+  suspect_keys.reserve(suspects.size());
+  for (const auto &suspect : suspects)
+  {
+    suspect_keys.push_back(cache_join_key({suspect.name, cache_bool_key(suspect.has_mass), cache_scalar_key(suspect.mass), cache_scalar_key(suspect.rt), suspect.formula, suspect.SMILES, suspect.InChI, suspect.InChIKey, cache_scalar_key(suspect.score), cache_bool_key(suspect.has_xLogP), cache_scalar_key(suspect.xLogP), suspect.database_id, cache_vector_key(suspect.fragments_mz_pos), cache_vector_key(suspect.fragments_intensity_pos), cache_vector_key(suspect.fragments_mz_neg), cache_vector_key(suspect.fragments_intensity_neg)}));
+  }
+  return run_cached_suspects_algorithm(
+      "suspect_screening",
+      cache_join_key({cache_vector_key(analyses), cache_scalar_key(ppm), cache_scalar_key(sec), cache_scalar_key(ppmMS2), cache_scalar_key(mzrMS2), cache_scalar_key(minCosineSimilarity), cache_scalar_key(minSharedFragments), cache_bool_key(filtered), cache_join_key(suspect_keys)}),
+      {feature_state_cache_key(), suspect_state_cache_key()},
+      "Cached NTS suspects for suspect_screening",
+      [&]()
+      { suspect_screening::suspect_screening_impl(*this, analyses, suspects, ppm, sec, ppmMS2, mzrMS2, minCosineSimilarity, minSharedFragments, filtered); });
+};
+
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::filter_suspects(const std::vector<std::string> &names, double minScore, double maxErrorRT, double maxErrorMass, const std::vector<int> &idLevels, int minSharedFragments, double minCosineSimilarity)
+{
+  load_processing_metadata();
+  load_processing_suspects();
+  return run_cached_suspects_algorithm(
+      "filter_suspects",
+      cache_join_key({cache_vector_key(names), cache_scalar_key(minScore), cache_scalar_key(maxErrorRT), cache_scalar_key(maxErrorMass), cache_vector_key(idLevels), cache_scalar_key(minSharedFragments), cache_scalar_key(minCosineSimilarity)}),
+      {suspect_state_cache_key()},
+      "Cached NTS suspects for filter_suspects",
+      [&]()
+      { filter_suspects::filter_suspects_impl(*this, names, minScore, maxErrorRT, maxErrorMass, idLevels, minSharedFragments, minCosineSimilarity); });
+};
+
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::filter_internal_standards(const std::vector<std::string> &names, double minScore, double maxErrorRT, double maxErrorMass, const std::vector<int> &idLevels, int minSharedFragments, double minCosineSimilarity)
+{
+  load_processing_metadata();
+  load_processing_internal_standards();
+  return run_cached_internal_standards_algorithm(
+      "filter_internal_standards",
+      cache_join_key({cache_vector_key(names), cache_scalar_key(minScore), cache_scalar_key(maxErrorRT), cache_scalar_key(maxErrorMass), cache_vector_key(idLevels), cache_scalar_key(minSharedFragments), cache_scalar_key(minCosineSimilarity)}),
+      {internal_standard_state_cache_key()},
+      "Cached NTS internal standards for filter_internal_standards",
+      [&]()
+      { filter_internal_standards::filter_internal_standards_impl(*this, names, minScore, maxErrorRT, maxErrorMass, idLevels, minSharedFragments, minCosineSimilarity); });
+};
+
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::filter_features_ms2(int top, float minIntensity, float relMinIntensity, bool blankClean, float mzClust, float blankPresenceThreshold, float globalPresenceThreshold)
+{
+  load_processing_metadata();
+  load_processing_features(true);
+  return run_cached_features_algorithm(
+      "filter_features_ms2",
+      cache_join_key({cache_scalar_key(top), cache_scalar_key(minIntensity), cache_scalar_key(relMinIntensity), cache_bool_key(blankClean), cache_scalar_key(mzClust), cache_scalar_key(blankPresenceThreshold), cache_scalar_key(globalPresenceThreshold)}),
+      {feature_state_cache_key()},
+      "Cached NTS features for filter_features_ms2",
+      [&]()
+      { filter_features_ms2::filter_features_ms2_impl(*this, top, minIntensity, relMinIntensity, blankClean, mzClust, blankPresenceThreshold, globalPresenceThreshold); });
+};
+
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::metfrag_screening(const std::vector<std::string> &analyses, const metfrag_runner::MetFragParams &params)
+{
+  load_processing_metadata();
+  load_processing_features(true);
+  load_processing_suspects();
+  std::vector<std::string> extra_params;
+  extra_params.reserve(params.extra_params.size());
+  for (const auto &entry : params.extra_params)
+  {
+    extra_params.push_back(cache_join_key({entry.first, entry.second}));
+  }
+  return run_cached_suspects_algorithm(
+      "metfrag_screening",
+      cache_join_key({cache_vector_key(analyses), params.metfrag_path, params.database_type, params.database_path, cache_scalar_key(params.ppm), cache_scalar_key(params.sec), cache_scalar_key(params.ppmMS2), cache_scalar_key(params.mzrMS2), cache_scalar_key(params.top_n), cache_bool_key(params.filtered), params.java_path, params.run_dir, cache_bool_key(params.debug), cache_join_key(extra_params)}),
+      {feature_state_cache_key(), suspect_state_cache_key()},
+      "Cached NTS suspects for metfrag_screening",
+      [&]()
+      { metfrag_runner::metfrag_screening_impl(*this, analyses, params); });
+};
+
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::assign_transformation_products(const std::vector<NTA_TRANSFORMATION_PRODUCT_ROW> &transformation_products, const std::string &chromatographic_phase, double mzrMS2)
+{
+  load_processing_metadata();
+  load_processing_features(true);
+  load_processing_suspects();
+  std::vector<std::string> input_rows;
+  input_rows.reserve(transformation_products.size());
+  for (const auto &row : transformation_products)
+  {
+    input_rows.push_back(cache_join_key({row.name, row.formula, cache_scalar_key(row.mass), row.SMILES, row.InChI, row.InChIKey, cache_scalar_key(row.xLogP), row.transformation, row.precursor_name, row.precursor_formula, cache_scalar_key(row.precursor_mass), row.precursor_SMILES, row.precursor_InChI, row.precursor_InChIKey, cache_scalar_key(row.precursor_xLogP), row.main_precursor_name, row.main_precursor_formula, cache_scalar_key(row.main_precursor_mass), row.main_precursor_SMILES, row.main_precursor_InChI, row.main_precursor_InChIKey, cache_scalar_key(row.main_precursor_xLogP)}));
+  }
+  return run_cached_transformation_products_algorithm(
+      "assign_transformation_products",
+      cache_join_key({chromatographic_phase, cache_scalar_key(mzrMS2), cache_join_key(input_rows)}),
+      {feature_state_cache_key(), suspect_state_cache_key()},
+      "Cached NTS transformation products for assign_transformation_products",
+      [&]()
+      {
+        NTA_QUERY_REQUEST query;
+        query.analyses = analysis_names();
+        return assign_transformation_products::assign_transformation_products_impl(
+            get_suspects(query),
+            transformation_products,
+            chromatographic_phase,
+            mzrMS2);
+      });
+};

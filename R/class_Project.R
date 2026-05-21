@@ -218,7 +218,10 @@ get_domain.Project <- function(x) {
 get_workflow.Project <- function(x) {
   checkmate::assert_class(x, "Project")
   value <- rcpp_project_get_workflow(x$get_ptr())
-  if (is.null(value) || identical(value, "") || identical(value, "null")) NULL else jsonlite::fromJSON(value)
+  if (is.null(value) || identical(value, "") || identical(value, "null")) {
+    return(NULL)
+  }
+  Workflow(jsonlite::fromJSON(value))
 }
 
 #' @describeIn ProjectS3 Set the project workflow; `value` may be a Workflow-compatible list, JSON string, or NULL.
@@ -231,7 +234,10 @@ set_workflow.Project <- function(x, value) {
   } else if (is.character(value) && length(value) == 1L) {
     value
   } else {
-    as.character(.convert_to_json(value))
+    workflow <- if (inherits(value, "Workflow")) value else Workflow(value)
+    payload <- lapply(workflow, unclass)
+    names(payload) <- names(workflow)
+    as.character(.convert_to_json(payload))
   }
   rcpp_project_set_workflow(x$get_ptr(), workflow_json)
   invisible(x)

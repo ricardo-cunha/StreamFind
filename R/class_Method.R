@@ -15,15 +15,16 @@
 #' @return A `Method` object.
 #' @export
 Method <- function(
-    method = NA_character_,
-    required = character(),
-    owner_class = NA_character_,
-    number_permitted = NA_real_,
-    developer = NA_character_,
-    contact = NA_character_,
-    link = NA_character_,
-    doi = NA_character_,
-    parameters = list()) {
+  method = NA_character_,
+  required = character(),
+  owner_class = NA_character_,
+  number_permitted = NA_real_,
+  developer = NA_character_,
+  contact = NA_character_,
+  link = NA_character_,
+  doi = NA_character_,
+  parameters = list()
+) {
   class_name <- if (!is.na(method) && nzchar(method) && !is.na(owner_class) && nzchar(owner_class)) {
     paste0(sub("^Project", "Method_", owner_class), "_", method)
   } else if (!is.na(method) && nzchar(method)) {
@@ -93,6 +94,48 @@ as.Method <- function(value) {
       value[[nm]] <- defaults[[nm]]
     }
   }
+  value$method <- as.character(unlist(value$method, use.names = FALSE))[1]
+  value$required <- if (length(value$required) == 0) {
+    character()
+  } else {
+    as.character(unlist(value$required, use.names = FALSE))
+  }
+  value$owner_class <- as.character(unlist(value$owner_class, use.names = FALSE))[1]
+  value$number_permitted <- as.numeric(unlist(value$number_permitted, use.names = FALSE))[1]
+  value$developer <- as.character(unlist(value$developer, use.names = FALSE))[1]
+  value$contact <- as.character(unlist(value$contact, use.names = FALSE))[1]
+  value$link <- as.character(unlist(value$link, use.names = FALSE))[1]
+  value$doi <- if (length(value$doi) == 0) {
+    NA_character_
+  } else {
+    as.character(unlist(value$doi, use.names = FALSE))[1]
+  }
+  if (!is.na(value$method) && nzchar(value$method) &&
+    !is.na(value$owner_class) && nzchar(value$owner_class)) {
+    constructor_name <- paste0(sub("^Project", "Method_", value$owner_class), "_", value$method)
+    constructor_envs <- Filter(Negate(is.null), list(
+      tryCatch(asNamespace("StreamFind"), error = function(...) NULL),
+      .GlobalEnv
+    ))
+    constructor_exists <- any(vapply(
+      constructor_envs,
+      function(env) exists(constructor_name, mode = "function", envir = env, inherits = TRUE),
+      logical(1)
+    ))
+    if (constructor_exists) {
+      constructor <- get(
+        constructor_name,
+        mode = "function",
+        envir = constructor_envs[[which(vapply(
+          constructor_envs,
+          function(env) exists(constructor_name, mode = "function", envir = env, inherits = TRUE),
+          logical(1)
+        ))[1]]],
+        inherits = TRUE
+      )
+      return(do.call(constructor, value$parameters))
+    }
+  }
   do.call(Method, value)
 }
 
@@ -126,7 +169,7 @@ save.Method <- function(x, file = "settings.json", ...) {
 #' @noRd
 read.Method <- function(x, file, ...) {
   if (grepl("\\.json$", file, ignore.case = TRUE) && file.exists(file)) {
-    return(as.Method(jsonlite::fromJSON(file, simplifyVector = FALSE)))
+    return(as.Method(jsonlite::fromJSON(file)))
   }
   if (grepl("\\.rds$", file, ignore.case = TRUE) && file.exists(file)) {
     return(readRDS(file))

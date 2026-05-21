@@ -27,7 +27,19 @@
 namespace nta
 {
 
-  struct NTA_INFO;
+  // MARK: NTA_INFO
+  struct NTA_INFO
+  {
+    std::vector<std::string> analyses;
+    std::vector<std::string> replicates;
+    std::vector<std::string> blanks;
+    std::vector<std::string> files;
+
+    int size() const
+    {
+      return analyses.size();
+    }
+  };
 
   // MARK: ns utils
   namespace utils
@@ -1466,6 +1478,121 @@ namespace nta
       mutable bool internal_standard_buffers_ready_ = false;
       mutable bool transformation_products_ready_ = false;
 
+      static constexpr const char *features_table_name() { return "NTA_FEATURES"; }
+      static constexpr const char *internal_standards_table_name() { return "NTA_INTERNAL_STANDARDS"; }
+      static constexpr const char *suspects_table_name() { return "NTA_SUSPECTS"; }
+      static constexpr const char *transformation_products_table_name() { return "NTA_TRANSFORMATION_PRODUCTS"; }
+
+      NTA_FEATURES_TABLE collect_features_table(const NTA_QUERY_REQUEST &query) const;
+      NTA_SUSPECTS_TABLE collect_suspects_table(const NTA_QUERY_REQUEST &query) const;
+      NTA_INTERNAL_STANDARDS_TABLE collect_internal_standards_table(const NTA_QUERY_REQUEST &query) const;
+      NTA_TRANSFORMATION_PRODUCTS_TABLE collect_transformation_products_table() const;
+
+      void materialize_feature_buffers() const;
+      void materialize_suspect_buffers() const;
+      void materialize_internal_standard_buffers() const;
+      void materialize_transformation_products_buffer() const;
+
+      template <typename T>
+      static std::string cache_scalar_key(const T &value)
+      {
+        std::ostringstream stream;
+        stream << std::setprecision(17) << value;
+        return stream.str();
+      }
+      static std::string cache_bool_key(bool value)
+      {
+        return value ? "1" : "0";
+      }
+
+      template <typename T>
+      static std::string cache_vector_key(const std::vector<T> &values)
+      {
+        std::vector<std::string> parts;
+        parts.reserve(values.size());
+        for (const auto &value : values)
+        {
+          parts.push_back(cache_scalar_key(value));
+        }
+        return cache_join_key(parts);
+      }
+
+      static std::string cache_vector_key(const std::vector<std::string> &values)
+      {
+        return cache_join_key(values);
+      }
+
+      static std::string cache_join_key(const std::vector<std::string> &parts)
+      {
+        std::ostringstream stream;
+        for (const auto &part : parts)
+        {
+          stream << part.size() << ':' << part << ';';
+        }
+        return stream.str();
+      }
+
+      std::string build_processing_cache_key(const std::string &step,
+                                             const std::string &args_key,
+                                             const std::vector<std::string> &dependency_keys = {}) const;
+
+      NTA_FEATURES_CACHE feature_cache_snapshot() const;
+      NTA_SUSPECTS_CACHE suspect_cache_snapshot() const;
+      NTA_INTERNAL_STANDARDS_CACHE internal_standard_cache_snapshot() const;
+
+      std::string feature_state_cache_key() const;
+      std::string suspect_state_cache_key() const;
+      std::string internal_standard_state_cache_key() const;
+
+      bool restore_feature_cache(const std::string &hash);
+      bool restore_suspect_cache(const std::string &hash);
+      bool restore_internal_standard_cache(const std::string &hash);
+      bool restore_transformation_products_cache(const std::string &hash);
+
+      bool run_cached_features_algorithm(const std::string &step,
+                                         const std::string &args_key,
+                                         const std::vector<std::string> &dependency_keys,
+                                         const std::string &description,
+                                         const std::function<void()> &algorithm);
+      bool run_cached_suspects_algorithm(const std::string &step,
+                                         const std::string &args_key,
+                                         const std::vector<std::string> &dependency_keys,
+                                         const std::string &description,
+                                         const std::function<void()> &algorithm);
+      bool run_cached_internal_standards_algorithm(const std::string &step,
+                                                   const std::string &args_key,
+                                                   const std::vector<std::string> &dependency_keys,
+                                                   const std::string &description,
+                                                   const std::function<void()> &algorithm);
+
+      bool run_cached_transformation_products_algorithm(
+          const std::string &step,
+          const std::string &args_key,
+          const std::vector<std::string> &dependency_keys,
+          const std::string &description,
+          const std::function<NTA_TRANSFORMATION_PRODUCTS()> &algorithm);
+
+      void store_feature_cache(const std::string &hash, const std::string &description);
+      void store_suspect_cache(const std::string &hash, const std::string &description);
+      void store_internal_standard_cache(const std::string &hash, const std::string &description);
+
+      void store_transformation_products_cache(const std::string &hash,
+                                               const std::string &description,
+                                               const NTA_TRANSFORMATION_PRODUCTS &products);
+
+      void load_processing_metadata();
+      void load_processing_headers();
+      void load_processing_features(bool include_filtered);
+      void load_processing_suspects();
+      void load_processing_internal_standards();
+      void load_processing_transformation_products();
+
+      void save_processing_features();
+      void save_processing_suspects();
+      void save_processing_internal_standards();
+
+      void save_processing_transformation_products(const NTA_TRANSFORMATION_PRODUCTS &products);
+
     public:
       explicit PROJECT_NON_TARGET_ANALYSIS(std::shared_ptr<project::api::CONTEXT> ctx);
       static void create_schema(const std::shared_ptr<project::api::CONTEXT> &ctx);
@@ -1499,7 +1626,6 @@ namespace nta
       std::vector<NTA_FEATURE_COUNT_ROW> get_features_count(
           const std::vector<std::string> &analyses = {},
           bool include_filtered = false) const;
-
 
       std::vector<NTA_FEATURE_ROW> get_features(
         const std::vector<std::string> &analyses = {},
@@ -1665,141 +1791,11 @@ namespace nta
         const std::vector<NTA_TRANSFORMATION_PRODUCT_ROW> &transformation_products,
         const std::string &chromatographic_phase = "reverse_phase",
         double mzrMS2 = 0.008);
-
-    private:
-      static constexpr const char *features_table_name() { return "NTA_FEATURES"; }
-      static constexpr const char *internal_standards_table_name() { return "NTA_INTERNAL_STANDARDS"; }
-      static constexpr const char *suspects_table_name() { return "NTA_SUSPECTS"; }
-      static constexpr const char *transformation_products_table_name() { return "NTA_TRANSFORMATION_PRODUCTS"; }
-
-      NTA_FEATURES_TABLE collect_features_table(const NTA_QUERY_REQUEST &query) const;
-      NTA_SUSPECTS_TABLE collect_suspects_table(const NTA_QUERY_REQUEST &query) const;
-      NTA_INTERNAL_STANDARDS_TABLE collect_internal_standards_table(const NTA_QUERY_REQUEST &query) const;
-      NTA_TRANSFORMATION_PRODUCTS_TABLE collect_transformation_products_table() const;
-
-      void materialize_feature_buffers() const;
-      void materialize_suspect_buffers() const;
-      void materialize_internal_standard_buffers() const;
-      void materialize_transformation_products_buffer() const;
-
-      template <typename T>
-      static std::string cache_scalar_key(const T &value)
-      {
-        std::ostringstream stream;
-        stream << std::setprecision(17) << value;
-        return stream.str();
-      }
-      static std::string cache_bool_key(bool value)
-      {
-        return value ? "1" : "0";
-      }
-
-      template <typename T>
-      static std::string cache_vector_key(const std::vector<T> &values)
-      {
-        std::vector<std::string> parts;
-        parts.reserve(values.size());
-        for (const auto &value : values)
-        {
-          parts.push_back(cache_scalar_key(value));
-        }
-        return cache_join_key(parts);
-      }
-
-      static std::string cache_vector_key(const std::vector<std::string> &values)
-      {
-        return cache_join_key(values);
-      }
-
-      static std::string cache_join_key(const std::vector<std::string> &parts)
-      {
-        std::ostringstream stream;
-        for (const auto &part : parts)
-        {
-          stream << part.size() << ':' << part << ';';
-        }
-        return stream.str();
-      }
-
-      std::string build_processing_cache_key(const std::string &step,
-                                             const std::string &args_key,
-                                             const std::vector<std::string> &dependency_keys = {}) const;
-
-      NTA_FEATURES_CACHE feature_cache_snapshot() const;
-      NTA_SUSPECTS_CACHE suspect_cache_snapshot() const;
-      NTA_INTERNAL_STANDARDS_CACHE internal_standard_cache_snapshot() const;
-
-      std::string feature_state_cache_key() const;
-      std::string suspect_state_cache_key() const;
-      std::string internal_standard_state_cache_key() const;
-
-      bool restore_feature_cache(const std::string &hash);
-      bool restore_suspect_cache(const std::string &hash);
-      bool restore_internal_standard_cache(const std::string &hash);
-      bool restore_transformation_products_cache(const std::string &hash);
-
-      bool run_cached_features_algorithm(const std::string &step,
-                                         const std::string &args_key,
-                                         const std::vector<std::string> &dependency_keys,
-                                         const std::string &description,
-                                         const std::function<void()> &algorithm);
-      bool run_cached_suspects_algorithm(const std::string &step,
-                                         const std::string &args_key,
-                                         const std::vector<std::string> &dependency_keys,
-                                         const std::string &description,
-                                         const std::function<void()> &algorithm);
-      bool run_cached_internal_standards_algorithm(const std::string &step,
-                                                   const std::string &args_key,
-                                                   const std::vector<std::string> &dependency_keys,
-                                                   const std::string &description,
-                                                   const std::function<void()> &algorithm);
-
-      bool run_cached_transformation_products_algorithm(
-          const std::string &step,
-          const std::string &args_key,
-          const std::vector<std::string> &dependency_keys,
-          const std::string &description,
-          const std::function<NTA_TRANSFORMATION_PRODUCTS()> &algorithm);
-
-      void store_feature_cache(const std::string &hash, const std::string &description);
-      void store_suspect_cache(const std::string &hash, const std::string &description);
-      void store_internal_standard_cache(const std::string &hash, const std::string &description);
-
-      void store_transformation_products_cache(const std::string &hash,
-                                               const std::string &description,
-                                               const NTA_TRANSFORMATION_PRODUCTS &products);
-
-      void load_processing_metadata();
-      void load_processing_headers();
-      void load_processing_features(bool include_filtered);
-      void load_processing_suspects();
-      void load_processing_internal_standards();
-      void load_processing_transformation_products();
-
-      void save_processing_features();
-      void save_processing_suspects();
-      void save_processing_internal_standards();
-
-      void save_processing_transformation_products(const NTA_TRANSFORMATION_PRODUCTS &products);
     };
 
   } // namespace api
 
   using PROJECT_NON_TARGET_ANALYSIS = api::PROJECT_NON_TARGET_ANALYSIS;
-
-  // MARK: NTA_INFO
-  struct NTA_INFO
-  {
-    std::vector<std::string> analyses;
-    std::vector<std::string> replicates;
-    std::vector<std::string> blanks;
-    std::vector<std::string> files;
-
-    int size() const
-    {
-      return analyses.size();
-    }
-  };
 }; // namespace nta
 
 // Include internal NTS module headers now that `nta::api` types are defined
