@@ -56,11 +56,12 @@ app_server <- function(input, output, session) {
   }
 
   load_project_object <- function(project_class, db, project_id) {
-    ctor <- get0(project_class, envir = asNamespace("StreamFind"), inherits = FALSE)
-    if (is.null(ctor) || !inherits(ctor, "R6ClassGenerator")) {
-      stop("Project class not found: ", project_class)
+    opener_name <- .project_open_function_name(project_class)
+    opener <- get0(opener_name, envir = asNamespace("StreamFind"), mode = "function", inherits = FALSE)
+    if (is.null(opener)) {
+      stop("Project open function not found: ", opener_name)
     }
-    suppressMessages(ctor$new(db = db, project_id = project_id))
+    suppressMessages(opener(db = db, project_id = project_id))
   }
 
   get_project_results <- function(project) {

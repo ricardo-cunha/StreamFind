@@ -48,7 +48,7 @@
                                         volumes,
                                         input, output, session) {
 
-  project_registry <- ProjectClasses()
+  project_registry <- projects_overview()
   available_projects <- names(project_registry)
 
   time_var <- format(Sys.time(), "%Y%m%d%H%M%S")

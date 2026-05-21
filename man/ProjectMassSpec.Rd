@@ -61,7 +61,7 @@ Internal R6 child of \code{Project} exposing shared Mass Spec tables and native 
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="list_tables"><a href='../../StreamFind/html/Project.html#method-Project-list_tables'><code>StreamFind::Project$list_tables()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="report_quarto"><a href='../../StreamFind/html/Project.html#method-Project-report_quarto'><code>StreamFind::Project$report_quarto()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_app"><a href='../../StreamFind/html/Project.html#method-Project-run_app'><code>StreamFind::Project$run_app()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_processing_step"><a href='../../StreamFind/html/Project.html#method-Project-run_processing_step'><code>StreamFind::Project$run_processing_step()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_method"><a href='../../StreamFind/html/Project.html#method-Project-run_method'><code>StreamFind::Project$run_method()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_workflow"><a href='../../StreamFind/html/Project.html#method-Project-run_workflow'><code>StreamFind::Project$run_workflow()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="set_metadata"><a href='../../StreamFind/html/Project.html#method-Project-set_metadata'><code>StreamFind::Project$set_metadata()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="set_workflow"><a href='../../StreamFind/html/Project.html#method-Project-set_workflow'><code>StreamFind::Project$set_workflow()</code></a></span></li>
@@ -281,7 +281,12 @@ object.}
 \subsection{Method \code{get_spectra_tic()}}{
 Return spectra TIC rows for selected analyses.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$get_spectra_tic(analyses = NULL, levels = NULL, rt = NULL)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$get_spectra_tic(
+  analyses = NULL,
+  levels = NULL,
+  rtmin = NULL,
+  rtmax = NULL
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -292,9 +297,9 @@ object.}
 
 \item{\code{levels}}{Integer vector with the levels of MS data.}
 
-\item{\code{rt}}{A vector with target retention time values (in seconds) or
-a two columns data.table or data.frame with minimum and maximum retention
-time values (in seconds).}
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
 }
 \if{html}{\out{</div>}}
 }
@@ -480,10 +485,6 @@ are returned, using the \code{isolationWindow} to calculate the mass window.}
 applied for ion isolation and fragmentation during acquisition of tandem
 data (i.e., MS2 data).}
 
-\item{\code{isolationWindow}}{Numeric value with the isolation window (in Da)
-applied for ion isolation and fragmentation during acquisition of tandem
-data (i.e., MS2 data).}
-
 \item{\code{minIntensityMS1}}{Numeric value with the minimum intensity of level 1
 data (i.e., MS1 data).}
 
@@ -502,7 +503,8 @@ Plot total ion current traces for selected analyses.
 \if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$plot_spectra_tic(
   analyses = NULL,
   levels = c(1, 2),
-  rt = NULL,
+  rtmin = NULL,
+  rtmax = NULL,
   downsize = NULL,
   xLab = NULL,
   yLab = NULL,
@@ -521,9 +523,9 @@ object.}
 
 \item{\code{levels}}{Integer vector with the levels of MS data.}
 
-\item{\code{rt}}{A vector with target retention time values (in seconds) or
-a two columns data.table or data.frame with minimum and maximum retention
-time values (in seconds).}
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
 
 \item{\code{downsize}}{An integer of length one to downsize the TIC plot. The default is 1.}
 
@@ -551,7 +553,8 @@ Plot base peak chromatogram traces for selected analyses.
 \if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$plot_spectra_bpc(
   analyses = NULL,
   levels = c(1, 2),
-  rt = NULL,
+  rtmin = NULL,
+  rtmax = NULL,
   downsize = NULL,
   xLab = NULL,
   yLab = NULL,
@@ -570,9 +573,9 @@ object.}
 
 \item{\code{levels}}{Integer vector with the levels of MS data.}
 
-\item{\code{rt}}{A vector with target retention time values (in seconds) or
-a two columns data.table or data.frame with minimum and maximum retention
-time values (in seconds).}
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
 
 \item{\code{downsize}}{An integer of length one to downsize the TIC plot. The default is 1.}
 
@@ -892,10 +895,6 @@ combination of the \emph{m/z} and retention time ranges or values.}
 applied for ion isolation and fragmentation during acquisition of tandem
 data (i.e., MS2 data).}
 
-\item{\code{isolationWindow}}{Numeric value with the isolation window (in Da)
-applied for ion isolation and fragmentation during acquisition of tandem
-data (i.e., MS2 data).}
-
 \item{\code{mzClust}}{Numeric (length 1) with the mass deviation threshold (in Da) to cluster mass traces. Highly dependent
 on the mass resolution of the MS data.}
 
@@ -1078,10 +1077,6 @@ in milliseconds.}
 \item{\code{id}}{Character with the same length as \emph{m/z} and retention time
 targets to be used as identifier/s. When not given, the id is built as a
 combination of the \emph{m/z} and retention time ranges or values.}
-
-\item{\code{isolationWindow}}{Numeric value with the isolation window (in Da)
-applied for ion isolation and fragmentation during acquisition of tandem
-data (i.e., MS2 data).}
 
 \item{\code{isolationWindow}}{Numeric value with the isolation window (in Da)
 applied for ion isolation and fragmentation during acquisition of tandem

@@ -735,6 +735,17 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// rcpp_decode_string
+std::vector<float> rcpp_decode_string(std::string base64_encoded);
+RcppExport SEXP _StreamFind_rcpp_decode_string(SEXP base64_encodedSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type base64_encoded(base64_encodedSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_decode_string(base64_encoded));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_project_mass_spec_new
 SEXP rcpp_project_mass_spec_new(SEXP project_xptr, CharacterVector file_paths, CharacterVector replicates, CharacterVector blanks);
 RcppExport SEXP _StreamFind_rcpp_project_mass_spec_new(SEXP project_xptrSEXP, SEXP file_pathsSEXP, SEXP replicatesSEXP, SEXP blanksSEXP) {
@@ -886,16 +897,17 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_project_mass_spec_get_spectra_tic
-DataFrame rcpp_project_mass_spec_get_spectra_tic(SEXP mass_spec_xptr, SEXP analyses, std::vector<int> levels, NumericVector rt);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_get_spectra_tic(SEXP mass_spec_xptrSEXP, SEXP analysesSEXP, SEXP levelsSEXP, SEXP rtSEXP) {
+DataFrame rcpp_project_mass_spec_get_spectra_tic(SEXP mass_spec_xptr, SEXP analyses, std::vector<int> levels, double rtmin, double rtmax);
+RcppExport SEXP _StreamFind_rcpp_project_mass_spec_get_spectra_tic(SEXP mass_spec_xptrSEXP, SEXP analysesSEXP, SEXP levelsSEXP, SEXP rtminSEXP, SEXP rtmaxSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type mass_spec_xptr(mass_spec_xptrSEXP);
     Rcpp::traits::input_parameter< SEXP >::type analyses(analysesSEXP);
     Rcpp::traits::input_parameter< std::vector<int> >::type levels(levelsSEXP);
-    Rcpp::traits::input_parameter< NumericVector >::type rt(rtSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_project_mass_spec_get_spectra_tic(mass_spec_xptr, analyses, levels, rt));
+    Rcpp::traits::input_parameter< double >::type rtmin(rtminSEXP);
+    Rcpp::traits::input_parameter< double >::type rtmax(rtmaxSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_project_mass_spec_get_spectra_tic(mass_spec_xptr, analyses, levels, rtmin, rtmax));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1084,6 +1096,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_StreamFind_rcpp_project_get_cache_size", (DL_FUNC) &_StreamFind_rcpp_project_get_cache_size, 1},
     {"_StreamFind_rcpp_project_get_cache", (DL_FUNC) &_StreamFind_rcpp_project_get_cache, 1},
     {"_StreamFind_rcpp_project_delete_cache", (DL_FUNC) &_StreamFind_rcpp_project_delete_cache, 2},
+    {"_StreamFind_rcpp_decode_string", (DL_FUNC) &_StreamFind_rcpp_decode_string, 1},
     {"_StreamFind_rcpp_project_mass_spec_new", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_new, 4},
     {"_StreamFind_rcpp_project_mass_spec_import_files", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_import_files, 4},
     {"_StreamFind_rcpp_project_mass_spec_remove_analysis", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_remove_analysis, 2},
@@ -1097,7 +1110,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_StreamFind_rcpp_project_mass_spec_set_concentrations", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_set_concentrations, 2},
     {"_StreamFind_rcpp_project_mass_spec_get_spectra_headers", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_spectra_headers, 2},
     {"_StreamFind_rcpp_project_mass_spec_get_chromatograms_headers", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_chromatograms_headers, 2},
-    {"_StreamFind_rcpp_project_mass_spec_get_spectra_tic", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_spectra_tic, 4},
+    {"_StreamFind_rcpp_project_mass_spec_get_spectra_tic", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_spectra_tic, 5},
     {"_StreamFind_rcpp_project_mass_spec_get_raw_spectra", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_raw_spectra, 15},
     {"_StreamFind_rcpp_project_mass_spec_get_raw_spectra_eic", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_raw_spectra_eic, 10},
     {"_StreamFind_rcpp_project_mass_spec_get_raw_spectra_ms1", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_raw_spectra_ms1, 13},

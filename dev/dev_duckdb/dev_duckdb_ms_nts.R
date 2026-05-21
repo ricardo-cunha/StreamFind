@@ -13,8 +13,7 @@ db_with_ms2$polarity[db_with_ms2$polarity == 1] <- "positive"
 db_with_ms2$polarity[is.na(db_with_ms2$polarity)] <- "positive"
 db_with_ms2$polarity[db_with_ms2$polarity == -1] <- "negative"
 
-db <- file.path("dev", "dev_duckdb", "data", "ms_project_test.duckdb")
-if (file.exists(db)) file.remove(db)
+
 
 #main_drive <- "D:"
 main_drive <- "E:"
@@ -31,7 +30,7 @@ ms_files_mzxml <- c(
   file.path(main_drive, "example_files", "ms_basic_mzxml", "00_hrms_mix1_pos_mzxml_cent-r003.mzXML")
 )
 
-proj <- OpenProjectMassSpecSpectra(
+proj <- open_ProjectMassSpecSpectra(
   db = db,
   project_id = "ms-demo",
   file_paths = ms_files
@@ -42,7 +41,8 @@ proj <- OpenProjectMassSpecSpectra(
   project_id = "ms-demo"
 )
 
-proj$get_cache()
+info(proj)
+get_cache(proj)
 proj$get_project_id()
 proj$get_domain()
 proj$set_metadata(
@@ -54,8 +54,8 @@ proj$set_metadata(
 proj$get_metadata()
 proj$list_tables()
 proj$get_analyses()
-proj$get_spectra_headers()
-proj$get_spectra_tic()
+get_spectra_headers(proj)
+get_spectra_tic(proj, rtmin = 200, rtmax = 400)
 proj$plot_spectra_tic(interactive = FALSE, levels = 1)
 proj$plot_spectra_bpc(interactive = FALSE, levels = 1)
 
@@ -65,7 +65,8 @@ db <- file.path("dev", "dev_duckdb", "data", "ms_project_test.duckdb")
 
 proj <- OpenProjectMassSpecSpectra(
   db = db,
-  project_id = "ms-demo"
+  project_id = "ms-demo",
+
 )
 
 
@@ -82,6 +83,8 @@ proj <- OpenProjectMassSpecSpectra(
 project_db <- file.path("dev", "dev_duckdb", "data_nts.duckdb")
 project_id <- "demo_nts"
 
+#if (file.exists(project_db)) file.remove(project_db)
+
 internal_standards <- fread(file.path("dev", "dev_duckdb", "internal_standards.csv"))
 internal_standards <- internal_standards[!is.na(rt), ]
 
@@ -92,56 +95,37 @@ ms_files <- StreamFindData::get_ms_file_paths()
 ms_files <- ms_files[grepl("ww_", ms_files)]
 
 # -----------------------------------------------------------------------------
-# 1. Overview of the public project classes
-# -----------------------------------------------------------------------------
-
-project_classes <- ProjectClasses()
-str(project_classes, max.level = 1)
-ProjectClasses("ProjectNonTargetAnalysis")
-
-# -----------------------------------------------------------------------------
 # 2. Open the NTS project
 # -----------------------------------------------------------------------------
 
-nts <- ProjectNonTargetAnalysis$new(
+nts <- open_ProjectNonTargetAnalysis(
   db = project_db,
-  project_id = project_id
+  project_id = project_id,
+  file_paths = ms_files
 )
 
-nts
+nts$set_replicate_names(c(
+  rep("neg_blank", 3),
+  rep("pos_blank", 3),
+  rep("neg_influent", 3),
+  rep("pos_influent", 3),
+  rep("neg_effluent", 3),
+  rep("pos_effluent", 3)
+))
+
+nts$set_blank_names(c(
+  rep("neg_blank", 3),
+  rep("pos_blank", 3),
+  rep("neg_blank", 3),
+  rep("pos_blank", 3),
+  rep("neg_blank", 3),
+  rep("pos_blank", 3)
+))
+
+print(nts)
 
 nts$get_domain()
-
 nts$list_tables()
-
-# -----------------------------------------------------------------------------
-# 3. Import files into the shared project DB
-#    Run this section only when the project is still empty or you want to add
-#    more analyses.
-# -----------------------------------------------------------------------------
-
-if (length(nts$get_analysis_names()) == 0) {
-  nts$import_files(file_paths = ms_files)
-
-  nts$set_replicate_names(c(
-    rep("neg_blank", 3),
-    rep("pos_blank", 3),
-    rep("neg_influent", 3),
-    rep("pos_influent", 3),
-    rep("neg_effluent", 3),
-    rep("pos_effluent", 3)
-  ))
-
-  nts$set_blank_names(c(
-    rep("neg_blank", 3),
-    rep("pos_blank", 3),
-    rep("neg_blank", 3),
-    rep("pos_blank", 3),
-    rep("neg_blank", 3),
-    rep("pos_blank", 3)
-  ))
-}
-
 info(nts)
 
 # -----------------------------------------------------------------------------
@@ -150,16 +134,62 @@ info(nts)
 
 registry <- nts$available_processing_methods()
 names(registry)
-ProjectClasses("ProjectNonTargetAnalysis")$processing_methods
-
-registry$FindFeatures_native
-registry$SuspectScreening_metfrag
+projects_overview()$ProjectNonTargetAnalysis$processing_methods
 
 # -----------------------------------------------------------------------------
-# 5. Run methods directly on the project object
-#    These calls are the primary API for testing implementations in
-#    ProjectNonTargetAnalysis.
+# 5. Run methods
 # -----------------------------------------------------------------------------
+
+nts <- open_ProjectNonTargetAnalysis(
+  db = project_db,
+  project_id = project_id
+)
+
+ffm <- Method_NonTargetAnalysis_FindFeatures(
+  rtWindows = data.frame(rtmin = numeric(), rtmax = numeric()),
+  ppmThreshold = 10,
+  noiseThreshold = 250,
+  minSNR = 3,
+  minTraces = 3,
+  baselineWindow = 200,
+  maxWidth = 250,
+  baseQuantile = 0.99,
+  debugAnalysis = "",
+  debugMZ = 0,
+  debugSpecIdx = -1L
+)
+
+run_method(nts, ffm)
+
+get_cache(nts)
+print(nts)
+
+t(get_features(
+  nts,
+  analyses = 11,
+  mass = internal_standards[4, ],
+  ppm = 20,
+  sec = 60
+))
+
+plot_features(
+  nts,
+  analyses = 11,
+  mass = internal_standards[4:6, ],
+  ppm = 20,
+  sec = 60,
+  interactive = TRUE,
+  showDetails = TRUE
+)
+
+
+
+
+
+
+
+
+
 
 features <- nts$find_features(
   rtWindows = data.frame(rtmin = numeric(), rtmax = numeric()),

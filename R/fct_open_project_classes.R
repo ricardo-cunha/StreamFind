@@ -1,13 +1,14 @@
-#' @title ProjectClasses Registry
+#' @title Projects Overview
 #' @description Return metadata describing the public StreamFind project classes.
-#'   The registry includes the class name, user-facing label, project domain,
-#'   supported input file formats, a short description, and the available
-#'   project-owned processing method names for each concrete project class.
+#'   The overview includes the class name, user-facing label, project domain,
+#'   supported input file formats, a short description, the corresponding
+#'   `open_<ProjectClass>()` function name, and discovered project-owned method
+#'   names for each concrete project class.
 #' @param project_class Optional public project class name. If `NULL`, returns the full registry.
 #' @return If `project_class` is `NULL`, a named list keyed by public project class.
 #' Otherwise, a named list describing the selected project class.
 #' @export
-ProjectClasses <- function(project_class = NULL) {
+projects_overview <- function(project_class = NULL) {
   registry <- list(
     ProjectMassSpecSpectra = list(
       project_class = "ProjectMassSpecSpectra",
@@ -15,7 +16,8 @@ ProjectClasses <- function(project_class = NULL) {
       domain = "mass_spec_spectra",
       formats = c("mzML", "mzXML", "d", "raw"),
       description = "Shared Mass Spec project focused on spectra import, raw spectra access, and spectra plots.",
-      processing_methods = list()
+      open_function = .project_open_function_name("ProjectMassSpecSpectra"),
+      processing_methods = names(.discover_project_methods("ProjectMassSpecSpectra"))
     ),
     ProjectMassSpecChromatograms = list(
       project_class = "ProjectMassSpecChromatograms",
@@ -23,7 +25,8 @@ ProjectClasses <- function(project_class = NULL) {
       domain = "mass_spec_chromatograms",
       formats = c("mzML", "mzXML", "d", "raw"),
       description = "Shared Mass Spec project focused on chromatogram extraction and chromatogram plots.",
-      processing_methods = list()
+      open_function = .project_open_function_name("ProjectMassSpecChromatograms"),
+      processing_methods = names(.discover_project_methods("ProjectMassSpecChromatograms"))
     ),
     ProjectNonTargetAnalysis = list(
       project_class = "ProjectNonTargetAnalysis",
@@ -31,7 +34,8 @@ ProjectClasses <- function(project_class = NULL) {
       domain = "mass_spec_nts",
       formats = c("mzML", "mzXML", "d", "raw"),
       description = "Shared Mass Spec project focused on non-target screening workflows, features, suspects, and downstream results.",
-      processing_methods = unique(vapply(.project_non_target_analysis_processing_methods(), `[[`, character(1), "method"))
+      open_function = .project_open_function_name("ProjectNonTargetAnalysis"),
+      processing_methods = names(.discover_project_methods("ProjectNonTargetAnalysis"))
     )
   )
 
@@ -62,7 +66,7 @@ ProjectClasses <- function(project_class = NULL) {
 #' @param blanks Optional character vector with blank names.
 #' @return A `ProjectMassSpecSpectra` object.
 #' @export
-OpenProjectMassSpecSpectra <- function(
+open_ProjectMassSpecSpectra <- function(
     db,
     project_id,
     file_paths = character(),
@@ -89,7 +93,7 @@ OpenProjectMassSpecSpectra <- function(
 #' @param blanks Optional character vector with blank names.
 #' @return A `ProjectMassSpecChromatograms` object.
 #' @export
-OpenProjectMassSpecChromatograms <- function(
+open_ProjectMassSpecChromatograms <- function(
     db,
     project_id,
     file_paths = character(),
@@ -110,8 +114,22 @@ OpenProjectMassSpecChromatograms <- function(
 #'   may be returned rather than always creating a fresh project.
 #' @param db Path to the project DuckDB file.
 #' @param project_id Active project identifier.
+#' @param file_paths Character vector with Mass Spec file paths.
+#' @param replicates Optional character vector with replicate names.
+#' @param blanks Optional character vector with blank names.
 #' @return A `ProjectNonTargetAnalysis` object.
 #' @export
-OpenProjectNonTargetAnalysis <- function(db, project_id) {
-  ProjectNonTargetAnalysis$new(db = db, project_id = project_id)
+open_ProjectNonTargetAnalysis <- function(
+    db,
+    project_id,
+    file_paths = character(),
+    replicates = character(),
+    blanks = character()) {
+  ProjectNonTargetAnalysis$new(
+    db = db,
+    project_id = project_id,
+    file_paths = file_paths,
+    replicates = replicates,
+    blanks = blanks
+  )
 }

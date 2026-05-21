@@ -2,14 +2,10 @@
 % Please edit documentation in R/class_ProjectMassSpec.R
 \name{ProjectMassSpecS3}
 \alias{ProjectMassSpecS3}
-\alias{get_chromatograms_headers.ProjectMassSpec}
-\alias{get_raw_chromatograms.ProjectMassSpec}
-\alias{plot_raw_chromatograms.ProjectMassSpec}
-\alias{get_analyses.ProjectMassSpec}
-\alias{plot_spectra_tic.ProjectMassSpec}
-\alias{plot_spectra_bpc.ProjectMassSpec}
-\alias{get_spectra_headers.ProjectMassSpec}
 \alias{info.ProjectMassSpec}
+\alias{print.ProjectMassSpec}
+\alias{show.ProjectMassSpec}
+\alias{get_analyses.ProjectMassSpec}
 \alias{add_analyses.ProjectMassSpec}
 \alias{remove_analyses.ProjectMassSpec}
 \alias{get_analysis_names.ProjectMassSpec}
@@ -19,6 +15,10 @@
 \alias{set_blank_names.ProjectMassSpec}
 \alias{get_concentrations.ProjectMassSpec}
 \alias{set_concentrations.ProjectMassSpec}
+\alias{get_spectra_headers.ProjectMassSpec}
+\alias{get_spectra_tic.ProjectMassSpec}
+\alias{plot_spectra_tic.ProjectMassSpec}
+\alias{plot_spectra_bpc.ProjectMassSpec}
 \alias{get_raw_spectra.ProjectMassSpec}
 \alias{get_raw_spectra_eic.ProjectMassSpec}
 \alias{plot_raw_spectra_eic.ProjectMassSpec}
@@ -26,72 +26,27 @@
 \alias{plot_raw_spectra_ms2.ProjectMassSpec}
 \alias{get_raw_spectra_ms1.ProjectMassSpec}
 \alias{get_raw_spectra_ms2.ProjectMassSpec}
+\alias{get_chromatograms_headers.ProjectMassSpec}
+\alias{get_raw_chromatograms.ProjectMassSpec}
+\alias{plot_raw_chromatograms.ProjectMassSpec}
 \title{ProjectMassSpec S3 Methods}
 \usage{
-\method{get_chromatograms_headers}{ProjectMassSpec}(x, analyses = NULL)
+\method{info}{ProjectMassSpec}(x)
 
-\method{get_raw_chromatograms}{ProjectMassSpec}(
-  x,
-  analyses = NULL,
-  chromatograms = NULL,
-  rtmin = 0,
-  rtmax = 0,
-  minIntensity = NULL
-)
+\method{print}{ProjectMassSpec}(x, ...)
 
-\method{plot_raw_chromatograms}{ProjectMassSpec}(
-  x,
-  analyses = NULL,
-  chromatograms = NULL,
-  rtmin = 0,
-  rtmax = 0,
-  minIntensity = NULL,
-  downsize = NULL,
-  xLab = NULL,
-  yLab = NULL,
-  title = NULL,
-  groupBy = "analysis",
-  interactive = TRUE,
-  colorPalette = NULL
-)
+\method{show}{ProjectMassSpec}(x, ...)
 
 \method{get_analyses}{ProjectMassSpec}(x)
 
-\method{plot_spectra_tic}{ProjectMassSpec}(
+\method{add_analyses}{ProjectMassSpec}(
   x,
-  analyses = NULL,
-  levels = c(1, 2),
-  rt = NULL,
-  downsize = NULL,
-  xLab = NULL,
-  yLab = NULL,
-  title = NULL,
-  groupBy = "analysis",
-  interactive = TRUE,
-  colorPalette = NULL
+  file_paths = character(),
+  replicates = character(),
+  blanks = character()
 )
 
-\method{plot_spectra_bpc}{ProjectMassSpec}(
-  x,
-  analyses = NULL,
-  levels = c(1, 2),
-  rt = NULL,
-  downsize = NULL,
-  xLab = NULL,
-  yLab = NULL,
-  title = NULL,
-  groupBy = "analysis",
-  interactive = TRUE,
-  colorPalette = NULL
-)
-
-\method{get_spectra_headers}{ProjectMassSpec}(x, analyses = NULL)
-
-\method{info}{ProjectMassSpec}(x, ...)
-
-\method{add_analyses}{ProjectMassSpec}(x, ...)
-
-\method{remove_analyses}{ProjectMassSpec}(x, ...)
+\method{remove_analyses}{ProjectMassSpec}(x, analyses = character())
 
 \method{get_analysis_names}{ProjectMassSpec}(x)
 
@@ -106,6 +61,46 @@
 \method{get_concentrations}{ProjectMassSpec}(x)
 
 \method{set_concentrations}{ProjectMassSpec}(x, value)
+
+\method{get_spectra_headers}{ProjectMassSpec}(x, analyses = character())
+
+\method{get_spectra_tic}{ProjectMassSpec}(
+  x,
+  analyses = character(),
+  levels = integer(),
+  rtmin = numeric(),
+  rtmax = numeric()
+)
+
+\method{plot_spectra_tic}{ProjectMassSpec}(
+  x,
+  analyses = character(),
+  levels = c(1, 2),
+  rtmin = numeric(),
+  rtmax = numeric(),
+  downsize = NULL,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colorPalette = NULL
+)
+
+\method{plot_spectra_bpc}{ProjectMassSpec}(
+  x,
+  analyses = character(),
+  levels = c(1, 2),
+  rtmin = numeric(),
+  rtmax = numeric(),
+  downsize = NULL,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colorPalette = NULL
+)
 
 \method{get_raw_spectra}{ProjectMassSpec}(
   x,
@@ -237,14 +232,51 @@
   presence = 0,
   minIntensity = 0
 )
+
+\method{get_chromatograms_headers}{ProjectMassSpec}(x, analyses = NULL)
+
+\method{get_raw_chromatograms}{ProjectMassSpec}(
+  x,
+  analyses = NULL,
+  chromatograms = NULL,
+  rtmin = 0,
+  rtmax = 0,
+  minIntensity = NULL
+)
+
+\method{plot_raw_chromatograms}{ProjectMassSpec}(
+  x,
+  analyses = NULL,
+  chromatograms = NULL,
+  rtmin = 0,
+  rtmax = 0,
+  minIntensity = NULL,
+  downsize = NULL,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colorPalette = NULL
+)
 }
 \arguments{
 \item{x}{A \code{ProjectMassSpec} object.}
 
+\item{...}{Additional arguments passed to the method or ignored by the implementation.}
+
+\item{file_paths}{Character vector with Mass Spec file paths.}
+
+\item{replicates}{Optional character vector with replicate names.}
+
+\item{blanks}{Optional character vector with blank names.}
+
 \item{analyses}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
-\item{chromatograms}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
+\item{value}{An object that highly depends on the method. Check the specific method documentation for details.}
+
+\item{levels}{Integer vector with the levels of MS data.}
 
 \item{rtmin}{Numeric (length 1) with the minimum retention time.}
 
@@ -264,12 +296,6 @@ object.}
 
 \item{colorPalette}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
-\item{levels}{Integer vector with the levels of MS data.}
-
-\item{rt}{A vector with target retention time values (in seconds) or
-a two columns data.table or data.frame with minimum and maximum retention
-time values (in seconds).}
-
 \item{mass}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
 and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
 and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
@@ -288,6 +314,10 @@ calculate the ranges. Also works with a data.table or data.frame with minimum an
 retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
 \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
 arguments are not used.}
+
+\item{rt}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
 
 \item{mobility}{A vector with target drift time values (in milliseconds) or
 a two columns data.table or data.frame with minimum and maximum drift
@@ -318,30 +348,40 @@ data (i.e., MS1 data).}
 \item{minIntensityMS2}{Numeric value with the minimum intensity of level 2
 data (i.e., MS2 data).}
 
+\item{mzClust}{Numeric (length 1) with the mass deviation threshold (in Da) to cluster mass traces. Highly dependent
+on the mass resolution of the MS data.}
+
+\item{presence}{Numeric (length 1) with the required presence ratio from 0 (i.e., doesn't need to be present in any
+spectra) to 1 (i.e., must be present in all spectra) for traces during clustering of spectra.}
+
+\item{minIntensity}{Numeric (length 1) with the minimum intensity.}
+
 \item{normalized}{A logical value indicating whether the result should be normalized.}
 
 \item{showText}{Logical (length 1), set to \code{TRUE} to show the text annotations.}
+
+\item{chromatograms}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
+
+\item{db}{Path to DuckDB file.}
+
+\item{project_id}{Active project identifier.}
+
+\item{file}{A \emph{json} or \emph{rds} file to be imported.}
+
+\item{analysis}{Character scalar with the analysis name.}
 }
 \description{
 S3 interface methods for \code{ProjectMassSpec}.
 }
 \section{Functions}{
 \itemize{
-\item \code{get_chromatograms_headers(ProjectMassSpec)}: Return chromatogram headers for selected analyses.
+\item \code{info(ProjectMassSpec)}: Print a short information table for the project analyses.
 
-\item \code{get_raw_chromatograms(ProjectMassSpec)}: Get raw chromatograms for selected analyses.
+\item \code{print(ProjectMassSpec)}: Print a short summary.
 
-\item \code{plot_raw_chromatograms(ProjectMassSpec)}: Plot raw chromatograms for selected analyses.
+\item \code{show(ProjectMassSpec)}: Show a short summary.
 
 \item \code{get_analyses(ProjectMassSpec)}: Return imported analyses.
-
-\item \code{plot_spectra_tic(ProjectMassSpec)}: Plot total ion current (TIC) spectra for specified analyses.
-
-\item \code{plot_spectra_bpc(ProjectMassSpec)}: Plot base peak chromatogram (BPC) spectra for specified analyses.
-
-\item \code{get_spectra_headers(ProjectMassSpec)}: Fetch spectra headers for specified analyses.
-
-\item \code{info(ProjectMassSpec)}: Print a short information table for the project analyses.
 
 \item \code{add_analyses(ProjectMassSpec)}: Import one or more data files into the project as analyses.
 
@@ -361,6 +401,14 @@ S3 interface methods for \code{ProjectMassSpec}.
 
 \item \code{set_concentrations(ProjectMassSpec)}: Set concentrations for the project analyses.
 
+\item \code{get_spectra_headers(ProjectMassSpec)}: Fetch spectra headers for specified analyses.
+
+\item \code{get_spectra_tic(ProjectMassSpec)}: Return spectra TIC rows for selected analyses.
+
+\item \code{plot_spectra_tic(ProjectMassSpec)}: Plot total ion current (TIC) spectra for specified analyses.
+
+\item \code{plot_spectra_bpc(ProjectMassSpec)}: Plot base peak chromatogram (BPC) spectra for specified analyses.
+
 \item \code{get_raw_spectra(ProjectMassSpec)}: Get raw spectra data for specified analyses; returns a data.table with spectra rows.
 
 \item \code{get_raw_spectra_eic(ProjectMassSpec)}: Get extracted ion chromatograms (EIC) for specified analyses.
@@ -374,5 +422,11 @@ S3 interface methods for \code{ProjectMassSpec}.
 \item \code{get_raw_spectra_ms1(ProjectMassSpec)}: Get clustered MS1 spectra for specified analyses and targets.
 
 \item \code{get_raw_spectra_ms2(ProjectMassSpec)}: Get clustered MS2 spectra for specified analyses and targets.
+
+\item \code{get_chromatograms_headers(ProjectMassSpec)}: Return chromatogram headers for selected analyses.
+
+\item \code{get_raw_chromatograms(ProjectMassSpec)}: Get raw chromatograms for selected analyses.
+
+\item \code{plot_raw_chromatograms(ProjectMassSpec)}: Plot raw chromatograms for selected analyses.
 
 }}

@@ -17,11 +17,13 @@
 \alias{delete_cache.Project}
 \alias{list_tables.Project}
 \alias{available_processing_methods.Project}
-\alias{run_processing_step.Project}
+\alias{run_method.Project}
 \alias{run_workflow.Project}
 \alias{report_quarto.Project}
 \alias{run_app.Project}
 \alias{copy.Project}
+\alias{print.Project}
+\alias{show.Project}
 \title{Project S3 Methods}
 \usage{
 \method{get_ptr}{Project}(x)
@@ -54,7 +56,7 @@
 
 \method{available_processing_methods}{Project}(x)
 
-\method{run_processing_step}{Project}(x, step)
+\method{run_method}{Project}(x, step)
 
 \method{run_workflow}{Project}(x, workflow = NULL)
 
@@ -69,29 +71,13 @@
 \method{run_app}{Project}(x)
 
 \method{copy}{Project}(x, db = x$get_db(), project_id = x$get_project_id())
+
+\method{print}{Project}(x, ...)
+
+\method{show}{Project}(x, ...)
 }
 \arguments{
 \item{x}{A \code{Project} object.}
-
-\item{value}{An object that highly depends on the method. Check the specific method documentation for details.}
-
-\item{name}{Optional cache name to delete. Use \code{NULL} to delete all cache rows.}
-
-\item{step}{A \code{ProcessingStep} object or a compatible list describing a workflow step.}
-
-\item{workflow}{A \code{Workflow} object or a compatible list of processing steps.}
-
-\item{template}{Full path to a template file (e.g. a Quarto \code{.qmd} file).}
-
-\item{output_file}{Output file name or path; file extension is handled by the caller.}
-
-\item{execute_dir}{Directory in which to execute rendering or related operations.}
-
-\item{...}{Additional arguments passed to the method or ignored by the implementation.}
-
-\item{db}{Path to DuckDB file.}
-
-\item{project_id}{Active project identifier.}
 }
 \description{
 S3 wrappers for \code{Project} R6 methods providing a thin functional interface.
@@ -126,9 +112,9 @@ S3 wrappers for \code{Project} R6 methods providing a thin functional interface.
 
 \item \code{list_tables(Project)}: List tables in the project database.
 
-\item \code{available_processing_methods(Project)}: Return project-owned processing-step metadata.
+\item \code{available_processing_methods(Project)}: Return project-owned method metadata.
 
-\item \code{run_processing_step(Project)}: Run one workflow step via its owning project method.
+\item \code{run_method(Project)}: Run one workflow method via its owning project method.
 
 \item \code{run_workflow(Project)}: Run the active workflow or supplied \code{workflow}.
 
@@ -137,5 +123,9 @@ S3 wrappers for \code{Project} R6 methods providing a thin functional interface.
 \item \code{run_app(Project)}: Run the StreamFind app using the active project as startup context.
 
 \item \code{copy(Project)}: Copy this project to another database and/or project id, returning a new \code{Project} object.
+
+\item \code{print(Project)}: Print a short summary.
+
+\item \code{show(Project)}: Show a short summary.
 
 }}

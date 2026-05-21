@@ -7,11 +7,11 @@
 Workflow(processing_steps = list())
 }
 \arguments{
-\item{processing_steps}{A list of \code{ProcessingStep} objects or compatible lists.}
+\item{processing_steps}{A list of \code{Method} objects or compatible lists.}
 }
 \value{
 A \code{Workflow} object.
 }
 \description{
-Ordered list of \code{ProcessingStep} metadata objects.
+Ordered list of \code{Method} metadata objects.
 }

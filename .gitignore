@@ -25,7 +25,9 @@
 *.so
 *.dll
 *.html
+# Ignore CSVs everywhere except in the dev/ folder
 *.csv
+!dev/**/*.csv
 *.duckdb
 .Rproj.user
 /.quarto/

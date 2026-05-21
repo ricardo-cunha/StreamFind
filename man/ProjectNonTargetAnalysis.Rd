@@ -16,22 +16,22 @@ R6 child of \code{ProjectMassSpec} exposing the non-target analysis-focused NTS 
 \item \href{#method-ProjectNonTargetAnalysis-new}{\code{ProjectNonTargetAnalysis$new()}}
 \item \href{#method-ProjectNonTargetAnalysis-get_nts_ptr}{\code{ProjectNonTargetAnalysis$get_nts_ptr()}}
 \item \href{#method-ProjectNonTargetAnalysis-available_processing_methods}{\code{ProjectNonTargetAnalysis$available_processing_methods()}}
-\item \href{#method-ProjectNonTargetAnalysis-get_suspects}{\code{ProjectNonTargetAnalysis$get_suspects()}}
-\item \href{#method-ProjectNonTargetAnalysis-get_internal_standards}{\code{ProjectNonTargetAnalysis$get_internal_standards()}}
-\item \href{#method-ProjectNonTargetAnalysis-get_transformation_products}{\code{ProjectNonTargetAnalysis$get_transformation_products()}}
-\item \href{#method-ProjectNonTargetAnalysis-get_features}{\code{ProjectNonTargetAnalysis$get_features()}}
-\item \href{#method-ProjectNonTargetAnalysis-get_features_profile}{\code{ProjectNonTargetAnalysis$get_features_profile()}}
-\item \href{#method-ProjectNonTargetAnalysis-get_features_count}{\code{ProjectNonTargetAnalysis$get_features_count()}}
 \item \href{#method-ProjectNonTargetAnalysis-info}{\code{ProjectNonTargetAnalysis$info()}}
+\item \href{#method-ProjectNonTargetAnalysis-get_features}{\code{ProjectNonTargetAnalysis$get_features()}}
+\item \href{#method-ProjectNonTargetAnalysis-get_features_count}{\code{ProjectNonTargetAnalysis$get_features_count()}}
 \item \href{#method-ProjectNonTargetAnalysis-plot_features_count}{\code{ProjectNonTargetAnalysis$plot_features_count()}}
+\item \href{#method-ProjectNonTargetAnalysis-get_features_profile}{\code{ProjectNonTargetAnalysis$get_features_profile()}}
 \item \href{#method-ProjectNonTargetAnalysis-plot_features_profile}{\code{ProjectNonTargetAnalysis$plot_features_profile()}}
 \item \href{#method-ProjectNonTargetAnalysis-plot_features}{\code{ProjectNonTargetAnalysis$plot_features()}}
 \item \href{#method-ProjectNonTargetAnalysis-map_features}{\code{ProjectNonTargetAnalysis$map_features()}}
 \item \href{#method-ProjectNonTargetAnalysis-plot_features_ms1}{\code{ProjectNonTargetAnalysis$plot_features_ms1()}}
 \item \href{#method-ProjectNonTargetAnalysis-plot_features_ms2}{\code{ProjectNonTargetAnalysis$plot_features_ms2()}}
+\item \href{#method-ProjectNonTargetAnalysis-get_internal_standards}{\code{ProjectNonTargetAnalysis$get_internal_standards()}}
+\item \href{#method-ProjectNonTargetAnalysis-get_suspects}{\code{ProjectNonTargetAnalysis$get_suspects()}}
 \item \href{#method-ProjectNonTargetAnalysis-plot_suspects_ms2}{\code{ProjectNonTargetAnalysis$plot_suspects_ms2()}}
 \item \href{#method-ProjectNonTargetAnalysis-get_fold_change}{\code{ProjectNonTargetAnalysis$get_fold_change()}}
 \item \href{#method-ProjectNonTargetAnalysis-plot_fold_change}{\code{ProjectNonTargetAnalysis$plot_fold_change()}}
+\item \href{#method-ProjectNonTargetAnalysis-get_transformation_products}{\code{ProjectNonTargetAnalysis$get_transformation_products()}}
 \item \href{#method-ProjectNonTargetAnalysis-plot_transformation_products}{\code{ProjectNonTargetAnalysis$plot_transformation_products()}}
 \item \href{#method-ProjectNonTargetAnalysis-print}{\code{ProjectNonTargetAnalysis$print()}}
 \item \href{#method-ProjectNonTargetAnalysis-show}{\code{ProjectNonTargetAnalysis$show()}}
@@ -54,7 +54,7 @@ R6 child of \code{ProjectMassSpec} exposing the non-target analysis-focused NTS 
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="list_tables"><a href='../../StreamFind/html/Project.html#method-Project-list_tables'><code>StreamFind::Project$list_tables()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="report_quarto"><a href='../../StreamFind/html/Project.html#method-Project-report_quarto'><code>StreamFind::Project$report_quarto()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_app"><a href='../../StreamFind/html/Project.html#method-Project-run_app'><code>StreamFind::Project$run_app()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_processing_step"><a href='../../StreamFind/html/Project.html#method-Project-run_processing_step'><code>StreamFind::Project$run_processing_step()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_method"><a href='../../StreamFind/html/Project.html#method-Project-run_method'><code>StreamFind::Project$run_method()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_workflow"><a href='../../StreamFind/html/Project.html#method-Project-run_workflow'><code>StreamFind::Project$run_workflow()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="set_metadata"><a href='../../StreamFind/html/Project.html#method-Project-set_metadata'><code>StreamFind::Project$set_metadata()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="set_workflow"><a href='../../StreamFind/html/Project.html#method-Project-set_workflow'><code>StreamFind::Project$set_workflow()</code></a></span></li>
@@ -93,7 +93,14 @@ R6 child of \code{ProjectMassSpec} exposing the non-target analysis-focused NTS 
 \subsection{Method \code{new()}}{
 Create an NTS domain wrapper on top of a shared Mass Spec project.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$new(db, project_id, ...)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$new(
+  db,
+  project_id,
+  ...,
+  file_paths = character(),
+  replicates = character(),
+  blanks = character()
+)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{
@@ -104,6 +111,12 @@ Create an NTS domain wrapper on top of a shared Mass Spec project.
 \item{\code{project_id}}{Active project identifier.}
 
 \item{\code{...}}{Additional arguments passed to the method or ignored by the implementation.}
+
+\item{\code{file_paths}}{Character vector with Mass Spec file paths.}
+
+\item{\code{replicates}}{Optional character vector with replicate names.}
+
+\item{\code{blanks}}{Optional character vector with blank names.}
 }
 \if{html}{\out{</div>}}
 }
@@ -122,172 +135,24 @@ Return the native NTS pointer.
 \if{html}{\out{<a id="method-ProjectNonTargetAnalysis-available_processing_methods"></a>}}
 \if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-available_processing_methods}{}}}
 \subsection{Method \code{available_processing_methods()}}{
-Return project-owned NTS processing-step metadata.
+Return project-owned NTS method metadata.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$available_processing_methods()}\if{html}{\out{</div>}}
 }
 
 \subsection{Returns}{
-A named list of \code{ProcessingStep} metadata objects.
+A named list of \code{Method} metadata objects.
 }
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ProjectNonTargetAnalysis-get_suspects"></a>}}
-\if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-get_suspects}{}}}
-\subsection{Method \code{get_suspects()}}{
-Return shared \code{NTS_SUSPECTS} rows for selected analyses.
+\if{html}{\out{<a id="method-ProjectNonTargetAnalysis-info"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-info}{}}}
+\subsection{Method \code{info()}}{
+Return a compact per-analysis feature summary.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$get_suspects(
-  analyses = NULL,
-  features = NULL,
-  groups = NULL,
-  mass = NULL,
-  mz = NULL,
-  rt = NULL,
-  mobility = NULL,
-  ppm = 20,
-  sec = 60,
-  millisec = 5
-)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$info()}\if{html}{\out{</div>}}
 }
 
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{features}}{A character vector with the feature IDs or a data.frame or data.table with a column named \code{feature}
-with the feature IDs. A column named \code{analysis} can be given to specify from which analyses the features matched.}
-
-\item{\code{groups}}{A numeric or character vector with feature group IDs, or a data.frame/data.table with a \code{feature_group} (or \code{group}) column; an optional \code{analysis} column restricts analyses and a \code{name} column sets custom labels.}
-
-\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
-and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
-and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
-data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
-and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
-minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
-must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
-\code{ppm}, \code{sec} and \code{millisec}
-arguments are not used.}
-
-\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
-\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
-retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
-and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
-calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
-retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
-\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
-arguments are not used.}
-
-\item{\code{rt}}{A vector with target retention time values (in seconds) or
-a two columns data.table or data.frame with minimum and maximum retention
-time values (in seconds).}
-
-\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
-a two columns data.table or data.frame with minimum and maximum drift
-time values (in milliseconds).}
-
-\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
-
-\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
-
-\item{\code{millisec}}{Numeric of length one with the drift time deviation,
-in milliseconds.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ProjectNonTargetAnalysis-get_internal_standards"></a>}}
-\if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-get_internal_standards}{}}}
-\subsection{Method \code{get_internal_standards()}}{
-Return shared \code{NTS_INTERNAL_STANDARDS} rows for selected analyses.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$get_internal_standards(
-  analyses = NULL,
-  features = NULL,
-  groups = NULL,
-  mass = NULL,
-  mz = NULL,
-  rt = NULL,
-  mobility = NULL,
-  ppm = 20,
-  sec = 60,
-  millisec = 5
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{features}}{A character vector with the feature IDs or a data.frame or data.table with a column named \code{feature}
-with the feature IDs. A column named \code{analysis} can be given to specify from which analyses the features matched.}
-
-\item{\code{groups}}{A numeric or character vector with feature group IDs, or a data.frame/data.table with a \code{feature_group} (or \code{group}) column; an optional \code{analysis} column restricts analyses and a \code{name} column sets custom labels.}
-
-\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
-and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
-and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
-data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
-and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
-minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
-must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
-\code{ppm}, \code{sec} and \code{millisec}
-arguments are not used.}
-
-\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
-\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
-retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
-and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
-calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
-retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
-\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
-arguments are not used.}
-
-\item{\code{rt}}{A vector with target retention time values (in seconds) or
-a two columns data.table or data.frame with minimum and maximum retention
-time values (in seconds).}
-
-\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
-a two columns data.table or data.frame with minimum and maximum drift
-time values (in milliseconds).}
-
-\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
-
-\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
-
-\item{\code{millisec}}{Numeric of length one with the drift time deviation,
-in milliseconds.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ProjectNonTargetAnalysis-get_transformation_products"></a>}}
-\if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-get_transformation_products}{}}}
-\subsection{Method \code{get_transformation_products()}}{
-Return shared \code{NTS_TRANSFORMATION_PRODUCTS} rows.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$get_transformation_products(
-  parents = NULL,
-  groups = NULL
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{parents}}{Optional parent names to keep.}
-
-\item{\code{groups}}{A numeric or character vector with feature group IDs, or a data.frame/data.table with a \code{feature_group} (or \code{group}) column; an optional \code{analysis} column restricts analyses and a \code{name} column sets custom labels.}
-}
-\if{html}{\out{</div>}}
-}
 }
 \if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ProjectNonTargetAnalysis-get_features"></a>}}
@@ -364,6 +229,66 @@ in milliseconds.}
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectNonTargetAnalysis-get_features_count"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-get_features_count}{}}}
+\subsection{Method \code{get_features_count()}}{
+Return a per-analysis summary of shared \code{NTS_FEATURES} rows.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$get_features_count(analyses = NULL, filtered = FALSE)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{filtered}}{Logical (length 1). When \code{TRUE}, filtered features/groups are considered.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectNonTargetAnalysis-plot_features_count"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-plot_features_count}{}}}
+\subsection{Method \code{plot_features_count()}}{
+Plot the number of features for selected analyses.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$plot_features_count(
+  analyses = NULL,
+  filtered = FALSE,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  showLegend = TRUE,
+  showHoverText = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{filtered}}{Logical (length 1). When \code{TRUE}, filtered features/groups are considered.}
+
+\item{\code{yLab}}{A string with the title for the y axis.}
+
+\item{\code{yLab}}{A string with the title for the y axis.}
+
+\item{\code{title}}{A string with the title.}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{showLegend}}{Logical (length 1). Set to \code{TRUE} to show legend.}
+
+\item{\code{showHoverText}}{Logical (length 1), set to \code{TRUE} to show hovering text annotations.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ProjectNonTargetAnalysis-get_features_profile"></a>}}
 \if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-get_features_profile}{}}}
 \subsection{Method \code{get_features_profile()}}{
@@ -426,76 +351,6 @@ time values (in milliseconds).}
 in milliseconds.}
 
 \item{\code{filtered}}{Logical (length 1). When \code{TRUE}, filtered features/groups are considered.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ProjectNonTargetAnalysis-get_features_count"></a>}}
-\if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-get_features_count}{}}}
-\subsection{Method \code{get_features_count()}}{
-Return a per-analysis summary of shared \code{NTS_FEATURES} rows.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$get_features_count(analyses = NULL, filtered = FALSE)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{filtered}}{Logical (length 1). When \code{TRUE}, filtered features/groups are considered.}
-}
-\if{html}{\out{</div>}}
-}
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ProjectNonTargetAnalysis-info"></a>}}
-\if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-info}{}}}
-\subsection{Method \code{info()}}{
-Return a compact per-analysis feature summary.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$info()}\if{html}{\out{</div>}}
-}
-
-}
-\if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-ProjectNonTargetAnalysis-plot_features_count"></a>}}
-\if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-plot_features_count}{}}}
-\subsection{Method \code{plot_features_count()}}{
-Plot the number of features for selected analyses.
-\subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$plot_features_count(
-  analyses = NULL,
-  filtered = FALSE,
-  yLab = NULL,
-  title = NULL,
-  groupBy = "analysis",
-  showLegend = TRUE,
-  showHoverText = TRUE
-)}\if{html}{\out{</div>}}
-}
-
-\subsection{Arguments}{
-\if{html}{\out{<div class="arguments">}}
-\describe{
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
-\item{\code{filtered}}{Logical (length 1). When \code{TRUE}, filtered features/groups are considered.}
-
-\item{\code{yLab}}{A string with the title for the y axis.}
-
-\item{\code{yLab}}{A string with the title for the y axis.}
-
-\item{\code{title}}{A string with the title.}
-
-\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
-
-\item{\code{showLegend}}{Logical (length 1). Set to \code{TRUE} to show legend.}
-
-\item{\code{showHoverText}}{Logical (length 1), set to \code{TRUE} to show hovering text annotations.}
 }
 \if{html}{\out{</div>}}
 }
@@ -973,6 +828,142 @@ in milliseconds.}
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectNonTargetAnalysis-get_internal_standards"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-get_internal_standards}{}}}
+\subsection{Method \code{get_internal_standards()}}{
+Return shared \code{NTS_INTERNAL_STANDARDS} rows for selected analyses.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$get_internal_standards(
+  analyses = NULL,
+  features = NULL,
+  groups = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{features}}{A character vector with the feature IDs or a data.frame or data.table with a column named \code{feature}
+with the feature IDs. A column named \code{analysis} can be given to specify from which analyses the features matched.}
+
+\item{\code{groups}}{A numeric or character vector with feature group IDs, or a data.frame/data.table with a \code{feature_group} (or \code{group}) column; an optional \code{analysis} column restricts analyses and a \code{name} column sets custom labels.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectNonTargetAnalysis-get_suspects"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-get_suspects}{}}}
+\subsection{Method \code{get_suspects()}}{
+Return shared \code{NTS_SUSPECTS} rows for selected analyses.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$get_suspects(
+  analyses = NULL,
+  features = NULL,
+  groups = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{features}}{A character vector with the feature IDs or a data.frame or data.table with a column named \code{feature}
+with the feature IDs. A column named \code{analysis} can be given to specify from which analyses the features matched.}
+
+\item{\code{groups}}{A numeric or character vector with feature group IDs, or a data.frame/data.table with a \code{feature_group} (or \code{group}) column; an optional \code{analysis} column restricts analyses and a \code{name} column sets custom labels.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ProjectNonTargetAnalysis-plot_suspects_ms2"></a>}}
 \if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-plot_suspects_ms2}{}}}
 \subsection{Method \code{plot_suspects_ms2()}}{
@@ -1256,6 +1247,28 @@ correction is ignored even if set to \code{TRUE}.}
 \item{\code{interactive}}{Logical (length 1). When \code{TRUE}, the data is plotted interactively using \pkg{plotly}.}
 
 \item{\code{showLegend}}{Logical (length 1). Set to \code{TRUE} to show legend.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectNonTargetAnalysis-get_transformation_products"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-get_transformation_products}{}}}
+\subsection{Method \code{get_transformation_products()}}{
+Return shared \code{NTS_TRANSFORMATION_PRODUCTS} rows.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$get_transformation_products(
+  parents = NULL,
+  groups = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{parents}}{Optional parent names to keep.}
+
+\item{\code{groups}}{A numeric or character vector with feature group IDs, or a data.frame/data.table with a \code{feature_group} (or \code{group}) column; an optional \code{analysis} column restricts analyses and a \code{name} column sets custom labels.}
 }
 \if{html}{\out{</div>}}
 }

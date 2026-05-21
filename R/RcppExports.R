@@ -201,6 +201,10 @@ rcpp_project_delete_cache <- function(project_xptr, name = NULL) {
     invisible(.Call(`_StreamFind_rcpp_project_delete_cache`, project_xptr, name))
 }
 
+rcpp_decode_string <- function(base64_encoded) {
+    .Call(`_StreamFind_rcpp_decode_string`, base64_encoded)
+}
+
 rcpp_project_mass_spec_new <- function(project_xptr, file_paths, replicates, blanks) {
     .Call(`_StreamFind_rcpp_project_mass_spec_new`, project_xptr, file_paths, replicates, blanks)
 }
@@ -253,8 +257,8 @@ rcpp_project_mass_spec_get_chromatograms_headers <- function(mass_spec_xptr, ana
     .Call(`_StreamFind_rcpp_project_mass_spec_get_chromatograms_headers`, mass_spec_xptr, analyses)
 }
 
-rcpp_project_mass_spec_get_spectra_tic <- function(mass_spec_xptr, analyses, levels, rt) {
-    .Call(`_StreamFind_rcpp_project_mass_spec_get_spectra_tic`, mass_spec_xptr, analyses, levels, rt)
+rcpp_project_mass_spec_get_spectra_tic <- function(mass_spec_xptr, analyses, levels, rtmin, rtmax) {
+    .Call(`_StreamFind_rcpp_project_mass_spec_get_spectra_tic`, mass_spec_xptr, analyses, levels, rtmin, rtmax)
 }
 
 rcpp_project_mass_spec_get_raw_spectra <- function(mass_spec_xptr, analyses, levels, mass, mz, rt, mobility, id, ppm, sec, millisec, all_traces, isolation_window, min_intensity_ms1, min_intensity_ms2) {

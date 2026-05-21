@@ -2175,4 +2175,8 @@ void nts::deconvolution::find_features_impl(
 
     std::cout << "  5/5 Processing complete" << std::endl;
   }
+
+  std::cout << " " << std::endl;
+  std::cout << " Completed!" << std::endl;
+  std::cout << " " << std::endl;
 };

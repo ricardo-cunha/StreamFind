@@ -1,15 +1,15 @@
 #' @title Internal Project Base R6 Class
 #' @description Internal DuckDB-backed StreamFind project runtime.
-#' @template arg-db-path
-#' @template arg-project-id
-#' @template arg-value
-#' @template arg-step
-#' @template arg-workflow
-#' @template arg-template
-#' @template arg-output-file
-#' @template arg-execute-dir
-#' @template arg-cache-name
-#' @template arg-ellipsis
+#' @template arg-Project-db
+#' @template arg-Project-project-id
+#' @template arg-Project-value
+#' @template arg-Project-cache-name
+#' @template arg-Project-step
+#' @template arg-Project-workflow
+#' @template arg-Project-template
+#' @template arg-Project-output-file
+#' @template arg-Project-execute-dir
+#' @template arg-Project-ellipsis
 #' @keywords internal
 #'
 Project <- R6::R6Class(
@@ -20,7 +20,6 @@ Project <- R6::R6Class(
     .db = NULL,
     .project_id = NULL
   ),
-
   public = list(
     #' @description Create a new `Project` handle.
     initialize = function(db, project_id, ...) {
@@ -28,9 +27,6 @@ Project <- R6::R6Class(
       ptr_res <- .pull_internal_init_arg(dots, ".ptr")
       .ptr <- ptr_res$value
       .assert_only_internal_init_args(ptr_res$dots, "Project$initialize()")
-      if (!requireNamespace("duckdb", quietly = TRUE)) {
-        stop("duckdb package is required for Project")
-      }
       checkmate::assert_character(db, len = 1)
       checkmate::assert_character(project_id, len = 1)
       private$.db <- db
@@ -51,273 +47,105 @@ Project <- R6::R6Class(
     },
     #' @description Validate the project schema and row state.
     validate = function() {
-      rcpp_project_validate(private$.ptr)
-      invisible(self)
+      validate.Project(self)
     },
     #' @description Get the project metadata.
     get_metadata = function() {
-      value <- rcpp_project_get_metadata(private$.ptr)
-      if (is.null(value) || identical(value, "") || identical(value, "null")) NULL else jsonlite::fromJSON(value)
+      get_metadata.Project(self)
     },
     #' @description Set the project metadata.
     set_metadata = function(value) {
-      metadata_json <- if (is.null(value)) {
-        "null"
-      } else if (is.character(value) && length(value) == 1L) {
-        value
-      } else {
-        as.character(.convert_to_json(value))
-      }
-      rcpp_project_set_metadata(private$.ptr, metadata_json)
-      invisible(self)
+      set_metadata.Project(self, value)
     },
     #' @description Get the project domain.
     get_domain = function() {
-      value <- rcpp_project_get_domain(private$.ptr)
-      if (is.null(value) || identical(value, "")) NULL else value
+      get_domain.Project(self)
     },
     #' @description Get the project workflow.
     get_workflow = function() {
-      value <- rcpp_project_get_workflow(private$.ptr)
-      if (is.null(value) || identical(value, "") || identical(value, "null")) NULL else jsonlite::fromJSON(value)
+      get_workflow.Project(self)
     },
     #' @description Set the project workflow.
     set_workflow = function(value) {
-      workflow_json <- if (is.null(value)) {
-        "null"
-      } else if (is.character(value) && length(value) == 1L) {
-        value
-      } else {
-        as.character(.convert_to_json(value))
-      }
-      rcpp_project_set_workflow(private$.ptr, workflow_json)
-      invisible(self)
+      set_workflow.Project(self, value)
     },
     #' @description Return all audit entries.
     get_audit = function() {
-      rcpp_project_get_audit(private$.ptr)
+      get_audit.Project(self)
     },
     #' @description Return the number of cache rows.
     get_cache_size = function() {
-      as.integer(rcpp_project_get_cache_size(private$.ptr))
+      get_cache_size.Project(self)
     },
     #' @description Return cache rows for the active project.
     get_cache = function() {
-      rcpp_project_get_cache(private$.ptr)
+      get_cache.Project(self)
     },
     #' @description Delete cache rows, optionally filtered by cache name.
     delete_cache = function(name = NULL) {
-      if (!is.null(name)) {
-        checkmate::assert_character(name, len = 1, any.missing = FALSE)
-      }
-      rcpp_project_delete_cache(private$.ptr, name)
-      invisible(self)
+      delete_cache.Project(self, name = name)
     },
     #' @description List tables in the project database.
     list_tables = function() {
-      rcpp_project_list_tables(private$.ptr)
+      list_tables.Project(self)
     },
-    #' @description Return project-owned processing-step metadata.
+    #' @description Return project-owned method metadata.
     available_processing_methods = function() {
-      list()
+      available_processing_methods.Project(self)
     },
-    #' @description Run one workflow step via its owning project method.
-    run_processing_step = function(step) {
-      if (!inherits(step, "ProcessingStep")) {
-        step <- as.ProcessingStep(step)
-      }
-      owner_class <- step$owner_class
-      if (!is.na(owner_class) && nzchar(owner_class) && !owner_class %in% class(self)) {
-        stop(sprintf(
-          "Workflow step '%s' belongs to '%s' but active project is '%s'.",
-          step$constructor_name,
-          owner_class,
-          class(self)[1]
-        ))
-      }
-      method_name <- step$method
-      if (is.na(method_name) || !nzchar(method_name)) {
-        stop(sprintf(
-          "Workflow step '%s' does not define a method dispatch target.",
-          step$constructor_name
-        ))
-      }
-      method_fun <- self[[method_name]]
-      if (!is.function(method_fun)) {
-        stop(sprintf(
-          "Active project class '%s' does not implement workflow method '%s'.",
-          class(self)[1],
-          method_name
-        ))
-      }
-      parameters <- step$parameters
-      if (is.null(parameters)) {
-        parameters <- list()
-      }
-      checkmate::assert_list(parameters)
-      do.call(method_fun, parameters)
-      invisible(self)
+    #' @description Run one workflow method via its owning project method.
+    run_method = function(step) {
+      run_method.Project(self, step)
     },
     #' @description Run the active project workflow via project-owned methods.
     run_workflow = function(workflow = NULL) {
-      if (is.null(workflow)) {
-        workflow <- self$get_workflow()
-      } else if (!inherits(workflow, "Workflow")) {
-        workflow <- Workflow(workflow)
-      }
-      if (is.null(workflow) || length(workflow) == 0) {
-        warning("There are no processing steps to run!")
-        return(invisible(self))
-      }
-      self$set_workflow(workflow)
-      for (i in seq_along(workflow)) {
-        self$run_processing_step(workflow[[i]])
-      }
-      invisible(self)
+      run_workflow.Project(self, workflow = workflow)
     },
     #' @description Generate a Quarto report for the active project.
     report_quarto = function(template = NULL, output_file = NULL, execute_dir = getwd(), ...) {
-      if (is.null(template) || !file.exists(template)) {
-        warning("Template not found!")
-        return(invisible(self))
-      }
-      if (!requireNamespace("quarto", quietly = TRUE)) {
-        warning("quarto package not installed! Please install it with: install.packages('quarto')")
-        return(invisible(self))
-      }
-
-      template <- normalizePath(template, mustWork = TRUE)
-
-      if (is.null(execute_dir) || !nzchar(trimws(execute_dir))) {
-        execute_dir <- getwd()
-      } else {
-        execute_dir <- trimws(execute_dir)
-      }
-      execute_dir <- normalizePath(execute_dir, mustWork = FALSE)
-
-      if (is.null(output_file)) {
-        output_file <- tools::file_path_sans_ext(basename(template))
-      } else {
-        checkmate::assert_character(output_file, len = 1)
-        output_file <- trimws(output_file)
-      }
-
-      output_file_dir <- dirname(output_file)
-      if (identical(output_file_dir, ".")) {
-        output_dir <- execute_dir
-        output_file <- basename(output_file)
-      } else {
-        if (grepl("^([A-Za-z]:|/|\\\\)", output_file)) {
-          output_file_abs <- normalizePath(output_file, mustWork = FALSE)
-        } else {
-          output_file_abs <- normalizePath(file.path(execute_dir, output_file), mustWork = FALSE)
-        }
-        output_dir <- dirname(output_file_abs)
-        output_file <- basename(output_file_abs)
-      }
-
-      dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
-
-      dots <- list(...)
-      if ("output_dir" %in% names(dots)) {
-        warning("Argument output_dir is deprecated for Project$report_quarto() and will be ignored.")
-        dots$output_dir <- NULL
-      }
-      execute_params <- dots$execute_params
-      dots$execute_params <- NULL
-      if (is.null(execute_params)) {
-        execute_params <- list()
-      }
-      checkmate::assert_list(execute_params)
-      execute_params$db <- normalizePath(private$.db, mustWork = TRUE)
-      execute_params$project_id <- private$.project_id
-      execute_params$project_class <- class(self)[1]
-
-      quarto_args <- dots$quarto_args
-      dots$quarto_args <- NULL
-      if (is.null(quarto_args)) {
-        quarto_args <- character()
-      } else {
-        checkmate::assert_character(quarto_args)
-      }
-      if (!"--output-dir" %in% quarto_args) {
-        quarto_args <- c(quarto_args, "--output-dir", output_dir)
-      }
-
-      tryCatch(
-        {
-          do.call(
-            quarto::quarto_render,
-            c(
-              list(
-                input = template,
-                output_file = output_file,
-                execute_dir = execute_dir,
-                execute_params = execute_params,
-                quarto_args = quarto_args
-              ),
-              dots
-            )
-          )
-          message("\U2713 Quarto report generated successfully!")
-        },
-        error = function(e) {
-          warning("Error generating Quarto report: ", e$message)
-        }
-      )
-
-      invisible(self)
+      report_quarto.Project(self, template = template, output_file = output_file, execute_dir = execute_dir, ...)
     },
     #' @description Run the StreamFind app using the active project as startup context.
     run_app = function() {
-      run_app(
-        db = private$.db,
-        project_id = private$.project_id,
-        project_class = class(self)[1]
-      )
+      run_app.Project(self)
     },
     #' @description Copy this project to another database and/or project id.
     copy = function(db = private$.db, project_id = private$.project_id) {
-      copied_ptr <- rcpp_project_copy(private$.ptr, db, project_id)
-      Project$new(db, project_id, .ptr = copied_ptr)
+      copy.Project(self, db = db, project_id = project_id)
     },
     #' @description Print a short summary.
     print = function(...) {
-      cat("\nProject\n")
-      cat("db: ", private$.db, "\n", sep = "")
-      cat("project_id: ", private$.project_id, "\n", sep = "")
-      domain <- try(self$get_domain(), silent = TRUE)
-      if (!inherits(domain, "try-error") && !is.null(domain)) {
-        cat("domain: ", domain, "\n", sep = "")
-      }
-      audit_info <- try(self$get_audit(), silent = TRUE)
-      if (!inherits(audit_info, "try-error")) {
-        cat("audit entries: ", nrow(audit_info), "\n", sep = "")
-      }
-      invisible(self)
+      print.Project(self, ...)
     },
     #' @description Show a short summary.
     show = function(...) {
-      self$print(...)
+      show.Project(self, ...)
     }
   )
 )
+
+#' @noRd
+.print_project_summary_base <- function(x, title = class(x)[1]) {
+  cat("\n", title, "\n", sep = "")
+  cat("db: ", x$get_db(), "\n", sep = "")
+  cat("project_id: ", x$get_project_id(), "\n", sep = "")
+  domain <- try(get_domain.Project(x), silent = TRUE)
+  if (!inherits(domain, "try-error") && !is.null(domain)) {
+    cat("domain: ", domain, "\n", sep = "")
+  }
+  audit_info <- try(get_audit.Project(x), silent = TRUE)
+  if (!inherits(audit_info, "try-error")) {
+    cat("audit entries: ", nrow(audit_info), "\n", sep = "")
+  }
+  invisible(x)
+}
 
 
 #' @name ProjectS3
 #' @title Project S3 Methods
 #' @description S3 wrappers for `Project` R6 methods providing a thin functional interface.
 #' @param x A `Project` object.
-#' @template arg-db-path
-#' @template arg-project-id
-#' @template arg-value
-#' @template arg-step
-#' @template arg-workflow
-#' @template arg-template
-#' @template arg-output-file
-#' @template arg-execute-dir
-#' @template arg-ellipsis
-#' @template arg-cache-name
+#' @template args-Project
 NULL
 
 #' @describeIn ProjectS3 Return the native project pointer.
@@ -346,7 +174,8 @@ get_project_id.Project <- function(x) {
 #' @export
 validate.Project <- function(x) {
   checkmate::assert_class(x, "Project")
-  x$validate()
+  rcpp_project_validate(x$get_ptr())
+  invisible(x)
 }
 
 #' @describeIn ProjectS3 Get the project metadata.
@@ -354,7 +183,8 @@ validate.Project <- function(x) {
 #' @export
 get_metadata.Project <- function(x) {
   checkmate::assert_class(x, "Project")
-  x$get_metadata()
+  value <- rcpp_project_get_metadata(x$get_ptr())
+  if (is.null(value) || identical(value, "") || identical(value, "null")) NULL else jsonlite::fromJSON(value)
 }
 
 #' @describeIn ProjectS3 Set the project metadata; `value` may be a list, JSON string, or NULL.
@@ -362,7 +192,15 @@ get_metadata.Project <- function(x) {
 #' @export
 set_metadata.Project <- function(x, value) {
   checkmate::assert_class(x, "Project")
-  x$set_metadata(value)
+  metadata_json <- if (is.null(value)) {
+    "null"
+  } else if (is.character(value) && length(value) == 1L) {
+    value
+  } else {
+    as.character(.convert_to_json(value))
+  }
+  rcpp_project_set_metadata(x$get_ptr(), metadata_json)
+  invisible(x)
 }
 
 #' @describeIn ProjectS3 Get the project domain.
@@ -370,7 +208,8 @@ set_metadata.Project <- function(x, value) {
 #' @export
 get_domain.Project <- function(x) {
   checkmate::assert_class(x, "Project")
-  x$get_domain()
+  value <- rcpp_project_get_domain(x$get_ptr())
+  if (is.null(value) || identical(value, "")) NULL else value
 }
 
 #' @describeIn ProjectS3 Get the project workflow.
@@ -378,7 +217,8 @@ get_domain.Project <- function(x) {
 #' @export
 get_workflow.Project <- function(x) {
   checkmate::assert_class(x, "Project")
-  x$get_workflow()
+  value <- rcpp_project_get_workflow(x$get_ptr())
+  if (is.null(value) || identical(value, "") || identical(value, "null")) NULL else jsonlite::fromJSON(value)
 }
 
 #' @describeIn ProjectS3 Set the project workflow; `value` may be a Workflow-compatible list, JSON string, or NULL.
@@ -386,7 +226,15 @@ get_workflow.Project <- function(x) {
 #' @export
 set_workflow.Project <- function(x, value) {
   checkmate::assert_class(x, "Project")
-  x$set_workflow(value)
+  workflow_json <- if (is.null(value)) {
+    "null"
+  } else if (is.character(value) && length(value) == 1L) {
+    value
+  } else {
+    as.character(.convert_to_json(value))
+  }
+  rcpp_project_set_workflow(x$get_ptr(), workflow_json)
+  invisible(x)
 }
 
 #' @describeIn ProjectS3 Return all audit entries.
@@ -394,7 +242,7 @@ set_workflow.Project <- function(x, value) {
 #' @export
 get_audit.Project <- function(x) {
   checkmate::assert_class(x, "Project")
-  x$get_audit()
+  rcpp_project_get_audit(x$get_ptr())
 }
 
 #' @describeIn ProjectS3 Return the number of cache rows.
@@ -402,7 +250,7 @@ get_audit.Project <- function(x) {
 #' @export
 get_cache_size.Project <- function(x) {
   checkmate::assert_class(x, "Project")
-  x$get_cache_size()
+  as.integer(rcpp_project_get_cache_size(x$get_ptr()))
 }
 
 #' @describeIn ProjectS3 Return cache rows for the active project.
@@ -410,7 +258,7 @@ get_cache_size.Project <- function(x) {
 #' @export
 get_cache.Project <- function(x) {
   checkmate::assert_class(x, "Project")
-  x$get_cache()
+  rcpp_project_get_cache(x$get_ptr())
 }
 
 #' @describeIn ProjectS3 Delete cache rows, optionally filtered by cache name.
@@ -418,7 +266,11 @@ get_cache.Project <- function(x) {
 #' @export
 delete_cache.Project <- function(x, name = NULL) {
   checkmate::assert_class(x, "Project")
-  x$delete_cache(name = name)
+  if (!is.null(name)) {
+    checkmate::assert_character(name, len = 1, any.missing = FALSE)
+  }
+  rcpp_project_delete_cache(x$get_ptr(), name)
+  invisible(x)
 }
 
 #' @describeIn ProjectS3 List tables in the project database.
@@ -426,23 +278,67 @@ delete_cache.Project <- function(x, name = NULL) {
 #' @export
 list_tables.Project <- function(x) {
   checkmate::assert_class(x, "Project")
-  x$list_tables()
+  rcpp_project_list_tables(x$get_ptr())
 }
 
-#' @describeIn ProjectS3 Return project-owned processing-step metadata.
+#' @describeIn ProjectS3 Return project-owned method metadata.
 #' @method available_processing_methods Project
 #' @export
 available_processing_methods.Project <- function(x) {
   checkmate::assert_class(x, "Project")
-  x$available_processing_methods()
+  .discover_project_methods(class(x)[1])
 }
 
-#' @describeIn ProjectS3 Run one workflow step via its owning project method.
-#' @method run_processing_step Project
+#' @describeIn ProjectS3 Run one workflow method via its owning project method.
+#' @method run_method Project
 #' @export
-run_processing_step.Project <- function(x, step) {
+run_method.Project <- function(x, step) {
   checkmate::assert_class(x, "Project")
-  x$run_processing_step(step)
+  if (!inherits(step, "Method")) {
+    step <- as.Method(step)
+  }
+  owner_class <- step$owner_class
+  if (!is.na(owner_class) && nzchar(owner_class) && !owner_class %in% class(x)) {
+    stop(sprintf(
+      "Workflow method '%s' belongs to '%s' but active project is '%s'.",
+      class(step)[1],
+      owner_class,
+      class(x)[1]
+    ))
+  }
+  run_method <- NULL
+  for (cls in class(step)) {
+    run_method <- utils::getS3method("run", cls, optional = TRUE)
+    if (!is.null(run_method)) {
+      break
+    }
+  }
+  if (!is.null(run_method)) {
+    run(step, x)
+    return(invisible(x))
+  }
+  method_name <- step$method
+  if (is.na(method_name) || !nzchar(method_name)) {
+    stop(sprintf(
+      "Workflow method '%s' does not define a method dispatch target.",
+      class(step)[1]
+    ))
+  }
+  method_fun <- x[[method_name]]
+  if (!is.function(method_fun)) {
+    stop(sprintf(
+      "Active project class '%s' does not implement workflow method '%s'.",
+      class(x)[1],
+      method_name
+    ))
+  }
+  parameters <- step$parameters
+  if (is.null(parameters)) {
+    parameters <- list()
+  }
+  checkmate::assert_list(parameters)
+  do.call(method_fun, parameters)
+  invisible(x)
 }
 
 #' @describeIn ProjectS3 Run the active workflow or supplied `workflow`.
@@ -450,7 +346,20 @@ run_processing_step.Project <- function(x, step) {
 #' @export
 run_workflow.Project <- function(x, workflow = NULL) {
   checkmate::assert_class(x, "Project")
-  x$run_workflow(workflow = workflow)
+  if (is.null(workflow)) {
+    workflow <- get_workflow.Project(x)
+  } else if (!inherits(workflow, "Workflow")) {
+    workflow <- Workflow(workflow)
+  }
+  if (is.null(workflow) || length(workflow) == 0) {
+    warning("There are no workflow methods to run!")
+    return(invisible(x))
+  }
+  set_workflow.Project(x, workflow)
+  for (i in seq_along(workflow)) {
+    run_method.Project(x, workflow[[i]])
+  }
+  invisible(x)
 }
 
 #' @describeIn ProjectS3 Generate a Quarto report for the active project.
@@ -458,7 +367,96 @@ run_workflow.Project <- function(x, workflow = NULL) {
 #' @export
 report_quarto.Project <- function(x, template = NULL, output_file = NULL, execute_dir = getwd(), ...) {
   checkmate::assert_class(x, "Project")
-  x$report_quarto(template = template, output_file = output_file, execute_dir = execute_dir, ...)
+  if (is.null(template) || !file.exists(template)) {
+    warning("Template not found!")
+    return(invisible(x))
+  }
+  if (!requireNamespace("quarto", quietly = TRUE)) {
+    warning("quarto package not installed! Please install it with: install.packages('quarto')")
+    return(invisible(x))
+  }
+
+  template <- normalizePath(template, mustWork = TRUE)
+
+  if (is.null(execute_dir) || !nzchar(trimws(execute_dir))) {
+    execute_dir <- getwd()
+  } else {
+    execute_dir <- trimws(execute_dir)
+  }
+  execute_dir <- normalizePath(execute_dir, mustWork = FALSE)
+
+  if (is.null(output_file)) {
+    output_file <- tools::file_path_sans_ext(basename(template))
+  } else {
+    checkmate::assert_character(output_file, len = 1)
+    output_file <- trimws(output_file)
+  }
+
+  output_file_dir <- dirname(output_file)
+  if (identical(output_file_dir, ".")) {
+    output_dir <- execute_dir
+    output_file <- basename(output_file)
+  } else {
+    if (grepl("^([A-Za-z]:|/|\\\\)", output_file)) {
+      output_file_abs <- normalizePath(output_file, mustWork = FALSE)
+    } else {
+      output_file_abs <- normalizePath(file.path(execute_dir, output_file), mustWork = FALSE)
+    }
+    output_dir <- dirname(output_file_abs)
+    output_file <- basename(output_file_abs)
+  }
+
+  dir.create(output_dir, recursive = TRUE, showWarnings = FALSE)
+
+  dots <- list(...)
+  if ("output_dir" %in% names(dots)) {
+    warning("Argument output_dir is deprecated for Project$report_quarto() and will be ignored.")
+    dots$output_dir <- NULL
+  }
+  execute_params <- dots$execute_params
+  dots$execute_params <- NULL
+  if (is.null(execute_params)) {
+    execute_params <- list()
+  }
+  checkmate::assert_list(execute_params)
+  execute_params$db <- normalizePath(x$get_db(), mustWork = TRUE)
+  execute_params$project_id <- x$get_project_id()
+  execute_params$project_class <- class(x)[1]
+
+  quarto_args <- dots$quarto_args
+  dots$quarto_args <- NULL
+  if (is.null(quarto_args)) {
+    quarto_args <- character()
+  } else {
+    checkmate::assert_character(quarto_args)
+  }
+  if (!"--output-dir" %in% quarto_args) {
+    quarto_args <- c(quarto_args, "--output-dir", output_dir)
+  }
+
+  tryCatch(
+    {
+      do.call(
+        quarto::quarto_render,
+        c(
+          list(
+            input = template,
+            output_file = output_file,
+            execute_dir = execute_dir,
+            execute_params = execute_params,
+            quarto_args = quarto_args
+          ),
+          dots
+        )
+      )
+      message("\U2713 Quarto report generated successfully!")
+    },
+    error = function(e) {
+      warning("Error generating Quarto report: ", e$message)
+    }
+  )
+
+  invisible(x)
 }
 
 #' @describeIn ProjectS3 Run the StreamFind app using the active project as startup context.
@@ -466,7 +464,11 @@ report_quarto.Project <- function(x, template = NULL, output_file = NULL, execut
 #' @export
 run_app.Project <- function(x) {
   checkmate::assert_class(x, "Project")
-  x$run_app()
+  run_app(
+    db = x$get_db(),
+    project_id = x$get_project_id(),
+    project_class = class(x)[1]
+  )
 }
 
 #' @describeIn ProjectS3 Copy this project to another database and/or project id, returning a new `Project` object.
@@ -474,5 +476,22 @@ run_app.Project <- function(x) {
 #' @export
 copy.Project <- function(x, db = x$get_db(), project_id = x$get_project_id()) {
   checkmate::assert_class(x, "Project")
-  x$copy(db = db, project_id = project_id)
+  copied_ptr <- rcpp_project_copy(x$get_ptr(), db, project_id)
+  Project$new(db, project_id, .ptr = copied_ptr)
+}
+
+#' @describeIn ProjectS3 Print a short summary.
+#' @method print Project
+#' @export
+print.Project <- function(x, ...) {
+  checkmate::assert_class(x, "Project")
+  .print_project_summary_base(x, title = "Project")
+}
+
+#' @describeIn ProjectS3 Show a short summary.
+#' @method show Project
+#' @export
+show.Project <- function(x, ...) {
+  checkmate::assert_class(x, "Project")
+  print.Project(x, ...)
 }

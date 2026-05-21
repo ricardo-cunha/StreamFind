@@ -3,15 +3,23 @@
 \name{ProjectMassSpecChromatogramsS3}
 \alias{ProjectMassSpecChromatogramsS3}
 \alias{get_chromatograms_headers.ProjectMassSpecChromatograms}
+\alias{print.ProjectMassSpecChromatograms}
+\alias{show.ProjectMassSpecChromatograms}
 \title{ProjectMassSpecChromatograms S3 Methods}
 \usage{
 \method{get_chromatograms_headers}{ProjectMassSpecChromatograms}(x, analyses = NULL)
+
+\method{print}{ProjectMassSpecChromatograms}(x, ...)
+
+\method{show}{ProjectMassSpecChromatograms}(x, ...)
 }
 \arguments{
 \item{x}{A \code{ProjectMassSpecChromatograms} object.}
 
 \item{analyses}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
+
+\item{...}{Additional arguments passed to the method or ignored by the implementation.}
 
 \item{chromatograms}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
 
@@ -34,8 +42,6 @@ object.}
 \item{interactive}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
 
 \item{colorPalette}{Optional vector of colors for the plot; if not provided, an internal function is used.}
-
-\item{...}{Additional arguments passed to the method or ignored by the implementation.}
 }
 \description{
 S3 interface methods for \code{ProjectMassSpecChromatograms}.
@@ -45,5 +51,9 @@ methods and expose the chromatogram-specific package generics.
 \section{Functions}{
 \itemize{
 \item \code{get_chromatograms_headers(ProjectMassSpecChromatograms)}: Return chromatogram headers for selected analyses.
+
+\item \code{print(ProjectMassSpecChromatograms)}: Print a short summary.
+
+\item \code{show(ProjectMassSpecChromatograms)}: Show a short summary.
 
 }}

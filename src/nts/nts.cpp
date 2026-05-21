@@ -1617,14 +1617,12 @@ namespace nts
       return value;
     }
 
-    namespace
+    struct FEATURE_METADATA
     {
-      struct FEATURE_METADATA
-      {
-        std::string feature_group;
-        std::string feature_component;
-        std::string adduct;
-      };
+      std::string feature_group;
+      std::string feature_component;
+      std::string adduct;
+    };
 
       std::vector<std::string> sanitize_query_values(const std::vector<std::string> &values)
       {
@@ -1780,21 +1778,20 @@ namespace nts
         return out;
       }
 
-      std::string stable_hash_hex(const std::string &text)
+    std::string stable_hash_hex(const std::string &text)
+    {
+      constexpr std::uint64_t offset_basis = 14695981039346656037ull;
+      constexpr std::uint64_t prime = 1099511628211ull;
+      std::uint64_t hash = offset_basis;
+      for (const unsigned char ch : text)
       {
-        constexpr std::uint64_t offset_basis = 14695981039346656037ull;
-        constexpr std::uint64_t prime = 1099511628211ull;
-        std::uint64_t hash = offset_basis;
-        for (const unsigned char ch : text)
-        {
-          hash ^= static_cast<std::uint64_t>(ch);
-          hash *= prime;
-        }
-
-        std::ostringstream stream;
-        stream << std::hex << std::setfill('0') << std::setw(16) << hash;
-        return stream.str();
+        hash ^= static_cast<std::uint64_t>(ch);
+        hash *= prime;
       }
+
+      std::ostringstream stream;
+      stream << std::hex << std::setfill('0') << std::setw(16) << hash;
+      return stream.str();
     }
 
     // MARK: PROJECT_NON_TARGET_ANALYSIS
@@ -2117,6 +2114,7 @@ namespace nts
       const auto &features = feature_buffers();
       features_table_ = NTS_FEATURES_TABLE();
       auto guard = mass_spec::api::connect_checked(ctx_);
+      std::cout << "Saving features to duckdb... ";
       project::db::run_sql(guard.get(), "BEGIN TRANSACTION", "begin save NTS features transaction");
       try
       {
@@ -2194,6 +2192,7 @@ namespace nts
         }
 
         project::db::run_sql(guard.get(), "COMMIT", "commit save NTS features transaction");
+        std::cout << "Done!" << std::endl;
       }
       catch (...)
       {
@@ -2213,6 +2212,7 @@ namespace nts
       const auto &suspects = suspect_buffers();
       suspects_table_ = NTS_SUSPECTS_TABLE();
       auto guard = mass_spec::api::connect_checked(ctx_);
+      std::cout << "Saving suspects to duckdb... ";
       project::db::run_sql(guard.get(), "BEGIN TRANSACTION", "begin save NTS suspects transaction");
       try
       {
@@ -2274,6 +2274,7 @@ namespace nts
         }
 
         project::db::run_sql(guard.get(), "COMMIT", "commit save NTS suspects transaction");
+        std::cout << "Done!" << std::endl;
       }
       catch (...)
       {
@@ -2293,6 +2294,7 @@ namespace nts
       const auto &internal_standards = internal_standard_buffers();
       internal_standards_table_ = NTS_INTERNAL_STANDARDS_TABLE();
       auto guard = mass_spec::api::connect_checked(ctx_);
+      std::cout << "Saving internal standards to duckdb... ";
       project::db::run_sql(guard.get(), "BEGIN TRANSACTION", "begin save NTS internal standards transaction");
       try
       {
@@ -2354,6 +2356,7 @@ namespace nts
         }
 
         project::db::run_sql(guard.get(), "COMMIT", "commit save NTS internal standards transaction");
+        std::cout << "Done!" << std::endl;
       }
       catch (...)
       {
@@ -2423,8 +2426,10 @@ namespace nts
       {
         return false;
       }
+      std::cout << "Loading features from cache... ";
       feature_buffers_ = cached->buffers;
       feature_buffers_ready_ = true;
+      std::cout << "Done!" << std::endl;
       save_processing_features();
       return true;
     }
@@ -2437,6 +2442,7 @@ namespace nts
       {
         return false;
       }
+      std::cout << "Loading suspects from cache... ";
       suspect_buffers_ = cached->buffers;
       suspect_buffers_ready_ = true;
       save_processing_suspects();
@@ -2451,6 +2457,7 @@ namespace nts
       {
         return false;
       }
+      std::cout << "Loading internal standards from cache... ";
       internal_standard_buffers_ = cached->buffers;
       internal_standard_buffers_ready_ = true;
       save_processing_internal_standards();
@@ -2465,6 +2472,7 @@ namespace nts
       {
         return false;
       }
+      std::cout << "Loading transformation products from cache... ";
       transformation_products_buffer_ = *cached;
       transformation_products_ready_ = true;
       save_processing_transformation_products(*cached);
@@ -2473,17 +2481,23 @@ namespace nts
 
     void PROJECT_NON_TARGET_ANALYSIS::store_feature_cache(const std::string &hash, const std::string &description)
     {
+      std::cout << "Caching features... ";
       project::cache::CACHE(ctx_).put_object("NTS_FEATURES_CACHE", hash, description, feature_cache_snapshot());
+      std::cout << "Done!" << std::endl;
     }
 
     void PROJECT_NON_TARGET_ANALYSIS::store_suspect_cache(const std::string &hash, const std::string &description)
     {
+      std::cout << "Caching suspects... ";
       project::cache::CACHE(ctx_).put_object("NTS_SUSPECTS_CACHE", hash, description, suspect_cache_snapshot());
+      std::cout << "Done!" << std::endl;
     }
 
     void PROJECT_NON_TARGET_ANALYSIS::store_internal_standard_cache(const std::string &hash, const std::string &description)
     {
+      std::cout << "Caching internal standards... ";
       project::cache::CACHE(ctx_).put_object("NTS_INTERNAL_STANDARDS_CACHE", hash, description, internal_standard_cache_snapshot());
+      std::cout << "Done!" << std::endl;
     }
 
     void PROJECT_NON_TARGET_ANALYSIS::store_transformation_products_cache(
@@ -2491,7 +2505,9 @@ namespace nts
         const std::string &description,
         const NTS_TRANSFORMATION_PRODUCTS &products)
     {
+      std::cout << "Caching transformation products... ";
       project::cache::CACHE(ctx_).put_object("NTS_TRANSFORMATION_PRODUCTS", hash, description, products);
+      std::cout << "Done!" << std::endl;
     }
 
     bool PROJECT_NON_TARGET_ANALYSIS::run_cached_features_algorithm(
@@ -2601,6 +2617,7 @@ namespace nts
       transformation_products_buffer_ = products;
       transformation_products_ready_ = true;
       auto guard = mass_spec::api::connect_checked(ctx_);
+      std::cout << "Saving transformation products to duckdb... ";
       project::db::run_sql(guard.get(), "BEGIN TRANSACTION", "begin save NTS transformation products transaction");
       try
       {
@@ -2658,6 +2675,7 @@ namespace nts
         }
 
         project::db::run_sql(guard.get(), "COMMIT", "commit save NTS transformation products transaction");
+        std::cout << "Done!" << std::endl;
       }
       catch (...)
       {

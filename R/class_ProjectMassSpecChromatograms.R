@@ -1,24 +1,23 @@
 #' @title Project Mass Spec Chromatograms R6 Class
 #' @description R6 child of `ProjectMassSpec` exposing the chromatogram-focused MassSpec interface.
-#' @template arg-db-path
-#' @template arg-project-id
-#' @template arg-file-paths
-#' @template arg-analyses
-#' @template arg-replicates
-#' @template arg-blanks
-#' @template arg-analyses
-#' @template arg-chromatograms
-#' @template arg-ms-rtmin
-#' @template arg-ms-rtmax
-#' @template arg-ms-minIntensity
-#' @template arg-plot-downsize
-#' @template arg-plot-xLab
-#' @template arg-plot-yLab
-#' @template arg-plot-title
-#' @template arg-plot-groupBy
-#' @template arg-plot-interactive
-#' @template arg-plot-colorPalette
-#' @template arg-ellipsis
+#' @template arg-Project-db
+#' @template arg-Project-project-id
+#' @template arg-ProjectMassSpec-file-paths
+#' @template arg-ProjectMassSpec-analyses
+#' @template arg-ProjectMassSpec-replicates
+#' @template arg-ProjectMassSpec-blanks
+#' @template arg-ProjectMassSpec-chromatograms
+#' @template arg-ProjectMassSpec-rtmin
+#' @template arg-ProjectMassSpec-rtmax
+#' @template arg-ProjectMassSpec-minIntensity
+#' @template arg-ProjectMassSpec-plot-downsize
+#' @template arg-ProjectMassSpec-plot-xLab
+#' @template arg-ProjectMassSpec-plot-yLab
+#' @template arg-ProjectMassSpec-plot-title
+#' @template arg-ProjectMassSpec-plot-groupBy
+#' @template arg-ProjectMassSpec-plot-interactive
+#' @template arg-ProjectMassSpec-plot-colorPalette
+#' @template arg-Project-ellipsis
 #' @keywords internal
 #' @export
 ProjectMassSpecChromatograms <- R6::R6Class(
@@ -66,9 +65,9 @@ ProjectMassSpecChromatograms <- R6::R6Class(
     get_mass_spec_chromatograms_ptr = function() {
       private$.mass_spec_chromatograms_ptr
     },
-    #' @description Return chromatogram-project processing-step metadata.
+    #' @description Return chromatogram-project method metadata.
     available_processing_methods = function() {
-      list()
+      available_processing_methods.Project(self)
     },
     #' @description Return chromatogram headers for selected analyses.
     get_chromatograms_headers = function(analyses = NULL) {
@@ -93,22 +92,11 @@ ProjectMassSpecChromatograms <- R6::R6Class(
     },
     #' @description Print a short summary.
     print = function(...) {
-      cat("\nProjectMassSpecChromatograms\n")
-      cat("db: ", self$get_db(), "\n", sep = "")
-      cat("project_id: ", self$get_project_id(), "\n", sep = "")
-      domain <- try(self$get_domain(), silent = TRUE)
-      if (!inherits(domain, "try-error") && !is.null(domain)) {
-        cat("domain: ", domain, "\n", sep = "")
-      }
-      analyses <- try(self$get_analyses(), silent = TRUE)
-      if (!inherits(analyses, "try-error")) {
-        cat("analyses: ", nrow(analyses), "\n", sep = "")
-      }
-      invisible(self)
+      print.ProjectMassSpecChromatograms(self, ...)
     },
     #' @description Show a short summary.
     show = function(...) {
-      self$print(...)
+      show.ProjectMassSpecChromatograms(self, ...)
     }
   )
 )
@@ -119,19 +107,19 @@ ProjectMassSpecChromatograms <- R6::R6Class(
 #' These methods are thin wrappers over the `ProjectMassSpecChromatograms` R6
 #' methods and expose the chromatogram-specific package generics.
 #' @param x A `ProjectMassSpecChromatograms` object.
-#' @template arg-analyses
-#' @template arg-chromatograms
-#' @template arg-ms-rtmin
-#' @template arg-ms-rtmax
-#' @template arg-ms-minIntensity
-#' @template arg-plot-downsize
-#' @template arg-plot-xLab
-#' @template arg-plot-yLab
-#' @template arg-plot-title
-#' @template arg-plot-groupBy
-#' @template arg-plot-interactive
-#' @template arg-plot-colorPalette
-#' @template arg-ellipsis
+#' @template arg-ProjectMassSpec-analyses
+#' @template arg-ProjectMassSpec-chromatograms
+#' @template arg-ProjectMassSpec-rtmin
+#' @template arg-ProjectMassSpec-rtmax
+#' @template arg-ProjectMassSpec-minIntensity
+#' @template arg-ProjectMassSpec-plot-downsize
+#' @template arg-ProjectMassSpec-plot-xLab
+#' @template arg-ProjectMassSpec-plot-yLab
+#' @template arg-ProjectMassSpec-plot-title
+#' @template arg-ProjectMassSpec-plot-groupBy
+#' @template arg-ProjectMassSpec-plot-interactive
+#' @template arg-ProjectMassSpec-plot-colorPalette
+#' @template arg-Project-ellipsis
 NULL
 
 #' @describeIn ProjectMassSpecChromatogramsS3 Return chromatogram headers for selected analyses.
@@ -139,4 +127,19 @@ NULL
 get_chromatograms_headers.ProjectMassSpecChromatograms <- function(x, analyses = NULL) {
   checkmate::assert_class(x, "ProjectMassSpecChromatograms")
   x$get_chromatograms_headers(analyses = analyses)
+}
+
+#' @describeIn ProjectMassSpecChromatogramsS3 Print a short summary.
+#' @export
+print.ProjectMassSpecChromatograms <- function(x, ...) {
+  checkmate::assert_class(x, "ProjectMassSpecChromatograms")
+  .print_project_mass_spec_summary(x, title = "ProjectMassSpecChromatograms")
+  invisible(x)
+}
+
+#' @describeIn ProjectMassSpecChromatogramsS3 Show a short summary.
+#' @export
+show.ProjectMassSpecChromatograms <- function(x, ...) {
+  checkmate::assert_class(x, "ProjectMassSpecChromatograms")
+  print.ProjectMassSpecChromatograms(x, ...)
 }

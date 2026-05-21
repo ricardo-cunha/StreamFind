@@ -562,14 +562,14 @@ available_processing_methods <- function(x, ...) {
   UseMethod("available_processing_methods")
 }
 
-#' @title S3 generic `run_processing_step`
-#' @description Run a processing step on `x`.
+#' @title S3 generic `run_method`
+#' @description Run a workflow method on `x`.
 #' @param x An object.
 #' @param step Processing step.
 #' @export
 #' @noRd
-run_processing_step <- function(x, step, ...) {
-  UseMethod("run_processing_step")
+run_method <- function(x, step, ...) {
+  UseMethod("run_method")
 }
 
 #' @title S3 generic `run_workflow`
@@ -662,6 +662,17 @@ get_raw_spectra_eic <- function(x, ...) {
 #'
 get_spectra_headers <- function(x, ...) {
   UseMethod("get_spectra_headers")
+}
+
+#' @title Generic `get_spectra_tic`
+#' @description S3 generic to get spectra TIC (total ion current) from `x`.
+#' @param x An object from which the spectra TIC will be retrieved.
+#' @param ... Additional arguments passed to the method.
+#' @export
+#' @noRd
+#'
+get_spectra_tic <- function(x, ...) {
+  UseMethod("get_spectra_tic")
 }
 
 #' @title Generic `get_spectra_matrix`

@@ -38,7 +38,7 @@ R6 child of \code{ProjectMassSpec} exposing the chromatogram-focused MassSpec in
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="list_tables"><a href='../../StreamFind/html/Project.html#method-Project-list_tables'><code>StreamFind::Project$list_tables()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="report_quarto"><a href='../../StreamFind/html/Project.html#method-Project-report_quarto'><code>StreamFind::Project$report_quarto()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_app"><a href='../../StreamFind/html/Project.html#method-Project-run_app'><code>StreamFind::Project$run_app()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_processing_step"><a href='../../StreamFind/html/Project.html#method-Project-run_processing_step'><code>StreamFind::Project$run_processing_step()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_method"><a href='../../StreamFind/html/Project.html#method-Project-run_method'><code>StreamFind::Project$run_method()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_workflow"><a href='../../StreamFind/html/Project.html#method-Project-run_workflow'><code>StreamFind::Project$run_workflow()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="set_metadata"><a href='../../StreamFind/html/Project.html#method-Project-set_metadata'><code>StreamFind::Project$set_metadata()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="set_workflow"><a href='../../StreamFind/html/Project.html#method-Project-set_workflow'><code>StreamFind::Project$set_workflow()</code></a></span></li>
@@ -118,7 +118,7 @@ Return the native chromatograms pointer.
 \if{html}{\out{<a id="method-ProjectMassSpecChromatograms-available_processing_methods"></a>}}
 \if{latex}{\out{\hypertarget{method-ProjectMassSpecChromatograms-available_processing_methods}{}}}
 \subsection{Method \code{available_processing_methods()}}{
-Return chromatogram-project processing-step metadata.
+Return chromatogram-project method metadata.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpecChromatograms$available_processing_methods()}\if{html}{\out{</div>}}
 }
@@ -136,9 +136,6 @@ Return chromatogram headers for selected analyses.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
-\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
-object.}
-
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 }

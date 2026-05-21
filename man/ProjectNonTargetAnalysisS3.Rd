@@ -3,25 +3,31 @@
 \name{ProjectNonTargetAnalysisS3}
 \alias{ProjectNonTargetAnalysisS3}
 \alias{info.ProjectNonTargetAnalysis}
+\alias{print.ProjectNonTargetAnalysis}
+\alias{show.ProjectNonTargetAnalysis}
 \alias{get_features.ProjectNonTargetAnalysis}
 \alias{get_features_count.ProjectNonTargetAnalysis}
+\alias{plot_features_count.ProjectNonTargetAnalysis}
 \alias{get_features_profile.ProjectNonTargetAnalysis}
 \alias{plot_features_profile.ProjectNonTargetAnalysis}
 \alias{plot_features.ProjectNonTargetAnalysis}
 \alias{map_features.ProjectNonTargetAnalysis}
 \alias{plot_features_ms1.ProjectNonTargetAnalysis}
 \alias{plot_features_ms2.ProjectNonTargetAnalysis}
+\alias{get_internal_standards.ProjectNonTargetAnalysis}
+\alias{get_suspects.ProjectNonTargetAnalysis}
 \alias{plot_suspects_ms2.ProjectNonTargetAnalysis}
 \alias{get_fold_change.ProjectNonTargetAnalysis}
-\alias{get_suspects.ProjectNonTargetAnalysis}
-\alias{get_internal_standards.ProjectNonTargetAnalysis}
-\alias{get_transformation_products.ProjectNonTargetAnalysis}
 \alias{plot_fold_change.ProjectNonTargetAnalysis}
+\alias{get_transformation_products.ProjectNonTargetAnalysis}
 \alias{plot_transformation_products.ProjectNonTargetAnalysis}
-\alias{plot_features_count.ProjectNonTargetAnalysis}
 \title{ProjectNonTargetAnalysis S3 Methods}
 \usage{
 \method{info}{ProjectNonTargetAnalysis}(x, ...)
+
+\method{print}{ProjectNonTargetAnalysis}(x, ...)
+
+\method{show}{ProjectNonTargetAnalysis}(x, ...)
 
 \method{get_features}{ProjectNonTargetAnalysis}(
   x,
@@ -41,6 +47,17 @@
 )
 
 \method{get_features_count}{ProjectNonTargetAnalysis}(x, analyses = NULL, filtered = FALSE)
+
+\method{plot_features_count}{ProjectNonTargetAnalysis}(
+  x,
+  analyses = NULL,
+  filtered = FALSE,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  showLegend = TRUE,
+  showHoverText = TRUE
+)
 
 \method{get_features_profile}{ProjectNonTargetAnalysis}(
   x,
@@ -173,6 +190,36 @@
   ...
 )
 
+\method{get_internal_standards}{ProjectNonTargetAnalysis}(
+  x,
+  analyses = NULL,
+  features = NULL,
+  groups = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  ...
+)
+
+\method{get_suspects}{ProjectNonTargetAnalysis}(
+  x,
+  analyses = NULL,
+  features = NULL,
+  groups = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  ...
+)
+
 \method{plot_suspects_ms2}{ProjectNonTargetAnalysis}(
   x,
   analyses = NULL,
@@ -218,38 +265,6 @@
   ...
 )
 
-\method{get_suspects}{ProjectNonTargetAnalysis}(
-  x,
-  analyses = NULL,
-  features = NULL,
-  groups = NULL,
-  mass = NULL,
-  mz = NULL,
-  rt = NULL,
-  mobility = NULL,
-  ppm = 20,
-  sec = 60,
-  millisec = 5,
-  ...
-)
-
-\method{get_internal_standards}{ProjectNonTargetAnalysis}(
-  x,
-  analyses = NULL,
-  features = NULL,
-  groups = NULL,
-  mass = NULL,
-  mz = NULL,
-  rt = NULL,
-  mobility = NULL,
-  ppm = 20,
-  sec = 60,
-  millisec = 5,
-  ...
-)
-
-\method{get_transformation_products}{ProjectNonTargetAnalysis}(x, parents = NULL, groups = NULL, ...)
-
 \method{plot_fold_change}{ProjectNonTargetAnalysis}(
   x,
   replicatesIn = NULL,
@@ -276,6 +291,8 @@
   ...
 )
 
+\method{get_transformation_products}{ProjectNonTargetAnalysis}(x, parents = NULL, groups = NULL, ...)
+
 \method{plot_transformation_products}{ProjectNonTargetAnalysis}(
   x,
   groups = NULL,
@@ -289,17 +306,6 @@
   showMS2 = FALSE,
   showIntensityProfile = FALSE,
   ...
-)
-
-\method{plot_features_count}{ProjectNonTargetAnalysis}(
-  x,
-  analyses = NULL,
-  filtered = FALSE,
-  yLab = NULL,
-  title = NULL,
-  groupBy = "analysis",
-  showLegend = TRUE,
-  showHoverText = TRUE
 )
 }
 \arguments{
@@ -353,17 +359,17 @@ in milliseconds.}
 
 \item{filtered}{Logical (length 1). When \code{TRUE}, filtered features/groups are considered.}
 
-\item{groupBy}{Column to use for color grouping (default: "analysis").}
-
-\item{normalized}{A logical value indicating whether the result should be normalized.}
-
 \item{yLab}{A string with the title for the y axis.}
 
 \item{title}{A string with the title.}
 
-\item{interactive}{Logical (length 1). When \code{TRUE}, the data is plotted interactively using \pkg{plotly}.}
+\item{groupBy}{Column to use for color grouping (default: "analysis").}
 
 \item{showLegend}{Logical (length 1). Set to \code{TRUE} to show legend.}
+
+\item{normalized}{A logical value indicating whether the result should be normalized.}
+
+\item{interactive}{Logical (length 1). When \code{TRUE}, the data is plotted interactively using \pkg{plotly}.}
 
 \item{xLab}{A string with the title for the x axis.}
 
@@ -415,9 +421,15 @@ S3 interface methods for \code{ProjectNonTargetAnalysis}.
 \itemize{
 \item \code{info(ProjectNonTargetAnalysis)}: Return project information summary.
 
+\item \code{print(ProjectNonTargetAnalysis)}: Print a short summary.
+
+\item \code{show(ProjectNonTargetAnalysis)}: Show a short summary.
+
 \item \code{get_features(ProjectNonTargetAnalysis)}: Return shared NTS_FEATURES rows for selected analyses.
 
 \item \code{get_features_count(ProjectNonTargetAnalysis)}: Return feature counts for selected analyses.
+
+\item \code{plot_features_count(ProjectNonTargetAnalysis)}: Plot features count across analyses.
 
 \item \code{get_features_profile(ProjectNonTargetAnalysis)}: Return feature profiles across analyses.
 
@@ -431,21 +443,19 @@ S3 interface methods for \code{ProjectNonTargetAnalysis}.
 
 \item \code{plot_features_ms2(ProjectNonTargetAnalysis)}: Plot MS2 features for selected analyses.
 
+\item \code{get_internal_standards(ProjectNonTargetAnalysis)}: Return internal standards for selected analyses.
+
+\item \code{get_suspects(ProjectNonTargetAnalysis)}: Return suspects for selected analyses.
+
 \item \code{plot_suspects_ms2(ProjectNonTargetAnalysis)}: Plot suspects MS2 for selected analyses.
 
 \item \code{get_fold_change(ProjectNonTargetAnalysis)}: Compute fold change between replicate sets.
 
-\item \code{get_suspects(ProjectNonTargetAnalysis)}: Return suspects for selected analyses.
-
-\item \code{get_internal_standards(ProjectNonTargetAnalysis)}: Return internal standards for selected analyses.
+\item \code{plot_fold_change(ProjectNonTargetAnalysis)}: Plot fold change between replicate sets.
 
 \item \code{get_transformation_products(ProjectNonTargetAnalysis)}: Return transformation products for groups/parents.
 
-\item \code{plot_fold_change(ProjectNonTargetAnalysis)}: Plot fold change between replicate sets.
-
 \item \code{plot_transformation_products(ProjectNonTargetAnalysis)}: Plot transformation products for groups.
-
-\item \code{plot_features_count(ProjectNonTargetAnalysis)}: Plot features count across analyses.
 
 }}
 \keyword{internal}

@@ -57,30 +57,6 @@
   )
 }
 
-# MARK: .infer_processing_owner_class
-#' @noRd
-.infer_processing_owner_class <- function(type = NA_character_, input_class = NA_character_, output_class = NA_character_) {
-  classes <- unique(stats::na.omit(c(input_class, output_class)))
-  if (length(classes) > 0) {
-    if (any(grepl("NonTargetAnalysis", classes, fixed = TRUE))) {
-      return("ProjectNonTargetAnalysis")
-    }
-    if (any(grepl("Chromatograms", classes, fixed = TRUE))) {
-      return("ProjectMassSpecChromatograms")
-    }
-    if (any(grepl("Spectra", classes, fixed = TRUE))) {
-      return("ProjectMassSpecSpectra")
-    }
-    if (any(grepl("MassSpec", classes, fixed = TRUE))) {
-      return("ProjectMassSpec")
-    }
-  }
-  if (identical(type, "MassSpec")) {
-    return("ProjectMassSpec")
-  }
-  NA_character_
-}
-
 # MARK: .make_processing_parameter_doc
 #' @noRd
 .make_processing_parameter_doc <- function(description, type = NA_character_, required = FALSE) {
@@ -91,23 +67,73 @@
   )
 }
 
+#' @noRd
+.project_method_owner <- function(project_class) {
+  checkmate::assert_character(project_class, len = 1, any.missing = FALSE)
+  sub("^Project", "", project_class)
+}
+
+#' @noRd
+.project_method_prefix <- function(project_class) {
+  paste0("Method_", .project_method_owner(project_class), "_")
+}
+
+#' @noRd
+.discover_project_method_constructors <- function(project_class, envir = parent.frame()) {
+  prefix <- .project_method_prefix(project_class)
+  search_envs <- unique(Filter(Negate(is.null), list(
+    envir,
+    tryCatch(asNamespace("StreamFind"), error = function(...) NULL)
+  )))
+  constructor_names <- unique(unlist(lapply(
+    search_envs,
+    function(env) ls(envir = env, pattern = paste0("^", prefix), all.names = TRUE)
+  )))
+  if (length(constructor_names) == 0) {
+    return(character())
+  }
+  constructor_names[vapply(constructor_names, function(nm) {
+    any(vapply(search_envs, function(env) exists(nm, mode = "function", envir = env, inherits = TRUE), logical(1)))
+  }, logical(1))]
+}
+
+#' @noRd
+.discover_project_methods <- function(project_class, envir = parent.frame()) {
+  constructor_names <- .discover_project_method_constructors(project_class, envir = envir)
+  if (length(constructor_names) == 0) {
+    return(list())
+  }
+  methods <- lapply(constructor_names, function(nm) {
+    get(nm, envir = tryCatch(asNamespace("StreamFind"), error = function(...) envir), inherits = TRUE)()
+  })
+  names(methods) <- vapply(methods, function(step) step$method, character(1))
+  methods
+}
+
+#' @noRd
+.project_open_function_name <- function(project_class) {
+  paste0("open_", project_class)
+}
+
+#' @noRd
+.project_open_function <- function(project_class, envir = parent.frame()) {
+  fn_name <- .project_open_function_name(project_class)
+  namespace_env <- tryCatch(asNamespace("StreamFind"), error = function(...) NULL)
+  if (!exists(fn_name, mode = "function", envir = envir, inherits = TRUE) &&
+      (is.null(namespace_env) || !exists(fn_name, mode = "function", envir = namespace_env, inherits = TRUE))) {
+    stop("No open function registered for project class '", project_class, "'.", call. = FALSE)
+  }
+  get(fn_name, mode = "function", envir = if (!is.null(namespace_env)) namespace_env else envir, inherits = TRUE)
+}
+
 # MARK: .make_project_processing_step
 #' @noRd
 .make_project_processing_step <- function(
     method,
     parameters,
-    parameter_docs,
-    title,
-    description,
-    details,
     required = NA_character_,
     owner_class,
-    algorithm = NA_character_,
-    type = "MassSpec",
-    input_class = owner_class,
-    output_class = owner_class,
     number_permitted = 1,
-    software = "StreamFind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
     link = "https://odea-project.github.io/StreamFind",
@@ -115,27 +141,16 @@
   if (length(required) == 1 && is.na(required)) {
     required <- character()
   }
-  ProcessingStep(
-    type = type,
+  Method(
     method = method,
     required = required,
-    algorithm = algorithm,
     owner_class = owner_class,
-    input_class = input_class,
-    output_class = output_class,
     number_permitted = number_permitted,
-    version = as.character(packageVersion("StreamFind")),
-    software = software,
     developer = developer,
     contact = contact,
     link = link,
     doi = doi,
-    parameters = parameters,
-    title = title,
-    description = description,
-    details = details,
-    parameter_docs = parameter_docs,
-    constructor_name = if (!is.na(algorithm) && nzchar(algorithm)) paste0(type, "Method_", method, "_", algorithm) else paste0(type, "Method_", method)
+    parameters = parameters
   )
 }
 

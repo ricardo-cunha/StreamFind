@@ -1,5 +1,6 @@
 #include <Rcpp.h>
 
+#include "mass_spec/reader.h"
 #include "mass_spec/project_mass_spec.h"
 #include "project/project.h"
 
@@ -195,6 +196,23 @@ void rcpp_project_delete_cache(SEXP project_xptr, Nullable<std::string> name = R
                              {
     project_rcpp::project_from_xptr(project_xptr).delete_cache(name.isNull() ? std::string() : Rcpp::as<std::string>(name));
     return 0; });
+}
+
+// [[Rcpp::export]]
+std::vector<float> rcpp_decode_string(std::string base64_encoded)
+{
+  if (base64_encoded.empty())
+    return std::vector<float>();
+  try
+  {
+    std::string decoded_binary = mass_spec::reader::utils::decode_base64(base64_encoded);
+    return mass_spec::reader::utils::decode_little_endian_to_float(decoded_binary, 4);
+  }
+  catch (const std::exception &e)
+  {
+    Rcpp::warning(std::string("Failed to decode string: ") + e.what());
+    return std::vector<float>();
+  }
 }
 
 // MARK: ns mass_spec_rcpp
@@ -1072,16 +1090,13 @@ DataFrame rcpp_project_mass_spec_get_chromatograms_headers(SEXP mass_spec_xptr, 
 DataFrame rcpp_project_mass_spec_get_spectra_tic(SEXP mass_spec_xptr,
              SEXP analyses,
                                                  std::vector<int> levels,
-                                                 NumericVector rt)
+                                                 double rtmin,
+                                                 double rtmax)
 {
   return project::api::project_call([&]() {
     auto& mass_spec = mass_spec_rcpp::project_mass_spec_from_xptr(mass_spec_xptr);
-    double rt_min = 0.0;
-    double rt_max = 0.0;
-    if (rt.size() == 2) {
-        rt_min = std::min(rt[0], rt[1]);
-        rt_max = std::max(rt[0], rt[1]);
-    }
+    double rt_min = rtmin;
+    double rt_max = rtmax;
     return mass_spec_rcpp::ms_spectra_tic_rows_to_df(
         mass_spec.get_spectra_tic(
           mass_spec_rcpp::resolve_analysis_selection(analyses, mass_spec), levels, rt_min, rt_max

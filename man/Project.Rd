@@ -26,7 +26,7 @@ Internal DuckDB-backed StreamFind project runtime.
 \item \href{#method-Project-delete_cache}{\code{Project$delete_cache()}}
 \item \href{#method-Project-list_tables}{\code{Project$list_tables()}}
 \item \href{#method-Project-available_processing_methods}{\code{Project$available_processing_methods()}}
-\item \href{#method-Project-run_processing_step}{\code{Project$run_processing_step()}}
+\item \href{#method-Project-run_method}{\code{Project$run_method()}}
 \item \href{#method-Project-run_workflow}{\code{Project$run_workflow()}}
 \item \href{#method-Project-report_quarto}{\code{Project$report_quarto()}}
 \item \href{#method-Project-run_app}{\code{Project$run_app()}}
@@ -221,19 +221,19 @@ List tables in the project database.
 \if{html}{\out{<a id="method-Project-available_processing_methods"></a>}}
 \if{latex}{\out{\hypertarget{method-Project-available_processing_methods}{}}}
 \subsection{Method \code{available_processing_methods()}}{
-Return project-owned processing-step metadata.
+Return project-owned method metadata.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Project$available_processing_methods()}\if{html}{\out{</div>}}
 }
 
 }
 \if{html}{\out{<hr>}}
-\if{html}{\out{<a id="method-Project-run_processing_step"></a>}}
-\if{latex}{\out{\hypertarget{method-Project-run_processing_step}{}}}
-\subsection{Method \code{run_processing_step()}}{
-Run one workflow step via its owning project method.
+\if{html}{\out{<a id="method-Project-run_method"></a>}}
+\if{latex}{\out{\hypertarget{method-Project-run_method}{}}}
+\subsection{Method \code{run_method()}}{
+Run one workflow method via its owning project method.
 \subsection{Usage}{
-\if{html}{\out{<div class="r">}}\preformatted{Project$run_processing_step(step)}\if{html}{\out{</div>}}
+\if{html}{\out{<div class="r">}}\preformatted{Project$run_method(step)}\if{html}{\out{</div>}}
 }
 
 \subsection{Arguments}{

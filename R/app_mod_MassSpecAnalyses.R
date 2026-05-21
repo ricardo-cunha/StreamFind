@@ -22,7 +22,7 @@
     ns2 <- shiny::NS(id)
 
     reactive_analyses_info <- shiny::reactiveVal(info(reactive_analyses()))
-    project_details <- ProjectClasses(class(reactive_analyses())[1])
+    project_details <- projects_overview(class(reactive_analyses())[1])
 
     # Register shinyFileChoose once (must be outside renderUI) -----
     shinyFiles::shinyFileChoose(

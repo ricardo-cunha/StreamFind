@@ -1,12 +1,12 @@
 #' @title Project Mass Spec Spectra R6 Class
 #' @description R6 child of `ProjectMassSpec` exposing the spectra-focused MassSpec interface.
- #' @template arg-db-path
- #' @template arg-project-id
- #' @template arg-file-paths
- #' @template arg-analyses
- #' @template arg-replicates
- #' @template arg-blanks
- #' @template arg-ellipsis
+ #' @template arg-Project-db
+ #' @template arg-Project-project-id
+ #' @template arg-ProjectMassSpec-file-paths
+ #' @template arg-ProjectMassSpec-analyses
+ #' @template arg-ProjectMassSpec-replicates
+ #' @template arg-ProjectMassSpec-blanks
+ #' @template arg-Project-ellipsis
  #' @export
 ProjectMassSpecSpectra <- R6::R6Class(
   classname = "ProjectMassSpecSpectra",
@@ -53,28 +53,17 @@ ProjectMassSpecSpectra <- R6::R6Class(
     get_mass_spec_spectra_ptr = function() {
       private$.mass_spec_spectra_ptr
     },
-    #' @description Return spectra-project processing-step metadata.
+    #' @description Return spectra-project method metadata.
     available_processing_methods = function() {
-      list()
+      available_processing_methods.Project(self)
     },
     #' @description Print a short summary.
     print = function(...) {
-      cat("\nProjectMassSpecSpectra\n")
-      cat("db: ", self$get_db(), "\n", sep = "")
-      cat("project_id: ", self$get_project_id(), "\n", sep = "")
-      domain <- try(self$get_domain(), silent = TRUE)
-      if (!inherits(domain, "try-error") && !is.null(domain)) {
-        cat("domain: ", domain, "\n", sep = "")
-      }
-      analyses <- try(self$get_analyses(), silent = TRUE)
-      if (!inherits(analyses, "try-error")) {
-        cat("analyses: ", nrow(analyses), "\n", sep = "")
-      }
-      invisible(self)
+      print.ProjectMassSpecSpectra(self, ...)
     },
     #' @description Show a short summary.
     show = function(...) {
-      self$print(...)
+      show.ProjectMassSpecSpectra(self, ...)
     }
   )
 )
@@ -85,7 +74,7 @@ ProjectMassSpecSpectra <- R6::R6Class(
 #' These methods are thin wrappers over the `ProjectMassSpecSpectra` R6
 #' methods and expose the spectra-specific package generics.
 #' @param x A `ProjectMassSpecSpectra` object.
-#' @template arg-ellipsis
+#' @template arg-Project-ellipsis
 NULL
 
 #' @describeIn ProjectMassSpecSpectraS3 Return the native spectra pointer.
@@ -106,14 +95,15 @@ available_processing_methods.ProjectMassSpecSpectra <- function(x) {
 #' @export
 print.ProjectMassSpecSpectra <- function(x, ...) {
   checkmate::assert_class(x, "ProjectMassSpecSpectra")
-  x$print(...)
+  .print_project_mass_spec_summary(x, title = "ProjectMassSpecSpectra")
+  invisible(x)
 }
 
 #' @describeIn ProjectMassSpecSpectraS3 Show a short summary.
 #' @export
 show.ProjectMassSpecSpectra <- function(x, ...) {
   checkmate::assert_class(x, "ProjectMassSpecSpectra")
-  x$show(...)
+  print.ProjectMassSpecSpectra(x, ...)
 }
 
 #' @describeIn ProjectMassSpecSpectraS3 Plot extracted ion chromatograms (EIC) for specified analyses and targets.

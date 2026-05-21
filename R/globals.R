@@ -2,7 +2,7 @@ utils::globalVariables(c(
   "AnalysesTable", "AnalysesTable_cell_edit", "AnalysesTable_cells_selected",
   "Class", "ID", "a", "accumulations", "add_analyses_button", "add_header_button",
   "add_workflow_step", "adduct", "adduct_cat", "adduct_mass_error",
-  "adduct_time_error", "algorithm", "analyses_info", "analyses_overview_buttons",
+  "adduct_time_error", "analyses_info", "analyses_overview_buttons",
   "analyses_ui", "analysis", "annotation", "app_mode_ui", "area",
   "audit_trail", "audit_ui", "author", "avgFun", "b", "basePeakIntensity",
   "basePeakMZ", "blank", "blanks", "body_ui", "br", "capture.output",
@@ -32,7 +32,7 @@ utils::globalVariables(c(
   "save_engine_button_file", "save_workflow", "save_workflow_ui",
   "scanWindowLowerLimit", "scanWindowUpperLimit", "selected_method_details",
   "self", "seqNum", "set_wdir_button", "settings_selector", "sidebar_ui", "sn",
-  "software", "span", "spectra_headers", "strong", "style", "suspects", "tags",
+  "span", "spectra_headers", "strong", "style", "suspects", "tags",
   "topMost", "totIonCurrent", "type", "ul", "update_method", "value",
   "warningMenu", "wdir", "width", "workflow", "workflow_settings", "workflow_ui",
   "xVal"

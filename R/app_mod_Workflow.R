@@ -705,9 +705,6 @@
             class = "method-details",
             shiny::h3(method_editor_title, style = "margin-bottom: 10px;"),
             shiny::tags$div(
-              shiny::tags$b("Software: "),
-              shiny::tags$span(settings$software),
-              shiny::tags$br(),
               shiny::tags$b("Developer: "),
               shiny::tags$span(settings$developer),
               shiny::tags$br(),
@@ -1028,6 +1025,12 @@
       if (is.null(parameter_docs)) {
         parameter_docs <- list()
       }
+      settings_title <- settings$title
+      if (is.null(settings_title) || !nzchar(as.character(settings_title))) {
+        settings_title <- class(settings)[1]
+      }
+      settings_description <- settings$description
+      settings_details <- settings$details
       tryCatch(
         {
           parameter_items <- lapply(names(settings$parameters), function(param_name) {
@@ -1043,9 +1046,9 @@
           })
 
           help_page <- htmltools::tagList(
-            htmltools::h3(settings$title),
-            htmltools::p(settings$description),
-            htmltools::p(settings$details),
+            htmltools::h3(settings_title),
+            if (!is.null(settings_description) && nzchar(as.character(settings_description))) htmltools::p(settings_description),
+            if (!is.null(settings_details) && nzchar(as.character(settings_details))) htmltools::p(settings_details),
             htmltools::tags$div(
               htmltools::tags$b("Project Method: "),
               htmltools::tags$code(settings$method)
@@ -1069,7 +1072,7 @@
         },
         error = function(e) {
             shiny::showNotification(
-              paste("Error getting processing-step metadata:", e$message),
+              paste("Error getting method metadata:", e$message),
               duration = 5,
               type = "error"
             )
@@ -1077,7 +1080,7 @@
         },
         warning = function(w) {
             shiny::showNotification(
-              paste("Warning getting processing-step metadata:", w$message),
+              paste("Warning getting method metadata:", w$message),
               duration = 5,
               type = "warning"
             )

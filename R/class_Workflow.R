@@ -1,6 +1,6 @@
 #' @title Workflow Metadata Container
-#' @description Ordered list of `ProcessingStep` metadata objects.
-#' @param processing_steps A list of `ProcessingStep` objects or compatible lists.
+#' @description Ordered list of `Method` metadata objects.
+#' @param processing_steps A list of `Method` objects or compatible lists.
 #' @return A `Workflow` object.
 #' @export
 Workflow <- function(processing_steps = list()) {
@@ -9,10 +9,10 @@ Workflow <- function(processing_steps = list()) {
   attributes(items) <- NULL
   if (length(items) > 0) {
     items <- lapply(items, function(step) {
-      if (inherits(step, "ProcessingStep")) {
+      if (inherits(step, "Method")) {
         return(step)
       }
-      as.ProcessingStep(step)
+      as.Method(step)
     })
     workflow_methods <- character(0)
     for (i in seq_along(items)) {
@@ -34,14 +34,11 @@ validate_object.Workflow <- function(x, ...) {
   if (length(x) == 0) {
     return(invisible(NULL))
   }
-  step_types <- vapply(x, function(step) {
-    checkmate::assert_true(inherits(step, "ProcessingStep"))
+  vapply(x, function(step) {
+    checkmate::assert_true(inherits(step, "Method"))
     validate_object(step)
-    step$type
-  }, character(1))
-  if (length(unique(step_types)) > 1) {
-    stop("All workflow steps must share the same type.")
-  }
+    TRUE
+  }, logical(1))
   methods <- vapply(x, function(step) step$method, character(1))
   permitted <- vapply(x, function(step) step$number_permitted, numeric(1))
   singleton_methods <- methods[is.finite(permitted) & permitted == 1]
@@ -57,7 +54,7 @@ get_methods.Workflow <- function(x, ...) {
   if (length(x) == 0) {
     return(character())
   }
-  vapply(x, function(step) step$constructor_name, character(1))
+  vapply(x, function(step) class(step)[1], character(1))
 }
 
 #' @export
@@ -68,15 +65,9 @@ info.Workflow <- function(x, ...) {
   }
   data.frame(
     index = seq_along(x),
-    type = vapply(x, function(step) step$type, character(1)),
     owner_class = vapply(x, function(step) step$owner_class, character(1)),
     method = vapply(x, function(step) step$method, character(1)),
-    algorithm = vapply(x, function(step) step$algorithm, character(1)),
-    input_class = vapply(x, function(step) step$input_class, character(1)),
-    output_class = vapply(x, function(step) step$output_class, character(1)),
     number_permitted = vapply(x, function(step) step$number_permitted, numeric(1)),
-    version = vapply(x, function(step) step$version, character(1)),
-    software = vapply(x, function(step) step$software, character(1)),
     developer = vapply(x, function(step) step$developer, character(1)),
     contact = vapply(x, function(step) step$contact, character(1)),
     link = vapply(x, function(step) step$link, character(1)),
