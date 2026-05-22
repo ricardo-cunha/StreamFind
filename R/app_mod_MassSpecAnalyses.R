@@ -1,5 +1,6 @@
 ##' @noRd
-.mod_Analyses_UI.MassSpecAnalyses <- function(x, id, ns) {
+##' @export
+.mod_Analyses_UI.ProjectMassSpec <- function(x, id, ns) {
   ns2 <- shiny::NS(id)
   htmltools::div(
     style = "height: calc(100vh - 35px); overflow: hidden;",
@@ -10,7 +11,8 @@
 }
 
 ##' @noRd
-.mod_Analyses_Server.MassSpecAnalyses <- function(
+##' @export
+.mod_Analyses_Server.ProjectMassSpec <- function(
     x,
     id,
     ns,
@@ -180,7 +182,7 @@
             "Add Analyses",
             paste0(
               "Select Analyses (",
-              paste(data_type_details$formats, collapse = "|"),
+              paste(project_details$formats, collapse = "|"),
               ")"
             ),
             multiple = TRUE,
@@ -200,7 +202,7 @@
             "Add Analyses",
             paste0(
               "Select Analyses (",
-              paste(data_type_details$formats, collapse = "|"),
+              paste(project_details$formats, collapse = "|"),
               ")"
             ),
             multiple = TRUE,
@@ -222,7 +224,7 @@
         if (number_files > 0) {
           if (
             all(
-              tools::file_ext(files) %in% data_type_details$formats
+              tools::file_ext(files) %in% project_details$formats
             )
           ) {
             analyses <- reactive_analyses()
@@ -295,7 +297,7 @@
             shiny::tags$i(class = "fa fa-info-circle"),
             sprintf(
               "Analyses can be added in the following formats: %s.",
-              paste(data_type_details$formats, collapse = ", ")
+              paste(project_details$formats, collapse = ", ")
             )
           ),
           shiny::tags$li(
@@ -316,32 +318,24 @@
 
 ##' @noRd
 ##' @export
-.mod_Analyses_UI.ProjectMassSpec <- .mod_Analyses_UI.MassSpecAnalyses
+.mod_Analyses_UI.ProjectNonTargetAnalysis <- .mod_Analyses_UI.ProjectMassSpec
 
 ##' @noRd
 ##' @export
-.mod_Analyses_Server.ProjectMassSpec <- .mod_Analyses_Server.MassSpecAnalyses
+.mod_Analyses_Server.ProjectNonTargetAnalysis <- .mod_Analyses_Server.ProjectMassSpec
 
 ##' @noRd
 ##' @export
-.mod_Analyses_UI.ProjectNonTargetAnalysis <- .mod_Analyses_UI.MassSpecAnalyses
+.mod_Analyses_UI.ProjectMassSpecSpectra <- .mod_Analyses_UI.ProjectMassSpec
 
 ##' @noRd
 ##' @export
-.mod_Analyses_Server.ProjectNonTargetAnalysis <- .mod_Analyses_Server.MassSpecAnalyses
+.mod_Analyses_Server.ProjectMassSpecSpectra <- .mod_Analyses_Server.ProjectMassSpec
 
 ##' @noRd
 ##' @export
-.mod_Analyses_UI.ProjectMassSpecSpectra <- .mod_Analyses_UI.MassSpecAnalyses
+.mod_Analyses_UI.ProjectMassSpecChromatograms <- .mod_Analyses_UI.ProjectMassSpec
 
 ##' @noRd
 ##' @export
-.mod_Analyses_Server.ProjectMassSpecSpectra <- .mod_Analyses_Server.MassSpecAnalyses
-
-##' @noRd
-##' @export
-.mod_Analyses_UI.ProjectMassSpecChromatograms <- .mod_Analyses_UI.MassSpecAnalyses
-
-##' @noRd
-##' @export
-.mod_Analyses_Server.ProjectMassSpecChromatograms <- .mod_Analyses_Server.MassSpecAnalyses
+.mod_Analyses_Server.ProjectMassSpecChromatograms <- .mod_Analyses_Server.ProjectMassSpec

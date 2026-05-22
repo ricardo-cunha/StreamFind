@@ -2,8 +2,9 @@
 #' @description Return metadata describing the public StreamFind project classes.
 #'   The overview includes the class name, user-facing label, project domain,
 #'   supported input file formats, a short description, the corresponding
-#'   `open_<ProjectClass>()` function name, and discovered project-owned method
-#'   names for each concrete project class.
+#'   `open_<ProjectClass>()` function name, app module owners, result module
+#'   classes, and discovered project-owned method names for each concrete
+#'   project class.
 #' @param project_class Optional public project class name. If `NULL`, returns the full registry.
 #' @return If `project_class` is `NULL`, a named list keyed by public project class.
 #' Otherwise, a named list describing the selected project class.
@@ -17,6 +18,9 @@ projects_overview <- function(project_class = NULL) {
       formats = c("mzML", "mzXML", "d", "raw"),
       description = "Shared Mass Spec project focused on spectra import, raw spectra access, and spectra plots.",
       open_function = .project_open_function_name("ProjectMassSpecSpectra"),
+      analyses_owner = "ProjectMassSpec",
+      explorer_owner = "ProjectMassSpec",
+      result_classes = character(),
       processing_methods = names(.discover_project_methods("ProjectMassSpecSpectra"))
     ),
     ProjectMassSpecChromatograms = list(
@@ -26,6 +30,9 @@ projects_overview <- function(project_class = NULL) {
       formats = c("mzML", "mzXML", "d", "raw"),
       description = "Shared Mass Spec project focused on chromatogram extraction and chromatogram plots.",
       open_function = .project_open_function_name("ProjectMassSpecChromatograms"),
+      analyses_owner = "ProjectMassSpec",
+      explorer_owner = "ProjectMassSpec",
+      result_classes = "ProjectMassSpecChromatograms",
       processing_methods = names(.discover_project_methods("ProjectMassSpecChromatograms"))
     ),
     ProjectNonTargetAnalysis = list(
@@ -35,6 +42,9 @@ projects_overview <- function(project_class = NULL) {
       formats = c("mzML", "mzXML", "d", "raw"),
       description = "Shared Mass Spec project focused on non-target screening workflows, features, suspects, and downstream results.",
       open_function = .project_open_function_name("ProjectNonTargetAnalysis"),
+      analyses_owner = "ProjectMassSpec",
+      explorer_owner = "ProjectMassSpec",
+      result_classes = "ProjectNonTargetAnalysis",
       processing_methods = names(.discover_project_methods("ProjectNonTargetAnalysis"))
     )
   )
@@ -53,6 +63,16 @@ projects_overview <- function(project_class = NULL) {
   }
 
   registry[[project_class]]
+}
+
+#' @noRd
+.project_class_from_domain <- function(domain, registry = projects_overview()) {
+  checkmate::assert_character(domain, len = 1, any.missing = FALSE)
+  matches <- names(Filter(function(entry) identical(entry$domain, domain), registry))
+  if (length(matches) != 1) {
+    return(NA_character_)
+  }
+  matches[[1]]
 }
 
 #' @title Open or Create a Mass Spec Spectra Project

@@ -23,9 +23,14 @@ app_ui <- function(request) {
         # ---- Horizontal navigation (replaces sidebar) ----
         htmltools::div(
           id = "sf-nav",
+          # Home
+          htmltools::div(class = "sf-nav-group active", `data-tab` = "home",
+            htmltools::tags$button(class = "sf-nav-btn active", `data-tab` = "home", title = "Home",
+              shiny::icon("home"))
+          ),
           # Project
-          htmltools::div(class = "sf-nav-group active", `data-tab` = "project",
-            htmltools::tags$button(class = "sf-nav-btn active", `data-tab` = "project", title = "Project",
+          htmltools::div(class = "sf-nav-group", `data-tab` = "project",
+            htmltools::tags$button(class = "sf-nav-btn", `data-tab` = "project", title = "Project",
               "Project")
           ),
           # Analyses
@@ -33,30 +38,20 @@ app_ui <- function(request) {
             htmltools::tags$button(class = "sf-nav-btn", `data-tab` = "analyses", title = "Analyses",
               "Analyses")
           ),
-          # Explorer + sub-pages
+          # Explorer
           htmltools::div(class = "sf-nav-group", `data-tab` = "explorer",
             htmltools::tags$button(class = "sf-nav-btn", `data-tab` = "explorer", title = "Explorer",
-              "Explorer"),
-            htmltools::div(
-              class = "sf-sub-menu",
-              htmltools::tags$button(class = "sf-sub-btn", `data-tab` = "explorer",
-                `data-subtab` = "spectra", title = "Spectra", "Spectra"),
-              htmltools::tags$button(class = "sf-sub-btn", `data-tab` = "explorer",
-                `data-subtab` = "chromatograms", title = "Chromatograms", "Chromatograms"),
-              htmltools::tags$button(class = "sf-sub-btn", `data-tab` = "explorer",
-                `data-subtab` = "eic", title = "Extract Ion Chrom.", "EIC")
-            )
+              "Explorer")
           ),
           # Workflow
           htmltools::div(class = "sf-nav-group", `data-tab` = "workflow",
             htmltools::tags$button(class = "sf-nav-btn", `data-tab` = "workflow", title = "Workflow",
               "Workflow")
           ),
-          # Results + dynamic sub-pages
+          # Results
           htmltools::div(class = "sf-nav-group", `data-tab` = "results",
             htmltools::tags$button(class = "sf-nav-btn", `data-tab` = "results", title = "Results",
-              "Results"),
-            shiny::uiOutput("results_sidebar_subnav")
+              "Results")
           ),
           # Report
           htmltools::div(class = "sf-nav-group", `data-tab` = "report",
@@ -67,27 +62,17 @@ app_ui <- function(request) {
           htmltools::div(class = "sf-nav-group", `data-tab` = "audit",
             htmltools::tags$button(class = "sf-nav-btn", `data-tab` = "audit", title = "Audit Trail",
               "Audit Trail")
-          )
+          ),
+          
         ),
         htmltools::div(
           id = "sf-topbar-right",
           shiny::uiOutput("project_data_type"),
-          shiny::actionButton(
-            "restart_app",
-            label = "Restart",
-            title = "Reset / Restart",
-            class = "sf-topbar-btn sf-topbar-text-btn"
-          ),
-          shiny::actionButton(
-            "settings_button",
-            label = NULL,
-            icon = shiny::icon("gear"),
-            title = "Settings",
-            class = "sf-topbar-btn"
-          ),
-          shiny::uiOutput("notifications_ui")
+          shiny::uiOutput("notifications_ui"),
+          shiny::uiOutput("settings_dropdown_ui")
         )
       ),
+      shiny::uiOutput("subtopbar_ui"),
       # ---- Body = full-width content (no sidebar) ----
       htmltools::div(
         id = "sf-body",
@@ -106,7 +91,11 @@ app_ui <- function(request) {
             )
           ),
           shiny::conditionalPanel(
-            "input.sf_active_tab === 'project' || !input.sf_active_tab",
+            "input.sf_active_tab === 'home' || !input.sf_active_tab",
+            htmltools::div(class = "sf-page", shiny::uiOutput("home_ui"))
+          ),
+          shiny::conditionalPanel(
+            "input.sf_active_tab === 'project'",
             htmltools::div(class = "sf-page", shiny::uiOutput("project_ui"))
           ),
           shiny::conditionalPanel(
@@ -132,7 +121,8 @@ app_ui <- function(request) {
           shiny::conditionalPanel(
             "input.sf_active_tab === 'audit'",
             htmltools::div(class = "sf-page", shiny::uiOutput("audit_ui"))
-          )
+          ),
+          
         )
       )
     )
@@ -180,88 +170,78 @@ golem_add_external_resources <- function() {
     ),
     # Navigation + theme toggle JS
     shiny::tags$script(htmltools::HTML("
-      // sfNavigate: activate a main tab, expand its sub-menu, auto-select first sub-tab
+      // sfNavigate: activate a main tab
       function sfNavigate(tab, subtab) {
         Shiny.setInputValue('sf_active_tab', tab, {priority: 'event'});
 
-        // Toggle active state on nav-groups (CSS drives sub-menu visibility)
         document.querySelectorAll('#sf-nav .sf-nav-group').forEach(function(grp) {
           grp.classList.toggle('active', grp.getAttribute('data-tab') === tab);
         });
 
-        // Toggle active state on main buttons
         document.querySelectorAll('#sf-nav .sf-nav-btn').forEach(function(btn) {
           btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
         });
 
-        // Determine which subtab to activate
-        var activeSubtab = subtab || null;
-        if (!activeSubtab) {
-          var grp = document.querySelector('#sf-nav .sf-nav-group[data-tab=\"' + tab + '\"]');
-          var firstSub = grp ? grp.querySelector('.sf-sub-btn') : null;
-          if (firstSub) activeSubtab = firstSub.getAttribute('data-subtab');
+        if (typeof subtab === 'string') {
+          sfSubNavigate(tab, subtab);
         }
-
-        // Update sub-button active states
-        document.querySelectorAll('#sf-nav .sf-sub-btn').forEach(function(btn) {
-          btn.classList.toggle('active',
-            btn.getAttribute('data-tab') === tab &&
-            btn.getAttribute('data-subtab') === activeSubtab);
-        });
-
-        Shiny.setInputValue('sf_active_subtab', activeSubtab || '', {priority: 'event'});
       }
 
-      // sfSubNavigate: switch sub-tab without changing main tab
+      // sfSubNavigate: switch sub-tab on the second topbar
       function sfSubNavigate(tab, subtab) {
+        Shiny.setInputValue('sf_active_tab', tab, {priority: 'event'});
         Shiny.setInputValue('sf_active_subtab', subtab, {priority: 'event'});
-        document.querySelectorAll('#sf-nav .sf-sub-btn').forEach(function(btn) {
+
+        document.querySelectorAll('#sf-nav .sf-nav-group').forEach(function(grp) {
+          grp.classList.toggle('active', grp.getAttribute('data-tab') === tab);
+        });
+
+        document.querySelectorAll('#sf-nav .sf-nav-btn').forEach(function(btn) {
+          btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
+        });
+
+        document.querySelectorAll('#sf-subtopbar .sf-subbar-btn').forEach(function(btn) {
           btn.classList.toggle('active',
             btn.getAttribute('data-tab') === tab &&
             btn.getAttribute('data-subtab') === subtab);
         });
       }
 
-      // Event delegation on nav bar (handles static + dynamically rendered sub-buttons)
+      // Event delegation on nav bars
       document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('sf-nav').addEventListener('click', function(e) {
-          var subBtn  = e.target.closest('.sf-sub-btn');
           var mainBtn = e.target.closest('.sf-nav-btn');
+          if (mainBtn) {
+            var tab = mainBtn.getAttribute('data-tab');
+            sfNavigate(tab);
+          }
+        });
+
+        document.addEventListener('click', function(e) {
+          var subBtn = e.target.closest('#sf-subtopbar .sf-subbar-btn');
           if (subBtn) {
             sfSubNavigate(subBtn.getAttribute('data-tab'), subBtn.getAttribute('data-subtab'));
-          } else if (mainBtn) {
-            sfNavigate(mainBtn.getAttribute('data-tab'));
           }
         });
       });
 
-      // Auto-activate first sub-tab after dynamic sub-menu renders (e.g. Results)
-      Shiny.addCustomMessageHandler('activateFirstSubtab', function(tab) {
-        var grp = document.querySelector('#sf-nav .sf-nav-group[data-tab=\"' + tab + '\"]');
-        if (grp && grp.classList.contains('active')) {
-          setTimeout(function() {
-            var firstSub = grp.querySelector('.sf-sub-btn');
-            if (firstSub && !grp.querySelector('.sf-sub-btn.active')) {
-              sfSubNavigate(tab, firstSub.getAttribute('data-subtab'));
-            }
-          }, 50);
+      // Apply mode/style to the app root and body so shared CSS and modals stay in sync.
+      Shiny.addCustomMessageHandler('setAppTheme', function(msg) {
+        var app = document.getElementById('sf-app');
+        if (app) {
+          var mode = (msg && msg.mode) ? msg.mode : 'light';
+          var palette = (msg && msg.palette) ? msg.palette : 'lagoon';
+          app.classList.remove('sf-light', 'sf-dark');
+          app.classList.add(mode === 'dark' ? 'sf-dark' : 'sf-light');
+          app.setAttribute('data-sf-palette', palette);
+          document.body.setAttribute('data-sf-theme', mode);
+          document.body.setAttribute('data-sf-palette', palette);
         }
       });
 
-      // Theme toggle: flip .sf-light / .sf-dark on #sf-app + body[data-sf-theme] for modals
-      Shiny.addCustomMessageHandler('toggleTheme', function(msg) {
-        var app = document.getElementById('sf-app');
-        if (app) {
-          if (app.classList.contains('sf-dark')) {
-            app.classList.remove('sf-dark');
-            app.classList.add('sf-light');
-            document.body.removeAttribute('data-sf-theme');
-          } else {
-            app.classList.remove('sf-light');
-            app.classList.add('sf-dark');
-            document.body.setAttribute('data-sf-theme', 'dark');
-          }
-        }
+      Shiny.addCustomMessageHandler('setActiveTab', function(msg) {
+        if (!msg || !msg.tab) return;
+        sfNavigate(msg.tab, msg.subtab || null);
       });
 
       Shiny.addCustomMessageHandler('setBootOverlay', function(msg) {
@@ -338,8 +318,9 @@ golem_add_external_resources <- function() {
       // Init body theme attribute on page load
       document.addEventListener('DOMContentLoaded', function() {
         var app = document.getElementById('sf-app');
-        if (app && app.classList.contains('sf-dark')) {
-          document.body.setAttribute('data-sf-theme', 'dark');
+        if (app) {
+          document.body.setAttribute('data-sf-theme', app.classList.contains('sf-dark') ? 'dark' : 'light');
+          document.body.setAttribute('data-sf-palette', app.getAttribute('data-sf-palette') || 'lagoon');
         }
       });
 
@@ -349,6 +330,12 @@ golem_add_external_resources <- function() {
         if (wrapper && !wrapper.contains(e.target)) {
           var dd = document.getElementById('sf-notif-dropdown');
           if (dd) dd.classList.remove('open');
+        }
+
+        var settingsWrapper = document.querySelector('.sf-settings-wrapper');
+        if (settingsWrapper && !settingsWrapper.contains(e.target)) {
+          var settingsDd = document.getElementById('sf-settings-dropdown');
+          if (settingsDd) settingsDd.classList.remove('open');
         }
       });
     "))

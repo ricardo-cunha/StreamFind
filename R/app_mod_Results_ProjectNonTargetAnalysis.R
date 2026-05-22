@@ -1,7 +1,7 @@
-## MARK: .mod_Result_UI.MassSpecResults_NonTargetAnalysis
+## MARK: .mod_Result_UI.ProjectNonTargetAnalysis
 ##' @export
 ##' @noRd
-.mod_Result_UI.MassSpecResults_NonTargetAnalysis <- function(x, id, ns) {
+.mod_Result_UI.ProjectNonTargetAnalysis <- function(x, id, ns) {
   ns2 <- shiny::NS(id)
   ns_full <- function(name) ns(ns2(name))
 
@@ -126,17 +126,8 @@
     custom_css,
     .app_util_plot_maximize_js(),
     .app_util_create_plot_modal(ns_full),
-    # MARK: Main TabBox
-    bslib::navset_card_tab(
-      id = ns_full("main_tabs"),
-      height = "calc(100vh - 35px - 44px)",
-      # MARK: Summary Tab
-      # Summary Tab -----
-      bslib::nav_panel(
-        title = shiny::tagList(
-          shiny::icon("chart-pie", class = "mr-2"),
-          "Summary"
-        ),
+    shiny::conditionalPanel(
+      "input.sf_active_subtab === 'summary'",
         shiny::div(
           class = "tab-content",
           style = "max-height: calc(100vh - 69px); overflow-y: auto; padding: 0;",
@@ -287,187 +278,18 @@
             )
           )
         )
-      ),
-      # MARK: Features Tab
-      # Features Tab -----
-      bslib::nav_panel(
-        title = shiny::tagList(shiny::icon("braille", class = "mr-2"), "Features"),
-        shiny::div(
-          class = "tab-content",
-          style = "max-height: calc(100vh - 69px); overflow-y: auto; padding: 0;",
-          shiny::div(
-            class = "features-controls-bar",
-            style = "display: flex; align-items: center; justify-content: space-between;",
-            shiny::div(
-              style = "display: flex; align-items: center; gap: 10px; flex-wrap: wrap;",
-              shiny::div(
-                style = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;",
-                shiny::span("Group by:", style = "font-weight: 500;"),
-                shiny::div(
-                  style = "display: flex; align-items: center;",
-                  shiny::radioButtons(
-                    ns_full("scatter_color_by"),
-                    label = NULL,
-                    choices = c("Analysis" = "analysis", "Replicate" = "replicate"),
-                    selected = "analysis",
-                    inline = TRUE
-                  )
-                )
-              ),
-              shiny::div(
-                style = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;",
-                shiny::span("Select by:", style = "font-weight: 500;"),
-                shiny::radioButtons(
-                  ns_full("scatter_select_by"),
-                  label = NULL,
-                  choices = c("Feature" = "feature", "Component" = "feature_component", "Group" = "feature_group"),
-                  selected = "feature",
-                  inline = TRUE
-                )
-              )
-            ),
-            shiny::div(
-              class = "btn-group btn-group-sm",
-              shiny::actionButton(ns_full("scatter_prop_20_80"), "20:80", class = "btn btn-outline-primary btn-sm"),
-              shiny::actionButton(ns_full("scatter_prop_30_70"), "30:70", class = "btn btn-outline-primary btn-sm"),
-              shiny::actionButton(ns_full("scatter_prop_40_60"), "40:60", class = "btn btn-outline-primary btn-sm"),
-              shiny::actionButton(ns_full("scatter_prop_50_50"), "50:50", class = "btn btn-outline-primary btn-sm"),
-              shiny::actionButton(ns_full("scatter_prop_60_40"), "60:40", class = "btn btn-outline-primary btn-sm"),
-              shiny::actionButton(ns_full("scatter_prop_70_30"), "70:30", class = "btn btn-outline-primary btn-sm"),
-              shiny::actionButton(ns_full("scatter_prop_80_20"), "80:20", class = "btn btn-outline-primary btn-sm")
-            )
-          ),
-          shiny::div(
-            id = ns_full("scatter_content_container"),
-            style = "display: flex; height: calc(100vh - 183px);",
-            shiny::div(
-              id = ns_full("features_scatter_panel"),
-              style = "height: calc(100vh - 183px); padding: 10px; overflow: auto; width: 55%; display: flex; flex-direction: column; gap: 8px;",
-              bslib::layout_sidebar(
-                sidebar = bslib::sidebar(
-                  open = TRUE,
-                  width = "350px",
-                  style = "max-height: calc(100vh - 253px); overflow-y: auto; overflow-x: visible; padding: 16px 24px;",
-                  shiny::textInput(
-                    ns_full("scatter_search"),
-                    "Search (regex)",
-                    value = "",
-                    placeholder = "Filter features (regex)..."
-                  ),
-                  shiny::uiOutput(ns_full("scatter_numeric_filters"))
-                ),
-                fill = TRUE,
-                shiny::div(
-                  style = "flex: 1 1 auto; min-width: 0; width: 100%; position: relative;",
-                  shiny::div(
-                    style = "height: 30px; position: relative;",
-                    .app_util_create_maximize_button("features_scatter_plot", ns_full)
-                  ),
-                    plotly::plotlyOutput(
-                      ns_full("features_scatter_plot"),
-                      height = "calc(100vh - 253px)",
-                      width = "100%"
-                    )
-                  )
-                )
-              ),
-              shiny::div(
-              id = ns_full("features_scatter_details_panel"),
-              style = "height: calc(100vh - 183px); padding: 10px; overflow: hidden; width: 45%;",
-              shiny::tabsetPanel(
-                id = ns_full("feature_scatter_details_tabs"),
-                type = "tabs",
-                shiny::tabPanel(
-                  title = "EIC",
-                  height = "100%",
-                  shiny::div(
-                    style = "height: 30px; position: relative;",
-                    .app_util_create_maximize_button("feature_peaks_plot_scatter", ns_full)
-                  ),
-                  plotly::plotlyOutput(
-                    ns_full("feature_peaks_plot_scatter"),
-                    height = "calc(100vh - 253px)"
-                  )
-                ),
-                shiny::tabPanel(
-                  title = "XIC",
-                  height = "100%",
-                  shiny::div(
-                    style = "height: 30px; position: relative;",
-                    .app_util_create_maximize_button("feature_xic_plot_scatter", ns_full)
-                  ),
-                  plotly::plotlyOutput(
-                    ns_full("feature_xic_plot_scatter"),
-                    height = "calc(100vh - 253px)"
-                  )
-                ),
-                shiny::tabPanel(
-                  title = "Profile",
-                  height = "100%",
-                  shiny::div(
-                    style = "height: 30px; position: relative;",
-                    .app_util_create_maximize_button("feature_profile_plot_scatter", ns_full)
-                  ),
-                  plotly::plotlyOutput(
-                    ns_full("feature_profile_plot_scatter"),
-                    height = "calc(100vh - 253px)"
-                  )
-                ),
-                shiny::tabPanel(
-                  title = "MS1",
-                  height = "100%",
-                  shiny::div(
-                    style = "height: 30px; position: relative;",
-                    .app_util_create_maximize_button("feature_ms1_plot_scatter", ns_full)
-                  ),
-                  plotly::plotlyOutput(
-                    ns_full("feature_ms1_plot_scatter"),
-                    height = "calc(100vh - 253px)"
-                  )
-                ),
-                shiny::tabPanel(
-                  title = "MS2",
-                  height = "100%",
-                  shiny::div(
-                    style = "height: 30px; position: relative;",
-                    .app_util_create_maximize_button("feature_ms2_plot_scatter", ns_full)
-                  ),
-                  plotly::plotlyOutput(
-                    ns_full("feature_ms2_plot_scatter"),
-                    height = "calc(100vh - 253px)"
-                  )
-                ),
-                shiny::tabPanel(
-                  title = "Details",
-                  shiny::div(
-                    class = "p-3",
-                    style = "height: calc(100vh - 233px); overflow: auto;",
-                    DT::dataTableOutput(ns_full("feature_details_table_scatter"))
-                  )
-                ),
-                shiny::tabPanel(
-                  title = "Suspects",
-                  shiny::div(
-                    class = "p-3",
-                    style = "height: calc(100vh - 233px); overflow: auto;",
-                    DT::dataTableOutput(ns_full("suspects_table_scatter"))
-                  )
-                )
-              )
-            )
-          )
-        )
-      ),
-      # MARK: Suspects Tab
-      # Suspects Tab -----
+    ),
+    shiny::conditionalPanel(
+      "input.sf_active_subtab === 'features'",
+      shiny::uiOutput(ns_full("features_results_ui"))
     )
   )
 }
 
-# MARK: .mod_WAResult_Server.MassSpecResults_NonTargetAnalysis
+# MARK: .mod_Result_Server.ProjectNonTargetAnalysis
 ##' @export
 ##' @noRd
-.mod_Result_Server.MassSpecResults_NonTargetAnalysis <- function(
+.mod_Result_Server.ProjectNonTargetAnalysis <- function(
     x,
     id,
     ns,
@@ -521,6 +343,194 @@
         fts[[col]] <- round(fts[[col]], d)
       }
       fts
+    })
+
+    has_features <- shiny::reactive({
+      nrow(features_data()) > 0
+    })
+
+    output$features_results_ui <- shiny::renderUI({
+      if (!isTRUE(has_features())) {
+        return(
+          htmltools::div(
+            class = "sf-empty-state",
+            htmltools::div(
+              class = "sf-page-title-block",
+              htmltools::tags$h3(class = "sf-page-title", "No Features Available"),
+              htmltools::tags$p(
+                class = "sf-page-subtitle",
+                "Run the FindFeatures method in the Workflow tab."
+              )
+            )
+          )
+        )
+      }
+
+      shiny::div(
+        class = "tab-content",
+        style = "max-height: calc(100vh - 69px); overflow-y: auto; padding: 0;",
+        shiny::div(
+          class = "features-controls-bar",
+          style = "display: flex; align-items: center; justify-content: space-between;",
+          shiny::div(
+            style = "display: flex; align-items: center; gap: 10px; flex-wrap: wrap;",
+            shiny::div(
+              style = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;",
+              shiny::span("Group by:", style = "font-weight: 500;"),
+              shiny::div(
+                style = "display: flex; align-items: center;",
+                shiny::radioButtons(
+                  ns_full("scatter_color_by"),
+                  label = NULL,
+                  choices = c("Analysis" = "analysis", "Replicate" = "replicate"),
+                  selected = "analysis",
+                  inline = TRUE
+                )
+              )
+            ),
+            shiny::div(
+              style = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;",
+              shiny::span("Select by:", style = "font-weight: 500;"),
+              shiny::radioButtons(
+                ns_full("scatter_select_by"),
+                label = NULL,
+                choices = c("Feature" = "feature", "Component" = "feature_component", "Group" = "feature_group"),
+                selected = "feature",
+                inline = TRUE
+              )
+            )
+          ),
+          shiny::div(
+            class = "btn-group btn-group-sm",
+            shiny::actionButton(ns_full("scatter_prop_20_80"), "20:80", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("scatter_prop_30_70"), "30:70", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("scatter_prop_40_60"), "40:60", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("scatter_prop_50_50"), "50:50", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("scatter_prop_60_40"), "60:40", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("scatter_prop_70_30"), "70:30", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("scatter_prop_80_20"), "80:20", class = "btn btn-outline-primary btn-sm")
+          )
+        ),
+        shiny::div(
+          id = ns_full("scatter_content_container"),
+          style = "display: flex; height: calc(100vh - 183px);",
+          shiny::div(
+            id = ns_full("features_scatter_panel"),
+            style = "height: calc(100vh - 183px); padding: 10px; overflow: auto; width: 55%; display: flex; flex-direction: column; gap: 8px;",
+            bslib::layout_sidebar(
+              sidebar = bslib::sidebar(
+                open = TRUE,
+                width = "350px",
+                style = "max-height: calc(100vh - 253px); overflow-y: auto; overflow-x: visible; padding: 16px 24px;",
+                shiny::textInput(
+                  ns_full("scatter_search"),
+                  "Search (regex)",
+                  value = "",
+                  placeholder = "Filter features (regex)..."
+                ),
+                shiny::uiOutput(ns_full("scatter_numeric_filters"))
+              ),
+              fill = TRUE,
+              shiny::div(
+                style = "flex: 1 1 auto; min-width: 0; width: 100%; position: relative;",
+                shiny::div(
+                  style = "height: 30px; position: relative;",
+                  .app_util_create_maximize_button("features_scatter_plot", ns_full)
+                ),
+                plotly::plotlyOutput(
+                  ns_full("features_scatter_plot"),
+                  height = "calc(100vh - 253px)",
+                  width = "100%"
+                )
+              )
+            )
+          ),
+          shiny::div(
+            id = ns_full("features_scatter_details_panel"),
+            style = "height: calc(100vh - 183px); padding: 10px; overflow: hidden; width: 45%;",
+            shiny::tabsetPanel(
+              id = ns_full("feature_scatter_details_tabs"),
+              type = "tabs",
+              shiny::tabPanel(
+                title = "EIC",
+                height = "100%",
+                shiny::div(
+                  style = "height: 30px; position: relative;",
+                  .app_util_create_maximize_button("feature_peaks_plot_scatter", ns_full)
+                ),
+                plotly::plotlyOutput(
+                  ns_full("feature_peaks_plot_scatter"),
+                  height = "calc(100vh - 253px)"
+                )
+              ),
+              shiny::tabPanel(
+                title = "XIC",
+                height = "100%",
+                shiny::div(
+                  style = "height: 30px; position: relative;",
+                  .app_util_create_maximize_button("feature_xic_plot_scatter", ns_full)
+                ),
+                plotly::plotlyOutput(
+                  ns_full("feature_xic_plot_scatter"),
+                  height = "calc(100vh - 253px)"
+                )
+              ),
+              shiny::tabPanel(
+                title = "Profile",
+                height = "100%",
+                shiny::div(
+                  style = "height: 30px; position: relative;",
+                  .app_util_create_maximize_button("feature_profile_plot_scatter", ns_full)
+                ),
+                plotly::plotlyOutput(
+                  ns_full("feature_profile_plot_scatter"),
+                  height = "calc(100vh - 253px)"
+                )
+              ),
+              shiny::tabPanel(
+                title = "MS1",
+                height = "100%",
+                shiny::div(
+                  style = "height: 30px; position: relative;",
+                  .app_util_create_maximize_button("feature_ms1_plot_scatter", ns_full)
+                ),
+                plotly::plotlyOutput(
+                  ns_full("feature_ms1_plot_scatter"),
+                  height = "calc(100vh - 253px)"
+                )
+              ),
+              shiny::tabPanel(
+                title = "MS2",
+                height = "100%",
+                shiny::div(
+                  style = "height: 30px; position: relative;",
+                  .app_util_create_maximize_button("feature_ms2_plot_scatter", ns_full)
+                ),
+                plotly::plotlyOutput(
+                  ns_full("feature_ms2_plot_scatter"),
+                  height = "calc(100vh - 253px)"
+                )
+              ),
+              shiny::tabPanel(
+                title = "Details",
+                shiny::div(
+                  class = "p-3",
+                  style = "height: calc(100vh - 233px); overflow: auto;",
+                  DT::dataTableOutput(ns_full("feature_details_table_scatter"))
+                )
+              ),
+              shiny::tabPanel(
+                title = "Suspects",
+                shiny::div(
+                  class = "p-3",
+                  style = "height: calc(100vh - 233px); overflow: auto;",
+                  DT::dataTableOutput(ns_full("suspects_table_scatter"))
+                )
+              )
+            )
+          )
+        )
+      )
     })
 
     # MARK: internal_standards_data
@@ -1394,10 +1404,3 @@
   })
 }
 
-##' @export
-##' @noRd
-.mod_Result_UI.ProjectNonTargetAnalysis <- .mod_Result_UI.MassSpecResults_NonTargetAnalysis
-
-##' @export
-##' @noRd
-.mod_Result_Server.ProjectNonTargetAnalysis <- .mod_Result_Server.MassSpecResults_NonTargetAnalysis

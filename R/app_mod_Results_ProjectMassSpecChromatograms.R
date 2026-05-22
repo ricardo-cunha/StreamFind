@@ -1,17 +1,13 @@
-## MARK: .mod_Result_UI.MassSpecResults_Chromatograms
+## MARK: .mod_Result_UI.ProjectMassSpecChromatograms
 ##' @export
 ##' @noRd
-.mod_Result_UI.MassSpecResults_Chromatograms <- function(x, id, ns) {
+.mod_Result_UI.ProjectMassSpecChromatograms <- function(x, id, ns) {
   ns2 <- shiny::NS(id)
   ns_full <- function(name) ns(ns2(name))
 
-  bslib::navset_card_tab(
-    id = ns_full("main_tabs"),
-    height = "calc(100vh - 35px - 44px - 52.8px)",
-
-    # MARK: Chromatograms Tab -----
-    bslib::nav_panel(
-      title = shiny::tagList(shiny::icon("wave-square", class = "mr-2"), "Chromatograms"),
+  shiny::tagList(
+    shiny::conditionalPanel(
+      "input.sf_active_subtab === 'chromatograms'",
       shiny::fluidRow(
         shiny::column(
           3,
@@ -33,10 +29,8 @@
         )
       )
     ),
-
-    # MARK: Peaks Tab -----
-    bslib::nav_panel(
-      title = shiny::tagList(shiny::icon("chart-area", class = "mr-2"), "Peaks"),
+    shiny::conditionalPanel(
+      "input.sf_active_subtab === 'peaks'",
       shiny::fluidRow(
         shiny::column(
           3,
@@ -68,10 +62,8 @@
         )
       )
     ),
-
-    # MARK: Summary Tab -----
-    bslib::nav_panel(
-      title = shiny::tagList(shiny::icon("chart-pie", class = "mr-2"), "Summary"),
+    shiny::conditionalPanel(
+      "input.sf_active_subtab === 'summary'",
       shiny::div(
         style = "padding: 10px; overflow-y: auto; height: calc(100vh - 125.8px);",
         DT::DTOutput(ns_full("summary_table"))
@@ -80,10 +72,10 @@
   )
 }
 
-## MARK: .mod_Result_Server.MassSpecResults_Chromatograms
+## MARK: .mod_Result_Server.ProjectMassSpecChromatograms
 ##' @export
 ##' @noRd
-.mod_Result_Server.MassSpecResults_Chromatograms <- function(
+.mod_Result_Server.ProjectMassSpecChromatograms <- function(
     x,
     id,
     ns,
@@ -208,7 +200,7 @@
       p <- plot_chromatograms(
         res,
         analyses = sel_analyses,
-        colorBy = input$chrom_color_by %||% "analyses+targets",
+        colorBy = if (!is.null(input$chrom_color_by)) input$chrom_color_by else "analyses+targets",
         normalized = isTRUE(input$chrom_normalized),
         interactive = TRUE
       )
@@ -231,7 +223,7 @@
       plot_chromatograms(
         res,
         analyses = sel_analyses,
-        colorBy = input$chrom_color_by %||% "analyses+targets",
+        colorBy = if (!is.null(input$chrom_color_by)) input$chrom_color_by else "analyses+targets",
         normalized = isTRUE(input$chrom_normalized),
         interactive = FALSE
       )
@@ -293,7 +285,7 @@
       p <- plot_chromatograms_peaks(
         res,
         analyses = sel_analyses,
-        colorBy = input$peaks_color_by %||% "analyses+targets",
+        colorBy = if (!is.null(input$peaks_color_by)) input$peaks_color_by else "analyses+targets",
         interactive = TRUE
       )
       plotly::layout(
@@ -315,7 +307,7 @@
       plot_chromatograms_peaks(
         res,
         analyses = sel_analyses,
-        colorBy = input$peaks_color_by %||% "analyses+targets",
+        colorBy = if (!is.null(input$peaks_color_by)) input$peaks_color_by else "analyses+targets",
         interactive = FALSE
       )
     }, bg = "transparent")

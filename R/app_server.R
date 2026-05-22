@@ -10,7 +10,14 @@ app_server <- function(input, output, session) {
   reactive_project_class <- shiny::reactiveVal(NA_character_)
   reactive_project_db <- shiny::reactiveVal(NA_character_)
   reactive_project_id <- shiny::reactiveVal(NA_character_)
-  reactive_show_init_modal <- shiny::reactiveVal(FALSE)
+  reactive_project_entry <- shiny::reactiveVal(NULL)
+  reactive_theme_mode <- shiny::reactiveVal("light")
+  reactive_theme_palette <- shiny::reactiveVal("lagoon")
+  reactive_create_class <- shiny::reactiveVal(NA_character_)
+  reactive_create_db <- shiny::reactiveVal(NA_character_)
+  reactive_open_db <- shiny::reactiveVal(NA_character_)
+  reactive_open_resolution <- shiny::reactiveVal(NULL)
+  reactive_open_project_id <- shiny::reactiveVal(NA_character_)
 
   .init_project_db <- golem::get_golem_options("db")
   .init_project_id <- golem::get_golem_options("project_id")
@@ -23,6 +30,12 @@ app_server <- function(input, output, session) {
   }
   if (!is.null(.init_project_class) && !is.na(.init_project_class) && nzchar(.init_project_class)) {
     reactive_project_class(.init_project_class)
+  } else if (!is.null(.init_project_db) && !is.na(.init_project_db) && file.exists(.init_project_db)) {
+    try({
+      init_resolution <- .app_util_resolve_project_db(.init_project_db)
+      reactive_project_class(init_resolution$project_class)
+      reactive_project_entry(projects_overview(init_resolution$project_class))
+    }, silent = TRUE)
   }
 
   reactive_warnings <- shiny::reactiveVal(list())
@@ -34,14 +47,20 @@ app_server <- function(input, output, session) {
   reactive_audit <- shiny::reactiveVal(NULL)
   reactive_app_mode <- shiny::reactiveVal(NA_character_)
   reactive_update_trigger <- shiny::reactiveVal(0)
+  project_registry <- projects_overview()
+  value_or <- function(x, default) if (is.null(x) || length(x) == 0) default else x
 
-  public_project_label <- function(project_class) {
-    switch(
-      project_class,
-      ProjectMassSpecSpectra = "Mass Spec Spectra",
-      ProjectMassSpecChromatograms = "Mass Spec Chromatograms",
-      ProjectNonTargetAnalysis = "Non-Target Analysis",
-      project_class
+  make_subbar_button <- function(tab, key, label, active_key = NA_character_) {
+    htmltools::tags$button(
+      type = "button",
+      class = paste(
+        "sf-subbar-btn",
+        if (!is.na(active_key) && identical(active_key, key)) "active" else ""
+      ),
+      `data-tab` = tab,
+      `data-subtab` = key,
+      title = label,
+      label
     )
   }
 
@@ -64,15 +83,194 @@ app_server <- function(input, output, session) {
     suppressMessages(opener(db = db, project_id = project_id))
   }
 
-  get_project_results <- function(project) {
-    if (inherits(project, "ProjectNonTargetAnalysis")) {
-      return(list(ProjectNonTargetAnalysis = project))
-    }
-    list()
+  no_project_loaded_ui <- function() {
+    htmltools::div(
+      class = "sf-empty-state",
+      htmltools::div(
+        class = "sf-page-title-block",
+        htmltools::tags$h3(class = "sf-page-title", "No project loaded"),
+        htmltools::tags$p(
+          class = "sf-page-subtitle",
+          "No project is currently loaded. Use the Home tab to create or open a project."
+        )
+      )
+    )
   }
+
+  show_create_project_modal <- function(project_class) {
+    details <- projects_overview(project_class)
+    reactive_create_class(project_class)
+    shiny::showModal(
+      htmltools::tagAppendAttributes(
+        shiny::modalDialog(
+          title = paste("Create", details$label),
+          easyClose = TRUE,
+          footer = shiny::tagList(
+            shiny::modalButton("Cancel"),
+            shiny::actionButton("create_project_confirm", "Create / Open Project", class = "btn-primary")
+          ),
+          shiny::uiOutput("create_project_modal_ui")
+        ),
+        class = "sf-wizard-modal"
+      )
+    )
+  }
+
+  show_open_project_modal <- function() {
+    shiny::showModal(
+      htmltools::tagAppendAttributes(
+        shiny::modalDialog(
+          title = "Open Existing Project",
+          easyClose = TRUE,
+          footer = shiny::tagList(
+            shiny::modalButton("Cancel"),
+            shiny::actionButton("open_project_confirm", "Open Project", class = "btn-primary")
+          ),
+          shiny::uiOutput("open_project_modal_ui")
+        ),
+        class = "sf-wizard-modal"
+      )
+    )
+  }
+
+  shinyFiles::shinyFileChoose(
+    input, "create_project_db",
+    roots = reactive_volumes(),
+    defaultRoot = "wd",
+    session = session,
+    filetypes = "duckdb"
+  )
+  shinyFiles::shinyFileChoose(
+    input, "open_project_db",
+    roots = reactive_volumes(),
+    defaultRoot = "wd",
+    session = session,
+    filetypes = "duckdb"
+  )
 
   output$app_mode_ui <- shiny::renderUI({
     shiny::tags$span("StreamFind")
+  })
+
+  output$home_ui <- shiny::renderUI({
+    project_tiles <- lapply(names(project_registry), function(project_class) {
+      entry <- project_registry[[project_class]]
+      shiny::actionButton(
+        inputId = paste0("home_create_", project_class),
+        label = htmltools::tagList(
+          htmltools::tags$span(class = "sf-home-tile-title", entry$label),
+          htmltools::tags$span(class = "sf-home-tile-type", paste("Project Type:", project_class)),
+          htmltools::tags$span(class = "sf-home-tile-copy", entry$description)
+        ),
+        class = "sf-home-tile"
+      )
+    })
+
+    htmltools::div(
+      class = "sf-page-shell",
+      htmltools::div(
+        class = "sf-page-toolbar",
+        htmltools::div(
+          class = "sf-page-title-block",
+          htmltools::tags$h3(class = "sf-page-title", "Home"),
+          htmltools::tags$p(
+            class = "sf-page-subtitle",
+            "Start a new project from any available project class or open an existing StreamFind DuckDB file."
+          )
+        )
+      ),
+      htmltools::div(
+        class = "sf-home-grid",
+        project_tiles,
+        shiny::actionButton(
+          "home_open_project",
+          label = htmltools::tagList(
+            htmltools::tags$span(class = "sf-home-tile-title", "Open Existing Project"),
+            htmltools::tags$span(class = "sf-home-tile-type", "DuckDB Resolver"),
+            htmltools::tags$span(
+              class = "sf-home-tile-copy",
+              "Inspect an existing DuckDB file, resolve its project class dynamically, and choose the project ID to work on."
+            )
+          ),
+          class = "sf-home-tile sf-home-tile-open"
+        )
+      )
+    )
+  })
+
+  output$subtopbar_ui <- shiny::renderUI({
+    active_tab <- value_or(input$sf_active_tab, "home")
+    active_subtab <- value_or(input$sf_active_subtab, "")
+
+    if (identical(active_tab, "explorer")) {
+      buttons <- list(
+        make_subbar_button("explorer", "spectra", "Spectra", active_subtab),
+        make_subbar_button("explorer", "chromatograms", "Chromatograms", active_subtab),
+        make_subbar_button("explorer", "eic", "EIC", active_subtab)
+      )
+      return(
+        htmltools::div(
+          id = "sf-subtopbar",
+          htmltools::div(
+            class = "sf-subtopbar-nav",
+            do.call(htmltools::tagList, buttons)
+          )
+        )
+      )
+    }
+
+    if (identical(active_tab, "results")) {
+      project <- reactive_analyses()
+      if (is.null(project)) {
+        return(NULL)
+      }
+      pages <- .app_util_results_pages(class(project)[1])
+      if (length(pages) == 0) {
+        return(NULL)
+      }
+      buttons <- lapply(pages, function(page) {
+        make_subbar_button("results", page$key, page$label, active_subtab)
+      })
+      return(
+        htmltools::div(
+          id = "sf-subtopbar",
+          htmltools::div(
+            class = "sf-subtopbar-nav",
+            do.call(htmltools::tagList, buttons)
+          )
+        )
+      )
+    }
+
+    NULL
+  })
+
+  shiny::observe({
+    active_tab <- value_or(input$sf_active_tab, "home")
+    active_subtab <- value_or(input$sf_active_subtab, "")
+
+    if (identical(active_tab, "explorer")) {
+      valid_subtabs <- c("spectra", "chromatograms", "eic")
+      if (!active_subtab %in% valid_subtabs) {
+        session$sendCustomMessage("setActiveTab", list(tab = "explorer", subtab = valid_subtabs[[1]]))
+      }
+      return(invisible(NULL))
+    }
+
+    if (identical(active_tab, "results")) {
+      project <- reactive_analyses()
+      if (is.null(project)) {
+        return(invisible(NULL))
+      }
+      pages <- .app_util_results_pages(class(project)[1])
+      if (length(pages) == 0) {
+        return(invisible(NULL))
+      }
+      valid_subtabs <- vapply(pages, `[[`, character(1), "key")
+      if (!active_subtab %in% valid_subtabs) {
+        session$sendCustomMessage("setActiveTab", list(tab = "results", subtab = valid_subtabs[[1]]))
+      }
+    }
   })
 
   output$notifications_ui <- shiny::renderUI({
@@ -92,41 +290,45 @@ app_server <- function(input, output, session) {
     }
     htmltools::div(
       class = "sf-notif-wrapper",
-      bell_btn,
-      htmltools::div(
-        id = "sf-notif-dropdown",
-        class = "sf-notif-dropdown",
-        items
-      )
-    )
-  })
-
-  shiny::observeEvent(input$theme_toggle, {
-    session$sendCustomMessage("toggleTheme", list())
-  })
-
-  shiny::observeEvent(input$settings_button, {
-    shiny::showModal(shiny::modalDialog(
-      title = "Settings",
-      easyClose = TRUE,
-      footer = shiny::modalButton("Close"),
-      htmltools::div(
-        class = "sf-settings-modal",
-        htmltools::tags$h4("Appearance"),
-        shiny::actionButton(
-          "theme_toggle",
-          label = "Toggle Light / Dark Mode",
-          icon = shiny::icon("circle-half-stroke"),
-          class = "btn-primary"
-        ),
-        htmltools::tags$hr(),
-        htmltools::tags$p(
-          class = "sf-settings-note",
-          "Additional configuration options can be added here later."
+        bell_btn,
+        htmltools::div(
+          id = "sf-notif-dropdown",
+          class = "sf-topbar-dropdown sf-notif-dropdown",
+          items
         )
       )
+  })
+
+  shiny::observe({
+    session$sendCustomMessage("setAppTheme", list(
+      mode = reactive_theme_mode(),
+      palette = reactive_theme_palette()
     ))
   })
+
+  shiny::observeEvent(input$settings_theme_mode, {
+    shiny::req(is.character(input$settings_theme_mode), nzchar(input$settings_theme_mode))
+    reactive_theme_mode(input$settings_theme_mode)
+  }, ignoreInit = TRUE)
+
+  shiny::observeEvent(input$settings_theme_palette, {
+    shiny::req(is.character(input$settings_theme_palette), nzchar(input$settings_theme_palette))
+    reactive_theme_palette(input$settings_theme_palette)
+  })
+
+  lapply(names(project_registry), function(project_class) {
+    shiny::observeEvent(input[[paste0("home_create_", project_class)]], {
+      reactive_create_db(NA_character_)
+      show_create_project_modal(project_class)
+    }, ignoreInit = TRUE)
+  })
+
+  shiny::observeEvent(input$home_open_project, {
+    reactive_open_db(NA_character_)
+    reactive_open_resolution(NULL)
+    reactive_open_project_id(NA_character_)
+    show_open_project_modal()
+  }, ignoreInit = TRUE)
 
   shiny::observeEvent(list(reactive_project_class(), reactive_project_db(), reactive_project_id()), {
     project_class <- reactive_project_class()
@@ -138,11 +340,12 @@ app_server <- function(input, output, session) {
     tryCatch(
       {
         project_obj <<- load_project_object(project_class, project_db, project_id)
+        reactive_project_entry(projects_overview(project_class))
         reactive_metadata(project_obj$metadata)
         reactive_analyses(project_obj)
-        reactive_workflow(Workflow(project_obj$workflow %||% list()))
+        reactive_workflow(get_workflow(project_obj))
         reactive_audit(project_obj$get_audit())
-        reactive_results(get_project_results(project_obj))
+        reactive_results(.app_util_project_results(project_obj))
         reactive_app_mode("Project")
 
         session$onFlushed(function() {
@@ -162,64 +365,257 @@ app_server <- function(input, output, session) {
 
   shiny::observeEvent(reactive_update_trigger(), {
     if (!is.null(project_obj)) {
+      reactive_project_entry(projects_overview(class(project_obj)[1]))
       reactive_metadata(project_obj$metadata)
       reactive_analyses(project_obj)
-      reactive_workflow(Workflow(project_obj$workflow %||% list()))
+      reactive_workflow(get_workflow(project_obj))
       reactive_audit(project_obj$get_audit())
-      reactive_results(get_project_results(project_obj))
+      reactive_results(.app_util_project_results(project_obj))
     }
   })
 
+  shiny::observeEvent(input$create_project_db, {
+    fileinfo <- shinyFiles::parseFilePaths(reactive_volumes(), input$create_project_db)
+    if (nrow(fileinfo) > 0) {
+      reactive_create_db(fileinfo$datapath[1])
+    }
+  }, ignoreInit = TRUE)
+
+  shiny::observeEvent(input$open_project_db, {
+    fileinfo <- shinyFiles::parseFilePaths(reactive_volumes(), input$open_project_db)
+    if (nrow(fileinfo) == 0) {
+      return()
+    }
+    db_path <- fileinfo$datapath[1]
+    reactive_open_db(db_path)
+    resolution <- tryCatch(
+      .app_util_resolve_project_db(db_path, registry = project_registry),
+      error = function(e) structure(list(message = conditionMessage(e)), class = "app_project_resolution_error")
+    )
+    reactive_open_resolution(resolution)
+    if (!inherits(resolution, "app_project_resolution_error") && !is.null(resolution) && nrow(resolution$rows) > 0) {
+      reactive_open_project_id(resolution$rows$project_id[[1]])
+    } else {
+      reactive_open_project_id(NA_character_)
+    }
+  }, ignoreInit = TRUE)
+
+  shiny::observeEvent(input$open_project_tile, {
+    shiny::req(is.character(input$open_project_tile), nzchar(input$open_project_tile))
+    reactive_open_project_id(input$open_project_tile)
+  }, ignoreInit = TRUE)
+
+  shiny::observeEvent(input$create_project_confirm, {
+    project_class <- reactive_create_class()
+    project_id <- input$create_project_id
+    if (is.null(project_id)) project_id <- ""
+    project_id <- trimws(project_id)
+    db_path <- reactive_create_db()
+    if (!is.character(project_class) || !nzchar(project_class)) {
+      shiny::showNotification("Please choose a project type to create.", type = "warning", duration = 5)
+      return()
+    }
+    if (!is.character(db_path) || !nzchar(db_path)) {
+      shiny::showNotification("Please choose a DuckDB file for the new project.", type = "warning", duration = 5)
+      return()
+    }
+    if (!nzchar(project_id)) {
+      shiny::showNotification("Please enter a project ID.", type = "warning", duration = 5)
+      return()
+    }
+    shiny::removeModal()
+    reactive_project_class(project_class)
+    reactive_project_db(db_path)
+    reactive_project_id(project_id)
+    session$sendCustomMessage("setActiveTab", list(tab = "project"))
+  }, ignoreInit = TRUE)
+
+  shiny::observeEvent(input$open_project_confirm, {
+    resolution <- reactive_open_resolution()
+    if (inherits(resolution, "app_project_resolution_error") || is.null(resolution)) {
+      shiny::showNotification("Please select a valid StreamFind DuckDB file.", type = "warning", duration = 5)
+      return()
+    }
+    selected_project_id <- reactive_open_project_id()
+    if (is.null(selected_project_id)) selected_project_id <- ""
+    selected_project_id <- trimws(selected_project_id)
+    if (!nzchar(selected_project_id)) {
+      shiny::showNotification("Please choose a project ID from the selected DuckDB file.", type = "warning", duration = 5)
+      return()
+    }
+    if (!selected_project_id %in% resolution$rows$project_id) {
+      shiny::showNotification("The selected project ID is not available in this DuckDB file.", type = "error", duration = 5)
+      return()
+    }
+    shiny::removeModal()
+    reactive_project_class(resolution$project_class)
+    reactive_project_db(reactive_open_db())
+    reactive_project_id(selected_project_id)
+    session$sendCustomMessage("setActiveTab", list(tab = "project"))
+  }, ignoreInit = TRUE)
+
   output$project_ui <- shiny::renderUI({
+    project <- reactive_analyses()
+    if (is.null(project)) {
+      return(htmltools::div(class = "sf-page-shell", no_project_loaded_ui()))
+    }
     htmltools::div(
-      style = "height: calc(100vh - 35px); display: flex; flex-direction: column; overflow: hidden;",
+      class = "sf-page-shell",
       htmltools::div(
-        style = "flex: 0 0 auto; padding: 8px 10px;",
+        class = "sf-page-toolbar",
         shiny::uiOutput("project_control_ui")
       ),
       htmltools::div(
-        style = "flex: 1; overflow: hidden; padding: 0 10px 8px;",
+        class = "sf-page-body",
         shiny::uiOutput("metadata_ui")
       )
     )
   })
 
+  output$create_project_modal_ui <- shiny::renderUI({
+    project_class <- reactive_create_class()
+    shiny::req(is.character(project_class), nzchar(project_class))
+    details <- projects_overview(project_class)
+    htmltools::div(
+      class = "sf-stack",
+      htmltools::div(
+        class = "sf-info-banner",
+        htmltools::tags$strong(details$label),
+        htmltools::tags$p(class = "sf-panel-copy", details$description),
+        htmltools::tags$div(
+          class = "sf-inline-meta",
+          htmltools::tags$span("Domain:"),
+          htmltools::tags$span(details$domain),
+          htmltools::tags$span("Formats:"),
+          htmltools::tags$span(paste(details$formats, collapse = ", "))
+        )
+      ),
+      shinyFiles::shinyFilesButton(
+        "create_project_db",
+        "Choose DuckDB File",
+        "Select or create a DuckDB file for the project",
+        multiple = FALSE,
+        class = "btn btn-default"
+      ),
+      shiny::uiOutput("create_project_db_ui"),
+      shiny::textInput("create_project_id", "Project ID", value = "default")
+    )
+  })
+
+  output$open_project_modal_ui <- shiny::renderUI({
+    htmltools::div(
+      class = "sf-stack",
+      shinyFiles::shinyFilesButton(
+        "open_project_db",
+        "Choose Existing DuckDB File",
+        "Select a StreamFind DuckDB file",
+        multiple = FALSE,
+        class = "btn btn-default"
+      ),
+      shiny::uiOutput("open_project_resolution_ui")
+    )
+  })
+
+  output$create_project_db_ui <- shiny::renderUI({
+    db_path <- reactive_create_db()
+    htmltools::div(
+      class = "sf-path-preview",
+      if (is.character(db_path) && nzchar(db_path)) db_path else "No DuckDB file selected."
+    )
+  })
+
+  output$open_project_resolution_ui <- shiny::renderUI({
+    resolution <- reactive_open_resolution()
+    db_path <- reactive_open_db()
+    if (!is.character(db_path) || !nzchar(db_path)) {
+      return(htmltools::div(class = "sf-path-preview", "No DuckDB file selected."))
+    }
+    if (inherits(resolution, "app_project_resolution_error")) {
+      return(
+        htmltools::div(
+          class = "sf-panel sf-panel-danger",
+          htmltools::tags$strong("Invalid project file"),
+          htmltools::tags$p(class = "sf-panel-copy", resolution$message)
+        )
+      )
+    }
+    shiny::req(!is.null(resolution))
+    rows <- resolution$rows
+    selected_project_id <- reactive_open_project_id()
+    project_tiles <- lapply(rows$project_id, function(project_id) {
+      htmltools::tags$button(
+        type = "button",
+        class = paste(
+          "sf-home-tile sf-project-id-tile",
+          if (!is.na(selected_project_id) && identical(selected_project_id, project_id)) "active" else ""
+        ),
+        onclick = sprintf(
+          "Shiny.setInputValue('open_project_tile', '%s', {priority: 'event'})",
+          gsub("'", "\\\\'", project_id, fixed = TRUE)
+        ),
+        htmltools::tags$span(class = "sf-home-tile-title", project_id),
+        htmltools::tags$span(class = "sf-home-tile-type", "Project ID")
+      )
+    })
+    htmltools::div(
+      class = "sf-panel sf-panel-muted",
+      htmltools::div(class = "sf-path-preview", db_path),
+      htmltools::tags$p(
+        class = "sf-panel-copy",
+        paste0("Resolved project class: ", resolution$project_label, " (", resolution$project_class, ")")
+      ),
+      htmltools::div(class = "sf-project-id-grid", project_tiles)
+    )
+  })
+
   output$project_control_ui <- shiny::renderUI({
+    project <- reactive_analyses()
+    shiny::req(!is.null(project))
     project_db <- reactive_project_db()
     project_id <- reactive_project_id()
-    project_class <- reactive_project_class()
     htmltools::div(
+      class = "sf-project-summary",
       htmltools::div(
-        style = "display: flex; align-items: center; gap: 12px; font-size: 12px; flex-wrap: nowrap;",
-        htmltools::div(
-          style = "flex-shrink: 0;",
-          htmltools::strong("Project DB: "),
-          htmltools::span(project_db, style = "word-break: break-all;")
-        ),
-        htmltools::div(
-          style = "flex-shrink: 0;",
-          htmltools::strong("Project ID: "),
-          htmltools::span(project_id)
-        ),
-        htmltools::div(
-          style = "flex-shrink: 0; margin-left: auto;",
-          htmltools::span(public_project_label(project_class), class = "sf-cache-label")
-        )
+        class = "sf-project-summary-lines",
+        htmltools::tags$p(class = "sf-page-subtitle", "Project DB:"),
+        htmltools::tags$p(class = "sf-page-title", project_db),
+        htmltools::tags$p(class = "sf-page-subtitle", "Project ID:"),
+        htmltools::tags$p(class = "sf-page-title", project_id)
       )
     )
   })
 
   metadata_dt <- shiny::reactiveVal()
 
+  metadata_to_dt <- function(meta) {
+    if (is.null(meta) || length(meta) == 0) {
+      return(data.table::data.table(Name = character(), Value = character()))
+    }
+    if (inherits(meta, "data.frame")) {
+      dt <- data.table::as.data.table(meta)
+      if (ncol(dt) >= 2) {
+        dt <- dt[, seq_len(2), with = FALSE]
+        data.table::setnames(dt, c("Name", "Value"))
+        dt[, Name := as.character(Name)]
+        dt[, Value := as.character(Value)]
+        return(dt)
+      }
+    }
+    values <- unlist(meta, use.names = FALSE)
+    names_vec <- names(meta)
+    if (is.null(names_vec) || !length(names_vec)) {
+      names_vec <- rep("", length(values))
+    }
+    data.table::data.table(
+      Name = as.character(names_vec),
+      Value = as.character(values)
+    )
+  }
+
   shiny::observe({
     tryCatch(
       {
-        meta <- reactive_metadata()
-        if (!is.null(meta)) {
-          dt <- data.table::as.data.table(meta)
-          data.table::setnames(dt, c("Name", "Value"))
-          metadata_dt(dt)
-        }
+        metadata_dt(metadata_to_dt(reactive_metadata()))
       },
       error = function(e) message("Error initializing metadata: ", e)
     )
@@ -229,7 +625,7 @@ app_server <- function(input, output, session) {
     dt <- metadata_dt()
     if (!is.null(dt)) {
       htmltools::div(
-        style = "display: flex; gap: 10px;",
+        class = "sf-toolbar-inline",
         shiny::actionButton("update_metadata", "Update Metadata"),
         shiny::actionButton("discard_changes", "Discard Changes", class = "btn-danger")
       )
@@ -238,19 +634,18 @@ app_server <- function(input, output, session) {
 
   output$metadata_ui <- shiny::renderUI({
     htmltools::div(
-      style = "display: flex; flex-direction: column; height: 100%; overflow: hidden;",
+      class = "sf-stack sf-fill",
       htmltools::div(
-        style = "flex: 0 0 auto; display: flex; gap: 10px; align-items: center; padding: 0 0 4px 0;",
+        class = "sf-toolbar-inline",
         shiny::actionButton("add_row", "Add New Row", class = "btn-light"),
         shiny::uiOutput("update_metadata_ui")
       ),
       htmltools::div(
         class = "sf-info-text",
-        style = "flex: 0 0 auto; padding: 2px 0 4px 0;",
         shiny::HTML("<i class='fa fa-info-circle'></i> Double-click on any cell to edit its value")
       ),
       htmltools::div(
-        style = "flex: 1; overflow: hidden;",
+        class = "sf-fill",
         DT::DTOutput("metadata_dt")
       )
     )
@@ -302,13 +697,12 @@ app_server <- function(input, output, session) {
 
   shiny::observeEvent(input$add_row, {
     dt <- metadata_dt()
-    if (!is.null(dt)) {
-      place_holder_idx <- nrow(dt) + 1
-      place_holder_name <- paste0("place_holder_", place_holder_idx)
-      dt <- rbind(dt, data.table::data.table(Name = place_holder_name, Value = place_holder_name))
-      dt <- dt[!duplicated(dt), ]
-      metadata_dt(dt)
-    }
+    if (is.null(dt)) dt <- data.table::data.table(Name = character(), Value = character())
+    place_holder_idx <- nrow(dt) + 1
+    place_holder_name <- paste0("place_holder_", place_holder_idx)
+    dt <- rbind(dt, data.table::data.table(Name = place_holder_name, Value = place_holder_name))
+    dt <- dt[!duplicated(dt), ]
+    metadata_dt(dt)
   })
 
   shiny::observeEvent(input$delete_row, {
@@ -335,98 +729,81 @@ app_server <- function(input, output, session) {
   })
 
   shiny::observeEvent(input$discard_changes, {
-    dt <- data.table::as.data.table(reactive_metadata())
-    data.table::setnames(dt, c("Name", "Value"))
-    metadata_dt(dt)
+    metadata_dt(metadata_to_dt(reactive_metadata()))
   })
 
   output$analyses_ui <- shiny::renderUI({
     project <- reactive_analyses()
     if (is.null(project)) {
-      return(htmltools::div("No project loaded yet."))
+      return(no_project_loaded_ui())
     }
-    .mod_Analyses_Server(
+    module_fns <- .app_util_module_functions(class(project)[1], "analyses")
+    if (!is.function(module_fns$ui) || !is.function(module_fns$server)) {
+      return(htmltools::div(class = "sf-empty-state", "No analyses module available for this project class."))
+    }
+    module_fns$server(
       project, "analyses", session$ns,
       reactive_update_trigger, reactive_analyses,
       reactive_warnings, reactive_volumes
     )
-    .mod_Analyses_UI(project, "analyses", session$ns)
+    module_fns$ui(project, "analyses", session$ns)
   })
 
   output$explorer_ui <- shiny::renderUI({
     project <- reactive_analyses()
     if (is.null(project)) {
-      return(htmltools::div("No project loaded yet."))
+      return(no_project_loaded_ui())
     }
     tryCatch(
       {
-        .mod_Explorer_Server(project, "explorer", session$ns, reactive_analyses, reactive_volumes)
-        .mod_Explorer_UI(project, "explorer", session$ns)
+        module_fns <- .app_util_module_functions(class(project)[1], "explorer")
+        if (!is.function(module_fns$ui) || !is.function(module_fns$server)) {
+          return(htmltools::div(class = "sf-empty-state", "No explorer module available for this project class."))
+        }
+        module_fns$server(project, "explorer", session$ns, reactive_analyses, reactive_volumes)
+        module_fns$ui(project, "explorer", session$ns)
       },
       error = function(e) {
         msg <- paste("Explorer not rendering for class", class(project)[1], ":", conditionMessage(e))
         shiny::showNotification(msg, duration = 10, type = "error")
-        shiny::div(style = "color: red;", msg)
+        shiny::div(class = "sf-panel sf-panel-danger", msg)
       }
     )
   })
 
   output$workflow_ui <- shiny::renderUI({
-    if (is.null(project_obj)) return(htmltools::div("Project not initialized!"))
+    project <- reactive_analyses()
+    if (is.null(project)) return(no_project_loaded_ui())
     module_id <- make_module_id("workflow", reactive_project_class(), reactive_project_db(), reactive_project_id())
     .mod_Workflow_Server(
-      project_obj, module_id, session$ns,
+      project, module_id, session$ns,
       reactive_workflow, reactive_warnings,
       reactive_volumes, reactive_update_trigger
     )
-    .mod_Workflow_UI(project_obj, module_id, session$ns)
-  })
-
-  output$results_sidebar_subnav <- shiny::renderUI({
-    res <- reactive_results()
-    if (length(res) == 0) return(NULL)
-    session$sendCustomMessage("activateFirstSubtab", "results")
-    sub_btns <- lapply(seq_along(res), function(i) {
-      cls <- class(res[[i]])[1]
-      tab_id <- paste0("tab_", names(res)[i])
-      lbl <- switch(
-        cls,
-        ProjectNonTargetAnalysis = "Non-Target",
-        gsub("_", " ", names(res)[i], fixed = TRUE)
-      )
-      htmltools::tags$button(
-        class = if (i == 1) "sf-sub-btn active" else "sf-sub-btn",
-        `data-tab` = "results",
-        `data-subtab` = tab_id,
-        title = lbl,
-        lbl
-      )
-    })
-    htmltools::div(class = "sf-sub-menu", sub_btns)
+    .mod_Workflow_UI(project, module_id, session$ns)
   })
 
   output$results_ui <- shiny::renderUI({
-    res <- reactive_results()
-    if (length(res) == 0) return(htmltools::div(htmltools::h4("No results found!")))
-    panels <- lapply(seq_along(res), function(i) {
-      res_obj <- res[[i]]
-      cls <- class(res_obj)[1]
-      tab_id <- paste0("tab_", names(res)[i])
-      ui_fun <- get0(paste0(".mod_Result_UI.", cls), mode = "function")
-      server_fun <- get0(paste0(".mod_Result_Server.", cls), mode = "function")
-      if (is.function(server_fun)) {
-        server_fun(res_obj, tab_id, session$ns, reactive_analyses, reactive_volumes)
-      }
-      shiny::conditionalPanel(
-        paste0("input.sf_active_subtab === '", tab_id, "'"),
-        if (is.function(ui_fun)) ui_fun(res_obj, tab_id, session$ns)
-        else htmltools::div(paste0("No results UI available for ", cls))
-      )
-    })
-    htmltools::div(panels)
+    project <- reactive_analyses()
+    if (is.null(project)) return(no_project_loaded_ui())
+    pages <- .app_util_results_pages(class(project)[1])
+    if (length(pages) == 0) {
+      return(htmltools::div(class = "sf-empty-state", htmltools::h4("No results found!")))
+    }
+    module_fns <- .app_util_module_functions(class(project)[1], "results")
+    ui_fun <- module_fns$ui
+    server_fun <- module_fns$server
+    tab_id <- "results"
+    if (is.function(server_fun)) {
+      server_fun(project, tab_id, session$ns, reactive_analyses, reactive_volumes)
+    }
+    if (is.function(ui_fun)) ui_fun(project, tab_id, session$ns)
+    else htmltools::div(class = "sf-empty-state", paste0("No results UI available for ", class(project)[1]))
   })
 
   output$audit_ui <- shiny::renderUI({
+    project <- reactive_analyses()
+    if (is.null(project)) return(no_project_loaded_ui())
     htmltools::tagList(
       htmltools::tags$style(htmltools::HTML(
         ".audit-table .dataTables_wrapper { width: 100% !important; }
@@ -467,65 +844,60 @@ app_server <- function(input, output, session) {
     if (is.null(project_class) || is.na(project_class) || identical(project_class, "")) {
       return(NULL)
     }
-    htmltools::tags$span(class = "sf-cache-label", paste0("Type: ", public_project_label(project_class)))
+    htmltools::tags$span(class = "sf-cache-label", paste0("Type: ", .app_util_project_label(project_class)))
+  })
+
+  output$settings_dropdown_ui <- shiny::renderUI({
+    htmltools::div(
+      class = "sf-settings-wrapper",
+      htmltools::tags$button(
+        class = "sf-topbar-btn",
+        onclick = "var dd = document.getElementById('sf-settings-dropdown'); if(dd) dd.classList.toggle('open');",
+        title = "Settings",
+        shiny::icon("gear")
+        ),
+        htmltools::div(
+          id = "sf-settings-dropdown",
+          class = "sf-topbar-dropdown sf-settings-dropdown",
+          htmltools::div(
+            class = "sf-settings-section",
+          htmltools::tags$h4(class = "sf-panel-title", "Mode"),
+          shiny::radioButtons(
+            "settings_theme_mode",
+            label = NULL,
+            choices = c("Light" = "light", "Dark" = "dark"),
+            selected = reactive_theme_mode(),
+            inline = FALSE
+          )
+        ),
+        htmltools::div(
+          class = "sf-settings-section",
+          htmltools::tags$h4(class = "sf-panel-title", "Palette"),
+          shiny::selectInput(
+            "settings_theme_palette",
+            label = NULL,
+            choices = c(
+              "Lagoon" = "lagoon",
+              "Copper" = "copper",
+              "Slate" = "slate",
+              "StreamFind" = "streamfind"
+            ),
+            selected = reactive_theme_palette()
+          )
+        ),
+        htmltools::div(
+          class = "sf-settings-note",
+          "Theme changes apply to the current app session only."
+        )
+      )
+    )
   })
 
   output$report_ui <- shiny::renderUI({
-    if (is.null(project_obj)) return(htmltools::div("Project not initialized!"))
-    .mod_Report_Server(project_obj, "report", session$ns, reactive_volumes)
-    .mod_Report_UI(project_obj, "report", session$ns)
+    project <- reactive_analyses()
+    if (is.null(project)) return(no_project_loaded_ui())
+    .mod_Report_Server(project, "report", session$ns, reactive_volumes)
+    .mod_Report_UI(project, "report", session$ns)
   })
 
-  shiny::observe({
-    if (reactive_show_init_modal()) {
-      reactive_show_init_modal(FALSE)
-      .app_util_use_initial_modal(
-        reactive_app_mode,
-        reactive_project_class,
-        reactive_project_db,
-        reactive_project_id,
-        reactive_show_init_modal,
-        .app_util_get_volumes(),
-        input,
-        output,
-        session
-      )
-    }
-  })
-
-  shiny::observeEvent(input$restart_app, {
-    time_var <- format(Sys.time(), "%Y%m%d%H%M%S")
-    btn_id <- paste0("confirm_restart_", time_var)
-    shiny::showModal(shiny::modalDialog(
-      "Are you sure you want to restart StreamFind?",
-      title = "Restart StreamFind",
-      easyClose = TRUE,
-      footer = shiny::tagList(
-        shiny::modalButton("Cancel"),
-        shiny::actionButton(btn_id, "Confirm", class = "btn-danger")
-      )
-    ))
-    shiny::observeEvent(input[[btn_id]], {
-      shiny::removeModal()
-      session$sendCustomMessage("cleanupAllModals", list())
-      session$sendCustomMessage("setBootOverlay", list(visible = FALSE))
-      project_obj <<- NULL
-      reactive_app_mode(NA_character_)
-      reactive_project_class(NA_character_)
-      reactive_project_db(NA_character_)
-      reactive_project_id(NA_character_)
-      reactive_metadata(NULL)
-      reactive_analyses(NULL)
-      reactive_workflow(NULL)
-      reactive_results(NULL)
-      reactive_audit(NULL)
-      reactive_warnings(list())
-    }, ignoreNULL = TRUE, once = TRUE)
-  })
-
-  shiny::observe({
-    if (is.na(reactive_project_class()) && is.na(reactive_project_db()) && is.na(reactive_project_id())) {
-      reactive_show_init_modal(TRUE)
-    }
-  })
 }

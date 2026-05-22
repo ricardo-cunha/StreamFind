@@ -167,6 +167,7 @@ class(nta$get_workflow())
 
 nta$list_tables()
 
+run_app()
 
 
 #nta$run_workflow(workflow)

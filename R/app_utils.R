@@ -38,6 +38,168 @@
   c("wd" = getwd(), drives)
 }
 
+#' @noRd
+.app_util_project_label <- function(project_class) {
+  details <- tryCatch(projects_overview(project_class), error = function(...) NULL)
+  if (!is.null(details) && !is.null(details$label)) {
+    return(details$label)
+  }
+  project_class
+}
+
+#' @noRd
+.app_util_result_label <- function(result_class) {
+  switch(
+    result_class,
+    ProjectMassSpecChromatograms = "Chromatograms",
+    ProjectNonTargetAnalysis = "Non-Target Analysis",
+    result_class
+  )
+}
+
+#' @noRd
+.app_util_result_key <- function(result_class) {
+  sub("^Project", "", result_class)
+}
+
+#' @noRd
+.app_util_module_owner <- function(project_class, module_type) {
+  module_type <- match.arg(module_type, c("analyses", "explorer", "results"))
+  details <- projects_overview(project_class)
+  owner <- switch(
+    module_type,
+    analyses = details$analyses_owner,
+    explorer = details$explorer_owner,
+    results = project_class
+  )
+  if (is.null(owner) || is.na(owner) || !nzchar(owner)) {
+    owner <- project_class
+  }
+  owner
+}
+
+#' @noRd
+.app_util_module_functions <- function(project_class, module_type, envir = parent.frame()) {
+  module_type <- match.arg(module_type, c("analyses", "explorer", "results"))
+  owner <- .app_util_module_owner(project_class, module_type)
+  prefix <- switch(
+    module_type,
+    analyses = ".mod_Analyses",
+    explorer = ".mod_Explorer",
+    results = ".mod_Result"
+  )
+  namespace_env <- tryCatch(asNamespace("StreamFind"), error = function(...) envir)
+  list(
+    ui = get0(paste0(prefix, "_UI.", owner), mode = "function", envir = namespace_env, inherits = TRUE),
+    server = get0(paste0(prefix, "_Server.", owner), mode = "function", envir = namespace_env, inherits = TRUE)
+  )
+}
+
+#' @noRd
+.app_util_project_results <- function(project) {
+  if (is.null(project)) {
+    return(list())
+  }
+  project_class <- class(project)[1]
+  details <- projects_overview(project_class)
+  result_classes <- details$result_classes
+  if (is.null(result_classes)) {
+    result_classes <- character()
+  }
+  if (length(result_classes) == 0) {
+    return(list())
+  }
+  names(result_classes) <- vapply(result_classes, .app_util_result_key, character(1))
+  lapply(result_classes, function(result_class) {
+    list(
+      key = .app_util_result_key(result_class),
+      label = .app_util_result_label(result_class),
+      class = result_class,
+      object = project
+    )
+  })
+}
+
+#' @noRd
+.app_util_results_pages <- function(project_class) {
+  owner <- .app_util_module_owner(project_class, "results")
+  switch(
+    owner,
+    ProjectNonTargetAnalysis = list(
+      list(key = "summary", label = "Summary"),
+      list(key = "features", label = "Features")
+    ),
+    ProjectMassSpecChromatograms = list(
+      list(key = "chromatograms", label = "Chromatograms"),
+      list(key = "peaks", label = "Peaks"),
+      list(key = "summary", label = "Summary")
+    ),
+    list(
+      list(key = "summary", label = "Summary")
+    )
+  )
+}
+
+#' @noRd
+.app_util_read_project_rows <- function(db) {
+  checkmate::assert_file_exists(db)
+  conn <- DBI::dbConnect(duckdb::duckdb(), dbdir = db, read_only = TRUE)
+  on.exit(DBI::dbDisconnect(conn, shutdown = TRUE), add = TRUE)
+
+  if (!DBI::dbExistsTable(conn, "PROJECT")) {
+    stop("The selected DuckDB file does not contain a PROJECT table.", call. = FALSE)
+  }
+
+  rows <- DBI::dbGetQuery(
+    conn,
+    "SELECT project_id, domain, created_at FROM PROJECT ORDER BY project_id"
+  )
+  data.table::as.data.table(rows)
+}
+
+#' @noRd
+.app_util_resolve_project_db <- function(db, registry = projects_overview()) {
+  rows <- .app_util_read_project_rows(db)
+  if (nrow(rows) == 0) {
+    stop("The selected DuckDB file does not contain any StreamFind project rows.", call. = FALSE)
+  }
+  rows[, domain := trimws(as.character(domain))]
+  rows <- rows[!is.na(project_id) & nzchar(trimws(project_id))]
+  if (nrow(rows) == 0) {
+    stop("The selected DuckDB file does not contain any valid project_id values.", call. = FALSE)
+  }
+  rows[, project_id := trimws(as.character(project_id))]
+  rows[, project_class := vapply(domain, .project_class_from_domain, character(1), registry = registry)]
+
+  if (anyNA(rows$project_class) || any(!nzchar(rows$project_class))) {
+    bad_domains <- unique(rows$domain[is.na(rows$project_class) | !nzchar(rows$project_class)])
+    stop(
+      "Unable to map project domain(s) to a StreamFind project class: ",
+      paste(bad_domains, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  unique_classes <- unique(rows$project_class)
+  if (length(unique_classes) != 1) {
+    stop(
+      "The selected DuckDB file contains multiple incompatible project classes: ",
+      paste(unique_classes, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+
+  project_class <- unique_classes[[1]]
+  rows[, project_label := .app_util_project_label(project_class)]
+  list(
+    project_class = project_class,
+    project_label = .app_util_project_label(project_class),
+    rows = rows
+  )
+}
+
 # MARK: Initial Modal
 #' @noRd
 .app_util_use_initial_modal <- function(reactive_app_mode,
@@ -144,6 +306,7 @@
             project_db_var,
             "Choose DuckDB File",
             "Select a StreamFind .duckdb file",
+            multiple = FALSE,
             class = "btn btn-primary"
           ),
           style = "text-align: center; margin: 20px 0;"

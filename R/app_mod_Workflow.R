@@ -705,6 +705,9 @@
             class = "method-details",
             shiny::h3(method_editor_title, style = "margin-bottom: 10px;"),
             shiny::tags$div(
+              shiny::tags$b("Owner Class: "),
+              shiny::tags$span(settings$owner_class),
+              shiny::tags$br(),
               shiny::tags$b("Developer: "),
               shiny::tags$span(settings$developer),
               shiny::tags$br(),
@@ -716,14 +719,6 @@
               shiny::tags$br(),
               shiny::tags$b("DOI: "),
               shiny::tags$span(settings$doi)
-            ),
-            shiny::tags$div(
-              style = "margin-top: 10px;",
-              shiny::tags$b("Summary: "),
-              shiny::tags$span(settings$description),
-              shiny::tags$br(),
-              shiny::tags$b("Details: "),
-              shiny::tags$span(settings$details)
             ),
             if (!is.na(help_url)) {
               shiny::tags$div(
@@ -1021,37 +1016,26 @@
       selected_method <- reactive_selected_method()
       shiny::req(selected_method %in% names(rw))
       settings <- rw[[selected_method]]
-      parameter_docs <- settings$parameter_docs
-      if (is.null(parameter_docs)) {
-        parameter_docs <- list()
-      }
-      settings_title <- settings$title
-      if (is.null(settings_title) || !nzchar(as.character(settings_title))) {
-        settings_title <- class(settings)[1]
-      }
-      settings_description <- settings$description
-      settings_details <- settings$details
       tryCatch(
         {
           parameter_items <- lapply(names(settings$parameters), function(param_name) {
-            doc <- parameter_docs[[param_name]]
-            if (is.null(doc)) {
-              doc <- list(description = "", type = class(settings$parameters[[param_name]])[1], required = FALSE)
-            }
+            value <- settings$parameters[[param_name]]
+            value_type <- class(value)[1]
             shiny::tags$li(
               shiny::tags$b(param_name),
-              paste0(" (", doc$type, if (isTRUE(doc$required)) ", required" else "", ")"),
-              if (nzchar(doc$description)) paste0(": ", doc$description) else NULL
+              paste0(" (", value_type, ")")
             )
           })
 
           help_page <- htmltools::tagList(
-            htmltools::h3(settings_title),
-            if (!is.null(settings_description) && nzchar(as.character(settings_description))) htmltools::p(settings_description),
-            if (!is.null(settings_details) && nzchar(as.character(settings_details))) htmltools::p(settings_details),
+            htmltools::h3(settings$method),
             htmltools::tags$div(
               htmltools::tags$b("Project Method: "),
               htmltools::tags$code(settings$method)
+            ),
+            htmltools::tags$div(
+              htmltools::tags$b("Owner Class: "),
+              htmltools::tags$code(settings$owner_class)
             ),
             htmltools::tags$div(
               style = "margin-top: 10px;",
