@@ -8,6 +8,8 @@
   --sf-space: 5px;
   --sf-space-2: calc(var(--sf-space) * 2);
   --sf-space-3: calc(var(--sf-space) * 3);
+  --sf-topbar-height: 36px;
+  --sf-subtopbar-height: 36px;
   --sf-radius-sm: 0px;
   --sf-radius-md: 0px;
   --sf-radius-lg: 0px;
@@ -71,6 +73,7 @@
   --sf-btn-bg: #0b6f6b;
   --sf-btn-color: #ffffff;
   --sf-btn-hover-bg: #095754;
+  --sf-content-bg: #ffffff;
 }
 
 #sf-app.sf-light[data-sf-palette="copper"] {
@@ -90,6 +93,7 @@
   --sf-btn-bg: #a65a3a;
   --sf-btn-color: #fffaf5;
   --sf-btn-hover-bg: #8b4a2e;
+  --sf-content-bg: #fff8f2;
 }
 
 #sf-app.sf-light[data-sf-palette="slate"] {
@@ -109,6 +113,7 @@
   --sf-btn-bg: #334155;
   --sf-btn-color: #ffffff;
   --sf-btn-hover-bg: #1f2937;
+  --sf-content-bg: #ffffff;
 }
 
 #sf-app.sf-light[data-sf-palette="streamfind"] {
@@ -128,6 +133,7 @@
   --sf-btn-bg: #5a8d37;
   --sf-btn-color: #f7faf5;
   --sf-btn-hover-bg: #4c772e;
+  --sf-content-bg: #f7faf5;
 }
 
 /* ---- CSS Custom Properties: Dark ---- */
@@ -184,6 +190,7 @@
   --sf-btn-bg: #46c1bb;
   --sf-btn-color: #091211;
   --sf-btn-hover-bg: #2fa39e;
+  --sf-content-bg: #091211;
 }
 
 #sf-app.sf-dark[data-sf-palette="copper"] {
@@ -203,6 +210,7 @@
   --sf-btn-bg: #d08a5f;
   --sf-btn-color: #150e0a;
   --sf-btn-hover-bg: #b26f47;
+  --sf-content-bg: #150e0a;
 }
 
 #sf-app.sf-dark[data-sf-palette="slate"] {
@@ -222,6 +230,7 @@
   --sf-btn-bg: #94a3b8;
   --sf-btn-color: #0b1220;
   --sf-btn-hover-bg: #cbd5e1;
+  --sf-content-bg: #0b1220;
 }
 
 #sf-app.sf-dark[data-sf-palette="streamfind"] {
@@ -241,6 +250,7 @@
   --sf-btn-bg: #102a66;
   --sf-btn-color: #f4f8ef;
   --sf-btn-hover-bg: #173983;
+  --sf-content-bg: #08101d;
 }
 
 /* ============================================================
@@ -258,51 +268,63 @@ body {
 }
 
 body[data-sf-theme="light"][data-sf-palette="lagoon"] {
+  --sf-topbar-bg: #ffffff;
   --sf-btn-bg: #0b6f6b;
   --sf-btn-color: #ffffff;
   --sf-btn-hover-bg: #095754;
 }
 
 body[data-sf-theme="light"][data-sf-palette="copper"] {
+  --sf-topbar-bg: #fff8f2;
   --sf-btn-bg: #a65a3a;
   --sf-btn-color: #fffaf5;
   --sf-btn-hover-bg: #8b4a2e;
 }
 
 body[data-sf-theme="light"][data-sf-palette="slate"] {
+  --sf-topbar-bg: #ffffff;
   --sf-btn-bg: #334155;
   --sf-btn-color: #ffffff;
   --sf-btn-hover-bg: #1f2937;
 }
 
 body[data-sf-theme="light"][data-sf-palette="streamfind"] {
+  --sf-topbar-bg: #f7faf5;
   --sf-btn-bg: #5a8d37;
   --sf-btn-color: #f7faf5;
   --sf-btn-hover-bg: #4c772e;
 }
 
 body[data-sf-theme="dark"][data-sf-palette="lagoon"] {
+  --sf-topbar-bg: #091211;
   --sf-btn-bg: #46c1bb;
   --sf-btn-color: #091211;
   --sf-btn-hover-bg: #2fa39e;
 }
 
 body[data-sf-theme="dark"][data-sf-palette="copper"] {
+  --sf-topbar-bg: #150e0a;
   --sf-btn-bg: #d08a5f;
   --sf-btn-color: #150e0a;
   --sf-btn-hover-bg: #b26f47;
 }
 
 body[data-sf-theme="dark"][data-sf-palette="slate"] {
+  --sf-topbar-bg: #0b1220;
   --sf-btn-bg: #94a3b8;
   --sf-btn-color: #0b1220;
   --sf-btn-hover-bg: #cbd5e1;
 }
 
 body[data-sf-theme="dark"][data-sf-palette="streamfind"] {
+  --sf-topbar-bg: #08101d;
   --sf-btn-bg: #102a66;
   --sf-btn-color: #f4f8ef;
   --sf-btn-hover-bg: #173983;
+}
+
+body[data-sf-theme][data-sf-palette] {
+  background: var(--sf-topbar-bg);
 }
 
 /* ============================================================
@@ -320,9 +342,9 @@ body[data-sf-theme="dark"][data-sf-palette="streamfind"] {
    Top Bar: #sf-topbar
    ============================================================ */
 #sf-topbar {
-  flex: 0 0 36px;
-  height: 36px;
-  min-height: 36px;
+  flex: 0 0 var(--sf-topbar-height);
+  height: var(--sf-topbar-height);
+  min-height: var(--sf-topbar-height);
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -334,9 +356,9 @@ body[data-sf-theme="dark"][data-sf-palette="streamfind"] {
 }
 
 #sf-subtopbar {
-  flex: 0 0 36px;
-  height: 36px;
-  min-height: 36px;
+  flex: 0 0 var(--sf-subtopbar-height);
+  height: var(--sf-subtopbar-height);
+  min-height: var(--sf-subtopbar-height);
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -344,6 +366,14 @@ body[data-sf-theme="dark"][data-sf-palette="streamfind"] {
   color: var(--sf-topbar-color);
   padding: 0 8px 0 60px;
   z-index: 95;
+}
+
+#sf-subtopbar:empty {
+  flex: 0 0 0;
+  height: 0;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
 }
 
 .sf-subtopbar-nav {
@@ -664,7 +694,7 @@ body[data-sf-theme="dark"][data-sf-palette="streamfind"] {
   display: flex;
   flex-direction: row;
   overflow: hidden;
-  height: calc(100vh - 36px);
+  min-height: 0;
 }
 
 /* ============================================================
@@ -673,6 +703,8 @@ body[data-sf-theme="dark"][data-sf-palette="streamfind"] {
 #sf-content {
   flex: 1;
   width: 100%;
+  height: 100%;
+  min-height: 0;
   background: var(--sf-content-bg);
   color: var(--sf-content-color);
   overflow: hidden;
@@ -713,9 +745,10 @@ body[data-sf-theme="dark"][data-sf-palette="streamfind"] {
 /* Conditionally shown page wrappers */
 .sf-page {
   padding: 5px;
-  height: calc(100vh - 36px);
+  height: 100%;
+  min-height: 0;
   width: 100%;
-  overflow: hidden;
+  overflow: auto;
   background: var(--sf-content-bg);
   color: var(--sf-content-color);
 }
@@ -908,9 +941,16 @@ body[data-sf-theme="dark"][data-sf-palette="streamfind"] {
 
 .sf-home-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: var(--sf-space);
   align-items: stretch;
+  width: 100%;
+  max-width: 100%;
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  align-content: stretch;
 }
 
 .sf-project-id-grid {
@@ -927,9 +967,15 @@ body[data-sf-theme="dark"][data-sf-palette="streamfind"] {
   justify-content: flex-start;
   gap: var(--sf-space);
   width: 100%;
-  min-height: 160px;
+  min-height: 0;
+  height: 100%;
   padding: var(--sf-space-2) !important;
   text-align: left;
+  min-width: 0;
+  overflow: hidden;
+  white-space: normal !important;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .sf-project-id-tile {
@@ -957,6 +1003,9 @@ body[data-sf-theme="dark"][data-sf-palette="streamfind"] {
   display: block;
   font-size: 12px;
   line-height: 1.45;
+  white-space: normal;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 
 .sf-wizard-modal .modal-dialog {
@@ -1090,6 +1139,45 @@ body[data-sf-theme="dark"][data-sf-palette="streamfind"] {
 #sf-app.sf-dark #sf-content .js-plotly-plot .infolayer .ytitle {
   fill: #ffffff !important;
   color: #ffffff !important;
+}
+
+#sf-app #sf-content .js-plotly-plot .modebar,
+#sf-app #sf-content .js-plotly-plot .modebar-group {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#sf-app #sf-content .js-plotly-plot .modebar-btn {
+  background: var(--sf-btn-bg) !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--sf-btn-color) !important;
+  opacity: 1 !important;
+}
+
+#sf-app #sf-content .js-plotly-plot .modebar-btn:hover,
+#sf-app #sf-content .js-plotly-plot .modebar-btn:focus {
+  background: var(--sf-btn-hover-bg) !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--sf-btn-color) !important;
+}
+
+#sf-app #sf-content .js-plotly-plot .modebar-btn svg,
+#sf-app #sf-content .js-plotly-plot .modebar-btn path {
+  fill: var(--sf-btn-color) !important;
+}
+
+#sf-app #sf-content .js-plotly-plot .modebar-btn.active,
+#sf-app #sf-content .js-plotly-plot .modebar-btn--logo,
+#sf-app #sf-content .js-plotly-plot .modebar-btn.active:hover {
+  background: var(--sf-accent) !important;
+  color: var(--sf-topbar-bg) !important;
+}
+
+#sf-app #sf-content .js-plotly-plot .modebar-btn.active svg,
+#sf-app #sf-content .js-plotly-plot .modebar-btn.active path {
+  fill: var(--sf-topbar-bg) !important;
 }
 
 /* Keep grid lines visually identical in both light/dark modes. */

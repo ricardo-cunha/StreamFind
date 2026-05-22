@@ -167,7 +167,7 @@ app_server <- function(input, output, session) {
     })
 
     htmltools::div(
-      class = "sf-page-shell",
+      class = "sf-page-shell sf-home-shell",
       htmltools::div(
         class = "sf-page-toolbar",
         htmltools::div(

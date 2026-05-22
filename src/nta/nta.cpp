@@ -3474,10 +3474,12 @@ bool nta::api::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
             targets.level.push_back(2);
             targets.polarity.push_back(ft_j.polarity);
             targets.precursor.push_back(true);
-            targets.mzmin.push_back(ft_j.mzmin - (isolationWindow / 2));
-            targets.mzmax.push_back(ft_j.mzmax + (isolationWindow / 2));
-            targets.rtmin.push_back(ft_j.rtmin - 1);
-            targets.rtmax.push_back(ft_j.rtmax + 1);
+            targets.mz.push_back(ft_j.mz);
+            targets.mzmin.push_back(ft_j.mz - (isolationWindow / 2));
+            targets.mzmax.push_back(ft_j.mz + (isolationWindow / 2));
+            targets.rt.push_back(ft_j.rt);
+            targets.rtmin.push_back(ft_j.rtmin);
+            targets.rtmax.push_back(ft_j.rtmax);
             targets.mobilitymin.push_back(0);
             targets.mobilitymax.push_back(0);
             counter++;
@@ -3505,14 +3507,13 @@ bool nta::api::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
               continue;
 
             const mass_spec::spectra::MS_TARGETS_SPECTRA &res_j = res[ft_j.feature];
-            const auto clustered = nta::api::merge_NTA_FEATURE_SPECTRA(res_j, mzClust, presence);
-            const int n_res_j = static_cast<int>(clustered.mz.size());
+            const int n_res_j = static_cast<int>(res_j.mz.size());
             if (n_res_j == 0)
               continue;
 
             ft_j.ms2_size = n_res_j;
-            ft_j.ms2_mz = utils::encode_floats_base64(clustered.mz);
-            ft_j.ms2_intensity = utils::encode_floats_base64(clustered.intensity);
+            ft_j.ms2_mz = utils::encode_floats_base64(res_j.mz);
+            ft_j.ms2_intensity = utils::encode_floats_base64(res_j.intensity);
             fts_i.set_feature(j, ft_j);
           }
         }

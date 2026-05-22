@@ -18,6 +18,8 @@ R6 child of \code{ProjectMassSpec} exposing the non-target analysis-focused NTS 
 \item \href{#method-ProjectNonTargetAnalysis-available_processing_methods}{\code{ProjectNonTargetAnalysis$available_processing_methods()}}
 \item \href{#method-ProjectNonTargetAnalysis-info}{\code{ProjectNonTargetAnalysis$info()}}
 \item \href{#method-ProjectNonTargetAnalysis-get_features}{\code{ProjectNonTargetAnalysis$get_features()}}
+\item \href{#method-ProjectNonTargetAnalysis-get_features_ms1}{\code{ProjectNonTargetAnalysis$get_features_ms1()}}
+\item \href{#method-ProjectNonTargetAnalysis-get_features_ms2}{\code{ProjectNonTargetAnalysis$get_features_ms2()}}
 \item \href{#method-ProjectNonTargetAnalysis-get_features_count}{\code{ProjectNonTargetAnalysis$get_features_count()}}
 \item \href{#method-ProjectNonTargetAnalysis-plot_features_count}{\code{ProjectNonTargetAnalysis$plot_features_count()}}
 \item \href{#method-ProjectNonTargetAnalysis-get_features_profile}{\code{ProjectNonTargetAnalysis$get_features_profile()}}
@@ -222,6 +224,160 @@ time values (in milliseconds).}
 
 \item{\code{millisec}}{Numeric of length one with the drift time deviation,
 in milliseconds.}
+
+\item{\code{filtered}}{Logical (length 1). When \code{TRUE}, filtered features/groups are considered.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectNonTargetAnalysis-get_features_ms1"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-get_features_ms1}{}}}
+\subsection{Method \code{get_features_ms1()}}{
+Return MS1 feature spectra for selected analyses.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$get_features_ms1(
+  analyses = NULL,
+  features = NULL,
+  groups = NULL,
+  components = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  normalized = FALSE,
+  filtered = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{features}}{A character vector with the feature IDs or a data.frame or data.table with a column named \code{feature}
+with the feature IDs. A column named \code{analysis} can be given to specify from which analyses the features matched.}
+
+\item{\code{groups}}{A numeric or character vector with feature group IDs, or a data.frame/data.table with a \code{feature_group} (or \code{group}) column; an optional \code{analysis} column restricts analyses and a \code{name} column sets custom labels.}
+
+\item{\code{components}}{A numeric or character vector with feature component IDs, or a data.frame/data.table with a \code{feature_component} (or \code{component}) column; an optional \code{analysis} column restricts analyses and a \code{name} column sets custom labels.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{normalized}}{A logical value indicating whether the result should be normalized.}
+
+\item{\code{filtered}}{Logical (length 1). When \code{TRUE}, filtered features/groups are considered.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectNonTargetAnalysis-get_features_ms2"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-get_features_ms2}{}}}
+\subsection{Method \code{get_features_ms2()}}{
+Return MS2 feature spectra for selected analyses.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$get_features_ms2(
+  analyses = NULL,
+  features = NULL,
+  groups = NULL,
+  components = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  normalized = FALSE,
+  filtered = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{features}}{A character vector with the feature IDs or a data.frame or data.table with a column named \code{feature}
+with the feature IDs. A column named \code{analysis} can be given to specify from which analyses the features matched.}
+
+\item{\code{groups}}{A numeric or character vector with feature group IDs, or a data.frame/data.table with a \code{feature_group} (or \code{group}) column; an optional \code{analysis} column restricts analyses and a \code{name} column sets custom labels.}
+
+\item{\code{components}}{A numeric or character vector with feature component IDs, or a data.frame/data.table with a \code{feature_component} (or \code{component}) column; an optional \code{analysis} column restricts analyses and a \code{name} column sets custom labels.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{normalized}}{A logical value indicating whether the result should be normalized.}
 
 \item{\code{filtered}}{Logical (length 1). When \code{TRUE}, filtered features/groups are considered.}
 }

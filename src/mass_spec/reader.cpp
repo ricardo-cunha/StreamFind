@@ -1496,7 +1496,6 @@ namespace mass_spec
       }(hd.size());
 
       auto raw = ms->get_spectra(all_indices);
-      out.id.reserve(targets.id.size());
       for (size_t t = 0; t < targets.id.size(); ++t)
       {
         const bool precursor = t < targets.precursor.size() ? targets.precursor[t] : false;
@@ -1510,18 +1509,6 @@ namespace mass_spec
         const float mmin = mzmin == 0.0f && mzmax == 0.0f ? mzcenter - 0.01f : mzmin;
         const float mmax = mzmin == 0.0f && mzmax == 0.0f ? mzcenter + 0.01f : mzmax;
 
-        out.id.push_back(targets.id[t]);
-        out.polarity.push_back(polarity);
-        out.level.push_back(level);
-        out.pre_mz.push_back(mzcenter);
-        out.pre_mzlow.push_back(mmin);
-        out.pre_mzhigh.push_back(mmax);
-        out.pre_ce.push_back(0.0f);
-        out.rt.push_back(t < targets.rt.size() ? targets.rt[t] : 0.0f);
-        out.mobility.push_back(t < targets.mobility.size() ? targets.mobility[t] : 0.0f);
-
-        std::vector<float> mz;
-        std::vector<float> intensity;
         for (size_t i = 0; i < hd.rt.size(); ++i)
         {
           if (i >= hd.level.size() || i >= hd.polarity.size())
@@ -1553,6 +1540,9 @@ namespace mass_spec
           const auto &scan = raw[i];
           if (scan.size() < 2)
             continue;
+          const float scan_rt = i < hd.rt.size() ? hd.rt[i] : (t < targets.rt.size() ? targets.rt[t] : 0.0f);
+          const float scan_pre_mz = (precursor && i < hd.precursor_mz.size()) ? hd.precursor_mz[i] : mzcenter;
+          const float scan_mobility = i < hd.mobility.size() ? hd.mobility[i] : (t < targets.mobility.size() ? targets.mobility[t] : 0.0f);
           for (size_t k = 0; k < scan[0].size(); ++k)
           {
             const float mzv = scan[0][k];
@@ -1561,15 +1551,21 @@ namespace mass_spec
               continue;
             if (level >= 2 && inv < minIntLv2)
               continue;
-            if (mzv < mmin || mzv > mmax)
+            if (!precursor && (mzv < mmin || mzv > mmax))
               continue;
-            mz.push_back(mzv);
-            intensity.push_back(inv);
+            out.id.push_back(targets.id[t]);
+            out.polarity.push_back(polarity);
+            out.level.push_back(level);
+            out.pre_mz.push_back(scan_pre_mz);
+            out.pre_mzlow.push_back(mmin);
+            out.pre_mzhigh.push_back(mmax);
+            out.pre_ce.push_back(0.0f);
+            out.rt.push_back(scan_rt);
+            out.mobility.push_back(scan_mobility);
+            out.mz.push_back(mzv);
+            out.intensity.push_back(inv);
           }
         }
-
-        out.mz.insert(out.mz.end(), mz.begin(), mz.end());
-        out.intensity.insert(out.intensity.end(), intensity.begin(), intensity.end());
       }
       return out;
     }

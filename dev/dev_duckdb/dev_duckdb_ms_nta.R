@@ -158,37 +158,84 @@ workflow <- Workflow(list(
 
 set_workflow(nta, workflow[1:3])
 
-class(workflow[1:3])
+nta$run_workflow()
+
+
 
 show(nta$get_workflow())
 
 class(nta$get_workflow())
 
-
 nta$list_tables()
 
-run_app()
+
+nta <- open_ProjectNonTargetAnalysis(
+  db = project_db,
+  project_id = project_id
+)
+
+nta$run_app()
 
 
-#nta$run_workflow(workflow)
+
 
 # -----------------------------------------------------------------------------
 # 4. Inspect the results
 # -----------------------------------------------------------------------------
 
 get_cache(nta)
+
+delete_cache(nta, name = "NTA_FEATURES_CACHE")
+
 print(nta)
 
 
 features_all <- get_features(nta)
+
 features_subset <- get_features(
   nta,
   analyses = 11,
-  mass = internal_standards[4, ],
+  mass = internal_standards[4:6, ],
   ppm = 20,
   sec = 60,
   filtered = FALSE
 )
+
+plot_features_ms2(
+  nta,
+  analyses = 11,
+  mass = internal_standards[4:6, ],
+  ppm = 20,
+  sec = 60,
+  filtered = FALSE
+)
+
+plot_features_ms1(
+  nta,
+  analyses = 11,
+  mass = internal_standards[4:6, ],
+  ppm = 20,
+  sec = 60,
+  filtered = FALSE
+)
+
+get_features_ms2(
+  nta,
+  analyses = 11,
+  mass = internal_standards[4:6, ],
+  ppm = 20,
+  sec = 60,
+  filtered = FALSE
+)
+
+get_raw_spectra_ms2(
+  nta,
+  analyses = 11,
+  mass = internal_standards[4:6, ],
+  ppm = 20,
+  sec = 60
+)
+
 
 suspects_found <- get_suspects(nta)
 internal_standards_found <- get_internal_standards(nta)

@@ -6,6 +6,8 @@
 \alias{print.ProjectNonTargetAnalysis}
 \alias{show.ProjectNonTargetAnalysis}
 \alias{get_features.ProjectNonTargetAnalysis}
+\alias{get_features_ms1.ProjectNonTargetAnalysis}
+\alias{get_features_ms2.ProjectNonTargetAnalysis}
 \alias{get_features_count.ProjectNonTargetAnalysis}
 \alias{plot_features_count.ProjectNonTargetAnalysis}
 \alias{get_features_profile.ProjectNonTargetAnalysis}
@@ -42,6 +44,42 @@
   ppm = 20,
   sec = 60,
   millisec = 5,
+  filtered = FALSE,
+  ...
+)
+
+\method{get_features_ms1}{ProjectNonTargetAnalysis}(
+  x,
+  analyses = NULL,
+  features = NULL,
+  groups = NULL,
+  components = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  normalized = FALSE,
+  filtered = FALSE,
+  ...
+)
+
+\method{get_features_ms2}{ProjectNonTargetAnalysis}(
+  x,
+  analyses = NULL,
+  features = NULL,
+  groups = NULL,
+  components = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  normalized = FALSE,
   filtered = FALSE,
   ...
 )
@@ -359,6 +397,8 @@ in milliseconds.}
 
 \item{filtered}{Logical (length 1). When \code{TRUE}, filtered features/groups are considered.}
 
+\item{normalized}{A logical value indicating whether the result should be normalized.}
+
 \item{yLab}{A string with the title for the y axis.}
 
 \item{title}{A string with the title.}
@@ -366,8 +406,6 @@ in milliseconds.}
 \item{groupBy}{Column to use for color grouping (default: "analysis").}
 
 \item{showLegend}{Logical (length 1). Set to \code{TRUE} to show legend.}
-
-\item{normalized}{A logical value indicating whether the result should be normalized.}
 
 \item{interactive}{Logical (length 1). When \code{TRUE}, the data is plotted interactively using \pkg{plotly}.}
 
@@ -426,6 +464,10 @@ S3 interface methods for \code{ProjectNonTargetAnalysis}.
 \item \code{show(ProjectNonTargetAnalysis)}: Show a short summary.
 
 \item \code{get_features(ProjectNonTargetAnalysis)}: Return shared NTS_FEATURES rows for selected analyses.
+
+\item \code{get_features_ms1(ProjectNonTargetAnalysis)}: Return decoded MS1 feature spectra for selected analyses.
+
+\item \code{get_features_ms2(ProjectNonTargetAnalysis)}: Return decoded MS2 feature spectra for selected analyses.
 
 \item \code{get_features_count(ProjectNonTargetAnalysis)}: Return feature counts for selected analyses.
 

@@ -105,6 +105,38 @@ ProjectNonTargetAnalysis <- R6::R6Class(
                             filtered = FALSE) {
       get_features.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, groups = groups, components = components, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, filtered = filtered)
     },
+    #' @description Return MS1 feature spectra for selected analyses.
+    get_features_ms1 = function(analyses = NULL,
+                                features = NULL,
+                                groups = NULL,
+                                components = NULL,
+                                mass = NULL,
+                                mz = NULL,
+                                rt = NULL,
+                                mobility = NULL,
+                                ppm = 20,
+                                sec = 60,
+                                millisec = 5,
+                                normalized = FALSE,
+                                filtered = FALSE) {
+      get_features_ms1.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, groups = groups, components = components, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, normalized = normalized, filtered = filtered)
+    },
+    #' @description Return MS2 feature spectra for selected analyses.
+    get_features_ms2 = function(analyses = NULL,
+                                features = NULL,
+                                groups = NULL,
+                                components = NULL,
+                                mass = NULL,
+                                mz = NULL,
+                                rt = NULL,
+                                mobility = NULL,
+                                ppm = 20,
+                                sec = 60,
+                                millisec = 5,
+                                normalized = FALSE,
+                                filtered = FALSE) {
+      get_features_ms2.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, groups = groups, components = components, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, normalized = normalized, filtered = filtered)
+    },
     #' @description Return a per-analysis summary of shared `NTS_FEATURES` rows.
     get_features_count = function(analyses = NULL, filtered = FALSE) {
       get_features_count.ProjectNonTargetAnalysis(self, analyses = analyses, filtered = filtered)
@@ -433,6 +465,98 @@ show.ProjectNonTargetAnalysis <- function(x, ...) {
   print.ProjectNonTargetAnalysis(x, ...)
 }
 
+.decode_project_nts_feature_spectra <- function(fts, spectrum = c("ms1", "ms2"), normalized = FALSE) {
+  spectrum <- match.arg(spectrum)
+  if (!data.table::is.data.table(fts)) {
+    fts <- data.table::as.data.table(fts)
+  }
+  if (nrow(fts) == 0) {
+    return(data.table::data.table())
+  }
+
+  mz_col <- paste0(spectrum, "_mz")
+  intensity_col <- paste0(spectrum, "_intensity")
+
+  spectra_list <- lapply(seq_len(nrow(fts)), function(i) {
+    ft <- fts[i, ]
+    has_spectrum <- !is.na(ft[[mz_col]]) &&
+      nchar(ft[[mz_col]]) > 0 &&
+      !is.na(ft[[intensity_col]]) &&
+      nchar(ft[[intensity_col]]) > 0
+    if (!has_spectrum) {
+      return(data.table::data.table())
+    }
+
+    mz_dec <- rcpp_decode_string(ft[[mz_col]])
+    int_dec <- rcpp_decode_string(ft[[intensity_col]])
+    if (length(mz_dec) == 0 || length(mz_dec) != length(int_dec)) {
+      return(data.table::data.table())
+    }
+
+    feature_group <- NA
+    if ("feature_group" %in% colnames(ft)) {
+      feature_group <- ft$feature_group
+    } else if ("group" %in% colnames(ft)) {
+      feature_group <- ft$group
+    }
+
+    feature_component <- NA
+    if ("feature_component" %in% colnames(ft)) {
+      feature_component <- ft$feature_component
+    } else if ("component" %in% colnames(ft)) {
+      feature_component <- ft$component
+    }
+
+    data.table::data.table(
+      analysis = ft$analysis,
+      replicate = if ("replicate" %in% colnames(ft)) ft$replicate else NA_character_,
+      feature = ft$feature,
+      feature_group = feature_group,
+      feature_component = feature_component,
+      name = if ("name" %in% colnames(ft)) ft$name else NA_character_,
+      polarity = if ("polarity" %in% colnames(ft)) ft$polarity else NA_real_,
+      feature_mz = if ("mz" %in% colnames(ft)) ft$mz else NA_real_,
+      feature_rt = if ("rt" %in% colnames(ft)) ft$rt else NA_real_,
+      pre_mz = if (identical(spectrum, "ms2") && "mz" %in% colnames(ft)) ft$mz else NA_real_,
+      mz = mz_dec,
+      intensity = int_dec
+    )
+  })
+
+  spectra <- data.table::rbindlist(spectra_list, fill = TRUE)
+  if (nrow(spectra) == 0) {
+    return(data.table::data.table())
+  }
+
+  if (normalized) {
+    spectra[, intensity := {
+      max_intensity <- max(intensity, na.rm = TRUE)
+      if (!is.finite(max_intensity) || max_intensity <= 0) {
+        intensity
+      } else {
+        intensity / max_intensity
+      }
+    }, by = .(analysis, feature)]
+  }
+
+  desired_order <- c(
+    "analysis",
+    "replicate",
+    "feature",
+    "feature_group",
+    "feature_component",
+    "name",
+    "polarity",
+    "feature_mz",
+    "feature_rt",
+    "pre_mz",
+    "mz",
+    "intensity"
+  )
+  data.table::setcolorder(spectra, c(intersect(desired_order, colnames(spectra)), setdiff(colnames(spectra), desired_order)))
+  spectra[]
+}
+
 #' @describeIn ProjectNonTargetAnalysisS3 Return shared NTS_FEATURES rows for selected analyses.
 #' @method get_features ProjectNonTargetAnalysis
 #' @export
@@ -513,6 +637,84 @@ get_features.ProjectNonTargetAnalysis <- function(
   desired_order <- c("analysis", "replicate", "feature")
   data.table::setcolorder(fts, c(intersect(desired_order, colnames(fts)), setdiff(colnames(fts), desired_order)))
   fts
+}
+
+#' @describeIn ProjectNonTargetAnalysisS3 Return decoded MS1 feature spectra for selected analyses.
+#' @method get_features_ms1 ProjectNonTargetAnalysis
+#' @export
+get_features_ms1.ProjectNonTargetAnalysis <- function(
+  x,
+  analyses = NULL,
+  features = NULL,
+  groups = NULL,
+  components = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  normalized = FALSE,
+  filtered = FALSE,
+  ...
+) {
+  checkmate::assert_class(x, "ProjectNonTargetAnalysis")
+  fts <- get_features(
+    x,
+    analyses = analyses,
+    features = features,
+    groups = groups,
+    components = components,
+    mass = mass,
+    mz = mz,
+    rt = rt,
+    mobility = mobility,
+    ppm = ppm,
+    sec = sec,
+    millisec = millisec,
+    filtered = filtered
+  )
+  .decode_project_nts_feature_spectra(fts, spectrum = "ms1", normalized = normalized)
+}
+
+#' @describeIn ProjectNonTargetAnalysisS3 Return decoded MS2 feature spectra for selected analyses.
+#' @method get_features_ms2 ProjectNonTargetAnalysis
+#' @export
+get_features_ms2.ProjectNonTargetAnalysis <- function(
+  x,
+  analyses = NULL,
+  features = NULL,
+  groups = NULL,
+  components = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  normalized = FALSE,
+  filtered = FALSE,
+  ...
+) {
+  checkmate::assert_class(x, "ProjectNonTargetAnalysis")
+  fts <- get_features(
+    x,
+    analyses = analyses,
+    features = features,
+    groups = groups,
+    components = components,
+    mass = mass,
+    mz = mz,
+    rt = rt,
+    mobility = mobility,
+    ppm = ppm,
+    sec = sec,
+    millisec = millisec,
+    filtered = filtered
+  )
+  .decode_project_nts_feature_spectra(fts, spectrum = "ms2", normalized = normalized)
 }
 
 #' @describeIn ProjectNonTargetAnalysisS3 Return feature counts for selected analyses.
@@ -1305,7 +1507,7 @@ plot_features_ms1.ProjectNonTargetAnalysis <- function(
   ...
 ) {
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
-  fts <- get_features(
+  ms1 <- get_features_ms1(
     x,
     analyses = analyses,
     features = features,
@@ -1318,79 +1520,14 @@ plot_features_ms1.ProjectNonTargetAnalysis <- function(
     ppm = ppm,
     sec = sec,
     millisec = millisec,
+    normalized = normalized,
     filtered = filtered
   )
 
-  if (nrow(fts) == 0) {
-    message("\u2717 MS1 traces not found for the targets!")
-    return(NULL)
-  }
-
-  ms1_list <- lapply(seq_len(nrow(fts)), function(i) {
-    ft <- fts[i, ]
-    sel <- !is.na(ft$ms1_mz) && nchar(ft$ms1_mz) > 0 && !is.na(ft$ms1_intensity) && nchar(ft$ms1_intensity) > 0
-    if (!sel) {
-      return(data.table::data.table())
-    }
-    mz_dec <- rcpp_decode_string(ft$ms1_mz)
-    int_dec <- rcpp_decode_string(ft$ms1_intensity)
-    if (length(mz_dec) == 0 || length(mz_dec) != length(int_dec)) {
-      return(data.table::data.table())
-    }
-    data.table::data.table(mz = mz_dec, intensity = int_dec, analysis = ft$analysis, feature = ft$feature)
-  })
-
-  if (normalized) {
-    ms1_list <- lapply(ms1_list, function(z) {
-      if (!is.null(z) && nrow(z) > 0) {
-        max_int <- max(z$intensity)
-        if (max_int > 0) z$intensity <- z$intensity / max_int
-      }
-      z
-    })
-  }
-
-  ms1 <- data.table::rbindlist(ms1_list, fill = TRUE)
   if (nrow(ms1) == 0) {
     message("\u2717 MS1 traces not found for the targets!")
     return(NULL)
   }
-
-  analyses_info <- data.table::as.data.table(self$get_analyses())
-  rpl_map <- analyses_info$replicate
-  names(rpl_map) <- analyses_info$analysis
-  ms1$replicate <- rpl_map[ms1$analysis]
-  data.table::setcolorder(ms1, c("analysis", "replicate", "feature"))
-
-  unique_fts_id <- paste0(fts$analysis, "-", fts$feature)
-  unique_ms1_id <- paste0(ms1$analysis, "-", ms1$feature)
-  if ("feature_group" %in% colnames(fts)) {
-    fgs <- fts$feature_group
-    names(fgs) <- unique_fts_id
-    ms1$feature_group <- fgs[unique_ms1_id]
-  } else if ("group" %in% colnames(fts)) {
-    fgs <- fts$group
-    names(fgs) <- unique_fts_id
-    ms1$feature_group <- fgs[unique_ms1_id]
-  }
-  if ("feature_component" %in% colnames(fts)) {
-    fcs <- fts$feature_component
-    names(fcs) <- unique_fts_id
-    ms1$feature_component <- fcs[unique_ms1_id]
-  } else if ("component" %in% colnames(fts)) {
-    fcs <- fts$component
-    names(fcs) <- unique_fts_id
-    ms1$feature_component <- fcs[unique_ms1_id]
-  }
-  if ("name" %in% colnames(fts)) {
-    tar_ids <- fts$name
-    names(tar_ids) <- unique_fts_id
-    ms1$name <- tar_ids[unique_ms1_id]
-    data.table::setcolorder(ms1, c("analysis", "replicate", "name"))
-  }
-
-  desired_order <- c("analysis", "replicate", "feature", "feature_group", "feature_component")
-  data.table::setcolorder(ms1, c(desired_order, setdiff(colnames(ms1), desired_order)))
 
   if (!(is.character(groupBy) && length(groupBy) >= 1 && all(groupBy %in% colnames(ms1)))) {
     warning("groupBy columns not found in MS1 data")
@@ -1398,7 +1535,7 @@ plot_features_ms1.ProjectNonTargetAnalysis <- function(
   }
   vals <- lapply(groupBy, function(col) as.character(ms1[[col]]))
   ms1$var <- do.call(paste, c(vals, sep = " - "))
-  ms1$loop <- paste0(ms1$analysis, ms1$replicate, ms1$id, ms1$var)
+  ms1$loop <- paste0(ms1$analysis, ms1$replicate, ms1$feature, ms1$var)
   cl <- .get_colors(unique(ms1$var))
   ms1$text_string <- if (showText) paste0(round(ms1$mz, 4)) else ""
 
@@ -1471,7 +1608,7 @@ plot_features_ms2.ProjectNonTargetAnalysis <- function(
   ...
 ) {
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
-  fts <- get_features(
+  ms2 <- get_features_ms2(
     x,
     analyses = analyses,
     features = features,
@@ -1484,79 +1621,15 @@ plot_features_ms2.ProjectNonTargetAnalysis <- function(
     ppm = ppm,
     sec = sec,
     millisec = millisec,
+    normalized = normalized,
     filtered = filtered
   )
 
-  if (nrow(fts) == 0) {
-    message("\u2717 MS2 traces not found for the targets!")
-    return(NULL)
-  }
-
-  ms2_list <- lapply(seq_len(nrow(fts)), function(i) {
-    ft <- fts[i, ]
-    sel <- !is.na(ft$ms2_mz) && nchar(ft$ms2_mz) > 0 && !is.na(ft$ms2_intensity) && nchar(ft$ms2_intensity) > 0
-    if (!sel) {
-      return(data.table::data.table())
-    }
-    mz_dec <- rcpp_decode_string(ft$ms2_mz)
-    int_dec <- rcpp_decode_string(ft$ms2_intensity)
-    if (length(mz_dec) == 0 || length(mz_dec) != length(int_dec)) {
-      return(data.table::data.table())
-    }
-    data.table::data.table(mz = mz_dec, intensity = int_dec, analysis = ft$analysis, feature = ft$feature, is_pre = FALSE)
-  })
-
-  if (normalized) {
-    ms2_list <- lapply(ms2_list, function(z) {
-      if (!is.null(z) && nrow(z) > 0) {
-        max_int <- max(z$intensity)
-        if (max_int > 0) z$intensity <- z$intensity / max_int
-      }
-      z
-    })
-  }
-
-  ms2 <- data.table::rbindlist(ms2_list, fill = TRUE)
   if (nrow(ms2) == 0) {
     message("\u2717 MS2 traces not found for the targets!")
     return(NULL)
   }
-
-  analyses_info <- data.table::as.data.table(self$get_analyses())
-  rpl_map <- analyses_info$replicate
-  names(rpl_map) <- analyses_info$analysis
-  ms2$replicate <- rpl_map[ms2$analysis]
-  data.table::setcolorder(ms2, c("analysis", "replicate", "feature"))
-
-  unique_fts_id <- paste0(fts$analysis, "-", fts$feature)
-  unique_ms2_id <- paste0(ms2$analysis, "-", ms2$feature)
-  if ("feature_group" %in% colnames(fts)) {
-    fgs <- fts$feature_group
-    names(fgs) <- unique_fts_id
-    ms2$feature_group <- fgs[unique_ms2_id]
-  } else if ("group" %in% colnames(fts)) {
-    fgs <- fts$group
-    names(fgs) <- unique_fts_id
-    ms2$feature_group <- fgs[unique_ms2_id]
-  }
-  if ("feature_component" %in% colnames(fts)) {
-    fcs <- fts$feature_component
-    names(fcs) <- unique_fts_id
-    ms2$feature_component <- fcs[unique_ms2_id]
-  } else if ("component" %in% colnames(fts)) {
-    fcs <- fts$component
-    names(fcs) <- unique_fts_id
-    ms2$feature_component <- fcs[unique_ms2_id]
-  }
-  if ("name" %in% colnames(fts)) {
-    tar_ids <- fts$name
-    names(tar_ids) <- unique_fts_id
-    ms2$name <- tar_ids[unique_ms2_id]
-    data.table::setcolorder(ms2, c("analysis", "replicate", "name"))
-  }
-
-  desired_order <- c("analysis", "replicate", "feature", "feature_group", "feature_component")
-  data.table::setcolorder(ms2, c(desired_order, setdiff(colnames(ms2), desired_order)))
+  ms2[, is_pre := FALSE]
 
   if (!(is.character(groupBy) && length(groupBy) >= 1 && all(groupBy %in% colnames(ms2)))) {
     warning("groupBy columns not found in MS2 data")
@@ -1566,7 +1639,7 @@ plot_features_ms2.ProjectNonTargetAnalysis <- function(
   ms2$var <- do.call(paste, c(vals, sep = " - "))
   ms2$text_string <- if (showText) paste0(round(ms2$mz, 4)) else ""
   ms2$text_string[ms2$is_pre] <- paste0("Pre ", ms2$text_string[ms2$is_pre])
-  ms2$loop <- paste0(ms2$analysis, ms2$replicate, ms2$id, ms2$var)
+  ms2$loop <- paste0(ms2$analysis, ms2$replicate, ms2$feature, ms2$var)
   cl <- .get_colors(unique(ms2$var))
 
   if (!interactive) {
@@ -2143,8 +2216,8 @@ plot_fold_change.ProjectNonTargetAnalysis <- function(
 
   fc_summary_count <- fc[, .(count = .N), by = c("combination", "bondaries", "replicate_out", "replicate_in")]
 
-  info_analyses <- data.table::as.data.table(self$get_analyses())
-  fts_all <- self$get_features(analyses = NULL, filtered = filtered)
+  info_analyses <- data.table::as.data.table(get_analyses.ProjectMassSpec(x))
+  fts_all <- get_features.ProjectNonTargetAnalysis(x, analyses = NULL, filtered = filtered)
   groups_counts <- data.table::data.table(
     analysis = info_analyses$analysis,
     replicate = info_analyses$replicate,

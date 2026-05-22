@@ -10,9 +10,11 @@
     shiny::HTML(
       "
     .status-panel {
-      background-color: var(--sf-content-bg, white);
-      border-radius: 8px;
-      padding: 16px;
+      background: transparent;
+      border: none;
+      border-radius: 0;
+      box-shadow: none;
+      padding: 8px 12px;
       height: 100%;
     }
     .status-item {
@@ -38,6 +40,78 @@
     }
     .tab-content {
       padding: 0;
+    }
+    .sf-nta-results-root {
+      height: calc(100dvh - var(--sf-topbar-height, 36px) - var(--sf-subtopbar-height, 36px) - 10px);
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: transparent;
+    }
+    .sf-nta-results-root > .tab-content {
+      height: 100%;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: transparent;
+    }
+    .sf-nta-results-root .bslib-sidebar-layout,
+    .sf-nta-results-root .bslib-sidebar-layout > .main,
+    .sf-nta-results-root .bslib-sidebar-layout > .sidebar {
+      min-height: 0;
+      height: 100% !important;
+      background: transparent !important;
+      box-shadow: none !important;
+      border: none !important;
+    }
+    .sf-nta-results-summary .bslib-sidebar-layout,
+    .sf-nta-results-features .bslib-sidebar-layout {
+      flex: 1 1 auto;
+      display: flex;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .sf-nta-results-summary .bslib-sidebar-layout > .main,
+    .sf-nta-results-features .bslib-sidebar-layout > .main {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .sf-nta-results-summary .bslib-sidebar-layout > .sidebar,
+    .sf-nta-results-features .bslib-sidebar-layout > .sidebar {
+      overflow: auto;
+    }
+    .sf-nta-summary-main {
+      flex: 1 1 auto;
+      height: 100%;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      background: transparent;
+    }
+    .sf-nta-summary-main > .features-controls-bar {
+      flex: 0 0 60px;
+    }
+    .sf-nta-summary-plot {
+      flex: 1 1 auto;
+      min-height: 0;
+      background: transparent;
+      padding: 5px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .sf-nta-summary-plot .shiny-plot-output,
+    .sf-nta-summary-plot .plotly,
+    .sf-nta-summary-plot .js-plotly-plot,
+    .sf-nta-summary-plot .html-widget {
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100% !important;
     }
     .nav-tabs {
       border-bottom: 2px solid #e3e6f0;
@@ -89,16 +163,18 @@
       display: block;
     }
     .plot-container {
-      border-radius: 8px;
-      background-color: var(--sf-content-bg, white);
-      padding: 15px;
-      box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+      border-radius: 0;
+      background: transparent;
+      padding: 0;
+      box-shadow: none;
     }
     .nav-tabs-custom {
       margin-bottom: 0px;
     }
     .features-controls-bar {
-      background-color: var(--sf-content-bg, white);
+      background: transparent;
+      border: none;
+      box-shadow: none;
       padding: 10px 15px;
       height: 60px;
       display: flex;
@@ -118,19 +194,249 @@
     .features-controls-bar .checkbox input {
       margin-right: 4px;
     }
+    .sf-nta-features-layout {
+      display: flex;
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+      gap: 0;
+    }
+    .sf-nta-results-features > .features-controls-bar {
+      flex: 0 0 60px;
+    }
+    .sf-nta-features-plot-pane {
+      min-width: 0;
+      flex: 1 1 auto;
+      padding: 10px;
+      min-height: 0;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      background: transparent;
+    }
+    .sf-nta-features-details-pane {
+      min-width: 340px;
+      padding: 10px;
+      min-height: 0;
+      overflow: hidden;
+      background: transparent;
+    }
+    .sf-nta-feature-pane-shell {
+      display: flex;
+      flex: 1 1 auto;
+      min-height: 0;
+      min-width: 0;
+      overflow: hidden;
+      gap: 10px;
+    }
+    .sf-nta-feature-filter-sidebar {
+      flex: 0 0 0;
+      width: 0;
+      min-width: 0;
+      padding: 0;
+      overflow: hidden;
+      opacity: 0;
+      transition: width 0.16s ease, opacity 0.16s ease, padding 0.16s ease;
+      background: transparent;
+    }
+    .sf-nta-feature-filter-sidebar.open {
+      flex-basis: 320px;
+      width: 320px;
+      min-width: 320px;
+      padding: 5px;
+      opacity: 1;
+      overflow: auto;
+    }
+    .sf-nta-feature-filter-sidebar .form-group,
+    .sf-nta-feature-filter-sidebar .shiny-input-container {
+      margin-bottom: 10px;
+    }
+    .sf-nta-feature-plot-shell {
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      background: transparent;
+    }
+    .sf-nta-feature-plot-holder {
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
+      display: flex;
+      overflow: hidden;
+      background: transparent;
+    }
+    .sf-nta-feature-plot-holder .plotly,
+    .sf-nta-feature-plot-holder .js-plotly-plot,
+    .sf-nta-feature-plot-holder .html-widget,
+    .sf-nta-feature-plot-holder .shiny-plot-output {
+      flex: 1 1 auto;
+      min-width: 0;
+      min-height: 0;
+      height: 100% !important;
+      width: 100% !important;
+    }
+    .sf-nta-details-tabs {
+      height: 100%;
+      min-height: 0;
+    }
+    .sf-nta-details-tabs > .tabbable {
+      height: 100%;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+    .sf-nta-details-tabs > .tabbable > .nav,
+    .sf-nta-details-tabs > .tabbable > .nav-tabs {
+      flex: 0 0 auto;
+      display: flex;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      overflow-y: hidden;
+      white-space: nowrap;
+    }
+    .sf-nta-details-tabs > .tabbable > .nav-tabs > li {
+      flex: 0 0 auto;
+    }
+    .sf-nta-details-tabs > .tabbable > .tab-content {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .sf-nta-details-tabs > .tabbable > .tab-content > .tab-pane,
+    .sf-nta-details-tabs > .tabbable > .tab-content > .tab-pane.active {
+      height: 100%;
+      min-height: 0;
+      overflow: hidden;
+      padding: 0;
+    }
+    .sf-nta-plot-panel {
+      height: 100%;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+      background: transparent;
+    }
+    .sf-nta-plot-toolbar {
+      flex: 0 0 30px;
+      height: 30px;
+      position: relative;
+    }
+    .sf-nta-plot-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      background: transparent;
+      display: flex;
+      overflow: hidden;
+    }
+    .sf-nta-plot-body .shiny-plot-output,
+    .sf-nta-plot-body .plotly,
+    .sf-nta-plot-body .js-plotly-plot,
+    .sf-nta-plot-body .html-widget {
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100% !important;
+    }
+    .sf-nta-table-panel {
+      height: 100%;
+      min-height: 0;
+      overflow: auto;
+      padding: 12px;
+      background: transparent;
+    }
     "
+    )
+  )
+
+  custom_js <- shiny::tags$script(
+    shiny::HTML(
+      sprintf(
+        "
+        (function() {
+          if (window.__sfNtaResultsResizeRegistered) return;
+          window.__sfNtaResultsResizeRegistered = true;
+          window.__sfNtaPlotlyObservers = window.__sfNtaPlotlyObservers || {};
+
+          var resolvePlotEl = function(id) {
+            var root = document.getElementById(id);
+            if (!root) return null;
+            return root.querySelector('.js-plotly-plot') || root;
+          };
+
+          var resizeIds = function(ids) {
+            if (!Array.isArray(ids)) return;
+            ids.forEach(function(id) {
+              var el = resolvePlotEl(id);
+              if (el && window.Plotly && window.Plotly.Plots) {
+                try { window.Plotly.relayout(el, {autosize: true}); } catch (e) {}
+                try { window.Plotly.Plots.resize(el); } catch (e) {}
+              }
+            });
+          };
+
+          var observeIds = function(ids) {
+            if (!window.ResizeObserver || !Array.isArray(ids)) return;
+            ids.forEach(function(id) {
+              var root = document.getElementById(id);
+              if (!root) return;
+              if (window.__sfNtaPlotlyObservers[id]) {
+                try { window.__sfNtaPlotlyObservers[id].disconnect(); } catch (e) {}
+              }
+              var observer = new ResizeObserver(function() {
+                window.requestAnimationFrame(function() {
+                  resizeIds([id]);
+                  setTimeout(function() { resizeIds([id]); }, 80);
+                });
+              });
+              observer.observe(root);
+              window.__sfNtaPlotlyObservers[id] = observer;
+            });
+          };
+
+          Shiny.addCustomMessageHandler('sf-plotly-resize', function(message) {
+            if (!message || !Array.isArray(message.ids)) return;
+            var ids = message.ids;
+            window.requestAnimationFrame(function() {
+              observeIds(ids);
+              resizeIds(ids);
+              setTimeout(function() { resizeIds(ids); }, 120);
+              setTimeout(function() { resizeIds(ids); }, 320);
+            });
+          });
+
+          $(document).on('shown.bs.tab', '#%s li a[data-toggle=\"tab\"]', function() {
+            var ids = [
+              '%s', '%s', '%s', '%s', '%s', '%s'
+            ];
+            setTimeout(function() {
+              observeIds(ids);
+              resizeIds(ids);
+            }, 80);
+          });
+        })();
+        ",
+        ns_full("feature_scatter_details_tabs"),
+        ns_full("features_scatter_plot"),
+        ns_full("feature_peaks_plot_scatter"),
+        ns_full("feature_xic_plot_scatter"),
+        ns_full("feature_profile_plot_scatter"),
+        ns_full("feature_ms1_plot_scatter"),
+        ns_full("feature_ms2_plot_scatter")
+      )
     )
   )
 
   shiny::tagList(
     custom_css,
+    custom_js,
     .app_util_plot_maximize_js(),
     .app_util_create_plot_modal(ns_full),
     shiny::conditionalPanel(
       "input.sf_active_subtab === 'summary'",
         shiny::div(
-          class = "tab-content",
-          style = "max-height: calc(100vh - 69px); overflow-y: auto; padding: 0;",
+          class = "sf-nta-results-root sf-nta-results-summary tab-content",
           bslib::layout_sidebar(
             sidebar = bslib::sidebar(
               shiny::div(
@@ -246,7 +552,7 @@
               )
             ),
               shiny::div(
-                style = "height: calc(100vh - 133px); display: flex; flex-direction: column;",
+                class = "sf-nta-summary-main",
                 shiny::div(
                   class = "features-controls-bar",
                   style = "display: flex; align-items: center; justify-content: space-between;",
@@ -268,10 +574,8 @@
                     )
                   )
                 ),
-              shiny::column(
-                width = 12,
-                class = "position-relative",
-                style = "flex: 1; background-color: var(--sf-content-bg, #ffffff); padding: 5px;",
+              shiny::div(
+                class = "position-relative sf-nta-summary-plot",
                 .app_util_create_maximize_button("features_chart", ns_full),
                 plotly::plotlyOutput(ns_full("features_chart"), height = "100%")
               )
@@ -366,14 +670,37 @@
         )
       }
 
+      props <- scatter_layout_proportions()
+      filters_open <- isTRUE(scatter_filters_open())
+      left_basis <- sprintf(
+        "flex: 0 0 calc(%s%% - 10px); max-width: calc(%s%% - 10px);",
+        props[1], props[1]
+      )
+      right_basis <- sprintf(
+        "flex: 0 0 calc(%s%% - 10px); max-width: calc(%s%% - 10px);",
+        props[2], props[2]
+      )
+      active_prop <- paste0(props[1], "_", props[2])
+      prop_btn_class <- function(label) {
+        paste(
+          "btn btn-outline-primary btn-sm",
+          if (identical(active_prop, label)) "active" else ""
+        )
+      }
+
       shiny::div(
-        class = "tab-content",
-        style = "max-height: calc(100vh - 69px); overflow-y: auto; padding: 0;",
+        class = "sf-nta-results-root sf-nta-results-features tab-content",
         shiny::div(
           class = "features-controls-bar",
           style = "display: flex; align-items: center; justify-content: space-between;",
           shiny::div(
             style = "display: flex; align-items: center; gap: 10px; flex-wrap: wrap;",
+            shiny::actionButton(
+              ns_full("toggle_scatter_filters"),
+              label = if (filters_open) "Hide Filters" else "Show Filters",
+              icon = shiny::icon("sliders"),
+              class = "btn btn-outline-primary btn-sm"
+            ),
             shiny::div(
               style = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;",
               shiny::span("Group by:", style = "font-weight: 500;"),
@@ -402,26 +729,29 @@
           ),
           shiny::div(
             class = "btn-group btn-group-sm",
-            shiny::actionButton(ns_full("scatter_prop_20_80"), "20:80", class = "btn btn-outline-primary btn-sm"),
-            shiny::actionButton(ns_full("scatter_prop_30_70"), "30:70", class = "btn btn-outline-primary btn-sm"),
-            shiny::actionButton(ns_full("scatter_prop_40_60"), "40:60", class = "btn btn-outline-primary btn-sm"),
-            shiny::actionButton(ns_full("scatter_prop_50_50"), "50:50", class = "btn btn-outline-primary btn-sm"),
-            shiny::actionButton(ns_full("scatter_prop_60_40"), "60:40", class = "btn btn-outline-primary btn-sm"),
-            shiny::actionButton(ns_full("scatter_prop_70_30"), "70:30", class = "btn btn-outline-primary btn-sm"),
-            shiny::actionButton(ns_full("scatter_prop_80_20"), "80:20", class = "btn btn-outline-primary btn-sm")
+            shiny::actionButton(ns_full("scatter_prop_20_80"), "20:80", class = prop_btn_class("20_80")),
+            shiny::actionButton(ns_full("scatter_prop_30_70"), "30:70", class = prop_btn_class("30_70")),
+            shiny::actionButton(ns_full("scatter_prop_40_60"), "40:60", class = prop_btn_class("40_60")),
+            shiny::actionButton(ns_full("scatter_prop_50_50"), "50:50", class = prop_btn_class("50_50")),
+            shiny::actionButton(ns_full("scatter_prop_60_40"), "60:40", class = prop_btn_class("60_40")),
+            shiny::actionButton(ns_full("scatter_prop_70_30"), "70:30", class = prop_btn_class("70_30")),
+            shiny::actionButton(ns_full("scatter_prop_80_20"), "80:20", class = prop_btn_class("80_20"))
           )
         ),
         shiny::div(
           id = ns_full("scatter_content_container"),
-          style = "display: flex; height: calc(100vh - 183px);",
+          class = "sf-nta-features-layout",
           shiny::div(
             id = ns_full("features_scatter_panel"),
-            style = "height: calc(100vh - 183px); padding: 10px; overflow: auto; width: 55%; display: flex; flex-direction: column; gap: 8px;",
-            bslib::layout_sidebar(
-              sidebar = bslib::sidebar(
-                open = TRUE,
-                width = "350px",
-                style = "max-height: calc(100vh - 253px); overflow-y: auto; overflow-x: visible; padding: 16px 24px;",
+            class = "sf-nta-features-plot-pane",
+            style = left_basis,
+            shiny::div(
+              class = "sf-nta-feature-pane-shell",
+              shiny::div(
+                class = paste(
+                  "sf-nta-feature-filter-sidebar",
+                  if (filters_open) "open" else ""
+                ),
                 shiny::textInput(
                   ns_full("scatter_search"),
                   "Search (regex)",
@@ -430,104 +760,137 @@
                 ),
                 shiny::uiOutput(ns_full("scatter_numeric_filters"))
               ),
-              fill = TRUE,
               shiny::div(
-                style = "flex: 1 1 auto; min-width: 0; width: 100%; position: relative;",
+                class = "sf-nta-feature-plot-shell",
                 shiny::div(
-                  style = "height: 30px; position: relative;",
+                  class = "sf-nta-plot-toolbar",
                   .app_util_create_maximize_button("features_scatter_plot", ns_full)
                 ),
-                plotly::plotlyOutput(
-                  ns_full("features_scatter_plot"),
-                  height = "calc(100vh - 253px)",
-                  width = "100%"
+                shiny::div(
+                  class = "sf-nta-feature-plot-holder",
+                  plotly::plotlyOutput(
+                    ns_full("features_scatter_plot"),
+                    height = "100%",
+                    width = "100%"
+                  )
                 )
               )
             )
           ),
           shiny::div(
             id = ns_full("features_scatter_details_panel"),
-            style = "height: calc(100vh - 183px); padding: 10px; overflow: hidden; width: 45%;",
-            shiny::tabsetPanel(
+            class = "sf-nta-features-details-pane",
+            style = right_basis,
+            shiny::div(
+              class = "sf-nta-details-tabs",
+              shiny::tabsetPanel(
               id = ns_full("feature_scatter_details_tabs"),
               type = "tabs",
               shiny::tabPanel(
                 title = "EIC",
                 height = "100%",
                 shiny::div(
-                  style = "height: 30px; position: relative;",
-                  .app_util_create_maximize_button("feature_peaks_plot_scatter", ns_full)
-                ),
-                plotly::plotlyOutput(
-                  ns_full("feature_peaks_plot_scatter"),
-                  height = "calc(100vh - 253px)"
+                  class = "sf-nta-plot-panel",
+                  shiny::div(
+                    class = "sf-nta-plot-toolbar",
+                    .app_util_create_maximize_button("feature_peaks_plot_scatter", ns_full)
+                  ),
+                  shiny::div(
+                    class = "sf-nta-plot-body",
+                    plotly::plotlyOutput(
+                      ns_full("feature_peaks_plot_scatter"),
+                      height = "100%"
+                    )
+                  )
                 )
               ),
               shiny::tabPanel(
                 title = "XIC",
                 height = "100%",
                 shiny::div(
-                  style = "height: 30px; position: relative;",
-                  .app_util_create_maximize_button("feature_xic_plot_scatter", ns_full)
-                ),
-                plotly::plotlyOutput(
-                  ns_full("feature_xic_plot_scatter"),
-                  height = "calc(100vh - 253px)"
+                  class = "sf-nta-plot-panel",
+                  shiny::div(
+                    class = "sf-nta-plot-toolbar",
+                    .app_util_create_maximize_button("feature_xic_plot_scatter", ns_full)
+                  ),
+                  shiny::div(
+                    class = "sf-nta-plot-body",
+                    plotly::plotlyOutput(
+                      ns_full("feature_xic_plot_scatter"),
+                      height = "100%"
+                    )
+                  )
                 )
               ),
               shiny::tabPanel(
                 title = "Profile",
                 height = "100%",
                 shiny::div(
-                  style = "height: 30px; position: relative;",
-                  .app_util_create_maximize_button("feature_profile_plot_scatter", ns_full)
-                ),
-                plotly::plotlyOutput(
-                  ns_full("feature_profile_plot_scatter"),
-                  height = "calc(100vh - 253px)"
+                  class = "sf-nta-plot-panel",
+                  shiny::div(
+                    class = "sf-nta-plot-toolbar",
+                    .app_util_create_maximize_button("feature_profile_plot_scatter", ns_full)
+                  ),
+                  shiny::div(
+                    class = "sf-nta-plot-body",
+                    plotly::plotlyOutput(
+                      ns_full("feature_profile_plot_scatter"),
+                      height = "100%"
+                    )
+                  )
                 )
               ),
               shiny::tabPanel(
                 title = "MS1",
                 height = "100%",
                 shiny::div(
-                  style = "height: 30px; position: relative;",
-                  .app_util_create_maximize_button("feature_ms1_plot_scatter", ns_full)
-                ),
-                plotly::plotlyOutput(
-                  ns_full("feature_ms1_plot_scatter"),
-                  height = "calc(100vh - 253px)"
+                  class = "sf-nta-plot-panel",
+                  shiny::div(
+                    class = "sf-nta-plot-toolbar",
+                    .app_util_create_maximize_button("feature_ms1_plot_scatter", ns_full)
+                  ),
+                  shiny::div(
+                    class = "sf-nta-plot-body",
+                    plotly::plotlyOutput(
+                      ns_full("feature_ms1_plot_scatter"),
+                      height = "100%"
+                    )
+                  )
                 )
               ),
               shiny::tabPanel(
                 title = "MS2",
                 height = "100%",
                 shiny::div(
-                  style = "height: 30px; position: relative;",
-                  .app_util_create_maximize_button("feature_ms2_plot_scatter", ns_full)
-                ),
-                plotly::plotlyOutput(
-                  ns_full("feature_ms2_plot_scatter"),
-                  height = "calc(100vh - 253px)"
+                  class = "sf-nta-plot-panel",
+                  shiny::div(
+                    class = "sf-nta-plot-toolbar",
+                    .app_util_create_maximize_button("feature_ms2_plot_scatter", ns_full)
+                  ),
+                  shiny::div(
+                    class = "sf-nta-plot-body",
+                    plotly::plotlyOutput(
+                      ns_full("feature_ms2_plot_scatter"),
+                      height = "100%"
+                    )
+                  )
                 )
               ),
               shiny::tabPanel(
                 title = "Details",
                 shiny::div(
-                  class = "p-3",
-                  style = "height: calc(100vh - 233px); overflow: auto;",
+                  class = "sf-nta-table-panel",
                   DT::dataTableOutput(ns_full("feature_details_table_scatter"))
                 )
               ),
               shiny::tabPanel(
                 title = "Suspects",
                 shiny::div(
-                  class = "p-3",
-                  style = "height: calc(100vh - 233px); overflow: auto;",
+                  class = "sf-nta-table-panel",
                   DT::dataTableOutput(ns_full("suspects_table_scatter"))
                 )
               )
-            )
+            ))
           )
         )
       )
@@ -755,6 +1118,7 @@
 
     # MARK: Layout proportions
     scatter_layout_proportions <- shiny::reactiveVal(c(80, 20))
+    scatter_filters_open <- shiny::reactiveVal(FALSE)
     scatter_numeric_cols <- shiny::reactive({
       fts <- data.table::as.data.table(features_data())
       names(fts)[sapply(fts, is.numeric)]
@@ -780,35 +1144,32 @@
     shiny::observeEvent(input$scatter_prop_80_20, {
       scatter_layout_proportions(c(80, 20))
     })
-    shiny::observe({
-      props <- scatter_layout_proportions()
-      table_width <- props[1]
-      plots_width <- props[2]
-      table_id <- session$ns("features_scatter_panel")
-      plots_id <- session$ns("features_scatter_details_panel")
-      shiny::insertUI(
-        selector = "head",
-        where = "beforeEnd",
-        ui = shiny::tags$style(shiny::HTML(paste0(
-          "
-            #", table_id, " { width: ", table_width, "% !important; }
-            #", plots_id, " { width: ", plots_width, "% !important; }
-          "
-        )))
-      )
-      current_prop <- paste0(table_width, "_", plots_width)
-      button_id <- session$ns(paste0("scatter_prop_", current_prop))
-      shiny::insertUI(
-        selector = "head",
-        where = "beforeEnd",
-        ui = shiny::tags$script(shiny::HTML(paste0(
-          "
-            $('.features-controls-bar .btn').removeClass('active');
-            $('#", button_id, "').addClass('active');
-          "
-        )))
-      )
+    shiny::observeEvent(input$toggle_scatter_filters, {
+      scatter_filters_open(!isTRUE(scatter_filters_open()))
     })
+    resize_feature_plots <- function() {
+      session$sendCustomMessage("sf-plotly-resize", list(
+        ids = unname(c(
+          ns_full("features_scatter_plot"),
+          ns_full("feature_peaks_plot_scatter"),
+          ns_full("feature_xic_plot_scatter"),
+          ns_full("feature_profile_plot_scatter"),
+          ns_full("feature_ms1_plot_scatter"),
+          ns_full("feature_ms2_plot_scatter")
+        ))
+      ))
+    }
+    schedule_feature_plot_resize <- function() {
+      session$onFlushed(function() {
+        resize_feature_plots()
+      }, once = TRUE)
+    }
+    shiny::observeEvent(scatter_layout_proportions(), {
+      later::later(schedule_feature_plot_resize, delay = 0.08)
+    }, ignoreInit = FALSE)
+    shiny::observeEvent(scatter_filters_open(), {
+      later::later(schedule_feature_plot_resize, delay = 0.08)
+    }, ignoreInit = FALSE)
 
     # MARK: scatter_numeric_filters
     output$scatter_numeric_filters <- shiny::renderUI({
@@ -1038,7 +1399,7 @@
       p <- plotly::layout(
         p,
         title = NULL,
-        margin = list(l = 60, r = 30, t = 30, b = 40),
+        margin = list(l = 60, r = 30, t = 30, b = 88),
         paper_bgcolor = "rgba(0,0,0,0)",
         plot_bgcolor = "rgba(0,0,0,0)",
         xaxis = list(
@@ -1055,17 +1416,19 @@
           title = list(text = paste(color_cols, collapse = ", ")),
           orientation = "h",
           x = 0,
-          y = -0.15
+          xanchor = "left",
+          y = -0.16,
+          yanchor = "top"
         ),
         showlegend = !hide_legend
       )
 
-      p <- plotly::config(
-        p,
-        displayModeBar = TRUE,
-        displaylogo = FALSE,
-        responsive = TRUE
-      )
+            p <- plotly::config(
+              p,
+              displayModeBar = TRUE,
+              displaylogo = FALSE,
+              responsive = FALSE
+            )
 
       p <- plotly::event_register(p, "plotly_selected")
       p <- plotly::event_register(p, "plotly_click")
