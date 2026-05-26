@@ -964,6 +964,96 @@ run.Method_NonTargetAnalysis_SuspectScreening <- function(x, proj, ...) {
   .run_nta_method(success, proj, "Suspect screening did not complete successfully.")
 }
 
+#' @title Method_NonTargetAnalysis_FindInternalStandards
+#' @description Create a `Method` child object for finding internal standards by
+#'   screening provided standards against the current feature set.
+#' @param suspects A data.frame/data.table with internal-standard information.
+#' @param analyses Optional character vector restricting screening to selected
+#'   analyses.
+#' @param ppm,sec,ppmMS2,mzrMS2,minCosineSimilarity Numeric scalar thresholds
+#'   used during matching.
+#' @param minSharedFragments Integer(1) minimum number of shared MS2 fragments.
+#' @param filtered Logical(1) whether to include filtered features in the
+#'   search.
+#' @return A `Method` object of class
+#'   `Method_NonTargetAnalysis_FindInternalStandards`.
+#' @export
+Method_NonTargetAnalysis_FindInternalStandards <- function(
+    suspects = NULL,
+    analyses = character(),
+    ppm = 5,
+    sec = 10,
+    ppmMS2 = 10,
+    mzrMS2 = 0.008,
+    minCosineSimilarity = 0.7,
+    minSharedFragments = 3L,
+    filtered = TRUE) {
+  suspects_dt <- if (is.null(suspects)) .empty_nta_suspects() else data.table::as.data.table(suspects)
+  x <- do.call(
+    Method,
+    c(
+      list(
+        method = "FindInternalStandards",
+        parameters = list(
+          suspects = suspects_dt,
+          analyses = as.character(analyses),
+          ppm = as.numeric(ppm),
+          sec = as.numeric(sec),
+          ppmMS2 = as.numeric(ppmMS2),
+          mzrMS2 = as.numeric(mzrMS2),
+          minCosineSimilarity = as.numeric(minCosineSimilarity),
+          minSharedFragments = as.integer(minSharedFragments),
+          filtered = as.logical(filtered)
+        )
+      ),
+      .nta_method_defaults(required = "FindFeatures", number_permitted = Inf)
+    )
+  )
+  validate_object(x)
+  x
+}
+
+#' @export
+#' @noRd
+validate_object.Method_NonTargetAnalysis_FindInternalStandards <- function(x, ...) {
+  .validate_nta_method_base(x, "Method_NonTargetAnalysis_FindInternalStandards", "FindInternalStandards", Inf)
+  suspects <- data.table::as.data.table(x$parameters$suspects)
+  checkmate::assert_data_frame(suspects)
+  checkmate::assert_true("name" %in% names(suspects))
+  checkmate::assert_true(any(c("mass", "mz") %in% names(suspects)) || nrow(suspects) == 0L)
+  checkmate::assert_character(x$parameters$analyses, any.missing = FALSE)
+  checkmate::assert_number(x$parameters$ppm, lower = 0, finite = TRUE)
+  checkmate::assert_number(x$parameters$sec, lower = 0, finite = TRUE)
+  checkmate::assert_number(x$parameters$ppmMS2, lower = 0, finite = TRUE)
+  checkmate::assert_number(x$parameters$mzrMS2, lower = 0, finite = TRUE)
+  checkmate::assert_number(x$parameters$minCosineSimilarity, lower = 0, upper = 1, finite = TRUE)
+  checkmate::assert_integerish(x$parameters$minSharedFragments, len = 1, lower = 0)
+  checkmate::assert_logical(x$parameters$filtered, len = 1)
+  invisible(NULL)
+}
+
+#' @export
+#' @noRd
+run.Method_NonTargetAnalysis_FindInternalStandards <- function(x, proj, ...) {
+  checkmate::assert_class(x, "Method_NonTargetAnalysis_FindInternalStandards")
+  validate_object(x)
+  checkmate::assert_class(proj, "ProjectNonTargetAnalysis")
+  p <- x$parameters
+  success <- rcpp_project_nta_find_internal_standards(
+    nta_xptr = proj$get_nts_ptr(),
+    suspects = as.data.frame(data.table::as.data.table(p$suspects)),
+    analyses = as.character(p$analyses),
+    ppm = as.numeric(p$ppm),
+    sec = as.numeric(p$sec),
+    ppmMS2 = as.numeric(p$ppmMS2),
+    mzrMS2 = as.numeric(p$mzrMS2),
+    minCosineSimilarity = as.numeric(p$minCosineSimilarity),
+    minSharedFragments = as.integer(p$minSharedFragments),
+    filtered = isTRUE(p$filtered)
+  )
+  .run_nta_method(success, proj, "Finding internal standards did not complete successfully.")
+}
+
 #' @title Method_NonTargetAnalysis_FilterSuspects
 #' @description Create a `Method` child object for filtering suspect hits.
 #' @param names Optional character vector of suspect names to match.

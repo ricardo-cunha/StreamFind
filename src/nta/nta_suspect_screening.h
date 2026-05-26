@@ -45,6 +45,18 @@ namespace nta
         double minCosineSimilarity,
         int minSharedFragments,
         bool filtered);
+
+    void find_internal_standards_impl(
+      PROJECT_NON_TARGET_ANALYSIS &nta_data,
+        const std::vector<std::string> &analyses,
+        const std::vector<SuspectQuery> &suspects,
+        double ppm,
+        double sec,
+        double ppmMS2,
+        double mzrMS2,
+        double minCosineSimilarity,
+        int minSharedFragments,
+        bool filtered);
   } // namespace suspect_screening
 } // namespace nta
 

@@ -58,190 +58,232 @@ namespace nta
       return def;
     }
 
-    void suspect_screening_impl(
-        PROJECT_NON_TARGET_ANALYSIS &nta_data,
-        const std::vector<std::string> &analyses,
-        const std::vector<SuspectQuery> &suspects,
-        double ppm,
-        double sec,
-        double ppmMS2,
-        double mzrMS2,
-        double minCosineSimilarity,
-        int minSharedFragments,
-        bool filtered)
+    namespace
     {
-      api::NTA_SUSPECTS out;
-      const auto &analysis_names = nta_data.analysis_names();
-      const auto &feature_buffers = nta_data.feature_buffers();
-      auto &suspect_buffers = nta_data.suspect_buffers();
-
-      if (suspects.empty() || analysis_names.empty())
-        return;
-
-      std::unordered_set<std::string> analyses_set;
-      if (!analyses.empty())
+      api::NTA_INTERNAL_STANDARD_ROW suspect_to_internal_standard(const api::NTA_SUSPECT_ROW &suspect)
       {
-        analyses_set.insert(analyses.begin(), analyses.end());
+        api::NTA_INTERNAL_STANDARD_ROW row;
+        row.project_id = suspect.project_id;
+        row.created_at = suspect.created_at;
+        row.analysis = suspect.analysis;
+        row.feature = suspect.feature;
+        row.candidate_rank = suspect.candidate_rank;
+        row.name = suspect.name;
+        row.polarity = suspect.polarity;
+        row.db_mass = suspect.db_mass;
+        row.exp_mass = suspect.exp_mass;
+        row.error_mass = suspect.error_mass;
+        row.db_rt = suspect.db_rt;
+        row.exp_rt = suspect.exp_rt;
+        row.error_rt = suspect.error_rt;
+        row.intensity = suspect.intensity;
+        row.area = suspect.area;
+        row.id_level = suspect.id_level;
+        row.score = suspect.score;
+        row.shared_fragments = suspect.shared_fragments;
+        row.cosine_similarity = suspect.cosine_similarity;
+        row.formula = suspect.formula;
+        row.SMILES = suspect.SMILES;
+        row.InChI = suspect.InChI;
+        row.InChIKey = suspect.InChIKey;
+        row.xLogP = suspect.xLogP;
+        row.database_id = suspect.database_id;
+        row.db_ms2_size = suspect.db_ms2_size;
+        row.db_ms2_mz = suspect.db_ms2_mz;
+        row.db_ms2_intensity = suspect.db_ms2_intensity;
+        row.db_ms2_formula = suspect.db_ms2_formula;
+        row.exp_ms2_size = suspect.exp_ms2_size;
+        row.exp_ms2_mz = suspect.exp_ms2_mz;
+        row.exp_ms2_intensity = suspect.exp_ms2_intensity;
+        return row;
       }
 
-      bool use_mass = false;
-      for (const auto &sus : suspects)
+      void screening_impl(
+          PROJECT_NON_TARGET_ANALYSIS &nta_data,
+          const std::vector<std::string> &analyses,
+          const std::vector<SuspectQuery> &suspects,
+          double ppm,
+          double sec,
+          double ppmMS2,
+          double mzrMS2,
+          double minCosineSimilarity,
+          int minSharedFragments,
+          bool filtered,
+          bool write_internal_standards)
       {
-        if (sus.has_mass)
+        const auto &analysis_names = nta_data.analysis_names();
+        const auto &feature_buffers = nta_data.feature_buffers();
+        auto &suspect_buffers = nta_data.suspect_buffers();
+        auto &internal_standard_buffers = nta_data.internal_standard_buffers();
+
+        for (size_t i = 0; i < analysis_names.size(); ++i)
         {
-          use_mass = true;
-          break;
+          suspect_buffers[i] = api::NTA_SUSPECTS();
+          internal_standard_buffers[i] = api::NTA_INTERNAL_STANDARDS();
         }
-      }
 
-      struct FeatureRef
-      {
-        size_t analysis_idx;
-        int feature_idx;
-        std::string assigned_name;
-      };
+        if (suspects.empty() || analysis_names.empty())
+          return;
 
-      std::vector<FeatureRef> matched;
-
-      // Assign suspect names to matching features (last match wins, mimicking R logic)
-      for (size_t a = 0; a < analysis_names.size(); ++a)
-      {
-        const std::string &analysis = analysis_names[a];
-        if (!analyses_set.empty() && analyses_set.find(analysis) == analyses_set.end())
-          continue;
-
-        const nta::api::NTA_FEATURES &fts = feature_buffers[a];
-        for (int i = 0; i < fts.size(); ++i)
+        std::unordered_set<std::string> analyses_set;
+        if (!analyses.empty())
         {
-          if (!filtered && fts.filtered[i])
-            continue;
-
-          std::string assigned;
-          for (const auto &sus : suspects)
-          {
-            if (use_mass)
-            {
-              if (!sus.has_mass)
-                continue;
-              double expected_mz = sus.mass + (static_cast<double>(fts.polarity[i]) * 1.007276);
-              if (!within_ppm(fts.mz[i], expected_mz, ppm))
-                continue;
-            }
-
-            assigned = sus.name;
-          }
-
-          if (!assigned.empty())
-          {
-            matched.push_back({a, i, assigned});
-          }
+          analyses_set.insert(analyses.begin(), analyses.end());
         }
-      }
 
-      if (matched.empty())
-        return;
-
-      // Build name -> suspect index (first match by grepl-like)
-      auto find_suspect = [&](const std::string &feature_name) -> const SuspectQuery *
-      {
+        bool use_mass = false;
         for (const auto &sus : suspects)
         {
-          if (feature_name.find(sus.name) != std::string::npos)
-            return &sus;
-        }
-        return nullptr;
-      };
-
-      for (const auto &ref : matched)
-      {
-        const SuspectQuery *sus = find_suspect(ref.assigned_name);
-        if (!sus)
-          continue;
-
-        const nta::api::NTA_FEATURES &fts = feature_buffers[ref.analysis_idx];
-        const int i = ref.feature_idx;
-        const size_t idx = static_cast<size_t>(i);
-
-        api::NTA_SUSPECT_ROW row;
-        row.analysis = analysis_names[ref.analysis_idx];
-        row.feature = get_or_default(fts.feature, idx, std::string());
-        row.candidate_rank = 1;
-        row.name = ref.assigned_name;
-        row.polarity = get_or_default(fts.polarity, idx, 0);
-        row.exp_mass = static_cast<double>(get_or_default(fts.mass, idx, 0.0f));
-        row.exp_rt = static_cast<double>(get_or_default(fts.rt, idx, 0.0f));
-        row.intensity = static_cast<double>(get_or_default(fts.intensity, idx, 0.0f));
-        row.area = static_cast<double>(get_or_default(fts.area, idx, 0.0f));
-        row.id_level = 4;
-        row.shared_fragments = 0;
-        row.cosine_similarity = 0.0;
-        row.score = sus->score;
-        row.formula = sus->formula;
-        row.SMILES = sus->SMILES;
-        row.InChI = sus->InChI;
-        row.InChIKey = sus->InChIKey;
-        row.xLogP = sus->has_xLogP ? sus->xLogP : std::numeric_limits<double>::quiet_NaN();
-        row.database_id = sus->database_id;
-
-        row.db_mass = std::numeric_limits<double>::quiet_NaN();
-        if (use_mass && sus->has_mass)
-        {
-          row.db_mass = sus->mass;
-        }
-
-        row.error_mass = std::numeric_limits<double>::quiet_NaN();
-        if (std::isfinite(row.db_mass) && std::isfinite(row.exp_mass) && row.exp_mass != 0.0)
-        {
-          double err = ((row.exp_mass - row.db_mass) / row.exp_mass) * 1e6;
-          row.error_mass = std::round(err * 10.0) / 10.0;
-        }
-
-        row.db_rt = sus->rt;
-        row.error_rt = std::numeric_limits<double>::quiet_NaN();
-        bool rt_matched = false;
-        if (row.db_rt > 0.0 && std::isfinite(row.exp_rt))
-        {
-          double err_rt = row.exp_rt - row.db_rt;
-          row.error_rt = std::round(err_rt * 10.0) / 10.0;
-          rt_matched = within_sec(row.exp_rt, row.db_rt, sec);
-        }
-
-        row.db_ms2_size = 0;
-        row.db_ms2_mz = "";
-        row.db_ms2_intensity = "";
-        row.db_ms2_formula = "";
-        row.exp_ms2_size = get_or_default(fts.ms2_size, idx, 0);
-        row.exp_ms2_mz = get_or_default(fts.ms2_mz, idx, std::string());
-        row.exp_ms2_intensity = get_or_default(fts.ms2_intensity, idx, std::string());
-
-        const std::vector<double> *sus_mz = nullptr;
-        const std::vector<double> *sus_int = nullptr;
-        if (row.polarity > 0)
-        {
-          sus_mz = &sus->fragments_mz_pos;
-          sus_int = &sus->fragments_intensity_pos;
-        }
-        else if (row.polarity < 0)
-        {
-          sus_mz = &sus->fragments_mz_neg;
-          sus_int = &sus->fragments_intensity_neg;
-        }
-
-        const bool can_check_ms2 = (sus_mz && !sus_mz->empty() &&
-                                    !row.exp_ms2_mz.empty() &&
-                                    !row.exp_ms2_intensity.empty());
-
-        bool ms2_matched = false;
-        if (can_check_ms2)
-        {
-          row.db_ms2_size = static_cast<int>(sus_mz->size());
-          row.db_ms2_mz = encode_floats(*sus_mz);
-          row.db_ms2_intensity = encode_floats(*sus_int);
-          row.db_ms2_formula = "";
-
-          // MS2 matching
-          if (!row.exp_ms2_mz.empty() && !row.exp_ms2_intensity.empty())
+          if (sus.has_mass)
           {
+            use_mass = true;
+            break;
+          }
+        }
+
+        struct FeatureRef
+        {
+          size_t analysis_idx;
+          int feature_idx;
+          std::string assigned_name;
+        };
+
+        std::vector<FeatureRef> matched;
+
+        for (size_t a = 0; a < analysis_names.size(); ++a)
+        {
+          const std::string &analysis = analysis_names[a];
+          if (!analyses_set.empty() && analyses_set.find(analysis) == analyses_set.end())
+            continue;
+
+          const nta::api::NTA_FEATURES &fts = feature_buffers[a];
+          for (int i = 0; i < fts.size(); ++i)
+          {
+            if (!filtered && fts.filtered[i])
+              continue;
+
+            std::string assigned;
+            for (const auto &sus : suspects)
+            {
+              if (use_mass)
+              {
+                if (!sus.has_mass)
+                  continue;
+                double expected_mz = sus.mass + (static_cast<double>(fts.polarity[i]) * 1.007276);
+                if (!within_ppm(fts.mz[i], expected_mz, ppm))
+                  continue;
+              }
+
+              assigned = sus.name;
+            }
+
+            if (!assigned.empty())
+            {
+              matched.push_back({a, i, assigned});
+            }
+          }
+        }
+
+        if (matched.empty())
+          return;
+
+        auto find_suspect = [&](const std::string &feature_name) -> const SuspectQuery *
+        {
+          for (const auto &sus : suspects)
+          {
+            if (feature_name.find(sus.name) != std::string::npos)
+              return &sus;
+          }
+          return nullptr;
+        };
+
+        for (const auto &ref : matched)
+        {
+          const SuspectQuery *sus = find_suspect(ref.assigned_name);
+          if (!sus)
+            continue;
+
+          const nta::api::NTA_FEATURES &fts = feature_buffers[ref.analysis_idx];
+          const int i = ref.feature_idx;
+          const size_t idx = static_cast<size_t>(i);
+
+          api::NTA_SUSPECT_ROW row;
+          row.analysis = analysis_names[ref.analysis_idx];
+          row.feature = get_or_default(fts.feature, idx, std::string());
+          row.candidate_rank = 1;
+          row.name = ref.assigned_name;
+          row.polarity = get_or_default(fts.polarity, idx, 0);
+          row.exp_mass = static_cast<double>(get_or_default(fts.mass, idx, 0.0f));
+          row.exp_rt = static_cast<double>(get_or_default(fts.rt, idx, 0.0f));
+          row.intensity = static_cast<double>(get_or_default(fts.intensity, idx, 0.0f));
+          row.area = static_cast<double>(get_or_default(fts.area, idx, 0.0f));
+          row.id_level = 4;
+          row.shared_fragments = 0;
+          row.cosine_similarity = 0.0;
+          row.score = sus->score;
+          row.formula = sus->formula;
+          row.SMILES = sus->SMILES;
+          row.InChI = sus->InChI;
+          row.InChIKey = sus->InChIKey;
+          row.xLogP = sus->has_xLogP ? sus->xLogP : std::numeric_limits<double>::quiet_NaN();
+          row.database_id = sus->database_id;
+
+          row.db_mass = std::numeric_limits<double>::quiet_NaN();
+          if (use_mass && sus->has_mass)
+          {
+            row.db_mass = sus->mass;
+          }
+
+          row.error_mass = std::numeric_limits<double>::quiet_NaN();
+          if (std::isfinite(row.db_mass) && std::isfinite(row.exp_mass) && row.exp_mass != 0.0)
+          {
+            double err = ((row.exp_mass - row.db_mass) / row.exp_mass) * 1e6;
+            row.error_mass = std::round(err * 10.0) / 10.0;
+          }
+
+          row.db_rt = sus->rt;
+          row.error_rt = std::numeric_limits<double>::quiet_NaN();
+          bool rt_matched = false;
+          if (row.db_rt > 0.0 && std::isfinite(row.exp_rt))
+          {
+            double err_rt = row.exp_rt - row.db_rt;
+            row.error_rt = std::round(err_rt * 10.0) / 10.0;
+            rt_matched = within_sec(row.exp_rt, row.db_rt, sec);
+          }
+
+          row.db_ms2_size = 0;
+          row.db_ms2_mz = "";
+          row.db_ms2_intensity = "";
+          row.db_ms2_formula = "";
+          row.exp_ms2_size = get_or_default(fts.ms2_size, idx, 0);
+          row.exp_ms2_mz = get_or_default(fts.ms2_mz, idx, std::string());
+          row.exp_ms2_intensity = get_or_default(fts.ms2_intensity, idx, std::string());
+
+          const std::vector<double> *sus_mz = nullptr;
+          const std::vector<double> *sus_int = nullptr;
+          if (row.polarity > 0)
+          {
+            sus_mz = &sus->fragments_mz_pos;
+            sus_int = &sus->fragments_intensity_pos;
+          }
+          else if (row.polarity < 0)
+          {
+            sus_mz = &sus->fragments_mz_neg;
+            sus_int = &sus->fragments_intensity_neg;
+          }
+
+          const bool can_check_ms2 = (sus_mz && !sus_mz->empty() &&
+                                      !row.exp_ms2_mz.empty() &&
+                                      !row.exp_ms2_intensity.empty());
+
+          bool ms2_matched = false;
+          if (can_check_ms2)
+          {
+            row.db_ms2_size = static_cast<int>(sus_mz->size());
+            row.db_ms2_mz = encode_floats(*sus_mz);
+            row.db_ms2_intensity = encode_floats(*sus_int);
+            row.db_ms2_formula = "";
+
             std::vector<float> exp_mz = decode_floats(row.exp_ms2_mz);
             std::vector<float> exp_int = decode_floats(row.exp_ms2_intensity);
             if (!exp_mz.empty() && exp_mz.size() == exp_int.size())
@@ -272,9 +314,9 @@ namespace nta
               }
 
               int shared = 0;
-              for (int idx : exp_idx)
+              for (int idx_match : exp_idx)
               {
-                if (idx >= 0)
+                if (idx_match >= 0)
                   shared++;
               }
 
@@ -288,11 +330,11 @@ namespace nta
                 intensity_exp.reserve(shared);
                 for (size_t z = 0; z < exp_idx.size(); ++z)
                 {
-                  int idx = exp_idx[z];
-                  if (idx < 0)
+                  int idx_match = exp_idx[z];
+                  if (idx_match < 0)
                     continue;
                   intensity_db.push_back(get_or_default(*sus_int, z, 0.0));
-                  intensity_exp.push_back(exp_int[idx]);
+                  intensity_exp.push_back(exp_int[idx_match]);
                 }
                 double max_db = *std::max_element(intensity_db.begin(), intensity_db.end());
                 double max_exp = *std::max_element(intensity_exp.begin(), intensity_exp.end());
@@ -323,83 +365,64 @@ namespace nta
               }
             }
           }
-        }
 
-        // Assign ID level based on what matched
-        // ID 1: mass + RT + MS2
-        // ID 2: mass + MS2
-        // ID 3: mass + RT
-        // ID 4: mass only
-        if (rt_matched && ms2_matched)
-        {
-          row.id_level = 1;
-        }
-        else if (ms2_matched)
-        {
-          row.id_level = 2;
-        }
-        else if (rt_matched)
-        {
-          row.id_level = 3;
-        }
-        else
-        {
-          row.id_level = 4;
-        }
-
-        out.append(row);
-      }
-
-      // Distribute suspects to the appropriate analysis in nta_data.suspects
-      for (size_t i = 0; i < analysis_names.size(); ++i)
-      {
-        suspect_buffers[i] = api::NTA_SUSPECTS();
-      }
-
-      for (size_t i = 0; i < out.analysis.size(); ++i)
-      {
-        api::NTA_SUSPECT_ROW s;
-        s.analysis = out.analysis[i];
-        s.feature = out.feature[i];
-        s.candidate_rank = out.candidate_rank[i];
-        s.name = out.name[i];
-        s.polarity = out.polarity[i];
-        s.db_mass = out.db_mass[i];
-        s.exp_mass = out.exp_mass[i];
-        s.error_mass = out.error_mass[i];
-        s.db_rt = out.db_rt[i];
-        s.exp_rt = out.exp_rt[i];
-        s.error_rt = out.error_rt[i];
-        s.intensity = out.intensity[i];
-        s.area = out.area[i];
-        s.id_level = out.id_level[i];
-        s.score = out.score[i];
-        s.shared_fragments = out.shared_fragments[i];
-        s.cosine_similarity = out.cosine_similarity[i];
-        s.formula = out.formula[i];
-        s.SMILES = out.SMILES[i];
-        s.InChI = out.InChI[i];
-        s.InChIKey = out.InChIKey[i];
-        s.xLogP = out.xLogP[i];
-        s.database_id = out.database_id[i];
-        s.db_ms2_size = out.db_ms2_size[i];
-        s.db_ms2_mz = out.db_ms2_mz[i];
-        s.db_ms2_intensity = out.db_ms2_intensity[i];
-        s.db_ms2_formula = out.db_ms2_formula[i];
-        s.exp_ms2_size = out.exp_ms2_size[i];
-        s.exp_ms2_mz = out.exp_ms2_mz[i];
-        s.exp_ms2_intensity = out.exp_ms2_intensity[i];
-
-        // Find which analysis index this suspect belongs to
-        for (size_t a = 0; a < analysis_names.size(); ++a)
-        {
-          if (analysis_names[a] == s.analysis)
+          if (rt_matched && ms2_matched)
           {
-            suspect_buffers[a].append(s);
-            break;
+            row.id_level = 1;
+          }
+          else if (ms2_matched)
+          {
+            row.id_level = 2;
+          }
+          else if (rt_matched)
+          {
+            row.id_level = 3;
+          }
+          else
+          {
+            row.id_level = 4;
+          }
+
+          if (write_internal_standards)
+          {
+            internal_standard_buffers[ref.analysis_idx].append(suspect_to_internal_standard(row));
+          }
+          else
+          {
+            suspect_buffers[ref.analysis_idx].append(row);
           }
         }
       }
+    } // namespace
+
+    void suspect_screening_impl(
+        PROJECT_NON_TARGET_ANALYSIS &nta_data,
+        const std::vector<std::string> &analyses,
+        const std::vector<SuspectQuery> &suspects,
+        double ppm,
+        double sec,
+        double ppmMS2,
+        double mzrMS2,
+        double minCosineSimilarity,
+        int minSharedFragments,
+        bool filtered)
+    {
+      screening_impl(nta_data, analyses, suspects, ppm, sec, ppmMS2, mzrMS2, minCosineSimilarity, minSharedFragments, filtered, false);
+    }
+
+    void find_internal_standards_impl(
+        PROJECT_NON_TARGET_ANALYSIS &nta_data,
+        const std::vector<std::string> &analyses,
+        const std::vector<SuspectQuery> &suspects,
+        double ppm,
+        double sec,
+        double ppmMS2,
+        double mzrMS2,
+        double minCosineSimilarity,
+        int minSharedFragments,
+        bool filtered)
+    {
+      screening_impl(nta_data, analyses, suspects, ppm, sec, ppmMS2, mzrMS2, minCosineSimilarity, minSharedFragments, filtered, true);
     }
   } // namespace suspect_screening
 } // namespace nta

@@ -50,6 +50,45 @@ Method <- function(
   x
 }
 
+#' @noRd
+.method_scalar_or_default <- function(value, default, mode = c("character", "numeric")) {
+  mode <- match.arg(mode)
+  flat <- unlist(value, use.names = FALSE)
+  if (length(flat) == 0) {
+    return(default)
+  }
+  if (identical(mode, "character")) {
+    return(as.character(flat)[1])
+  }
+  as.numeric(flat)[1]
+}
+
+#' @noRd
+.normalize_method_parameter <- function(value) {
+  if (is.null(value)) {
+    return(NULL)
+  }
+  if (!is.list(value)) {
+    return(value)
+  }
+  if (length(value) == 0) {
+    return(value)
+  }
+
+  if (is.null(names(value)) || !any(nzchar(names(value)))) {
+    normalized <- lapply(value, .normalize_method_parameter)
+    if (all(vapply(normalized, is.null, logical(1)))) {
+      return(NULL)
+    }
+    if (all(vapply(normalized, function(x) is.atomic(x) && length(x) == 1, logical(1)))) {
+      return(unlist(normalized, use.names = FALSE))
+    }
+    return(normalized)
+  }
+
+  stats::setNames(lapply(value, .normalize_method_parameter), names(value))
+}
+
 #' @export
 #' @noRd
 validate_object.Method <- function(x, ...) {
@@ -94,22 +133,19 @@ as.Method <- function(value) {
       value[[nm]] <- defaults[[nm]]
     }
   }
-  value$method <- as.character(unlist(value$method, use.names = FALSE))[1]
+  value$method <- .method_scalar_or_default(value$method, NA_character_, "character")
   value$required <- if (length(value$required) == 0) {
     character()
   } else {
     as.character(unlist(value$required, use.names = FALSE))
   }
-  value$owner_class <- as.character(unlist(value$owner_class, use.names = FALSE))[1]
-  value$number_permitted <- as.numeric(unlist(value$number_permitted, use.names = FALSE))[1]
-  value$developer <- as.character(unlist(value$developer, use.names = FALSE))[1]
-  value$contact <- as.character(unlist(value$contact, use.names = FALSE))[1]
-  value$link <- as.character(unlist(value$link, use.names = FALSE))[1]
-  value$doi <- if (length(value$doi) == 0) {
-    NA_character_
-  } else {
-    as.character(unlist(value$doi, use.names = FALSE))[1]
-  }
+  value$owner_class <- .method_scalar_or_default(value$owner_class, NA_character_, "character")
+  value$number_permitted <- .method_scalar_or_default(value$number_permitted, Inf, "numeric")
+  value$developer <- .method_scalar_or_default(value$developer, NA_character_, "character")
+  value$contact <- .method_scalar_or_default(value$contact, NA_character_, "character")
+  value$link <- .method_scalar_or_default(value$link, NA_character_, "character")
+  value$doi <- .method_scalar_or_default(value$doi, NA_character_, "character")
+  value$parameters <- .normalize_method_parameter(value$parameters)
   if (!is.na(value$method) && nzchar(value$method) &&
     !is.na(value$owner_class) && nzchar(value$owner_class)) {
     constructor_name <- paste0(sub("^Project", "Method_", value$owner_class), "_", value$method)
@@ -133,7 +169,24 @@ as.Method <- function(value) {
         ))[1]]],
         inherits = TRUE
       )
-      return(do.call(constructor, value$parameters))
+      ctor_formals <- as.list(formals(constructor))
+      ctor_formals[["..."]] <- NULL
+      ctor_args <- ctor_formals
+      normalized_params <- .normalize_method_parameter(value$parameters)
+      if (!is.list(normalized_params)) {
+        normalized_params <- list()
+      }
+      for (nm in intersect(names(normalized_params), names(ctor_args))) {
+        param_value <- normalized_params[[nm]]
+        if (is.null(param_value)) {
+          next
+        }
+        if (is.list(param_value) && length(param_value) == 0 && !is.symbol(ctor_args[[nm]])) {
+          next
+        }
+        ctor_args[[nm]] <- param_value
+      }
+      return(do.call(constructor, ctor_args))
     }
   }
   do.call(Method, value)

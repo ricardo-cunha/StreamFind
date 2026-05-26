@@ -104,6 +104,7 @@
       display: flex;
       flex-direction: column;
       overflow: hidden;
+      position: relative;
     }
     .sf-nta-summary-plot .shiny-plot-output,
     .sf-nta-summary-plot .plotly,
@@ -267,6 +268,20 @@
       display: flex;
       overflow: hidden;
       background: transparent;
+      position: relative;
+    }
+    .sf-nta-loading-surface.loading::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 8100;
+      pointer-events: none;
+      background-color: rgba(255, 255, 255, 0.96);
+      background-image: url('/www/logo_StreamFind.png');
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-size: auto 70%;
+      animation: sf-logo-pulse 1.2s ease-in-out infinite;
     }
     .sf-nta-feature-plot-holder .plotly,
     .sf-nta-feature-plot-holder .js-plotly-plot,
@@ -358,6 +373,7 @@
           if (window.__sfNtaResultsResizeRegistered) return;
           window.__sfNtaResultsResizeRegistered = true;
           window.__sfNtaPlotlyObservers = window.__sfNtaPlotlyObservers || {};
+          window.__sfNtaLoadingObservers = window.__sfNtaLoadingObservers || {};
 
           var resolvePlotEl = function(id) {
             var root = document.getElementById(id);
@@ -395,6 +411,28 @@
             });
           };
 
+          var bindLoadingSurface = function(outputId, surfaceId) {
+            var output = document.getElementById(outputId);
+            var surface = document.getElementById(surfaceId);
+            if (!output || !surface) return;
+
+            var syncLoading = function() {
+              surface.classList.toggle('loading', output.classList.contains('recalculating'));
+            };
+
+            syncLoading();
+
+            if (window.__sfNtaLoadingObservers[outputId]) {
+              try { window.__sfNtaLoadingObservers[outputId].disconnect(); } catch (e) {}
+            }
+
+            var observer = new MutationObserver(function() {
+              syncLoading();
+            });
+            observer.observe(output, { attributes: true, attributeFilter: ['class'] });
+            window.__sfNtaLoadingObservers[outputId] = observer;
+          };
+
           Shiny.addCustomMessageHandler('sf-plotly-resize', function(message) {
             if (!message || !Array.isArray(message.ids)) return;
             var ids = message.ids;
@@ -406,6 +444,38 @@
             });
           });
 
+          Shiny.addCustomMessageHandler('sf-nta-feature-layout', function(message) {
+            if (!message) return;
+            var left = document.getElementById(message.left_id || '');
+            var right = document.getElementById(message.right_id || '');
+            var sidebar = document.getElementById(message.sidebar_id || '');
+            var toggleBtn = document.getElementById(message.toggle_id || '');
+            if (left && typeof message.left_basis === 'number') {
+              left.style.flex = '0 0 calc(' + message.left_basis + '%% - 10px)';
+              left.style.maxWidth = 'calc(' + message.left_basis + '%% - 10px)';
+            }
+            if (right && typeof message.right_basis === 'number') {
+              right.style.flex = '0 0 calc(' + message.right_basis + '%% - 10px)';
+              right.style.maxWidth = 'calc(' + message.right_basis + '%% - 10px)';
+            }
+            if (sidebar) {
+              if (message.filters_open) sidebar.classList.add('open');
+              else sidebar.classList.remove('open');
+            }
+            if (toggleBtn && typeof message.toggle_label === 'string') {
+              var labelNode = toggleBtn.querySelector('.sf-nta-toggle-label');
+              if (labelNode) labelNode.textContent = message.toggle_label;
+            }
+            if (Array.isArray(message.prop_button_ids)) {
+              message.prop_button_ids.forEach(function(id) {
+                var btn = document.getElementById(id);
+                if (!btn) return;
+                if (id === message.active_prop_button_id) btn.classList.add('active');
+                else btn.classList.remove('active');
+              });
+            }
+          });
+
           $(document).on('shown.bs.tab', '#%s li a[data-toggle=\"tab\"]', function() {
             var ids = [
               '%s', '%s', '%s', '%s', '%s', '%s'
@@ -415,6 +485,19 @@
               resizeIds(ids);
             }, 80);
           });
+
+          var initLoadingSurfaces = function() {
+            bindLoadingSurface('%s', '%s');
+            bindLoadingSurface('%s', '%s');
+          };
+
+          document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(initLoadingSurfaces, 0);
+            setTimeout(initLoadingSurfaces, 250);
+          });
+
+          setTimeout(initLoadingSurfaces, 0);
+          setTimeout(initLoadingSurfaces, 250);
         })();
         ",
         ns_full("feature_scatter_details_tabs"),
@@ -423,7 +506,11 @@
         ns_full("feature_xic_plot_scatter"),
         ns_full("feature_profile_plot_scatter"),
         ns_full("feature_ms1_plot_scatter"),
-        ns_full("feature_ms2_plot_scatter")
+        ns_full("feature_ms2_plot_scatter"),
+        ns_full("features_chart"),
+        ns_full("features_chart_surface"),
+        ns_full("features_scatter_plot"),
+        ns_full("features_scatter_surface")
       )
     )
   )
@@ -574,11 +661,12 @@
                     )
                   )
                 ),
-              shiny::div(
-                class = "position-relative sf-nta-summary-plot",
-                .app_util_create_maximize_button("features_chart", ns_full),
-                plotly::plotlyOutput(ns_full("features_chart"), height = "100%")
-              )
+                shiny::div(
+                  id = ns_full("features_chart_surface"),
+                  class = "position-relative sf-nta-summary-plot sf-nta-loading-surface",
+                  .app_util_create_maximize_button("features_chart", ns_full),
+                  plotly::plotlyOutput(ns_full("features_chart"), height = "100%")
+                )
             )
           )
         )
@@ -670,24 +758,6 @@
         )
       }
 
-      props <- scatter_layout_proportions()
-      filters_open <- isTRUE(scatter_filters_open())
-      left_basis <- sprintf(
-        "flex: 0 0 calc(%s%% - 10px); max-width: calc(%s%% - 10px);",
-        props[1], props[1]
-      )
-      right_basis <- sprintf(
-        "flex: 0 0 calc(%s%% - 10px); max-width: calc(%s%% - 10px);",
-        props[2], props[2]
-      )
-      active_prop <- paste0(props[1], "_", props[2])
-      prop_btn_class <- function(label) {
-        paste(
-          "btn btn-outline-primary btn-sm",
-          if (identical(active_prop, label)) "active" else ""
-        )
-      }
-
       shiny::div(
         class = "sf-nta-results-root sf-nta-results-features tab-content",
         shiny::div(
@@ -697,8 +767,10 @@
             style = "display: flex; align-items: center; gap: 10px; flex-wrap: wrap;",
             shiny::actionButton(
               ns_full("toggle_scatter_filters"),
-              label = if (filters_open) "Hide Filters" else "Show Filters",
-              icon = shiny::icon("sliders"),
+              label = shiny::tagList(
+                shiny::icon("sliders"),
+                shiny::tags$span(class = "sf-nta-toggle-label", "Show Filters")
+              ),
               class = "btn btn-outline-primary btn-sm"
             ),
             shiny::div(
@@ -729,13 +801,13 @@
           ),
           shiny::div(
             class = "btn-group btn-group-sm",
-            shiny::actionButton(ns_full("scatter_prop_20_80"), "20:80", class = prop_btn_class("20_80")),
-            shiny::actionButton(ns_full("scatter_prop_30_70"), "30:70", class = prop_btn_class("30_70")),
-            shiny::actionButton(ns_full("scatter_prop_40_60"), "40:60", class = prop_btn_class("40_60")),
-            shiny::actionButton(ns_full("scatter_prop_50_50"), "50:50", class = prop_btn_class("50_50")),
-            shiny::actionButton(ns_full("scatter_prop_60_40"), "60:40", class = prop_btn_class("60_40")),
-            shiny::actionButton(ns_full("scatter_prop_70_30"), "70:30", class = prop_btn_class("70_30")),
-            shiny::actionButton(ns_full("scatter_prop_80_20"), "80:20", class = prop_btn_class("80_20"))
+            shiny::actionButton(ns_full("scatter_prop_20_80"), "20:80", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("scatter_prop_30_70"), "30:70", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("scatter_prop_40_60"), "40:60", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("scatter_prop_50_50"), "50:50", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("scatter_prop_60_40"), "60:40", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("scatter_prop_70_30"), "70:30", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("scatter_prop_80_20"), "80:20", class = "btn btn-outline-primary btn-sm active")
           )
         ),
         shiny::div(
@@ -744,14 +816,12 @@
           shiny::div(
             id = ns_full("features_scatter_panel"),
             class = "sf-nta-features-plot-pane",
-            style = left_basis,
+            style = "flex: 0 0 calc(80% - 10px); max-width: calc(80% - 10px);",
             shiny::div(
               class = "sf-nta-feature-pane-shell",
               shiny::div(
-                class = paste(
-                  "sf-nta-feature-filter-sidebar",
-                  if (filters_open) "open" else ""
-                ),
+                id = ns_full("scatter_filter_sidebar"),
+                class = "sf-nta-feature-filter-sidebar",
                 shiny::textInput(
                   ns_full("scatter_search"),
                   "Search (regex)",
@@ -767,7 +837,8 @@
                   .app_util_create_maximize_button("features_scatter_plot", ns_full)
                 ),
                 shiny::div(
-                  class = "sf-nta-feature-plot-holder",
+                  id = ns_full("features_scatter_surface"),
+                  class = "sf-nta-feature-plot-holder sf-nta-loading-surface",
                   plotly::plotlyOutput(
                     ns_full("features_scatter_plot"),
                     height = "100%",
@@ -780,7 +851,7 @@
           shiny::div(
             id = ns_full("features_scatter_details_panel"),
             class = "sf-nta-features-details-pane",
-            style = right_basis,
+            style = "flex: 0 0 calc(20% - 10px); max-width: calc(20% - 10px);",
             shiny::div(
               class = "sf-nta-details-tabs",
               shiny::tabsetPanel(
@@ -1164,10 +1235,37 @@
         resize_feature_plots()
       }, once = TRUE)
     }
+    sync_feature_layout <- function() {
+      props <- scatter_layout_proportions()
+      filters_open <- isTRUE(scatter_filters_open())
+      active_prop <- paste0(props[1], "_", props[2])
+      session$sendCustomMessage("sf-nta-feature-layout", list(
+        left_id = ns_full("features_scatter_panel"),
+        right_id = ns_full("features_scatter_details_panel"),
+        sidebar_id = ns_full("scatter_filter_sidebar"),
+        toggle_id = ns_full("toggle_scatter_filters"),
+        left_basis = props[1],
+        right_basis = props[2],
+        filters_open = filters_open,
+        toggle_label = if (filters_open) "Hide Filters" else "Show Filters",
+        prop_button_ids = unname(c(
+          ns_full("scatter_prop_20_80"),
+          ns_full("scatter_prop_30_70"),
+          ns_full("scatter_prop_40_60"),
+          ns_full("scatter_prop_50_50"),
+          ns_full("scatter_prop_60_40"),
+          ns_full("scatter_prop_70_30"),
+          ns_full("scatter_prop_80_20")
+        )),
+        active_prop_button_id = ns_full(paste0("scatter_prop_", active_prop))
+      ))
+    }
     shiny::observeEvent(scatter_layout_proportions(), {
+      sync_feature_layout()
       later::later(schedule_feature_plot_resize, delay = 0.08)
     }, ignoreInit = FALSE)
     shiny::observeEvent(scatter_filters_open(), {
+      sync_feature_layout()
       later::later(schedule_feature_plot_resize, delay = 0.08)
     }, ignoreInit = FALSE)
 

@@ -1045,6 +1045,22 @@ namespace project
                   duckdb_bind_varchar(statement, 4, workflow.c_str()); }, [](duckdb_result &) {});
     }
 
+    PROJECT::PROJECT(std::shared_ptr<project::api::CONTEXT> ctx)
+        : ctx_(std::move(ctx))
+    {
+      if (!ctx_ || ctx_->db_path.empty())
+      {
+        throw error::ERROR(error::ERROR_CODE::InvalidArgument, "Project context is not initialized");
+      }
+      if (ctx_->project_id.empty())
+      {
+        throw error::ERROR(error::ERROR_CODE::InvalidArgument, "Project context requires a project_id");
+      }
+
+      create_schema(ctx_);
+      ensure_row_exists(ctx_);
+    }
+
     PROJECT::~PROJECT()
     {
     }
@@ -1148,6 +1164,11 @@ namespace project
         project::utils::validate_domain_code(current.domain);
         project::db::ensure_database_domain_compatible(ctx_, current.domain);
       }
+    }
+
+    void PROJECT::close()
+    {
+      return;
     }
 
     std::vector<std::string> PROJECT::list_tables() const

@@ -77,6 +77,10 @@ rcpp_project_validate <- function(project_xptr) {
     invisible(.Call(`_StreamFind_rcpp_project_validate`, project_xptr))
 }
 
+rcpp_project_close <- function(project_xptr) {
+    invisible(.Call(`_StreamFind_rcpp_project_close`, project_xptr))
+}
+
 rcpp_project_get_metadata <- function(project_xptr) {
     .Call(`_StreamFind_rcpp_project_get_metadata`, project_xptr)
 }
@@ -271,6 +275,10 @@ rcpp_project_nta_filter_suspects <- function(nta_xptr, names = as.character( c()
 
 rcpp_project_nta_filter_internal_standards <- function(nta_xptr, names = as.character( c()), minScore = NA_real_, maxErrorRT = NA_real_, maxErrorMass = NA_real_, idLevels = as.integer( c()), minSharedFragments = 0L, minCosineSimilarity = NA_real_) {
     .Call(`_StreamFind_rcpp_project_nta_filter_internal_standards`, nta_xptr, names, minScore, maxErrorRT, maxErrorMass, idLevels, minSharedFragments, minCosineSimilarity)
+}
+
+rcpp_project_nta_find_internal_standards <- function(nta_xptr, suspects, analyses = as.character( c("")), ppm = 5.0, sec = 10.0, ppmMS2 = 10.0, mzrMS2 = 0.008, minCosineSimilarity = 0.7, minSharedFragments = 3L, filtered = TRUE) {
+    .Call(`_StreamFind_rcpp_project_nta_find_internal_standards`, nta_xptr, suspects, analyses, ppm, sec, ppmMS2, mzrMS2, minCosineSimilarity, minSharedFragments, filtered)
 }
 
 rcpp_project_nta_suspect_screening <- function(nta_xptr, suspects, analyses = as.character( c("")), ppm = 5.0, sec = 10.0, ppmMS2 = 10.0, mzrMS2 = 0.008, minCosineSimilarity = 0.7, minSharedFragments = 3L, filtered = FALSE) {

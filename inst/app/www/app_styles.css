@@ -718,7 +718,7 @@ body[data-sf-theme][data-sf-palette] {
   align-items: center;
   justify-content: center;
   z-index: 9000;
-  background: var(--sf-content-bg);
+  background: #ffffff;
   pointer-events: all;
 }
 
@@ -730,8 +730,8 @@ body[data-sf-theme][data-sf-palette] {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: min(50vh, 50vw);
-  height: 50%;
+  width: min(70vh, 70vw);
+  height: 70%;
   aspect-ratio: 1 / 1;
 }
 
@@ -1456,13 +1456,25 @@ ul.sf-info-list {
 
 /* Add relative positioning so the ::after overlay aligns correctly */
 #sf-content .shiny-bound-output,
+#sf-content .html-widget-output,
+#sf-content .plotly,
 #shiny-modal-wrapper .modal .shiny-bound-output,
-.plot-modal .shiny-bound-output { position: relative; }
+#shiny-modal-wrapper .modal .html-widget-output,
+#shiny-modal-wrapper .modal .plotly,
+.plot-modal .shiny-bound-output,
+.plot-modal .html-widget-output,
+.plot-modal .plotly { position: relative; }
 
 /* The overlay: semi-transparent panel + pulsing logo centred at 50% height */
 #sf-content .shiny-bound-output.recalculating::after,
+#sf-content .html-widget-output.recalculating::after,
+#sf-content .plotly.recalculating::after,
 #shiny-modal-wrapper .modal .shiny-bound-output.recalculating::after,
-.plot-modal .shiny-bound-output.recalculating::after {
+#shiny-modal-wrapper .modal .html-widget-output.recalculating::after,
+#shiny-modal-wrapper .modal .plotly.recalculating::after,
+.plot-modal .shiny-bound-output.recalculating::after,
+.plot-modal .html-widget-output.recalculating::after,
+.plot-modal .plotly.recalculating::after {
   content:    '';
   display:    block;
   position:   absolute;
@@ -1470,11 +1482,11 @@ ul.sf-info-list {
   z-index:    8000;
   pointer-events: none;
   border-radius: inherit;
-  background-color:  rgba(255, 255, 255, 0.60);
+  background-color:  rgba(255, 255, 255, 0.96);
   background-image:  url('/www/logo_StreamFind.png');
   background-repeat: no-repeat;
   background-position: center center;
-  background-size: auto 50%;
+  background-size: auto 70%;
   animation:  sf-logo-pulse 1.2s ease-in-out infinite;
 }
 
@@ -1499,12 +1511,6 @@ ul.sf-info-list {
 .plot-modal .recalculating > .spinner {
   display: none !important;
 }
-/* Dark mode: darker overlay tint */
-#sf-app.sf-dark .shiny-bound-output.recalculating::after,
-body[data-sf-theme="dark"] .shiny-bound-output.recalculating::after {
-  background-color: rgba(30, 33, 41, 0.65);
-}
-
 /* ============================================================
    Shiny Modal Layout (restart/init dialogs)
    Force modal dialogs to float centered as overlays even when UI

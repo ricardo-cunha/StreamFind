@@ -124,6 +124,15 @@ void rcpp_project_validate(SEXP project_xptr)
 }
 
 // [[Rcpp::export]]
+void rcpp_project_close(SEXP project_xptr)
+{
+  project_rcpp::project_call([&]()
+                             {
+    project_rcpp::project_from_xptr(project_xptr).close();
+    return 0; });
+}
+
+// [[Rcpp::export]]
 std::string rcpp_project_get_metadata(SEXP project_xptr)
 {
   return project_rcpp::project_call([&]()

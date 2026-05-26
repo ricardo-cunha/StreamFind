@@ -224,6 +224,16 @@ BEGIN_RCPP
     return R_NilValue;
 END_RCPP
 }
+// rcpp_project_close
+void rcpp_project_close(SEXP project_xptr);
+RcppExport SEXP _StreamFind_rcpp_project_close(SEXP project_xptrSEXP) {
+BEGIN_RCPP
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type project_xptr(project_xptrSEXP);
+    rcpp_project_close(project_xptr);
+    return R_NilValue;
+END_RCPP
+}
 // rcpp_project_get_metadata
 std::string rcpp_project_get_metadata(SEXP project_xptr);
 RcppExport SEXP _StreamFind_rcpp_project_get_metadata(SEXP project_xptrSEXP) {
@@ -967,6 +977,26 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_project_nta_find_internal_standards
+bool rcpp_project_nta_find_internal_standards(SEXP nta_xptr, Rcpp::List suspects, Rcpp::CharacterVector analyses, double ppm, double sec, double ppmMS2, double mzrMS2, double minCosineSimilarity, int minSharedFragments, bool filtered);
+RcppExport SEXP _StreamFind_rcpp_project_nta_find_internal_standards(SEXP nta_xptrSEXP, SEXP suspectsSEXP, SEXP analysesSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP ppmMS2SEXP, SEXP mzrMS2SEXP, SEXP minCosineSimilaritySEXP, SEXP minSharedFragmentsSEXP, SEXP filteredSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type nta_xptr(nta_xptrSEXP);
+    Rcpp::traits::input_parameter< Rcpp::List >::type suspects(suspectsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type analyses(analysesSEXP);
+    Rcpp::traits::input_parameter< double >::type ppm(ppmSEXP);
+    Rcpp::traits::input_parameter< double >::type sec(secSEXP);
+    Rcpp::traits::input_parameter< double >::type ppmMS2(ppmMS2SEXP);
+    Rcpp::traits::input_parameter< double >::type mzrMS2(mzrMS2SEXP);
+    Rcpp::traits::input_parameter< double >::type minCosineSimilarity(minCosineSimilaritySEXP);
+    Rcpp::traits::input_parameter< int >::type minSharedFragments(minSharedFragmentsSEXP);
+    Rcpp::traits::input_parameter< bool >::type filtered(filteredSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_project_nta_find_internal_standards(nta_xptr, suspects, analyses, ppm, sec, ppmMS2, mzrMS2, minCosineSimilarity, minSharedFragments, filtered));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_project_nta_suspect_screening
 bool rcpp_project_nta_suspect_screening(SEXP nta_xptr, Rcpp::List suspects, Rcpp::CharacterVector analyses, double ppm, double sec, double ppmMS2, double mzrMS2, double minCosineSimilarity, int minSharedFragments, bool filtered);
 RcppExport SEXP _StreamFind_rcpp_project_nta_suspect_screening(SEXP nta_xptrSEXP, SEXP suspectsSEXP, SEXP analysesSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP ppmMS2SEXP, SEXP mzrMS2SEXP, SEXP minCosineSimilaritySEXP, SEXP minSharedFragmentsSEXP, SEXP filteredSEXP) {
@@ -1065,6 +1095,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_StreamFind_rcpp_project_get_domain", (DL_FUNC) &_StreamFind_rcpp_project_get_domain, 1},
     {"_StreamFind_rcpp_project_copy", (DL_FUNC) &_StreamFind_rcpp_project_copy, 3},
     {"_StreamFind_rcpp_project_validate", (DL_FUNC) &_StreamFind_rcpp_project_validate, 1},
+    {"_StreamFind_rcpp_project_close", (DL_FUNC) &_StreamFind_rcpp_project_close, 1},
     {"_StreamFind_rcpp_project_get_metadata", (DL_FUNC) &_StreamFind_rcpp_project_get_metadata, 1},
     {"_StreamFind_rcpp_project_set_metadata", (DL_FUNC) &_StreamFind_rcpp_project_set_metadata, 2},
     {"_StreamFind_rcpp_project_get_workflow", (DL_FUNC) &_StreamFind_rcpp_project_get_workflow, 1},
@@ -1114,6 +1145,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_StreamFind_rcpp_project_nta_filter_features", (DL_FUNC) &_StreamFind_rcpp_project_nta_filter_features, 32},
     {"_StreamFind_rcpp_project_nta_filter_suspects", (DL_FUNC) &_StreamFind_rcpp_project_nta_filter_suspects, 8},
     {"_StreamFind_rcpp_project_nta_filter_internal_standards", (DL_FUNC) &_StreamFind_rcpp_project_nta_filter_internal_standards, 8},
+    {"_StreamFind_rcpp_project_nta_find_internal_standards", (DL_FUNC) &_StreamFind_rcpp_project_nta_find_internal_standards, 10},
     {"_StreamFind_rcpp_project_nta_suspect_screening", (DL_FUNC) &_StreamFind_rcpp_project_nta_suspect_screening, 10},
     {"_StreamFind_rcpp_project_nta_filter_features_ms2", (DL_FUNC) &_StreamFind_rcpp_project_nta_filter_features_ms2, 8},
     {"_StreamFind_rcpp_project_nta_metfrag_screening", (DL_FUNC) &_StreamFind_rcpp_project_nta_metfrag_screening, 15},

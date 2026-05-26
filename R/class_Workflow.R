@@ -112,8 +112,7 @@ info.Workflow <- function(x, ...) {
 save.Workflow <- function(x, file = "workflow.rds", ...) {
   format <- tools::file_ext(file)
   if (identical(format, "json")) {
-    payload <- lapply(x, unclass)
-    names(payload) <- names(x)
+    payload <- unname(lapply(x, unclass))
     write(as.character(.convert_to_json(payload)), file)
   } else if (identical(format, "rds")) {
     saveRDS(x, file)
@@ -127,7 +126,12 @@ save.Workflow <- function(x, file = "workflow.rds", ...) {
 #' @noRd
 read.Workflow <- function(x, file, ...) {
   if (grepl("\\.json$", file, ignore.case = TRUE) && file.exists(file)) {
-    return(Workflow(jsonlite::fromJSON(file)))
+    return(Workflow(jsonlite::fromJSON(
+      file,
+      simplifyVector = FALSE,
+      simplifyDataFrame = FALSE,
+      simplifyMatrix = FALSE
+    )))
   }
   if (grepl("\\.rds$", file, ignore.case = TRUE) && file.exists(file)) {
     return(readRDS(file))

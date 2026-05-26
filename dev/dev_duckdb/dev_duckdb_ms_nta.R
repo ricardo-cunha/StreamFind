@@ -101,7 +101,7 @@ workflow <- Workflow(list(
     debugComponent = "",
     debugAnalysis = ""
   ),
-  Method_NonTargetAnalysis_SuspectScreening(
+  Method_NonTargetAnalysis_FindInternalStandards(
     suspects = internal_standards,
     ppm = 10,
     sec = 15,
@@ -112,7 +112,7 @@ workflow <- Workflow(list(
     filtered = TRUE
   ),
   Method_NonTargetAnalysis_FilterInternalStandards(
-    idLevels = c(1L, 3L)
+    idLevels = c(1L, 2L, 3L)
   ),
   Method_NonTargetAnalysis_GroupFeatures(
     method = "internal_standards",
@@ -133,6 +133,16 @@ workflow <- Workflow(list(
     removeIsotopes = TRUE,
     removeAdducts = TRUE,
     removeLosses = TRUE
+  ),
+  Method_NonTargetAnalysis_SuspectScreening(
+    suspects = suspects,
+    ppm = 5,
+    sec = 10,
+    ppmMS2 = 10,
+    mzrMS2 = 0.008,
+    minCosineSimilarity = 0.7,
+    minSharedFragments = 3L,
+    filtered = TRUE
   ),
   Method_NonTargetAnalysis_MetFragScreening(
     metfrag_path = "C:\\Users\\cunha\\Documents\\patRoon_deps\\MetFragCommandLine-2.5.0.jar",
@@ -156,11 +166,13 @@ workflow <- Workflow(list(
   )
 ))
 
-set_workflow(nta, workflow[1:3])
+set_workflow(nta, workflow[1:11])
 
 nta$run_workflow()
 
 
+
+nrow(get_internal_standards(nta))
 
 show(nta$get_workflow())
 
@@ -169,14 +181,21 @@ class(nta$get_workflow())
 nta$list_tables()
 
 
+rm(nta)
+gc()
+devtools::load_all()
+
+
 nta <- open_ProjectNonTargetAnalysis(
   db = project_db,
   project_id = project_id
 )
 
+#nta$run_workflow()
+
 nta$run_app()
 
-
+run_app()
 
 
 # -----------------------------------------------------------------------------
@@ -186,6 +205,8 @@ nta$run_app()
 get_cache(nta)
 
 delete_cache(nta, name = "NTA_FEATURES_CACHE")
+delete_cache(nta, name = "NTA_INTERNAL_STANDARDS_CACHE")
+delete_cache(nta, name = "NTA_SUSPECTS_CACHE")
 
 print(nta)
 

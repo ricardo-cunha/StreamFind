@@ -2611,7 +2611,7 @@ namespace mass_spec
                                                          const std::vector<std::string> &blanks)
         : ctx_(std::move(ctx)), base_(ctx_, file_paths, replicates, blanks)
     {
-      project::PROJECT root(ctx_->db_path, ctx_->project_id);
+      project::PROJECT root(ctx_);
       root.set_domain("mass_spec_spectra");
     };
 
@@ -2636,7 +2636,7 @@ namespace mass_spec
                                                                      const std::vector<std::string> &blanks)
         : ctx_(std::move(ctx)), base_(ctx_, file_paths, replicates, blanks)
     {
-      project::PROJECT root(ctx_->db_path, ctx_->project_id);
+      project::PROJECT root(ctx_);
       root.set_domain("mass_spec_chromatograms");
     };
 

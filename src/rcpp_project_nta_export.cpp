@@ -1714,6 +1714,42 @@ bool rcpp_project_nta_filter_internal_standards(
   });
 }
 
+// MARK: rcpp_project_nta_find_internal_standards
+// [[Rcpp::export]]
+bool rcpp_project_nta_find_internal_standards(
+  SEXP nta_xptr,
+    Rcpp::List suspects,
+    Rcpp::CharacterVector analyses = Rcpp::CharacterVector::create(""),
+    double ppm = 5.0,
+    double sec = 10.0,
+    double ppmMS2 = 10.0,
+    double mzrMS2 = 0.008,
+    double minCosineSimilarity = 0.7,
+    int minSharedFragments = 3,
+    bool filtered = true)
+{
+  std::vector<std::string> analyses_sel;
+  if (analyses.size() > 0 && analyses[0] != NA_STRING && Rcpp::as<std::string>(analyses[0]) != "")
+  {
+    analyses_sel = Rcpp::as<std::vector<std::string>>(analyses);
+  }
+
+  std::vector<nta::suspect_screening::SuspectQuery> suspects_cpp = nta_rcpp::as_suspect_queries(suspects);
+  return nta_rcpp::project_call([&]() {
+    auto &nta_data = nta_rcpp::project_non_target_analysis_from_xptr(nta_xptr);
+    return nta_data.find_internal_standards(
+      analyses_sel,
+      suspects_cpp,
+      ppm,
+      sec,
+      ppmMS2,
+      mzrMS2,
+      minCosineSimilarity,
+      minSharedFragments,
+      filtered);
+  });
+}
+
 // MARK: rcpp_project_nta_suspect_screening
 // [[Rcpp::export]]
 bool rcpp_project_nta_suspect_screening(

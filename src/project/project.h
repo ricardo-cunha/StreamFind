@@ -332,6 +332,8 @@ namespace project
     public:
       /** Open or create a project database for the given project id. */
       explicit PROJECT(std::string db_path, std::string project_id);
+      /** Wrap an existing shared project context without reopening the database file. */
+      explicit PROJECT(std::shared_ptr<api::CONTEXT> ctx);
       /** Close the database handle and release owned table wrappers. */
       ~PROJECT();
 
@@ -368,6 +370,8 @@ namespace project
 
       /** Validate schema and ensure the project row exists. */
       void validate() const;
+      /** Close the shared DuckDB database handle for this project context. */
+      void close();
       /** List tables present in the database. */
       std::vector<std::string> list_tables() const;
 

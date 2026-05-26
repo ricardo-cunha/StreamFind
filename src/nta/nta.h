@@ -1487,6 +1487,9 @@ namespace nta
       NTA_SUSPECTS_TABLE collect_suspects_table(const NTA_QUERY_REQUEST &query) const;
       NTA_INTERNAL_STANDARDS_TABLE collect_internal_standards_table(const NTA_QUERY_REQUEST &query) const;
       NTA_TRANSFORMATION_PRODUCTS_TABLE collect_transformation_products_table() const;
+      std::vector<NTA_FEATURE_ROW> get_features(duckdb_connection con, const NTA_QUERY_REQUEST &query) const;
+      std::vector<NTA_SUSPECT_ROW> get_suspects(duckdb_connection con, const NTA_QUERY_REQUEST &query) const;
+      std::vector<NTA_INTERNAL_STANDARD_ROW> get_internal_standards(duckdb_connection con, const NTA_QUERY_REQUEST &query) const;
 
       void materialize_feature_buffers() const;
       void materialize_suspect_buffers() const;
@@ -1535,6 +1538,7 @@ namespace nta
       std::string build_processing_cache_key(const std::string &step,
                                              const std::string &args_key,
                                              const std::vector<std::string> &dependency_keys = {}) const;
+      std::string analyses_state_cache_key() const;
 
       NTA_FEATURES_CACHE feature_cache_snapshot() const;
       NTA_SUSPECTS_CACHE suspect_cache_snapshot() const;
@@ -1746,6 +1750,17 @@ namespace nta
         bool removeLosses);
 
       bool suspect_screening(
+        const std::vector<std::string> &analyses,
+        const std::vector<suspect_screening::SuspectQuery> &suspects,
+        double ppm,
+        double sec,
+        double ppmMS2,
+        double mzrMS2,
+        double minCosineSimilarity,
+        int minSharedFragments,
+        bool filtered);
+
+      bool find_internal_standards(
         const std::vector<std::string> &analyses,
         const std::vector<suspect_screening::SuspectQuery> &suspects,
         double ppm,

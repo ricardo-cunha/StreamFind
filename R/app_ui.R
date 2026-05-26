@@ -5,7 +5,22 @@
 #' @noRd
 app_ui <- function(request) {
   init_project_path <- golem::get_golem_options("projectPath")
-  boot_loading <- !is.null(init_project_path) && !is.na(init_project_path) && dir.exists(init_project_path)
+  init_project_db <- golem::get_golem_options("db")
+  init_project_id <- golem::get_golem_options("project_id")
+  init_project_class <- golem::get_golem_options("project_class")
+  init_project_object <- golem::get_golem_options("project_object")
+
+  has_initial_project_context <- (
+    inherits(init_project_object, "Project") ||
+      (!is.null(init_project_db) && !is.na(init_project_db) && nzchar(init_project_db)) ||
+      (!is.null(init_project_id) && !is.na(init_project_id) && nzchar(init_project_id)) ||
+      (!is.null(init_project_class) && !is.na(init_project_class) && nzchar(init_project_class))
+  )
+
+  boot_loading <- (
+    (!is.null(init_project_path) && !is.na(init_project_path) && dir.exists(init_project_path)) ||
+      isTRUE(has_initial_project_context)
+  )
 
   shiny::tagList(
     golem_add_external_resources(),
@@ -254,6 +269,16 @@ golem_add_external_resources <- function() {
         }
       });
 
+      function sfShowBootOverlay() {
+        var overlay = document.getElementById('sf-boot-overlay');
+        if (overlay) overlay.classList.add('visible');
+      }
+
+      function sfHideBootOverlay() {
+        var overlay = document.getElementById('sf-boot-overlay');
+        if (overlay) overlay.classList.remove('visible');
+      }
+
       // Hard cleanup for restart flow: remove any residual modal/backdrop nodes
       // (including shinyFiles custom containers) and clear body modal flags.
       Shiny.addCustomMessageHandler('cleanupAllModals', function(msg) {
@@ -313,6 +338,15 @@ golem_add_external_resources <- function() {
           enforceShinyModalFloating();
         });
         obs.observe(document.body, { childList: true, subtree: true });
+
+        document.addEventListener('click', function(e) {
+          var trigger = e.target.closest(
+            '#create_project_confirm, #open_project_confirm'
+          );
+          if (trigger) {
+            sfShowBootOverlay();
+          }
+        });
       });
 
       // Init body theme attribute on page load

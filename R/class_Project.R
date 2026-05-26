@@ -18,7 +18,12 @@ Project <- R6::R6Class(
   private = list(
     .ptr = NULL,
     .db = NULL,
-    .project_id = NULL
+    .project_id = NULL,
+    finalize = function() {
+      if (!is.null(private$.ptr)) {
+        try(rcpp_project_close(private$.ptr), silent = TRUE)
+      }
+    }
   ),
   public = list(
     #' @description Create a new `Project` handle.
@@ -48,6 +53,10 @@ Project <- R6::R6Class(
     #' @description Validate the project schema and row state.
     validate = function() {
       validate.Project(self)
+    },
+    #' @description Close the shared DuckDB handle for this project object.
+    close = function() {
+      close.Project(self)
     },
     #' @description Get the project metadata.
     get_metadata = function() {
@@ -178,6 +187,15 @@ validate.Project <- function(x) {
   invisible(x)
 }
 
+#' @describeIn ProjectS3 Close the shared DuckDB handle for this project object.
+#' @method close Project
+#' @export
+close.Project <- function(con, ...) {
+  checkmate::assert_class(con, "Project")
+  rcpp_project_close(con$get_ptr())
+  invisible(con)
+}
+
 #' @describeIn ProjectS3 Get the project metadata.
 #' @method get_metadata Project
 #' @export
@@ -221,7 +239,12 @@ get_workflow.Project <- function(x) {
   if (is.null(value) || identical(value, "") || identical(value, "null")) {
     return(NULL)
   }
-  Workflow(jsonlite::fromJSON(value))
+  Workflow(jsonlite::fromJSON(
+    value,
+    simplifyVector = FALSE,
+    simplifyDataFrame = FALSE,
+    simplifyMatrix = FALSE
+  ))
 }
 
 #' @describeIn ProjectS3 Set the project workflow; `value` may be a Workflow-compatible list, JSON string, or NULL.
@@ -235,8 +258,7 @@ set_workflow.Project <- function(x, value) {
     value
   } else {
     workflow <- if (inherits(value, "Workflow")) value else Workflow(value)
-    payload <- lapply(workflow, unclass)
-    names(payload) <- names(workflow)
+    payload <- unname(lapply(workflow, unclass))
     as.character(.convert_to_json(payload))
   }
   rcpp_project_set_workflow(x$get_ptr(), workflow_json)
@@ -303,6 +325,10 @@ run_method.Project <- function(x, step) {
   if (!inherits(step, "Method")) {
     step <- as.Method(step)
   }
+  step_name <- step$method
+  if (is.na(step_name) || !nzchar(step_name)) {
+    step_name <- class(step)[1]
+  }
   owner_class <- step$owner_class
   if (!is.na(owner_class) && nzchar(owner_class) && !owner_class %in% class(x)) {
     stop(sprintf(
@@ -312,6 +338,8 @@ run_method.Project <- function(x, step) {
       class(x)[1]
     ))
   }
+  cat("\u2699 Running ", step_name, "\n", sep = "")
+  flush.console()
   run_method <- NULL
   for (cls in class(step)) {
     run_method <- utils::getS3method("run", cls, optional = TRUE)
@@ -471,6 +499,7 @@ report_quarto.Project <- function(x, template = NULL, output_file = NULL, execut
 run_app.Project <- function(x) {
   checkmate::assert_class(x, "Project")
   run_app(
+    project_object = x,
     db = x$get_db(),
     project_id = x$get_project_id(),
     project_class = class(x)[1]

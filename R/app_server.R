@@ -18,10 +18,13 @@ app_server <- function(input, output, session) {
   reactive_open_db <- shiny::reactiveVal(NA_character_)
   reactive_open_resolution <- shiny::reactiveVal(NULL)
   reactive_open_project_id <- shiny::reactiveVal(NA_character_)
+  reactive_skip_initial_project_load <- shiny::reactiveVal(FALSE)
 
   .init_project_db <- golem::get_golem_options("db")
   .init_project_id <- golem::get_golem_options("project_id")
   .init_project_class <- golem::get_golem_options("project_class")
+  .init_project_object <- golem::get_golem_options("project_object")
+
   if (!is.null(.init_project_db) && !is.na(.init_project_db) && file.exists(.init_project_db)) {
     reactive_project_db(.init_project_db)
   }
@@ -47,6 +50,27 @@ app_server <- function(input, output, session) {
   reactive_audit <- shiny::reactiveVal(NULL)
   reactive_app_mode <- shiny::reactiveVal(NA_character_)
   reactive_update_trigger <- shiny::reactiveVal(0)
+
+  if (inherits(.init_project_object, "Project")) {
+    project_obj <- .init_project_object
+    reactive_skip_initial_project_load(TRUE)
+    reactive_project_db(project_obj$get_db())
+    reactive_project_id(project_obj$get_project_id())
+    reactive_project_class(class(project_obj)[1])
+    reactive_project_entry(projects_overview(class(project_obj)[1]))
+    reactive_metadata(project_obj$metadata)
+    reactive_analyses(project_obj)
+    reactive_workflow(get_workflow(project_obj))
+    reactive_audit(project_obj$get_audit())
+    reactive_results(.app_util_project_results(project_obj))
+    reactive_app_mode("Project")
+
+    session$onFlushed(function() {
+      session$sendCustomMessage("setActiveTab", list(tab = "project"))
+      session$sendCustomMessage("setBootOverlay", list(visible = FALSE))
+    }, once = TRUE)
+  }
+
   project_registry <- projects_overview()
   value_or <- function(x, default) if (is.null(x) || length(x) == 0) default else x
 
@@ -335,6 +359,15 @@ app_server <- function(input, output, session) {
     project_db <- reactive_project_db()
     project_id <- reactive_project_id()
     shiny::req(!is.na(project_class), !is.na(project_db), !is.na(project_id), file.exists(project_db), nzchar(project_id))
+
+    if (isTRUE(reactive_skip_initial_project_load())) {
+      reactive_skip_initial_project_load(FALSE)
+      session$onFlushed(function() {
+        session$sendCustomMessage("setBootOverlay", list(visible = FALSE))
+      }, once = TRUE)
+      return(invisible(NULL))
+    }
+
     session$sendCustomMessage("setBootOverlay", list(visible = TRUE))
 
     tryCatch(
@@ -349,6 +382,7 @@ app_server <- function(input, output, session) {
         reactive_app_mode("Project")
 
         session$onFlushed(function() {
+          session$sendCustomMessage("setActiveTab", list(tab = "project"))
           session$sendCustomMessage("setBootOverlay", list(visible = FALSE))
         }, once = TRUE)
       },

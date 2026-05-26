@@ -1796,7 +1796,7 @@ namespace nta
     PROJECT_NON_TARGET_ANALYSIS::PROJECT_NON_TARGET_ANALYSIS(std::shared_ptr<project::api::CONTEXT> ctx)
         : ctx_(std::move(ctx))
     {
-      project::PROJECT root(ctx_->db_path, ctx_->project_id);
+      project::PROJECT root(ctx_);
       root.set_domain("mass_spec_nts");
       mass_spec::PROJECT_MASS_SPEC::create_schema(ctx_);
       mass_spec::PROJECT_MASS_SPEC::validate_schema(ctx_);
@@ -2378,12 +2378,41 @@ namespace nta
       payload << "project=" << ctx_->project_id
               << "|step=" << step
               << "|args=" << args_key
-              << "|analyses=" << bytes_to_hex(analyses_table_.serialize_object());
+              << "|analyses=" << analyses_state_cache_key();
       for (const auto &dependency_key : dependency_keys)
       {
         payload << "|dep=" << dependency_key;
       }
       return std::string("nta|") + step + "|" + stable_hash_hex(payload.str());
+    }
+
+    std::string PROJECT_NON_TARGET_ANALYSIS::analyses_state_cache_key() const
+    {
+      std::ostringstream payload;
+      payload << "n=" << analyses_table_.analysis.size();
+      for (std::size_t i = 0; i < analyses_table_.analysis.size(); ++i)
+      {
+        payload << "|analysis=" << analyses_table_.analysis[i]
+                << "|replicate=" << analyses_table_.replicate[i]
+                << "|blank=" << analyses_table_.blank[i]
+                << "|file_name=" << analyses_table_.file_name[i]
+                << "|file_path=" << analyses_table_.file_path[i]
+                << "|file_dir=" << analyses_table_.file_dir[i]
+                << "|file_extension=" << analyses_table_.file_extension[i]
+                << "|format=" << analyses_table_.format[i]
+                << "|type=" << analyses_table_.type[i]
+                << "|time_stamp=" << analyses_table_.time_stamp[i]
+                << "|number_spectra=" << analyses_table_.number_spectra[i]
+                << "|number_chromatograms=" << analyses_table_.number_chromatograms[i]
+                << "|number_spectra_binary_arrays=" << analyses_table_.number_spectra_binary_arrays[i]
+                << "|min_mz=" << analyses_table_.min_mz[i]
+                << "|max_mz=" << analyses_table_.max_mz[i]
+                << "|start_rt=" << analyses_table_.start_rt[i]
+                << "|end_rt=" << analyses_table_.end_rt[i]
+                << "|has_ion_mobility=" << analyses_table_.has_ion_mobility[i]
+                << "|concentration=" << analyses_table_.concentration[i];
+      }
+      return stable_hash_hex(payload.str());
     }
 
     NTA_FEATURES_CACHE PROJECT_NON_TARGET_ANALYSIS::feature_cache_snapshot() const
@@ -2458,6 +2487,7 @@ namespace nta
       std::cout << "Loading internal standards from cache... ";
       internal_standard_buffers_ = cached->buffers;
       internal_standard_buffers_ready_ = true;
+      std::cout << "Done!" << std::endl;
       save_processing_internal_standards();
       return true;
     }
@@ -3095,6 +3125,13 @@ namespace nta
         const NTA_QUERY_REQUEST &query) const
     {
       auto guard = mass_spec::api::connect_checked(ctx_);
+      return get_features(guard.get(), query);
+    }
+
+    std::vector<NTA_FEATURE_ROW> PROJECT_NON_TARGET_ANALYSIS::get_features(
+        duckdb_connection con,
+        const NTA_QUERY_REQUEST &query) const
+    {
       std::vector<NTA_FEATURE_ROW> out;
       const auto selected_analyses = mass_spec::spectra::sanitize_analyses(query.analyses);
       const auto selected_features = sanitize_query_values(query.features);
@@ -3137,7 +3174,7 @@ namespace nta
       }
       sql += " ORDER BY lower(analysis), analysis, mz, rt, feature";
 
-      project::db::run_prepared(guard.get(), sql, "query NTS feature rows", [&](duckdb_prepared_statement statement)
+      project::db::run_prepared(con, sql, "query NTS feature rows", [&](duckdb_prepared_statement statement)
                                 {
                          idx_t bind_index = 1;
                          duckdb_bind_varchar(statement, bind_index++, ctx_->project_id.c_str());
@@ -3161,6 +3198,13 @@ namespace nta
     std::vector<NTA_SUSPECT_ROW> PROJECT_NON_TARGET_ANALYSIS::get_suspects(const NTA_QUERY_REQUEST &query) const
     {
       auto guard = mass_spec::api::connect_checked(ctx_);
+      return get_suspects(guard.get(), query);
+    }
+
+    std::vector<NTA_SUSPECT_ROW> PROJECT_NON_TARGET_ANALYSIS::get_suspects(
+        duckdb_connection con,
+        const NTA_QUERY_REQUEST &query) const
+    {
       std::vector<NTA_SUSPECT_ROW> out;
       const auto selected_analyses = mass_spec::spectra::sanitize_analyses(query.analyses);
 
@@ -3175,7 +3219,7 @@ namespace nta
       }
       sql += " ORDER BY lower(analysis), analysis, feature, candidate_rank, name";
 
-      project::db::run_prepared(guard.get(), sql, "query NTS suspect rows", [&](duckdb_prepared_statement statement)
+      project::db::run_prepared(con, sql, "query NTS suspect rows", [&](duckdb_prepared_statement statement)
                                 {
                          idx_t bind_index = 1;
                          duckdb_bind_varchar(statement, bind_index++, ctx_->project_id.c_str());
@@ -3192,7 +3236,7 @@ namespace nta
 
       auto feature_query = query;
       feature_query.include_filtered = true;
-      const auto feature_rows = get_features(feature_query);
+      const auto feature_rows = get_features(con, feature_query);
 
       if (!query.features.empty() || !query.feature_groups.empty() || !query.feature_components.empty() || has_target_filters(query))
       {
@@ -3229,6 +3273,13 @@ namespace nta
     std::vector<NTA_INTERNAL_STANDARD_ROW> PROJECT_NON_TARGET_ANALYSIS::get_internal_standards(const NTA_QUERY_REQUEST &query) const
     {
       auto guard = mass_spec::api::connect_checked(ctx_);
+      return get_internal_standards(guard.get(), query);
+    }
+
+    std::vector<NTA_INTERNAL_STANDARD_ROW> PROJECT_NON_TARGET_ANALYSIS::get_internal_standards(
+        duckdb_connection con,
+        const NTA_QUERY_REQUEST &query) const
+    {
       std::vector<NTA_INTERNAL_STANDARD_ROW> out;
       const auto selected_analyses = mass_spec::spectra::sanitize_analyses(query.analyses);
 
@@ -3243,7 +3294,7 @@ namespace nta
       }
       sql += " ORDER BY lower(analysis), analysis, feature, candidate_rank, name";
 
-      project::db::run_prepared(guard.get(), sql, "query NTS internal standard rows", [&](duckdb_prepared_statement statement)
+      project::db::run_prepared(con, sql, "query NTS internal standard rows", [&](duckdb_prepared_statement statement)
                                 {
                          idx_t bind_index = 1;
                          duckdb_bind_varchar(statement, bind_index++, ctx_->project_id.c_str());
@@ -3260,7 +3311,7 @@ namespace nta
 
       auto feature_query = query;
       feature_query.include_filtered = true;
-      const auto feature_rows = get_features(feature_query);
+      const auto feature_rows = get_features(con, feature_query);
 
       if (!query.features.empty() || !query.feature_groups.empty() || !query.feature_components.empty() || has_target_filters(query))
       {
@@ -3664,6 +3715,26 @@ bool nta::api::PROJECT_NON_TARGET_ANALYSIS::suspect_screening(const std::vector<
       "Cached NTS suspects for suspect_screening",
       [&]()
       { suspect_screening::suspect_screening_impl(*this, analyses, suspects, ppm, sec, ppmMS2, mzrMS2, minCosineSimilarity, minSharedFragments, filtered); });
+};
+
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::find_internal_standards(const std::vector<std::string> &analyses, const std::vector<suspect_screening::SuspectQuery> &suspects, double ppm, double sec, double ppmMS2, double mzrMS2, double minCosineSimilarity, int minSharedFragments, bool filtered)
+{
+  load_processing_metadata();
+  load_processing_features(true);
+  load_processing_internal_standards();
+  std::vector<std::string> suspect_keys;
+  suspect_keys.reserve(suspects.size());
+  for (const auto &suspect : suspects)
+  {
+    suspect_keys.push_back(cache_join_key({suspect.name, cache_bool_key(suspect.has_mass), cache_scalar_key(suspect.mass), cache_scalar_key(suspect.rt), suspect.formula, suspect.SMILES, suspect.InChI, suspect.InChIKey, cache_scalar_key(suspect.score), cache_bool_key(suspect.has_xLogP), cache_scalar_key(suspect.xLogP), suspect.database_id, cache_vector_key(suspect.fragments_mz_pos), cache_vector_key(suspect.fragments_intensity_pos), cache_vector_key(suspect.fragments_mz_neg), cache_vector_key(suspect.fragments_intensity_neg)}));
+  }
+  return run_cached_internal_standards_algorithm(
+      "find_internal_standards",
+      cache_join_key({cache_vector_key(analyses), cache_scalar_key(ppm), cache_scalar_key(sec), cache_scalar_key(ppmMS2), cache_scalar_key(mzrMS2), cache_scalar_key(minCosineSimilarity), cache_scalar_key(minSharedFragments), cache_bool_key(filtered), cache_join_key(suspect_keys)}),
+      {feature_state_cache_key()},
+      "Cached NTS internal standards for find_internal_standards",
+      [&]()
+      { suspect_screening::find_internal_standards_impl(*this, analyses, suspects, ppm, sec, ppmMS2, mzrMS2, minCosineSimilarity, minSharedFragments, filtered); });
 };
 
 bool nta::api::PROJECT_NON_TARGET_ANALYSIS::filter_suspects(const std::vector<std::string> &names, double minScore, double maxErrorRT, double maxErrorMass, const std::vector<int> &idLevels, int minSharedFragments, double minCosineSimilarity)
