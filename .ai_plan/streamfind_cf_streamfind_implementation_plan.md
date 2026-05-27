@@ -32,6 +32,73 @@ Modify the existing `odea-project/StreamFind` repository on branch `dev_filesyst
 
 ---
 
+## Big-Picture Architecture
+
+The repository should end in a dual-frontend layout:
+
+1. The repository root remains a valid R package named `StreamFind`.
+2. The repository root also becomes a valid Python build root for a package named `cf-streamfind`.
+3. The native code is split into three layers:
+   - `src/core/`: shared, framework-agnostic C++ implementation
+   - `src/r/`: Rcpp bridge used only by the R package
+   - `python/cf_streamfind/cpp/`: CogniFlow bridge used only by the Python package
+4. R and Python must each compile only their own bridge layer plus the shared core.
+5. The first success criterion is structural separation with the R package still building; the Python package is added only after that split is stable.
+
+In practical terms, this migration is really: extract one reusable C++ core from the current R-native layout, then attach two packaging frontends to that core.
+
+---
+
+## Recommended Delivery Sequence
+
+Implement this migration in three checkpoints rather than as one continuous file-copy exercise.
+
+### Checkpoint A: Native split only
+
+Scope:
+
+- Create `src/core/` and `src/r/`
+- Move shared native sources into `src/core/`
+- Move Rcpp bridge sources into `src/r/`
+- Update `src/Makevars` and `src/Makevars.win`
+- Confirm the R package still compiles
+
+Exit condition:
+
+- `devtools::load_all('.')` or equivalent succeeds
+- No Python integration is blocking the R-native refactor
+
+### Checkpoint B: Python packaging scaffold
+
+Scope:
+
+- Add `pyproject.toml`, root `CMakeLists.txt`, and `MANIFEST.in`
+- Add `python/cf_streamfind/`
+- Copy minimal CogniFlow package assets and Python tests
+- Keep `steps.cpp` thin and adapter-only
+
+Exit condition:
+
+- `python -m pip install .` at least reaches the native build stage against the new layout
+
+### Checkpoint C: Cross-frontend validation
+
+Scope:
+
+- Finish wiring `steps.cpp` to the real shared APIs
+- Update ignore files and README
+- Validate R check, Python install, and wheel build
+
+Exit condition:
+
+- R build passes
+- Python import passes
+- `python -m build` produces distributable artifacts
+
+This sequence matters because the current repository is already a working R package. The highest-risk work is the native refactor, not the Python metadata.
+
+---
+
 ## Current Repository Facts
 
 The current `StreamFind` repository is already an R package at the repository root. Keep that layout.
@@ -209,7 +276,20 @@ This plan assumes the working branch `dev_filesystem` is already up-to-date and 
 
 ---
 
-## Phase 2: Move Native Source into Shared and R-Specific Areas
+## Phase 2: Restructure Native Code into Core and R Bridge
+
+This phase is the architectural pivot of the migration. Do not mix it with Python adapter work yet beyond what is needed for planning.
+
+Primary objective:
+
+- Preserve current R behavior while changing the native code layout so Python can consume the same implementation later.
+
+Phase completion criteria:
+
+- Shared code is under `src/core/`
+- Rcpp bridge code is under `src/r/`
+- `Makevars` and `Makevars.win` build from the new layout
+- The R package still compiles after the move
 
 ### 2.1 Create target folders
 
@@ -280,6 +360,8 @@ The include directories in `Makevars` and CMake should make this unnecessary.
 ---
 
 ## Phase 3: Update R Build Files
+
+This phase closes Checkpoint A. Treat any R compilation or linkage failure here as a blocker for Phase 4 and beyond.
 
 Open `src/Makevars` and `src/Makevars.win`.
 
@@ -357,6 +439,8 @@ The R build must not include CogniFlow headers such as:
 ---
 
 ## Phase 4: Add Python Package Files at Repository Root
+
+Only start this phase after the Phase 2-3 refactor builds correctly from R. If the shared core is not stable yet, Python integration will widen the failure surface and slow debugging.
 
 The Cogniflow playground sources are available locally and as a ZIP archive. Prefer copying directly from the local checkout `C:/Users/cunha/Documents/GitHub/cogniflow-playground/resources/cf_streamfind`. If the local path is not present, fall back to extracting `.ai_plan/cogniflow-playground-20260527-122156.zip`.
 
