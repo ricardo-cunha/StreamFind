@@ -17,13 +17,19 @@
 #' @template arg-ProjectMassSpec-millisec
 #' @template arg-ProjectNonTargetAnalysis-parents
 #' @template arg-ProjectNonTargetAnalysis-filtered
+#' @template arg-ProjectNonTargetAnalysis-corrected
 #' @template arg-ProjectMassSpec-plot-groupBy
 #' @template arg-ProjectMassSpec-normalized
+#' @template arg-ms-rtWindowVal
+#' @template arg-ProjectNonTargetAnalysis-refBlankReplicate
 #' @template arg-ProjectNonTargetAnalysis-yLab
 #' @template arg-ProjectNonTargetAnalysis-title
 #' @template arg-ProjectNonTargetAnalysis-interactive
 #' @template arg-ProjectNonTargetAnalysis-showLegend
 #' @template arg-ProjectNonTargetAnalysis-labs
+#' @template arg-ms-colorBy
+#' @template arg-legendNames
+#' @template arg-ms-downsize
 #' @template arg-ProjectNonTargetAnalysis-showHoverText
 #' @template arg-ProjectNonTargetAnalysis-showDetails
 #' @template arg-ProjectNonTargetAnalysis-showText
@@ -37,6 +43,7 @@
 #' @template arg-ProjectNonTargetAnalysis-eliminationThreshold
 #' @template arg-ProjectNonTargetAnalysis-fillZerosWithLowerLimit
 #' @template arg-ProjectNonTargetAnalysis-lowerLimit
+#' @template arg-renderEngine
 #' @template arg-Project-ellipsis
 #' @template arg-ProjectMassSpec-file-paths
 #' @template arg-ProjectMassSpec-replicates
@@ -141,6 +148,46 @@ ProjectNonTargetAnalysis <- R6::R6Class(
     get_features_count = function(analyses = NULL, filtered = FALSE) {
       get_features_count.ProjectNonTargetAnalysis(self, analyses = analyses, filtered = filtered)
     },
+    #' @description Return TIC-based matrix-suppression profiles for selected analyses.
+    get_matrix_suppression = function(analyses = NULL,
+                                      rtWindowVal = 10,
+                                      refBlankReplicate = NA_character_) {
+      get_matrix_suppression.ProjectNonTargetAnalysis(
+        self,
+        analyses = analyses,
+        rtWindowVal = rtWindowVal,
+        refBlankReplicate = refBlankReplicate
+      )
+    },
+    #' @description Plot TIC-based matrix-suppression profiles for selected analyses.
+    plot_matrix_suppression = function(analyses = NULL,
+                                       rtWindowVal = 10,
+                                       refBlankReplicate = NA_character_,
+                                       xLab = NULL,
+                                       yLab = NULL,
+                                       title = NULL,
+                                       colorBy = "analyses",
+                                       legendNames = NULL,
+                                       downsize = 1,
+                                       interactive = TRUE,
+                                       showLegend = TRUE,
+                                       renderEngine = "webgl") {
+      plot_matrix_suppression.ProjectNonTargetAnalysis(
+        self,
+        analyses = analyses,
+        rtWindowVal = rtWindowVal,
+        refBlankReplicate = refBlankReplicate,
+        xLab = xLab,
+        yLab = yLab,
+        title = title,
+        colorBy = colorBy,
+        legendNames = legendNames,
+        downsize = downsize,
+        interactive = interactive,
+        showLegend = showLegend,
+        renderEngine = renderEngine
+      )
+    },
     #' @description Plot the number of features for selected analyses.
     plot_features_count = function(analyses = NULL,
                                    filtered = FALSE,
@@ -161,8 +208,9 @@ ProjectNonTargetAnalysis <- R6::R6Class(
                                     ppm = 20,
                                     sec = 60,
                                     millisec = 5,
-                                    filtered = FALSE) {
-      get_features_profile.ProjectNonTargetAnalysis(self, analyses = analyses, groups = groups, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, filtered = filtered)
+                                    filtered = FALSE,
+                                    corrected = FALSE) {
+      get_features_profile.ProjectNonTargetAnalysis(self, analyses = analyses, groups = groups, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, filtered = filtered, corrected = corrected)
     },
     #' @description Plot feature-group profiles across analyses or replicates.
     plot_features_profile = function(analyses = NULL,
@@ -175,13 +223,14 @@ ProjectNonTargetAnalysis <- R6::R6Class(
                                      sec = 60,
                                      millisec = 5,
                                      filtered = FALSE,
+                                     corrected = FALSE,
                                      groupBy = "analysis",
                                      normalized = FALSE,
                                      yLab = NULL,
                                      title = NULL,
                                      interactive = TRUE,
                                      showLegend = TRUE) {
-      plot_features_profile.ProjectNonTargetAnalysis(self, analyses = analyses, groups = groups, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, filtered = filtered, groupBy = groupBy, normalized = normalized, yLab = yLab, title = title, interactive = interactive, showLegend = showLegend)
+      plot_features_profile.ProjectNonTargetAnalysis(self, analyses = analyses, groups = groups, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, filtered = filtered, corrected = corrected, groupBy = groupBy, normalized = normalized, yLab = yLab, title = title, interactive = interactive, showLegend = showLegend)
     },
     #' @description Plot EIC traces for selected features.
     plot_features = function(analyses = NULL,
@@ -400,13 +449,19 @@ ProjectNonTargetAnalysis <- R6::R6Class(
 #' @template arg-ProjectMassSpec-sec
 #' @template arg-ProjectMassSpec-millisec
 #' @template arg-ProjectNonTargetAnalysis-filtered
+#' @template arg-ProjectNonTargetAnalysis-corrected
 #' @template arg-ProjectMassSpec-plot-groupBy
 #' @template arg-ProjectMassSpec-normalized
+#' @template arg-ms-rtWindowVal
+#' @template arg-ProjectNonTargetAnalysis-refBlankReplicate
 #' @template arg-ProjectNonTargetAnalysis-yLab
 #' @template arg-ProjectNonTargetAnalysis-title
 #' @template arg-ProjectNonTargetAnalysis-interactive
 #' @template arg-ProjectNonTargetAnalysis-showLegend
 #' @template arg-ProjectNonTargetAnalysis-labs
+#' @template arg-ms-colorBy
+#' @template arg-legendNames
+#' @template arg-ms-downsize
 #' @template arg-ProjectNonTargetAnalysis-correctIntensity
 #' @template arg-ProjectNonTargetAnalysis-showDetails
 #' @template arg-ProjectNonTargetAnalysis-showText
@@ -421,6 +476,7 @@ ProjectNonTargetAnalysis <- R6::R6Class(
 #' @template arg-ProjectNonTargetAnalysis-lowerLimit
 #' @template arg-ProjectNonTargetAnalysis-parents
 #' @template arg-ProjectNonTargetAnalysis-modal
+#' @template arg-renderEngine
 #' @template arg-Project-ellipsis
 NULL
 
@@ -755,6 +811,163 @@ get_features_count.ProjectNonTargetAnalysis <- function(x, analyses = NULL, filt
   info
 }
 
+#' @describeIn ProjectNonTargetAnalysisS3 Return TIC-based matrix-suppression rows for selected analyses.
+#' @method get_matrix_suppression ProjectNonTargetAnalysis
+#' @export
+get_matrix_suppression.ProjectNonTargetAnalysis <- function(
+  x,
+  analyses = NULL,
+  rtWindowVal = 10,
+  refBlankReplicate = NA_character_,
+  ...
+) {
+  checkmate::assert_class(x, "ProjectNonTargetAnalysis")
+  analyses_info <- data.table::as.data.table(x$get_analyses())
+  sel_names <- .resolve_analyses_selection(analyses, analyses_info$analysis)
+  if (length(sel_names) == 0) {
+    return(data.table::data.table())
+  }
+  ref_blank <- if (length(refBlankReplicate) == 0 || is.na(refBlankReplicate)) NULL else as.character(refBlankReplicate)
+  mp <- data.table::as.data.table(
+    rcpp_project_nta_get_matrix_suppression(
+      x$get_nts_ptr(),
+      sel_names,
+      as.numeric(rtWindowVal),
+      ref_blank
+    )
+  )
+  if (nrow(mp) == 0) {
+    return(data.table::data.table())
+  }
+  desired_order <- c("analysis", "replicate", "polarity", "level", "rt", "intensity", "mp")
+  data.table::setcolorder(mp, c(intersect(desired_order, colnames(mp)), setdiff(colnames(mp), desired_order)))
+  mp[]
+}
+
+#' @describeIn ProjectNonTargetAnalysisS3 Plot TIC-based matrix suppression for selected analyses.
+#' @method plot_matrix_suppression ProjectNonTargetAnalysis
+#' @export
+plot_matrix_suppression.ProjectNonTargetAnalysis <- function(
+  x,
+  analyses = NULL,
+  rtWindowVal = 10,
+  refBlankReplicate = NA_character_,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  colorBy = "analyses",
+  legendNames = NULL,
+  downsize = 1,
+  interactive = TRUE,
+  showLegend = TRUE,
+  renderEngine = "webgl",
+  ...
+) {
+  checkmate::assert_class(x, "ProjectNonTargetAnalysis")
+  mp <- get_matrix_suppression(
+    x,
+    analyses = analyses,
+    rtWindowVal = rtWindowVal,
+    refBlankReplicate = refBlankReplicate
+  )
+  if (nrow(mp) == 0) {
+    message("\U2717 TIC matrix suppression not found for the analyses!")
+    return(NULL)
+  }
+  if (!"id" %in% colnames(mp)) {
+    mp[, id := analysis]
+  }
+  mp[, intensity := mp]
+
+  if (is.numeric(downsize) && length(downsize) == 1 && is.finite(downsize) && downsize > 1) {
+    mp[, rt := floor(rt / downsize) * downsize]
+    mp <- mp[, .(intensity = mean(intensity, na.rm = TRUE)), by = c("analysis", "replicate", "polarity", "level", "id", "rt")]
+  }
+
+  if (is.null(yLab)) {
+    yLab <- "Supression Factor"
+  }
+  if (is.null(xLab)) {
+    xLab <- "Retention time / seconds"
+  }
+
+  color_col <- switch(
+    as.character(colorBy),
+    analyses = "analysis",
+    analysis = "analysis",
+    replicates = "replicate",
+    replicate = "replicate",
+    polarity = "polarity",
+    level = "level",
+    stop("colorBy must be one of: analyses, analysis, replicates, replicate, polarity, level")
+  )
+
+  mp[, var := as.character(get(color_col))]
+  if (is.character(legendNames) && length(legendNames) == length(unique(mp$var))) {
+    mapped <- setNames(legendNames, unique(mp$var))
+    mp[, var := unname(mapped[var])]
+  }
+  mp[, loop := paste0(analysis, replicate, id, var)]
+  cl <- .get_colors(unique(mp$var))
+
+  if (!interactive) {
+    return(
+      ggplot2::ggplot(mp, ggplot2::aes(x = rt, y = intensity, group = loop)) +
+        ggplot2::geom_line(ggplot2::aes(color = var)) +
+        ggplot2::scale_color_manual(values = cl) +
+        ggplot2::theme_classic() +
+        ggplot2::labs(x = xLab, y = yLab, title = title, color = colorBy)
+    )
+  }
+
+  title_spec <- list(text = title, font = list(size = 12, color = "black"))
+  xaxis <- list(
+    linecolor = "black",
+    title = xLab,
+    titlefont = list(size = 12, color = "black")
+  )
+  yaxis <- list(
+    linecolor = "black",
+    title = yLab,
+    titlefont = list(size = 12, color = "black")
+  )
+
+  loop <- NULL
+  plot <- mp %>%
+    dplyr::group_by(loop) %>%
+    plotly::plot_ly(
+      x = ~rt,
+      y = ~intensity,
+      type = "scatter",
+      color = ~var,
+      colors = cl,
+      mode = "lines",
+      line = list(width = 2),
+      text = ~paste(
+        "<br>analysis: ", analysis,
+        "<br>replicate: ", replicate,
+        "<br>id: ", id,
+        "<br>polarity: ", polarity,
+        "<br>level: ", level,
+        "<br>rt: ", rt,
+        "<br>suppression: ", intensity
+      ),
+      hoverinfo = "text",
+      showlegend = showLegend
+    ) %>%
+    plotly::layout(
+      xaxis = xaxis,
+      yaxis = yaxis,
+      title = title_spec
+    )
+
+  if (identical(renderEngine, "webgl")) {
+    plot <- plot %>% plotly::toWebGL()
+  }
+
+  plot
+}
+
 #' @describeIn ProjectNonTargetAnalysisS3 Plot features count across analyses.
 #' @method plot_features_count ProjectNonTargetAnalysis
 #' @export
@@ -856,6 +1069,7 @@ get_features_profile.ProjectNonTargetAnalysis <- function(
   sec = 60,
   millisec = 5,
   filtered = FALSE,
+  corrected = FALSE,
   ...
 ) {
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
@@ -896,6 +1110,9 @@ get_features_profile.ProjectNonTargetAnalysis <- function(
   if (nrow(fts) == 0) {
     return(data.table::data.table())
   }
+  if (corrected && "correction" %in% colnames(fts)) {
+    fts$intensity <- fts$intensity * fts$correction
+  }
   prof <- fts[, .(intensity = max(intensity, na.rm = TRUE)), by = c("feature_group", "analysis")]
   prof$intensity[is.na(prof$intensity) | is.infinite(prof$intensity)] <- 0
   if ("replicate" %in% colnames(fts)) {
@@ -923,6 +1140,7 @@ plot_features_profile.ProjectNonTargetAnalysis <- function(
   sec = 60,
   millisec = 5,
   filtered = FALSE,
+  corrected = FALSE,
   groupBy = "analysis",
   normalized = FALSE,
   yLab = NULL,
@@ -943,7 +1161,8 @@ plot_features_profile.ProjectNonTargetAnalysis <- function(
     ppm = ppm,
     sec = sec,
     millisec = millisec,
-    filtered = filtered
+    filtered = filtered,
+    corrected = corrected
   )
 
   if (nrow(prof) == 0) {

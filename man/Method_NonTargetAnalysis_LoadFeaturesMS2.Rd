@@ -29,6 +29,9 @@ cluster.}
 A \code{Method} object of class \code{Method_NonTargetAnalysis_LoadFeaturesMS2}.
 }
 \description{
-Create a \code{Method} child object for loading MS2 spectra into NTA
-features.
+Create a \code{Method} child object for extracting tandem-MS data
+associated with detected NTA features. The native routine searches for MS2
+scans linked to each precursor feature, applies precursor-isolation and
+fragment clustering tolerances, and stores feature-linked MS2 evidence for
+suspect screening, MetFrag, and internal-standard confirmation.
 }

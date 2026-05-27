@@ -5,7 +5,9 @@
 #include "../mass_spec/mass_spec.h"
 
 #include <algorithm>
+#include <cctype>
 #include <cmath>
+#include <chrono>
 #include <cstdlib>
 #include <filesystem>
 #include <fstream>
@@ -18,6 +20,26 @@
 #include <vector>
 
 namespace fs = std::filesystem;
+
+namespace
+{
+  const std::vector<std::string> kSupportedMetFragDatabaseTypes = {
+    "KEGG",
+    "PubChem",
+    "ExtendedPubChem",
+    "ChemSpiderRest",
+    "LocalSDF",
+    "LocalPSV",
+    "LocalCSV"
+  };
+  const std::vector<std::string> kSupportedMetFragCandidateWriters = {
+    "SDF",
+    "XLS",
+    "CSV",
+    "ExtendedXLS",
+    "ExtendedFragmentsXLS"
+  };
+}
 
 // ── Internal helpers ──────────────────────────────────────────────────────────
 namespace
@@ -46,6 +68,94 @@ namespace
     return s.substr(a, b - a + 1);
   }
 
+  std::string to_lower_ascii(std::string s)
+  {
+    std::transform(s.begin(), s.end(), s.begin(), [](unsigned char c) {
+      return static_cast<char>(std::tolower(c));
+    });
+    return s;
+  }
+
+  bool is_local_database_type(const std::string &database_type)
+  {
+    return database_type == "LocalSDF" ||
+           database_type == "LocalPSV" ||
+           database_type == "LocalCSV";
+  }
+
+  bool has_extra_param(
+      const std::vector<std::pair<std::string, std::string>> &extra_params,
+      const std::string &key)
+  {
+    for (const auto &entry : extra_params)
+    {
+      if (entry.first == key && !trim_ws(entry.second).empty())
+        return true;
+    }
+    return false;
+  }
+
+  std::string join_strings(
+      const std::vector<std::string> &values,
+      const std::string &separator)
+  {
+    std::ostringstream oss;
+    for (std::size_t i = 0; i < values.size(); ++i)
+    {
+      if (i > 0)
+        oss << separator;
+      oss << values[i];
+    }
+    return oss.str();
+  }
+
+  std::string join_doubles(
+      const std::vector<double> &values,
+      const std::string &separator)
+  {
+    std::ostringstream oss;
+    oss << std::fixed << std::setprecision(6);
+    for (std::size_t i = 0; i < values.size(); ++i)
+    {
+      if (i > 0)
+        oss << separator;
+      oss << values[i];
+    }
+    return oss.str();
+  }
+
+  std::string make_run_timestamp()
+  {
+    const auto now = std::chrono::system_clock::now();
+    const std::time_t now_time = std::chrono::system_clock::to_time_t(now);
+    std::tm time_info{};
+#ifdef _WIN32
+    localtime_s(&time_info, &now_time);
+#else
+    localtime_r(&now_time, &time_info);
+#endif
+    std::ostringstream oss;
+    oss << std::put_time(&time_info, "%Y%m%d_%H%M%S");
+    return oss.str();
+  }
+
+  std::string default_metfrag_run_dir()
+  {
+    return (fs::path(".") / "log" / "metfrag" / ("run_" + make_run_timestamp())).string();
+  }
+
+  std::string default_empty_peak_list_path(const std::string &run_dir)
+  {
+    return (fs::path(run_dir) / "_metfrag_empty_peaklist.txt").string();
+  }
+
+  void ensure_empty_peak_list_file(const std::string &path)
+  {
+    if (fs::exists(path))
+      return;
+    std::ofstream f(path);
+  }
+
   // Build a safe filename component from analysis + feature names.
   std::string safe_id(const std::string &a, const std::string &b)
   {
@@ -71,51 +181,24 @@ namespace
 
   void write_params_file(
       const std::string &path,
-      const std::string &database_type,
-      const std::string &database_path,
-      double ppm,
-      double ppmMS2,
-      double mzrMS2,
+      const std::string &common_template,
       double precursor_mass,
       int polarity,
       const std::string &ms2_path,
-      const std::string &results_dir,
-      const std::string &sample_name,
-      const std::vector<std::pair<std::string, std::string>> &extra_params)
+      const std::string &sample_name)
   {
     std::ofstream f(path);
-    auto w = [&](const std::string &k, const std::string &v) {
-      f << k << " = " << v << "\n";
-    };
     // MetFrag (Java) requires forward slashes in paths on all platforms.
     auto fwd = [](std::string s) -> std::string {
       for (char &c : s) if (c == '\\') c = '/';
       return s;
     };
-
-    w("MetFragDatabaseType",                        database_type);
-    w("DatabaseSearchRelativeMassDeviation",         std::to_string(ppm));
-    w("PeakListPath",                                fwd(ms2_path));
-    w("FragmentPeakMatchRelativeMassDeviation",      std::to_string(ppmMS2));
-    w("FragmentPeakMatchAbsoluteMassDeviation",      std::to_string(mzrMS2));
-    w("NeutralPrecursorMass",                        std::to_string(precursor_mass));
-    w("PrecursorIonMode",                            std::to_string(polarity));
-    w("IsPositiveIonMode",                           (polarity > 0) ? "True" : "False");
-    w("MetFragScoreTypes",                           "FragmenterScore");
-    w("MetFragScoreWeights",                         "1");
-    w("MetFragPreProcessingCandidateFilter",         "UnconnectedCompoundFilter,IsotopeFilter");
-    w("MetFragPostProcessingCandidateFilter",        "InChIKeyFilter");
-    w("MetFragCandidateWriter",                      "CSV");
-    w("SampleName",                                  sample_name);
-    w("ResultsPath",                                 fwd(results_dir));
-    w("MaximumTreeDepth",                            "2");
-    w("UseSmiles",                                   "True");
-
-    if (!database_path.empty())
-      w("LocalDatabasePath", fwd(database_path));
-
-    for (const auto &kv : extra_params)
-      w(kv.first, kv.second);
+    f << common_template;
+    f << "PeakListPath = " << fwd(ms2_path) << "\n";
+    f << "NeutralPrecursorMass = " << precursor_mass << "\n";
+    f << "PrecursorIonMode = " << polarity << "\n";
+    f << "IsPositiveIonMode = " << ((polarity > 0) ? "True" : "False") << "\n";
+    f << "SampleName = " << sample_name << "\n";
   }
 
   // ── Subprocess ───────────────────────────────────────────────────────────
@@ -155,6 +238,79 @@ namespace
   }
 
   // ── CSV parsing ───────────────────────────────────────────────────────────
+
+  std::string build_common_params_template(
+      const nta::metfrag_runner::MetFragParams &params,
+      const std::string &database_path,
+      const std::string &results_dir)
+  {
+    std::ostringstream oss;
+    auto fwd = [](std::string s) -> std::string {
+      for (char &c : s) if (c == '\\') c = '/';
+      return s;
+    };
+    auto w = [&](const std::string &k, const std::string &v) {
+      oss << k << " = " << v << "\n";
+    };
+
+    for (const auto &kv : params.extra_params)
+      w(kv.first, kv.second);
+
+    w("MetFragDatabaseType", params.database_type);
+    w("DatabaseSearchRelativeMassDeviation", std::to_string(params.ppm));
+    w("FragmentPeakMatchRelativeMassDeviation", std::to_string(params.ppmMS2));
+    w("FragmentPeakMatchAbsoluteMassDeviation", std::to_string(params.mzrMS2));
+    w("MetFragScoreTypes", join_strings(params.score_types, ","));
+    w("MetFragScoreWeights", join_doubles(params.score_weights, ","));
+    w("MetFragPreProcessingCandidateFilter", join_strings(params.pre_processing_candidate_filter, ","));
+    w("MetFragPostProcessingCandidateFilter", join_strings(params.post_processing_candidate_filter, ","));
+    w("MetFragCandidateWriter", join_strings(params.candidate_writer, ","));
+    w("ResultsPath", fwd(results_dir));
+    w("MaximumTreeDepth", std::to_string(params.maximum_tree_depth));
+    w("NumberThreads", std::to_string(params.number_threads));
+    w("UseSmiles", params.use_smiles ? "True" : "False");
+
+    if (!database_path.empty())
+      w("LocalDatabasePath", fwd(database_path));
+
+    return oss.str();
+  }
+
+  std::vector<std::string> collect_metfrag_result_files(
+      const std::string &results_dir,
+      const std::string &sample_name)
+  {
+    std::vector<std::string> candidates = {
+      results_dir + "/" + sample_name + ".csv",
+      results_dir + "/" + sample_name + "_1.csv"
+    };
+
+    try
+    {
+      for (const auto &entry : fs::directory_iterator(results_dir))
+      {
+        if (!entry.is_regular_file())
+          continue;
+        if (entry.path().extension() != ".csv" && entry.path().extension() != ".CSV")
+          continue;
+        std::string stem = entry.path().stem().string();
+        if (stem.rfind(sample_name, 0) == 0)
+          candidates.push_back(entry.path().string());
+      }
+    }
+    catch (...) {}
+
+    std::sort(candidates.begin(), candidates.end());
+    candidates.erase(std::unique(candidates.begin(), candidates.end()), candidates.end());
+
+    std::vector<std::string> existing;
+    for (const auto &cand : candidates)
+    {
+      if (fs::exists(cand))
+        existing.push_back(cand);
+    }
+    return existing;
+  }
 
   std::vector<std::string> split_csv_line(const std::string &line)
   {
@@ -222,31 +378,7 @@ namespace
   {
     std::vector<MetFragRow> out;
 
-    // MetFrag writes {SampleName}.csv; some versions append _1.
-    std::vector<std::string> candidates = {
-        results_dir + "/" + sample_name + ".csv",
-        results_dir + "/" + sample_name + "_1.csv"
-    };
-
-    // Also scan directory for {sample_name}*.csv (requires C++17 filesystem).
-    try
-    {
-      for (const auto &entry : fs::directory_iterator(results_dir))
-      {
-        if (!entry.is_regular_file())
-          continue;
-        if (entry.path().extension() != ".csv" && entry.path().extension() != ".CSV")
-          continue;
-        std::string stem = entry.path().stem().string();
-        if (stem.rfind(sample_name, 0) == 0)
-          candidates.push_back(entry.path().string());
-      }
-    }
-    catch (...) {}
-
-    // Deduplicate.
-    std::sort(candidates.begin(), candidates.end());
-    candidates.erase(std::unique(candidates.begin(), candidates.end()), candidates.end());
+    std::vector<std::string> candidates = collect_metfrag_result_files(results_dir, sample_name);
 
     std::ifstream f;
     for (const auto &cand : candidates)
@@ -525,33 +657,121 @@ namespace
 namespace nta::metfrag_runner
 {
 
+std::vector<std::string> supported_database_types()
+{
+  return kSupportedMetFragDatabaseTypes;
+}
+
+std::string canonicalize_database_type(const std::string &database_type)
+{
+  const std::string needle = to_lower_ascii(trim_ws(database_type));
+  for (const auto &value : kSupportedMetFragDatabaseTypes)
+  {
+    if (to_lower_ascii(value) == needle)
+      return value;
+  }
+
+  std::ostringstream oss;
+  oss << "Unsupported MetFrag database_type '" << database_type << "'. Supported values are: ";
+  for (size_t i = 0; i < kSupportedMetFragDatabaseTypes.size(); ++i)
+  {
+    if (i > 0)
+      oss << ", ";
+    oss << kSupportedMetFragDatabaseTypes[i];
+  }
+  throw std::invalid_argument(oss.str());
+}
+
+MetFragParams canonicalize_and_validate_params(const MetFragParams &params)
+{
+  MetFragParams out = params;
+  out.database_type = canonicalize_database_type(params.database_type);
+
+  if (out.score_types.empty())
+    throw std::invalid_argument("MetFrag score_types must not be empty.");
+  if (out.score_types.size() != out.score_weights.size())
+    throw std::invalid_argument("MetFrag score_types and score_weights must have the same length.");
+  if (out.pre_processing_candidate_filter.empty())
+    throw std::invalid_argument("MetFrag pre_processing_candidate_filter must not be empty.");
+  if (out.post_processing_candidate_filter.empty())
+    throw std::invalid_argument("MetFrag post_processing_candidate_filter must not be empty.");
+  if (out.candidate_writer.empty())
+    throw std::invalid_argument("MetFrag candidate_writer must not be empty.");
+  for (const auto &writer : out.candidate_writer)
+  {
+    if (std::find(kSupportedMetFragCandidateWriters.begin(), kSupportedMetFragCandidateWriters.end(), writer) ==
+        kSupportedMetFragCandidateWriters.end())
+    {
+      throw std::invalid_argument("Unsupported MetFrag candidate_writer '" + writer + "'.");
+    }
+  }
+  if (std::find(out.candidate_writer.begin(), out.candidate_writer.end(), "CSV") == out.candidate_writer.end())
+    throw std::invalid_argument("MetFrag candidate_writer must include 'CSV' for StreamFind result parsing.");
+  if (out.maximum_tree_depth < 1)
+    throw std::invalid_argument("MetFrag maximum_tree_depth must be at least 1.");
+  if (out.number_threads < 1)
+    throw std::invalid_argument("MetFrag number_threads must be at least 1.");
+
+  if (is_local_database_type(out.database_type))
+  {
+    if (trim_ws(out.database_path).empty())
+    {
+      throw std::invalid_argument(
+        "MetFrag database_type '" + out.database_type +
+        "' requires a non-empty database_path."
+      );
+    }
+    if (!fs::exists(out.database_path))
+    {
+      throw std::invalid_argument(
+        "MetFrag local database file does not exist: " + out.database_path
+      );
+    }
+  }
+
+  if (out.database_type == "ChemSpiderRest" &&
+      !has_extra_param(out.extra_params, "ChemSpiderToken"))
+  {
+    throw std::invalid_argument(
+      "MetFrag database_type 'ChemSpiderRest' requires extra_params[['ChemSpiderToken']]."
+    );
+  }
+
+  return out;
+}
+
 void metfrag_screening_impl(
   PROJECT_NON_TARGET_ANALYSIS &nta_data,
     const std::vector<std::string> &analyses_sel,
     const MetFragParams &p)
 {
+  const MetFragParams params = canonicalize_and_validate_params(p);
   const auto &analysis_names = nta_data.analysis_names();
   auto &feature_buffers = nta_data.feature_buffers();
   auto &suspect_buffers = nta_data.suspect_buffers();
   const size_t n_ana = analysis_names.size();
 
   // Ensure run directory exists.
-  std::string run_dir = p.run_dir.empty() ? "." : p.run_dir;
+  std::string run_dir = params.run_dir.empty() ? default_metfrag_run_dir() : params.run_dir;
   try { fs::create_directories(run_dir); }
   catch (const std::exception &e)
   {
     std::cerr << "[metfrag_runner] Failed to create run_dir '" << run_dir << "': " << e.what() << "\n";
   }
+  std::cout << "[metfrag_runner] run_dir: " << run_dir << std::endl;
 
   // Normalise LocalCSV column names once before the feature loop.
-  std::string effective_db_path = p.database_path;
+  std::string effective_db_path = params.database_path;
   if (!effective_db_path.empty())
   {
-    std::string db_type_lc = p.database_type;
-    std::transform(db_type_lc.begin(), db_type_lc.end(), db_type_lc.begin(), ::tolower);
-    if (db_type_lc == "localcsv")
-      effective_db_path = normalize_localcsv_database(effective_db_path, run_dir, p.debug);
+    if (params.database_type == "LocalCSV")
+      effective_db_path = normalize_localcsv_database(effective_db_path, run_dir, params.debug);
   }
+
+  const std::string common_params_template =
+    build_common_params_template(params, effective_db_path, run_dir);
+  const std::string shared_empty_peak_list = default_empty_peak_list_path(run_dir);
+  ensure_empty_peak_list_file(shared_empty_peak_list);
 
   // Reset suspects for all analyses.
   for (size_t ai = 0; ai < n_ana; ++ai)
@@ -576,7 +796,7 @@ void metfrag_screening_impl(
     for (int fi = 0; fi < n_feat; ++fi)
     {
       // Skip filtered features unless explicitly requested.
-      if (!p.filtered && feats.filtered[fi])
+      if (!params.filtered && feats.filtered[fi])
         continue;
 
       // Decode MS2 peak list.
@@ -595,28 +815,24 @@ void metfrag_screening_impl(
 
       // Build safe file-name stem.
       std::string sid         = safe_id(ana, feats.feature[fi]);
-      std::string ms2_path    = run_dir + "/ms2_"     + sid + ".txt";
+      const bool has_ms2 = !ms2_mz.empty();
+      std::string ms2_path    = has_ms2 ? (run_dir + "/ms2_" + sid + ".txt") : shared_empty_peak_list;
       std::string params_path = run_dir + "/metfrag_" + sid + ".params";
       std::string log_path    = run_dir + "/metfrag_" + sid + ".log";
+      std::string debug_path  = run_dir + "/metfrag_" + sid + ".debug.txt";
       std::string sample_name = "metfrag_" + sid;
 
-      // Write MS2 peak list (empty file is valid for MetFrag).
-      if (!ms2_mz.empty())
+      if (has_ms2)
         write_peak_list(ms2_path, ms2_mz, ms2_int);
-      else
-        { std::ofstream f(ms2_path); }
 
       // Write parameter file.
-      write_params_file(params_path, p.database_type, effective_db_path,
-                        p.ppm, p.ppmMS2, p.mzrMS2,
-                        precursor_mass, feats.polarity[fi],
-                        ms2_path, run_dir, sample_name,
-                        p.extra_params);
+      write_params_file(params_path, common_params_template, precursor_mass,
+                        feats.polarity[fi], ms2_path, sample_name);
 
       // Optional debug metadata file.
-      if (p.debug)
+      if (params.debug)
       {
-        std::ofstream dbg(run_dir + "/metfrag_" + sid + ".debug.txt");
+        std::ofstream dbg(debug_path);
         dbg << "analysis="     << ana                << "\n"
             << "feature="      << feats.feature[fi]  << "\n"
             << "polarity="     << feats.polarity[fi]  << "\n"
@@ -628,14 +844,15 @@ void metfrag_screening_impl(
       }
 
       // -- Invoke MetFragCL --------------------------------------------------
-      int status = run_metfrag(p.metfrag_path, p.java_path, params_path, log_path);
+      int status = run_metfrag(params.metfrag_path, params.java_path, params_path, log_path);
 
       // -- Parse output CSV --------------------------------------------------
       std::vector<MetFragRow> rows = parse_metfrag_csv(run_dir, sample_name);
+      std::vector<std::string> csv_paths = collect_metfrag_result_files(run_dir, sample_name);
 
-      if (p.debug)
+      if (params.debug)
       {
-        std::ofstream dbg(run_dir + "/metfrag_" + sid + ".debug.txt", std::ios::app);
+        std::ofstream dbg(debug_path, std::ios::app);
         dbg << "metfrag_exit_status=" << status << "\n"
             << "csv_rows_found=" << rows.size() << "\n";
         if (rows.empty())
@@ -654,11 +871,19 @@ void metfrag_screening_impl(
 
       if (rows.empty())
       {
-        if (p.debug)
+        if (params.debug)
         {
           std::cerr << "[metfrag] No results for feature " << feats.feature[fi]
                     << " (mass=" << precursor_mass
                     << ", status=" << status << ")\n";
+        }
+        if (!params.debug)
+        {
+          if (has_ms2)
+            fs::remove(ms2_path);
+          fs::remove(params_path);
+          for (const auto &csv_path : csv_paths)
+            fs::remove(csv_path);
         }
         continue;
       }
@@ -666,7 +891,7 @@ void metfrag_screening_impl(
       int rank = 1;
       for (const MetFragRow &row : rows)
       {
-        if (rank > p.top_n)
+        if (rank > params.top_n)
           break;
 
         // Decode MetFrag's ExplPeaks into parallel mz/intensity vectors.
@@ -685,7 +910,7 @@ void metfrag_screening_impl(
         double cosine = 0.0;
         if (!db_mz.empty() && !ms2_mz.empty())
           cosine = cosine_similarity(db_mz, db_int, ms2_mz, ms2_int,
-                                     p.ppmMS2, p.mzrMS2, shared);
+                                     params.ppmMS2, params.mzrMS2, shared);
 
         // Mass error (ppm).
         double error_mass = std::numeric_limits<double>::quiet_NaN();
@@ -697,7 +922,7 @@ void metfrag_screening_impl(
         double db_rt_val  = std::numeric_limits<double>::quiet_NaN();
         double error_rt   = std::numeric_limits<double>::quiet_NaN();
         if (!std::isnan(db_rt_val) &&
-            std::abs(static_cast<double>(feats.rt[fi]) - db_rt_val) > p.sec)
+            std::abs(static_cast<double>(feats.rt[fi]) - db_rt_val) > params.sec)
         {
           ++rank;
           continue;
@@ -707,7 +932,7 @@ void metfrag_screening_impl(
 
         // Assign identification level.
         bool rt_match  = (!std::isnan(db_rt_val) &&
-                           std::abs(static_cast<double>(feats.rt[fi]) - db_rt_val) <= p.sec);
+                           std::abs(static_cast<double>(feats.rt[fi]) - db_rt_val) <= params.sec);
         bool ms2_match = (shared > 0);
         int  id_level  = 4;
         if      (rt_match && ms2_match) id_level = 1;
@@ -750,6 +975,17 @@ void metfrag_screening_impl(
         suspect_buffers[ai].append(s);
         ++rank;
         ++n_suspects_found;
+      }
+
+      if (!params.debug)
+      {
+        if (has_ms2)
+          fs::remove(ms2_path);
+        fs::remove(params_path);
+        for (const auto &csv_path : csv_paths)
+          fs::remove(csv_path);
+        if (status == 0)
+          fs::remove(log_path);
       }
     } // features
 

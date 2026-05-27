@@ -54,5 +54,9 @@ A \code{Method} object of class \code{Method_NonTargetAnalysis_FindFeatures}.
 }
 \description{
 Create a \code{Method} child object for the native non-target
-feature-finding routine.
+feature-detection step. In LC/HRMS non-target analysis, this routine scans
+chromatographic signal, estimates a local baseline, groups nearby mass
+traces within the specified m/z tolerance, and proposes chromatographic
+peaks that become the initial feature table used by later alignment,
+correction, and identification steps.
 }

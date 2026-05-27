@@ -21,6 +21,8 @@ R6 child of \code{ProjectMassSpec} exposing the non-target analysis-focused NTS 
 \item \href{#method-ProjectNonTargetAnalysis-get_features_ms1}{\code{ProjectNonTargetAnalysis$get_features_ms1()}}
 \item \href{#method-ProjectNonTargetAnalysis-get_features_ms2}{\code{ProjectNonTargetAnalysis$get_features_ms2()}}
 \item \href{#method-ProjectNonTargetAnalysis-get_features_count}{\code{ProjectNonTargetAnalysis$get_features_count()}}
+\item \href{#method-ProjectNonTargetAnalysis-get_matrix_suppression}{\code{ProjectNonTargetAnalysis$get_matrix_suppression()}}
+\item \href{#method-ProjectNonTargetAnalysis-plot_matrix_suppression}{\code{ProjectNonTargetAnalysis$plot_matrix_suppression()}}
 \item \href{#method-ProjectNonTargetAnalysis-plot_features_count}{\code{ProjectNonTargetAnalysis$plot_features_count()}}
 \item \href{#method-ProjectNonTargetAnalysis-get_features_profile}{\code{ProjectNonTargetAnalysis$get_features_profile()}}
 \item \href{#method-ProjectNonTargetAnalysis-plot_features_profile}{\code{ProjectNonTargetAnalysis$plot_features_profile()}}
@@ -42,6 +44,7 @@ R6 child of \code{ProjectMassSpec} exposing the non-target analysis-focused NTS 
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="close"><a href='../../StreamFind/html/Project.html#method-Project-close'><code>StreamFind::Project$close()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="copy"><a href='../../StreamFind/html/Project.html#method-Project-copy'><code>StreamFind::Project$copy()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="delete_cache"><a href='../../StreamFind/html/Project.html#method-Project-delete_cache'><code>StreamFind::Project$delete_cache()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_audit"><a href='../../StreamFind/html/Project.html#method-Project-get_audit'><code>StreamFind::Project$get_audit()</code></a></span></li>
@@ -405,6 +408,89 @@ object.}
 }
 }
 \if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectNonTargetAnalysis-get_matrix_suppression"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-get_matrix_suppression}{}}}
+\subsection{Method \code{get_matrix_suppression()}}{
+Return TIC-based matrix-suppression profiles for selected analyses.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$get_matrix_suppression(
+  analyses = NULL,
+  rtWindowVal = 10,
+  refBlankReplicate = NA_character_
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{rtWindowVal}}{Numeric (length 1) with the retention time window value (in seconds).}
+
+\item{\code{refBlankReplicate}}{Optional character scalar naming the replicate whose assigned blank replicate(s) should be used as the reference for matrix-suppression calculations. Use \code{NA} to use each analysis' assigned blank.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectNonTargetAnalysis-plot_matrix_suppression"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-plot_matrix_suppression}{}}}
+\subsection{Method \code{plot_matrix_suppression()}}{
+Plot TIC-based matrix-suppression profiles for selected analyses.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectNonTargetAnalysis$plot_matrix_suppression(
+  analyses = NULL,
+  rtWindowVal = 10,
+  refBlankReplicate = NA_character_,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  colorBy = "analyses",
+  legendNames = NULL,
+  downsize = 1,
+  interactive = TRUE,
+  showLegend = TRUE,
+  renderEngine = "webgl"
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{rtWindowVal}}{Numeric (length 1) with the retention time window value (in seconds).}
+
+\item{\code{refBlankReplicate}}{Optional character scalar naming the replicate whose assigned blank replicate(s) should be used as the reference for matrix-suppression calculations. Use \code{NA} to use each analysis' assigned blank.}
+
+\item{\code{xLab}}{A string with the title for the x axis.}
+
+\item{\code{yLab}}{A string with the title for the y axis.}
+
+\item{\code{yLab}}{A string with the title for the y axis.}
+
+\item{\code{title}}{A string with the title.}
+
+\item{\code{colorBy}}{Character (length 1). One of \code{analyses} (the default), \code{polarities}, \code{levels}, \code{targets} or \code{replicates}.
+Mixed use (e.g. \code{analyses+polarities}) is also possible.}
+
+\item{\code{legendNames}}{A character vector with the same length as the targets or \code{TRUE} or \code{FALSE} for using the name in
+the added targets as legend of the plot.}
+
+\item{\code{downsize}}{An integer of length one to downsize the TIC plot. The default is 1.}
+
+\item{\code{interactive}}{Logical (length 1). When \code{TRUE}, the data is plotted interactively using \pkg{plotly}.}
+
+\item{\code{showLegend}}{Logical (length 1). Set to \code{TRUE} to show legend.}
+
+\item{\code{renderEngine}}{The engine to render the data. The default is "webgl".}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
 \if{html}{\out{<a id="method-ProjectNonTargetAnalysis-plot_features_count"></a>}}
 \if{latex}{\out{\hypertarget{method-ProjectNonTargetAnalysis-plot_features_count}{}}}
 \subsection{Method \code{plot_features_count()}}{
@@ -460,7 +546,8 @@ Return feature-group profiles across analyses.
   ppm = 20,
   sec = 60,
   millisec = 5,
-  filtered = FALSE
+  filtered = FALSE,
+  corrected = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -507,6 +594,8 @@ time values (in milliseconds).}
 in milliseconds.}
 
 \item{\code{filtered}}{Logical (length 1). When \code{TRUE}, filtered features/groups are considered.}
+
+\item{\code{corrected}}{Logical (length 1). If \code{TRUE}, intensities are multiplied by the feature \code{correction} values before aggregation or plotting.}
 }
 \if{html}{\out{</div>}}
 }
@@ -528,6 +617,7 @@ Plot feature-group profiles across analyses or replicates.
   sec = 60,
   millisec = 5,
   filtered = FALSE,
+  corrected = FALSE,
   groupBy = "analysis",
   normalized = FALSE,
   yLab = NULL,
@@ -580,6 +670,8 @@ time values (in milliseconds).}
 in milliseconds.}
 
 \item{\code{filtered}}{Logical (length 1). When \code{TRUE}, filtered features/groups are considered.}
+
+\item{\code{corrected}}{Logical (length 1). If \code{TRUE}, intensities are multiplied by the feature \code{correction} values before aggregation or plotting.}
 
 \item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
 

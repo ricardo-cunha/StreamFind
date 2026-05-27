@@ -6,6 +6,7 @@
 \alias{get_db.Project}
 \alias{get_project_id.Project}
 \alias{validate.Project}
+\alias{close.Project}
 \alias{get_metadata.Project}
 \alias{set_metadata.Project}
 \alias{get_domain.Project}
@@ -33,6 +34,8 @@
 \method{get_project_id}{Project}(x)
 
 \method{validate}{Project}(x)
+
+\method{close}{Project}(con, ...)
 
 \method{get_metadata}{Project}(x)
 
@@ -91,6 +94,8 @@ S3 wrappers for \code{Project} R6 methods providing a thin functional interface.
 \item \code{get_project_id(Project)}: Get the active project identifier.
 
 \item \code{validate(Project)}: Validate the project schema and row state.
+
+\item \code{close(Project)}: Close the shared DuckDB handle for this project object.
 
 \item \code{get_metadata(Project)}: Get the project metadata.
 

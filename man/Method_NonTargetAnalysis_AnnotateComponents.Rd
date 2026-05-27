@@ -31,6 +31,9 @@ patterns.}
 A \code{Method} object of class \code{Method_NonTargetAnalysis_AnnotateComponents}.
 }
 \description{
-Create a \code{Method} child object for annotating isotopes,
-adducts, and in-source fragments within components.
+Create a \code{Method} child object for annotating ion-relationship
+patterns inside previously created components. The native algorithm checks
+expected isotope spacing, charge states, and mass differences consistent
+with adducts and in-source fragments, helping translate raw NTA peak lists
+into chemically meaningful ion annotations.
 }

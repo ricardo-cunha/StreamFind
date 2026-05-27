@@ -217,6 +217,14 @@ rcpp_project_non_target_analysis_get_features_count <- function(nta_xptr, analys
     .Call(`_StreamFind_rcpp_project_non_target_analysis_get_features_count`, nta_xptr, analyses, include_filtered)
 }
 
+rcpp_project_nta_get_matrix_suppression <- function(nta_xptr, analyses = as.character( c("")), rtWindowVal = 10.0, refBlankReplicate = NULL) {
+    .Call(`_StreamFind_rcpp_project_nta_get_matrix_suppression`, nta_xptr, analyses, rtWindowVal, refBlankReplicate)
+}
+
+rcpp_project_nta_correct_matrix_suppression <- function(nta_xptr, mpRtWindow = 10.0, refBlankReplicate = NULL) {
+    .Call(`_StreamFind_rcpp_project_nta_correct_matrix_suppression`, nta_xptr, mpRtWindow, refBlankReplicate)
+}
+
 rcpp_project_non_target_analysis_get_suspects <- function(nta_xptr, analyses, features, groups, mass, mz, rt, mobility, ppm, sec, millisec) {
     .Call(`_StreamFind_rcpp_project_non_target_analysis_get_suspects`, nta_xptr, analyses, features, groups, mass, mz, rt, mobility, ppm, sec, millisec)
 }
@@ -289,8 +297,8 @@ rcpp_project_nta_filter_features_ms2 <- function(nta_xptr, top = 0L, minIntensit
     .Call(`_StreamFind_rcpp_project_nta_filter_features_ms2`, nta_xptr, top, minIntensity, relMinIntensity, blankClean, mzClust, blankPresenceThreshold, globalPresenceThreshold)
 }
 
-rcpp_project_nta_metfrag_screening <- function(nta_xptr, metfrag_path, database_type = "LocalCSV", database_path = "", analyses = as.character( c("")), ppm = 5.0, sec = 10.0, ppmMS2 = 10.0, mzrMS2 = 0.008, top_n = 1L, filtered = FALSE, java_path = "java", run_dir = "", debug = FALSE, extra_params = NULL) {
-    .Call(`_StreamFind_rcpp_project_nta_metfrag_screening`, nta_xptr, metfrag_path, database_type, database_path, analyses, ppm, sec, ppmMS2, mzrMS2, top_n, filtered, java_path, run_dir, debug, extra_params)
+rcpp_project_nta_metfrag_screening <- function(nta_xptr, metfrag_path, database_type = "PubChem", database_path = "", analyses = as.character( c("")), ppm = 5.0, sec = 10.0, ppmMS2 = 10.0, mzrMS2 = 0.008, top_n = 1L, score_types = as.character( c("FragmenterScore")), score_weights = as.numeric( c(1.0)), pre_processing_candidate_filter = as.character( c("UnconnectedCompoundFilter", "IsotopeFilter")), post_processing_candidate_filter = as.character( c("InChIKeyFilter")), maximum_tree_depth = 2L, number_threads = 1L, use_smiles = TRUE, filtered = FALSE, java_path = "java", run_dir = "", debug = FALSE, extra_params = NULL) {
+    .Call(`_StreamFind_rcpp_project_nta_metfrag_screening`, nta_xptr, metfrag_path, database_type, database_path, analyses, ppm, sec, ppmMS2, mzrMS2, top_n, score_types, score_weights, pre_processing_candidate_filter, post_processing_candidate_filter, maximum_tree_depth, number_threads, use_smiles, filtered, java_path, run_dir, debug, extra_params)
 }
 
 rcpp_project_nta_assign_transformation_products <- function(suspects, transformation_products, chromatographic_phase = "reverse_phase", mzrMS2 = 0.008) {

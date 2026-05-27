@@ -17,16 +17,29 @@ Method_NonTargetAnalysis_FilterSuspects(
 \arguments{
 \item{names}{Optional character vector of suspect names to match.}
 
-\item{minScore, maxErrorRT, maxErrorMass, minCosineSimilarity}{Optional numeric
-scalar thresholds. Use \code{NA_real_} to disable a threshold.}
+\item{minScore}{Optional numeric(1) minimum suspect score to keep. Use
+\code{NA_real_} to disable.}
+
+\item{maxErrorRT}{Optional numeric(1) maximum absolute retention-time error
+allowed for a suspect match. Use \code{NA_real_} to disable.}
+
+\item{maxErrorMass}{Optional numeric(1) maximum absolute mass error allowed
+for a suspect match. Use \code{NA_real_} to disable.}
 
 \item{idLevels}{Optional integer vector of identification levels to keep.}
 
 \item{minSharedFragments}{Integer(1) minimum number of shared fragments.}
+
+\item{minCosineSimilarity}{Optional numeric(1) minimum cosine similarity for
+MS2-supported suspect matches. Use \code{NA_real_} to disable.}
 }
 \value{
 A \code{Method} object of class \code{Method_NonTargetAnalysis_FilterSuspects}.
 }
 \description{
-Create a \code{Method} child object for filtering suspect hits.
+Create a \code{Method} child object for refining suspect-screening
+results after the initial match step. It applies score, RT error, mass
+error, fragment evidence, cosine similarity, and identification-level
+thresholds so downstream NTA interpretation focuses on the most defensible
+candidate assignments.
 }

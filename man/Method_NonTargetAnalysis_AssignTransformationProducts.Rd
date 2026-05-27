@@ -24,6 +24,9 @@ A \code{Method} object of class
 \code{Method_NonTargetAnalysis_AssignTransformationProducts}.
 }
 \description{
-Create a \code{Method} child object for assigning transformation
-products to suspect hits.
+Create a \code{Method} child object for assigning expected
+transformation products to detected features or suspect hits. This workflow
+uses a supplied precursor-product table together with chromatographic
+plausibility and optional MS2 fragment support to propose environmentally
+relevant parent-product relationships in NTA studies.
 }

@@ -23,3 +23,4 @@
 ^.*\.json$
 ^.*\.rds$
 ^.*\.sqlite$
+^LICENSE\.md$

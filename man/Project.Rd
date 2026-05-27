@@ -15,6 +15,7 @@ Internal DuckDB-backed StreamFind project runtime.
 \item \href{#method-Project-get_db}{\code{Project$get_db()}}
 \item \href{#method-Project-get_project_id}{\code{Project$get_project_id()}}
 \item \href{#method-Project-validate}{\code{Project$validate()}}
+\item \href{#method-Project-close}{\code{Project$close()}}
 \item \href{#method-Project-get_metadata}{\code{Project$get_metadata()}}
 \item \href{#method-Project-set_metadata}{\code{Project$set_metadata()}}
 \item \href{#method-Project-get_domain}{\code{Project$get_domain()}}
@@ -93,6 +94,16 @@ Get the active project identifier.
 Validate the project schema and row state.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Project$validate()}\if{html}{\out{</div>}}
+}
+
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-Project-close"></a>}}
+\if{latex}{\out{\hypertarget{method-Project-close}{}}}
+\subsection{Method \code{close()}}{
+Close the shared DuckDB handle for this project object.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{Project$close()}\if{html}{\out{</div>}}
 }
 
 }

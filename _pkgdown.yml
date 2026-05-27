@@ -7,77 +7,100 @@ template:
   assets:
     - pkgdown/extra.css
 
-reference:
+home:
+  title: StreamFind
+  description: >
+    DuckDB-backed project framework for mass spectrometry and non-target
+    analysis workflows in R.
 
-- title: Introduction
-  desc: >
-    StreamFind is built with two main class systems: R6 and S3. The R6 system is used for data processing engine classes, which are used for project managing. The S3 system is used for classes to manage metadata, analyses, data processing, results, audit trail and configuration. Below all class constructors and methods exposed to the user are listed.
-- title: Engines (R6)
-  contents:
-  - Engine
-  - MassSpecEngine
-  - RamanEngine
-  - StatisticEngine
-- title: Metadata (S3)
-  desc: >
-    Metadata classes are used to manage metadata (e.g., date, author and description) of main classes, such as the R6 engine classes.
-  contents:
-  - matches("Metadata")
-- title: Analyses (S3)
-  desc: >
-    Analyses represent data (i.e., actual data or links to raw data files) and results. Analyses child classes are implemented for each type of data.
-  contents:
-  - "Analyses"
-- subtitle: Mass Spectrometry Analyses
-  contents:
-  - "MassSpecAnalyses"
-- subtitle: Raman Spectroscopy Analyses
-  contents:
-  - "RamanAnalyses"
-- subtitle: Statistic Analyses
-  contents:
-  - "StatisticAnalyses"
-- title: Data Processing (S3)
-  desc: >
-    Data processing is governed by the Workflow class which consists of a sequence of ProcessingStep class objects. Processing methods for a specific type of data are implemented as child classes of the ProcessingStep class.
-  contents:
-  - Workflow
-  - ProcessingStep
-- subtitle: Mass Spectrometry Methods
-  contents:
-  - starts_with("MassSpecMethod_")
-- subtitle: Raman Spectroscopy Methods
-  contents:
-  - starts_with("RamanMethod_")
-- subtitle: Statistic Methods
-  contents:
-  - starts_with("StatisticMethod_")
-- title: Results (S3)
-  desc: >
-    The Results classes represent results of specific data processing methods. Results child classes are implemented for each processing method but can be reused/updated across processing methods. For instance, normalizing averaged spectra will update the spectra results. 
-  contents:
-  - Results
-- subtitle: Mass Spectrometry Results
-  contents:
-  - starts_with("MassSpecResults_")
-- subtitle: Raman Spectroscopy Results
-  contents:
-  - starts_with("RamanResults_")
-- subtitle: Statistical Analyses Results
-  contents:
-  - starts_with("StatisticResults_")
-- title: Configuration (S3)
-  desc: >
-    Configuration is governed by Config class which consists of a list of ConfigParameter class objects. Childs of both Config and ConfigParameter classes are implemented for specific use cases.
-  contents:
-  - matches("Config")
-- title: Audit Trail (S3)
-  desc: >
-    Audit trail is governed by a specific class, registering all changes made to the data within an `Engine`.
-  contents:
-  - matches("AuditTrail")
-- title: Other Functions
-  contents:
-  - convert_ms_files
-  - trim_ms_files_spectra
-  - run_app
+navbar:
+  structure:
+    left:
+      - home
+      - reference
+      - articles
+      - news
+    right:
+      - github
+  components:
+    home:
+      text: Home
+      href: index.html
+    reference:
+      text: Reference
+      href: reference/index.html
+    articles:
+      text: Articles
+      menu:
+        - text: Package Overview
+          href: articles/StreamFind.html
+    news:
+      text: News
+      href: news/index.html
+    github:
+      icon: fab fa-github
+      href: https://github.com/odea-project/StreamFind
+
+reference:
+  - title: Project Framework
+    desc: >
+      Core classes for persistent project state, workflow definition, and
+      method metadata.
+    contents:
+      - Project
+      - ProjectS3
+      - Workflow
+      - Method
+
+  - title: Open Project Classes
+    desc: >
+      Constructors for opening or creating the main project child classes.
+    contents:
+      - open_ProjectMassSpecSpectra
+      - open_ProjectMassSpecChromatograms
+      - open_ProjectNonTargetAnalysis
+      - projects_overview
+
+  - title: Mass Spectrometry Projects
+    desc: >
+      DuckDB-backed project interfaces for raw spectra and chromatogram access.
+    contents:
+      - ProjectMassSpec
+      - ProjectMassSpecS3
+      - ProjectMassSpecSpectra
+      - ProjectMassSpecSpectraS3
+      - ProjectMassSpecChromatograms
+      - ProjectMassSpecChromatogramsS3
+
+  - title: Non-Target Analysis Project
+    desc: >
+      Project interface for native feature finding, screening, correction, and
+      result inspection workflows.
+    contents:
+      - ProjectNonTargetAnalysis
+      - ProjectNonTargetAnalysisS3
+
+  - title: Non-Target Analysis Methods
+    desc: >
+      Workflow method constructors for the native non-target-analysis backend.
+    contents:
+      - starts_with("Method_NonTargetAnalysis_")
+
+  - title: Templates and Helpers
+    desc: >
+      Utility functions for workflow setup, template generation, and data
+      preparation.
+    contents:
+      - get_template_suspect_screening_csv
+      - get_suspects_screening_csv
+      - get_template_transformation_products_screening_csv
+      - search_transformation_products_biotransformer
+      - load_template_engine
+      - convert_ms_files
+      - trim_ms_files_spectra
+      - db_helpers
+      - run_app
+
+  - title: Package
+    contents:
+      - StreamFind-package

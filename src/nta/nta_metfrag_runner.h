@@ -21,19 +21,33 @@ namespace nta
     struct MetFragParams
     {
       std::string metfrag_path;          ///< Full path to MetFragCL JAR or native executable.
-      std::string database_type;         ///< MetFrag database type (e.g. "LocalCSV", "PubChem").
-      std::string database_path;         ///< Path to local database file (LocalCSV / LocalSDF).
+      std::string database_type;         ///< MetFrag database type: KEGG, PubChem, ExtendedPubChem, ChemSpiderRest, LocalSDF, LocalPSV, or LocalCSV.
+      std::string database_path;         ///< Path to local database file (LocalCSV / LocalPSV / LocalSDF).
       double      ppm            = 5.0;  ///< MS1 precursor mass tolerance (ppm).
       double      sec            = 10.0; ///< RT tolerance for post-filtering (seconds).
       double      ppmMS2         = 10.0; ///< MS2 fragment tolerance (ppm).
       double      mzrMS2         = 0.008;///< MS2 minimum absolute m/z tolerance.
       int         top_n          = 1;    ///< Max candidates kept per feature (top-ranked by score).
+      std::vector<std::string> score_types = {"FragmenterScore"}; ///< MetFrag score types.
+      std::vector<double> score_weights = {1.0}; ///< MetFrag score weights aligned with score_types.
+      std::vector<std::string> pre_processing_candidate_filter = {"UnconnectedCompoundFilter", "IsotopeFilter"}; ///< Candidate pre-filters.
+      std::vector<std::string> post_processing_candidate_filter = {"InChIKeyFilter"}; ///< Candidate post-filters.
+      std::vector<std::string> candidate_writer = {"CSV"}; ///< Output writers to request from MetFrag.
+      int         maximum_tree_depth = 2; ///< Maximum fragmentation tree depth.
+      int         number_threads = 1; ///< Number of threads requested from MetFrag.
+      bool        use_smiles = true; ///< Use SMILES rather than InChI for fragmentation.
       bool        filtered       = false;///< Include filtered features when true.
       std::string java_path      = "java";///< Path to Java executable (used in JAR mode only).
       std::string run_dir;               ///< Directory for temp files and logs; created if absent.
       bool        debug          = false;///< Write per-feature debug metadata when true.
       std::vector<std::pair<std::string, std::string>> extra_params; ///< Additional MetFrag parameters (override-last).
     };
+
+    std::vector<std::string> supported_database_types();
+
+    std::string canonicalize_database_type(const std::string &database_type);
+
+    MetFragParams canonicalize_and_validate_params(const MetFragParams &params);
 
     /**
      * Run MetFragCL screening for all (or selected) analyses in nta_data.

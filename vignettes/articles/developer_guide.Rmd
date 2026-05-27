@@ -1,212 +1,166 @@
 ---
-title: 'StreamFind Developer Guide'
-subtitle: |
-  | Implementation of processing methods and algorithms
-  | <br>
-author:
-  name: Ricardo Cunha
-  email: cunha@iuta.de
-date: "`r format(Sys.time(), '%d %B, %Y')`"
+title: "Developer Guide"
 output:
-  bookdown::html_document2:
-    fig_caption: true
+  rmarkdown::html_vignette:
     toc: true
-    number_sections: true
-    toc_float: true
 vignette: >
-  %\VignetteEncoding{UTF-8}
-  %\VignetteIndexEntry{StreamFind Developer Guide}
+  %\VignetteIndexEntry{Developer Guide}
   %\VignetteEngine{knitr::rmarkdown}
-editor_options: 
-  chunk_output_type: console
+  %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include=FALSE}
-# Libraries
-library(knitr)
-library(kableExtra)
-library(magrittr)
-library(ggplot2)
-library(plotly)
-library(StreamFind)
-
-# Global options
+```{r, include = FALSE}
 knitr::opts_chunk$set(
-  echo = TRUE,
-  fig.align = "center",
-  fig.width = 9,
-  results = "asis",
-  results = "markup",
-  message = FALSE,
-  warning = FALSE
+  collapse = TRUE,
+  comment = "#>"
 )
-
-options(
-  DT.options = list(
-    dom = "lfrtip",
-    autoWidth = TRUE,
-    pageLength = 10,
-    scrollX = TRUE,
-    lengthMenu = c(10, 20, 50, 75, 100),
-    initComplete = htmlwidgets::JS(
-      "function(settings, json) {",
-      "$(this.api().table().body()).css({'font-size': '12px'});",
-      "$(this.api().table().body()).css({'white-space': 'nowrap'});",
-      "}"
-    )
-  )
-)
-
-# Working directory
-path_wd <- getwd()
-
 ```
 
-```{r resources, include=FALSE}
-# MS files
-all_files <- StreamFindData::get_ms_file_paths()
-files <- all_files[grepl("blank|influent|o3sw", all_files)]
+# Overview
 
-# Chemicals database
-db <- StreamFindData::get_ms_tof_spiked_chemicals()
-db <- db[grepl("S", db$tag), ]
-cols <- c("name", "formula", "mass", "rt", "tag")
-db <- db[, cols, with = FALSE]
-db
+This article summarizes the current StreamFind package architecture after the
+transition from legacy analysis containers to persistent project classes. The
+main design goal is that the R API, the native C++ backend, and the Shiny app
+all operate on the same DuckDB-backed project state.
+
+# Core architecture
+
+## Project hierarchy
+
+The public project hierarchy is:
+
+- `Project`
+- `ProjectMassSpec`
+- `ProjectMassSpecSpectra`
+- `ProjectMassSpecChromatograms`
+- `ProjectNonTargetAnalysis`
+
+`Project` owns the shared database connection, metadata, audit trail, cache, and
+workflow serialization. Domain-specific project classes layer additional native
+helpers and S3/R6 convenience methods on top of that base.
+
+## Workflow model
+
+Workflows are metadata containers:
+
+- `Method` describes one processing step and its validated parameters
+- `Workflow` is an ordered list of `Method` objects
+
+Execution is delegated back to the owning project class through `run_method()`
+and `run_workflow()`.
+
+## Native backend
+
+Project classes are backed by Rcpp-exposed native objects. The main native
+implementation areas are:
+
+- `src/project/` for shared project persistence and cache logic
+- `src/mass_spec/` for shared Mass Spec import and raw-data helpers
+- `src/nta/` for non-target analysis algorithms and project APIs
+
+# Package layout
+
+The current source layout is broadly:
+
+- `R/class_Project*.R` for project R6 and S3 front-ends
+- `R/class_Method*.R` and `R/class_Workflow.R` for workflow metadata
+- `R/class_MethodsNonTargetAnalysis.R` for native NTA method constructors,
+  validation, and `run.*` dispatch
+- `R/fct_open_project_classes.R` for public `open_<ProjectClass>()` helpers
+- `src/rcpp_project*_export.cpp` for Rcpp bridges
+- `src/nta/*.cpp` and `src/nta/*.h` for native NTA implementations
+- `R/app_*` for the Shiny app modules
+
+# Public extension pattern
+
+## Add a new project-owned method
+
+For a new `ProjectNonTargetAnalysis` processing step, the usual path is:
+
+1. Add a `Method_NonTargetAnalysis_<Name>()` constructor in
+   `R/class_MethodsNonTargetAnalysis.R`.
+2. Add `validate_object.Method_NonTargetAnalysis_<Name>()`.
+3. Add `run.Method_NonTargetAnalysis_<Name>()` so the method can be executed by
+   `run_method()` and `run_workflow()`.
+4. Add or extend an Rcpp export in `src/rcpp_project_nta_export.cpp`.
+5. Implement the native algorithm in `src/nta/`.
+6. Expose the project-facing native entry point from `PROJECT_NON_TARGET_ANALYSIS`
+   in `src/nta/nta.h` and `src/nta/nta.cpp`.
+
+The method constructor should describe:
+
+- the public method name
+- required predecessor steps
+- the owning project class
+- parameter defaults
+- developer and reference metadata
+
+## Add a new project getter or plot helper
+
+If the new capability is a retrieval or visualization helper rather than a
+workflow step, the usual path is:
+
+1. Add the native project method in C++ if data access is backend-owned.
+2. Add the Rcpp wrapper.
+3. Add the S3 function in the appropriate `R/class_Project*.R` file.
+4. Add the matching R6 convenience wrapper when appropriate.
+5. Document the new interface and, if relevant, surface it in the app.
+
+# Persistence and caching
+
+Unlike the older in-memory workflow style, the current framework stores project
+state in DuckDB. This has several consequences:
+
+- methods should write reusable outputs back into project-owned tables
+- workflows should be serializable and reloadable
+- expensive computations can use project cache entries
+- app sessions and R sessions should see the same project state
+
+For mutating NTA feature algorithms, the existing project methods frequently use
+cached execution helpers before saving updated feature tables back to the
+project.
+
+# App integration
+
+The app is no longer a separate orchestration layer. It consumes the same
+project metadata and method registry as the R API. For developers, this means:
+
+- new project classes should be discoverable through `projects_overview()`
+- new project methods should have clean metadata and validation
+- results should be readable through project getters so app modules can consume
+  them directly
+
+# Documentation pattern
+
+When adding or changing functionality, keep these layers aligned:
+
+- roxygen for R6 and S3 interfaces
+- method constructor documentation
+- relevant articles in `vignettes/articles/`
+- `_pkgdown.yml` navigation and reference grouping when needed
+
+# Minimal example: inspect the project registry
+
+```{r}
+StreamFind::projects_overview()
 ```
 
-<style>
-pre {
-  overflow-x: auto;
-}
-pre code {
-  word-wrap: normal;
-  white-space: pre;
-}
-</style>
+# Minimal example: inspect available NTA methods
 
-<br>
-
-<br>
-
-***
-
-# StreamFind
-
-The StreamFind is an R package and can be used for data management, processing, visualization and reporting. This guide 
-uses mass spectrometry (MS) data as example and aims to instruct developers to implement new processing modules and 
-additional processing algorithms for new or existing processing methods in StreamFind.
-
-## Setup
-
-The R package is in the [StreamFind GitHub repository](https://github.com/odea-project/StreamFind) of the 
-[ODEA Project](https://github.com/odea-project). For development, the recommendation is to download the repository 
-locally using [git](https://git-scm.com/) tracking for version control. The [GitHub desktop](https://desktop.github.com/) 
-tool can be used for more easily install and configure git with your GitHub account, which is recommended for authoring 
-contributions. Since it is an R package, the [RStudio](https://posit.co/products/open-source/rstudio/) IDE is 
-recommended for development. Yet, others (e.g., [VS Code](https://code.visualstudio.com/download)) will also work. When 
-using RStudio, the repository can be downloaded via new project, selecting version control, then git and finally adding 
-the GitHub *url* https://github.com/odea-project/StreamFind. This should create a local image of the StreamFind repository 
-directly with git tracking, if git or GitHub desktop were properly installed and configured. When using RStudio, the 
-project should directly be identified as package development where all tools are available to support development. We 
-recommend setting the *Use devtools package functions if available* and *generate documentation via Roxygen* (in the 
-configure bottom you select all options) located in the *Build* tab under the *Configure Build Tools...*. For other 
-IDEs, we recommend using the package [devtools](https://www.r-project.org/nosvn/pandoc/devtools.html). Considering that 
-the local image of the StreamFind repository is installed with git tracking, the first step for development is to create 
-a dedicated branch for implementation of new processing modules and/or algorithms. The master branch should not be 
-changed directly but modified by pull requests from the dedicated development branch, giving the opportunity for code 
-revision.
-
-## Structure
-
-The streamFind R package is centered around the [R6](https://r6.r-lib.org/index.html) class system, which brings object 
-oriented programming to R. For MS, the [MassSpecEngine](https://odea-project.github.io/StreamFind/reference/MassSpecEngine.html) 
-R6 class is used for management of the `Metadata`, `MassSpecAnalyses`, `MassSpecResults`, `AuditTrail` and `Config` class objects.
-
-```{r create-empty-ms, results='markup'}
-# Create an Engine child class for MS data.
-ms <- MassSpecEngine$new()
-
-# Print method. Note that MS data files were not yet added!
-ms
+```{r}
+nta_methods <- StreamFind::projects_overview("ProjectNonTargetAnalysis")$processing_methods
+head(nta_methods)
 ```
 
-Under development...
+# Current development direction
 
-<!-- For implementation of processing methods, the [S7](https://rconsortium.github.io/S7/index.html) class *ProcessingStep*  -->
-<!-- is used to dispatch settings to processing methods. See article [Evaluation of Wastewater Ozonation with Mass Spectrometry](https://odea-project.github.io/StreamFind/articles/demo_ozonation_project.html) for demonstration of usage.  -->
-<!-- In essence, a given algorithm to be applied to a processing method is added to the *MassSpecEngine* or to a *Workflow*  -->
-<!-- object as a *ProcessingStep* which is then used to process the data with the defined settings or parameters. The  -->
-<!-- structure of a *ProcessingStep* is exemplified below for the algorithm `openms` to find features in MS data. -->
+The current framework emphasizes:
 
-<!-- ```{r example-settings, results='markup'} -->
-<!-- ffs <- MassSpecSettings_FindFeatures_openms() -->
+- project-backed reproducibility
+- native algorithms with explicit method metadata
+- a shared API surface between R and the app
+- clearer separation between raw-data access, workflow execution, and result
+  inspection
 
-<!-- ffs -->
-<!-- ``` -->
-
-<!-- As shown, the constructor of a *ProcessingStep* is a function always including `[engine name upper cammel case]Settings_[method name upper cammel case]_[algorithm name]`; More details are given in the Semantics (\@ref(semantics)). Then, the *ProcessingStep* can  -->
-<!-- be directly applied to the *MassSpecEngine* or used to assemble an S7 class *Workflow* object. -->
-
-<!-- ```{r add-settings, results='markup'} -->
-<!-- workflow <- Workflow(list(ffs)) -->
-
-<!-- workflow -->
-<!-- ``` -->
-
-<!-- Alternatively, the *ProcessingStep* can be saved as a JSON string and imported from a JSON file, as demonstrated below. -->
-
-<!-- ```{r save-settings, results='markup'} -->
-<!-- save(ffs, format = "json", name = "ffs") -->
-<!-- ``` -->
-
-<!-- ```{r show-json, results='markup'} -->
-<!-- jsonlite::prettify(readLines("ffs.json")) -->
-<!-- ``` -->
-
-<!-- ```{r import-settings, results='markup'} -->
-<!-- ffs <- read(ProcessingStep(), "ffs.json") -->
-
-<!-- # "openms" replaced by "xcms3_centwave" -->
-<!-- ffs -->
-<!-- ``` -->
-
-<!-- The use of the S3 object system for *ProcessingStep* gives flexibility to the list of parameters, meaning that each parameter entry can be a single numeric value, a vector of strings or even a full data.frame if required. Each *ProcessingStep* constructor (i.e., `[engine name upper cammel case]Settings_[method name upper cammel case]_[algorithm name]`) has a dedicated validation method to ensure that the parameters and metadata are in conformity (as shown below). The validation of a *ProcessingStep* is always performed before applying it to a processing method. -->
-
-<!-- ```{r validate-settings, results='markup'} -->
-<!-- validate(ffs) -->
-<!-- ``` -->
-
-<!-- Besides the S3 class *ProcessingStep*, the *ProcessingStep* object receives other class names that are used for S3 method dispatchment (i.e., direct the object to the dedicated S3 method where the actual processing algorithm is applied). Below we show the classes of the `ffs` *ProcessingStep*. The class *patRoon* means that the algorithm `openms` is applied via the package [patRoon](https://github.com/rickhelmus/patRoon). The class *MassSpecSettings_FindFeatures_openms* directs the object to the right processing method and indicates which algorithm to be applied. For this, an [S3 generic](http://adv-r.had.co.nz/S3.html) is used in each processing method (e.g., `MassSpecEngine$find_features()` or `MassSpecEngine$group_features()`) for the dispatchment. This process is not visible to the user but is essential for the developer. Implementation of new processing methods and/or algorithms must consider this structure. In the section Implementation (\@ref(implementation)) the process of adding new methods and algorithms is described in more detail. -->
-
-<!-- ```{r other-classes, results='markup'} -->
-<!-- class(ffs) -->
-<!-- ``` -->
-
-<!-- ## Semantics -->
-
-<!-- Consistent semantics are attempted within the StreamFind R package. Some of the class and method names were already mentioned above and a clear use of the *underscore* to separate words for methods and use of *Upper Camel Case* for classes is visible. In this section, we try to highlight the defined rules for the most important semantic aspects. All the methods available via the class `MassSpecEngine$` are written with underscore to separate the words (e.g., `get_analysis_names()` or `annotate_features()`). The arguments of methods, functions and class constructors are always written with *Lower Camel Case* when more than one word is needed (e.g., `colorBy` or `minIntensity`). Classes are written with *Upper Camel Case* when two or more words are used (e.g., *MassSpecAnalysis* or *Metadata*) with the exception of the specific constructor functions for the different algorithm settings, which use the syntax `[engine name]Settings_[method name]_[algorithm name]` (e.g., *MassSpecSettings_FilterFeatures_StreamFind* or *RamanSettings_BinSpectra_StreamFind*); This supports and facilitates the association of the settings with the respective engine and processing method. Functions or methods not available to the user (i.e., not exported via the package NAMESPACE) are written with `.` at the beginning, followed by *underscore* to separate words (e.g., *.get_colors()* or *.plot_spectra_ms2_static()*). This is also applied to the S3 generics of the processing modules, which use the syntax `.s3_[module method]` (e.g., `.s3_FindFeatures` or `.s3_GroupFeatures`). -->
-
-<!-- ## Files -->
-
-<!-- The file structure of the StreamFind package is in line with the [CRAN official package development guideline](https://cran.r-project.org/doc/manuals/R-exts.html#:~:text=Contents%5D%5BIndex%5D-,1.1%20Package%20structure,which%20should%20not%20be%20empty).). All relevant files for the developer are in the R, src, man-roxygen, tests and vignettes. In the R folder are the R scripts, in the src folder are C++ libraries and the [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html) interface functions, in the man-roxygen are the templates for documentation of arguments, in the tests are the test units that should be applied for each processing method and each algorithm implementation and finally, in the vignettes are articles, tutorials and guides for the users. R file names in the R folder have a defined name syntax according to the content/function. Class files are named with `class_[class type in capital_[class name].R]`. Exported MS function files are named with `fct_[optional engine associated]_[unique name].R`. Utility functions not exported are named with `utils_[unique name].R`. S3 methods for processing modules are written with `methods_S3_[engine name]_[method name]_[algorithm].R`. *ProcessingStep* constructors for a given engine are placed in a file named `class_S3_[engine name]Settings.R`. -->
-
-<!-- # Implementation -->
-
-<!-- The implementation of new processing methods and new algorithms for a given processing method differs in terms of impact change. While addition of new processing methods require the change of the main *MassSpecEngine* class and addition of new S3 generics, adding new algorithms for existing modules do not require changes in the existing files. Therefore, we describe their implementation in two separate sections. -->
-
-<!-- ## New methods -->
-
-<!-- Under definition. -->
-
-
-
-<!-- ## New algorithms -->
-
-<!-- Under definition. -->
-
-<!-- # ```{r remove-ffs, include=FALSE} -->
-<!-- # file.remove("ffs.json") -->
-<!-- # ``` -->
-
-***
+New development should generally extend this project-based model rather than the
+legacy `Engine`/`Analyses` abstraction family.

@@ -83,7 +83,9 @@ info.Workflow <- function(x, ...) {
 #' @export
 #' @noRd
 `[.Workflow` <- function(x, i) {
-  Workflow(NextMethod())
+  out <- unclass(NextMethod())
+  out <- Filter(Negate(is.null), out)
+  Workflow(out)
 }
 
 #' @export

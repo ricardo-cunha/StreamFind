@@ -15,6 +15,7 @@
 #include "nta_alignment.h"
 #include "nta_gap_filling.h"
 #include "nta_blank_subtraction.h"
+#include "nta_correction_algorithms.h"
 #include "nta_filters.h"
 #include "nta_suspect_screening.h"
 #include "nta_metfrag_runner.h"
@@ -1710,6 +1711,15 @@ namespace nta
         float rtExpand,
         float mzExpand,
         float minTracesIntensity = 0.0f);
+
+      std::vector<correction_algorithms::TIC_MATRIX_SUPPRESSION_ROW> get_matrix_suppression(
+        const std::vector<std::string> &analyses = {},
+        float rtWindow = 10.0f,
+        const std::string &refBlankReplicate = "");
+
+      bool correct_matrix_suppression(
+        float mpRtWindow = 10.0f,
+        const std::string &refBlankReplicate = "");
 
       bool filter_features(
         double minSN,

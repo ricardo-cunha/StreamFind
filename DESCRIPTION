@@ -1,5 +1,5 @@
 Package: StreamFind
-Title: Flexible Workflow Assembler for Advanced Data Analysis
+Title: DuckDB-Backed Project Framework for Analytical Workflows
 Version: 1.0.0
 Author: Ricardo Cunha [cre, aut, fnd] (<https://orcid.org/0000-0002-6791-0119>)
 Maintainer: Ricardo Cunha <cunha@iuta.de>
@@ -7,8 +7,20 @@ Authors@R: c(
         person("Ricardo", "Cunha", email="cunha@iuta.de", role=c("cre", "aut", "fnd"), comment = c(ORCID = "0000-0002-6791-0119")),
         person("Walter", "Laurito", email="laurito@fzi.de", role = "ctb")
     )
-Description: StreamFind is an R package designed to support the assembly and execution of standardized workflows for advanced data analysis. Originally developed within the project "Flexible Data Analysis and Workflow Designer to Identify Chemicals in the Water Cycle" (funded by the Bundesministerium für ­Forschung, Technologie und Raumfahrt, BMFTR), StreamFind offers a modular platform capable of handling diverse data types, including mass spectrometry, spectroscopy, and other structured datasets. StreamFind promotes the use of advanced analysis techniques—such as non-target screening (NTS), statistical modeling, and retrospective data evaluation—in both research and routine quality control workflows. With its standardized approach to data processing, comprehensive documentation, and an integrated graphical user interface, StreamFind is designed to support scientists and technical staff across a wide range of disciplines, from environmental monitoring to pharmaceutical quality assurance.
-License: MIT + file LICENSE
+Description: StreamFind provides a DuckDB-backed project framework for
+    assembling, running, and inspecting analytical workflows in R. The
+    current package centres on Project child classes that expose
+    domain-specific interfaces for mass spectrometry and non-target
+    analysis, including ProjectMassSpec, ProjectMassSpecSpectra,
+    ProjectMassSpecChromatograms, and ProjectNonTargetAnalysis.
+    Workflows are expressed as ordered Method objects, persisted with the
+    project, executed reproducibly, and inspected through both
+    programmatic APIs and an integrated Shiny application. StreamFind is
+    developed within the project "Flexible Data Analysis and Workflow
+    Designer to Identify Chemicals in the Water Cycle" and is intended
+    to support transparent, reusable processing pipelines for research
+    and routine analytical work.
+License: GPL-3
 URL: https://github.com/odea-project/StreamFind, https://odea-project.github.io/StreamFind/
 BugReports: https://github.com/odea-project/StreamFind/issues
 Depends: R (>= 4.3.0)

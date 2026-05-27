@@ -33,6 +33,9 @@ cluster.}
 A \code{Method} object of class \code{Method_NonTargetAnalysis_LoadFeaturesMS1}.
 }
 \description{
-Create a \code{Method} child object for loading MS1 traces into NTA
-features.
+Create a \code{Method} child object for extracting feature-centred
+MS1 trace data after feature detection. This step loads chromatographic
+signal around each NTA feature using configurable RT and m/z windows so
+later workflow steps can inspect peak shape, build components, perform
+QC, and visualise raw signal around the detected apex.
 }

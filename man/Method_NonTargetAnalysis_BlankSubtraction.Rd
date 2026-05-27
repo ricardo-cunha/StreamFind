@@ -22,6 +22,9 @@ intensities.}
 A \code{Method} object of class \code{Method_NonTargetAnalysis_BlankSubtraction}.
 }
 \description{
-Create a \code{Method} child object for subtracting blank-derived
-features.
+Create a \code{Method} child object for blank correction of grouped
+features. In NTA workflows, procedural and instrumental blanks often carry
+background contaminants and carryover peaks; this step compares grouped
+sample features against the associated blank signal and removes or flags
+features that are not sufficiently above blank contribution.
 }

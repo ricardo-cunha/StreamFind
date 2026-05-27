@@ -6,14 +6,21 @@
 \usage{
 Method_NonTargetAnalysis_MetFragScreening(
   metfrag_path = "",
-  database_type = "LocalCSV",
+  database_type = "PubChem",
   database_path = "",
   analyses = character(),
   ppm = 5,
   sec = 10,
   ppmMS2 = 10,
   mzrMS2 = 0.008,
-  top_n = 1L,
+  top_n = 5L,
+  score_types = "FragmenterScore",
+  score_weights = 1,
+  pre_processing_candidate_filter = c("UnconnectedCompoundFilter", "IsotopeFilter"),
+  post_processing_candidate_filter = "InChIKeyFilter",
+  maximum_tree_depth = 3L,
+  number_threads = 1L,
+  use_smiles = TRUE,
   filtered = FALSE,
   java_path = "java",
   run_dir = "",
@@ -24,25 +31,81 @@ Method_NonTargetAnalysis_MetFragScreening(
 \arguments{
 \item{metfrag_path}{Character(1) path to the MetFrag executable or JAR.}
 
-\item{database_type}{Character(1) MetFrag database type.}
+\item{database_type}{Character(1) MetFrag candidate-source type. Supported
+options are \code{"KEGG"}, \code{"PubChem"}, \code{"ExtendedPubChem"},
+\code{"ChemSpiderRest"}, \code{"LocalSDF"}, \code{"LocalPSV"}, and \code{"LocalCSV"}.
+Local database types require \code{database_path}; \code{"ChemSpiderRest"} also
+requires a \code{ChemSpiderToken} entry in \code{extra_params}.}
 
-\item{database_path}{Character(1) path to the local database file when
-applicable.}
+\item{database_path}{Character(1) path to the local database file used by
+\code{"LocalSDF"}, \code{"LocalPSV"}, or \code{"LocalCSV"}.}
 
 \item{analyses}{Optional character vector restricting screening to selected
 analyses.}
 
-\item{ppm, sec, ppmMS2, mzrMS2}{Numeric scalar thresholds used during matching.}
+\item{ppm}{Numeric(1) precursor mass tolerance in ppm used when querying
+MetFrag candidates.}
+
+\item{sec}{Numeric(1) retention-time tolerance in seconds used when
+post-filtering candidates against available RT information.}
+
+\item{ppmMS2}{Numeric(1) fragment mass tolerance in ppm used when comparing
+explained and experimental MS2 fragments.}
+
+\item{mzrMS2}{Numeric(1) minimum absolute fragment m/z tolerance used during
+MS2 comparison.}
 
 \item{top_n}{Integer(1) maximum number of candidates to consider per
 feature.}
+
+\item{score_types}{Character vector of MetFrag score types. The default uses
+\code{"FragmenterScore"}. Official predefined options include
+\code{"FragmenterScore"}, \code{"SmartsSubstructureInclusionScore"},
+\code{"SmartsSubstructureExclusionScore"}, and \code{"SuspectListScore"}. MetFrag CL
+also supports database-dependent scoring terms, for example
+\code{"PubChemNumberPatents"} and \code{"PubChemNumberPubMedReferences"} with
+\code{"ExtendedPubChem"}, and additional numeric columns or tags from local
+\code{LocalCSV}, \code{LocalPSV}, or \code{LocalSDF} databases.}
+
+\item{score_weights}{Numeric vector of MetFrag score weights. Must match the
+length and order of \code{score_types}; MetFrag combines the weighted scores
+into the final candidate ranking.}
+
+\item{pre_processing_candidate_filter}{Character vector of MetFrag
+pre-processing candidate filters applied before fragmentation and scoring.
+Official options include \code{"UnconnectedCompoundFilter"},
+\code{"IsotopeFilter"}, \code{"MinimumElementsFilter"},
+\code{"MaximumElementsFilter"}, \code{"SmartsSubstructureInclusionFilter"},
+\code{"SmartsSubstructureExclusionFilter"}, \code{"ElementInclusionFilter"},
+\code{"ElementInclusionExclusiveFilter"}, and \code{"ElementExclusionFilter"}.
+Some of these require additional MetFrag settings, for example
+\code{FilterMinimumElements}, \code{FilterMaximumElements},
+\code{FilterSmartsInclusionList}, \code{FilterSmartsExclusionList},
+\code{FilterIncludedElements}, or \code{FilterExcludedElements}, which can be passed
+via \code{extra_params}.}
+
+\item{post_processing_candidate_filter}{Character vector of MetFrag
+post-processing candidate filters applied after fragmentation and scoring.
+The official documented option is \code{"InChIKeyFilter"}, which collapses
+stereoisomeric candidates sharing the first block of the InChIKey so only
+the best-scoring structural skeleton remains in the result list.}
+
+\item{maximum_tree_depth}{Integer(1) maximum MetFrag fragmentation tree
+depth.}
+
+\item{number_threads}{Integer(1) number of threads requested from MetFrag.}
+
+\item{use_smiles}{Logical(1) whether MetFrag should fragment candidate
+structures using SMILES instead of InChI.}
 
 \item{filtered}{Logical(1) whether to include filtered features in the
 search.}
 
 \item{java_path}{Character(1) path to the Java executable.}
 
-\item{run_dir}{Character(1) output directory for MetFrag runs.}
+\item{run_dir}{Character(1) output directory for MetFrag run files. When
+empty, a timestamped directory under \verb{./log/metfrag/} is created
+automatically, for example \verb{./log/metfrag/run_20260527_153045/}.}
 
 \item{debug}{Logical(1) whether to keep debug output.}
 
@@ -52,6 +115,9 @@ search.}
 A \code{Method} object of class \code{Method_NonTargetAnalysis_MetFragScreening}.
 }
 \description{
-Create a \code{Method} child object for MetFrag-based suspect
-screening.
+Create a \code{Method} child object for MetFrag-based candidate
+screening on NTA features with MS2 support. This workflow exports feature
+data to MetFrag, queries the selected candidate database, and ranks
+structure hypotheses using in silico fragmentation, extending simple
+suspect matching with fragment-informed annotation.
 }

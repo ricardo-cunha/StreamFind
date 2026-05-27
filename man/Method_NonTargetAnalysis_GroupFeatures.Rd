@@ -35,6 +35,9 @@ in.}
 A \code{Method} object of class \code{Method_NonTargetAnalysis_GroupFeatures}.
 }
 \description{
-Create a \code{Method} child object for grouping aligned features
-across analyses.
+Create a \code{Method} child object for aligning and grouping the
+same chemical feature across analyses. This is a core NTA aggregation step
+that merges per-analysis detections into shared feature groups using RT and
+m/z tolerances, optionally guided by internal standards or chromatographic
+warping, so samples can be compared on a common feature table.
 }

@@ -22,6 +22,7 @@ R6 child of \code{ProjectMassSpec} exposing the spectra-focused MassSpec interfa
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
+<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="close"><a href='../../StreamFind/html/Project.html#method-Project-close'><code>StreamFind::Project$close()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="copy"><a href='../../StreamFind/html/Project.html#method-Project-copy'><code>StreamFind::Project$copy()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="delete_cache"><a href='../../StreamFind/html/Project.html#method-Project-delete_cache'><code>StreamFind::Project$delete_cache()</code></a></span></li>
 <li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_audit"><a href='../../StreamFind/html/Project.html#method-Project-get_audit'><code>StreamFind::Project$get_audit()</code></a></span></li>

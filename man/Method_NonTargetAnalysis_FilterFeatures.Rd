@@ -39,24 +39,106 @@ Method_NonTargetAnalysis_FilterFeatures(
 )
 }
 \arguments{
-\item{minSN, minIntensity, minArea, minWidth, maxWidth, maxPPM, minFwhmRT, maxFwhmRT, minFwhmMZ, maxFwhmMZ, minGaussianA, minGaussianMu, maxGaussianMu, minGaussianSigma, maxGaussianSigma, minGaussianR2, maxJaggedness, minSharpness, minAsymmetry, maxAsymmetry, minPlates, minRelPresenceReplicate}{Optional numeric scalar thresholds. Use \code{NA_real_} to disable a threshold.}
+\item{minSN}{Optional numeric(1) minimum signal-to-noise threshold. Use
+\code{NA_real_} to disable.}
+
+\item{minIntensity}{Optional numeric(1) minimum feature apex intensity. Use
+\code{NA_real_} to disable.}
+
+\item{minArea}{Optional numeric(1) minimum integrated feature area. Use
+\code{NA_real_} to disable.}
+
+\item{minWidth}{Optional numeric(1) minimum chromatographic peak width in
+seconds. Use \code{NA_real_} to disable.}
+
+\item{maxWidth}{Optional numeric(1) maximum chromatographic peak width in
+seconds. Use \code{NA_real_} to disable.}
+
+\item{maxPPM}{Optional numeric(1) maximum acceptable mass error in ppm. Use
+\code{NA_real_} to disable.}
+
+\item{minFwhmRT}{Optional numeric(1) minimum RT full width at half maximum.
+Use \code{NA_real_} to disable.}
+
+\item{maxFwhmRT}{Optional numeric(1) maximum RT full width at half maximum.
+Use \code{NA_real_} to disable.}
+
+\item{minFwhmMZ}{Optional numeric(1) minimum m/z full width at half maximum.
+Use \code{NA_real_} to disable.}
+
+\item{maxFwhmMZ}{Optional numeric(1) maximum m/z full width at half maximum.
+Use \code{NA_real_} to disable.}
+
+\item{minGaussianA}{Optional numeric(1) minimum fitted Gaussian amplitude.
+Use \code{NA_real_} to disable.}
+
+\item{minGaussianMu}{Optional numeric(1) minimum fitted Gaussian centre. Use
+\code{NA_real_} to disable.}
+
+\item{maxGaussianMu}{Optional numeric(1) maximum fitted Gaussian centre. Use
+\code{NA_real_} to disable.}
+
+\item{minGaussianSigma}{Optional numeric(1) minimum fitted Gaussian sigma.
+Use \code{NA_real_} to disable.}
+
+\item{maxGaussianSigma}{Optional numeric(1) maximum fitted Gaussian sigma.
+Use \code{NA_real_} to disable.}
+
+\item{minGaussianR2}{Optional numeric(1) minimum Gaussian fit quality
+(\code{R^2}). Use \code{NA_real_} to disable.}
+
+\item{maxJaggedness}{Optional numeric(1) maximum permitted peak jaggedness.
+Use \code{NA_real_} to disable.}
+
+\item{minSharpness}{Optional numeric(1) minimum peak sharpness. Use
+\code{NA_real_} to disable.}
+
+\item{minAsymmetry}{Optional numeric(1) minimum accepted peak asymmetry. Use
+\code{NA_real_} to disable.}
+
+\item{maxAsymmetry}{Optional numeric(1) maximum accepted peak asymmetry. Use
+\code{NA_real_} to disable.}
 
 \item{maxModality}{Optional integer scalar for the maximum number of local
 maxima. Use \code{NA_integer_} to disable.}
 
+\item{minPlates}{Optional numeric(1) minimum theoretical plate count. Use
+\code{NA_real_} to disable.}
+
 \item{onlyFilled}{Optional logical scalar. Use \code{TRUE} to keep only filled
 features, \code{FALSE} to keep only non-filled, or \code{NA} to disable.}
 
-\item{removeFilled, removeIsotopes, removeAdducts, removeLosses}{Logical scalar
-flags controlling feature removal.}
+\item{removeFilled}{Logical(1) whether features marked as filled should be
+removed.}
 
-\item{minSizeEIC, minSizeMS1, minSizeMS2}{Optional integer scalar minimum data
-point counts. Use \code{NA_integer_} to disable.}
+\item{minSizeEIC}{Optional integer(1) minimum number of points in the stored
+extracted-ion chromatogram. Use \code{NA_integer_} to disable.}
+
+\item{minSizeMS1}{Optional integer(1) minimum number of stored MS1 points.
+Use \code{NA_integer_} to disable.}
+
+\item{minSizeMS2}{Optional integer(1) minimum number of stored MS2 fragment
+peaks. Use \code{NA_integer_} to disable.}
+
+\item{minRelPresenceReplicate}{Optional numeric(1) minimum relative presence
+within replicate analyses. Use \code{NA_real_} to disable.}
+
+\item{removeIsotopes}{Logical(1) whether isotope annotations should be
+removed.}
+
+\item{removeAdducts}{Logical(1) whether annotated adduct features should be
+removed.}
+
+\item{removeLosses}{Logical(1) whether annotated neutral-loss or in-source
+fragment features should be removed.}
 }
 \value{
 A \code{Method} object of class \code{Method_NonTargetAnalysis_FilterFeatures}.
 }
 \description{
-Create a \code{Method} child object for filtering features by
-quality criteria.
+Create a \code{Method} child object for rule-based filtering of the
+NTA feature table. This step reduces the raw feature space by applying
+analytical quality criteria such as signal strength, peak width, fit, and
+prevalence, helping focus downstream screening and interpretation on more
+robust and reproducible features.
 }

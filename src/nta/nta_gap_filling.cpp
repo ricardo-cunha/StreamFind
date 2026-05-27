@@ -665,7 +665,7 @@ void nta::gap_filling::fill_features_impl(
     analysis_index_map[analysis_names[i]] = i;
   }
 
-  // Group feature gaps by file for batch extraction
+  // Group feature gaps by analysis/file for batch extraction
   struct GAP_INFO {
     std::string analysis;
     size_t analysis_idx;
@@ -748,14 +748,15 @@ void nta::gap_filling::fill_features_impl(
     }
   }
 
-  std::cout << "Processing " << gaps_by_file.size() << " files with gaps..." << std::endl;
+  std::cout << "Processing " << gaps_by_file.size() << " analyses with gaps..." << std::endl;
 
-  // Process each file
+  // Process each analysis/file
   for (const auto &[file_path, gaps] : gaps_by_file)
   {
-    std::cout << "  Processing " << gaps.size() << " gaps in file: " << file_path << std::endl;
+    const std::string &analysis_name = gaps.empty() ? std::string() : gaps.front().analysis;
+    std::cout << "  Processing " << gaps.size() << " gaps in analysis: " << analysis_name << std::endl;
 
-    // Open MS file once per file
+    // Open MS file once per analysis
     mass_spec::reader::MS_FILE ana(file_path);
 
     // Get headers for first gap (all gaps in same file share same headers)

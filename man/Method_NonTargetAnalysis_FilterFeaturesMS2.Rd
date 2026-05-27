@@ -18,8 +18,11 @@ Method_NonTargetAnalysis_FilterFeaturesMS2(
 \item{top}{Integer(1) number of top MS2 spectra to keep per feature. Use \code{0}
 to disable.}
 
-\item{minIntensity, relMinIntensity}{Optional numeric scalar thresholds. Use
-\code{NA_real_} to disable.}
+\item{minIntensity}{Optional numeric(1) minimum fragment intensity required
+to keep an MS2 peak. Use \code{NA_real_} to disable.}
+
+\item{relMinIntensity}{Optional numeric(1) minimum relative fragment
+intensity required to keep an MS2 peak. Use \code{NA_real_} to disable.}
 
 \item{blankClean}{Logical(1) whether to remove fragments prevalent in
 blanks.}
@@ -34,6 +37,9 @@ blanks.}
 A \code{Method} object of class \code{Method_NonTargetAnalysis_FilterFeaturesMS2}.
 }
 \description{
-Create a \code{Method} child object for filtering MS2 traces loaded
-onto features.
+Create a \code{Method} child object for cleaning and reducing
+feature-linked MS2 data. This step keeps the most informative MS2 spectra,
+removes weak or poorly supported fragments, and can suppress fragments that
+are prevalent in blanks so later identification steps operate on cleaner
+tandem-MS evidence.
 }

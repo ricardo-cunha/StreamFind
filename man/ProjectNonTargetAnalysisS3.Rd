@@ -9,6 +9,8 @@
 \alias{get_features_ms1.ProjectNonTargetAnalysis}
 \alias{get_features_ms2.ProjectNonTargetAnalysis}
 \alias{get_features_count.ProjectNonTargetAnalysis}
+\alias{get_matrix_suppression.ProjectNonTargetAnalysis}
+\alias{plot_matrix_suppression.ProjectNonTargetAnalysis}
 \alias{plot_features_count.ProjectNonTargetAnalysis}
 \alias{get_features_profile.ProjectNonTargetAnalysis}
 \alias{plot_features_profile.ProjectNonTargetAnalysis}
@@ -86,6 +88,31 @@
 
 \method{get_features_count}{ProjectNonTargetAnalysis}(x, analyses = NULL, filtered = FALSE)
 
+\method{get_matrix_suppression}{ProjectNonTargetAnalysis}(
+  x,
+  analyses = NULL,
+  rtWindowVal = 10,
+  refBlankReplicate = NA_character_,
+  ...
+)
+
+\method{plot_matrix_suppression}{ProjectNonTargetAnalysis}(
+  x,
+  analyses = NULL,
+  rtWindowVal = 10,
+  refBlankReplicate = NA_character_,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  colorBy = "analyses",
+  legendNames = NULL,
+  downsize = 1,
+  interactive = TRUE,
+  showLegend = TRUE,
+  renderEngine = "webgl",
+  ...
+)
+
 \method{plot_features_count}{ProjectNonTargetAnalysis}(
   x,
   analyses = NULL,
@@ -109,6 +136,7 @@
   sec = 60,
   millisec = 5,
   filtered = FALSE,
+  corrected = FALSE,
   ...
 )
 
@@ -124,6 +152,7 @@
   sec = 60,
   millisec = 5,
   filtered = FALSE,
+  corrected = FALSE,
   groupBy = "analysis",
   normalized = FALSE,
   yLab = NULL,
@@ -399,17 +428,33 @@ in milliseconds.}
 
 \item{normalized}{A logical value indicating whether the result should be normalized.}
 
+\item{rtWindowVal}{Numeric (length 1) with the retention time window value (in seconds).}
+
+\item{refBlankReplicate}{Optional character scalar naming the replicate whose assigned blank replicate(s) should be used as the reference for matrix-suppression calculations. Use \code{NA} to use each analysis' assigned blank.}
+
+\item{xLab}{A string with the title for the x axis.}
+
 \item{yLab}{A string with the title for the y axis.}
 
 \item{title}{A string with the title.}
 
-\item{groupBy}{Column to use for color grouping (default: "analysis").}
+\item{colorBy}{Character (length 1). One of \code{analyses} (the default), \code{polarities}, \code{levels}, \code{targets} or \code{replicates}.
+Mixed use (e.g. \code{analyses+polarities}) is also possible.}
 
-\item{showLegend}{Logical (length 1). Set to \code{TRUE} to show legend.}
+\item{legendNames}{A character vector with the same length as the targets or \code{TRUE} or \code{FALSE} for using the name in
+the added targets as legend of the plot.}
+
+\item{downsize}{An integer of length one to downsize the TIC plot. The default is 1.}
 
 \item{interactive}{Logical (length 1). When \code{TRUE}, the data is plotted interactively using \pkg{plotly}.}
 
-\item{xLab}{A string with the title for the x axis.}
+\item{showLegend}{Logical (length 1). Set to \code{TRUE} to show legend.}
+
+\item{renderEngine}{The engine to render the data. The default is "webgl".}
+
+\item{groupBy}{Column to use for color grouping (default: "analysis").}
+
+\item{corrected}{Logical (length 1). If \code{TRUE}, intensities are multiplied by the feature \code{correction} values before aggregation or plotting.}
 
 \item{showDetails}{Logical (length 1), show hover details in interactive plots.}
 
@@ -470,6 +515,10 @@ S3 interface methods for \code{ProjectNonTargetAnalysis}.
 \item \code{get_features_ms2(ProjectNonTargetAnalysis)}: Return decoded MS2 feature spectra for selected analyses.
 
 \item \code{get_features_count(ProjectNonTargetAnalysis)}: Return feature counts for selected analyses.
+
+\item \code{get_matrix_suppression(ProjectNonTargetAnalysis)}: Return TIC-based matrix-suppression rows for selected analyses.
+
+\item \code{plot_matrix_suppression(ProjectNonTargetAnalysis)}: Plot TIC-based matrix suppression for selected analyses.
 
 \item \code{plot_features_count(ProjectNonTargetAnalysis)}: Plot features count across analyses.
 

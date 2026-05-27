@@ -1,6 +1,5 @@
 ---
 output: github_document
-bibliography: inst/REFERENCES.bib
 ---
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
@@ -22,70 +21,122 @@ knitr::opts_chunk$set(
 knitr::include_graphics("man/figures/readme_logos.png")
 ```
 
-StreamFind R package is developed within the project ["Flexible data analysis and workflow designer to identify chemicals in the water cycle"](https://www.bildung-forschung.digital/digitalezukunft/de/bildung/digital-_und_datenkompetenzen/datenkompetenzen_wissenschaftlichen_nachwuchs/Projekte/stream_find.html) funded by the [German Federal Ministry of Education and Research (BMBF)](https://www.bmbf.de). The development is carried out by the [Institut für Umwelt & Energie, Technik & Analytik e. V. (IUTA)](https://www.iuta.de), the [Forschungszentrum Informatik (FZI)](https://www.fzi.de/) and supporting partners. StreamFind is intended to be a platform for assembling processing workflows for different types of data (e.g. mass spectrometry (MS) and spectroscopy data) with applications in different fields (e.g. environmental studies of the water cycle and quality control of pharmaceuticals). StreamFind aims to stimulate the use of advanced data analysis (e.g. non-target screening, statistical analysis, etc.) in routine studies, to promote standardization of data structure and processing, and to facilitate retrospective data evaluation. The StreamFind platform is aimed at scientists, but also at technicians due to its comprehensive documentation, its well categorized set of integrated modular processing methods and its embedded graphical user interface.
+StreamFind is a DuckDB-backed workflow framework for analytical data processing in R. The current package architecture is built around persistent `Project` child classes that hold data, workflow metadata, cached results, and audit state in one place.
 
-The StreamFind development is ongoing, please [contact us](mailto:cunha@iuta.de) for questions or collaboration.
+The main project classes are:
+
+- `ProjectMassSpec`: shared mass-spectrometry project interface
+- `ProjectMassSpecSpectra`: spectra-focused raw MS access
+- `ProjectMassSpecChromatograms`: chromatogram-focused raw MS access
+- `ProjectNonTargetAnalysis`: non-target analysis workflows and results
+
+Workflows are assembled from ordered `Method` objects, stored on the project, and executed reproducibly. This gives one framework for interactive exploration, scripted processing, and Shiny-based inspection of the same project state.
 
 ## Installation
 
-Pre-requisites for the StreamFind are the [R](https://cran.r-project.org/) software and the [RTools](https://cran.r-project.org/bin/windows/Rtools/) (only applicable for Windows users). RTools is needed for compiling C++ code used in the StreamFind R package. StreamFind also uses Python scripts for some of its processing methods, so it is recommended (but not mandatory) to have the latest [Python](https://www.python.org/downloads/) installed and added to the environmental variables for Windows users. Assuming that R, R Tools and Python (optional) are installed, the StreamFind R package can be installed from the GitHub repository via the [Bioconductor Manager](https://www.bioconductor.org/install/), which makes it easier to install necessary Bioconductor dependencies (e.g. zlibbioc and Rhdf5lib). Note that StreamFind itself is not available on Bioconductor. Please note that the default timeout for the `BiocManager::install` function might be to short. Thus, if the download of StreamFind fails run `options(timeout = 600)` before the installation command, as shown below.
+StreamFind requires R and a working C++17 toolchain. On Windows this generally means installing [RTools](https://cran.r-project.org/bin/windows/Rtools/). Some optional methods depend on external software such as Java, MetFrag, Python-based tooling, or chemistry packages listed in `Suggests`.
+
+Install the package from GitHub:
 
 ```{r install-streamfind, eval=FALSE}
-options(timeout = 600) # Increase timeout
-if (!require("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-BiocManager::install("odea-project/StreamFind")
+options(timeout = 600)
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
+}
+remotes::install_github("odea-project/StreamFind")
 ```
 
-## Other dependencies
-
-Some processing methods used by StreamFind depend on other open-source software. For example, when conducting non-target screening using mass spectrometry, StreamFind utilises the [patRoon R package](https://github.com/rickhelmus/patRoon) and its associated dependencies for certain processing methods. If a dependency is not installed, a warning message with instructions will be displayed. Please consult the documentation for each processing method for details of its dependencies.
-
-## Suplementary data
-
-The supplementary [StreamFindData](https://github.com/odea-project/StreamFindData) R package holds the data used in examples and other documentation assets of the StreamFind and can also be installed from the GitHub repository.
+Supplementary example data and assets are available in the companion package [StreamFindData](https://github.com/odea-project/StreamFindData):
 
 ```{r install-streamfinddata, eval=FALSE}
-if (!require("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-BiocManager::install("odea-project/StreamFindData")
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
+}
+remotes::install_github("odea-project/StreamFindData")
 ```
 
-## Docker Setup
+## Framework overview
 
-The StreamFind can also be used via the [Docker](https://www.docker.com/products/docker-desktop/) container. The Docker container is a pre-configured environment with all the necessary dependencies installed.  The Docker container can be built and started with the following commands.
+The typical workflow is:
 
-Build the Docker container:
-`docker build -t my-r-app .`
+1. Open or create a project child class.
+2. Import domain data into that project.
+3. Define a `Workflow` from `Method` objects.
+4. Attach the workflow with `set_workflow()`.
+5. Run it with `run_workflow()` or stepwise with `run_method()`.
+6. Inspect results through the project API or `run_app()`.
 
-Start the Docker container:
+Example for non-target analysis:
 
-**For Linux/macOS/bash:**
-```bash
-docker run -it -p 3838:3838 -p 8787:8787 -v $(pwd):/app my-r-app
+```{r example-nta, eval=FALSE}
+library(StreamFind)
+
+nta <- open_ProjectNonTargetAnalysis(
+  db = "streamfind.duckdb",
+  project_id = "nta_demo"
+)
+
+workflow <- Workflow(list(
+  Method_NonTargetAnalysis_FindFeatures(),
+  Method_NonTargetAnalysis_LoadFeaturesMS1(),
+  Method_NonTargetAnalysis_LoadFeaturesMS2(),
+  Method_NonTargetAnalysis_GroupFeatures(),
+  Method_NonTargetAnalysis_FillFeatures(),
+  Method_NonTargetAnalysis_FilterFeatures()
+))
+
+set_workflow(nta, workflow)
+run_workflow(nta)
+
+features <- get_features(nta)
+plot_features_count(nta)
 ```
 
-**For Windows PowerShell:**
-```powershell
-docker run -it -p 3838:3838 -p 8787:8787 -v "${PWD}:/app" my-r-app
+## Non-target analysis
+
+`ProjectNonTargetAnalysis` is the most feature-rich project class currently exposed in StreamFind. It supports native workflow methods for:
+
+- feature finding
+- MS1 and MS2 trace loading
+- component creation and annotation
+- feature grouping and gap filling
+- blank subtraction
+- matrix-suppression correction
+- feature filtering
+- suspect screening
+- internal-standard matching
+- MetFrag screening
+- transformation-product assignment
+
+The project object also exposes structured getters and plots for features, spectra, suspects, internal standards, matrix suppression, fold change, and transformation products.
+
+## Shiny application
+
+The same project objects can be inspected in the integrated application:
+
+```{r run-app, eval=FALSE}
+nta$run_app()
 ```
 
-Once the container is up, you'll be prompted to select the service you want to run:
+This is useful when you want to browse analyses, results, and workflow state without leaving the package data model.
 
-- *Option 1:* Starts the Shiny application, accessible at http://localhost:3838.
-- *Option 2:* Starts the RStudio Server, accessible at http://localhost:8787
-  + Default Username is rstudio and Password is rstudio
-- *Option 3:* Starts both the Shiny App and RStudio Server
+## External dependencies
+
+Some workflows depend on third-party tools that are not bundled with StreamFind. For example:
+
+- MetFrag screening requires a MetFrag CL installation and Java
+- some chemistry features depend on `rcdk` and `rJava`
+- optional reporting uses Quarto
+
+Method-level documentation describes these requirements where relevant.
 
 ## Documentation
 
-The documentation and usage examples of the StreamFind R package can be found in the [reference page](https://odea-project.github.io/StreamFind/reference/index.html) and [articles](https://odea-project.github.io/StreamFind/articles/index.html) of the [webpage](https://odea-project.github.io/StreamFind/index.html), respectively. Note that documentation and articles are under development so not all are yet available.
+Reference documentation and articles are published at:
 
-## References
+- <https://odea-project.github.io/StreamFind/>
+- <https://odea-project.github.io/StreamFind/reference/index.html>
 
-The StreamFind is open source due to public funding and the extensive contribution from scientific literature as well as existing open source software. Below, we reference the research and software that is used within StreamFind. Please note that each open source software or research that StreamFind uses relies on other contributions. Therefore, we recommend to search within each citation for other contributions.
-<br>
+## Project background
 
----
-nocite: '@*'
----
+StreamFind is developed within the project "Flexible data analysis and workflow designer to identify chemicals in the water cycle" with contributions centred at IUTA and partner organisations. The package is under active development and the project-class framework is the primary interface going forward.

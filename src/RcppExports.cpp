@@ -689,6 +689,33 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_project_nta_get_matrix_suppression
+Rcpp::List rcpp_project_nta_get_matrix_suppression(SEXP nta_xptr, Rcpp::CharacterVector analyses, double rtWindowVal, Rcpp::Nullable<std::string> refBlankReplicate);
+RcppExport SEXP _StreamFind_rcpp_project_nta_get_matrix_suppression(SEXP nta_xptrSEXP, SEXP analysesSEXP, SEXP rtWindowValSEXP, SEXP refBlankReplicateSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type nta_xptr(nta_xptrSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type analyses(analysesSEXP);
+    Rcpp::traits::input_parameter< double >::type rtWindowVal(rtWindowValSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<std::string> >::type refBlankReplicate(refBlankReplicateSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_project_nta_get_matrix_suppression(nta_xptr, analyses, rtWindowVal, refBlankReplicate));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_project_nta_correct_matrix_suppression
+bool rcpp_project_nta_correct_matrix_suppression(SEXP nta_xptr, double mpRtWindow, Rcpp::Nullable<std::string> refBlankReplicate);
+RcppExport SEXP _StreamFind_rcpp_project_nta_correct_matrix_suppression(SEXP nta_xptrSEXP, SEXP mpRtWindowSEXP, SEXP refBlankReplicateSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type nta_xptr(nta_xptrSEXP);
+    Rcpp::traits::input_parameter< double >::type mpRtWindow(mpRtWindowSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<std::string> >::type refBlankReplicate(refBlankReplicateSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_project_nta_correct_matrix_suppression(nta_xptr, mpRtWindow, refBlankReplicate));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_project_non_target_analysis_get_suspects
 Rcpp::List rcpp_project_non_target_analysis_get_suspects(SEXP nta_xptr, SEXP analyses, SEXP features, SEXP groups, SEXP mass, SEXP mz, SEXP rt, SEXP mobility, double ppm, double sec, double millisec);
 RcppExport SEXP _StreamFind_rcpp_project_non_target_analysis_get_suspects(SEXP nta_xptrSEXP, SEXP analysesSEXP, SEXP featuresSEXP, SEXP groupsSEXP, SEXP massSEXP, SEXP mzSEXP, SEXP rtSEXP, SEXP mobilitySEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP millisecSEXP) {
@@ -1036,8 +1063,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_project_nta_metfrag_screening
-bool rcpp_project_nta_metfrag_screening(SEXP nta_xptr, std::string metfrag_path, std::string database_type, std::string database_path, Rcpp::CharacterVector analyses, double ppm, double sec, double ppmMS2, double mzrMS2, int top_n, bool filtered, std::string java_path, std::string run_dir, bool debug, Rcpp::List extra_params);
-RcppExport SEXP _StreamFind_rcpp_project_nta_metfrag_screening(SEXP nta_xptrSEXP, SEXP metfrag_pathSEXP, SEXP database_typeSEXP, SEXP database_pathSEXP, SEXP analysesSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP ppmMS2SEXP, SEXP mzrMS2SEXP, SEXP top_nSEXP, SEXP filteredSEXP, SEXP java_pathSEXP, SEXP run_dirSEXP, SEXP debugSEXP, SEXP extra_paramsSEXP) {
+bool rcpp_project_nta_metfrag_screening(SEXP nta_xptr, std::string metfrag_path, std::string database_type, std::string database_path, Rcpp::CharacterVector analyses, double ppm, double sec, double ppmMS2, double mzrMS2, int top_n, Rcpp::CharacterVector score_types, Rcpp::NumericVector score_weights, Rcpp::CharacterVector pre_processing_candidate_filter, Rcpp::CharacterVector post_processing_candidate_filter, int maximum_tree_depth, int number_threads, bool use_smiles, bool filtered, std::string java_path, std::string run_dir, bool debug, Rcpp::List extra_params);
+RcppExport SEXP _StreamFind_rcpp_project_nta_metfrag_screening(SEXP nta_xptrSEXP, SEXP metfrag_pathSEXP, SEXP database_typeSEXP, SEXP database_pathSEXP, SEXP analysesSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP ppmMS2SEXP, SEXP mzrMS2SEXP, SEXP top_nSEXP, SEXP score_typesSEXP, SEXP score_weightsSEXP, SEXP pre_processing_candidate_filterSEXP, SEXP post_processing_candidate_filterSEXP, SEXP maximum_tree_depthSEXP, SEXP number_threadsSEXP, SEXP use_smilesSEXP, SEXP filteredSEXP, SEXP java_pathSEXP, SEXP run_dirSEXP, SEXP debugSEXP, SEXP extra_paramsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1051,12 +1078,19 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< double >::type ppmMS2(ppmMS2SEXP);
     Rcpp::traits::input_parameter< double >::type mzrMS2(mzrMS2SEXP);
     Rcpp::traits::input_parameter< int >::type top_n(top_nSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type score_types(score_typesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::NumericVector >::type score_weights(score_weightsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type pre_processing_candidate_filter(pre_processing_candidate_filterSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type post_processing_candidate_filter(post_processing_candidate_filterSEXP);
+    Rcpp::traits::input_parameter< int >::type maximum_tree_depth(maximum_tree_depthSEXP);
+    Rcpp::traits::input_parameter< int >::type number_threads(number_threadsSEXP);
+    Rcpp::traits::input_parameter< bool >::type use_smiles(use_smilesSEXP);
     Rcpp::traits::input_parameter< bool >::type filtered(filteredSEXP);
     Rcpp::traits::input_parameter< std::string >::type java_path(java_pathSEXP);
     Rcpp::traits::input_parameter< std::string >::type run_dir(run_dirSEXP);
     Rcpp::traits::input_parameter< bool >::type debug(debugSEXP);
     Rcpp::traits::input_parameter< Rcpp::List >::type extra_params(extra_paramsSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_project_nta_metfrag_screening(nta_xptr, metfrag_path, database_type, database_path, analyses, ppm, sec, ppmMS2, mzrMS2, top_n, filtered, java_path, run_dir, debug, extra_params));
+    rcpp_result_gen = Rcpp::wrap(rcpp_project_nta_metfrag_screening(nta_xptr, metfrag_path, database_type, database_path, analyses, ppm, sec, ppmMS2, mzrMS2, top_n, score_types, score_weights, pre_processing_candidate_filter, post_processing_candidate_filter, maximum_tree_depth, number_threads, use_smiles, filtered, java_path, run_dir, debug, extra_params));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1130,6 +1164,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_StreamFind_rcpp_project_non_target_analysis_new", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_new, 1},
     {"_StreamFind_rcpp_project_non_target_analysis_get_features", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_get_features, 13},
     {"_StreamFind_rcpp_project_non_target_analysis_get_features_count", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_get_features_count, 3},
+    {"_StreamFind_rcpp_project_nta_get_matrix_suppression", (DL_FUNC) &_StreamFind_rcpp_project_nta_get_matrix_suppression, 4},
+    {"_StreamFind_rcpp_project_nta_correct_matrix_suppression", (DL_FUNC) &_StreamFind_rcpp_project_nta_correct_matrix_suppression, 3},
     {"_StreamFind_rcpp_project_non_target_analysis_get_suspects", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_get_suspects, 11},
     {"_StreamFind_rcpp_project_non_target_analysis_get_internal_standards", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_get_internal_standards, 11},
     {"_StreamFind_rcpp_project_non_target_analysis_get_transformation_products", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_get_transformation_products, 1},
@@ -1148,7 +1184,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_StreamFind_rcpp_project_nta_find_internal_standards", (DL_FUNC) &_StreamFind_rcpp_project_nta_find_internal_standards, 10},
     {"_StreamFind_rcpp_project_nta_suspect_screening", (DL_FUNC) &_StreamFind_rcpp_project_nta_suspect_screening, 10},
     {"_StreamFind_rcpp_project_nta_filter_features_ms2", (DL_FUNC) &_StreamFind_rcpp_project_nta_filter_features_ms2, 8},
-    {"_StreamFind_rcpp_project_nta_metfrag_screening", (DL_FUNC) &_StreamFind_rcpp_project_nta_metfrag_screening, 15},
+    {"_StreamFind_rcpp_project_nta_metfrag_screening", (DL_FUNC) &_StreamFind_rcpp_project_nta_metfrag_screening, 22},
     {"_StreamFind_rcpp_project_nta_assign_transformation_products", (DL_FUNC) &_StreamFind_rcpp_project_nta_assign_transformation_products, 4},
     {NULL, NULL, 0}
 };

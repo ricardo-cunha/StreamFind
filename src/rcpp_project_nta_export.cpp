@@ -558,6 +558,50 @@ namespace nta_rcpp
     return out;
   }
 
+  Rcpp::List nta_matrix_suppression_rows_to_dt(const std::vector<nta::correction_algorithms::TIC_MATRIX_SUPPRESSION_ROW> &rows)
+  {
+    if (rows.empty())
+    {
+      Rcpp::List out = Rcpp::List::create(
+        Rcpp::Named("analysis") = Rcpp::CharacterVector(),
+        Rcpp::Named("replicate") = Rcpp::CharacterVector(),
+        Rcpp::Named("polarity") = Rcpp::IntegerVector(),
+        Rcpp::Named("level") = Rcpp::IntegerVector(),
+        Rcpp::Named("rt") = Rcpp::NumericVector(),
+        Rcpp::Named("intensity") = Rcpp::NumericVector(),
+        Rcpp::Named("mp") = Rcpp::NumericVector());
+      out.attr("class") = Rcpp::CharacterVector::create("data.table", "data.frame");
+      return out;
+    }
+
+    const std::size_t n = rows.size();
+    Rcpp::CharacterVector analysis(n), replicate(n);
+    Rcpp::IntegerVector polarity(n), level(n);
+    Rcpp::NumericVector rt(n), intensity(n), mp(n);
+
+    for (std::size_t i = 0; i < n; ++i)
+    {
+      analysis[i] = rows[i].analysis;
+      replicate[i] = rows[i].replicate.empty() ? NA_STRING : Rcpp::String(rows[i].replicate);
+      polarity[i] = rows[i].polarity;
+      level[i] = rows[i].level;
+      rt[i] = rows[i].rt;
+      intensity[i] = rows[i].intensity;
+      mp[i] = rows[i].mp;
+    }
+
+    Rcpp::List out = Rcpp::List::create(
+      Rcpp::Named("analysis") = analysis,
+      Rcpp::Named("replicate") = replicate,
+      Rcpp::Named("polarity") = polarity,
+      Rcpp::Named("level") = level,
+      Rcpp::Named("rt") = rt,
+      Rcpp::Named("intensity") = intensity,
+      Rcpp::Named("mp") = mp);
+    out.attr("class") = Rcpp::CharacterVector::create("data.table", "data.frame");
+    return out;
+  }
+
   Rcpp::List nta_suspect_rows_to_dt(const std::vector<nta::api::NTA_SUSPECT_ROW> &rows)
   {
     const std::size_t n = rows.size();
@@ -1265,6 +1309,53 @@ Rcpp::List rcpp_project_non_target_analysis_get_features_count(
 }
 
 // [[Rcpp::export]]
+Rcpp::List rcpp_project_nta_get_matrix_suppression(
+  SEXP nta_xptr,
+  Rcpp::CharacterVector analyses = Rcpp::CharacterVector::create(""),
+  double rtWindowVal = 10.0,
+  Rcpp::Nullable<std::string> refBlankReplicate = R_NilValue)
+{
+  std::vector<std::string> analyses_sel;
+  if (analyses.size() > 0 && analyses[0] != NA_STRING && Rcpp::as<std::string>(analyses[0]) != "")
+  {
+    analyses_sel = Rcpp::as<std::vector<std::string>>(analyses);
+  }
+
+  std::string ref_blank;
+  if (refBlankReplicate.isNotNull())
+  {
+    ref_blank = Rcpp::as<std::string>(refBlankReplicate);
+  }
+
+  return nta_rcpp::project_call([&]() {
+    return nta_rcpp::nta_matrix_suppression_rows_to_dt(
+      nta_rcpp::project_non_target_analysis_from_xptr(nta_xptr).get_matrix_suppression(
+        analyses_sel,
+        static_cast<float>(rtWindowVal),
+        ref_blank)
+    );
+  });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_nta_correct_matrix_suppression(
+  SEXP nta_xptr,
+  double mpRtWindow = 10.0,
+  Rcpp::Nullable<std::string> refBlankReplicate = R_NilValue)
+{
+  std::string ref_blank;
+  if (refBlankReplicate.isNotNull())
+  {
+    ref_blank = Rcpp::as<std::string>(refBlankReplicate);
+  }
+
+  return nta_rcpp::project_call([&]() {
+    auto &nta_data = nta_rcpp::project_non_target_analysis_from_xptr(nta_xptr);
+    return nta_data.correct_matrix_suppression(static_cast<float>(mpRtWindow), ref_blank);
+  });
+}
+
+// [[Rcpp::export]]
 Rcpp::List rcpp_project_non_target_analysis_get_suspects(
   SEXP nta_xptr,
   SEXP analyses,
@@ -1818,7 +1909,7 @@ bool rcpp_project_nta_filter_features_ms2(
 bool rcpp_project_nta_metfrag_screening(
   SEXP nta_xptr,
     std::string metfrag_path,
-    std::string database_type = "LocalCSV",
+    std::string database_type = "PubChem",
     std::string database_path = "",
     Rcpp::CharacterVector analyses = Rcpp::CharacterVector::create(""),
     double ppm = 5.0,
@@ -1826,6 +1917,13 @@ bool rcpp_project_nta_metfrag_screening(
     double ppmMS2 = 10.0,
     double mzrMS2 = 0.008,
     int top_n = 1,
+    Rcpp::CharacterVector score_types = Rcpp::CharacterVector::create("FragmenterScore"),
+    Rcpp::NumericVector score_weights = Rcpp::NumericVector::create(1.0),
+    Rcpp::CharacterVector pre_processing_candidate_filter = Rcpp::CharacterVector::create("UnconnectedCompoundFilter", "IsotopeFilter"),
+    Rcpp::CharacterVector post_processing_candidate_filter = Rcpp::CharacterVector::create("InChIKeyFilter"),
+    int maximum_tree_depth = 2,
+    int number_threads = 1,
+    bool use_smiles = true,
     bool filtered = false,
     std::string java_path = "java",
     std::string run_dir = "",
@@ -1852,13 +1950,20 @@ bool rcpp_project_nta_metfrag_screening(
 
   nta::metfrag_runner::MetFragParams p;
   p.metfrag_path   = metfrag_path;
-  p.database_type  = database_type;
+  p.database_type  = nta::metfrag_runner::canonicalize_database_type(database_type);
   p.database_path  = database_path;
   p.ppm            = ppm;
   p.sec            = sec;
   p.ppmMS2         = ppmMS2;
   p.mzrMS2         = mzrMS2;
   p.top_n          = top_n;
+  p.score_types    = Rcpp::as<std::vector<std::string>>(score_types);
+  p.score_weights  = Rcpp::as<std::vector<double>>(score_weights);
+  p.pre_processing_candidate_filter = Rcpp::as<std::vector<std::string>>(pre_processing_candidate_filter);
+  p.post_processing_candidate_filter = Rcpp::as<std::vector<std::string>>(post_processing_candidate_filter);
+  p.maximum_tree_depth = maximum_tree_depth;
+  p.number_threads = number_threads;
+  p.use_smiles = use_smiles;
   p.filtered       = filtered;
   p.java_path      = java_path;
   p.run_dir        = run_dir;

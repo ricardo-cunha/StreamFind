@@ -9,416 +9,144 @@ experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](h
 
 <img src="man/figures/readme_logos.png" alt="Logo" width="100%" style="display: block; margin: auto;" />
 
-StreamFind R package is developed within the project [“Flexible data
-analysis and workflow designer to identify chemicals in the water
-cycle”](https://www.bildung-forschung.digital/digitalezukunft/de/bildung/digital-_und_datenkompetenzen/datenkompetenzen_wissenschaftlichen_nachwuchs/Projekte/stream_find.html)
-funded by the [German Federal Ministry of Education and Research
-(BMBF)](https://www.bmbf.de). The development is carried out by the
-[Institut für Umwelt & Energie, Technik & Analytik e. V.
-(IUTA)](https://www.iuta.de), the [Forschungszentrum Informatik
-(FZI)](https://www.fzi.de/) and supporting partners. StreamFind is
-intended to be a platform for assembling processing workflows for
-different types of data (e.g. mass spectrometry (MS) and spectroscopy
-data) with applications in different fields (e.g. environmental studies
-of the water cycle and quality control of pharmaceuticals). StreamFind
-aims to stimulate the use of advanced data analysis (e.g. non-target
-screening, statistical analysis, etc.) in routine studies, to promote
-standardization of data structure and processing, and to facilitate
-retrospective data evaluation. The StreamFind platform is aimed at
-scientists, but also at technicians due to its comprehensive
-documentation, its well categorized set of integrated modular processing
-methods and its embedded graphical user interface.
+StreamFind is a DuckDB-backed workflow framework for analytical data
+processing in R. The current package architecture is built around
+persistent `Project` child classes that hold data, workflow metadata,
+cached results, and audit state in one place.
 
-The StreamFind development is ongoing, please [contact
-us](mailto:cunha@iuta.de) for questions or collaboration.
+The main project classes are:
+
+- `ProjectMassSpec`: shared mass-spectrometry project interface
+- `ProjectMassSpecSpectra`: spectra-focused raw MS access
+- `ProjectMassSpecChromatograms`: chromatogram-focused raw MS access
+- `ProjectNonTargetAnalysis`: non-target analysis workflows and results
+
+Workflows are assembled from ordered `Method` objects, stored on the
+project, and executed reproducibly. This gives one framework for
+interactive exploration, scripted processing, and Shiny-based inspection
+of the same project state.
 
 ## Installation
 
-Pre-requisites for the StreamFind are the
-[R](https://cran.r-project.org/) software and the
-[RTools](https://cran.r-project.org/bin/windows/Rtools/) (only
-applicable for Windows users). RTools is needed for compiling C++ code
-used in the StreamFind R package. StreamFind also uses Python scripts
-for some of its processing methods, so it is recommended (but not
-mandatory) to have the latest
-[Python](https://www.python.org/downloads/) installed and added to the
-environmental variables for Windows users. Assuming that R, R Tools and
-Python (optional) are installed, the StreamFind R package can be
-installed from the GitHub repository via the [Bioconductor
-Manager](https://www.bioconductor.org/install/), which makes it easier
-to install necessary Bioconductor dependencies (e.g. zlibbioc and
-Rhdf5lib). Note that StreamFind itself is not available on Bioconductor.
-Please note that the default timeout for the `BiocManager::install`
-function might be to short. Thus, if the download of StreamFind fails
-run `options(timeout = 600)` before the installation command, as shown
-below.
+StreamFind requires R and a working C++17 toolchain. On Windows this
+generally means installing
+[RTools](https://cran.r-project.org/bin/windows/Rtools/). Some optional
+methods depend on external software such as Java, MetFrag, Python-based
+tooling, or chemistry packages listed in `Suggests`.
+
+Install the package from GitHub:
 
 ``` r
-options(timeout = 600) # Increase timeout
-if (!require("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-BiocManager::install("odea-project/StreamFind")
+options(timeout = 600)
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
+}
+remotes::install_github("odea-project/StreamFind")
 ```
 
-## Other dependencies
-
-Some processing methods used by StreamFind depend on other open-source
-software. For example, when conducting non-target screening using mass
-spectrometry, StreamFind utilises the [patRoon R
-package](https://github.com/rickhelmus/patRoon) and its associated
-dependencies for certain processing methods. If a dependency is not
-installed, a warning message with instructions will be displayed. Please
-consult the documentation for each processing method for details of its
-dependencies.
-
-## Suplementary data
-
-The supplementary
-[StreamFindData](https://github.com/odea-project/StreamFindData) R
-package holds the data used in examples and other documentation assets
-of the StreamFind and can also be installed from the GitHub repository.
+Supplementary example data and assets are available in the companion
+package
+[StreamFindData](https://github.com/odea-project/StreamFindData):
 
 ``` r
-if (!require("BiocManager", quietly = TRUE))
-  install.packages("BiocManager")
-BiocManager::install("odea-project/StreamFindData")
+if (!requireNamespace("remotes", quietly = TRUE)) {
+  install.packages("remotes")
+}
+remotes::install_github("odea-project/StreamFindData")
 ```
 
-## Docker Setup
+## Framework overview
 
-The StreamFind can also be used via the
-[Docker](https://www.docker.com/products/docker-desktop/) container. The
-Docker container is a pre-configured environment with all the necessary
-dependencies installed. The Docker container can be built and started
-with the following commands.
+The typical workflow is:
 
-Build the Docker container: `docker build -t my-r-app .`
+1.  Open or create a project child class.
+2.  Import domain data into that project.
+3.  Define a `Workflow` from `Method` objects.
+4.  Attach the workflow with `set_workflow()`.
+5.  Run it with `run_workflow()` or stepwise with `run_method()`.
+6.  Inspect results through the project API or `run_app()`.
 
-Start the Docker container:
+Example for non-target analysis:
 
-**For Linux/macOS/bash:**
+``` r
+library(StreamFind)
 
-``` bash
-docker run -it -p 3838:3838 -p 8787:8787 -v $(pwd):/app my-r-app
+nta <- open_ProjectNonTargetAnalysis(
+  db = "streamfind.duckdb",
+  project_id = "nta_demo"
+)
+
+workflow <- Workflow(list(
+  Method_NonTargetAnalysis_FindFeatures(),
+  Method_NonTargetAnalysis_LoadFeaturesMS1(),
+  Method_NonTargetAnalysis_LoadFeaturesMS2(),
+  Method_NonTargetAnalysis_GroupFeatures(),
+  Method_NonTargetAnalysis_FillFeatures(),
+  Method_NonTargetAnalysis_FilterFeatures()
+))
+
+set_workflow(nta, workflow)
+run_workflow(nta)
+
+features <- get_features(nta)
+plot_features_count(nta)
 ```
 
-**For Windows PowerShell:**
+## Non-target analysis
 
-``` powershell
-docker run -it -p 3838:3838 -p 8787:8787 -v "${PWD}:/app" my-r-app
+`ProjectNonTargetAnalysis` is the most feature-rich project class
+currently exposed in StreamFind. It supports native workflow methods
+for:
+
+- feature finding
+- MS1 and MS2 trace loading
+- component creation and annotation
+- feature grouping and gap filling
+- blank subtraction
+- matrix-suppression correction
+- feature filtering
+- suspect screening
+- internal-standard matching
+- MetFrag screening
+- transformation-product assignment
+
+The project object also exposes structured getters and plots for
+features, spectra, suspects, internal standards, matrix suppression,
+fold change, and transformation products.
+
+## Shiny application
+
+The same project objects can be inspected in the integrated application:
+
+``` r
+nta$run_app()
 ```
 
-Once the container is up, you’ll be prompted to select the service you
-want to run:
+This is useful when you want to browse analyses, results, and workflow
+state without leaving the package data model.
 
-- *Option 1:* Starts the Shiny application, accessible at
-  <http://localhost:3838>.
-- *Option 2:* Starts the RStudio Server, accessible at
-  <http://localhost:8787>
-  - Default Username is rstudio and Password is rstudio
-- *Option 3:* Starts both the Shiny App and RStudio Server
+## External dependencies
+
+Some workflows depend on third-party tools that are not bundled with
+StreamFind. For example:
+
+- MetFrag screening requires a MetFrag CL installation and Java
+- some chemistry features depend on `rcdk` and `rJava`
+- optional reporting uses Quarto
+
+Method-level documentation describes these requirements where relevant.
 
 ## Documentation
 
-The documentation and usage examples of the StreamFind R package can be
-found in the [reference
-page](https://odea-project.github.io/StreamFind/reference/index.html)
-and
-[articles](https://odea-project.github.io/StreamFind/articles/index.html)
-of the [webpage](https://odea-project.github.io/StreamFind/index.html),
-respectively. Note that documentation and articles are under development
-so not all are yet available.
+Reference documentation and articles are published at:
 
-## References
+- <https://odea-project.github.io/StreamFind/>
+- <https://odea-project.github.io/StreamFind/reference/index.html>
 
-The StreamFind is open source due to public funding and the extensive
-contribution from scientific literature as well as existing open source
-software. Below, we reference the research and software that is used
-within StreamFind. Please note that each open source software or
-research that StreamFind uses relies on other contributions. Therefore,
-we recommend to search within each citation for other contributions.
-<br>
+## Project background
 
-<div id="refs" class="references csl-bib-body hanging-indent">
-
-<div id="ref-bader01" class="csl-entry">
-
-Bader, Tobias, Wolfgang Schulz, Klaus Kümmerer, and Rudi Winzenbacher.
-2017. “LC-HRMS Data Processing Strategy for Reliable Sample Comparison
-Exemplified by the Assessment of Water Treatment Processes.” *Analytical
-Chemistry* 89 (24): 13219–26.
-<https://doi.org/10.1021/acs.analchem.7b03037>.
-
-</div>
-
-<div id="ref-xcms03" class="csl-entry">
-
-Benton, H. Paul, Elizabeth J. Want, and Timothy M. D. Ebbels. 2010.
-“Correction of Mass Calibration Gaps in Liquid Chromatography-Mass
-Spectrometry Metabolomics Data.” *BIOINFORMATICS* 26: 2488.
-
-</div>
-
-<div id="ref-proteo02" class="csl-entry">
-
-Chambers, M. C., B. Maclean, R. Burke, et al. 2012a. “A Cross-Platform
-Toolkit for Mass Spectrometry and Proteomics.” *Nature Biotechnology* 30
-(10): 918–20. <https://doi.org/10.1038/nbt.2377>.
-
-</div>
-
-<div id="ref-mzr04" class="csl-entry">
-
-Chambers, Matthew C., Maclean, et al. 2012b. “<span class="nocase">A
-cross-platform toolkit for mass spectrometry and proteomics</span>.”
-*Nat Biotech* 30 (10): 918–20. <https://doi.org/10.1038/nbt.2377>.
-
-</div>
-
-<div id="ref-biotransformer01" class="csl-entry">
-
-Djoumbou-Feunang, Yannick, Jarlei Fiamoncini, Alberto Gil-de-la-Fuente,
-Claudine Manach, Russell Greiner, and David S. Wishart. 2019.
-“BioTransformer: A Comprehensive Computational Tool for Small Molecule
-Metabolism Prediction and Metabolite Identification.” *Journal of
-Cheminformatics* 11 (2): 1–25.
-<https://doi.org/10.1186/s13321-018-0324-5>.
-
-</div>
-
-<div id="ref-msnbase02" class="csl-entry">
-
-Gatto, Laurent, Sebastian Gibb, and Johannes Rainer. 2020. “MSnbase,
-Efficient and Elegant r-Based Processing and Visualisation of Raw Mass
-Spectrometry Data.” *bioRxiv*.
-
-</div>
-
-<div id="ref-msnbase01" class="csl-entry">
-
-Gatto, Laurent, and Kathryn Lilley. 2012. “MSnbase - an r/Bioconductor
-Package for Isobaric Tagged Mass Spectrometry Data Visualization,
-Processing and Quantitation.” *Bioinformatics* 28: 288–89.
-
-</div>
-
-<div id="ref-patroon01" class="csl-entry">
-
-<span class="nocase">Helmus, Rick, Thomas L. ter Laak, Annemarie P. van
-Wezel, Pim de Voogt, and Emma L. Schymanski</span>. 2021. “patRoon: Open
-Source Software Platform for Environmental Mass Spectrometry Based
-Non-Target Screening.” *Journal of Cheminformatics* 13 (1).
-<https://doi.org/10.1186/s13321-020-00477-w>.
-
-</div>
-
-<div id="ref-patroon02" class="csl-entry">
-
-Helmus, Rick, Bas van de Velde, Andrea M. Brunner, Thomas L. ter Laak,
-Annemarie P. van Wezel, and Emma L. Schymanski. 2022. “patRoon 2.0:
-Improved Non-Target Analysis Workflows Including Automated
-Transformation Product Screening.” *Journal of Open Source Software* 7
-(71): 4029. <https://doi.org/10.21105/joss.04029>.
-
-</div>
-
-<div id="ref-kpic01" class="csl-entry">
-
-Ji, Hongchao, Fanjuan Zeng, Yamei Xu, Hongmei Lu, and Zhimin Zhang.
-2017. “KPIC2: An Effective Framework for Mass Spectrometry-Based
-Metabolomics Using Pure Ion Chromatograms.” *Anal Chem.* 14 (89):
-7631–40. <https://doi.org/10.1021/acs.analchem.7b01547>.
-
-</div>
-
-<div id="ref-pugixml01" class="csl-entry">
-
-Kapoulkine, Arseny. 2022. “Pugixml 1.13: Light-Weight, Simple and Fast
-XML Parser for c++ with XPath Support.” *Copyright (C) 2006-2018*.
-<http://pugixml.org>.
-
-</div>
-
-<div id="ref-mzr02" class="csl-entry">
-
-Keller, Andrew, Jimmy Eng, Ning Zhang, Xiao-jun Li, and Ruedi Aebersold.
-2005. “A Uniform Proteomics MS/MS Analysis Platform Utilizing Open XML
-File Formats.” *Mol Syst Biol*.
-
-</div>
-
-<div id="ref-proteo01" class="csl-entry">
-
-Kessner, Darren, Matt Chambers, Robert Burke, David Agus, and Parag
-Mallick. 2008. “ProteoWizard: Open Source Software for Rapid Proteomics
-Tools Development.” *Bioinformatics* 24 (21): 2534–36.
-<https://doi.org/10.1093/bioinformatics/btn323>.
-
-</div>
-
-<div id="ref-mdatools01" class="csl-entry">
-
-Kucheryavskiy, Sergey. 2020. “Mdatools – r Package for Chemometrics.”
-*Chemometrics and Intelligent Laboratory Systems* 198: 103937.
-https://doi.org/<https://doi.org/10.1016/j.chemolab.2020.103937>.
-
-</div>
-
-<div id="ref-camera01" class="csl-entry">
-
-Kuhl, C., R. Tautenhahn, C. Boettcher, T. R. Larson, and S. Neumann.
-2012. “CAMERA: An Integrated Strategy for Compound Spectra Extraction
-and Annotation of Liquid Chromatography/Mass Spectrometry Data Sets.”
-*Analytical Chemistry* 84: 283–89.
-<http://pubs.acs.org/doi/abs/10.1021/ac202450g>.
-
-</div>
-
-<div id="ref-mzr03" class="csl-entry">
-
-Martens, Lennart, Matthew Chambers, Marc Sturm, et al. 2010. “MzML - a
-Community Standard for Mass Spectrometry Data.” *Mol Cell Proteomics*,
-ahead of print. <https://doi.org/10.1074/mcp.R110.000133>.
-
-</div>
-
-<div id="ref-genform" class="csl-entry">
-
-Meringer, Markus, Stefan Reinker, Juan Zhang, and Alban Muller. 2011.
-“MS/MS Data Improves Automated Determination of Molecular Formulas by
-Mass Spectrometry.” *MATCH Commun. Math. Comput. Chem* 65 (2): 259–90.
-
-</div>
-
-<div id="ref-mzr01" class="csl-entry">
-
-Pedrioli, Patrick G A, Jimmy K Eng, Robert Hubley, et al. 2004. “A
-Common Open Representation of Mass Spectrometry Data and Its Application
-to Proteomics Research.” *Nat Biotechnol* 22 (11): 1459–66.
-<https://doi.org/10.1038/nbt1031>.
-
-</div>
-
-<div id="ref-qcentroids01" class="csl-entry">
-
-Reuschenbach, Max, Lotta L. Hohrenk-Danzouma, Torsten C. Schmidt, and
-Gerrit Renner. 2022. “Development of a Scoring Parameter to Characterize
-Data Quality of Centroids in High-Resolution Mass Spectra.” *Analytical
-and Bioanalytical Chemistry* 414 (July): 6635–45.
-<https://doi.org/10.1007/s00216-022-04224-y>.
-
-</div>
-
-<div id="ref-openms01" class="csl-entry">
-
-Röst, Hannes L., Timo Sachsenberg, Stephan Aiche, et al. 2016. “OpenMS:
-A Flexible Open-Source Software Platform for Mass Spectrometry Data
-Analysis.” *Nature Methods* 13 (9): 741–48.
-<https://doi.org/10.1038/nmeth.3959>.
-
-</div>
-
-<div id="ref-metfrag02" class="csl-entry">
-
-Ruttkies, Christoph, Steffen Neumann, and Stefan Posch. 2019. “Improving
-MetFrag with Statistical Learning of Fragment Annotations.” *BMC
-Bioinformatics* 20 (1): 1–14.
-
-</div>
-
-<div id="ref-metfrag03" class="csl-entry">
-
-Ruttkies, Christoph, Emma L Schymanski, Nadine Strehmel, et al. 2019.
-“Supporting Non-Target Identification by Adding Hydrogen Deuterium
-Exchange MS/MS Capabilities to MetFrag.” *Analytical and Bioanalytical
-Chemistry* 411: 4683–700.
-
-</div>
-
-<div id="ref-metfrag01" class="csl-entry">
-
-Ruttkies, Christoph, Emma L Schymanski, Sebastian Wolf, Juliane
-Hollender, and Steffen Neumann. 2016. “MetFrag Relaunched: Incorporating
-Strategies Beyond in Silico Fragmentation.” *Journal of Cheminformatics*
-8 (1): 1–16.
-
-</div>
-
-<div id="ref-orpl01" class="csl-entry">
-
-Sheehy, Guillaume, Fabien Picot, Frédérick Dallaire, et al. 2023.
-“<span class="nocase">Open-sourced Raman spectroscopy data processing
-package implementing a baseline removal algorithm validated from
-multiple datasets acquired in human tissue and biofluids</span>.”
-*Journal of Biomedical Optics* 28 (2): 025002.
-<https://doi.org/10.1117/1.JBO.28.2.025002>.
-
-</div>
-
-<div id="ref-xcms01" class="csl-entry">
-
-Smith, C.A., Want, et al. 2006. “XCMS: Processing Mass Spectrometry Data
-for Metabolite Profiling Using Nonlinear Peak Alignment, Matching and
-Identification.” *Analytical Chemistry* 78: 779–87.
-
-</div>
-
-<div id="ref-xcms02" class="csl-entry">
-
-Tautenhahn, Ralf, Christoph Boettcher, and Steffen Neumann. 2008.
-“Highly Sensitive Feature Detection for High Resolution LC/MS.” *BMC
-Bioinformatics* 9: 504.
-
-</div>
-
-<div id="ref-tisler01" class="csl-entry">
-
-Tisler, Selina, David I. Pattison, and Jan H. Christensen. 2021.
-“Correction of Matrix Effects for Reliable Non-Target Screening
-LC–ESI–MS Analysis of Wastewater.” *Analytical Chemistry* 93 (24):
-8432–41. <https://doi.org/10.1021/acs.analchem.1c00357>.
-
-</div>
-
-<div id="ref-class01" class="csl-entry">
-
-Venables, W. N., and B. D. Ripley. 2002. *Modern Applied Statistics with
-s*. Fourth. Springer. <https://www.stats.ox.ac.uk/pub/MASS4/>.
-
-</div>
-
-<div id="ref-mdatools02" class="csl-entry">
-
-Windig, Willem, Neal B. Gallagher, Jeremy M. Shaver, and Barry M. Wise.
-2005. “A New Approach for Interactive Self-Modeling Mixture Analysis.”
-*Chemometrics and Intelligent Laboratory Systems* 77 (1): 85–96.
-https://doi.org/<https://doi.org/10.1016/j.chemolab.2004.06.009>.
-
-</div>
-
-<div id="ref-biotransformer02" class="csl-entry">
-
-Wishart, David S., Siyang Tian, Dana Allen, et al. 2022. “BioTransformer
-3.0 – a Web Server for Accurately Predicting Metabolic Transformation
-Products.” *Nucleic Acids Research*.
-
-</div>
-
-<div id="ref-metfrag04" class="csl-entry">
-
-Wolf, Sebastian, Stephan Schmidt, Matthias Müller-Hannemann, and Steffen
-Neumann. 2010. “In Silico Fragmentation for Computer Assisted
-Identification of Metabolite Mass Spectra.” *BMC Bioinformatics* 11:
-1–12.
-
-</div>
-
-<div id="ref-airpls01" class="csl-entry">
-
-Zhang, Zhi-Min, Shan Chen, and Yi-Zeng Liang. 2010. “Baseline Correction
-Using Adaptive Iteratively Reweighted Penalized Least Squares.”
-*Analyst* 135: 1138–46. <https://doi.org/10.1039/B922045C>.
-
-</div>
-
-</div>
+StreamFind is developed within the project “Flexible data analysis and
+workflow designer to identify chemicals in the water cycle” with
+contributions centred at IUTA and partner organisations. The package is
+under active development and the project-class framework is the primary
+interface going forward.

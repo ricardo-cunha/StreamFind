@@ -51,6 +51,9 @@ seconds.}
 A \code{Method} object of class \code{Method_NonTargetAnalysis_FillFeatures}.
 }
 \description{
-Create a \code{Method} child object for filling missing features
-across analyses.
+Create a \code{Method} child object for gap filling after feature
+grouping. In cross-sample NTA tables, some groups are absent in individual
+analyses because signals fall below the original detection threshold or
+were missed during peak picking; this step revisits the expected RT and m/z
+region to recover plausible peak intensities and improve table completeness.
 }

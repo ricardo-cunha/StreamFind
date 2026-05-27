@@ -123,6 +123,24 @@ workflow <- Workflow(list(
     debug = FALSE,
     debugRT = 0
   ),
+  Method_NonTargetAnalysis_FillFeatures(
+    withinReplicate = FALSE,
+    filtered = FALSE,
+    rtExpand = 10,
+    mzExpand = 0.01,
+    maxPeakWidth = 30,
+    minTracesIntensity = 1000,
+    minNumberTraces = 5L,
+    minIntensity = 5000,
+    rtApexDeviation = 5,
+    minSignalToNoiseRatio = 3,
+    minGaussianFit = 0.2,
+    debugFG = ""
+  ),
+  # Method_NonTargetAnalysis_CorrectMatrixSuppression(
+  #   refBlankReplicate = NA_character_,
+  #   mpRtWindow = 10
+  # ),
   Method_NonTargetAnalysis_BlankSubtraction(
     blankThreshold = 5,
     rtExpand = 10,
@@ -134,16 +152,16 @@ workflow <- Workflow(list(
     removeAdducts = TRUE,
     removeLosses = TRUE
   ),
-  Method_NonTargetAnalysis_SuspectScreening(
-    suspects = suspects,
-    ppm = 5,
-    sec = 10,
-    ppmMS2 = 10,
-    mzrMS2 = 0.008,
-    minCosineSimilarity = 0.7,
-    minSharedFragments = 3L,
-    filtered = TRUE
-  ),
+  # Method_NonTargetAnalysis_SuspectScreening(
+  #   suspects = suspects,
+  #   ppm = 5,
+  #   sec = 10,
+  #   ppmMS2 = 10,
+  #   mzrMS2 = 0.008,
+  #   minCosineSimilarity = 0.7,
+  #   minSharedFragments = 3L,
+  #   filtered = TRUE
+  # ),
   Method_NonTargetAnalysis_MetFragScreening(
     metfrag_path = "C:\\Users\\cunha\\Documents\\patRoon_deps\\MetFragCommandLine-2.5.0.jar",
     database_type = "LocalCSV",
@@ -153,20 +171,51 @@ workflow <- Workflow(list(
     ppmMS2 = 10,
     mzrMS2 = 0.008,
     top_n = 5L,
+    score_types = "FragmenterScore",
+    score_weights = 1,
+    pre_processing_candidate_filter = c("UnconnectedCompoundFilter", "IsotopeFilter"),
+    post_processing_candidate_filter = "InChIKeyFilter",
+    maximum_tree_depth = 2L,
+    number_threads = 1L,
+    use_smiles = TRUE,
     filtered = FALSE,
     java_path = "java",
     run_dir = "",
     debug = TRUE,
     extra_params = list()
-  ),
-  Method_NonTargetAnalysis_AssignTransformationProducts(
-    transformation_products = transformation_products,
-    chromatographic_phase = "reverse_phase",
-    mzrMS2 = 0.008
   )
+  # Method_NonTargetAnalysis_AssignTransformationProducts(
+  #   transformation_products = transformation_products,
+  #   chromatographic_phase = "reverse_phase",
+  #   mzrMS2 = 0.008
+  # )
 ))
 
-set_workflow(nta, workflow[1:11])
+set_workflow(nta, workflow[1:12])
+
+show(nta$get_workflow())
+
+
+
+
+# get_suspects_screening_csv(
+#   suspects = data.table::fread(
+#     file.path(
+#       getwd(),
+#       "dev",
+#       "dev_duckdb",
+#       "internal_standards_fants.csv"
+#     )
+#   ),
+#   file = file.path(
+#     getwd(),
+#     "dev",
+#     "dev_duckdb",
+#     "internal_standards_fants_V2.csv"
+#   )
+# )
+
+
 
 nta$run_workflow()
 
@@ -174,7 +223,6 @@ nta$run_workflow()
 
 nrow(get_internal_standards(nta))
 
-show(nta$get_workflow())
 
 class(nta$get_workflow())
 
@@ -215,11 +263,58 @@ features_all <- get_features(nta)
 
 features_subset <- get_features(
   nta,
-  analyses = 11,
-  mass = internal_standards[4:6, ],
+  #analyses = 11,
+  mass = internal_standards[4, ],
   ppm = 20,
   sec = 60,
-  filtered = FALSE
+  filtered = TRUE
+)[, 1:35]
+
+
+tic_plot <- plot_spectra_tic(
+  nta,
+  downsize = 1,
+  levels = 1,
+  groupBy = "replicate"
+)
+
+matrix_suppression_plot <- plot_matrix_suppression(
+  nta,
+  colorBy = "replicates"
+)
+
+tic_matrix_subplot <- plotly::subplot(
+  tic_plot,
+  matrix_suppression_plot,
+  nrows = 2,
+  shareX = TRUE,
+  titleY = TRUE
+)
+
+htmlwidgets::saveWidget(
+  tic_matrix_subplot,
+  file = file.path("dev", "dev_duckdb", "tic_matrix_suppression_subplot.html"),
+  selfcontained = TRUE
+)
+
+tic_matrix_subplot
+
+plot_features(
+  nta,
+  mass = internal_standards[4, ],
+  ppm = 20,
+  sec = 60,
+  filtered = TRUE
+)
+
+plot_features_profile(
+  nta,
+  #analyses = 11,
+  mass = internal_standards[4, ],
+  ppm = 20,
+  sec = 60,
+  corrected = TRUE,
+  filtered = TRUE
 )
 
 plot_features_ms2(

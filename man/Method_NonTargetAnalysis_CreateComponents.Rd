@@ -26,6 +26,9 @@ features in one component.}
 A \code{Method} object of class \code{Method_NonTargetAnalysis_CreateComponents}.
 }
 \description{
-Create a \code{Method} child object for clustering features into
-components.
+Create a \code{Method} child object for assembling detected features
+into chromatographic components. In NTA, co-eluting ions with correlated
+signal profiles often originate from the same compound; this step groups
+those related features so isotopes, adducts, and in-source fragments can
+be interpreted in a compound-centric way rather than as isolated peaks.
 }

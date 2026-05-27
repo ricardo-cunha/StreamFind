@@ -32,6 +32,32 @@
 }
 
 #' @noRd
+.metfrag_database_types <- c(
+  "KEGG",
+  "PubChem",
+  "ExtendedPubChem",
+  "ChemSpiderRest",
+  "LocalSDF",
+  "LocalPSV",
+  "LocalCSV"
+)
+
+#' @noRd
+.normalize_metfrag_database_type <- function(database_type) {
+  checkmate::assert_character(database_type, len = 1, any.missing = FALSE)
+  idx <- match(tolower(database_type), tolower(.metfrag_database_types))
+  if (is.na(idx)) {
+    stop(
+      "`database_type` must be one of: ",
+      paste(.metfrag_database_types, collapse = ", "),
+      ".",
+      call. = FALSE
+    )
+  }
+  .metfrag_database_types[[idx]]
+}
+
+#' @noRd
 .empty_nta_suspects <- function() {
   data.table::data.table(
     name = character(),
@@ -78,7 +104,11 @@
 
 #' @title Method_NonTargetAnalysis_FindFeatures
 #' @description Create a `Method` child object for the native non-target
-#'   feature-finding routine.
+#'   feature-detection step. In LC/HRMS non-target analysis, this routine scans
+#'   chromatographic signal, estimates a local baseline, groups nearby mass
+#'   traces within the specified m/z tolerance, and proposes chromatographic
+#'   peaks that become the initial feature table used by later alignment,
+#'   correction, and identification steps.
 #' @param rtWindows A data.frame/data.table with `rtmin` and `rtmax` columns
 #'   defining retention-time windows in seconds to include during feature
 #'   finding.
@@ -197,8 +227,11 @@ run.Method_NonTargetAnalysis_FindFeatures <- function(x, proj, ...) {
 }
 
 #' @title Method_NonTargetAnalysis_LoadFeaturesMS1
-#' @description Create a `Method` child object for loading MS1 traces into NTA
-#'   features.
+#' @description Create a `Method` child object for extracting feature-centred
+#'   MS1 trace data after feature detection. This step loads chromatographic
+#'   signal around each NTA feature using configurable RT and m/z windows so
+#'   later workflow steps can inspect peak shape, build components, perform
+#'   QC, and visualise raw signal around the detected apex.
 #' @param filtered Logical(1) whether to include features already marked as
 #'   filtered.
 #' @param rtWindow Numeric length-2 vector of retention-time offsets in
@@ -271,8 +304,11 @@ run.Method_NonTargetAnalysis_LoadFeaturesMS1 <- function(x, proj, ...) {
 }
 
 #' @title Method_NonTargetAnalysis_LoadFeaturesMS2
-#' @description Create a `Method` child object for loading MS2 spectra into NTA
-#'   features.
+#' @description Create a `Method` child object for extracting tandem-MS data
+#'   associated with detected NTA features. The native routine searches for MS2
+#'   scans linked to each precursor feature, applies precursor-isolation and
+#'   fragment clustering tolerances, and stores feature-linked MS2 evidence for
+#'   suspect screening, MetFrag, and internal-standard confirmation.
 #' @param filtered Logical(1) whether to include features already marked as
 #'   filtered.
 #' @param minTracesIntensity Numeric(1) minimum trace intensity to extract.
@@ -339,8 +375,11 @@ run.Method_NonTargetAnalysis_LoadFeaturesMS2 <- function(x, proj, ...) {
 }
 
 #' @title Method_NonTargetAnalysis_CreateComponents
-#' @description Create a `Method` child object for clustering features into
-#'   components.
+#' @description Create a `Method` child object for assembling detected features
+#'   into chromatographic components. In NTA, co-eluting ions with correlated
+#'   signal profiles often originate from the same compound; this step groups
+#'   those related features so isotopes, adducts, and in-source fragments can
+#'   be interpreted in a compound-centric way rather than as isolated peaks.
 #' @param rtWindow Numeric length-2 vector of retention-time offsets in
 #'   seconds.
 #' @param minCorrelation Numeric(1) minimum Pearson correlation to keep
@@ -402,8 +441,11 @@ run.Method_NonTargetAnalysis_CreateComponents <- function(x, proj, ...) {
 }
 
 #' @title Method_NonTargetAnalysis_AnnotateComponents
-#' @description Create a `Method` child object for annotating isotopes,
-#'   adducts, and in-source fragments within components.
+#' @description Create a `Method` child object for annotating ion-relationship
+#'   patterns inside previously created components. The native algorithm checks
+#'   expected isotope spacing, charge states, and mass differences consistent
+#'   with adducts and in-source fragments, helping translate raw NTA peak lists
+#'   into chemically meaningful ion annotations.
 #' @param maxIsotopes Integer(1) maximum number of isotopes to consider.
 #' @param maxCharge Integer(1) maximum charge state to consider.
 #' @param maxGaps Integer(1) maximum number of gaps allowed in isotope
@@ -474,8 +516,11 @@ run.Method_NonTargetAnalysis_AnnotateComponents <- function(x, proj, ...) {
 }
 
 #' @title Method_NonTargetAnalysis_GroupFeatures
-#' @description Create a `Method` child object for grouping aligned features
-#'   across analyses.
+#' @description Create a `Method` child object for aligning and grouping the
+#'   same chemical feature across analyses. This is a core NTA aggregation step
+#'   that merges per-analysis detections into shared feature groups using RT and
+#'   m/z tolerances, optionally guided by internal standards or chromatographic
+#'   warping, so samples can be compared on a common feature table.
 #' @param method Character(1) alignment method, usually `"internal_standards"`
 #'   or `"obi_warp"`.
 #' @param rtDeviation Numeric(1) retention-time tolerance in seconds.
@@ -552,8 +597,11 @@ run.Method_NonTargetAnalysis_GroupFeatures <- function(x, proj, ...) {
 }
 
 #' @title Method_NonTargetAnalysis_FillFeatures
-#' @description Create a `Method` child object for filling missing features
-#'   across analyses.
+#' @description Create a `Method` child object for gap filling after feature
+#'   grouping. In cross-sample NTA tables, some groups are absent in individual
+#'   analyses because signals fall below the original detection threshold or
+#'   were missed during peak picking; this step revisits the expected RT and m/z
+#'   region to recover plausible peak intensities and improve table completeness.
 #' @param withinReplicate Logical(1) whether to fill features only within
 #'   replicates.
 #' @param filtered Logical(1) whether to consider filtered features.
@@ -656,8 +704,11 @@ run.Method_NonTargetAnalysis_FillFeatures <- function(x, proj, ...) {
 }
 
 #' @title Method_NonTargetAnalysis_BlankSubtraction
-#' @description Create a `Method` child object for subtracting blank-derived
-#'   features.
+#' @description Create a `Method` child object for blank correction of grouped
+#'   features. In NTA workflows, procedural and instrumental blanks often carry
+#'   background contaminants and carryover peaks; this step compares grouped
+#'   sample features against the associated blank signal and removes or flags
+#'   features that are not sufficiently above blank contribution.
 #' @param blankThreshold Numeric(1) threshold multiplier for blank feature
 #'   intensities.
 #' @param rtExpand Numeric(1) retention-time expansion window in seconds.
@@ -712,19 +763,152 @@ run.Method_NonTargetAnalysis_BlankSubtraction <- function(x, proj, ...) {
   .run_nta_method(success, proj, "Blank subtraction did not complete successfully.")
 }
 
+#' @title Method_NonTargetAnalysis_CorrectMatrixSuppression
+#' @description Create a `Method` child object for correcting matrix suppression
+#'   in project-based non-target analysis workflows. In the context of NTA, the
+#'   method estimates a retention-time-dependent suppression profile from the
+#'   MS1 total ion chromatogram (TIC) relative to associated blank analyses and
+#'   stores a per-feature `correction` factor that can later be used to adjust
+#'   feature intensities for comparison across analyses with different matrix
+#'   effects.
+#'
+#'   The native project implementation follows the TiChri concept described by
+#'   \href{https://pubs.acs.org/doi/10.1021/acs.analchem.1c00357}{Tisler et al.
+#'   (2021)} for TIC-based suppression profiling, but adapts the feature-level
+#'   scaling for the current `ProjectNonTargetAnalysis` backend. When internal
+#'   standards are available, the algorithm builds a local linear model between
+#'   TIC-derived suppression and internal-standard suppression using surrounding
+#'   standards in retention-time order. When no usable internal standards are
+#'   available, the method falls back to TIC-only correction.
+#'
+#'   The resulting correction values are written into the existing feature
+#'   `correction` column and can be used by downstream plotting and summary
+#'   methods that support intensity correction.
+#' @param refBlankReplicate Optional character scalar naming a replicate whose
+#'   assigned blank replicate(s) should be used as the common reference for all
+#'   analyses. Use `NA_character_` to use the blank assignment already stored
+#'   for each analysis in the project. This mirrors the legacy behavior where a
+#'   single reference blank can be enforced across the workflow.
+#' @param mpRtWindow Numeric(1) retention-time window in seconds used to
+#'   calculate the TIC matrix-suppression profile around each time point and to
+#'   summarize suppression over each feature's retention-time range. Larger
+#'   values smooth the profile more strongly, while smaller values keep the
+#'   correction more local.
+#' @return A `Method` object of class `Method_NonTargetAnalysis_CorrectMatrixSuppression`.
+#' @export
+Method_NonTargetAnalysis_CorrectMatrixSuppression <- function(
+    refBlankReplicate = NA_character_,
+    mpRtWindow = 10) {
+  x <- do.call(
+    Method,
+    c(
+      list(
+        method = "CorrectMatrixSuppression",
+        parameters = list(
+          refBlankReplicate = as.character(refBlankReplicate),
+          mpRtWindow = as.numeric(mpRtWindow)
+        )
+      ),
+      .nta_method_defaults(required = "FindFeatures", number_permitted = 1)
+    )
+  )
+  validate_object(x)
+  x
+}
+
+#' @export
+#' @noRd
+validate_object.Method_NonTargetAnalysis_CorrectMatrixSuppression <- function(x, ...) {
+  .validate_nta_method_base(x, "Method_NonTargetAnalysis_CorrectMatrixSuppression", "CorrectMatrixSuppression", 1)
+  checkmate::assert_character(x$parameters$refBlankReplicate, len = 1, any.missing = TRUE)
+  checkmate::assert_number(x$parameters$mpRtWindow, lower = 0, finite = TRUE)
+  invisible(NULL)
+}
+
+#' @export
+#' @noRd
+run.Method_NonTargetAnalysis_CorrectMatrixSuppression <- function(x, proj, ...) {
+  checkmate::assert_class(x, "Method_NonTargetAnalysis_CorrectMatrixSuppression")
+  validate_object(x)
+  checkmate::assert_class(proj, "ProjectNonTargetAnalysis")
+  p <- x$parameters
+  ref_blank <- if (length(p$refBlankReplicate) == 0 || is.na(p$refBlankReplicate)) NULL else as.character(p$refBlankReplicate)
+  success <- rcpp_project_nta_correct_matrix_suppression(
+    nta_xptr = proj$get_nts_ptr(),
+    mpRtWindow = as.numeric(p$mpRtWindow),
+    refBlankReplicate = ref_blank
+  )
+  .run_nta_method(success, proj, "Matrix-suppression correction did not complete successfully.")
+}
+
 #' @title Method_NonTargetAnalysis_FilterFeatures
-#' @description Create a `Method` child object for filtering features by
-#'   quality criteria.
-#' @param minSN,minIntensity,minArea,minWidth,maxWidth,maxPPM,minFwhmRT,maxFwhmRT,minFwhmMZ,maxFwhmMZ,minGaussianA,minGaussianMu,maxGaussianMu,minGaussianSigma,maxGaussianSigma,minGaussianR2,maxJaggedness,minSharpness,minAsymmetry,maxAsymmetry,minPlates,minRelPresenceReplicate
-#'   Optional numeric scalar thresholds. Use `NA_real_` to disable a threshold.
+#' @description Create a `Method` child object for rule-based filtering of the
+#'   NTA feature table. This step reduces the raw feature space by applying
+#'   analytical quality criteria such as signal strength, peak width, fit, and
+#'   prevalence, helping focus downstream screening and interpretation on more
+#'   robust and reproducible features.
+#' @param minSN Optional numeric(1) minimum signal-to-noise threshold. Use
+#'   `NA_real_` to disable.
+#' @param minIntensity Optional numeric(1) minimum feature apex intensity. Use
+#'   `NA_real_` to disable.
+#' @param minArea Optional numeric(1) minimum integrated feature area. Use
+#'   `NA_real_` to disable.
+#' @param minWidth Optional numeric(1) minimum chromatographic peak width in
+#'   seconds. Use `NA_real_` to disable.
+#' @param maxWidth Optional numeric(1) maximum chromatographic peak width in
+#'   seconds. Use `NA_real_` to disable.
+#' @param maxPPM Optional numeric(1) maximum acceptable mass error in ppm. Use
+#'   `NA_real_` to disable.
+#' @param minFwhmRT Optional numeric(1) minimum RT full width at half maximum.
+#'   Use `NA_real_` to disable.
+#' @param maxFwhmRT Optional numeric(1) maximum RT full width at half maximum.
+#'   Use `NA_real_` to disable.
+#' @param minFwhmMZ Optional numeric(1) minimum m/z full width at half maximum.
+#'   Use `NA_real_` to disable.
+#' @param maxFwhmMZ Optional numeric(1) maximum m/z full width at half maximum.
+#'   Use `NA_real_` to disable.
+#' @param minGaussianA Optional numeric(1) minimum fitted Gaussian amplitude.
+#'   Use `NA_real_` to disable.
+#' @param minGaussianMu Optional numeric(1) minimum fitted Gaussian centre. Use
+#'   `NA_real_` to disable.
+#' @param maxGaussianMu Optional numeric(1) maximum fitted Gaussian centre. Use
+#'   `NA_real_` to disable.
+#' @param minGaussianSigma Optional numeric(1) minimum fitted Gaussian sigma.
+#'   Use `NA_real_` to disable.
+#' @param maxGaussianSigma Optional numeric(1) maximum fitted Gaussian sigma.
+#'   Use `NA_real_` to disable.
+#' @param minGaussianR2 Optional numeric(1) minimum Gaussian fit quality
+#'   (`R^2`). Use `NA_real_` to disable.
+#' @param maxJaggedness Optional numeric(1) maximum permitted peak jaggedness.
+#'   Use `NA_real_` to disable.
+#' @param minSharpness Optional numeric(1) minimum peak sharpness. Use
+#'   `NA_real_` to disable.
+#' @param minAsymmetry Optional numeric(1) minimum accepted peak asymmetry. Use
+#'   `NA_real_` to disable.
+#' @param maxAsymmetry Optional numeric(1) maximum accepted peak asymmetry. Use
+#'   `NA_real_` to disable.
+#' @param minPlates Optional numeric(1) minimum theoretical plate count. Use
+#'   `NA_real_` to disable.
+#' @param minRelPresenceReplicate Optional numeric(1) minimum relative presence
+#'   within replicate analyses. Use `NA_real_` to disable.
 #' @param maxModality Optional integer scalar for the maximum number of local
 #'   maxima. Use `NA_integer_` to disable.
 #' @param onlyFilled Optional logical scalar. Use `TRUE` to keep only filled
 #'   features, `FALSE` to keep only non-filled, or `NA` to disable.
-#' @param removeFilled,removeIsotopes,removeAdducts,removeLosses Logical scalar
-#'   flags controlling feature removal.
-#' @param minSizeEIC,minSizeMS1,minSizeMS2 Optional integer scalar minimum data
-#'   point counts. Use `NA_integer_` to disable.
+#' @param removeFilled Logical(1) whether features marked as filled should be
+#'   removed.
+#' @param removeIsotopes Logical(1) whether isotope annotations should be
+#'   removed.
+#' @param removeAdducts Logical(1) whether annotated adduct features should be
+#'   removed.
+#' @param removeLosses Logical(1) whether annotated neutral-loss or in-source
+#'   fragment features should be removed.
+#' @param minSizeEIC Optional integer(1) minimum number of points in the stored
+#'   extracted-ion chromatogram. Use `NA_integer_` to disable.
+#' @param minSizeMS1 Optional integer(1) minimum number of stored MS1 points.
+#'   Use `NA_integer_` to disable.
+#' @param minSizeMS2 Optional integer(1) minimum number of stored MS2 fragment
+#'   peaks. Use `NA_integer_` to disable.
 #' @return A `Method` object of class `Method_NonTargetAnalysis_FilterFeatures`.
 #' @export
 Method_NonTargetAnalysis_FilterFeatures <- function(
@@ -877,12 +1061,22 @@ run.Method_NonTargetAnalysis_FilterFeatures <- function(x, proj, ...) {
 
 #' @title Method_NonTargetAnalysis_SuspectScreening
 #' @description Create a `Method` child object for suspect screening against a
-#'   provided suspect table.
+#'   user-supplied suspect list. In the NTA workflow this step compares grouped
+#'   features with expected precursor masses, retention times, and optionally
+#'   MS2 evidence from candidate compounds, yielding ranked feature-to-suspect
+#'   matches for further curation and filtering.
 #' @param suspects A data.frame/data.table with suspect information.
 #' @param analyses Optional character vector restricting screening to selected
 #'   analyses.
-#' @param ppm,sec,ppmMS2,mzrMS2,minCosineSimilarity Numeric scalar thresholds
-#'   used during matching.
+#' @param ppm Numeric(1) precursor mass tolerance in ppm used for MS1 matching.
+#' @param sec Numeric(1) retention-time tolerance in seconds used when suspect
+#'   entries include RT information.
+#' @param ppmMS2 Numeric(1) fragment mass tolerance in ppm used for MS2
+#'   matching.
+#' @param mzrMS2 Numeric(1) minimum absolute fragment m/z tolerance used during
+#'   MS2 matching.
+#' @param minCosineSimilarity Numeric(1) minimum cosine similarity required for
+#'   MS2-supported suspect matches.
 #' @param minSharedFragments Integer(1) minimum number of shared MS2 fragments.
 #' @param filtered Logical(1) whether to include filtered features in the
 #'   search.
@@ -965,13 +1159,23 @@ run.Method_NonTargetAnalysis_SuspectScreening <- function(x, proj, ...) {
 }
 
 #' @title Method_NonTargetAnalysis_FindInternalStandards
-#' @description Create a `Method` child object for finding internal standards by
-#'   screening provided standards against the current feature set.
+#' @description Create a `Method` child object for locating internal standards
+#'   in the current NTA feature set. The workflow uses the same style of mass,
+#'   retention-time, and optional MS2 matching as suspect screening, but is
+#'   targeted at spiked reference compounds used for alignment, QC assessment,
+#'   and matrix-suppression correction.
 #' @param suspects A data.frame/data.table with internal-standard information.
 #' @param analyses Optional character vector restricting screening to selected
 #'   analyses.
-#' @param ppm,sec,ppmMS2,mzrMS2,minCosineSimilarity Numeric scalar thresholds
-#'   used during matching.
+#' @param ppm Numeric(1) precursor mass tolerance in ppm used for MS1 matching.
+#' @param sec Numeric(1) retention-time tolerance in seconds used when
+#'   internal-standard entries include RT information.
+#' @param ppmMS2 Numeric(1) fragment mass tolerance in ppm used for MS2
+#'   matching.
+#' @param mzrMS2 Numeric(1) minimum absolute fragment m/z tolerance used during
+#'   MS2 matching.
+#' @param minCosineSimilarity Numeric(1) minimum cosine similarity required for
+#'   MS2-supported internal-standard matches.
 #' @param minSharedFragments Integer(1) minimum number of shared MS2 fragments.
 #' @param filtered Logical(1) whether to include filtered features in the
 #'   search.
@@ -1055,10 +1259,20 @@ run.Method_NonTargetAnalysis_FindInternalStandards <- function(x, proj, ...) {
 }
 
 #' @title Method_NonTargetAnalysis_FilterSuspects
-#' @description Create a `Method` child object for filtering suspect hits.
+#' @description Create a `Method` child object for refining suspect-screening
+#'   results after the initial match step. It applies score, RT error, mass
+#'   error, fragment evidence, cosine similarity, and identification-level
+#'   thresholds so downstream NTA interpretation focuses on the most defensible
+#'   candidate assignments.
 #' @param names Optional character vector of suspect names to match.
-#' @param minScore,maxErrorRT,maxErrorMass,minCosineSimilarity Optional numeric
-#'   scalar thresholds. Use `NA_real_` to disable a threshold.
+#' @param minScore Optional numeric(1) minimum suspect score to keep. Use
+#'   `NA_real_` to disable.
+#' @param maxErrorRT Optional numeric(1) maximum absolute retention-time error
+#'   allowed for a suspect match. Use `NA_real_` to disable.
+#' @param maxErrorMass Optional numeric(1) maximum absolute mass error allowed
+#'   for a suspect match. Use `NA_real_` to disable.
+#' @param minCosineSimilarity Optional numeric(1) minimum cosine similarity for
+#'   MS2-supported suspect matches. Use `NA_real_` to disable.
 #' @param idLevels Optional integer vector of identification levels to keep.
 #' @param minSharedFragments Integer(1) minimum number of shared fragments.
 #' @return A `Method` object of class `Method_NonTargetAnalysis_FilterSuspects`.
@@ -1128,11 +1342,20 @@ run.Method_NonTargetAnalysis_FilterSuspects <- function(x, proj, ...) {
 }
 
 #' @title Method_NonTargetAnalysis_FilterInternalStandards
-#' @description Create a `Method` child object for filtering internal-standard
-#'   hits.
+#' @description Create a `Method` child object for refining internal-standard
+#'   matches after detection. The filtering logic mirrors suspect-hit filtering
+#'   but is aimed at retaining only high-confidence analytical reference peaks
+#'   that can be trusted for RT alignment, system performance checks, and
+#'   matrix-effect scaling.
 #' @param names Optional character vector of internal-standard names to match.
-#' @param minScore,maxErrorRT,maxErrorMass,minCosineSimilarity Optional numeric
-#'   scalar thresholds. Use `NA_real_` to disable a threshold.
+#' @param minScore Optional numeric(1) minimum internal-standard score to keep.
+#'   Use `NA_real_` to disable.
+#' @param maxErrorRT Optional numeric(1) maximum absolute retention-time error
+#'   allowed for an internal-standard match. Use `NA_real_` to disable.
+#' @param maxErrorMass Optional numeric(1) maximum absolute mass error allowed
+#'   for an internal-standard match. Use `NA_real_` to disable.
+#' @param minCosineSimilarity Optional numeric(1) minimum cosine similarity for
+#'   MS2-supported internal-standard matches. Use `NA_real_` to disable.
 #' @param idLevels Optional integer vector of identification levels to keep.
 #' @param minSharedFragments Integer(1) minimum number of shared fragments.
 #' @return A `Method` object of class
@@ -1203,12 +1426,17 @@ run.Method_NonTargetAnalysis_FilterInternalStandards <- function(x, proj, ...) {
 }
 
 #' @title Method_NonTargetAnalysis_FilterFeaturesMS2
-#' @description Create a `Method` child object for filtering MS2 traces loaded
-#'   onto features.
+#' @description Create a `Method` child object for cleaning and reducing
+#'   feature-linked MS2 data. This step keeps the most informative MS2 spectra,
+#'   removes weak or poorly supported fragments, and can suppress fragments that
+#'   are prevalent in blanks so later identification steps operate on cleaner
+#'   tandem-MS evidence.
 #' @param top Integer(1) number of top MS2 spectra to keep per feature. Use `0`
 #'   to disable.
-#' @param minIntensity,relMinIntensity Optional numeric scalar thresholds. Use
-#'   `NA_real_` to disable.
+#' @param minIntensity Optional numeric(1) minimum fragment intensity required
+#'   to keep an MS2 peak. Use `NA_real_` to disable.
+#' @param relMinIntensity Optional numeric(1) minimum relative fragment
+#'   intensity required to keep an MS2 peak. Use `NA_real_` to disable.
 #' @param blankClean Logical(1) whether to remove fragments prevalent in
 #'   blanks.
 #' @param mzClust Numeric(1) m/z clustering tolerance.
@@ -1281,40 +1509,97 @@ run.Method_NonTargetAnalysis_FilterFeaturesMS2 <- function(x, proj, ...) {
 }
 
 #' @title Method_NonTargetAnalysis_MetFragScreening
-#' @description Create a `Method` child object for MetFrag-based suspect
-#'   screening.
+#' @description Create a `Method` child object for MetFrag-based candidate
+#'   screening on NTA features with MS2 support. This workflow exports feature
+#'   data to MetFrag, queries the selected candidate database, and ranks
+#'   structure hypotheses using in silico fragmentation, extending simple
+#'   suspect matching with fragment-informed annotation.
 #' @param metfrag_path Character(1) path to the MetFrag executable or JAR.
-#' @param database_type Character(1) MetFrag database type.
-#' @param database_path Character(1) path to the local database file when
-#'   applicable.
+#' @param database_type Character(1) MetFrag candidate-source type. Supported
+#'   options are `"KEGG"`, `"PubChem"`, `"ExtendedPubChem"`,
+#'   `"ChemSpiderRest"`, `"LocalSDF"`, `"LocalPSV"`, and `"LocalCSV"`.
+#'   Local database types require `database_path`; `"ChemSpiderRest"` also
+#'   requires a `ChemSpiderToken` entry in `extra_params`.
+#' @param database_path Character(1) path to the local database file used by
+#'   `"LocalSDF"`, `"LocalPSV"`, or `"LocalCSV"`.
 #' @param analyses Optional character vector restricting screening to selected
 #'   analyses.
-#' @param ppm,sec,ppmMS2,mzrMS2 Numeric scalar thresholds used during matching.
+#' @param ppm Numeric(1) precursor mass tolerance in ppm used when querying
+#'   MetFrag candidates.
+#' @param sec Numeric(1) retention-time tolerance in seconds used when
+#'   post-filtering candidates against available RT information.
+#' @param ppmMS2 Numeric(1) fragment mass tolerance in ppm used when comparing
+#'   explained and experimental MS2 fragments.
+#' @param mzrMS2 Numeric(1) minimum absolute fragment m/z tolerance used during
+#'   MS2 comparison.
 #' @param top_n Integer(1) maximum number of candidates to consider per
 #'   feature.
+#' @param score_types Character vector of MetFrag score types. The default uses
+#'   `"FragmenterScore"`. Official predefined options include
+#'   `"FragmenterScore"`, `"SmartsSubstructureInclusionScore"`,
+#'   `"SmartsSubstructureExclusionScore"`, and `"SuspectListScore"`. MetFrag CL
+#'   also supports database-dependent scoring terms, for example
+#'   `"PubChemNumberPatents"` and `"PubChemNumberPubMedReferences"` with
+#'   `"ExtendedPubChem"`, and additional numeric columns or tags from local
+#'   `LocalCSV`, `LocalPSV`, or `LocalSDF` databases.
+#' @param score_weights Numeric vector of MetFrag score weights. Must match the
+#'   length and order of `score_types`; MetFrag combines the weighted scores
+#'   into the final candidate ranking.
+#' @param pre_processing_candidate_filter Character vector of MetFrag
+#'   pre-processing candidate filters applied before fragmentation and scoring.
+#'   Official options include `"UnconnectedCompoundFilter"`,
+#'   `"IsotopeFilter"`, `"MinimumElementsFilter"`,
+#'   `"MaximumElementsFilter"`, `"SmartsSubstructureInclusionFilter"`,
+#'   `"SmartsSubstructureExclusionFilter"`, `"ElementInclusionFilter"`,
+#'   `"ElementInclusionExclusiveFilter"`, and `"ElementExclusionFilter"`.
+#'   Some of these require additional MetFrag settings, for example
+#'   `FilterMinimumElements`, `FilterMaximumElements`,
+#'   `FilterSmartsInclusionList`, `FilterSmartsExclusionList`,
+#'   `FilterIncludedElements`, or `FilterExcludedElements`, which can be passed
+#'   via `extra_params`.
+#' @param post_processing_candidate_filter Character vector of MetFrag
+#'   post-processing candidate filters applied after fragmentation and scoring.
+#'   The official documented option is `"InChIKeyFilter"`, which collapses
+#'   stereoisomeric candidates sharing the first block of the InChIKey so only
+#'   the best-scoring structural skeleton remains in the result list.
+#' @param maximum_tree_depth Integer(1) maximum MetFrag fragmentation tree
+#'   depth.
+#' @param number_threads Integer(1) number of threads requested from MetFrag.
+#' @param use_smiles Logical(1) whether MetFrag should fragment candidate
+#'   structures using SMILES instead of InChI.
 #' @param filtered Logical(1) whether to include filtered features in the
 #'   search.
 #' @param java_path Character(1) path to the Java executable.
-#' @param run_dir Character(1) output directory for MetFrag runs.
+#' @param run_dir Character(1) output directory for MetFrag run files. When
+#'   empty, a timestamped directory under `./log/metfrag/` is created
+#'   automatically, for example `./log/metfrag/run_20260527_153045/`.
 #' @param debug Logical(1) whether to keep debug output.
 #' @param extra_params Named list of additional MetFrag parameters.
 #' @return A `Method` object of class `Method_NonTargetAnalysis_MetFragScreening`.
 #' @export
 Method_NonTargetAnalysis_MetFragScreening <- function(
     metfrag_path = "",
-    database_type = "LocalCSV",
+    database_type = "PubChem",
     database_path = "",
     analyses = character(),
     ppm = 5,
     sec = 10,
     ppmMS2 = 10,
     mzrMS2 = 0.008,
-    top_n = 1L,
+    top_n = 5L,
+    score_types = "FragmenterScore",
+    score_weights = 1,
+    pre_processing_candidate_filter = c("UnconnectedCompoundFilter", "IsotopeFilter"),
+    post_processing_candidate_filter = "InChIKeyFilter",
+    maximum_tree_depth = 3L,
+    number_threads = 1L,
+    use_smiles = TRUE,
     filtered = FALSE,
     java_path = "java",
     run_dir = "",
     debug = FALSE,
     extra_params = list()) {
+  database_type <- .normalize_metfrag_database_type(database_type)
   x <- Method(
     method = "MetFragScreening",
     required = c("FindFeatures", "LoadFeaturesMS1", "LoadFeaturesMS2"),
@@ -1334,6 +1619,13 @@ Method_NonTargetAnalysis_MetFragScreening <- function(
       ppmMS2 = as.numeric(ppmMS2),
       mzrMS2 = as.numeric(mzrMS2),
       top_n = as.integer(top_n),
+      score_types = as.character(score_types),
+      score_weights = as.numeric(score_weights),
+      pre_processing_candidate_filter = as.character(pre_processing_candidate_filter),
+      post_processing_candidate_filter = as.character(post_processing_candidate_filter),
+      maximum_tree_depth = as.integer(maximum_tree_depth),
+      number_threads = as.integer(number_threads),
+      use_smiles = as.logical(use_smiles),
       filtered = as.logical(filtered),
       java_path = as.character(java_path),
       run_dir = as.character(run_dir),
@@ -1354,7 +1646,7 @@ validate_object.Method_NonTargetAnalysis_MetFragScreening <- function(x, ...) {
   checkmate::assert_choice(x$owner_class, "ProjectNonTargetAnalysis")
   checkmate::assert_true(identical(x$number_permitted, Inf))
   checkmate::assert_character(x$parameters$metfrag_path, len = 1, any.missing = FALSE)
-  checkmate::assert_character(x$parameters$database_type, len = 1, any.missing = FALSE)
+  checkmate::assert_choice(x$parameters$database_type, .metfrag_database_types)
   checkmate::assert_character(x$parameters$database_path, len = 1, any.missing = FALSE)
   checkmate::assert_character(x$parameters$analyses, any.missing = FALSE)
   checkmate::assert_number(x$parameters$ppm, lower = 0, finite = TRUE)
@@ -1362,11 +1654,46 @@ validate_object.Method_NonTargetAnalysis_MetFragScreening <- function(x, ...) {
   checkmate::assert_number(x$parameters$ppmMS2, lower = 0, finite = TRUE)
   checkmate::assert_number(x$parameters$mzrMS2, lower = 0, finite = TRUE)
   checkmate::assert_integerish(x$parameters$top_n, len = 1, lower = 1)
+  checkmate::assert_character(x$parameters$score_types, min.len = 1, any.missing = FALSE)
+  checkmate::assert_numeric(x$parameters$score_weights, min.len = 1, any.missing = FALSE)
+  checkmate::assert_true(length(x$parameters$score_types) == length(x$parameters$score_weights))
+  checkmate::assert_character(x$parameters$pre_processing_candidate_filter, min.len = 1, any.missing = FALSE)
+  checkmate::assert_character(x$parameters$post_processing_candidate_filter, min.len = 1, any.missing = FALSE)
+  checkmate::assert_integerish(x$parameters$maximum_tree_depth, len = 1, lower = 1)
+  checkmate::assert_integerish(x$parameters$number_threads, len = 1, lower = 1)
+  checkmate::assert_logical(x$parameters$use_smiles, len = 1)
   checkmate::assert_logical(x$parameters$filtered, len = 1)
   checkmate::assert_character(x$parameters$java_path, len = 1, any.missing = FALSE)
   checkmate::assert_character(x$parameters$run_dir, len = 1, any.missing = FALSE)
   checkmate::assert_logical(x$parameters$debug, len = 1)
   checkmate::assert_list(x$parameters$extra_params, names = "named")
+  if (x$parameters$database_type %in% c("LocalSDF", "LocalPSV", "LocalCSV")) {
+    if (!nzchar(x$parameters$database_path)) {
+      stop(
+        "`database_path` must be provided for `database_type = \"",
+        x$parameters$database_type,
+        "\"`.",
+        call. = FALSE
+      )
+    }
+    if (!file.exists(x$parameters$database_path)) {
+      stop(
+        "MetFrag local database file does not exist: ",
+        x$parameters$database_path,
+        call. = FALSE
+      )
+    }
+  }
+  if (identical(x$parameters$database_type, "ChemSpiderRest")) {
+    has_token <- "ChemSpiderToken" %in% names(x$parameters$extra_params) &&
+      nzchar(as.character(x$parameters$extra_params[["ChemSpiderToken"]]))
+    if (!has_token) {
+      stop(
+        "`database_type = \"ChemSpiderRest\"` requires `extra_params[['ChemSpiderToken']]`.",
+        call. = FALSE
+      )
+    }
+  }
   invisible(NULL)
 }
 
@@ -1388,6 +1715,13 @@ run.Method_NonTargetAnalysis_MetFragScreening <- function(x, proj, ...) {
     ppmMS2 = as.numeric(p$ppmMS2),
     mzrMS2 = as.numeric(p$mzrMS2),
     top_n = as.integer(p$top_n),
+    score_types = as.character(p$score_types),
+    score_weights = as.numeric(p$score_weights),
+    pre_processing_candidate_filter = as.character(p$pre_processing_candidate_filter),
+    post_processing_candidate_filter = as.character(p$post_processing_candidate_filter),
+    maximum_tree_depth = as.integer(p$maximum_tree_depth),
+    number_threads = as.integer(p$number_threads),
+    use_smiles = isTRUE(p$use_smiles),
     filtered = isTRUE(p$filtered),
     java_path = as.character(p$java_path),
     run_dir = as.character(p$run_dir),
@@ -1398,8 +1732,11 @@ run.Method_NonTargetAnalysis_MetFragScreening <- function(x, proj, ...) {
 }
 
 #' @title Method_NonTargetAnalysis_AssignTransformationProducts
-#' @description Create a `Method` child object for assigning transformation
-#'   products to suspect hits.
+#' @description Create a `Method` child object for assigning expected
+#'   transformation products to detected features or suspect hits. This workflow
+#'   uses a supplied precursor-product table together with chromatographic
+#'   plausibility and optional MS2 fragment support to propose environmentally
+#'   relevant parent-product relationships in NTA studies.
 #' @param transformation_products A data.frame/data.table describing
 #'   transformation products and their precursors.
 #' @param chromatographic_phase Character(1) chromatographic phase used for RT

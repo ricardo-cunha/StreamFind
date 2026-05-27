@@ -3684,6 +3684,33 @@ bool nta::api::PROJECT_NON_TARGET_ANALYSIS::subtract_blank(float blankThreshold,
       { blank_subtraction::subtract_blank_impl(*this, blankThreshold, rtExpand, mzExpand, minTracesIntensity); });
 };
 
+std::vector<nta::correction_algorithms::TIC_MATRIX_SUPPRESSION_ROW> nta::api::PROJECT_NON_TARGET_ANALYSIS::get_matrix_suppression(
+  const std::vector<std::string> &analyses,
+  float rtWindow,
+  const std::string &refBlankReplicate)
+{
+  load_processing_metadata();
+  load_processing_headers();
+  return correction_algorithms::get_matrix_suppression_impl(*this, analyses, rtWindow, refBlankReplicate);
+}
+
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::correct_matrix_suppression(
+  float mpRtWindow,
+  const std::string &refBlankReplicate)
+{
+  load_processing_metadata();
+  load_processing_headers();
+  load_processing_features(true);
+  load_processing_internal_standards();
+  return run_cached_features_algorithm(
+    "correct_matrix_suppression",
+    cache_join_key({cache_scalar_key(mpRtWindow), refBlankReplicate}),
+    {feature_state_cache_key(), internal_standard_state_cache_key()},
+    "Cached NTS features for correct_matrix_suppression",
+    [&]()
+    { correction_algorithms::correct_matrix_suppression_impl(*this, mpRtWindow, refBlankReplicate); });
+};
+
 bool nta::api::PROJECT_NON_TARGET_ANALYSIS::filter_features(double minSN, double minIntensity, double minArea, double minWidth, double maxWidth, double maxPPM, double minFwhmRT, double maxFwhmRT, double minFwhmMZ, double maxFwhmMZ, double minGaussianA, double minGaussianMu, double maxGaussianMu, double minGaussianSigma, double maxGaussianSigma, double minGaussianR2, double maxJaggedness, double minSharpness, double minAsymmetry, double maxAsymmetry, int maxModality, bool hasMaxModality, double minPlates, bool hasOnlyFilled, bool onlyFilledValue, bool removeFilled, int minSizeEIC, bool hasMinSizeEIC, int minSizeMS1, bool hasMinSizeMS1, int minSizeMS2, bool hasMinSizeMS2, double minRelPresenceReplicate, bool removeIsotopes, bool removeAdducts, bool removeLosses)
 {
   load_processing_metadata();
@@ -3778,22 +3805,43 @@ bool nta::api::PROJECT_NON_TARGET_ANALYSIS::filter_features_ms2(int top, float m
 
 bool nta::api::PROJECT_NON_TARGET_ANALYSIS::metfrag_screening(const std::vector<std::string> &analyses, const metfrag_runner::MetFragParams &params)
 {
+  const auto normalized_params = metfrag_runner::canonicalize_and_validate_params(params);
   load_processing_metadata();
   load_processing_features(true);
   load_processing_suspects();
   std::vector<std::string> extra_params;
-  extra_params.reserve(params.extra_params.size());
-  for (const auto &entry : params.extra_params)
+  extra_params.reserve(normalized_params.extra_params.size());
+  for (const auto &entry : normalized_params.extra_params)
   {
     extra_params.push_back(cache_join_key({entry.first, entry.second}));
   }
+  std::vector<std::string> score_types;
+  score_types.reserve(normalized_params.score_types.size());
+  for (const auto &entry : normalized_params.score_types)
+    score_types.push_back(entry);
+  std::vector<std::string> score_weights;
+  score_weights.reserve(normalized_params.score_weights.size());
+  for (const auto &entry : normalized_params.score_weights)
+    score_weights.push_back(cache_scalar_key(entry));
+  std::vector<std::string> pre_filters;
+  pre_filters.reserve(normalized_params.pre_processing_candidate_filter.size());
+  for (const auto &entry : normalized_params.pre_processing_candidate_filter)
+    pre_filters.push_back(entry);
+  std::vector<std::string> post_filters;
+  post_filters.reserve(normalized_params.post_processing_candidate_filter.size());
+  for (const auto &entry : normalized_params.post_processing_candidate_filter)
+    post_filters.push_back(entry);
+  std::vector<std::string> candidate_writers;
+  candidate_writers.reserve(normalized_params.candidate_writer.size());
+  for (const auto &entry : normalized_params.candidate_writer)
+    candidate_writers.push_back(entry);
   return run_cached_suspects_algorithm(
       "metfrag_screening",
-      cache_join_key({cache_vector_key(analyses), params.metfrag_path, params.database_type, params.database_path, cache_scalar_key(params.ppm), cache_scalar_key(params.sec), cache_scalar_key(params.ppmMS2), cache_scalar_key(params.mzrMS2), cache_scalar_key(params.top_n), cache_bool_key(params.filtered), params.java_path, params.run_dir, cache_bool_key(params.debug), cache_join_key(extra_params)}),
+      cache_join_key({cache_vector_key(analyses), normalized_params.metfrag_path, normalized_params.database_type, normalized_params.database_path, cache_scalar_key(normalized_params.ppm), cache_scalar_key(normalized_params.sec), cache_scalar_key(normalized_params.ppmMS2), cache_scalar_key(normalized_params.mzrMS2), cache_scalar_key(normalized_params.top_n), cache_join_key(score_types), cache_join_key(score_weights), cache_join_key(pre_filters), cache_join_key(post_filters), cache_join_key(candidate_writers), cache_scalar_key(normalized_params.maximum_tree_depth), cache_scalar_key(normalized_params.number_threads), cache_bool_key(normalized_params.use_smiles), cache_bool_key(normalized_params.filtered), normalized_params.java_path, normalized_params.run_dir, cache_bool_key(normalized_params.debug), cache_join_key(extra_params)}),
       {feature_state_cache_key(), suspect_state_cache_key()},
       "Cached NTS suspects for metfrag_screening",
       [&]()
-      { metfrag_runner::metfrag_screening_impl(*this, analyses, params); });
+      { metfrag_runner::metfrag_screening_impl(*this, analyses, normalized_params); });
 };
 
 bool nta::api::PROJECT_NON_TARGET_ANALYSIS::assign_transformation_products(const std::vector<NTA_TRANSFORMATION_PRODUCT_ROW> &transformation_products, const std::string &chromatographic_phase, double mzrMS2)
