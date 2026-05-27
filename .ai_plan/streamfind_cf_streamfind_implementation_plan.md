@@ -324,6 +324,20 @@ OBJECTS = $(SOURCES:.cpp=.o)
 
 Do not use the placeholder filenames above. Replace them with real `.cpp` files from the repository.
 
+Note: during development use `devtools::load_all()` to compile and load the package in-place and quickly surface C++ compilation or linking errors. For example, run in an R session:
+
+```r
+devtools::load_all()
+```
+
+Or from the shell:
+
+```bash
+R -e "devtools::load_all('.')"
+```
+
+This is faster than a full `R CMD build`/`R CMD INSTALL` cycle and is useful for iterating on `src/` changes.
+
 ### 3.3 Keep CogniFlow files out of the R build
 
 The R build must not compile:
@@ -344,10 +358,7 @@ The R build must not include CogniFlow headers such as:
 
 ## Phase 4: Add Python Package Files at Repository Root
 
-The Cogniflow playground sources live in the attached ZIP and in a local repo path. Use one of these sources as available:
-
-- ZIP archive: `.ai_plan/cogniflow-playground-20260527-122156.zip` (extract first)
-- Local checkout: `C:/Users/cunha/Documents/GitHub/cogniflow-playground/resources/cf_streamfind`
+The Cogniflow playground sources are available locally and as a ZIP archive. Prefer copying directly from the local checkout `C:/Users/cunha/Documents/GitHub/cogniflow-playground/resources/cf_streamfind`. If the local path is not present, fall back to extracting `.ai_plan/cogniflow-playground-20260527-122156.zip`.
 
 Reshape that package into the new root-based structure.
 
@@ -359,7 +370,26 @@ Create target folder:
 mkdir -p python/cf_streamfind
 ```
 
-If you have the ZIP, extract then copy (Linux/macOS example):
+Preferred: copy from the local Cogniflow checkout (Windows PowerShell):
+
+```powershell
+New-Item -ItemType Directory -Force -Path python\cf_streamfind
+Copy-Item -Path 'C:\Users\cunha\Documents\GitHub\cogniflow-playground\resources\cf_streamfind\src\cf_streamfind\__init__.py' -Destination python\cf_streamfind\
+Copy-Item -Path 'C:\Users\cunha\Documents\GitHub\cogniflow-playground\resources\cf_streamfind\src\cf_streamfind\steps.nq' -Destination python\cf_streamfind\
+New-Item -ItemType Directory -Force -Path python\cf_streamfind\data
+Copy-Item -Path 'C:\Users\cunha\Documents\GitHub\cogniflow-playground\resources\cf_streamfind\src\cf_streamfind\data\*' -Destination python\cf_streamfind\data\ -Recurse -ErrorAction SilentlyContinue
+```
+
+Or (POSIX shell) copy from the local checkout:
+
+```bash
+mkdir -p python/cf_streamfind python/cf_streamfind/data
+cp /mnt/c/Users/cunha/Documents/GitHub/cogniflow-playground/resources/cf_streamfind/src/cf_streamfind/__init__.py python/cf_streamfind/__init__.py
+cp /mnt/c/Users/cunha/Documents/GitHub/cogniflow-playground/resources/cf_streamfind/src/cf_streamfind/steps.nq python/cf_streamfind/steps.nq
+cp -r /mnt/c/Users/cunha/Documents/GitHub/cogniflow-playground/resources/cf_streamfind/src/cf_streamfind/data/* python/cf_streamfind/data/ || true
+```
+
+Fallback: if the local checkout is missing, extract the ZIP and copy from the extracted tree (POSIX example):
 
 ```bash
 unzip .ai_plan/cogniflow-playground-20260527-122156.zip -d /tmp/cogniflow-playground
@@ -367,15 +397,6 @@ cp /tmp/cogniflow-playground/resources/cf_streamfind/src/cf_streamfind/__init__.
 cp /tmp/cogniflow-playground/resources/cf_streamfind/src/cf_streamfind/steps.nq python/cf_streamfind/steps.nq
 mkdir -p python/cf_streamfind/data
 cp -r /tmp/cogniflow-playground/resources/cf_streamfind/src/cf_streamfind/data/* python/cf_streamfind/data/ 2>/dev/null || true
-```
-
-Or copy directly from the local Cogniflow checkout on Windows:
-
-```powershell
-Copy-Item -Path 'C:\Users\cunha\Documents\GitHub\cogniflow-playground\resources\cf_streamfind\src\cf_streamfind\__init__.py' -Destination python\cf_streamfind\
-Copy-Item -Path 'C:\Users\cunha\Documents\GitHub\cogniflow-playground\resources\cf_streamfind\src\cf_streamfind\steps.nq' -Destination python\cf_streamfind\
-New-Item -ItemType Directory -Force -Path python\cf_streamfind\data
-Copy-Item -Path 'C:\Users\cunha\Documents\GitHub\cogniflow-playground\resources\cf_streamfind\src\cf_streamfind\data\*' -Destination python\cf_streamfind\data\ -Recurse -ErrorAction SilentlyContinue
 ```
 
 Do not copy generated binaries from the `bin/` directory in the source archive.
@@ -437,6 +458,101 @@ Or (PowerShell):
 
 ```powershell
 Copy-Item -Path 'C:\Users\cunha\Documents\GitHub\cogniflow-playground\resources\cf_streamfind\cmake\Repackaged.cmake' -Destination cmake\ -ErrorAction SilentlyContinue
+
+### 4.5 Implement simple CogniFlow steps that call `src/core` methods
+
+Rather than copying a fully-featured `steps.cpp` implementation, add a minimal, easy-to-tune adapter that mirrors the `Method` child functions already implemented in `StreamFind` and will call the corresponding C++ functions exposed from `src/core`.
+
+Goals:
+
+- Provide an immediately usable adapter that exposes a small set of steps (one per high-level Method) to CogniFlow.
+- Keep all heavy algorithm code in `src/core/` and only implement glue/ABI code in `python/cf_streamfind/cpp/steps.cpp`.
+- Keep the Python `cf_streamfind` package lightweight: include `steps.nq` and a tiny `__init__.py` that exposes metadata.
+
+Suggested files and minimal templates (copy into `python/cf_streamfind/` and `python/cf_streamfind/cpp/`):
+
+`python/cf_streamfind/__init__.py` (simple exposure and helper):
+
+```python
+__all__ = ["steps_nq_path"]
+import importlib.resources as pkg_resources
+from pathlib import Path
+
+def steps_nq_path():
+    # returns path to bundled steps document
+    return Path(pkg_resources.files(__package__) / "steps.nq")
+
+```
+
+`python/cf_streamfind/steps.nq` (minimal example describing two steps)
+
+```nq
+@prefix cf: <http://cogniflow.org/schema#> .
+
+<cf.streamfind.find_features> a cf:Step ;
+  cf:label "StreamFind: Find Features" ;
+  cf:entryPoint "cf.streamfind:run_find_features" .
+
+<cf.streamfind.group_features> a cf:Step ;
+  cf:label "StreamFind: Group Features" ;
+  cf:entryPoint "cf.streamfind:run_group_features" .
+```
+
+`python/cf_streamfind/cpp/steps.cpp` (minimal C++ CogniFlow ABI adapter)
+
+```cpp
+#include "cf_step_abi.h"
+#include "cf_step_utils.h"
+#include "cf_plugin_table.h"
+#include "cf_streamfind_signature_hashes.h"
+
+// Include shared core headers
+#include "project/streamfind_core_api.hpp" // example header in src/core/project
+
+extern "C" {
+
+CF_EXPORT cf_status_t cf_step_init(cf_step_context_t* ctx) {
+  // Initialize any global state if needed
+  return CF_SUCCESS;
+}
+
+CF_EXPORT cf_status_t cf_step_run(cf_step_context_t* ctx) {
+  // Example pattern:
+  // 1. parse inputs from ctx
+  // 2. call into src/core functions (thin wrappers)
+  // 3. set outputs on ctx
+
+  // Pseudo-code: replace with real argument parsing and calls
+  try {
+    // parse inputs (use cf_step_utils helpers)
+    // e.g. cf_string_t csv_path = cf_step_input_get_string(ctx, "input_path");
+
+    // call into shared core API
+    // int rc = streamfind::run_find_features("input_path", "output_path");
+
+    // set outputs on ctx
+    // cf_step_output_set_string(ctx, "result", "ok");
+    (void)ctx;
+    return CF_SUCCESS;
+  } catch(...) {
+    return CF_FAILURE;
+  }
+}
+
+CF_EXPORT void cf_step_shutdown() {
+  // cleanup if needed
+}
+
+} // extern "C"
+```
+
+Notes:
+
+- Replace `project/streamfind_core_api.hpp` and the example function names with the real headers and function names exported from `src/core/` once those are available.
+- Keep parsing/serialization in `steps.cpp` minimal; prefer to have Python-side helpers for complex parameter composition and let `steps.cpp` accept simple inputs (file paths, serialized JSON) and call core functions.
+- Use `cf_step_tooling.siggen` (invoked by CMake during build) to generate the `cf_streamfind_signature_hashes.h` file from `steps.nq` so signatures stay in sync.
+
+This minimal adapter gives you a working scaffold that maps CogniFlow steps to the R package's `Method` implementations now relocated to `src/core/`. Tweak the exact step names and core function calls as you complete the `src/core` refactor.
 ```
 
 ---
