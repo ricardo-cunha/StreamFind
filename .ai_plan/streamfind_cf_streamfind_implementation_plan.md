@@ -203,28 +203,9 @@ Follow these rules strictly:
 
 ---
 
-## Phase 1: Create a Safety Branch
+## Phase 1: (skipped)
 
-Run from a clean local checkout of `odea-project/StreamFind`:
-
-```bash
-git checkout dev_filesystem
-git pull
-git checkout -b feature/cf-streamfind-python-package
-```
-
-Verify current state:
-
-```bash
-git status
-Rscript -e "desc <- read.dcf('DESCRIPTION'); print(desc[,'Package'])"
-```
-
-Expected R package name:
-
-```text
-StreamFind
-```
+This plan assumes the working branch `dev_filesystem` is already up-to-date and ready for implementation. Creating a separate safety branch is not required for this session — proceed directly with Phase 2.
 
 ---
 
@@ -363,80 +344,99 @@ The R build must not include CogniFlow headers such as:
 
 ## Phase 4: Add Python Package Files at Repository Root
 
-Copy the existing Python package from the attached source:
+The Cogniflow playground sources live in the attached ZIP and in a local repo path. Use one of these sources as available:
 
-```text
-resources/cf_streamfind/
-```
+- ZIP archive: `.ai_plan/cogniflow-playground-20260527-122156.zip` (extract first)
+- Local checkout: `C:/Users/cunha/Documents/GitHub/cogniflow-playground/resources/cf_streamfind`
 
-but reshape it into the new root-based structure.
+Reshape that package into the new root-based structure.
 
 ### 4.1 Copy Python runtime module
 
-Create:
+Create target folder:
 
 ```bash
 mkdir -p python/cf_streamfind
 ```
 
-Copy:
+If you have the ZIP, extract then copy (Linux/macOS example):
 
 ```bash
-cp resources/cf_streamfind/src/cf_streamfind/__init__.py python/cf_streamfind/__init__.py
-cp resources/cf_streamfind/src/cf_streamfind/steps.nq python/cf_streamfind/steps.nq
+unzip .ai_plan/cogniflow-playground-20260527-122156.zip -d /tmp/cogniflow-playground
+cp /tmp/cogniflow-playground/resources/cf_streamfind/src/cf_streamfind/__init__.py python/cf_streamfind/__init__.py
+cp /tmp/cogniflow-playground/resources/cf_streamfind/src/cf_streamfind/steps.nq python/cf_streamfind/steps.nq
 mkdir -p python/cf_streamfind/data
-cp -r resources/cf_streamfind/src/cf_streamfind/data/* python/cf_streamfind/data/ 2>/dev/null || true
+cp -r /tmp/cogniflow-playground/resources/cf_streamfind/src/cf_streamfind/data/* python/cf_streamfind/data/ 2>/dev/null || true
 ```
 
-Do not copy generated binaries from:
+Or copy directly from the local Cogniflow checkout on Windows:
 
-```text
-resources/cf_streamfind/src/cf_streamfind/bin/
+```powershell
+Copy-Item -Path 'C:\Users\cunha\Documents\GitHub\cogniflow-playground\resources\cf_streamfind\src\cf_streamfind\__init__.py' -Destination python\cf_streamfind\
+Copy-Item -Path 'C:\Users\cunha\Documents\GitHub\cogniflow-playground\resources\cf_streamfind\src\cf_streamfind\steps.nq' -Destination python\cf_streamfind\
+New-Item -ItemType Directory -Force -Path python\cf_streamfind\data
+Copy-Item -Path 'C:\Users\cunha\Documents\GitHub\cogniflow-playground\resources\cf_streamfind\src\cf_streamfind\data\*' -Destination python\cf_streamfind\data\ -Recurse -ErrorAction SilentlyContinue
 ```
+
+Do not copy generated binaries from the `bin/` directory in the source archive.
 
 ### 4.2 Copy CogniFlow bridge code
 
-Create:
+Create target folder:
 
 ```bash
 mkdir -p python/cf_streamfind/cpp
 ```
 
-Copy:
+Copy the C++ bridge files (Linux/macOS example using extracted ZIP):
 
 ```bash
-cp resources/cf_streamfind/src/cf_streamfind/cpp/steps.cpp python/cf_streamfind/cpp/steps.cpp
-cp resources/cf_streamfind/src/cf_streamfind/cpp/CMakeLists.txt python/cf_streamfind/cpp/CMakeLists.txt
+cp /tmp/cogniflow-playground/resources/cf_streamfind/src/cf_streamfind/cpp/steps.cpp python/cf_streamfind/cpp/steps.cpp
+cp /tmp/cogniflow-playground/resources/cf_streamfind/src/cf_streamfind/cpp/CMakeLists.txt python/cf_streamfind/cpp/CMakeLists.txt
 ```
 
-Do not copy generated `cf_streamfind_signature_hashes.h` as a required source file if CMake already generates it. If copied for reference, remove it before final commit.
+Or Windows PowerShell (local checkout):
+
+```powershell
+Copy-Item -Path 'C:\Users\cunha\Documents\GitHub\cogniflow-playground\resources\cf_streamfind\src\cf_streamfind\cpp\steps.cpp' -Destination python\cf_streamfind\cpp\
+Copy-Item -Path 'C:\Users\cunha\Documents\GitHub\cogniflow-playground\resources\cf_streamfind\src\cf_streamfind\cpp\CMakeLists.txt' -Destination python\cf_streamfind\cpp\
+```
+
+Do not copy generated `cf_streamfind_signature_hashes.h` if CMake generates it during build; if copied for reference, remove it before committing.
 
 ### 4.3 Copy Python tests
 
-Create:
+Create tests folder:
 
 ```bash
 mkdir -p tests-py
 ```
 
-Copy:
+Copy tests from extracted ZIP:
 
 ```bash
-cp -r resources/cf_streamfind/tests/* tests-py/
+cp -r /tmp/cogniflow-playground/resources/cf_streamfind/tests/* tests-py/ || true
+```
+
+Or from local checkout (PowerShell):
+
+```powershell
+Copy-Item -Path 'C:\Users\cunha\Documents\GitHub\cogniflow-playground\resources\cf_streamfind\tests\*' -Destination tests-py\ -Recurse -ErrorAction SilentlyContinue
 ```
 
 ### 4.4 Copy CMake helper
 
-Create:
+Create `cmake/` and copy helper file:
 
 ```bash
 mkdir -p cmake
+cp /tmp/cogniflow-playground/resources/cf_streamfind/cmake/Repackaged.cmake cmake/Repackaged.cmake || true
 ```
 
-Copy:
+Or (PowerShell):
 
-```bash
-cp resources/cf_streamfind/cmake/Repackaged.cmake cmake/Repackaged.cmake
+```powershell
+Copy-Item -Path 'C:\Users\cunha\Documents\GitHub\cogniflow-playground\resources\cf_streamfind\cmake\Repackaged.cmake' -Destination cmake\ -ErrorAction SilentlyContinue
 ```
 
 ---
@@ -931,6 +931,8 @@ python -c "import cf_streamfind; print(cf_streamfind.__file__)"
 ---
 
 ## Phase 13: Optional CI Workflows
+
+Note: Create and enable CI workflows only when explicitly requested. Do not add or activate these workflows automatically as part of the initial migration — wait until local builds, tests, and wheel generation are verified and a manual decision to enable CI has been made.
 
 ### 13.1 Python build workflow
 
