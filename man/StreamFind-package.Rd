@@ -4,9 +4,9 @@
 \name{StreamFind-package}
 \alias{StreamFind}
 \alias{StreamFind-package}
-\title{StreamFind: Flexible Workflow Assembler for Advanced Data Analysis}
+\title{StreamFind: DuckDB-Backed Project Framework for Analytical Workflows}
 \description{
-StreamFind is an R package designed to support the assembly and execution of standardized workflows for advanced data analysis. Originally developed within the project "Flexible Data Analysis and Workflow Designer to Identify Chemicals in the Water Cycle" (funded by the Bundesministerium für ­Forschung, Technologie und Raumfahrt, BMFTR), StreamFind offers a modular platform capable of handling diverse data types, including mass spectrometry, spectroscopy, and other structured datasets. StreamFind promotes the use of advanced analysis techniques—such as non-target screening (NTS), statistical modeling, and retrospective data evaluation—in both research and routine quality control workflows. With its standardized approach to data processing, comprehensive documentation, and an integrated graphical user interface, StreamFind is designed to support scientists and technical staff across a wide range of disciplines, from environmental monitoring to pharmaceutical quality assurance.
+StreamFind provides a DuckDB-backed project framework for assembling, running, and inspecting analytical workflows in R. The current package centres on Project child classes that expose domain-specific interfaces for mass spectrometry and non-target analysis, including ProjectMassSpec, ProjectMassSpecSpectra, ProjectMassSpecChromatograms, and ProjectNonTargetAnalysis. Workflows are expressed as ordered Method objects, persisted with the project, executed reproducibly, and inspected through both programmatic APIs and an integrated Shiny application. StreamFind is developed within the project "Flexible Data Analysis and Workflow Designer to Identify Chemicals in the Water Cycle" and is intended to support transparent, reusable processing pipelines for research and routine analytical work.
 }
 \seealso{
 Useful links:
