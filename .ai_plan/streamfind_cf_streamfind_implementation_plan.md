@@ -1550,6 +1550,24 @@ git add .
 git commit -m "Add cf-streamfind Python package using shared StreamFind C++ core"
 ```
 
+### Phase 14 Conclusion
+
+Phase 14 is complete.
+
+- The migration changes have been committed as `799b329` with message `Add Python package and move shared C++ to src/core`.
+- The repository worktree is clean after the commit, which means the intended Phase 2-12 changes are now captured in version control.
+- The committed scope matches the current architecture: shared native code moved to `src/core/`, the Python/CogniFlow frontend added at the repository root and under `python/cf_streamfind/`, root Python packaging files added, and the R build kept functional through updated `Makevars` files.
+- The commit also includes the vendored `zlib` source for the Python/CMake build path, the reduced `json-schema-validator` vendored tree, and the placeholder-only `tests/python/README.md` instead of the earlier scaffold tests.
+
+Inspection result:
+
+- The commit is not just a file move; it also captures the dependency-vendoring decisions needed to make local `pip install .` succeed without relying on RTools for Python users.
+- The `json-schema-validator` vendor cleanup is preserved as explicit deletions of upstream extras, which keeps the repository leaner while retaining the library sources and provenance files actually used by StreamFind.
+- The current commit still includes vendored DuckDB binary artifacts under `src/core/external/duckdb/`, which is expected and intentional for the present build strategy rather than an accidental generated-build staging issue.
+- The validation level represented by this commit remains a local smoke-validation level: `devtools::load_all('.')` and local `.venv` `pip install .` succeeded, while dedicated new R tests and rewritten Python tests remain future work.
+
+This means the migration has now crossed from an in-progress working tree into a recorded repository checkpoint with a clean post-commit state, ready either for follow-up validation work or for any later CI/publishing decisions.
+
 ---
 
 ## Acceptance Criteria

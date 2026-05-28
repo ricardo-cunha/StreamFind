@@ -75,7 +75,7 @@ namespace project
           domain != "stat" &&
           domain != "mass_spec_spectra" &&
           domain != "mass_spec_chromatograms" &&
-          domain != "mass_spec_nts")
+          domain != "mass_spec_nta")
       {
         throw error::ERROR(error::ERROR_CODE::InvalidArgument, "Unsupported project domain: " + value);
       }

@@ -22,6 +22,116 @@
 <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/StepPackage> <https://cogniflow.odea-project.org/cf#pythonModule> "cf_streamfind" .
 <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/StepPackage> <https://cogniflow.odea-project.org/cf#requiresCogniflowCore> ">=0.1.0" .
 
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://cogniflow.odea-project.org/cf#ProcessingStep> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project> <http://www.w3.org/2004/02/skos/core#prefLabel> "SF NTA Project" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project> <http://www.w3.org/2004/02/skos/core#definition> "Creates, opens, and validates a StreamFind non-target-analysis project and emits a reusable JSON project handle." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project> <http://www.w3.org/2004/02/skos/core#scopeNote> "This input-category step mirrors the ProjectNonTargetAnalysis constructor shape with CogniFlow-friendly parameters. It identifies the DuckDB file and project_id, optionally imports analyses, validates the mass_spec_nta project domain, and emits the JSON projectRef handle required by downstream StreamFind steps." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project> <https://cogniflow.odea-project.org/cf#belongsToStepPackage> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/StepPackage> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project> <https://cogniflow.odea-project.org/cf#hasCategory> <https://cogniflow.odea-project.org/cf#processingStepCategory> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project> <https://cogniflow.odea-project.org/cf#hasImplementation> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_cpp_impl> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project> <https://cogniflow.odea-project.org/cf#hasOutput> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_output_project_ref> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project> <https://cogniflow.odea-project.org/cf#hasParameter> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_db_path> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project> <https://cogniflow.odea-project.org/cf#hasParameter> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_project_id> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project> <https://cogniflow.odea-project.org/cf#hasParameter> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_file_paths> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project> <https://cogniflow.odea-project.org/cf#hasParameter> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_replicates> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project> <https://cogniflow.odea-project.org/cf#hasParameter> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_blanks> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project> <https://cogniflow.odea-project.org/cf#requiresParameter> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_db_path> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project> <https://cogniflow.odea-project.org/cf#requiresParameter> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_project_id> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project> <https://cogniflow.odea-project.org/cf#stepCategory> <https://cogniflow.odea-project.org/cf#input> .
+
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_cpp_impl> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://cogniflow.odea-project.org/cf#StepImplementation> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_cpp_impl> <http://www.w3.org/2004/02/skos/core#prefLabel> "generated cf streamfind sf nta project cpp impl" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_cpp_impl> <http://www.w3.org/2004/02/skos/core#definition> "C++ implementation artifact for the StreamFind project-opening step used by non-target-analysis workflows." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_cpp_impl> <http://www.w3.org/2004/02/skos/core#example> "Example: this implementation resource can point to the packaged shared library that opens one StreamFind non-target-analysis project and returns its projectRef handle." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_cpp_impl> <http://www.w3.org/2004/02/skos/core#scopeNote> "Use this resource for the executable project-step binding. The generic project-child lifecycle is implemented in C++ so future StreamFind project child steps can reuse the same open, domain-check, import, and output flow." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_cpp_impl> <https://cogniflow.odea-project.org/cf#hasCategory> <https://cogniflow.odea-project.org/cf#stepImplementationCategory> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_cpp_impl> <https://cogniflow.odea-project.org/cf#implementationArtifact> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/GeneratedPlugin> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_cpp_impl> <https://cogniflow.odea-project.org/cf#implementationRole> <https://cogniflow.odea-project.org/cf#core_implementation> .
+
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_output_project_ref> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://cogniflow.odea-project.org/cf#OutputPort> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_output_project_ref> <http://www.w3.org/2004/02/skos/core#prefLabel> "projectRef" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_output_project_ref> <http://www.w3.org/2004/02/skos/core#definition> "JSON project reference containing the full DuckDB file path and the StreamFind project_id." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_output_project_ref> <http://www.w3.org/2004/02/skos/core#example> "{\"db_path\": \"C:/path/to/project.duckdb\", \"project_id\": \"my_project_id\"}" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_output_project_ref> <http://www.w3.org/2004/02/skos/core#scopeNote> "Use projectRef as the stable project handle passed to downstream StreamFind steps such as SF NTA Find Features. The handle identifies one project inside one DuckDB file; it does not hold an open database connection." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_output_project_ref> <https://cogniflow.odea-project.org/cf#hasCategory> <https://cogniflow.odea-project.org/cf#portCategory> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_output_project_ref> <https://cogniflow.odea-project.org/cf#portKey> <https://cogniflow.odea-project.org/cf#data> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_output_project_ref> <https://cogniflow.odea-project.org/cf#portName> "projectRef" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_output_project_ref> <https://cogniflow.odea-project.org/cf#valueContract> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_output_project_ref_value> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_output_project_ref_value> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://cogniflow.odea-project.org/cf#ValueContract> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_output_project_ref_value> <https://cogniflow.odea-project.org/cf#elementType> <http://www.w3.org/1999/02/22-rdf-syntax-ns#JSON> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_output_project_ref_value> <https://cogniflow.odea-project.org/cf#shapeKind> <https://cogniflow.odea-project.org/cf#shape_single> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_output_project_ref_value> <https://cogniflow.odea-project.org/cf#hasCategory> <https://cogniflow.odea-project.org/cf#bindingCategory> .
+
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_db_path> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://cogniflow.odea-project.org/cf#Parameter> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_db_path> <http://www.w3.org/2004/02/skos/core#prefLabel> "db_path" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_db_path> <http://www.w3.org/2004/02/skos/core#definition> "Full filesystem path to the DuckDB file that stores the StreamFind project." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_db_path> <http://www.w3.org/2004/02/skos/core#example> "C:/data/streamfind/project.duckdb" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_db_path> <http://www.w3.org/2004/02/skos/core#scopeNote> "Use db_path to point the step at the persisted StreamFind database file. The path is resolved during step execution only; no database connection is kept after the step returns." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_db_path> <https://cogniflow.odea-project.org/cf#defaultValue> "" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_db_path> <https://cogniflow.odea-project.org/cf#isRequired> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_db_path> <https://cogniflow.odea-project.org/cf#parameterName> "db_path" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_db_path> <https://cogniflow.odea-project.org/cf#valueContract> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_db_path_value> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_db_path_value> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://cogniflow.odea-project.org/cf#ValueContract> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_db_path_value> <https://cogniflow.odea-project.org/cf#elementType> <http://www.w3.org/2001/XMLSchema#string> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_db_path_value> <https://cogniflow.odea-project.org/cf#shapeKind> <https://cogniflow.odea-project.org/cf#shape_single> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_db_path_value> <https://cogniflow.odea-project.org/cf#hasCategory> <https://cogniflow.odea-project.org/cf#bindingCategory> .
+
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_project_id> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://cogniflow.odea-project.org/cf#Parameter> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_project_id> <http://www.w3.org/2004/02/skos/core#prefLabel> "project_id" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_project_id> <http://www.w3.org/2004/02/skos/core#definition> "StreamFind project identifier to create or open within the DuckDB file." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_project_id> <http://www.w3.org/2004/02/skos/core#example> "project_nta_001" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_project_id> <http://www.w3.org/2004/02/skos/core#scopeNote> "Use project_id to select the correct StreamFind project row inside the DuckDB file. This is required because one database file can host more than one project." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_project_id> <https://cogniflow.odea-project.org/cf#defaultValue> "" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_project_id> <https://cogniflow.odea-project.org/cf#isRequired> "true"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_project_id> <https://cogniflow.odea-project.org/cf#parameterName> "project_id" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_project_id> <https://cogniflow.odea-project.org/cf#valueContract> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_project_id_value> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_project_id_value> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://cogniflow.odea-project.org/cf#ValueContract> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_project_id_value> <https://cogniflow.odea-project.org/cf#elementType> <http://www.w3.org/2001/XMLSchema#string> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_project_id_value> <https://cogniflow.odea-project.org/cf#shapeKind> <https://cogniflow.odea-project.org/cf#shape_single> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_project_id_value> <https://cogniflow.odea-project.org/cf#hasCategory> <https://cogniflow.odea-project.org/cf#bindingCategory> .
+
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_file_paths> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://cogniflow.odea-project.org/cf#Parameter> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_file_paths> <http://www.w3.org/2004/02/skos/core#prefLabel> "file_paths" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_file_paths> <http://www.w3.org/2004/02/skos/core#definition> "JSON array of raw data file paths to import into the project when the step runs." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_file_paths> <http://www.w3.org/2004/02/skos/core#example> "[\"C:/data/sample_01.mzML\", \"C:/data/sample_02.mzML\"]" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_file_paths> <http://www.w3.org/2004/02/skos/core#scopeNote> "Use file_paths to mirror the ProjectNonTargetAnalysis constructor import behavior. Repeated runs with non-empty file_paths intentionally mirror the current R-side semantics rather than adding deduplication in the step layer." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_file_paths> <https://cogniflow.odea-project.org/cf#defaultValue> "[]" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_file_paths> <https://cogniflow.odea-project.org/cf#isRequired> "false"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_file_paths> <https://cogniflow.odea-project.org/cf#parameterName> "file_paths" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_file_paths> <https://cogniflow.odea-project.org/cf#valueContract> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_file_paths_value> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_file_paths_value> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://cogniflow.odea-project.org/cf#ValueContract> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_file_paths_value> <https://cogniflow.odea-project.org/cf#elementType> <http://www.w3.org/1999/02/22-rdf-syntax-ns#JSON> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_file_paths_value> <https://cogniflow.odea-project.org/cf#shapeKind> <https://cogniflow.odea-project.org/cf#shape_single> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_file_paths_value> <https://cogniflow.odea-project.org/cf#hasCategory> <https://cogniflow.odea-project.org/cf#bindingCategory> .
+
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_replicates> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://cogniflow.odea-project.org/cf#Parameter> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_replicates> <http://www.w3.org/2004/02/skos/core#prefLabel> "replicates" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_replicates> <http://www.w3.org/2004/02/skos/core#definition> "JSON array of replicate labels aligned positionally with file_paths." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_replicates> <http://www.w3.org/2004/02/skos/core#example> "[\"sample\", \"sample\"]" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_replicates> <http://www.w3.org/2004/02/skos/core#scopeNote> "Use replicates when imported analyses should be assigned to replicate groups. The array must be empty or have the same length as file_paths." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_replicates> <https://cogniflow.odea-project.org/cf#defaultValue> "[]" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_replicates> <https://cogniflow.odea-project.org/cf#isRequired> "false"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_replicates> <https://cogniflow.odea-project.org/cf#parameterName> "replicates" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_replicates> <https://cogniflow.odea-project.org/cf#valueContract> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_replicates_value> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_replicates_value> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://cogniflow.odea-project.org/cf#ValueContract> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_replicates_value> <https://cogniflow.odea-project.org/cf#elementType> <http://www.w3.org/1999/02/22-rdf-syntax-ns#JSON> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_replicates_value> <https://cogniflow.odea-project.org/cf#shapeKind> <https://cogniflow.odea-project.org/cf#shape_single> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_replicates_value> <https://cogniflow.odea-project.org/cf#hasCategory> <https://cogniflow.odea-project.org/cf#bindingCategory> .
+
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_blanks> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://cogniflow.odea-project.org/cf#Parameter> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_blanks> <http://www.w3.org/2004/02/skos/core#prefLabel> "blanks" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_blanks> <http://www.w3.org/2004/02/skos/core#definition> "JSON array of blank-sample labels aligned positionally with file_paths." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_blanks> <http://www.w3.org/2004/02/skos/core#example> "[\"blank_01\", \"blank_02\"]" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_blanks> <http://www.w3.org/2004/02/skos/core#scopeNote> "Use blanks when imported analyses should be associated with blank runs. The array must be empty or have the same length as file_paths." .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_blanks> <https://cogniflow.odea-project.org/cf#defaultValue> "[]" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_blanks> <https://cogniflow.odea-project.org/cf#isRequired> "false"^^<http://www.w3.org/2001/XMLSchema#boolean> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_blanks> <https://cogniflow.odea-project.org/cf#parameterName> "blanks" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_project_param_blanks> <https://cogniflow.odea-project.org/cf#valueContract> <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_blanks_value> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_blanks_value> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://cogniflow.odea-project.org/cf#ValueContract> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_blanks_value> <https://cogniflow.odea-project.org/cf#elementType> <http://www.w3.org/1999/02/22-rdf-syntax-ns#JSON> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_blanks_value> <https://cogniflow.odea-project.org/cf#shapeKind> <https://cogniflow.odea-project.org/cf#shape_single> .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/contracts/sf_nta_project_param_blanks_value> <https://cogniflow.odea-project.org/cf#hasCategory> <https://cogniflow.odea-project.org/cf#bindingCategory> .
+
 <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_find_features> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://cogniflow.odea-project.org/cf#ProcessingStep> .
 <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_find_features> <http://www.w3.org/2004/02/skos/core#prefLabel> "SF NTA Find Features" .
 <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/sf_nta_find_features> <http://www.w3.org/2004/02/skos/core#definition> "Runs the StreamFind ProjectNonTargetAnalysis FindFeatures core method on an existing DuckDB-backed non-target analysis project." .

@@ -1797,7 +1797,7 @@ namespace nta
         : ctx_(std::move(ctx))
     {
       project::PROJECT root(ctx_);
-      root.set_domain("mass_spec_nts");
+      root.set_domain("mass_spec_nta");
       mass_spec::PROJECT_MASS_SPEC::create_schema(ctx_);
       mass_spec::PROJECT_MASS_SPEC::validate_schema(ctx_);
       create_schema(ctx_);

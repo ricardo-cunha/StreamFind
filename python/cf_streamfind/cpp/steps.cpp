@@ -1,5 +1,7 @@
 #include <memory>
+#include <sstream>
 #include <string>
+#include <stdexcept>
 #include <utility>
 #include <vector>
 
@@ -7,6 +9,7 @@
 #include "cf_plugin_table.h"
 #include "cf_streamfind_signature_hashes.h"
 
+#include "mass_spec/mass_spec.h"
 #include "nta/nta.h"
 #include "project/project.h"
 
@@ -50,6 +53,58 @@ static bool read_numeric_value(
   return runtime->read_numeric_scalar(ctx, input, &out) == CF_STATUS_OK;
 }
 
+static std::string require_text_param(
+  const CfExecutionContext* ctx,
+  const CfStepRuntimeContractV1* runtime,
+  const CfValueHandle* value,
+  const char* param_name) {
+  std::string text;
+  if (!read_text_value(ctx, runtime, value, text)) {
+    throw std::runtime_error(std::string("failed to read parameter: ") + param_name);
+  }
+  if (text.empty()) {
+    throw std::runtime_error(std::string("parameter must not be empty: ") + param_name);
+  }
+  return text;
+}
+
+static std::vector<std::string> parse_json_string_array(
+  const std::string& json_text,
+  const char* param_name) {
+  if (json_text.empty()) {
+    return {};
+  }
+
+  const auto parsed = project::json::parse(json_text);
+  if (!parsed.is_array()) {
+    throw std::runtime_error(std::string(param_name) + " must be a JSON array");
+  }
+
+  std::vector<std::string> values;
+  values.reserve(parsed.size());
+  for (std::size_t i = 0; i < parsed.size(); ++i) {
+    if (!parsed.at(i).is_string()) {
+      std::ostringstream message;
+      message << param_name << "[" << i << "] must be a string";
+      throw std::runtime_error(message.str());
+    }
+    values.push_back(parsed.at(i).get<std::string>());
+  }
+  return values;
+}
+
+static std::vector<std::string> read_optional_string_array_param(
+  const CfExecutionContext* ctx,
+  const CfStepRuntimeContractV1* runtime,
+  const CfValueHandle* value,
+  const char* param_name) {
+  std::string text;
+  if (!read_text_value(ctx, runtime, value, text)) {
+    throw std::runtime_error(std::string("failed to read parameter: ") + param_name);
+  }
+  return parse_json_string_array(text, param_name);
+}
+
 static std::pair<std::vector<float>, std::vector<float>> parse_rt_windows(const std::string& json_text) {
   std::vector<float> mins;
   std::vector<float> maxs;
@@ -81,6 +136,12 @@ struct ProjectRef {
   std::string project_id;
 };
 
+struct ProjectImportArgs {
+  std::vector<std::string> file_paths;
+  std::vector<std::string> replicates;
+  std::vector<std::string> blanks;
+};
+
 static ProjectRef parse_project_ref(const std::string& json_text) {
   if (json_text.empty()) {
     throw std::runtime_error("project_ref must not be empty");
@@ -108,6 +169,109 @@ static ProjectRef parse_project_ref(const std::string& json_text) {
     throw std::runtime_error("project_ref.project_id must not be empty");
   }
   return ref;
+}
+
+static std::string serialize_project_ref(const ProjectRef& ref) {
+  project::json payload = {
+    {"db_path", ref.db_path},
+    {"project_id", ref.project_id}
+  };
+  return payload.dump();
+}
+
+static void validate_import_args(const ProjectImportArgs& args) {
+  if (!args.replicates.empty() && args.replicates.size() != args.file_paths.size()) {
+    throw std::runtime_error("replicates must be empty or have the same length as file_paths");
+  }
+  if (!args.blanks.empty() && args.blanks.size() != args.file_paths.size()) {
+    throw std::runtime_error("blanks must be empty or have the same length as file_paths");
+  }
+}
+
+static void ensure_project_domain(project::PROJECT& project_root, const std::string& expected_domain) {
+  const std::string current_domain = project_root.domain();
+  if (current_domain.empty()) {
+    project_root.set_domain(expected_domain);
+    return;
+  }
+  if (current_domain != expected_domain) {
+    throw std::runtime_error(
+      "project domain is already set to " + current_domain + " and is not compatible with " + expected_domain);
+  }
+}
+
+template <typename ChildFactory>
+static ProjectRef prepare_project_child(
+  const ProjectRef& ref,
+  const ProjectImportArgs& import_args,
+  const std::string& expected_domain,
+  ChildFactory&& child_factory) {
+  validate_import_args(import_args);
+
+  project::PROJECT project_root(ref.db_path, ref.project_id);
+  project_root.validate();
+  ensure_project_domain(project_root, expected_domain);
+  mass_spec::PROJECT_MASS_SPEC mass_spec_project(
+    project_root.context(),
+    import_args.file_paths,
+    import_args.replicates,
+    import_args.blanks);
+  (void)mass_spec_project;
+  auto child_project = child_factory(project_root.context());
+  (void)child_project;
+
+  return ref;
+}
+
+static CfStatusCode call_sf_nta_project(
+  CfExecutionContext* ctx,
+  const CfValueHandle* params,
+  size_t n_params,
+  const CfValueHandle* inputs,
+  size_t n_inputs,
+  CfValueHandle* outputs,
+  size_t n_outputs) {
+  using S = cf_sig::sf_nta_project;
+
+  (void)inputs;
+
+  if (n_inputs < S::kInputCount || n_params < S::kParamCount || n_outputs < S::kOutputCount) {
+    return CF_STATUS_INVALID;
+  }
+
+  const CfStepRuntimeContractV1* runtime = require_step_runtime(ctx);
+  if (!runtime || !runtime->write_string) {
+    return CF_STATUS_ERROR;
+  }
+
+  try {
+    const ProjectRef project_ref{
+      require_text_param(ctx, runtime, &params[S::P_db_path], "db_path"),
+      require_text_param(ctx, runtime, &params[S::P_project_id], "project_id")
+    };
+    const ProjectImportArgs import_args{
+      read_optional_string_array_param(ctx, runtime, &params[S::P_file_paths], "file_paths"),
+      read_optional_string_array_param(ctx, runtime, &params[S::P_replicates], "replicates"),
+      read_optional_string_array_param(ctx, runtime, &params[S::P_blanks], "blanks")
+    };
+
+    const ProjectRef prepared_ref = prepare_project_child(
+      project_ref,
+      import_args,
+      "mass_spec_nta",
+      [](const std::shared_ptr<project::api::CONTEXT>& ctx_value) {
+        return nta::PROJECT_NON_TARGET_ANALYSIS(ctx_value);
+      });
+
+    const std::string output_json = serialize_project_ref(prepared_ref);
+    return runtime->write_string(
+      ctx,
+      &outputs[S::O_data],
+      output_json.c_str(),
+      output_json.size());
+  } catch (const std::exception&) {
+    return CF_STATUS_ERROR;
+  }
 }
 
 static CfStatusCode call_sf_nta_find_features(
@@ -197,6 +361,7 @@ static CfStatusCode call_sf_nta_find_features(
 }
 
 #define CF_STREAMFIND_STEPS(X) \
+  X(cf_generated::ksf_nta_projectIri, cf_generated::ksf_nta_projectSigHash, call_sf_nta_project, nullptr) \
   X(cf_generated::ksf_nta_find_featuresIri, cf_generated::ksf_nta_find_featuresSigHash, call_sf_nta_find_features, nullptr)
 
 }  // namespace
