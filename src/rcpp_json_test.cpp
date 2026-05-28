@@ -1,6 +1,6 @@
 // Simple Rcpp tests for nlohmann::json integration
 #include <Rcpp.h>
-#include <../external/nlohmann/json.hpp>
+#include <json.hpp>
 
 using json = nlohmann::json;
 

@@ -24,6 +24,11 @@
 *.o
 *.so
 *.dll
+*.dylib
+*.pyd
+*.obj
+*.a
+*.lib
 *.html
 # Ignore CSVs everywhere except in the dev/ folder
 *.csv
@@ -35,6 +40,26 @@
 *.sf
 *.zip
 *.tar.gz
+
+# Python build artifacts -------------------------------------------------------
+/build/
+/dist/
+/\.venv/
+/\.venv-wheel/
+/*.egg-info/
+*.egg-info/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Python package runtime native output ----------------------------------------
+python/cf_streamfind/bin/
+
+# CMake / scikit-build --------------------------------------------------------
+CMakeCache.txt
+CMakeFiles/
+cmake-build-*/
+_skbuild/
 
 # Specific folders to exclude -----------------------------------------------------------
 /dev/dev_duckdb/data_nts
