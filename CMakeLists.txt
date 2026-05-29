@@ -127,6 +127,7 @@ set(STREAMFIND_CORE_SOURCES
 if(WIN32)
   set(CF_STREAMFIND_DUCKDB_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/windows)
   set(CF_STREAMFIND_DUCKDB_LIB ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/windows/duckdb.lib)
+  set(CF_STREAMFIND_DUCKDB_RUNTIME_DLL ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/windows/duckdb.dll)
 elseif(APPLE)
   message(FATAL_ERROR "Vendored DuckDB linkage is not configured for macOS yet.")
 else()
@@ -182,23 +183,38 @@ endif()
 # -----------------------------------------------------------------------------
 set_target_properties(cf_streamfind_steps PROPERTIES
   PREFIX ""
+  OUTPUT_NAME libcf_streamfind_steps
   RUNTIME_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/cf_streamfind/bin"
   LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/cf_streamfind/bin"
   ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/cf_streamfind/bin"
 )
 
-if(WIN32)
-  set(_CF_STREAMFIND_NATIVE_NAME libcf_streamfind_steps.dll)
-elseif(APPLE)
-  set(_CF_STREAMFIND_NATIVE_NAME libcf_streamfind_steps.dylib)
-else()
-  set(_CF_STREAMFIND_NATIVE_NAME libcf_streamfind_steps.so)
+if(CMAKE_CONFIGURATION_TYPES)
+  foreach(_cfg ${CMAKE_CONFIGURATION_TYPES})
+    string(TOUPPER "${_cfg}" _cfg_upper)
+    set_target_properties(cf_streamfind_steps PROPERTIES
+      RUNTIME_OUTPUT_DIRECTORY_${_cfg_upper} "${CMAKE_CURRENT_BINARY_DIR}/cf_streamfind/bin"
+      LIBRARY_OUTPUT_DIRECTORY_${_cfg_upper} "${CMAKE_CURRENT_BINARY_DIR}/cf_streamfind/bin"
+      ARCHIVE_OUTPUT_DIRECTORY_${_cfg_upper} "${CMAKE_CURRENT_BINARY_DIR}/cf_streamfind/bin"
+    )
+  endforeach()
 endif()
 
-add_custom_command(TARGET cf_streamfind_steps POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/cf_streamfind/bin
-  COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:cf_streamfind_steps> ${CMAKE_CURRENT_BINARY_DIR}/cf_streamfind/bin/${_CF_STREAMFIND_NATIVE_NAME}
-)
+set(CF_STREAMFIND_RUNTIME_DLLS)
+if(WIN32)
+  if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/inst/libs/x64/duckdb.dll")
+    list(APPEND CF_STREAMFIND_RUNTIME_DLLS ${CMAKE_CURRENT_SOURCE_DIR}/inst/libs/x64/duckdb.dll)
+  elseif(EXISTS "${CF_STREAMFIND_DUCKDB_RUNTIME_DLL}")
+    list(APPEND CF_STREAMFIND_RUNTIME_DLLS ${CF_STREAMFIND_DUCKDB_RUNTIME_DLL})
+  endif()
+endif()
+
+if(CF_STREAMFIND_RUNTIME_DLLS)
+  add_custom_command(TARGET cf_streamfind_steps POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/cf_streamfind/bin
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CF_STREAMFIND_RUNTIME_DLLS} ${CMAKE_CURRENT_BINARY_DIR}/cf_streamfind/bin
+  )
+endif()
 
 install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cf_streamfind/bin/
         DESTINATION cf_streamfind/bin

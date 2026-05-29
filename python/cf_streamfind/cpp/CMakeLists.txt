@@ -65,6 +65,11 @@ endif()
 
 target_compile_definitions(${PROJECT_NAME} PRIVATE CF_STEP_ABI_EXPORTS)
 
+set_target_properties(${PROJECT_NAME} PROPERTIES
+  PREFIX ""
+  OUTPUT_NAME libcf_streamfind_steps
+)
+
 add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
   COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_SOURCE_DIR}/../bin
   COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:${PROJECT_NAME}> ${CMAKE_CURRENT_SOURCE_DIR}/../bin
