@@ -387,3 +387,61 @@ plot_features(
 #   groups = unique(transformation_products_found$feature_group)[1],
 #   showMS2 = TRUE
 # )
+
+
+# Toxicity via SMILES
+
+suspects <- data.table::fread(
+  file.path("dev", "dev_duckdb", "suspects_with_ms2_template.csv")
+)
+sus_smiles <- suspects[, c("name", "SMILES", "mass")]
+colnames(sus_smiles) <- c("name", "SMILES", "exactMass")
+
+library(rcdk)
+mol <- parse.smiles(sus_smiles$SMILES[11])[[1]]
+
+# perceive chemistry (recommended)
+# do.typing(mol)
+set.atom.types(mol)
+do.aromaticity(mol)
+do.isotopes(mol)
+
+# compute fingerprint (types: "standard","extended","maccs","pubchem","morgan", etc.)
+fp <- get.fingerprint(mol, type = "extended")
+
+# inspect / print
+print(fp)
+
+
+if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")
+BiocManager::install("Rdisop")
+remotes::install_github("kruvelab/MS2Tox", INSTALL_opts="--no-multiarch", force = TRUE)
+library(MS2Tox)
+lc50 <- LC50fromSMILES(compoundslistwithSMILES = sus_smiles[11, ])
+
+# Addition to SIRIUS fingerprints it is also possible to calculate LC50 values using SMILES as an input. For that use function LC50fromSMILES(compoundslistwithSMILES). PS! Input needs to be a table containing columns named "SMILES" and "exactMass". Use exactly this format for naming.
+
+
+pred_log <- lc50$LC50_predicted           # predicted log10(LC50 [mmol/L])
+mmol_per_L <- 10^pred_log       # mmol/L
+mol_per_L  <- mmol_per_L / 1000 # mol/L
+
+molar_mass <- sus_smiles$exactMass[11]            # Diuron molar mass (g/mol)
+mg_per_L <- mmol_per_L * molar_mass  # mg/L  (since mmol/L * g/mol = mg/L)
+
+cat(mg_per_L, " mg/L\n")
+
+
+
+
+
+
+
+
+#Before installing MS2Tox package Rdisop is needed to be installed. To install this package, start R (version "4.1") and enter:
+
+
+
+
+
+
