@@ -1,10 +1,10 @@
 ---
-title: "Non-Target Analysis Demo"
+title: "Non-Target Screening Demo"
 output:
   rmarkdown::html_vignette:
     toc: true
 vignette: >
-  %\VignetteIndexEntry{Non-Target Analysis Demo}
+  %\VignetteIndexEntry{Non-Target Screening Demo}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
@@ -18,61 +18,158 @@ knitr::opts_chunk$set(
 
 # Goal
 
-This article shows how the current `ProjectNonTargetAnalysis` framework can be
-used to build, run, and inspect a non-target screening workflow. The example is
-based on the package's project-backed architecture rather than the legacy
-`MassSpecEngine` interface.
+This article shows a complete non-target screening workflow built with the
+current StreamFind project framework. The example uses
+`ProjectNonTargetAnalysis`, stores project state in DuckDB, and relies on demo
+mass-spectrometry files distributed through `StreamFindData`.
 
-# Project setup
+Compared with the legacy engine-based examples, the recommended pattern is now:
+
+1. Open a project-backed object.
+2. Import raw files into the project database.
+3. Attach sample metadata such as replicates and blanks.
+4. Define a workflow with `Method_NonTargetAnalysis_*()` constructors.
+5. Run the workflow and inspect persistent results from R or the app.
+
+# Requirements
+
+The examples below assume that `StreamFindData` is installed in addition to
+`StreamFind`.
+
+```{r, eval = FALSE}
+install.packages("StreamFindData")
+```
+
+The workflow in this article uses the wastewater TOF demo files and the
+reference table of spiked chemicals with MS2 information shipped by
+`StreamFindData`.
+
+# Load packages
 
 ```{r, eval = FALSE}
 library(StreamFind)
+library(StreamFindData)
+library(data.table)
+library(plotly)
+```
 
-db_file <- "streamfind_nta.duckdb"
+# Get demo resources
+
+First, collect the demo mzML files. Here the example keeps the wastewater
+analyses used in the development workflow.
+
+```{r, eval = FALSE}
+ms_files <- StreamFindData::get_ms_file_paths()
+ms_files <- ms_files[grepl("ww_", ms_files)]
+
+ms_files
+```
+
+Next, load the reference chemicals table and split it into internal standards
+and general suspects. The exact columns used by the NTA methods are kept small
+on purpose.
+
+```{r, eval = FALSE}
+reference_db <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+
+reference_db <- data.table::as.data.table(reference_db)[
+  ,
+  .(name, formula, mass, rt, fragments, tag)
+]
+
+internal_standards <- reference_db[grepl("IS", tag) & !is.na(rt)]
+suspects <- reference_db[!grepl("IS", tag)]
+```
+
+If you want to include MetFrag or transformation-product assignment, prepare
+their input tables separately. StreamFind also provides template exporters for
+these reference tables.
+
+# Create the project
+
+The project object persists imported analyses, workflow configuration, results,
+and cache objects inside a DuckDB database.
+
+```{r, eval = FALSE}
+project_db <- file.path(tempdir(), "streamfind_nta_demo.duckdb")
 project_id <- "wastewater_demo"
 
-ms_files <- c(
-  "01_tof_ww_is_pos_blank-r001.mzML",
-  "01_tof_ww_is_pos_blank-r002.mzML",
-  "02_tof_ww_is_pos_influent-r001.mzML",
-  "02_tof_ww_is_pos_influent-r002.mzML"
-)
+if (file.exists(project_db)) file.remove(project_db)
 
 nta <- open_ProjectNonTargetAnalysis(
-  db = db_file,
+  db = project_db,
   project_id = project_id,
   file_paths = ms_files
 )
 ```
 
-The project persists imported files, metadata, workflow state, and downstream
-results in a DuckDB database.
+Because the project is persistent, you can later reopen it with only the
+database path and `project_id`.
 
-# Replicates and blanks
+```{r, eval = FALSE}
+nta <- open_ProjectNonTargetAnalysis(
+  db = project_db,
+  project_id = project_id
+)
+```
 
-Replicate and blank assignments are part of the project state and are reused by
-workflow steps such as blank subtraction and matrix suppression correction.
+# Add replicate and blank information
+
+Replicate and blank assignments are project metadata. They are used later by
+workflow steps such as blank subtraction and matrix suppression handling.
 
 ```{r, eval = FALSE}
 nta$set_replicate_names(c(
-  "blank-r001",
-  "blank-r002",
-  "influent-r001",
-  "influent-r002"
+  rep("neg_blank", 3),
+  rep("pos_blank", 3),
+  rep("neg_influent", 3),
+  rep("pos_influent", 3),
+  rep("neg_effluent", 3),
+  rep("pos_effluent", 3)
 ))
 
 nta$set_blank_names(c(
-  "blank-r001",
-  "blank-r002",
-  "blank-r001",
-  "blank-r002"
+  rep("neg_blank", 3),
+  rep("pos_blank", 3),
+  rep("neg_blank", 3),
+  rep("pos_blank", 3),
+  rep("neg_blank", 3),
+  rep("pos_blank", 3)
 ))
 ```
 
-# Build the workflow
+You can inspect the project at any point:
 
-The current NTA workflow is defined from `Method_NonTargetAnalysis_*()`
-constructors. A realistic example can look like this:
+```{r, eval = FALSE}
+print(nta)
+info(nta)
+nta$get_domain()
+nta$list_tables()
+```
+
+# Inspect available processing methods
+
+Project classes expose a method registry so you can confirm which processing
+steps are available for the domain.
+
+```{r, eval = FALSE}
+registry <- nta$available_processing_methods()
+names(registry)
+
+projects_overview()$ProjectNonTargetAnalysis$processing_methods
+```
+
+# Build a complete workflow
+
+The recommended workflow is built from method objects and wrapped in a
+`Workflow`. The example below mirrors a realistic NTS sequence:
+
+- feature finding
+- MS1 and MS2 loading
+- component creation and annotation
+- internal-standard matching
+- feature grouping and filling
+- blank subtraction and feature filtering
 
 ```{r, eval = FALSE}
 workflow <- Workflow(list(
@@ -84,7 +181,10 @@ workflow <- Workflow(list(
     minTraces = 3L,
     baselineWindow = 200,
     maxWidth = 250,
-    baseQuantile = 0.99
+    baseQuantile = 0.99,
+    debugAnalysis = "",
+    debugMZ = 0,
+    debugSpecIdx = -1L
   ),
   Method_NonTargetAnalysis_LoadFeaturesMS1(
     filtered = FALSE,
@@ -101,22 +201,55 @@ workflow <- Workflow(list(
     mzClust = 0.008,
     presence = 0.5
   ),
+  Method_NonTargetAnalysis_CreateComponents(
+    rtWindow = c(-5, 5),
+    minCorrelation = 0.8,
+    debugRT = 0,
+    debugAnalysis = ""
+  ),
+  Method_NonTargetAnalysis_AnnotateComponents(
+    maxIsotopes = 8L,
+    maxCharge = 1L,
+    maxGaps = 1L,
+    ppm = 10,
+    debugComponent = "",
+    debugAnalysis = ""
+  ),
+  Method_NonTargetAnalysis_FindInternalStandards(
+    suspects = internal_standards,
+    ppm = 10,
+    sec = 15,
+    ppmMS2 = 10,
+    mzrMS2 = 0.008,
+    minCosineSimilarity = 0.7,
+    minSharedFragments = 3L,
+    filtered = TRUE
+  ),
+  Method_NonTargetAnalysis_FilterInternalStandards(
+    idLevels = c(1L, 2L, 3L)
+  ),
   Method_NonTargetAnalysis_GroupFeatures(
-    method = "none",
+    method = "internal_standards",
     rtDeviation = 5,
     ppm = 10,
-    minSamples = 1L
+    minSamples = 1L,
+    binSize = 5,
+    debug = FALSE,
+    debugRT = 0
   ),
   Method_NonTargetAnalysis_FillFeatures(
     withinReplicate = FALSE,
     filtered = FALSE,
     rtExpand = 10,
     mzExpand = 0.01,
-    maxPeakWidth = 30
-  ),
-  Method_NonTargetAnalysis_CorrectMatrixSuppression(
-    refBlankReplicate = NA_character_,
-    mpRtWindow = 10
+    maxPeakWidth = 30,
+    minTracesIntensity = 1000,
+    minNumberTraces = 5L,
+    minIntensity = 5000,
+    rtApexDeviation = 5,
+    minSignalToNoiseRatio = 3,
+    minGaussianFit = 0.2,
+    debugFG = ""
   ),
   Method_NonTargetAnalysis_BlankSubtraction(
     blankThreshold = 5,
@@ -136,89 +269,18 @@ Attach the workflow to the project:
 
 ```{r, eval = FALSE}
 set_workflow(nta, workflow)
+show(nta$get_workflow())
 ```
 
-# Run the workflow
+# Optional extensions
 
-```{r, eval = FALSE}
-nta$run_workflow()
-```
+The project workflow can be extended with suspect screening, matrix suppression
+correction, MetFrag screening, or transformation-product assignment.
 
-The workflow executes in order and writes results back into the project
-database. Because the state is persistent, the same project can be reopened
-later without rerunning previous steps.
-
-# Inspect feature results
-
-## Features table
-
-```{r, eval = FALSE}
-features_all <- get_features(nta)
-features_filtered <- get_features(nta, filtered = TRUE)
-```
-
-Typical columns include feature identifiers, group membership, analysis name,
-retention time, m/z, intensity, and correction factors written by matrix
-suppression correction.
-
-## Feature counts
-
-```{r, eval = FALSE}
-plot_features_count(nta, groupBy = "replicate")
-```
-
-## Feature profiles
-
-```{r, eval = FALSE}
-plot_features_profile(
-  nta,
-  groups = "FG1",
-  groupBy = "replicate",
-  corrected = TRUE
-)
-```
-
-When `corrected = TRUE`, the intensity profile uses the feature-specific
-`correction` factor computed by `Method_NonTargetAnalysis_CorrectMatrixSuppression()`.
-
-# Inspect matrix suppression
-
-The current framework exposes matrix suppression both as a table and as a plot.
-
-```{r, eval = FALSE}
-matrix_suppression <- get_matrix_suppression(
-  nta,
-  rtWindowVal = 10
-)
-
-plot_matrix_suppression(
-  nta,
-  rtWindowVal = 10,
-  colorBy = "replicates"
-)
-```
-
-The native implementation derives TIC-based suppression relative to associated
-blank samples and can scale feature correction factors using surrounding
-internal standards when these are available in the project.
-
-# Add internal standards or suspect screening
-
-The workflow can be extended with internal-standard detection and suspect
-screening methods when reference data are available.
+## Suspect screening
 
 ```{r, eval = FALSE}
 workflow_extended <- Workflow(c(unclass(workflow), list(
-  Method_NonTargetAnalysis_FindInternalStandards(
-    suspects = internal_standards,
-    ppm = 10,
-    sec = 15,
-    ppmMS2 = 10,
-    mzrMS2 = 0.008,
-    minCosineSimilarity = 0.7,
-    minSharedFragments = 3L,
-    filtered = TRUE
-  ),
   Method_NonTargetAnalysis_SuspectScreening(
     suspects = suspects,
     ppm = 5,
@@ -232,15 +294,16 @@ workflow_extended <- Workflow(c(unclass(workflow), list(
 )))
 ```
 
-You can then retrieve suspect annotations with:
+## Matrix suppression correction
 
 ```{r, eval = FALSE}
-suspects_found <- get_suspects(nta)
+matrix_suppression_step <- Method_NonTargetAnalysis_CorrectMatrixSuppression(
+  refBlankReplicate = NA_character_,
+  mpRtWindow = 10
+)
 ```
 
-# Add MetFrag screening
-
-MetFrag screening is also project-owned in the current framework:
+## MetFrag screening
 
 ```{r, eval = FALSE}
 metfrag_step <- Method_NonTargetAnalysis_MetFragScreening(
@@ -256,23 +319,183 @@ metfrag_step <- Method_NonTargetAnalysis_MetFragScreening(
   score_weights = 1,
   pre_processing_candidate_filter = c("UnconnectedCompoundFilter", "IsotopeFilter"),
   post_processing_candidate_filter = "InChIKeyFilter",
-  maximum_tree_depth = 3L,
+  maximum_tree_depth = 2L,
   number_threads = 1L,
   use_smiles = TRUE,
   filtered = FALSE,
   java_path = "java",
   run_dir = "",
-  debug = FALSE
+  debug = FALSE,
+  extra_params = list()
 )
 ```
 
-When `run_dir = ""`, StreamFind creates a timestamped folder under
-`./log/metfrag/` and manages temporary MetFrag files there.
+# Run the workflow
 
-# Use the app for interactive review
+```{r, eval = FALSE}
+nta$run_workflow()
+```
 
-Once the project has been populated from R, the same project can be opened in
-the app for manual inspection:
+The results are written back into the project database. This means you can
+close the R session, reopen the project later, and continue from the stored
+state.
+
+# Inspect the results
+
+## Retrieve tables
+
+```{r, eval = FALSE}
+features_all <- get_features(nta)
+features_filtered <- get_features(nta, filtered = TRUE)
+
+internal_standards_found <- get_internal_standards(nta)
+suspects_found <- get_suspects(nta)
+```
+
+When transformation-product assignment is part of the workflow:
+
+```{r, eval = FALSE}
+transformation_products_found <- get_transformation_products(nta)
+```
+
+## Filter by a target mass or reference row
+
+The project getters accept either scalar mass windows or full reference rows.
+
+```{r, eval = FALSE}
+features_subset <- get_features(
+  nta,
+  mass = internal_standards[4, ],
+  ppm = 20,
+  sec = 60,
+  filtered = TRUE
+)
+```
+
+## TIC overview
+
+```{r, eval = FALSE}
+plot_spectra_tic(
+  nta,
+  downsize = 1,
+  levels = 1,
+  groupBy = "replicate"
+)
+```
+
+## Feature counts
+
+```{r, eval = FALSE}
+plot_features_count(nta, groupBy = "replicate")
+```
+
+## Feature profiles
+
+```{r, eval = FALSE}
+plot_features_profile(
+  nta,
+  mass = internal_standards[4, ],
+  ppm = 20,
+  sec = 60,
+  corrected = TRUE,
+  filtered = TRUE
+)
+```
+
+## Feature overview plots
+
+```{r, eval = FALSE}
+plot_features(
+  nta,
+  mass = internal_standards[4, ],
+  ppm = 20,
+  sec = 60,
+  filtered = TRUE
+)
+```
+
+## MS1 and MS2 inspection
+
+```{r, eval = FALSE}
+plot_features_ms1(
+  nta,
+  analyses = 11,
+  mass = internal_standards[4:6, ],
+  ppm = 20,
+  sec = 60,
+  filtered = FALSE
+)
+
+plot_features_ms2(
+  nta,
+  analyses = 11,
+  mass = internal_standards[4:6, ],
+  ppm = 20,
+  sec = 60,
+  filtered = FALSE
+)
+```
+
+## Matrix suppression overview
+
+When matrix suppression correction is included in the workflow, you can inspect
+the computed suppression data directly.
+
+```{r, eval = FALSE}
+matrix_suppression <- get_matrix_suppression(
+  nta,
+  rtWindowVal = 10
+)
+
+plot_matrix_suppression(
+  nta,
+  rtWindowVal = 10,
+  colorBy = "replicates"
+)
+```
+
+This can be combined with the TIC plot in a subplot for a quick quality check.
+
+```{r, eval = FALSE}
+tic_plot <- plot_spectra_tic(
+  nta,
+  downsize = 1,
+  levels = 1,
+  groupBy = "replicate"
+)
+
+matrix_plot <- plot_matrix_suppression(
+  nta,
+  colorBy = "replicates"
+)
+
+plotly::subplot(
+  tic_plot,
+  matrix_plot,
+  nrows = 2,
+  shareX = TRUE,
+  titleY = TRUE
+)
+```
+
+# Reopen the same project later
+
+Because the analysis state is stored in DuckDB, reopening the project is
+lightweight:
+
+```{r, eval = FALSE}
+nta <- open_ProjectNonTargetAnalysis(
+  db = project_db,
+  project_id = project_id
+)
+```
+
+This is especially useful when the full workflow takes time and you only want
+to continue inspecting results.
+
+# Open the app
+
+The same project can be launched in the app for manual review.
 
 ```{r, eval = FALSE}
 nta$run_app()
@@ -280,10 +503,15 @@ nta$run_app()
 
 # Summary
 
-The recommended NTA pattern in StreamFind is:
+This demo illustrates the full project-based NTS pattern in StreamFind:
 
-1. Open a `ProjectNonTargetAnalysis`.
-2. Import analyses and assign replicates and blanks.
-3. Define a validated `Workflow`.
-4. Run the workflow into the project database.
-5. Inspect features, matrix suppression, and suspects from R or the app.
+1. Use `StreamFindData` to get example files and reference tables.
+2. Open a `ProjectNonTargetAnalysis` backed by DuckDB.
+3. Store replicate and blank metadata in the project.
+4. Build a workflow from `Method_NonTargetAnalysis_*()` steps.
+5. Run the workflow once and reuse the saved results later.
+6. Inspect features, TICs, MS1/MS2, matrix suppression, suspects, and internal
+   standards from the same project object.
+
+For additional interactive review, open the project in the app rather than
+rebuilding the workflow each time.
