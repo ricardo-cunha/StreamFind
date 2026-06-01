@@ -795,6 +795,32 @@ namespace mass_spec
         return 0.0f;
       }
 
+      float parse_scan_mobility(const pugi::xml_node &scan_node)
+      {
+        for (auto cv : scan_node.children("cvParam"))
+        {
+          const std::string accession = cv.attribute("accession").as_string();
+          const std::string name = cv.attribute("name").as_string();
+          if (accession == "MS:1002476" || accession == "MS:1002815" ||
+              name.find("ion mobility drift time") != std::string::npos ||
+              name.find("inverse reduced ion mobility") != std::string::npos)
+          {
+            const std::string unit = cv.attribute("unitName").as_string();
+            const float value = static_cast<float>(cv.attribute("value").as_double());
+            if (unit.find("second") != std::string::npos)
+            {
+              return value * 1000.0f;
+            }
+            if (unit.find("minute") != std::string::npos)
+            {
+              return value * 60000.0f;
+            }
+            return value;
+          }
+        }
+        return 0.0f;
+      }
+
       std::vector<float> decode_binary(const pugi::xml_node &array_node)
       {
         std::string encoded = array_node.child_value("binary");
@@ -940,7 +966,10 @@ namespace mass_spec
         {
           auto scan = scan_list.child("scan");
           if (scan)
+          {
             rt = parse_scan_time(scan);
+            s.mobility = parse_scan_mobility(scan);
+          }
         }
         s.rt = rt;
 
@@ -1227,7 +1256,11 @@ namespace mass_spec
         }
         return out;
       }
-      bool Reader::has_ion_mobility() { return false; }
+      bool Reader::has_ion_mobility()
+      {
+        return std::any_of(pimpl->spectra.begin(), pimpl->spectra.end(), [](const auto &s)
+                           { return s.mobility > 0.0f; });
+      }
       MS_SUMMARY Reader::get_summary()
       {
         MS_SUMMARY s{};
@@ -1244,7 +1277,7 @@ namespace mass_spec
         s.max_mz = get_max_mz();
         s.start_rt = get_start_rt();
         s.end_rt = get_end_rt();
-        s.has_ion_mobility = false;
+        s.has_ion_mobility = has_ion_mobility();
         return s;
       }
 
@@ -1321,7 +1354,19 @@ namespace mass_spec
             out.push_back(pimpl->spectra[i].rt);
         return out;
       }
-      std::vector<float> Reader::get_spectra_mobility(std::vector<int> indices) { return std::vector<float>(indices.empty() ? pimpl->spectra.size() : indices.size(), 0.0f); }
+      std::vector<float> Reader::get_spectra_mobility(std::vector<int> indices)
+      {
+        if (indices.empty())
+        {
+          indices.resize(pimpl->spectra.size());
+          std::iota(indices.begin(), indices.end(), 0);
+        }
+        std::vector<float> out;
+        for (int i : indices)
+          if (i >= 0 && static_cast<size_t>(i) < pimpl->spectra.size())
+            out.push_back(pimpl->spectra[i].mobility);
+        return out;
+      }
       std::vector<int> Reader::get_spectra_precursor_scan(std::vector<int> indices) { return std::vector<int>(indices.empty() ? pimpl->spectra.size() : indices.size(), 0); }
       std::vector<float> Reader::get_spectra_precursor_mz(std::vector<int> indices)
       {

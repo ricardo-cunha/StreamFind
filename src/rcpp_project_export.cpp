@@ -472,6 +472,7 @@ namespace mass_spec_rcpp
     IntegerVector polarity(rows.size());
     IntegerVector level(rows.size());
     NumericVector rt(rows.size());
+    NumericVector mobility(rows.size());
     NumericVector tic(rows.size());
     NumericVector bpmz(rows.size());
     NumericVector bpint(rows.size());
@@ -485,6 +486,7 @@ namespace mass_spec_rcpp
       polarity[i] = rows[i].polarity;
       level[i] = rows[i].level;
       rt[i] = rows[i].rt;
+      mobility[i] = rows[i].mobility;
       tic[i] = rows[i].tic;
       bpmz[i] = rows[i].bpmz;
       bpint[i] = rows[i].bpint;
@@ -494,6 +496,7 @@ namespace mass_spec_rcpp
                              Named("polarity") = polarity,
                              Named("level") = level,
                              Named("rt") = rt,
+                             Named("mobility") = mobility,
                              Named("tic") = tic,
                              Named("bpmz") = bpmz,
                              Named("bpint") = bpint);
@@ -560,6 +563,7 @@ namespace mass_spec_rcpp
     IntegerVector polarity(rows.size());
     NumericVector pre_mz(rows.size());
     NumericVector rt(rows.size());
+    NumericVector mobility(rows.size());
     NumericVector mz(rows.size());
     NumericVector intensity(rows.size());
     bool has_precursor = false;
@@ -577,6 +581,7 @@ namespace mass_spec_rcpp
       polarity[i] = rows[i].polarity;
       pre_mz[i] = rows[i].pre_mz;
       rt[i] = rows[i].rt;
+      mobility[i] = rows[i].mobility;
       mz[i] = rows[i].mz;
       intensity[i] = rows[i].intensity;
       has_precursor = has_precursor || std::abs(rows[i].pre_mz) > 0.0;
@@ -590,6 +595,7 @@ namespace mass_spec_rcpp
                                Named("polarity") = polarity,
                                Named("pre_mz") = pre_mz,
                                Named("rt") = rt,
+                               Named("mobility") = mobility,
                                Named("mz") = mz,
                                Named("intensity") = intensity);
     }
@@ -599,6 +605,7 @@ namespace mass_spec_rcpp
                              Named("id") = id,
                              Named("polarity") = polarity,
                              Named("rt") = rt,
+                             Named("mobility") = mobility,
                              Named("mz") = mz,
                              Named("intensity") = intensity);
   }

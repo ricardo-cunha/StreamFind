@@ -13,6 +13,261 @@
 namespace nta
 {
 
+  namespace
+  {
+    struct APPENDER_GUARD
+    {
+      explicit APPENDER_GUARD(duckdb_appender *appender) : appender_(appender) {}
+
+      ~APPENDER_GUARD()
+      {
+        if (appender_ && *appender_)
+        {
+          duckdb_appender_destroy(appender_);
+        }
+      }
+
+    private:
+      duckdb_appender *appender_;
+    };
+
+    std::string appender_error_message(duckdb_appender appender)
+    {
+      const char *message = duckdb_appender_error(appender);
+      return message ? std::string(message) : std::string("unknown DuckDB appender error");
+    }
+
+    void check_append_state(duckdb_state state, duckdb_appender appender, const char *context)
+    {
+      if (state == DuckDBError)
+      {
+        throw project::error::ERROR(project::error::ERROR_CODE::DuckDB,
+                                    std::string(context) + ": " + appender_error_message(appender));
+      }
+    }
+
+    void append_optional_varchar(duckdb_appender appender, const std::string &value, const char *context)
+    {
+      if (value.empty())
+      {
+        check_append_state(duckdb_append_null(appender), appender, context);
+        return;
+      }
+      check_append_state(duckdb_append_varchar(appender, value.c_str()), appender, context);
+    }
+
+    void insert_features_table(duckdb_connection con, const api::NTA_FEATURES_TABLE &features)
+    {
+      duckdb_appender appender = nullptr;
+      if (duckdb_appender_create(con, nullptr, "NTA_FEATURES", &appender) == DuckDBError)
+      {
+        throw project::error::ERROR(project::error::ERROR_CODE::DuckDB, "create NTA_FEATURES appender failed");
+      }
+      APPENDER_GUARD appender_guard(&appender);
+
+      const std::size_t count = static_cast<std::size_t>(features.size());
+      for (std::size_t i = 0; i < count; ++i)
+      {
+        check_append_state(duckdb_appender_begin_row(appender), appender, "begin NTA_FEATURES row");
+        check_append_state(duckdb_append_varchar(appender, features.project_id[i].c_str()), appender, "append NTA_FEATURES project_id");
+        check_append_state(duckdb_append_varchar(appender, features.analysis[i].c_str()), appender, "append NTA_FEATURES analysis");
+        check_append_state(duckdb_append_varchar(appender, features.feature[i].c_str()), appender, "append NTA_FEATURES feature");
+        append_optional_varchar(appender, features.feature_component[i], "append NTA_FEATURES feature_component");
+        append_optional_varchar(appender, features.feature_group[i], "append NTA_FEATURES feature_group");
+        append_optional_varchar(appender, features.adduct[i], "append NTA_FEATURES adduct");
+        check_append_state(duckdb_append_double(appender, features.rt[i]), appender, "append NTA_FEATURES rt");
+        check_append_state(duckdb_append_double(appender, features.mz[i]), appender, "append NTA_FEATURES mz");
+        check_append_state(duckdb_append_double(appender, features.mass[i]), appender, "append NTA_FEATURES mass");
+        check_append_state(duckdb_append_double(appender, features.intensity[i]), appender, "append NTA_FEATURES intensity");
+        check_append_state(duckdb_append_double(appender, features.noise[i]), appender, "append NTA_FEATURES noise");
+        check_append_state(duckdb_append_double(appender, features.sn[i]), appender, "append NTA_FEATURES sn");
+        check_append_state(duckdb_append_double(appender, features.area[i]), appender, "append NTA_FEATURES area");
+        check_append_state(duckdb_append_double(appender, features.rtmin[i]), appender, "append NTA_FEATURES rtmin");
+        check_append_state(duckdb_append_double(appender, features.rtmax[i]), appender, "append NTA_FEATURES rtmax");
+        check_append_state(duckdb_append_double(appender, features.width[i]), appender, "append NTA_FEATURES width");
+        check_append_state(duckdb_append_double(appender, features.mzmin[i]), appender, "append NTA_FEATURES mzmin");
+        check_append_state(duckdb_append_double(appender, features.mzmax[i]), appender, "append NTA_FEATURES mzmax");
+        check_append_state(duckdb_append_double(appender, features.ppm[i]), appender, "append NTA_FEATURES ppm");
+        check_append_state(duckdb_append_double(appender, features.fwhm_rt[i]), appender, "append NTA_FEATURES fwhm_rt");
+        check_append_state(duckdb_append_double(appender, features.fwhm_mz[i]), appender, "append NTA_FEATURES fwhm_mz");
+        check_append_state(duckdb_append_double(appender, features.gaussian_A[i]), appender, "append NTA_FEATURES gaussian_A");
+        check_append_state(duckdb_append_double(appender, features.gaussian_mu[i]), appender, "append NTA_FEATURES gaussian_mu");
+        check_append_state(duckdb_append_double(appender, features.gaussian_sigma[i]), appender, "append NTA_FEATURES gaussian_sigma");
+        check_append_state(duckdb_append_double(appender, features.gaussian_r2[i]), appender, "append NTA_FEATURES gaussian_r2");
+        check_append_state(duckdb_append_double(appender, features.jaggedness[i]), appender, "append NTA_FEATURES jaggedness");
+        check_append_state(duckdb_append_double(appender, features.sharpness[i]), appender, "append NTA_FEATURES sharpness");
+        check_append_state(duckdb_append_double(appender, features.asymmetry[i]), appender, "append NTA_FEATURES asymmetry");
+        check_append_state(duckdb_append_int32(appender, features.modality[i]), appender, "append NTA_FEATURES modality");
+        check_append_state(duckdb_append_double(appender, features.plates[i]), appender, "append NTA_FEATURES plates");
+        check_append_state(duckdb_append_int32(appender, features.polarity[i]), appender, "append NTA_FEATURES polarity");
+        check_append_state(duckdb_append_bool(appender, features.filtered[i]), appender, "append NTA_FEATURES filtered");
+        append_optional_varchar(appender, features.filter[i], "append NTA_FEATURES filter");
+        check_append_state(duckdb_append_bool(appender, features.filled[i]), appender, "append NTA_FEATURES filled");
+        check_append_state(duckdb_append_double(appender, features.correction[i]), appender, "append NTA_FEATURES correction");
+        check_append_state(duckdb_append_int32(appender, features.eic_size[i]), appender, "append NTA_FEATURES eic_size");
+        append_optional_varchar(appender, features.eic_rt[i], "append NTA_FEATURES eic_rt");
+        append_optional_varchar(appender, features.eic_mz[i], "append NTA_FEATURES eic_mz");
+        append_optional_varchar(appender, features.eic_intensity[i], "append NTA_FEATURES eic_intensity");
+        append_optional_varchar(appender, features.eic_baseline[i], "append NTA_FEATURES eic_baseline");
+        append_optional_varchar(appender, features.eic_smoothed[i], "append NTA_FEATURES eic_smoothed");
+        check_append_state(duckdb_append_int32(appender, features.ms1_size[i]), appender, "append NTA_FEATURES ms1_size");
+        append_optional_varchar(appender, features.ms1_mz[i], "append NTA_FEATURES ms1_mz");
+        append_optional_varchar(appender, features.ms1_intensity[i], "append NTA_FEATURES ms1_intensity");
+        check_append_state(duckdb_append_int32(appender, features.ms2_size[i]), appender, "append NTA_FEATURES ms2_size");
+        append_optional_varchar(appender, features.ms2_mz[i], "append NTA_FEATURES ms2_mz");
+        append_optional_varchar(appender, features.ms2_intensity[i], "append NTA_FEATURES ms2_intensity");
+        check_append_state(duckdb_appender_end_row(appender), appender, "end NTA_FEATURES row");
+      }
+      check_append_state(duckdb_appender_close(appender), appender, "close NTA_FEATURES appender");
+    }
+
+    void insert_suspects_table(duckdb_connection con, const api::NTA_SUSPECTS_TABLE &suspects)
+    {
+      duckdb_appender appender = nullptr;
+      if (duckdb_appender_create(con, nullptr, "NTA_SUSPECTS", &appender) == DuckDBError)
+      {
+        throw project::error::ERROR(project::error::ERROR_CODE::DuckDB, "create NTA_SUSPECTS appender failed");
+      }
+      APPENDER_GUARD appender_guard(&appender);
+
+      const std::size_t count = static_cast<std::size_t>(suspects.size());
+      for (std::size_t i = 0; i < count; ++i)
+      {
+        check_append_state(duckdb_appender_begin_row(appender), appender, "begin NTA_SUSPECTS row");
+        check_append_state(duckdb_append_varchar(appender, suspects.project_id[i].c_str()), appender, "append NTA_SUSPECTS project_id");
+        check_append_state(duckdb_append_varchar(appender, suspects.analysis[i].c_str()), appender, "append NTA_SUSPECTS analysis");
+        check_append_state(duckdb_append_varchar(appender, suspects.feature[i].c_str()), appender, "append NTA_SUSPECTS feature");
+        check_append_state(duckdb_append_int32(appender, suspects.candidate_rank[i]), appender, "append NTA_SUSPECTS candidate_rank");
+        check_append_state(duckdb_append_varchar(appender, suspects.name[i].c_str()), appender, "append NTA_SUSPECTS name");
+        check_append_state(duckdb_append_int32(appender, suspects.polarity[i]), appender, "append NTA_SUSPECTS polarity");
+        check_append_state(duckdb_append_double(appender, suspects.db_mass[i]), appender, "append NTA_SUSPECTS db_mass");
+        check_append_state(duckdb_append_double(appender, suspects.exp_mass[i]), appender, "append NTA_SUSPECTS exp_mass");
+        check_append_state(duckdb_append_double(appender, suspects.error_mass[i]), appender, "append NTA_SUSPECTS error_mass");
+        check_append_state(duckdb_append_double(appender, suspects.db_rt[i]), appender, "append NTA_SUSPECTS db_rt");
+        check_append_state(duckdb_append_double(appender, suspects.exp_rt[i]), appender, "append NTA_SUSPECTS exp_rt");
+        check_append_state(duckdb_append_double(appender, suspects.error_rt[i]), appender, "append NTA_SUSPECTS error_rt");
+        check_append_state(duckdb_append_double(appender, suspects.intensity[i]), appender, "append NTA_SUSPECTS intensity");
+        check_append_state(duckdb_append_double(appender, suspects.area[i]), appender, "append NTA_SUSPECTS area");
+        check_append_state(duckdb_append_int32(appender, suspects.id_level[i]), appender, "append NTA_SUSPECTS id_level");
+        check_append_state(duckdb_append_double(appender, suspects.score[i]), appender, "append NTA_SUSPECTS score");
+        check_append_state(duckdb_append_int32(appender, suspects.shared_fragments[i]), appender, "append NTA_SUSPECTS shared_fragments");
+        check_append_state(duckdb_append_double(appender, suspects.cosine_similarity[i]), appender, "append NTA_SUSPECTS cosine_similarity");
+        append_optional_varchar(appender, suspects.formula[i], "append NTA_SUSPECTS formula");
+        append_optional_varchar(appender, suspects.SMILES[i], "append NTA_SUSPECTS SMILES");
+        append_optional_varchar(appender, suspects.InChI[i], "append NTA_SUSPECTS InChI");
+        append_optional_varchar(appender, suspects.InChIKey[i], "append NTA_SUSPECTS InChIKey");
+        check_append_state(duckdb_append_double(appender, suspects.xLogP[i]), appender, "append NTA_SUSPECTS xLogP");
+        append_optional_varchar(appender, suspects.database_id[i], "append NTA_SUSPECTS database_id");
+        check_append_state(duckdb_append_int32(appender, suspects.db_ms2_size[i]), appender, "append NTA_SUSPECTS db_ms2_size");
+        append_optional_varchar(appender, suspects.db_ms2_mz[i], "append NTA_SUSPECTS db_ms2_mz");
+        append_optional_varchar(appender, suspects.db_ms2_intensity[i], "append NTA_SUSPECTS db_ms2_intensity");
+        append_optional_varchar(appender, suspects.db_ms2_formula[i], "append NTA_SUSPECTS db_ms2_formula");
+        check_append_state(duckdb_append_int32(appender, suspects.exp_ms2_size[i]), appender, "append NTA_SUSPECTS exp_ms2_size");
+        append_optional_varchar(appender, suspects.exp_ms2_mz[i], "append NTA_SUSPECTS exp_ms2_mz");
+        append_optional_varchar(appender, suspects.exp_ms2_intensity[i], "append NTA_SUSPECTS exp_ms2_intensity");
+        check_append_state(duckdb_appender_end_row(appender), appender, "end NTA_SUSPECTS row");
+      }
+      check_append_state(duckdb_appender_close(appender), appender, "close NTA_SUSPECTS appender");
+    }
+
+    void insert_internal_standards_table(duckdb_connection con, const api::NTA_INTERNAL_STANDARDS_TABLE &internal_standards)
+    {
+      duckdb_appender appender = nullptr;
+      if (duckdb_appender_create(con, nullptr, "NTA_INTERNAL_STANDARDS", &appender) == DuckDBError)
+      {
+        throw project::error::ERROR(project::error::ERROR_CODE::DuckDB, "create NTA_INTERNAL_STANDARDS appender failed");
+      }
+      APPENDER_GUARD appender_guard(&appender);
+
+      const std::size_t count = static_cast<std::size_t>(internal_standards.size());
+      for (std::size_t i = 0; i < count; ++i)
+      {
+        check_append_state(duckdb_appender_begin_row(appender), appender, "begin NTA_INTERNAL_STANDARDS row");
+        check_append_state(duckdb_append_varchar(appender, internal_standards.project_id[i].c_str()), appender, "append NTA_INTERNAL_STANDARDS project_id");
+        check_append_state(duckdb_append_varchar(appender, internal_standards.analysis[i].c_str()), appender, "append NTA_INTERNAL_STANDARDS analysis");
+        check_append_state(duckdb_append_varchar(appender, internal_standards.feature[i].c_str()), appender, "append NTA_INTERNAL_STANDARDS feature");
+        check_append_state(duckdb_append_int32(appender, internal_standards.candidate_rank[i]), appender, "append NTA_INTERNAL_STANDARDS candidate_rank");
+        check_append_state(duckdb_append_varchar(appender, internal_standards.name[i].c_str()), appender, "append NTA_INTERNAL_STANDARDS name");
+        check_append_state(duckdb_append_int32(appender, internal_standards.polarity[i]), appender, "append NTA_INTERNAL_STANDARDS polarity");
+        check_append_state(duckdb_append_double(appender, internal_standards.db_mass[i]), appender, "append NTA_INTERNAL_STANDARDS db_mass");
+        check_append_state(duckdb_append_double(appender, internal_standards.exp_mass[i]), appender, "append NTA_INTERNAL_STANDARDS exp_mass");
+        check_append_state(duckdb_append_double(appender, internal_standards.error_mass[i]), appender, "append NTA_INTERNAL_STANDARDS error_mass");
+        check_append_state(duckdb_append_double(appender, internal_standards.db_rt[i]), appender, "append NTA_INTERNAL_STANDARDS db_rt");
+        check_append_state(duckdb_append_double(appender, internal_standards.exp_rt[i]), appender, "append NTA_INTERNAL_STANDARDS exp_rt");
+        check_append_state(duckdb_append_double(appender, internal_standards.error_rt[i]), appender, "append NTA_INTERNAL_STANDARDS error_rt");
+        check_append_state(duckdb_append_double(appender, internal_standards.intensity[i]), appender, "append NTA_INTERNAL_STANDARDS intensity");
+        check_append_state(duckdb_append_double(appender, internal_standards.area[i]), appender, "append NTA_INTERNAL_STANDARDS area");
+        check_append_state(duckdb_append_int32(appender, internal_standards.id_level[i]), appender, "append NTA_INTERNAL_STANDARDS id_level");
+        check_append_state(duckdb_append_double(appender, internal_standards.score[i]), appender, "append NTA_INTERNAL_STANDARDS score");
+        check_append_state(duckdb_append_int32(appender, internal_standards.shared_fragments[i]), appender, "append NTA_INTERNAL_STANDARDS shared_fragments");
+        check_append_state(duckdb_append_double(appender, internal_standards.cosine_similarity[i]), appender, "append NTA_INTERNAL_STANDARDS cosine_similarity");
+        append_optional_varchar(appender, internal_standards.formula[i], "append NTA_INTERNAL_STANDARDS formula");
+        append_optional_varchar(appender, internal_standards.SMILES[i], "append NTA_INTERNAL_STANDARDS SMILES");
+        append_optional_varchar(appender, internal_standards.InChI[i], "append NTA_INTERNAL_STANDARDS InChI");
+        append_optional_varchar(appender, internal_standards.InChIKey[i], "append NTA_INTERNAL_STANDARDS InChIKey");
+        check_append_state(duckdb_append_double(appender, internal_standards.xLogP[i]), appender, "append NTA_INTERNAL_STANDARDS xLogP");
+        append_optional_varchar(appender, internal_standards.database_id[i], "append NTA_INTERNAL_STANDARDS database_id");
+        check_append_state(duckdb_append_int32(appender, internal_standards.db_ms2_size[i]), appender, "append NTA_INTERNAL_STANDARDS db_ms2_size");
+        append_optional_varchar(appender, internal_standards.db_ms2_mz[i], "append NTA_INTERNAL_STANDARDS db_ms2_mz");
+        append_optional_varchar(appender, internal_standards.db_ms2_intensity[i], "append NTA_INTERNAL_STANDARDS db_ms2_intensity");
+        append_optional_varchar(appender, internal_standards.db_ms2_formula[i], "append NTA_INTERNAL_STANDARDS db_ms2_formula");
+        check_append_state(duckdb_append_int32(appender, internal_standards.exp_ms2_size[i]), appender, "append NTA_INTERNAL_STANDARDS exp_ms2_size");
+        append_optional_varchar(appender, internal_standards.exp_ms2_mz[i], "append NTA_INTERNAL_STANDARDS exp_ms2_mz");
+        append_optional_varchar(appender, internal_standards.exp_ms2_intensity[i], "append NTA_INTERNAL_STANDARDS exp_ms2_intensity");
+        check_append_state(duckdb_appender_end_row(appender), appender, "end NTA_INTERNAL_STANDARDS row");
+      }
+      check_append_state(duckdb_appender_close(appender), appender, "close NTA_INTERNAL_STANDARDS appender");
+    }
+
+    void insert_transformation_products_table(duckdb_connection con, const api::NTA_TRANSFORMATION_PRODUCTS_TABLE &products)
+    {
+      duckdb_appender appender = nullptr;
+      if (duckdb_appender_create(con, nullptr, "NTA_TRANSFORMATION_PRODUCTS", &appender) == DuckDBError)
+      {
+        throw project::error::ERROR(project::error::ERROR_CODE::DuckDB, "create NTA_TRANSFORMATION_PRODUCTS appender failed");
+      }
+      APPENDER_GUARD appender_guard(&appender);
+
+      const std::size_t count = static_cast<std::size_t>(products.size());
+      for (std::size_t i = 0; i < count; ++i)
+      {
+        check_append_state(duckdb_appender_begin_row(appender), appender, "begin NTA_TRANSFORMATION_PRODUCTS row");
+        check_append_state(duckdb_append_varchar(appender, products.project_id[i].c_str()), appender, "append NTA_TRANSFORMATION_PRODUCTS project_id");
+        append_optional_varchar(appender, products.name[i], "append NTA_TRANSFORMATION_PRODUCTS name");
+        append_optional_varchar(appender, products.formula[i], "append NTA_TRANSFORMATION_PRODUCTS formula");
+        check_append_state(duckdb_append_double(appender, products.mass[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS mass");
+        append_optional_varchar(appender, products.SMILES[i], "append NTA_TRANSFORMATION_PRODUCTS SMILES");
+        append_optional_varchar(appender, products.InChI[i], "append NTA_TRANSFORMATION_PRODUCTS InChI");
+        append_optional_varchar(appender, products.InChIKey[i], "append NTA_TRANSFORMATION_PRODUCTS InChIKey");
+        check_append_state(duckdb_append_double(appender, products.xLogP[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS xLogP");
+        append_optional_varchar(appender, products.transformation[i], "append NTA_TRANSFORMATION_PRODUCTS transformation");
+        append_optional_varchar(appender, products.precursor_name[i], "append NTA_TRANSFORMATION_PRODUCTS precursor_name");
+        append_optional_varchar(appender, products.precursor_formula[i], "append NTA_TRANSFORMATION_PRODUCTS precursor_formula");
+        check_append_state(duckdb_append_double(appender, products.precursor_mass[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS precursor_mass");
+        append_optional_varchar(appender, products.precursor_SMILES[i], "append NTA_TRANSFORMATION_PRODUCTS precursor_SMILES");
+        append_optional_varchar(appender, products.precursor_InChI[i], "append NTA_TRANSFORMATION_PRODUCTS precursor_InChI");
+        append_optional_varchar(appender, products.precursor_InChIKey[i], "append NTA_TRANSFORMATION_PRODUCTS precursor_InChIKey");
+        check_append_state(duckdb_append_double(appender, products.precursor_xLogP[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS precursor_xLogP");
+        append_optional_varchar(appender, products.main_precursor_name[i], "append NTA_TRANSFORMATION_PRODUCTS main_precursor_name");
+        append_optional_varchar(appender, products.main_precursor_formula[i], "append NTA_TRANSFORMATION_PRODUCTS main_precursor_formula");
+        check_append_state(duckdb_append_double(appender, products.main_precursor_mass[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS main_precursor_mass");
+        append_optional_varchar(appender, products.main_precursor_SMILES[i], "append NTA_TRANSFORMATION_PRODUCTS main_precursor_SMILES");
+        append_optional_varchar(appender, products.main_precursor_InChI[i], "append NTA_TRANSFORMATION_PRODUCTS main_precursor_InChI");
+        append_optional_varchar(appender, products.main_precursor_InChIKey[i], "append NTA_TRANSFORMATION_PRODUCTS main_precursor_InChIKey");
+        check_append_state(duckdb_append_double(appender, products.main_precursor_xLogP[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS main_precursor_xLogP");
+        append_optional_varchar(appender, products.feature_group[i], "append NTA_TRANSFORMATION_PRODUCTS feature_group");
+        append_optional_varchar(appender, products.precursor_feature_group[i], "append NTA_TRANSFORMATION_PRODUCTS precursor_feature_group");
+        append_optional_varchar(appender, products.main_precursor_feature_group[i], "append NTA_TRANSFORMATION_PRODUCTS main_precursor_feature_group");
+        check_append_state(duckdb_append_double(appender, products.cosine_similarity[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS cosine_similarity");
+        check_append_state(duckdb_append_double(appender, products.main_precursor_cosine_similarity[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS main_precursor_cosine_similarity");
+        check_append_state(duckdb_append_double(appender, products.rt_plausibility[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS rt_plausibility");
+        check_append_state(duckdb_append_double(appender, products.main_precursor_rt_plausibility[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS main_precursor_rt_plausibility");
+        check_append_state(duckdb_appender_end_row(appender), appender, "end NTA_TRANSFORMATION_PRODUCTS row");
+      }
+      check_append_state(duckdb_appender_close(appender), appender, "close NTA_TRANSFORMATION_PRODUCTS appender");
+    }
+  }
+
   namespace api
   {
 
@@ -2131,63 +2386,10 @@ namespace nta
             auto row = feature_table.get_feature(i);
             row.project_id = ctx_->project_id;
             features_table_.append(row);
-            project::db::run_prepared(
-                guard.get(),
-                "INSERT INTO NTA_FEATURES (project_id, analysis, feature, feature_component, feature_group, adduct, rt, mz, mass, intensity, noise, sn, area, rtmin, rtmax, width, mzmin, mzmax, ppm, fwhm_rt, fwhm_mz, gaussian_A, gaussian_mu, gaussian_sigma, gaussian_r2, jaggedness, sharpness, asymmetry, modality, plates, polarity, filtered, filter, filled, correction, eic_size, eic_rt, eic_mz, eic_intensity, eic_baseline, eic_smoothed, ms1_size, ms1_mz, ms1_intensity, ms2_size, ms2_mz, ms2_intensity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                "insert NTS feature",
-                [&](duckdb_prepared_statement statement)
-                {
-                  duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str());
-                  duckdb_bind_varchar(statement, 2, row.analysis.c_str());
-                  duckdb_bind_varchar(statement, 3, row.feature.c_str());
-                  project::db::bind_optional_varchar(statement, 4, row.feature_component);
-                  project::db::bind_optional_varchar(statement, 5, row.feature_group);
-                  project::db::bind_optional_varchar(statement, 6, row.adduct);
-                  duckdb_bind_double(statement, 7, row.rt);
-                  duckdb_bind_double(statement, 8, row.mz);
-                  duckdb_bind_double(statement, 9, row.mass);
-                  duckdb_bind_double(statement, 10, row.intensity);
-                  duckdb_bind_double(statement, 11, row.noise);
-                  duckdb_bind_double(statement, 12, row.sn);
-                  duckdb_bind_double(statement, 13, row.area);
-                  duckdb_bind_double(statement, 14, row.rtmin);
-                  duckdb_bind_double(statement, 15, row.rtmax);
-                  duckdb_bind_double(statement, 16, row.width);
-                  duckdb_bind_double(statement, 17, row.mzmin);
-                  duckdb_bind_double(statement, 18, row.mzmax);
-                  duckdb_bind_double(statement, 19, row.ppm);
-                  duckdb_bind_double(statement, 20, row.fwhm_rt);
-                  duckdb_bind_double(statement, 21, row.fwhm_mz);
-                  duckdb_bind_double(statement, 22, row.gaussian_A);
-                  duckdb_bind_double(statement, 23, row.gaussian_mu);
-                  duckdb_bind_double(statement, 24, row.gaussian_sigma);
-                  duckdb_bind_double(statement, 25, row.gaussian_r2);
-                  duckdb_bind_double(statement, 26, row.jaggedness);
-                  duckdb_bind_double(statement, 27, row.sharpness);
-                  duckdb_bind_double(statement, 28, row.asymmetry);
-                  duckdb_bind_int32(statement, 29, row.modality);
-                  duckdb_bind_double(statement, 30, row.plates);
-                  duckdb_bind_int32(statement, 31, row.polarity);
-                  duckdb_bind_boolean(statement, 32, row.filtered);
-                  project::db::bind_optional_varchar(statement, 33, row.filter);
-                  duckdb_bind_boolean(statement, 34, row.filled);
-                  duckdb_bind_double(statement, 35, row.correction);
-                  duckdb_bind_int32(statement, 36, row.eic_size);
-                  project::db::bind_optional_varchar(statement, 37, row.eic_rt);
-                  project::db::bind_optional_varchar(statement, 38, row.eic_mz);
-                  project::db::bind_optional_varchar(statement, 39, row.eic_intensity);
-                  project::db::bind_optional_varchar(statement, 40, row.eic_baseline);
-                  project::db::bind_optional_varchar(statement, 41, row.eic_smoothed);
-                  duckdb_bind_int32(statement, 42, row.ms1_size);
-                  project::db::bind_optional_varchar(statement, 43, row.ms1_mz);
-                  project::db::bind_optional_varchar(statement, 44, row.ms1_intensity);
-                  duckdb_bind_int32(statement, 45, row.ms2_size);
-                  project::db::bind_optional_varchar(statement, 46, row.ms2_mz);
-                  project::db::bind_optional_varchar(statement, 47, row.ms2_intensity);
-                },
-                [](duckdb_result &) {});
           }
         }
+
+        insert_features_table(guard.get(), features_table_);
 
         project::db::run_sql(guard.get(), "COMMIT", "commit save NTS features transaction");
         std::cout << "Done!" << std::endl;
@@ -2229,47 +2431,10 @@ namespace nta
             auto row = suspect_table.get_suspect(i);
             row.project_id = ctx_->project_id;
             suspects_table_.append(row);
-            project::db::run_prepared(
-                guard.get(),
-                "INSERT INTO NTA_SUSPECTS (project_id, analysis, feature, candidate_rank, name, polarity, db_mass, exp_mass, error_mass, db_rt, exp_rt, error_rt, intensity, area, id_level, score, shared_fragments, cosine_similarity, formula, SMILES, InChI, InChIKey, xLogP, database_id, db_ms2_size, db_ms2_mz, db_ms2_intensity, db_ms2_formula, exp_ms2_size, exp_ms2_mz, exp_ms2_intensity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                "insert NTS suspect",
-                [&](duckdb_prepared_statement statement)
-                {
-                  duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str());
-                  duckdb_bind_varchar(statement, 2, row.analysis.c_str());
-                  duckdb_bind_varchar(statement, 3, row.feature.c_str());
-                  duckdb_bind_int32(statement, 4, row.candidate_rank);
-                  duckdb_bind_varchar(statement, 5, row.name.c_str());
-                  duckdb_bind_int32(statement, 6, row.polarity);
-                  duckdb_bind_double(statement, 7, row.db_mass);
-                  duckdb_bind_double(statement, 8, row.exp_mass);
-                  duckdb_bind_double(statement, 9, row.error_mass);
-                  duckdb_bind_double(statement, 10, row.db_rt);
-                  duckdb_bind_double(statement, 11, row.exp_rt);
-                  duckdb_bind_double(statement, 12, row.error_rt);
-                  duckdb_bind_double(statement, 13, row.intensity);
-                  duckdb_bind_double(statement, 14, row.area);
-                  duckdb_bind_int32(statement, 15, row.id_level);
-                  duckdb_bind_double(statement, 16, row.score);
-                  duckdb_bind_int32(statement, 17, row.shared_fragments);
-                  duckdb_bind_double(statement, 18, row.cosine_similarity);
-                  project::db::bind_optional_varchar(statement, 19, row.formula);
-                  project::db::bind_optional_varchar(statement, 20, row.SMILES);
-                  project::db::bind_optional_varchar(statement, 21, row.InChI);
-                  project::db::bind_optional_varchar(statement, 22, row.InChIKey);
-                  duckdb_bind_double(statement, 23, row.xLogP);
-                  project::db::bind_optional_varchar(statement, 24, row.database_id);
-                  duckdb_bind_int32(statement, 25, row.db_ms2_size);
-                  project::db::bind_optional_varchar(statement, 26, row.db_ms2_mz);
-                  project::db::bind_optional_varchar(statement, 27, row.db_ms2_intensity);
-                  project::db::bind_optional_varchar(statement, 28, row.db_ms2_formula);
-                  duckdb_bind_int32(statement, 29, row.exp_ms2_size);
-                  project::db::bind_optional_varchar(statement, 30, row.exp_ms2_mz);
-                  project::db::bind_optional_varchar(statement, 31, row.exp_ms2_intensity);
-                },
-                [](duckdb_result &) {});
           }
         }
+
+        insert_suspects_table(guard.get(), suspects_table_);
 
         project::db::run_sql(guard.get(), "COMMIT", "commit save NTS suspects transaction");
         std::cout << "Done!" << std::endl;
@@ -2311,47 +2476,10 @@ namespace nta
             auto row = internal_table.get_internal_standard(i);
             row.project_id = ctx_->project_id;
             internal_standards_table_.append(row);
-            project::db::run_prepared(
-                guard.get(),
-                "INSERT INTO NTA_INTERNAL_STANDARDS (project_id, analysis, feature, candidate_rank, name, polarity, db_mass, exp_mass, error_mass, db_rt, exp_rt, error_rt, intensity, area, id_level, score, shared_fragments, cosine_similarity, formula, SMILES, InChI, InChIKey, xLogP, database_id, db_ms2_size, db_ms2_mz, db_ms2_intensity, db_ms2_formula, exp_ms2_size, exp_ms2_mz, exp_ms2_intensity) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                "insert NTS internal standard",
-                [&](duckdb_prepared_statement statement)
-                {
-                  duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str());
-                  duckdb_bind_varchar(statement, 2, row.analysis.c_str());
-                  duckdb_bind_varchar(statement, 3, row.feature.c_str());
-                  duckdb_bind_int32(statement, 4, row.candidate_rank);
-                  duckdb_bind_varchar(statement, 5, row.name.c_str());
-                  duckdb_bind_int32(statement, 6, row.polarity);
-                  duckdb_bind_double(statement, 7, row.db_mass);
-                  duckdb_bind_double(statement, 8, row.exp_mass);
-                  duckdb_bind_double(statement, 9, row.error_mass);
-                  duckdb_bind_double(statement, 10, row.db_rt);
-                  duckdb_bind_double(statement, 11, row.exp_rt);
-                  duckdb_bind_double(statement, 12, row.error_rt);
-                  duckdb_bind_double(statement, 13, row.intensity);
-                  duckdb_bind_double(statement, 14, row.area);
-                  duckdb_bind_int32(statement, 15, row.id_level);
-                  duckdb_bind_double(statement, 16, row.score);
-                  duckdb_bind_int32(statement, 17, row.shared_fragments);
-                  duckdb_bind_double(statement, 18, row.cosine_similarity);
-                  project::db::bind_optional_varchar(statement, 19, row.formula);
-                  project::db::bind_optional_varchar(statement, 20, row.SMILES);
-                  project::db::bind_optional_varchar(statement, 21, row.InChI);
-                  project::db::bind_optional_varchar(statement, 22, row.InChIKey);
-                  duckdb_bind_double(statement, 23, row.xLogP);
-                  project::db::bind_optional_varchar(statement, 24, row.database_id);
-                  duckdb_bind_int32(statement, 25, row.db_ms2_size);
-                  project::db::bind_optional_varchar(statement, 26, row.db_ms2_mz);
-                  project::db::bind_optional_varchar(statement, 27, row.db_ms2_intensity);
-                  project::db::bind_optional_varchar(statement, 28, row.db_ms2_formula);
-                  duckdb_bind_int32(statement, 29, row.exp_ms2_size);
-                  project::db::bind_optional_varchar(statement, 30, row.exp_ms2_mz);
-                  project::db::bind_optional_varchar(statement, 31, row.exp_ms2_intensity);
-                },
-                [](duckdb_result &) {});
           }
         }
+
+        insert_internal_standards_table(guard.get(), internal_standards_table_);
 
         project::db::run_sql(guard.get(), "COMMIT", "commit save NTS internal standards transaction");
         std::cout << "Done!" << std::endl;
@@ -2662,45 +2790,9 @@ namespace nta
           auto row = products.get_transformation_product(i);
           row.project_id = ctx_->project_id;
           transformation_products_table_.append(row);
-          project::db::run_prepared(
-              guard.get(),
-              "INSERT INTO NTA_TRANSFORMATION_PRODUCTS (project_id, name, formula, mass, SMILES, InChI, InChIKey, xLogP, transformation, precursor_name, precursor_formula, precursor_mass, precursor_SMILES, precursor_InChI, precursor_InChIKey, precursor_xLogP, main_precursor_name, main_precursor_formula, main_precursor_mass, main_precursor_SMILES, main_precursor_InChI, main_precursor_InChIKey, main_precursor_xLogP, feature_group, precursor_feature_group, main_precursor_feature_group, cosine_similarity, main_precursor_cosine_similarity, rt_plausibility, main_precursor_rt_plausibility) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-              "insert NTS transformation product",
-              [&](duckdb_prepared_statement statement)
-              {
-                duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str());
-                project::db::bind_optional_varchar(statement, 2, row.name);
-                project::db::bind_optional_varchar(statement, 3, row.formula);
-                duckdb_bind_double(statement, 4, row.mass);
-                project::db::bind_optional_varchar(statement, 5, row.SMILES);
-                project::db::bind_optional_varchar(statement, 6, row.InChI);
-                project::db::bind_optional_varchar(statement, 7, row.InChIKey);
-                duckdb_bind_double(statement, 8, row.xLogP);
-                project::db::bind_optional_varchar(statement, 9, row.transformation);
-                project::db::bind_optional_varchar(statement, 10, row.precursor_name);
-                project::db::bind_optional_varchar(statement, 11, row.precursor_formula);
-                duckdb_bind_double(statement, 12, row.precursor_mass);
-                project::db::bind_optional_varchar(statement, 13, row.precursor_SMILES);
-                project::db::bind_optional_varchar(statement, 14, row.precursor_InChI);
-                project::db::bind_optional_varchar(statement, 15, row.precursor_InChIKey);
-                duckdb_bind_double(statement, 16, row.precursor_xLogP);
-                project::db::bind_optional_varchar(statement, 17, row.main_precursor_name);
-                project::db::bind_optional_varchar(statement, 18, row.main_precursor_formula);
-                duckdb_bind_double(statement, 19, row.main_precursor_mass);
-                project::db::bind_optional_varchar(statement, 20, row.main_precursor_SMILES);
-                project::db::bind_optional_varchar(statement, 21, row.main_precursor_InChI);
-                project::db::bind_optional_varchar(statement, 22, row.main_precursor_InChIKey);
-                duckdb_bind_double(statement, 23, row.main_precursor_xLogP);
-                project::db::bind_optional_varchar(statement, 24, row.feature_group);
-                project::db::bind_optional_varchar(statement, 25, row.precursor_feature_group);
-                project::db::bind_optional_varchar(statement, 26, row.main_precursor_feature_group);
-                duckdb_bind_double(statement, 27, row.cosine_similarity);
-                duckdb_bind_double(statement, 28, row.main_precursor_cosine_similarity);
-                duckdb_bind_double(statement, 29, row.rt_plausibility);
-                duckdb_bind_double(statement, 30, row.main_precursor_rt_plausibility);
-              },
-              [](duckdb_result &) {});
         }
+
+        insert_transformation_products_table(guard.get(), transformation_products_table_);
 
         project::db::run_sql(guard.get(), "COMMIT", "commit save NTS transformation products transaction");
         std::cout << "Done!" << std::endl;

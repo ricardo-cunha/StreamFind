@@ -19,9 +19,15 @@
 \alias{get_spectra_tic.ProjectMassSpec}
 \alias{plot_spectra_tic.ProjectMassSpec}
 \alias{plot_spectra_bpc.ProjectMassSpec}
+\alias{plot_spectra_tic_heatmap.ProjectMassSpec}
+\alias{plot_spectra_tic_3d.ProjectMassSpec}
+\alias{plot_spectra_bpc_heatmap.ProjectMassSpec}
+\alias{plot_spectra_bpc_3d.ProjectMassSpec}
 \alias{get_raw_spectra.ProjectMassSpec}
 \alias{get_raw_spectra_eic.ProjectMassSpec}
 \alias{plot_raw_spectra_eic.ProjectMassSpec}
+\alias{plot_raw_spectra_eic_heatmap.ProjectMassSpec}
+\alias{plot_raw_spectra_eic_3d.ProjectMassSpec}
 \alias{plot_raw_spectra_ms1.ProjectMassSpec}
 \alias{plot_raw_spectra_ms2.ProjectMassSpec}
 \alias{get_raw_spectra_ms1.ProjectMassSpec}
@@ -102,6 +108,70 @@
   colorPalette = NULL
 )
 
+\method{plot_spectra_tic_heatmap}{ProjectMassSpec}(
+  x,
+  analyses = character(),
+  levels = c(1, 2),
+  rtmin = numeric(),
+  rtmax = numeric(),
+  reduction = 0.1,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colors = NULL,
+  showLabels = FALSE
+)
+
+\method{plot_spectra_tic_3d}{ProjectMassSpec}(
+  x,
+  analyses = character(),
+  levels = c(1, 2),
+  rtmin = numeric(),
+  rtmax = numeric(),
+  reduction = 0.1,
+  useMobility = TRUE,
+  xLab = NULL,
+  yLab = NULL,
+  zLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  colorPalette = NULL
+)
+
+\method{plot_spectra_bpc_heatmap}{ProjectMassSpec}(
+  x,
+  analyses = character(),
+  levels = c(1, 2),
+  rtmin = numeric(),
+  rtmax = numeric(),
+  reduction = 0.1,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colors = NULL,
+  showLabels = TRUE
+)
+
+\method{plot_spectra_bpc_3d}{ProjectMassSpec}(
+  x,
+  analyses = character(),
+  levels = c(1, 2),
+  rtmin = numeric(),
+  rtmax = numeric(),
+  reduction = 0.1,
+  useMobility = TRUE,
+  xLab = NULL,
+  yLab = NULL,
+  zLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  colorPalette = NULL
+)
+
 \method{get_raw_spectra}{ProjectMassSpec}(
   x,
   analyses = character(),
@@ -150,6 +220,48 @@
   title = NULL,
   groupBy = c("analysis", "id"),
   interactive = TRUE,
+  colorPalette = NULL
+)
+
+\method{plot_raw_spectra_eic_heatmap}{ProjectMassSpec}(
+  x,
+  analyses = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = NULL,
+  reduction = 0.1,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = c("analysis", "id"),
+  interactive = TRUE,
+  colorPalette = NULL,
+  showLabels = FALSE
+)
+
+\method{plot_raw_spectra_eic_3d}{ProjectMassSpec}(
+  x,
+  analyses = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = NULL,
+  reduction = 0.1,
+  useMobility = TRUE,
+  xLab = NULL,
+  yLab = NULL,
+  zLab = NULL,
+  title = NULL,
+  groupBy = c("analysis", "id"),
   colorPalette = NULL
 )
 
@@ -296,6 +408,19 @@ object.}
 
 \item{colorPalette}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
+\item{reduction}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{colors}{Optional heatmap color palette vector.}
+
+\item{showLabels}{Logical; overlay bin labels for populated bins.}
+
+\item{useMobility}{Logical; when \code{TRUE}, use ion mobility on the y axis.
+When \code{FALSE}, use \code{mz} or \code{bpmz} on the y axis depending on the plot.}
+
+\item{zLab}{Z axis label for the plot.}
+
 \item{mass}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
 and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
 and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
@@ -409,11 +534,23 @@ S3 interface methods for \code{ProjectMassSpec}.
 
 \item \code{plot_spectra_bpc(ProjectMassSpec)}: Plot base peak chromatogram (BPC) spectra for specified analyses.
 
+\item \code{plot_spectra_tic_heatmap(ProjectMassSpec)}: Plot TIC heatmap overview for ion mobility data.
+
+\item \code{plot_spectra_tic_3d(ProjectMassSpec)}: Plot TIC overview as grouped 3D surfaces.
+
+\item \code{plot_spectra_bpc_heatmap(ProjectMassSpec)}: Plot BPC heatmap overview for ion mobility data.
+
+\item \code{plot_spectra_bpc_3d(ProjectMassSpec)}: Plot BPC overview as grouped 3D surfaces.
+
 \item \code{get_raw_spectra(ProjectMassSpec)}: Get raw spectra data for specified analyses; returns a data.table with spectra rows.
 
 \item \code{get_raw_spectra_eic(ProjectMassSpec)}: Get extracted ion chromatograms (EIC) for specified analyses.
 
 \item \code{plot_raw_spectra_eic(ProjectMassSpec)}: Plot extracted ion chromatograms (EIC) for specified analyses and targets.
+
+\item \code{plot_raw_spectra_eic_heatmap(ProjectMassSpec)}: Plot extracted ion chromatograms (EIC) as RT x mobility heatmaps.
+
+\item \code{plot_raw_spectra_eic_3d(ProjectMassSpec)}: Plot extracted ion chromatograms as grouped 3D surfaces.
 
 \item \code{plot_raw_spectra_ms1(ProjectMassSpec)}: Plot clustered MS1 spectra for specified analyses and targets.
 

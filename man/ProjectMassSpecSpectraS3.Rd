@@ -7,6 +7,10 @@
 \alias{print.ProjectMassSpecSpectra}
 \alias{show.ProjectMassSpecSpectra}
 \alias{plot_raw_spectra_eic.ProjectMassSpecSpectra}
+\alias{plot_raw_spectra_eic_3d.ProjectMassSpecSpectra}
+\alias{plot_raw_spectra_eic_heatmap.ProjectMassSpecSpectra}
+\alias{plot_spectra_tic_3d.ProjectMassSpecSpectra}
+\alias{plot_spectra_bpc_3d.ProjectMassSpecSpectra}
 \title{ProjectMassSpecSpectra S3 Methods}
 \usage{
 get_mass_spec_spectra_ptr.ProjectMassSpecSpectra(x)
@@ -18,6 +22,14 @@ get_mass_spec_spectra_ptr.ProjectMassSpecSpectra(x)
 \method{show}{ProjectMassSpecSpectra}(x, ...)
 
 \method{plot_raw_spectra_eic}{ProjectMassSpecSpectra}(x, ...)
+
+\method{plot_raw_spectra_eic_3d}{ProjectMassSpecSpectra}(x, ...)
+
+\method{plot_raw_spectra_eic_heatmap}{ProjectMassSpecSpectra}(x, ...)
+
+\method{plot_spectra_tic_3d}{ProjectMassSpecSpectra}(x, ...)
+
+\method{plot_spectra_bpc_3d}{ProjectMassSpecSpectra}(x, ...)
 }
 \arguments{
 \item{x}{A \code{ProjectMassSpecSpectra} object.}
@@ -40,5 +52,13 @@ methods and expose the spectra-specific package generics.
 \item \code{show(ProjectMassSpecSpectra)}: Show a short summary.
 
 \item \code{plot_raw_spectra_eic(ProjectMassSpecSpectra)}: Plot extracted ion chromatograms (EIC) for specified analyses and targets.
+
+\item \code{plot_raw_spectra_eic_3d(ProjectMassSpecSpectra)}: Plot extracted ion chromatograms (EIC) as grouped 3D surfaces.
+
+\item \code{plot_raw_spectra_eic_heatmap(ProjectMassSpecSpectra)}: Plot extracted ion chromatograms (EIC) as RT x mobility heatmaps.
+
+\item \code{plot_spectra_tic_3d(ProjectMassSpecSpectra)}: Plot TIC overview as grouped 3D surfaces.
+
+\item \code{plot_spectra_bpc_3d(ProjectMassSpecSpectra)}: Plot BPC overview as grouped 3D surfaces.
 
 }}

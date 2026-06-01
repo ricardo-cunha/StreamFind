@@ -32,9 +32,15 @@ Internal R6 child of \code{Project} exposing shared Mass Spec tables and native 
 \item \href{#method-ProjectMassSpec-plot_raw_chromatograms}{\code{ProjectMassSpec$plot_raw_chromatograms()}}
 \item \href{#method-ProjectMassSpec-get_raw_spectra}{\code{ProjectMassSpec$get_raw_spectra()}}
 \item \href{#method-ProjectMassSpec-plot_spectra_tic}{\code{ProjectMassSpec$plot_spectra_tic()}}
+\item \href{#method-ProjectMassSpec-plot_spectra_tic_3d}{\code{ProjectMassSpec$plot_spectra_tic_3d()}}
 \item \href{#method-ProjectMassSpec-plot_spectra_bpc}{\code{ProjectMassSpec$plot_spectra_bpc()}}
+\item \href{#method-ProjectMassSpec-plot_spectra_bpc_3d}{\code{ProjectMassSpec$plot_spectra_bpc_3d()}}
+\item \href{#method-ProjectMassSpec-plot_spectra_tic_heatmap}{\code{ProjectMassSpec$plot_spectra_tic_heatmap()}}
+\item \href{#method-ProjectMassSpec-plot_spectra_bpc_heatmap}{\code{ProjectMassSpec$plot_spectra_bpc_heatmap()}}
 \item \href{#method-ProjectMassSpec-get_raw_spectra_eic}{\code{ProjectMassSpec$get_raw_spectra_eic()}}
 \item \href{#method-ProjectMassSpec-plot_raw_spectra_eic}{\code{ProjectMassSpec$plot_raw_spectra_eic()}}
+\item \href{#method-ProjectMassSpec-plot_raw_spectra_eic_3d}{\code{ProjectMassSpec$plot_raw_spectra_eic_3d()}}
+\item \href{#method-ProjectMassSpec-plot_raw_spectra_eic_heatmap}{\code{ProjectMassSpec$plot_raw_spectra_eic_heatmap()}}
 \item \href{#method-ProjectMassSpec-get_raw_spectra_ms1}{\code{ProjectMassSpec$get_raw_spectra_ms1()}}
 \item \href{#method-ProjectMassSpec-get_raw_spectra_ms2}{\code{ProjectMassSpec$get_raw_spectra_ms2()}}
 \item \href{#method-ProjectMassSpec-plot_raw_spectra_ms1}{\code{ProjectMassSpec$plot_raw_spectra_ms1()}}
@@ -151,6 +157,24 @@ Remove analyses from the shared DB.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 }
@@ -272,6 +296,24 @@ Return spectra headers for selected analyses.
 \describe{
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
 }
 \if{html}{\out{</div>}}
 }
@@ -296,9 +338,51 @@ Return spectra TIC rows for selected analyses.
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
 \item{\code{levels}}{Integer vector with the levels of MS data.}
 
 \item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
 
 \item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
 }
@@ -317,6 +401,24 @@ Return chromatogram headers for selected analyses.
 \subsection{Arguments}{
 \if{html}{\out{<div class="arguments">}}
 \describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 }
@@ -344,9 +446,43 @@ Get raw chromatograms for selected analyses.
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
 \item{\code{chromatograms}}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
 
 \item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
 
 \item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
 
@@ -383,9 +519,43 @@ Plot raw chromatograms for selected analyses.
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
 \item{\code{chromatograms}}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
 
 \item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
 
 \item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
 
@@ -395,13 +565,75 @@ object.}
 
 \item{\code{xLab}}{X axis label for the plot.}
 
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
 \item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
 
 \item{\code{title}}{Plot title.}
 
 \item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
 
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
 \item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 }
@@ -438,7 +670,53 @@ Get raw spectra data for selected analyses.
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
 \item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
 
 \item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
 and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
@@ -459,6 +737,32 @@ retention time and drift time targets. In this case, the column names must be \c
 \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
 arguments are not used.}
 
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
 \item{\code{rt}}{A vector with target retention time values (in seconds) or
 a two columns data.table or data.frame with minimum and maximum retention
 time values (in seconds).}
@@ -467,12 +771,42 @@ time values (in seconds).}
 a two columns data.table or data.frame with minimum and maximum drift
 time values (in milliseconds).}
 
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
 \item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
 
 \item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
 
 \item{\code{millisec}}{Numeric of length one with the drift time deviation,
 in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
 
 \item{\code{id}}{Character with the same length as \emph{m/z} and retention time
 targets to be used as identifier/s. When not given, the id is built as a
@@ -522,9 +856,51 @@ Plot total ion current traces for selected analyses.
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
 \item{\code{levels}}{Integer vector with the levels of MS data.}
 
 \item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
 
 \item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
 
@@ -532,13 +908,268 @@ object.}
 
 \item{\code{xLab}}{X axis label for the plot.}
 
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
 \item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
 
 \item{\code{title}}{Plot title.}
 
 \item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
 
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
 \item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectMassSpec-plot_spectra_tic_3d"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectMassSpec-plot_spectra_tic_3d}{}}}
+\subsection{Method \code{plot_spectra_tic_3d()}}{
+Plot TIC overview as grouped 3D surfaces.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$plot_spectra_tic_3d(
+  analyses = NULL,
+  levels = c(1, 2),
+  rtmin = NULL,
+  rtmax = NULL,
+  reduction = 0.1,
+  useMobility = TRUE,
+  xLab = NULL,
+  yLab = NULL,
+  zLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  colorPalette = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{useMobility}}{Logical; when \code{TRUE}, use ion mobility on the y axis.
+When \code{FALSE}, use \code{mz} or \code{bpmz} on the y axis depending on the plot.}
+
+\item{\code{useMobility}}{Logical; when \code{TRUE}, use ion mobility on the y axis.
+When \code{FALSE}, use \code{mz} or \code{bpmz} on the y axis depending on the plot.}
+
+\item{\code{useMobility}}{Logical; when \code{TRUE}, use ion mobility on the y axis.
+When \code{FALSE}, use \code{mz} or \code{bpmz} on the y axis depending on the plot.}
+
+\item{\code{useMobility}}{Logical; when \code{TRUE}, use ion mobility on the y axis.
+When \code{FALSE}, use \code{mz} or \code{bpmz} on the y axis depending on the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{zLab}}{Z axis label for the plot.}
+
+\item{\code{zLab}}{Z axis label for the plot.}
+
+\item{\code{zLab}}{Z axis label for the plot.}
+
+\item{\code{zLab}}{Z axis label for the plot.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 }
@@ -572,9 +1203,51 @@ Plot base peak chromatogram traces for selected analyses.
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
 \item{\code{levels}}{Integer vector with the levels of MS data.}
 
 \item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
 
 \item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
 
@@ -582,15 +1255,640 @@ object.}
 
 \item{\code{xLab}}{X axis label for the plot.}
 
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
 \item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
 
 \item{\code{title}}{Plot title.}
 
 \item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
 
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
 \item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
 
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectMassSpec-plot_spectra_bpc_3d"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectMassSpec-plot_spectra_bpc_3d}{}}}
+\subsection{Method \code{plot_spectra_bpc_3d()}}{
+Plot BPC overview as grouped 3D surfaces.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$plot_spectra_bpc_3d(
+  analyses = NULL,
+  levels = c(1, 2),
+  rtmin = NULL,
+  rtmax = NULL,
+  reduction = 0.1,
+  useMobility = TRUE,
+  xLab = NULL,
+  yLab = NULL,
+  zLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  colorPalette = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{useMobility}}{Logical; when \code{TRUE}, use ion mobility on the y axis.
+When \code{FALSE}, use \code{mz} or \code{bpmz} on the y axis depending on the plot.}
+
+\item{\code{useMobility}}{Logical; when \code{TRUE}, use ion mobility on the y axis.
+When \code{FALSE}, use \code{mz} or \code{bpmz} on the y axis depending on the plot.}
+
+\item{\code{useMobility}}{Logical; when \code{TRUE}, use ion mobility on the y axis.
+When \code{FALSE}, use \code{mz} or \code{bpmz} on the y axis depending on the plot.}
+
+\item{\code{useMobility}}{Logical; when \code{TRUE}, use ion mobility on the y axis.
+When \code{FALSE}, use \code{mz} or \code{bpmz} on the y axis depending on the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{zLab}}{Z axis label for the plot.}
+
+\item{\code{zLab}}{Z axis label for the plot.}
+
+\item{\code{zLab}}{Z axis label for the plot.}
+
+\item{\code{zLab}}{Z axis label for the plot.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectMassSpec-plot_spectra_tic_heatmap"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectMassSpec-plot_spectra_tic_heatmap}{}}}
+\subsection{Method \code{plot_spectra_tic_heatmap()}}{
+Plot TIC overview as RT x mobility heatmap when ion mobility data is available.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$plot_spectra_tic_heatmap(
+  analyses = NULL,
+  levels = c(1, 2),
+  rtmin = NULL,
+  rtmax = NULL,
+  reduction = 0.1,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colors = NULL,
+  showLabels = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{colors}}{Optional heatmap color palette vector.}
+
+\item{\code{colors}}{Optional heatmap color palette vector.}
+
+\item{\code{colors}}{Optional heatmap color palette vector.}
+
+\item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
+
+\item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
+
+\item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
+
+\item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectMassSpec-plot_spectra_bpc_heatmap"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectMassSpec-plot_spectra_bpc_heatmap}{}}}
+\subsection{Method \code{plot_spectra_bpc_heatmap()}}{
+Plot BPC overview as RT x mobility heatmap when ion mobility data is available.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$plot_spectra_bpc_heatmap(
+  analyses = NULL,
+  levels = c(1, 2),
+  rtmin = NULL,
+  rtmax = NULL,
+  reduction = 0.1,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colors = NULL,
+  showLabels = TRUE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{levels}}{Integer vector with the levels of MS data.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{colors}}{Optional heatmap color palette vector.}
+
+\item{\code{colors}}{Optional heatmap color palette vector.}
+
+\item{\code{colors}}{Optional heatmap color palette vector.}
+
+\item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
+
+\item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
+
+\item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
+
+\item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
 }
 \if{html}{\out{</div>}}
 }
@@ -620,6 +1918,44 @@ Get extracted ion chromatograms for selected analyses.
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
 \item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
 and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
 and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
@@ -639,6 +1975,32 @@ retention time and drift time targets. In this case, the column names must be \c
 \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
 arguments are not used.}
 
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
 \item{\code{rt}}{A vector with target retention time values (in seconds) or
 a two columns data.table or data.frame with minimum and maximum retention
 time values (in seconds).}
@@ -647,12 +2009,42 @@ time values (in seconds).}
 a two columns data.table or data.frame with minimum and maximum drift
 time values (in milliseconds).}
 
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
 \item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
 
 \item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
 
 \item{\code{millisec}}{Numeric of length one with the drift time deviation,
 in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
 
 \item{\code{id}}{Character with the same length as \emph{m/z} and retention time
 targets to be used as identifier/s. When not given, the id is built as a
@@ -693,6 +2085,44 @@ Plot extracted ion chromatograms for selected analyses.
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
 \item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
 and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
 and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
@@ -712,6 +2142,32 @@ retention time and drift time targets. In this case, the column names must be \c
 \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
 arguments are not used.}
 
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
 \item{\code{rt}}{A vector with target retention time values (in seconds) or
 a two columns data.table or data.frame with minimum and maximum retention
 time values (in seconds).}
@@ -720,12 +2176,42 @@ time values (in seconds).}
 a two columns data.table or data.frame with minimum and maximum drift
 time values (in milliseconds).}
 
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
 \item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
 
 \item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
 
 \item{\code{millisec}}{Numeric of length one with the drift time deviation,
 in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
 
 \item{\code{id}}{Character with the same length as \emph{m/z} and retention time
 targets to be used as identifier/s. When not given, the id is built as a
@@ -735,15 +2221,637 @@ combination of the \emph{m/z} and retention time ranges or values.}
 
 \item{\code{xLab}}{X axis label for the plot.}
 
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
 \item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
 
 \item{\code{title}}{Plot title.}
 
 \item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
 
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
 \item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
 
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectMassSpec-plot_raw_spectra_eic_3d"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectMassSpec-plot_raw_spectra_eic_3d}{}}}
+\subsection{Method \code{plot_raw_spectra_eic_3d()}}{
+Plot extracted ion chromatograms as grouped 3D surfaces.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$plot_raw_spectra_eic_3d(
+  analyses = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = NULL,
+  reduction = 0.1,
+  useMobility = TRUE,
+  xLab = NULL,
+  yLab = NULL,
+  zLab = NULL,
+  title = NULL,
+  groupBy = c("analysis", "id"),
+  colorPalette = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{useMobility}}{Logical; when \code{TRUE}, use ion mobility on the y axis.
+When \code{FALSE}, use \code{mz} or \code{bpmz} on the y axis depending on the plot.}
+
+\item{\code{useMobility}}{Logical; when \code{TRUE}, use ion mobility on the y axis.
+When \code{FALSE}, use \code{mz} or \code{bpmz} on the y axis depending on the plot.}
+
+\item{\code{useMobility}}{Logical; when \code{TRUE}, use ion mobility on the y axis.
+When \code{FALSE}, use \code{mz} or \code{bpmz} on the y axis depending on the plot.}
+
+\item{\code{useMobility}}{Logical; when \code{TRUE}, use ion mobility on the y axis.
+When \code{FALSE}, use \code{mz} or \code{bpmz} on the y axis depending on the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{zLab}}{Z axis label for the plot.}
+
+\item{\code{zLab}}{Z axis label for the plot.}
+
+\item{\code{zLab}}{Z axis label for the plot.}
+
+\item{\code{zLab}}{Z axis label for the plot.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectMassSpec-plot_raw_spectra_eic_heatmap"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectMassSpec-plot_raw_spectra_eic_heatmap}{}}}
+\subsection{Method \code{plot_raw_spectra_eic_heatmap()}}{
+Plot extracted ion chromatograms as RT x mobility heatmaps for selected analyses and targets.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpec$plot_raw_spectra_eic_heatmap(
+  analyses = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = NULL,
+  reduction = 0.1,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = c("analysis", "id"),
+  interactive = TRUE,
+  colorPalette = NULL,
+  showLabels = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{reduction}}{Numeric reduction factor for heatmap binning density. Values
+in \code{0-1} are treated as fractions; values above \code{1} are treated as
+percentages.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
+
+\item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
+
+\item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
+
+\item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
 }
 \if{html}{\out{</div>}}
 }
@@ -776,6 +2884,44 @@ Get clustered MS1 spectra for selected analyses.
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
 \item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
 and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
 and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
@@ -795,6 +2941,32 @@ retention time and drift time targets. In this case, the column names must be \c
 \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
 arguments are not used.}
 
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
 \item{\code{rt}}{A vector with target retention time values (in seconds) or
 a two columns data.table or data.frame with minimum and maximum retention
 time values (in seconds).}
@@ -803,12 +2975,42 @@ time values (in seconds).}
 a two columns data.table or data.frame with minimum and maximum drift
 time values (in milliseconds).}
 
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
 \item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
 
 \item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
 
 \item{\code{millisec}}{Numeric of length one with the drift time deviation,
 in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
 
 \item{\code{id}}{Character with the same length as \emph{m/z} and retention time
 targets to be used as identifier/s. When not given, the id is built as a
@@ -854,6 +3056,44 @@ Get clustered MS2 spectra for selected analyses.
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
 \item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
 and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
 and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
@@ -873,6 +3113,32 @@ retention time and drift time targets. In this case, the column names must be \c
 \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
 arguments are not used.}
 
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
 \item{\code{rt}}{A vector with target retention time values (in seconds) or
 a two columns data.table or data.frame with minimum and maximum retention
 time values (in seconds).}
@@ -881,12 +3147,42 @@ time values (in seconds).}
 a two columns data.table or data.frame with minimum and maximum drift
 time values (in milliseconds).}
 
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
 \item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
 
 \item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
 
 \item{\code{millisec}}{Numeric of length one with the drift time deviation,
 in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
 
 \item{\code{id}}{Character with the same length as \emph{m/z} and retention time
 targets to be used as identifier/s. When not given, the id is built as a
@@ -942,6 +3238,44 @@ Plot clustered MS1 spectra for selected analyses.
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
 \item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
 and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
 and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
@@ -961,6 +3295,32 @@ retention time and drift time targets. In this case, the column names must be \c
 \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
 arguments are not used.}
 
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
 \item{\code{rt}}{A vector with target retention time values (in seconds) or
 a two columns data.table or data.frame with minimum and maximum retention
 time values (in seconds).}
@@ -969,12 +3329,42 @@ time values (in seconds).}
 a two columns data.table or data.frame with minimum and maximum drift
 time values (in milliseconds).}
 
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
 \item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
 
 \item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
 
 \item{\code{millisec}}{Numeric of length one with the drift time deviation,
 in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
 
 \item{\code{id}}{Character with the same length as \emph{m/z} and retention time
 targets to be used as identifier/s. When not given, the id is built as a
@@ -992,13 +3382,67 @@ spectra) to 1 (i.e., must be present in all spectra) for traces during clusterin
 
 \item{\code{xLab}}{X axis label for the plot.}
 
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
 \item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
 
 \item{\code{title}}{Plot title.}
 
 \item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
 
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
 \item{\code{showText}}{Logical (length 1), set to \code{TRUE} to show the text annotations.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
 
 \item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
 }
@@ -1041,6 +3485,44 @@ Plot clustered MS2 spectra for selected analyses.
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
+and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
+and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
+data.frame with columns named \code{mass} and \code{rt} and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec}
+and \code{millisec}  arguments are used to calculate the ranges. Also works with a data.table or data.frame with
+minimum and maximum values of neutral mass, retention time and drift time targets. In this case, the column names
+must be \code{min}, \code{max}, \code{rtmin}, \code{rtmax}, \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the
+\code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
 \item{\code{mass}}{A vector with target neutral mass value/s (in Da) or a two columns data.table or data.frame named \code{min}
 and \code{max} with minimum and maximum neutral mass values (in Da), respectively. Alternatively, neutral mass (in Da)
 and retention time (in seconds) and/or drift time values (in milliseconds) can be given as one data.table or
@@ -1060,6 +3542,32 @@ retention time and drift time targets. In this case, the column names must be \c
 \code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
 arguments are not used.}
 
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{mz}}{A vector with target \emph{m/z} value/s (in Da) or a two columns data.table or data.frame named \code{mzmin} and
+\code{mzmax} with minimum and maximum \emph{m/z} values (in Da), respectively. Alternatively, \emph{m/z} (in Da) and
+retention time values (in seconds) can be given as one data.table or data.frame with columns named \code{mz} and \code{rt}
+and/or \code{drift}. Then, the deviations given in the \code{ppm}, \code{sec} and \code{millisec} arguments are used to
+calculate the ranges. Also works with a data.table or data.frame with minimum and maximum values of \emph{m/z},
+retention time and drift time targets. In this case, the column names must be \code{mzmin}, \code{mzmax}, \code{rtmin}, \code{rtmax},
+\code{driftmin} and \code{driftmax}. Note that when mass/time ranges are given, the \code{ppm}, \code{sec} and \code{millisec}
+arguments are not used.}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
+\item{\code{rt}}{A vector with target retention time values (in seconds) or
+a two columns data.table or data.frame with minimum and maximum retention
+time values (in seconds).}
+
 \item{\code{rt}}{A vector with target retention time values (in seconds) or
 a two columns data.table or data.frame with minimum and maximum retention
 time values (in seconds).}
@@ -1068,12 +3576,42 @@ time values (in seconds).}
 a two columns data.table or data.frame with minimum and maximum drift
 time values (in milliseconds).}
 
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
+\item{\code{mobility}}{A vector with target drift time values (in milliseconds) or
+a two columns data.table or data.frame with minimum and maximum drift
+time values (in milliseconds).}
+
 \item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{ppm}}{Numeric of length one with the mass deviation, in ppm.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
+
+\item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
 
 \item{\code{sec}}{Numeric of length one with the time deviation, in seconds.}
 
 \item{\code{millisec}}{Numeric of length one with the drift time deviation,
 in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{millisec}}{Numeric of length one with the drift time deviation,
+in milliseconds.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
+
+\item{\code{id}}{Character with the same length as \emph{m/z} and retention time
+targets to be used as identifier/s. When not given, the id is built as a
+combination of the \emph{m/z} and retention time ranges or values.}
 
 \item{\code{id}}{Character with the same length as \emph{m/z} and retention time
 targets to be used as identifier/s. When not given, the id is built as a
@@ -1095,13 +3633,67 @@ spectra) to 1 (i.e., must be present in all spectra) for traces during clusterin
 
 \item{\code{xLab}}{X axis label for the plot.}
 
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
 \item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{title}}{Plot title.}
 
 \item{\code{title}}{Plot title.}
 
 \item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
 
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
 \item{\code{showText}}{Logical (length 1), set to \code{TRUE} to show the text annotations.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
 
 \item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
 }

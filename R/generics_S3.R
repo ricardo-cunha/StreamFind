@@ -1242,6 +1242,28 @@ plot_spectra_bpc <- function(x, ...) {
   UseMethod("plot_spectra_bpc")
 }
 
+#' @title Generic `plot_spectra_bpc_heatmap`
+#' @description S3 generic to plot spectra BPC heatmap from `x`.
+#' @param x An object from which the spectra BPC heatmap will be plotted.
+#' @param ... Additional arguments passed to the method.
+#' @export
+#' @noRd
+#'
+plot_spectra_bpc_heatmap <- function(x, ...) {
+  UseMethod("plot_spectra_bpc_heatmap")
+}
+
+#' @title Generic `plot_spectra_bpc_3d`
+#' @description S3 generic to plot spectra BPC 3D surfaces from `x`.
+#' @param x An object from which the spectra BPC 3D surfaces will be plotted.
+#' @param ... Additional arguments passed to the method.
+#' @export
+#' @noRd
+#'
+plot_spectra_bpc_3d <- function(x, ...) {
+  UseMethod("plot_spectra_bpc_3d")
+}
+
 #' @title Generic `plot_spectra_charges`
 #' @description S3 generic to plot spectra charges from `x`.
 #' @param x An object from which the spectra charges will be plotted.
@@ -1262,6 +1284,28 @@ plot_spectra_charges <- function(x, ...) {
 #'
 plot_raw_spectra_eic <- function(x, ...) {
   UseMethod("plot_raw_spectra_eic")
+}
+
+#' @title Generic `plot_raw_spectra_eic_3d`
+#' @description S3 generic to plot raw spectra EIC 3D surfaces from `x`.
+#' @param x An object from which the raw spectra EIC 3D surfaces will be plotted.
+#' @param ... Additional arguments passed to the method.
+#' @export
+#' @noRd
+#'
+plot_raw_spectra_eic_3d <- function(x, ...) {
+  UseMethod("plot_raw_spectra_eic_3d")
+}
+
+#' @title Generic `plot_raw_spectra_eic_heatmap`
+#' @description S3 generic to plot raw spectra EIC heatmaps from `x`.
+#' @param x An object from which the raw spectra EIC heatmap will be plotted.
+#' @param ... Additional arguments passed to the method.
+#' @export
+#' @noRd
+#'
+plot_raw_spectra_eic_heatmap <- function(x, ...) {
+  UseMethod("plot_raw_spectra_eic_heatmap")
 }
 
 #' @title Generic `plot_raw_spectra_ms1`
@@ -1328,6 +1372,28 @@ plot_spectra_peaks <- function(x, ...) {
 #'
 plot_spectra_tic <- function(x, ...) {
   UseMethod("plot_spectra_tic")
+}
+
+#' @title Generic `plot_spectra_tic_3d`
+#' @description S3 generic to plot spectra TIC 3D surfaces from `x`.
+#' @param x An object from which the spectra TIC 3D surfaces will be plotted.
+#' @param ... Additional arguments passed to the method.
+#' @export
+#' @noRd
+#'
+plot_spectra_tic_3d <- function(x, ...) {
+  UseMethod("plot_spectra_tic_3d")
+}
+
+#' @title Generic `plot_spectra_tic_heatmap`
+#' @description S3 generic to plot spectra TIC heatmap from `x`.
+#' @param x An object from which the spectra TIC heatmap will be plotted.
+#' @param ... Additional arguments passed to the method.
+#' @export
+#' @noRd
+#'
+plot_spectra_tic_heatmap <- function(x, ...) {
+  UseMethod("plot_spectra_tic_heatmap")
 }
 
 #' @title Generic `plot_spectra_xic`

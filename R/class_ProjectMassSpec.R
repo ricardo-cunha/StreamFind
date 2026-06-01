@@ -22,15 +22,20 @@
 #' @template arg-ProjectMassSpec-plot-downsize
 #' @template arg-ProjectMassSpec-plot-xLab
 #' @template arg-ProjectMassSpec-plot-yLab
+#' @template arg-ProjectMassSpec-plot-zLab
 #' @template arg-ProjectMassSpec-plot-title
 #' @template arg-ProjectMassSpec-plot-groupBy
 #' @template arg-ProjectMassSpec-plot-interactive
 #' @template arg-ProjectMassSpec-plot-colorPalette
+#' @template arg-ProjectMassSpec-plot-colors
 #' @template arg-ProjectMassSpec-normalized
 #' @template arg-ProjectMassSpec-showText
+#' @template arg-ProjectMassSpec-showLabels
 #' @template arg-ProjectMassSpec-mzClust
 #' @template arg-ProjectMassSpec-presence
+#' @template arg-ProjectMassSpec-reduction
 #' @template arg-ProjectMassSpec-minIntensity
+#' @template arg-ProjectMassSpec-useMobility
 #' @template arg-Project-ellipsis
 #' @template arg-ProjectMassSpec-import-file
 #' @template arg-ProjectMassSpec-file-paths
@@ -181,6 +186,47 @@ ProjectMassSpec <- R6::R6Class(
                                 colorPalette = NULL) {
       plot_spectra_tic.ProjectMassSpec(self, analyses = analyses, levels = levels, rtmin = rtmin, rtmax = rtmax, downsize = downsize, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, interactive = interactive, colorPalette = colorPalette)
     },
+    #' @description Plot TIC overview as grouped 3D surfaces.
+    #' @template arg-ProjectMassSpec-analyses
+    #' @template arg-ProjectMassSpec-levels
+    #' @template arg-ProjectMassSpec-rtmin
+    #' @template arg-ProjectMassSpec-rtmax
+    #' @template arg-ProjectMassSpec-reduction
+    #' @template arg-ProjectMassSpec-useMobility
+    #' @template arg-ProjectMassSpec-plot-xLab
+    #' @template arg-ProjectMassSpec-plot-yLab
+    #' @template arg-ProjectMassSpec-plot-zLab
+    #' @template arg-ProjectMassSpec-plot-title
+    #' @template arg-ProjectMassSpec-plot-groupBy
+    #' @template arg-ProjectMassSpec-plot-colorPalette
+    plot_spectra_tic_3d = function(analyses = NULL,
+                                   levels = c(1, 2),
+                                   rtmin = NULL,
+                                   rtmax = NULL,
+                                   reduction = 0.1,
+                                   useMobility = TRUE,
+                                   xLab = NULL,
+                                   yLab = NULL,
+                                   zLab = NULL,
+                                   title = NULL,
+                                   groupBy = "analysis",
+                                   colorPalette = NULL) {
+      plot_spectra_tic_3d.ProjectMassSpec(
+        self,
+        analyses = analyses,
+        levels = levels,
+        rtmin = rtmin,
+        rtmax = rtmax,
+        reduction = reduction,
+        useMobility = useMobility,
+        xLab = xLab,
+        yLab = yLab,
+        zLab = zLab,
+        title = title,
+        groupBy = groupBy,
+        colorPalette = colorPalette
+      )
+    },
     #' @description Plot base peak chromatogram traces for selected analyses.
     plot_spectra_bpc = function(analyses = NULL,
                                 levels = c(1, 2),
@@ -194,6 +240,129 @@ ProjectMassSpec <- R6::R6Class(
                                 interactive = TRUE,
                                 colorPalette = NULL) {
       plot_spectra_bpc.ProjectMassSpec(self, analyses = analyses, levels = levels, rtmin = rtmin, rtmax = rtmax, downsize = downsize, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, interactive = interactive, colorPalette = colorPalette)
+    },
+    #' @description Plot BPC overview as grouped 3D surfaces.
+    #' @template arg-ProjectMassSpec-analyses
+    #' @template arg-ProjectMassSpec-levels
+    #' @template arg-ProjectMassSpec-rtmin
+    #' @template arg-ProjectMassSpec-rtmax
+    #' @template arg-ProjectMassSpec-reduction
+    #' @template arg-ProjectMassSpec-useMobility
+    #' @template arg-ProjectMassSpec-plot-xLab
+    #' @template arg-ProjectMassSpec-plot-yLab
+    #' @template arg-ProjectMassSpec-plot-zLab
+    #' @template arg-ProjectMassSpec-plot-title
+    #' @template arg-ProjectMassSpec-plot-groupBy
+    #' @template arg-ProjectMassSpec-plot-colorPalette
+    plot_spectra_bpc_3d = function(analyses = NULL,
+                                   levels = c(1, 2),
+                                   rtmin = NULL,
+                                   rtmax = NULL,
+                                   reduction = 0.1,
+                                   useMobility = TRUE,
+                                   xLab = NULL,
+                                   yLab = NULL,
+                                   zLab = NULL,
+                                   title = NULL,
+                                   groupBy = "analysis",
+                                   colorPalette = NULL) {
+      plot_spectra_bpc_3d.ProjectMassSpec(
+        self,
+        analyses = analyses,
+        levels = levels,
+        rtmin = rtmin,
+        rtmax = rtmax,
+        reduction = reduction,
+        useMobility = useMobility,
+        xLab = xLab,
+        yLab = yLab,
+        zLab = zLab,
+        title = title,
+        groupBy = groupBy,
+        colorPalette = colorPalette
+      )
+    },
+    #' @description Plot TIC overview as RT x mobility heatmap when ion mobility data is available.
+    #' @template arg-ProjectMassSpec-analyses
+    #' @template arg-ProjectMassSpec-levels
+    #' @template arg-ProjectMassSpec-rtmin
+    #' @template arg-ProjectMassSpec-rtmax
+    #' @template arg-ProjectMassSpec-reduction
+    #' @template arg-ProjectMassSpec-plot-xLab
+    #' @template arg-ProjectMassSpec-plot-yLab
+    #' @template arg-ProjectMassSpec-plot-title
+    #' @template arg-ProjectMassSpec-plot-groupBy
+    #' @template arg-ProjectMassSpec-plot-interactive
+    #' @template arg-ProjectMassSpec-plot-colors
+    #' @template arg-ProjectMassSpec-showLabels
+    plot_spectra_tic_heatmap = function(analyses = NULL,
+                                        levels = c(1, 2),
+                                        rtmin = NULL,
+                                        rtmax = NULL,
+                                        reduction = 0.1,
+                                        xLab = NULL,
+                                        yLab = NULL,
+                                        title = NULL,
+                                        groupBy = "analysis",
+                                        interactive = TRUE,
+                                        colors = NULL,
+                                        showLabels = FALSE) {
+      plot_spectra_tic_heatmap.ProjectMassSpec(
+        self,
+        analyses = analyses,
+        levels = levels,
+        rtmin = rtmin,
+        rtmax = rtmax,
+        reduction = reduction,
+        xLab = xLab,
+        yLab = yLab,
+        title = title,
+        groupBy = groupBy,
+        interactive = interactive,
+        colors = colors,
+        showLabels = showLabels
+      )
+    },
+    #' @description Plot BPC overview as RT x mobility heatmap when ion mobility data is available.
+    #' @template arg-ProjectMassSpec-analyses
+    #' @template arg-ProjectMassSpec-levels
+    #' @template arg-ProjectMassSpec-rtmin
+    #' @template arg-ProjectMassSpec-rtmax
+    #' @template arg-ProjectMassSpec-reduction
+    #' @template arg-ProjectMassSpec-plot-xLab
+    #' @template arg-ProjectMassSpec-plot-yLab
+    #' @template arg-ProjectMassSpec-plot-title
+    #' @template arg-ProjectMassSpec-plot-groupBy
+    #' @template arg-ProjectMassSpec-plot-interactive
+    #' @template arg-ProjectMassSpec-plot-colors
+    #' @template arg-ProjectMassSpec-showLabels
+    plot_spectra_bpc_heatmap = function(analyses = NULL,
+                                        levels = c(1, 2),
+                                        rtmin = NULL,
+                                        rtmax = NULL,
+                                        reduction = 0.1,
+                                        xLab = NULL,
+                                        yLab = NULL,
+                                        title = NULL,
+                                        groupBy = "analysis",
+                                        interactive = TRUE,
+                                        colors = NULL,
+                                        showLabels = TRUE) {
+      plot_spectra_bpc_heatmap.ProjectMassSpec(
+        self,
+        analyses = analyses,
+        levels = levels,
+        rtmin = rtmin,
+        rtmax = rtmax,
+        reduction = reduction,
+        xLab = xLab,
+        yLab = yLab,
+        title = title,
+        groupBy = groupBy,
+        interactive = interactive,
+        colors = colors,
+        showLabels = showLabels
+      )
     },
     #' @description Get extracted ion chromatograms for selected analyses.
     get_raw_spectra_eic = function(analyses = NULL,
@@ -225,6 +394,118 @@ ProjectMassSpec <- R6::R6Class(
                                     interactive = TRUE,
                                     colorPalette = NULL) {
       plot_raw_spectra_eic.ProjectMassSpec(self, analyses = analyses, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, id = id, downsize = downsize, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, interactive = interactive, colorPalette = colorPalette)
+    },
+    #' @description Plot extracted ion chromatograms as grouped 3D surfaces.
+    #' @template arg-ProjectMassSpec-analyses
+    #' @template arg-ProjectMassSpec-mass
+    #' @template arg-ProjectMassSpec-mz
+    #' @template arg-ProjectMassSpec-rt
+    #' @template arg-ProjectMassSpec-mobility
+    #' @template arg-ProjectMassSpec-ppm
+    #' @template arg-ProjectMassSpec-sec
+    #' @template arg-ProjectMassSpec-millisec
+    #' @template arg-ProjectMassSpec-id
+    #' @template arg-ProjectMassSpec-reduction
+    #' @template arg-ProjectMassSpec-useMobility
+    #' @template arg-ProjectMassSpec-plot-xLab
+    #' @template arg-ProjectMassSpec-plot-yLab
+    #' @template arg-ProjectMassSpec-plot-zLab
+    #' @template arg-ProjectMassSpec-plot-title
+    #' @template arg-ProjectMassSpec-plot-groupBy
+    #' @template arg-ProjectMassSpec-plot-colorPalette
+    plot_raw_spectra_eic_3d = function(analyses = NULL,
+                                       mass = NULL,
+                                       mz = NULL,
+                                       rt = NULL,
+                                       mobility = NULL,
+                                       ppm = 20,
+                                       sec = 60,
+                                       millisec = 5,
+                                       id = NULL,
+                                       reduction = 0.1,
+                                       useMobility = TRUE,
+                                       xLab = NULL,
+                                       yLab = NULL,
+                                       zLab = NULL,
+                                       title = NULL,
+                                       groupBy = c("analysis", "id"),
+                                       colorPalette = NULL) {
+      plot_raw_spectra_eic_3d.ProjectMassSpec(
+        self,
+        analyses = analyses,
+        mass = mass,
+        mz = mz,
+        rt = rt,
+        mobility = mobility,
+        ppm = ppm,
+        sec = sec,
+        millisec = millisec,
+        id = id,
+        reduction = reduction,
+        useMobility = useMobility,
+        xLab = xLab,
+        yLab = yLab,
+        zLab = zLab,
+        title = title,
+        groupBy = groupBy,
+        colorPalette = colorPalette
+      )
+    },
+    #' @description Plot extracted ion chromatograms as RT x mobility heatmaps for selected analyses and targets.
+    #' @template arg-ProjectMassSpec-analyses
+    #' @template arg-ProjectMassSpec-mass
+    #' @template arg-ProjectMassSpec-mz
+    #' @template arg-ProjectMassSpec-rt
+    #' @template arg-ProjectMassSpec-mobility
+    #' @template arg-ProjectMassSpec-ppm
+    #' @template arg-ProjectMassSpec-sec
+    #' @template arg-ProjectMassSpec-millisec
+    #' @template arg-ProjectMassSpec-id
+    #' @template arg-ProjectMassSpec-reduction
+    #' @template arg-ProjectMassSpec-plot-xLab
+    #' @template arg-ProjectMassSpec-plot-yLab
+    #' @template arg-ProjectMassSpec-plot-title
+    #' @template arg-ProjectMassSpec-plot-groupBy
+    #' @template arg-ProjectMassSpec-plot-interactive
+    #' @template arg-ProjectMassSpec-plot-colorPalette
+    #' @template arg-ProjectMassSpec-showLabels
+    plot_raw_spectra_eic_heatmap = function(analyses = NULL,
+                                            mass = NULL,
+                                            mz = NULL,
+                                            rt = NULL,
+                                            mobility = NULL,
+                                            ppm = 20,
+                                            sec = 60,
+                                            millisec = 5,
+                                            id = NULL,
+                                            reduction = 0.1,
+                                            xLab = NULL,
+                                            yLab = NULL,
+                                            title = NULL,
+                                            groupBy = c("analysis", "id"),
+                                            interactive = TRUE,
+                                            colorPalette = NULL,
+                                            showLabels = FALSE) {
+      plot_raw_spectra_eic_heatmap.ProjectMassSpec(
+        self,
+        analyses = analyses,
+        mass = mass,
+        mz = mz,
+        rt = rt,
+        mobility = mobility,
+        ppm = ppm,
+        sec = sec,
+        millisec = millisec,
+        id = id,
+        reduction = reduction,
+        xLab = xLab,
+        yLab = yLab,
+        title = title,
+        groupBy = groupBy,
+        interactive = interactive,
+        colorPalette = colorPalette,
+        showLabels = showLabels
+      )
     },
     #' @description Get clustered MS1 spectra for selected analyses.
     get_raw_spectra_ms1 = function(analyses = NULL,
@@ -340,17 +621,22 @@ ProjectMassSpec <- R6::R6Class(
 #' @template arg-ProjectMassSpec-plot-downsize
 #' @template arg-ProjectMassSpec-plot-xLab
 #' @template arg-ProjectMassSpec-plot-yLab
+#' @template arg-ProjectMassSpec-plot-zLab
 #' @template arg-ProjectMassSpec-plot-title
 #' @template arg-ProjectMassSpec-plot-groupBy
 #' @template arg-ProjectMassSpec-plot-interactive
 #' @template arg-ProjectMassSpec-plot-colorPalette
+#' @template arg-ProjectMassSpec-plot-colors
 #' @template arg-ProjectMassSpec-normalized
 #' @template arg-ProjectMassSpec-showText
+#' @template arg-ProjectMassSpec-showLabels
 #' @template arg-Project-db
 #' @template arg-Project-project-id
 #' @template arg-ProjectMassSpec-mzClust
 #' @template arg-ProjectMassSpec-presence
+#' @template arg-ProjectMassSpec-reduction
 #' @template arg-ProjectMassSpec-minIntensity
+#' @template arg-ProjectMassSpec-useMobility
 #' @template arg-Project-ellipsis
 #' @template arg-ProjectMassSpec-import-file
 #' @template arg-ProjectMassSpec-analysis
@@ -507,6 +793,315 @@ get_spectra_headers.ProjectMassSpec <- function(x, analyses = character()) {
   hd
 }
 
+.prepare_spectra_heatmap_headers <- function(x,
+                                             analyses = character(),
+                                             levels = c(1, 2),
+                                             rtmin = numeric(),
+                                             rtmax = numeric()) {
+  analyses_info <- data.table::as.data.table(get_analyses.ProjectMassSpec(x))
+  hd <- data.table::as.data.table(get_spectra_headers.ProjectMassSpec(x, analyses = analyses))
+  if (nrow(hd) == 0) {
+    return(list(headers = hd, has_im = FALSE))
+  }
+
+  im_by_analysis <- analyses_info$has_ion_mobility
+  names(im_by_analysis) <- analyses_info$analysis
+  has_im <- any(isTRUE(im_by_analysis[unique(hd$analysis)]), na.rm = TRUE)
+
+  if (length(levels) > 0) {
+    hd <- hd[level %in% as.integer(levels)]
+  }
+  if (length(rtmin) > 0) {
+    hd <- hd[rt >= min(as.numeric(rtmin), na.rm = TRUE)]
+  }
+  if (length(rtmax) > 0) {
+    hd <- hd[rt <= max(as.numeric(rtmax), na.rm = TRUE)]
+  }
+
+  list(headers = hd, has_im = has_im)
+}
+
+.resolve_spectra_heatmap_bins <- function(headers,
+                                          reduction = 0.1,
+                                          minBins = 25L,
+                                          maxBins = 1000L) {
+  reduction_val <- as.numeric(reduction)[1]
+  if (!is.finite(reduction_val) || reduction_val <= 0) {
+    stop("reduction must be a positive numeric value.")
+  }
+  if (reduction_val > 1) {
+    reduction_val <- reduction_val / 100
+  }
+  reduction_val <- min(reduction_val, 1)
+
+  dt <- data.table::as.data.table(headers)[is.finite(rt) & is.finite(mobility)]
+  rt_unique <- uniqueN(dt$rt)
+  mobility_unique <- uniqueN(dt$mobility)
+
+  rtBins <- max(minBins, min(maxBins, ceiling(rt_unique * reduction_val)))
+  mobilityBins <- max(minBins, min(maxBins, ceiling(mobility_unique * reduction_val)))
+
+  list(rtBins = as.integer(rtBins), mobilityBins = as.integer(mobilityBins))
+}
+
+.resolve_heatmap_trace_id <- function(data, groupBy) {
+  dt <- data.table::as.data.table(data)
+  if (is.null(groupBy) || length(groupBy) == 0) {
+    dt[, trace_id := "all"]
+    return(dt)
+  }
+  if (!(is.character(groupBy) && all(groupBy %in% colnames(dt)))) {
+    stop("groupBy columns not found in data: ", paste(setdiff(groupBy, colnames(dt)), collapse = ", "))
+  }
+  vals <- lapply(groupBy, function(col) as.character(dt[[col]]))
+  dt[, trace_id := do.call(paste, c(vals, sep = " - "))]
+  dt
+}
+
+.resolve_surface_axis <- function(data, useMobility = TRUE, mzVar = "mz") {
+  dt <- data.table::as.data.table(data)
+  if (isTRUE(useMobility)) {
+    if (!"mobility" %in% colnames(dt) || !any(is.finite(dt$mobility) & dt$mobility > 0, na.rm = TRUE)) {
+      stop("Ion mobility requested for the y axis, but no mobility values were found.")
+    }
+    return(list(var = "mobility", label = "Mobility"))
+  }
+  if (!mzVar %in% colnames(dt)) {
+    stop("Column '", mzVar, "' not found for the y axis.")
+  }
+  list(var = mzVar, label = if (mzVar %in% c("mz", "bpmz")) "m/z" else mzVar)
+}
+
+.bin_grouped_rt_mobility_heatmap <- function(data,
+                                             zvar,
+                                             reduction = 0.1,
+                                             groupBy = "analysis",
+                                             aggregate = c("sum", "max"),
+                                             label_builder = NULL) {
+  aggregate <- match.arg(aggregate)
+  dt <- data.table::as.data.table(data)[
+    is.finite(rt) & is.finite(mobility) & is.finite(get(zvar))
+  ]
+  if (nrow(dt) == 0) {
+    return(data.table::data.table())
+  }
+
+  dt <- .resolve_heatmap_trace_id(dt, groupBy)
+  bins <- .resolve_spectra_heatmap_bins(dt, reduction = reduction)
+  rt_breaks <- seq(min(dt$rt), max(dt$rt), length.out = bins$rtBins + 1L)
+  mobility_breaks <- seq(min(dt$mobility), max(dt$mobility), length.out = bins$mobilityBins + 1L)
+  rt_centers <- (rt_breaks[-1L] + rt_breaks[-length(rt_breaks)]) / 2
+  mobility_centers <- (mobility_breaks[-1L] + mobility_breaks[-length(mobility_breaks)]) / 2
+
+  dt[, rt_bin := findInterval(rt, rt_breaks, rightmost.closed = TRUE)]
+  dt[, mobility_bin := findInterval(mobility, mobility_breaks, rightmost.closed = TRUE)]
+  dt <- dt[
+    rt_bin >= 1L & rt_bin <= bins$rtBins &
+      mobility_bin >= 1L & mobility_bin <= bins$mobilityBins
+  ]
+  if (nrow(dt) == 0) {
+    return(data.table::data.table())
+  }
+
+  if (aggregate == "sum") {
+    out <- dt[
+      ,
+      .(
+        rt = rt_centers[rt_bin[1]],
+        mobility = mobility_centers[mobility_bin[1]],
+        value = sum(get(zvar), na.rm = TRUE)
+      ),
+      by = .(trace_id, mobility_bin, rt_bin)
+    ]
+  } else {
+    out <- dt[
+      ,
+      .SD[which.max(get(zvar))],
+      by = .(trace_id, mobility_bin, rt_bin)
+    ][
+      ,
+      .(
+        trace_id,
+        rt = rt_centers[rt_bin],
+        mobility = mobility_centers[mobility_bin],
+        value = get(zvar),
+        bpmz = if ("bpmz" %in% colnames(dt)) bpmz else NA_real_
+      )
+    ]
+  }
+
+  data.table::setnames(out, "value", zvar)
+  if (!is.null(label_builder)) {
+    out[, bin_label := label_builder(.SD)]
+  } else {
+    out[, bin_label := sprintf("%s %.0f", zvar, get(zvar))]
+  }
+  out
+}
+
+.bin_grouped_3d_surface <- function(data,
+                                    zvar,
+                                    yvar,
+                                    reduction = 0.1,
+                                    groupBy = "analysis",
+                                    aggregate = c("sum", "max")) {
+  aggregate <- match.arg(aggregate)
+  dt <- data.table::as.data.table(data)[
+    is.finite(rt) & is.finite(get(yvar)) & is.finite(get(zvar))
+  ]
+  if (nrow(dt) == 0) {
+    return(data.table::data.table())
+  }
+  dt <- .resolve_heatmap_trace_id(dt, groupBy)
+
+  reduction_val <- as.numeric(reduction)[1]
+  if (!is.finite(reduction_val) || reduction_val <= 0) {
+    stop("reduction must be a positive numeric value.")
+  }
+  if (reduction_val > 1) {
+    reduction_val <- reduction_val / 100
+  }
+  reduction_val <- min(reduction_val, 1)
+
+  rt_bins <- max(25L, min(1000L, ceiling(data.table::uniqueN(dt$rt) * reduction_val)))
+  y_bins <- max(25L, min(1000L, ceiling(data.table::uniqueN(dt[[yvar]]) * reduction_val)))
+  rt_breaks <- seq(min(dt$rt), max(dt$rt), length.out = rt_bins + 1L)
+  y_breaks <- seq(min(dt[[yvar]]), max(dt[[yvar]]), length.out = y_bins + 1L)
+  rt_centers <- (rt_breaks[-1L] + rt_breaks[-length(rt_breaks)]) / 2
+  y_centers <- (y_breaks[-1L] + y_breaks[-length(y_breaks)]) / 2
+
+  dt[, rt_bin := findInterval(rt, rt_breaks, rightmost.closed = TRUE)]
+  dt[, y_bin := findInterval(get(yvar), y_breaks, rightmost.closed = TRUE)]
+  dt <- dt[
+    rt_bin >= 1L & rt_bin <= rt_bins &
+      y_bin >= 1L & y_bin <= y_bins
+  ]
+  if (nrow(dt) == 0) {
+    return(data.table::data.table())
+  }
+
+  if (aggregate == "sum") {
+    out <- dt[
+      ,
+      .(
+        rt = rt_centers[rt_bin[1]],
+        y_value = y_centers[y_bin[1]],
+        value = sum(get(zvar), na.rm = TRUE)
+      ),
+      by = .(trace_id, rt_bin, y_bin)
+    ]
+  } else {
+    out <- dt[
+      ,
+      .SD[which.max(get(zvar))],
+      by = .(trace_id, rt_bin, y_bin)
+    ][
+      ,
+      .(
+        trace_id,
+        rt = rt_centers[rt_bin],
+        y_value = y_centers[y_bin],
+        value = get(zvar)
+      )
+    ]
+  }
+  data.table::setnames(out, "value", zvar)
+  out
+}
+
+.bin_spectra_heatmap_tic <- function(headers, reduction = 0.1, groupBy = "analysis") {
+  dt <- data.table::as.data.table(headers)[
+    is.finite(rt) & is.finite(mobility) & is.finite(tic)
+  ]
+  if (nrow(dt) == 0) {
+    return(data.table::data.table())
+  }
+  .bin_grouped_rt_mobility_heatmap(
+    data = dt,
+    zvar = "tic",
+    reduction = reduction,
+    groupBy = groupBy,
+    aggregate = "sum",
+    label_builder = function(x) sprintf("tic %.0f", x$tic)
+  )
+}
+
+.bin_spectra_heatmap_bpc <- function(headers, reduction = 0.1, groupBy = "analysis") {
+  dt <- data.table::as.data.table(headers)[
+    is.finite(rt) & is.finite(mobility) & is.finite(bpint) & is.finite(bpmz)
+  ]
+  if (nrow(dt) == 0) {
+    return(data.table::data.table())
+  }
+  .bin_grouped_rt_mobility_heatmap(
+    data = dt,
+    zvar = "bpint",
+    reduction = reduction,
+    groupBy = groupBy,
+    aggregate = "max",
+    label_builder = function(x) sprintf("m/z %.4f<br>bpint %.0f", x$bpmz, x$bpint)
+  )
+}
+
+.bin_raw_spectra_eic_heatmap <- function(eic, reduction = 0.1, groupBy = c("analysis", "id")) {
+  dt <- data.table::as.data.table(eic)[
+    is.finite(rt) & is.finite(mobility) & is.finite(intensity)
+  ]
+  if (nrow(dt) == 0) {
+    return(data.table::data.table())
+  }
+  .bin_grouped_rt_mobility_heatmap(
+    data = dt,
+    zvar = "intensity",
+    reduction = reduction,
+    groupBy = groupBy,
+    aggregate = "sum",
+    label_builder = function(x) sprintf("intensity %.0f", x$intensity)
+  )
+}
+
+.plot_raw_spectra_eic_from_data <- function(eic,
+                                            downsize = NULL,
+                                            xLab = NULL,
+                                            yLab = NULL,
+                                            title = NULL,
+                                            groupBy = c("analysis", "id"),
+                                            interactive = TRUE,
+                                            colorPalette = NULL) {
+  if (nrow(eic) == 0) {
+    message("\U2717 EIC not found for the analyses!")
+    return(NULL)
+  }
+  if (!is.null(downsize) && downsize > 0 && nrow(eic) > downsize) {
+    eic <- data.table::as.data.table(eic)
+    eic$rt <- floor(eic$rt / downsize) * downsize
+    group_cols <- c("rt", "analysis", "id")
+    eic <- eic[, lapply(.SD, function(col) {
+      if (is.numeric(col)) {
+        mean(col, na.rm = TRUE)
+      } else if (is.character(col)) {
+        col[1]
+      } else {
+        col[1]
+      }
+    }), by = group_cols]
+  }
+  if (is.null(xLab)) xLab <- "Retention time / seconds"
+  if (is.null(yLab)) yLab <- "Intensity / counts"
+  .plot_lines_tabular_data(
+    data = eic,
+    xvar = "rt",
+    yvar = "intensity",
+    groupBy = groupBy,
+    basicGroupBy = c("analysis", "id"),
+    interactive = interactive,
+    title = title,
+    xLab = xLab,
+    yLab = yLab,
+    colorPalette = colorPalette
+  )
+}
+
 #' @describeIn ProjectMassSpecS3 Return spectra TIC rows for selected analyses.
 #' @method get_spectra_tic ProjectMassSpec
 #' @export
@@ -629,6 +1224,234 @@ plot_spectra_bpc.ProjectMassSpec <- function(
     title = title,
     xLab = xLab,
     yLab = yLab,
+    colorPalette = colorPalette
+  )
+}
+
+#' @describeIn ProjectMassSpecS3 Plot TIC heatmap overview for ion mobility data.
+#' @method plot_spectra_tic_heatmap ProjectMassSpec
+#' @export
+plot_spectra_tic_heatmap.ProjectMassSpec <- function(
+  x,
+  analyses = character(),
+  levels = c(1, 2),
+  rtmin = numeric(),
+  rtmax = numeric(),
+  reduction = 0.1,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colors = NULL,
+  showLabels = FALSE
+) {
+  checkmate::assert_class(x, "ProjectMassSpec")
+  prepared <- .prepare_spectra_heatmap_headers(x, analyses, levels, rtmin, rtmax)
+  if (!prepared$has_im) {
+    return(plot_spectra_tic.ProjectMassSpec(
+      x,
+      analyses = analyses,
+      levels = levels,
+      rtmin = rtmin,
+      rtmax = rtmax,
+      xLab = xLab,
+      yLab = yLab,
+      title = title,
+      groupBy = groupBy,
+      interactive = interactive
+    ))
+  }
+  binned <- .bin_spectra_heatmap_tic(prepared$headers, reduction = reduction, groupBy = groupBy)
+  if (nrow(binned) == 0) {
+    message("\U2717 TIC heatmap not available for the analyses!")
+    return(NULL)
+  }
+  if (is.null(xLab)) xLab <- "Retention time / seconds"
+  if (is.null(yLab)) yLab <- "Mobility"
+  if (is.null(title)) title <- "Spectra TIC Heatmap"
+  .plot_grouped_binned_heatmap_tabular_data(
+    data = binned,
+    xvar = "rt",
+    yvar = "mobility",
+    zvar = "tic",
+    tracevar = "trace_id",
+    labelvar = "bin_label",
+    interactive = interactive,
+    title = title,
+    xLab = xLab,
+    yLab = yLab,
+    colorPalette = colors,
+    showLabels = showLabels
+  )
+}
+
+#' @describeIn ProjectMassSpecS3 Plot TIC overview as grouped 3D surfaces.
+#' @method plot_spectra_tic_3d ProjectMassSpec
+#' @export
+plot_spectra_tic_3d.ProjectMassSpec <- function(
+  x,
+  analyses = character(),
+  levels = c(1, 2),
+  rtmin = numeric(),
+  rtmax = numeric(),
+  reduction = 0.1,
+  useMobility = TRUE,
+  xLab = NULL,
+  yLab = NULL,
+  zLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  colorPalette = NULL
+) {
+  checkmate::assert_class(x, "ProjectMassSpec")
+  prepared <- .prepare_spectra_heatmap_headers(x, analyses, levels, rtmin, rtmax)
+  tic <- data.table::as.data.table(prepared$headers)
+  if (nrow(tic) == 0) {
+    message("\U2717 TIC not found for the analyses!")
+    return(NULL)
+  }
+  axis_spec <- .resolve_surface_axis(tic, useMobility = useMobility, mzVar = "bpmz")
+  binned <- .bin_grouped_3d_surface(
+    data = tic,
+    zvar = "tic",
+    yvar = axis_spec$var,
+    reduction = reduction,
+    groupBy = groupBy,
+    aggregate = "sum"
+  )
+  if (nrow(binned) == 0) {
+    message("\U2717 TIC 3D surface not available for the analyses!")
+    return(NULL)
+  }
+  if (is.null(xLab)) xLab <- "Retention time / seconds"
+  if (is.null(yLab)) yLab <- axis_spec$label
+  if (is.null(zLab)) zLab <- "Intensity / counts"
+  if (is.null(title)) title <- "Spectra TIC 3D Surface"
+  .plot_grouped_3d_surface_tabular_data(
+    data = binned,
+    xvar = "rt",
+    yvar = "y_value",
+    zvar = "tic",
+    tracevar = "trace_id",
+    title = title,
+    xLab = xLab,
+    yLab = yLab,
+    zLab = zLab,
+    colorPalette = colorPalette
+  )
+}
+
+#' @describeIn ProjectMassSpecS3 Plot BPC heatmap overview for ion mobility data.
+#' @method plot_spectra_bpc_heatmap ProjectMassSpec
+#' @export
+plot_spectra_bpc_heatmap.ProjectMassSpec <- function(
+  x,
+  analyses = character(),
+  levels = c(1, 2),
+  rtmin = numeric(),
+  rtmax = numeric(),
+  reduction = 0.1,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colors = NULL,
+  showLabels = TRUE
+) {
+  checkmate::assert_class(x, "ProjectMassSpec")
+  prepared <- .prepare_spectra_heatmap_headers(x, analyses, levels, rtmin, rtmax)
+  if (!prepared$has_im) {
+    return(plot_spectra_bpc.ProjectMassSpec(
+      x,
+      analyses = analyses,
+      levels = levels,
+      rtmin = rtmin,
+      rtmax = rtmax,
+      xLab = xLab,
+      yLab = yLab,
+      title = title,
+      groupBy = groupBy,
+      interactive = interactive
+    ))
+  }
+  binned <- .bin_spectra_heatmap_bpc(prepared$headers, reduction = reduction, groupBy = groupBy)
+  if (nrow(binned) == 0) {
+    message("\U2717 BPC heatmap not available for the analyses!")
+    return(NULL)
+  }
+  if (is.null(xLab)) xLab <- "Retention time / seconds"
+  if (is.null(yLab)) yLab <- "Mobility"
+  if (is.null(title)) title <- "Spectra BPC Heatmap"
+  .plot_grouped_binned_heatmap_tabular_data(
+    data = binned,
+    xvar = "rt",
+    yvar = "mobility",
+    zvar = "bpint",
+    tracevar = "trace_id",
+    labelvar = "bin_label",
+    interactive = interactive,
+    title = title,
+    xLab = xLab,
+    yLab = yLab,
+    colorPalette = colors,
+    showLabels = showLabels
+  )
+}
+
+#' @describeIn ProjectMassSpecS3 Plot BPC overview as grouped 3D surfaces.
+#' @method plot_spectra_bpc_3d ProjectMassSpec
+#' @export
+plot_spectra_bpc_3d.ProjectMassSpec <- function(
+  x,
+  analyses = character(),
+  levels = c(1, 2),
+  rtmin = numeric(),
+  rtmax = numeric(),
+  reduction = 0.1,
+  useMobility = TRUE,
+  xLab = NULL,
+  yLab = NULL,
+  zLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  colorPalette = NULL
+) {
+  checkmate::assert_class(x, "ProjectMassSpec")
+  prepared <- .prepare_spectra_heatmap_headers(x, analyses, levels, rtmin, rtmax)
+  bpc <- data.table::as.data.table(prepared$headers)
+  if (nrow(bpc) == 0) {
+    message("\U2717 BPC not found for the analyses!")
+    return(NULL)
+  }
+  axis_spec <- .resolve_surface_axis(bpc, useMobility = useMobility, mzVar = "bpmz")
+  binned <- .bin_grouped_3d_surface(
+    data = bpc,
+    zvar = "bpint",
+    yvar = axis_spec$var,
+    reduction = reduction,
+    groupBy = groupBy,
+    aggregate = "max"
+  )
+  if (nrow(binned) == 0) {
+    message("\U2717 BPC 3D surface not available for the analyses!")
+    return(NULL)
+  }
+  if (is.null(xLab)) xLab <- "Retention time / seconds"
+  if (is.null(yLab)) yLab <- axis_spec$label
+  if (is.null(zLab)) zLab <- "Intensity / counts"
+  if (is.null(title)) title <- "Spectra BPC 3D Surface"
+  .plot_grouped_3d_surface_tabular_data(
+    data = binned,
+    xvar = "rt",
+    yvar = "y_value",
+    zvar = "bpint",
+    tracevar = "trace_id",
+    title = title,
+    xLab = xLab,
+    yLab = yLab,
+    zLab = zLab,
     colorPalette = colorPalette
   )
 }
@@ -777,36 +1600,139 @@ plot_raw_spectra_eic.ProjectMassSpec <- function(
 ) {
   checkmate::assert_class(x, "ProjectMassSpec")
   eic <- get_raw_spectra_eic.ProjectMassSpec(x, analyses, mass, mz, rt, mobility, ppm, sec, millisec, id)
+  .plot_raw_spectra_eic_from_data(
+    eic = eic,
+    downsize = downsize,
+    xLab = xLab,
+    yLab = yLab,
+    title = title,
+    groupBy = groupBy,
+    interactive = interactive,
+    colorPalette = colorPalette
+  )
+}
+
+#' @describeIn ProjectMassSpecS3 Plot extracted ion chromatograms (EIC) as RT x mobility heatmaps.
+#' @method plot_raw_spectra_eic_heatmap ProjectMassSpec
+#' @export
+plot_raw_spectra_eic_heatmap.ProjectMassSpec <- function(
+  x,
+  analyses = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = NULL,
+  reduction = 0.1,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = c("analysis", "id"),
+  interactive = TRUE,
+  colorPalette = NULL,
+  showLabels = FALSE
+) {
+  checkmate::assert_class(x, "ProjectMassSpec")
+  eic <- get_raw_spectra_eic.ProjectMassSpec(x, analyses, mass, mz, rt, mobility, ppm, sec, millisec, id)
   if (nrow(eic) == 0) {
     message("\U2717 EIC not found for the analyses!")
     return(NULL)
   }
-  if (!is.null(downsize) && downsize > 0 && nrow(eic) > downsize) {
-    eic <- data.table::as.data.table(eic)
-    eic$rt <- floor(eic$rt / downsize) * downsize
-    group_cols <- c("rt", "analysis", "id")
-    eic <- eic[, lapply(.SD, function(col) {
-      if (is.numeric(col)) {
-        mean(col, na.rm = TRUE)
-      } else if (is.character(col)) {
-        col[1]
-      } else {
-        col[1]
-      }
-    }), by = group_cols]
+  if (!"mobility" %in% colnames(eic) || !any(is.finite(eic$mobility) & eic$mobility > 0, na.rm = TRUE)) {
+    return(.plot_raw_spectra_eic_from_data(
+      eic = eic,
+      xLab = xLab,
+      yLab = yLab,
+      title = title,
+      downsize = NULL,
+      groupBy = groupBy,
+      interactive = interactive,
+      colorPalette = colorPalette
+    ))
+  }
+  binned <- .bin_raw_spectra_eic_heatmap(eic, reduction = reduction, groupBy = groupBy)
+  if (nrow(binned) == 0) {
+    message("\U2717 EIC heatmap not available for the analyses!")
+    return(NULL)
   }
   if (is.null(xLab)) xLab <- "Retention time / seconds"
-  if (is.null(yLab)) yLab <- "Intensity / counts"
-  .plot_lines_tabular_data(
-    data = eic,
+  if (is.null(yLab)) yLab <- "Mobility"
+  if (is.null(title)) title <- "Extracted Ion Chromatogram Heatmap"
+  .plot_grouped_binned_heatmap_tabular_data(
+    data = binned,
     xvar = "rt",
-    yvar = "intensity",
-    groupBy = groupBy,
-    basicGroupBy = c("analysis", "id"),
+    yvar = "mobility",
+    zvar = "intensity",
+    tracevar = "trace_id",
+    labelvar = "bin_label",
     interactive = interactive,
     title = title,
     xLab = xLab,
     yLab = yLab,
+    colorPalette = colorPalette,
+    showLabels = showLabels
+  )
+}
+
+#' @describeIn ProjectMassSpecS3 Plot extracted ion chromatograms as grouped 3D surfaces.
+#' @method plot_raw_spectra_eic_3d ProjectMassSpec
+#' @export
+plot_raw_spectra_eic_3d.ProjectMassSpec <- function(
+  x,
+  analyses = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  id = NULL,
+  reduction = 0.1,
+  useMobility = TRUE,
+  xLab = NULL,
+  yLab = NULL,
+  zLab = NULL,
+  title = NULL,
+  groupBy = c("analysis", "id"),
+  colorPalette = NULL
+) {
+  checkmate::assert_class(x, "ProjectMassSpec")
+  eic <- get_raw_spectra_eic.ProjectMassSpec(x, analyses, mass, mz, rt, mobility, ppm, sec, millisec, id)
+  if (nrow(eic) == 0) {
+    message("\U2717 EIC not found for the analyses!")
+    return(NULL)
+  }
+  axis_spec <- .resolve_surface_axis(eic, useMobility = useMobility, mzVar = "mz")
+  binned <- .bin_grouped_3d_surface(
+    data = eic,
+    zvar = "intensity",
+    yvar = axis_spec$var,
+    reduction = reduction,
+    groupBy = groupBy,
+    aggregate = "max"
+  )
+  if (nrow(binned) == 0) {
+    message("\U2717 EIC 3D surface not available for the analyses!")
+    return(NULL)
+  }
+  if (is.null(xLab)) xLab <- "Retention time / seconds"
+  if (is.null(yLab)) yLab <- axis_spec$label
+  if (is.null(zLab)) zLab <- "Intensity / counts"
+  if (is.null(title)) title <- "Extracted Ion Chromatogram 3D Surface"
+  .plot_grouped_3d_surface_tabular_data(
+    data = binned,
+    xvar = "rt",
+    yvar = "y_value",
+    zvar = "intensity",
+    tracevar = "trace_id",
+    title = title,
+    xLab = xLab,
+    yLab = yLab,
+    zLab = zLab,
     colorPalette = colorPalette
   )
 }

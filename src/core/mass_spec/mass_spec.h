@@ -389,6 +389,7 @@ namespace mass_spec
       int polarity = 0;
       int level = 0;
       double rt = 0.0;
+      double mobility = 0.0;
       double tic = 0.0;
       double bpmz = 0.0;
       double bpint = 0.0;

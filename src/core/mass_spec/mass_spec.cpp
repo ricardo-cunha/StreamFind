@@ -1267,85 +1267,154 @@ namespace mass_spec
       return out;
     }
 
+    namespace
+    {
+      struct APPENDER_GUARD
+      {
+        explicit APPENDER_GUARD(duckdb_appender *appender) : appender_(appender) {}
+
+        ~APPENDER_GUARD()
+        {
+          if (appender_ && *appender_)
+          {
+            duckdb_appender_destroy(appender_);
+          }
+        }
+
+      private:
+        duckdb_appender *appender_;
+      };
+
+      std::string appender_error_message(duckdb_appender appender)
+      {
+        const char *message = duckdb_appender_error(appender);
+        return message ? std::string(message) : std::string("unknown DuckDB appender error");
+      }
+
+      void check_append_state(duckdb_state state, duckdb_appender appender, const char *context)
+      {
+        if (state == DuckDBError)
+        {
+          throw project::error::ERROR(project::error::ERROR_CODE::DuckDB,
+                                      std::string(context) + ": " + appender_error_message(appender));
+        }
+      }
+
+      void append_optional_varchar(duckdb_appender appender, const std::string &value, const char *context)
+      {
+        if (value.empty())
+        {
+          check_append_state(duckdb_append_null(appender), appender, context);
+          return;
+        }
+        check_append_state(duckdb_append_varchar(appender, value.c_str()), appender, context);
+      }
+    }
+
     void insert_analysis_table(duckdb_connection con, const MS_ANALYSES_TABLE &analyses)
     {
+      duckdb_appender appender = nullptr;
+      if (duckdb_appender_create(con, nullptr, "MS_ANALYSES", &appender) == DuckDBError)
+      {
+        throw project::error::ERROR(project::error::ERROR_CODE::DuckDB, "create MS_ANALYSES appender failed");
+      }
+      APPENDER_GUARD appender_guard(&appender);
+
       for (std::size_t i = 0; i < analyses.analysis.size(); ++i)
       {
-        project::db::run_prepared(con, "INSERT INTO MS_ANALYSES (project_id, analysis, replicate, blank, file_name, file_path, file_dir, file_extension, format, type, time_stamp, number_spectra, number_chromatograms, number_spectra_binary_arrays, min_mz, max_mz, start_rt, end_rt, has_ion_mobility, concentration) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", "insert MS analysis", [&](duckdb_prepared_statement statement)
-                                  {
-                           duckdb_bind_varchar(statement, 1, analyses.project_id[i].c_str());
-                           duckdb_bind_varchar(statement, 2, analyses.analysis[i].c_str());
-                           project::db::bind_optional_varchar(statement, 3, analyses.replicate[i]);
-                           project::db::bind_optional_varchar(statement, 4, analyses.blank[i]);
-                           project::db::bind_optional_varchar(statement, 5, analyses.file_name[i]);
-                           duckdb_bind_varchar(statement, 6, analyses.file_path[i].c_str());
-                           project::db::bind_optional_varchar(statement, 7, analyses.file_dir[i]);
-                           project::db::bind_optional_varchar(statement, 8, analyses.file_extension[i]);
-                           project::db::bind_optional_varchar(statement, 9, analyses.format[i]);
-                           project::db::bind_optional_varchar(statement, 10, analyses.type[i]);
-                           project::db::bind_optional_varchar(statement, 11, analyses.time_stamp[i]);
-                           duckdb_bind_int32(statement, 12, analyses.number_spectra[i]);
-                           duckdb_bind_int32(statement, 13, analyses.number_chromatograms[i]);
-                           duckdb_bind_int32(statement, 14, analyses.number_spectra_binary_arrays[i]);
-                           duckdb_bind_double(statement, 15, analyses.min_mz[i]);
-                           duckdb_bind_double(statement, 16, analyses.max_mz[i]);
-                           duckdb_bind_double(statement, 17, analyses.start_rt[i]);
-                           duckdb_bind_double(statement, 18, analyses.end_rt[i]);
-                           duckdb_bind_boolean(statement, 19, analyses.has_ion_mobility[i]);
-                           duckdb_bind_double(statement, 20, analyses.concentration[i]); }, [](duckdb_result &) {});
+        check_append_state(duckdb_appender_begin_row(appender), appender, "begin MS_ANALYSES row");
+        check_append_state(duckdb_append_varchar(appender, analyses.project_id[i].c_str()), appender, "append MS_ANALYSES project_id");
+        check_append_state(duckdb_append_varchar(appender, analyses.analysis[i].c_str()), appender, "append MS_ANALYSES analysis");
+        append_optional_varchar(appender, analyses.replicate[i], "append MS_ANALYSES replicate");
+        append_optional_varchar(appender, analyses.blank[i], "append MS_ANALYSES blank");
+        append_optional_varchar(appender, analyses.file_name[i], "append MS_ANALYSES file_name");
+        check_append_state(duckdb_append_varchar(appender, analyses.file_path[i].c_str()), appender, "append MS_ANALYSES file_path");
+        append_optional_varchar(appender, analyses.file_dir[i], "append MS_ANALYSES file_dir");
+        append_optional_varchar(appender, analyses.file_extension[i], "append MS_ANALYSES file_extension");
+        append_optional_varchar(appender, analyses.format[i], "append MS_ANALYSES format");
+        append_optional_varchar(appender, analyses.type[i], "append MS_ANALYSES type");
+        append_optional_varchar(appender, analyses.time_stamp[i], "append MS_ANALYSES time_stamp");
+        check_append_state(duckdb_append_int32(appender, analyses.number_spectra[i]), appender, "append MS_ANALYSES number_spectra");
+        check_append_state(duckdb_append_int32(appender, analyses.number_chromatograms[i]), appender, "append MS_ANALYSES number_chromatograms");
+        check_append_state(duckdb_append_int32(appender, analyses.number_spectra_binary_arrays[i]), appender, "append MS_ANALYSES number_spectra_binary_arrays");
+        check_append_state(duckdb_append_double(appender, analyses.min_mz[i]), appender, "append MS_ANALYSES min_mz");
+        check_append_state(duckdb_append_double(appender, analyses.max_mz[i]), appender, "append MS_ANALYSES max_mz");
+        check_append_state(duckdb_append_double(appender, analyses.start_rt[i]), appender, "append MS_ANALYSES start_rt");
+        check_append_state(duckdb_append_double(appender, analyses.end_rt[i]), appender, "append MS_ANALYSES end_rt");
+        check_append_state(duckdb_append_bool(appender, analyses.has_ion_mobility[i]), appender, "append MS_ANALYSES has_ion_mobility");
+        check_append_state(duckdb_append_double(appender, analyses.concentration[i]), appender, "append MS_ANALYSES concentration");
+        check_append_state(duckdb_append_default(appender), appender, "append MS_ANALYSES created_at default");
+        check_append_state(duckdb_appender_end_row(appender), appender, "end MS_ANALYSES row");
       }
+      check_append_state(duckdb_appender_close(appender), appender, "close MS_ANALYSES appender");
     }
 
     void insert_spectra_headers_table(duckdb_connection con, const MS_SPECTRA_HEADERS_TABLE &spectra_headers)
     {
+      duckdb_appender appender = nullptr;
+      if (duckdb_appender_create(con, nullptr, "MS_SPECTRA_HEADERS", &appender) == DuckDBError)
+      {
+        throw project::error::ERROR(project::error::ERROR_CODE::DuckDB, "create MS_SPECTRA_HEADERS appender failed");
+      }
+      APPENDER_GUARD appender_guard(&appender);
+
       const std::size_t count = static_cast<std::size_t>(spectra_headers.size());
       for (std::size_t i = 0; i < count; ++i)
       {
-        project::db::run_prepared(con, "INSERT INTO MS_SPECTRA_HEADERS (project_id, analysis, index, scan, array_length, level, mode, polarity, configuration, lowmz, highmz, bpmz, bpint, tic, rt, mobility, window_mz, window_mzlow, window_mzhigh, precursor_mz, precursor_intensity, precursor_charge, activation_ce) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", "insert MS spectrum header", [&](duckdb_prepared_statement statement)
-                                  {
-                           duckdb_bind_varchar(statement, 1, spectra_headers.project_id[i].c_str());
-                           duckdb_bind_varchar(statement, 2, spectra_headers.analysis[i].c_str());
-                           duckdb_bind_int32(statement, 3, spectra_headers.index[i]);
-                           duckdb_bind_int32(statement, 4, spectra_headers.scan[i]);
-                           duckdb_bind_int32(statement, 5, spectra_headers.array_length[i]);
-                           duckdb_bind_int32(statement, 6, spectra_headers.level[i]);
-                           duckdb_bind_int32(statement, 7, spectra_headers.mode[i]);
-                           duckdb_bind_int32(statement, 8, spectra_headers.polarity[i]);
-                           duckdb_bind_int32(statement, 9, spectra_headers.configuration[i]);
-                           duckdb_bind_double(statement, 10, spectra_headers.lowmz[i]);
-                           duckdb_bind_double(statement, 11, spectra_headers.highmz[i]);
-                           duckdb_bind_double(statement, 12, spectra_headers.bpmz[i]);
-                           duckdb_bind_double(statement, 13, spectra_headers.bpint[i]);
-                           duckdb_bind_double(statement, 14, spectra_headers.tic[i]);
-                           duckdb_bind_double(statement, 15, spectra_headers.rt[i]);
-                           duckdb_bind_double(statement, 16, spectra_headers.mobility[i]);
-                           duckdb_bind_double(statement, 17, spectra_headers.window_mz[i]);
-                           duckdb_bind_double(statement, 18, spectra_headers.window_mzlow[i]);
-                           duckdb_bind_double(statement, 19, spectra_headers.window_mzhigh[i]);
-                           duckdb_bind_double(statement, 20, spectra_headers.precursor_mz[i]);
-                           duckdb_bind_double(statement, 21, spectra_headers.precursor_intensity[i]);
-                           duckdb_bind_int32(statement, 22, spectra_headers.precursor_charge[i]);
-                           duckdb_bind_double(statement, 23, spectra_headers.activation_ce[i]); }, [](duckdb_result &) {});
+        check_append_state(duckdb_appender_begin_row(appender), appender, "begin MS_SPECTRA_HEADERS row");
+        check_append_state(duckdb_append_varchar(appender, spectra_headers.project_id[i].c_str()), appender, "append MS_SPECTRA_HEADERS project_id");
+        check_append_state(duckdb_append_varchar(appender, spectra_headers.analysis[i].c_str()), appender, "append MS_SPECTRA_HEADERS analysis");
+        check_append_state(duckdb_append_int32(appender, spectra_headers.index[i]), appender, "append MS_SPECTRA_HEADERS index");
+        check_append_state(duckdb_append_int32(appender, spectra_headers.scan[i]), appender, "append MS_SPECTRA_HEADERS scan");
+        check_append_state(duckdb_append_int32(appender, spectra_headers.array_length[i]), appender, "append MS_SPECTRA_HEADERS array_length");
+        check_append_state(duckdb_append_int32(appender, spectra_headers.level[i]), appender, "append MS_SPECTRA_HEADERS level");
+        check_append_state(duckdb_append_int32(appender, spectra_headers.mode[i]), appender, "append MS_SPECTRA_HEADERS mode");
+        check_append_state(duckdb_append_int32(appender, spectra_headers.polarity[i]), appender, "append MS_SPECTRA_HEADERS polarity");
+        check_append_state(duckdb_append_int32(appender, spectra_headers.configuration[i]), appender, "append MS_SPECTRA_HEADERS configuration");
+        check_append_state(duckdb_append_double(appender, spectra_headers.lowmz[i]), appender, "append MS_SPECTRA_HEADERS lowmz");
+        check_append_state(duckdb_append_double(appender, spectra_headers.highmz[i]), appender, "append MS_SPECTRA_HEADERS highmz");
+        check_append_state(duckdb_append_double(appender, spectra_headers.bpmz[i]), appender, "append MS_SPECTRA_HEADERS bpmz");
+        check_append_state(duckdb_append_double(appender, spectra_headers.bpint[i]), appender, "append MS_SPECTRA_HEADERS bpint");
+        check_append_state(duckdb_append_double(appender, spectra_headers.tic[i]), appender, "append MS_SPECTRA_HEADERS tic");
+        check_append_state(duckdb_append_double(appender, spectra_headers.rt[i]), appender, "append MS_SPECTRA_HEADERS rt");
+        check_append_state(duckdb_append_double(appender, spectra_headers.mobility[i]), appender, "append MS_SPECTRA_HEADERS mobility");
+        check_append_state(duckdb_append_double(appender, spectra_headers.window_mz[i]), appender, "append MS_SPECTRA_HEADERS window_mz");
+        check_append_state(duckdb_append_double(appender, spectra_headers.window_mzlow[i]), appender, "append MS_SPECTRA_HEADERS window_mzlow");
+        check_append_state(duckdb_append_double(appender, spectra_headers.window_mzhigh[i]), appender, "append MS_SPECTRA_HEADERS window_mzhigh");
+        check_append_state(duckdb_append_double(appender, spectra_headers.precursor_mz[i]), appender, "append MS_SPECTRA_HEADERS precursor_mz");
+        check_append_state(duckdb_append_double(appender, spectra_headers.precursor_intensity[i]), appender, "append MS_SPECTRA_HEADERS precursor_intensity");
+        check_append_state(duckdb_append_int32(appender, spectra_headers.precursor_charge[i]), appender, "append MS_SPECTRA_HEADERS precursor_charge");
+        check_append_state(duckdb_append_double(appender, spectra_headers.activation_ce[i]), appender, "append MS_SPECTRA_HEADERS activation_ce");
+        check_append_state(duckdb_appender_end_row(appender), appender, "end MS_SPECTRA_HEADERS row");
       }
+      check_append_state(duckdb_appender_close(appender), appender, "close MS_SPECTRA_HEADERS appender");
     }
 
     void insert_chromatograms_headers_table(duckdb_connection con, const MS_CHROMATOGRAMS_HEADERS_TABLE &chromatograms_headers)
     {
+      duckdb_appender appender = nullptr;
+      if (duckdb_appender_create(con, nullptr, "MS_CHROMATOGRAMS_HEADERS", &appender) == DuckDBError)
+      {
+        throw project::error::ERROR(project::error::ERROR_CODE::DuckDB, "create MS_CHROMATOGRAMS_HEADERS appender failed");
+      }
+      APPENDER_GUARD appender_guard(&appender);
+
       const std::size_t count = static_cast<std::size_t>(chromatograms_headers.size());
       for (std::size_t i = 0; i < count; ++i)
       {
-        project::db::run_prepared(con, "INSERT INTO MS_CHROMATOGRAMS_HEADERS (project_id, analysis, index, id, array_length, polarity, precursor_mz, activation_ce, product_mz) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)", "insert MS chromatogram header", [&](duckdb_prepared_statement statement)
-                                  {
-                           duckdb_bind_varchar(statement, 1, chromatograms_headers.project_id[i].c_str());
-                           duckdb_bind_varchar(statement, 2, chromatograms_headers.analysis[i].c_str());
-                           duckdb_bind_int32(statement, 3, chromatograms_headers.index[i]);
-                           project::db::bind_optional_varchar(statement, 4, chromatograms_headers.id[i]);
-                           duckdb_bind_int32(statement, 5, chromatograms_headers.array_length[i]);
-                           duckdb_bind_int32(statement, 6, chromatograms_headers.polarity[i]);
-                           duckdb_bind_double(statement, 7, chromatograms_headers.precursor_mz[i]);
-                           duckdb_bind_double(statement, 8, chromatograms_headers.activation_ce[i]);
-                           duckdb_bind_double(statement, 9, chromatograms_headers.product_mz[i]); }, [](duckdb_result &) {});
+        check_append_state(duckdb_appender_begin_row(appender), appender, "begin MS_CHROMATOGRAMS_HEADERS row");
+        check_append_state(duckdb_append_varchar(appender, chromatograms_headers.project_id[i].c_str()), appender, "append MS_CHROMATOGRAMS_HEADERS project_id");
+        check_append_state(duckdb_append_varchar(appender, chromatograms_headers.analysis[i].c_str()), appender, "append MS_CHROMATOGRAMS_HEADERS analysis");
+        check_append_state(duckdb_append_int32(appender, chromatograms_headers.index[i]), appender, "append MS_CHROMATOGRAMS_HEADERS index");
+        append_optional_varchar(appender, chromatograms_headers.id[i], "append MS_CHROMATOGRAMS_HEADERS id");
+        check_append_state(duckdb_append_int32(appender, chromatograms_headers.array_length[i]), appender, "append MS_CHROMATOGRAMS_HEADERS array_length");
+        check_append_state(duckdb_append_int32(appender, chromatograms_headers.polarity[i]), appender, "append MS_CHROMATOGRAMS_HEADERS polarity");
+        check_append_state(duckdb_append_double(appender, chromatograms_headers.precursor_mz[i]), appender, "append MS_CHROMATOGRAMS_HEADERS precursor_mz");
+        check_append_state(duckdb_append_double(appender, chromatograms_headers.activation_ce[i]), appender, "append MS_CHROMATOGRAMS_HEADERS activation_ce");
+        check_append_state(duckdb_append_double(appender, chromatograms_headers.product_mz[i]), appender, "append MS_CHROMATOGRAMS_HEADERS product_mz");
+        check_append_state(duckdb_appender_end_row(appender), appender, "end MS_CHROMATOGRAMS_HEADERS row");
       }
+      check_append_state(duckdb_appender_close(appender), appender, "close MS_CHROMATOGRAMS_HEADERS appender");
     }
 
     MS_ANALYSIS_ROW analysis_row_from_result(duckdb_result &result, idx_t row)
@@ -1710,30 +1779,36 @@ namespace mass_spec
       }
       else
       {
+        std::cout << "  Reading headers... " << std::flush;
         const auto parse_started = std::chrono::steady_clock::now();
         reader::MS_FILE file(file_path);
         const reader::MS_SUMMARY summary = file.get_summary();
         const reader::MS_SPECTRA_HEADERS spectra_headers = file.get_spectra_headers();
         const reader::MS_CHROMATOGRAMS_HEADERS chromatograms_headers = file.get_chromatograms_headers();
         const auto parse_finished = std::chrono::steady_clock::now();
-        std::cout << "  Reading headers... "
-            << format_done_message(parse_started, parse_finished)
+        std::cout << format_done_message(parse_started, parse_finished)
                   << std::endl;
 
+        std::cout << "  Preparing import tables... " << std::flush;
+        const auto table_build_started = std::chrono::steady_clock::now();
         analyses_table = build_analysis_table(ctx_->project_id, analysis_name, replicate, blank, summary);
         spectra_headers_table = build_spectra_headers_table(ctx_->project_id, analysis_name, spectra_headers);
         chromatograms_headers_table = build_chromatograms_headers_table(ctx_->project_id, analysis_name, chromatograms_headers);
+        const auto table_build_finished = std::chrono::steady_clock::now();
+        std::cout << format_done_message(table_build_started, table_build_finished)
+                  << std::endl;
 
+        std::cout << "  Caching data... " << std::flush;
         const auto cache_write_started = std::chrono::steady_clock::now();
         cache.put_object(con, "MS_ANALYSES_TABLE", analyses_cache_key, "Cached mass spec analyses table import payload", *analyses_table);
         cache.put_object(con, "MS_SPECTRA_HEADERS_TABLE", spectra_cache_key, "Cached mass spec spectra headers import payload", *spectra_headers_table);
         cache.put_object(con, "MS_CHROMATOGRAMS_HEADERS_TABLE", chromatograms_cache_key, "Cached mass spec chromatograms headers import payload", *chromatograms_headers_table);
         const auto cache_write_finished = std::chrono::steady_clock::now();
-        std::cout << "  Caching data... "
-            << format_done_message(cache_write_started, cache_write_finished)
+        std::cout << format_done_message(cache_write_started, cache_write_finished)
                   << std::endl;
       }
 
+      std::cout << "  Removing existing DuckDB rows... " << std::flush;
       const auto delete_started = std::chrono::steady_clock::now();
       project::db::run_prepared(con, "DELETE FROM MS_SPECTRA_HEADERS WHERE project_id = ? AND analysis = ?", "delete MS spectra headers", [&](duckdb_prepared_statement statement)
                                 {
@@ -1748,17 +1823,16 @@ namespace mass_spec
                          duckdb_bind_varchar(statement, 1, ctx_->project_id.c_str());
                          duckdb_bind_varchar(statement, 2, analysis_name.c_str()); }, [](duckdb_result &) {});
       const auto delete_finished = std::chrono::steady_clock::now();
-                  std::cout << "  Removing existing DuckDB rows... "
-                    << format_done_message(delete_started, delete_finished)
-            << std::endl;
+      std::cout << format_done_message(delete_started, delete_finished)
+                << std::endl;
 
+      std::cout << "  Saving data... " << std::flush;
       const auto load_started = std::chrono::steady_clock::now();
       insert_analysis_table(con, *analyses_table);
       insert_spectra_headers_table(con, *spectra_headers_table);
       insert_chromatograms_headers_table(con, *chromatograms_headers_table);
       const auto load_finished = std::chrono::steady_clock::now();
-      std::cout << "  Saving data... "
-                << format_done_message(load_started, load_finished)
+      std::cout << format_done_message(load_started, load_finished)
                 << std::endl;
       const auto import_finished = std::chrono::steady_clock::now();
       std::cout << "  Total import time: "
@@ -2162,7 +2236,7 @@ namespace mass_spec
       const auto selected_analyses = spectra::sanitize_analyses(analyses);
       const bool filter_analyses = !selected_analyses.empty();
       const bool filter_rt = has_rt_window(rt_min, rt_max);
-      std::string sql = "SELECT h.analysis, a.replicate, h.polarity, h.level, h.rt, h.tic, h.bpmz, h.bpint FROM MS_SPECTRA_HEADERS h LEFT JOIN MS_ANALYSES a ON a.project_id = h.project_id AND a.analysis = h.analysis WHERE h.project_id = ?";
+      std::string sql = "SELECT h.analysis, a.replicate, h.polarity, h.level, h.rt, h.mobility, h.tic, h.bpmz, h.bpint FROM MS_SPECTRA_HEADERS h LEFT JOIN MS_ANALYSES a ON a.project_id = h.project_id AND a.analysis = h.analysis WHERE h.project_id = ?";
       if (filter_analyses)
       {
         sql += " AND h.analysis IN (";
@@ -2216,9 +2290,10 @@ namespace mass_spec
                            value.polarity = duckdb_value_int32(&result, 2, row);
                            value.level = duckdb_value_int32(&result, 3, row);
                            value.rt = duckdb_value_double(&result, 4, row);
-                           value.tic = duckdb_value_double(&result, 5, row);
-                           value.bpmz = duckdb_value_double(&result, 6, row);
-                           value.bpint = duckdb_value_double(&result, 7, row);
+                           value.mobility = duckdb_value_double(&result, 5, row);
+                           value.tic = duckdb_value_double(&result, 6, row);
+                           value.bpmz = duckdb_value_double(&result, 7, row);
+                           value.bpint = duckdb_value_double(&result, 8, row);
                            return value; }); });
       return out;
     }
@@ -2318,33 +2393,62 @@ namespace mass_spec
           continue;
         }
         const auto &headers_rows = headers_rows_it->second;
+        double analysis_mobility_min = 0.0;
+        double analysis_mobility_max = 0.0;
+        bool analysis_has_mobility = false;
+        for (const auto *header : headers_rows)
+        {
+          if (header->mobility > 0.0)
+          {
+            if (!analysis_has_mobility)
+            {
+              analysis_mobility_min = header->mobility;
+              analysis_mobility_max = header->mobility;
+              analysis_has_mobility = true;
+            }
+            else
+            {
+              analysis_mobility_min = std::min<double>(analysis_mobility_min, header->mobility);
+              analysis_mobility_max = std::max<double>(analysis_mobility_max, header->mobility);
+            }
+          }
+        }
 
         for (std::size_t i = 0; i < analysis_targets.id.size(); ++i)
         {
+          const auto previous_default_id = spectra::spectra_targets::make_default_target_id(
+              analysis_targets.mzmin[i],
+              analysis_targets.mzmax[i],
+              analysis_targets.rtmin[i],
+              analysis_targets.rtmax[i],
+              analysis_targets.mobilitymin[i],
+              analysis_targets.mobilitymax[i]);
+
           if (analysis_targets.rtmin[i] == 0.0f && analysis_targets.rtmax[i] == 0.0f)
           {
-            const auto previous_default_id = spectra::spectra_targets::make_default_target_id(
+            analysis_targets.rtmin[i] = static_cast<float>(analysis_it->start_rt);
+            analysis_targets.rtmax[i] = static_cast<float>(analysis_it->end_rt);
+            analysis_targets.rt[i] = static_cast<float>((analysis_it->start_rt + analysis_it->end_rt) / 2.0);
+          }
+
+          if (analysis_has_mobility &&
+              analysis_targets.mobilitymin[i] == 0.0f &&
+              analysis_targets.mobilitymax[i] == 0.0f)
+          {
+            analysis_targets.mobilitymin[i] = static_cast<float>(analysis_mobility_min);
+            analysis_targets.mobilitymax[i] = static_cast<float>(analysis_mobility_max);
+            analysis_targets.mobility[i] = static_cast<float>((analysis_mobility_min + analysis_mobility_max) / 2.0);
+          }
+
+          if (analysis_targets.id[i].empty() || analysis_targets.id[i] == previous_default_id)
+          {
+            analysis_targets.id[i] = spectra::spectra_targets::make_default_target_id(
                 analysis_targets.mzmin[i],
                 analysis_targets.mzmax[i],
                 analysis_targets.rtmin[i],
                 analysis_targets.rtmax[i],
                 analysis_targets.mobilitymin[i],
                 analysis_targets.mobilitymax[i]);
-
-            analysis_targets.rtmin[i] = static_cast<float>(analysis_it->start_rt);
-            analysis_targets.rtmax[i] = static_cast<float>(analysis_it->end_rt);
-            analysis_targets.rt[i] = static_cast<float>((analysis_it->start_rt + analysis_it->end_rt) / 2.0);
-
-            if (analysis_targets.id[i].empty() || analysis_targets.id[i] == previous_default_id)
-            {
-              analysis_targets.id[i] = spectra::spectra_targets::make_default_target_id(
-                  analysis_targets.mzmin[i],
-                  analysis_targets.mzmax[i],
-                  analysis_targets.rtmin[i],
-                  analysis_targets.rtmax[i],
-                  analysis_targets.mobilitymin[i],
-                  analysis_targets.mobilitymax[i]);
-            }
           }
         }
 

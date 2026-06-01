@@ -113,3 +113,35 @@ plot_raw_spectra_eic.ProjectMassSpecSpectra <- function(x, ...) {
   checkmate::assert_class(x, "ProjectMassSpecSpectra")
   plot_raw_spectra_eic.ProjectMassSpec(x, ...)
 }
+
+#' @describeIn ProjectMassSpecSpectraS3 Plot extracted ion chromatograms (EIC) as grouped 3D surfaces.
+#' @method plot_raw_spectra_eic_3d ProjectMassSpecSpectra
+#' @export
+plot_raw_spectra_eic_3d.ProjectMassSpecSpectra <- function(x, ...) {
+  checkmate::assert_class(x, "ProjectMassSpecSpectra")
+  plot_raw_spectra_eic_3d.ProjectMassSpec(x, ...)
+}
+
+#' @describeIn ProjectMassSpecSpectraS3 Plot extracted ion chromatograms (EIC) as RT x mobility heatmaps.
+#' @method plot_raw_spectra_eic_heatmap ProjectMassSpecSpectra
+#' @export
+plot_raw_spectra_eic_heatmap.ProjectMassSpecSpectra <- function(x, ...) {
+  checkmate::assert_class(x, "ProjectMassSpecSpectra")
+  plot_raw_spectra_eic_heatmap.ProjectMassSpec(x, ...)
+}
+
+#' @describeIn ProjectMassSpecSpectraS3 Plot TIC overview as grouped 3D surfaces.
+#' @method plot_spectra_tic_3d ProjectMassSpecSpectra
+#' @export
+plot_spectra_tic_3d.ProjectMassSpecSpectra <- function(x, ...) {
+  checkmate::assert_class(x, "ProjectMassSpecSpectra")
+  plot_spectra_tic_3d.ProjectMassSpec(x, ...)
+}
+
+#' @describeIn ProjectMassSpecSpectraS3 Plot BPC overview as grouped 3D surfaces.
+#' @method plot_spectra_bpc_3d ProjectMassSpecSpectra
+#' @export
+plot_spectra_bpc_3d.ProjectMassSpecSpectra <- function(x, ...) {
+  checkmate::assert_class(x, "ProjectMassSpecSpectra")
+  plot_spectra_bpc_3d.ProjectMassSpec(x, ...)
+}

@@ -332,3 +332,442 @@
     uniformtext = list(minsize = 6, mode = "show")
   )
 }
+
+#' @title plot_binned_heatmap_tabular_data
+#' @description Internal utility to plot a binned heatmap from tabular data.
+#' @param data data.table or data.frame containing binned x/y/z columns.
+#' @param xvar Name of binned x-axis center column.
+#' @param yvar Name of binned y-axis center column.
+#' @param zvar Name of heatmap value column.
+#' @param labelvar Optional label/hover text column for bin annotations.
+#' @param interactive Logical, use plotly if TRUE, ggplot2 if FALSE.
+#' @param title Plot title.
+#' @param xLab X axis label.
+#' @param yLab Y axis label.
+#' @param colors Optional palette vector.
+#' @param showLabels Logical, overlay text labels for populated bins.
+#' @return Plot object (plotly or ggplot2)
+#' @noRd
+.plot_binned_heatmap_tabular_data <- function(
+  data,
+  xvar,
+  yvar,
+  zvar,
+  labelvar = NULL,
+  interactive = TRUE,
+  title = NULL,
+  xLab = NULL,
+  yLab = NULL,
+  colors = NULL,
+  showLabels = FALSE
+) {
+  dt <- data.table::as.data.table(data)
+  required_cols <- c(xvar, yvar, zvar)
+  missing_cols <- setdiff(required_cols, colnames(dt))
+  if (length(missing_cols) > 0) {
+    stop("Missing required heatmap columns: ", paste(missing_cols, collapse = ", "))
+  }
+
+  if (nrow(dt) == 0) {
+    return(NULL)
+  }
+
+  if (is.null(xLab)) xLab <- xvar
+  if (is.null(yLab)) yLab <- yvar
+  if (is.null(title)) title <- paste(zvar, "heatmap")
+  if (is.null(colors)) colors <- viridisLite::viridis(256)
+
+  x_vals <- sort(unique(dt[[xvar]]))
+  y_vals <- sort(unique(dt[[yvar]]))
+  x_index <- match(dt[[xvar]], x_vals)
+  y_index <- match(dt[[yvar]], y_vals)
+
+  z_mat <- matrix(NA_real_, nrow = length(y_vals), ncol = length(x_vals))
+  z_mat[cbind(y_index, x_index)] <- as.numeric(dt[[zvar]])
+
+  if (!interactive) {
+    plot <- ggplot2::ggplot(
+      dt,
+      ggplot2::aes(x = .data[[xvar]], y = .data[[yvar]], fill = .data[[zvar]])
+    ) +
+      ggplot2::geom_raster() +
+      ggplot2::scale_fill_gradientn(colours = colors) +
+      ggplot2::theme_classic() +
+      ggplot2::labs(title = title, x = xLab, y = yLab, fill = zvar)
+
+    if (showLabels && !is.null(labelvar) && labelvar %in% colnames(dt)) {
+      plot <- plot +
+        ggplot2::geom_text(
+          ggplot2::aes(label = .data[[labelvar]]),
+          size = 2
+        )
+    }
+
+    return(plot)
+  }
+
+  x0 <- min(x_vals)
+  y0 <- min(y_vals)
+  dx <- if (length(x_vals) > 1) stats::median(diff(x_vals)) else 1
+  dy <- if (length(y_vals) > 1) stats::median(diff(y_vals)) else 1
+
+  plot <- plotly::plot_ly(
+    z = z_mat,
+    type = "heatmapgl",
+    x0 = x0,
+    dx = dx,
+    y0 = y0,
+    dy = dy,
+    colors = colors
+  )
+
+  if (!is.null(labelvar) && labelvar %in% colnames(dt)) {
+    label_dt <- dt[!is.na(get(zvar)) & get(zvar) != 0]
+    if (nrow(label_dt) > 0) {
+      plot <- plotly::add_trace(
+        plot,
+        data = label_dt,
+        x = as.formula(paste0("~", xvar)),
+        y = as.formula(paste0("~", yvar)),
+        text = as.formula(paste0("~", labelvar)),
+        type = "scattergl",
+        mode = if (showLabels) "text" else "markers",
+        marker = list(size = 6, opacity = 0),
+        hoverinfo = "text",
+        showlegend = FALSE,
+        textposition = "middle center",
+        textfont = list(size = 8, color = "black")
+      )
+    }
+  }
+
+  plotly::layout(
+    plot,
+    title = list(text = title, font = list(size = 12, color = "black")),
+    xaxis = list(title = xLab, linecolor = "black"),
+    yaxis = list(title = yLab, linecolor = "black")
+  )
+}
+
+.build_trace_colorscale <- function(color) {
+  rgb <- grDevices::col2rgb(color)[, 1]
+  list(
+    list(0, "rgba(255,255,255,0.05)"),
+    list(0.15, sprintf("rgba(%d,%d,%d,0.20)", rgb[1], rgb[2], rgb[3])),
+    list(0.5, sprintf("rgba(%d,%d,%d,0.55)", rgb[1], rgb[2], rgb[3])),
+    list(1, sprintf("rgba(%d,%d,%d,0.95)", rgb[1], rgb[2], rgb[3]))
+  )
+}
+
+.resolve_binned_marker_size <- function(x_vals, y_vals) {
+  nx <- max(1L, length(unique(x_vals)))
+  ny <- max(1L, length(unique(y_vals)))
+  base <- floor(1200 / max(nx, ny))
+  as.numeric(max(6, min(28, base)))
+}
+
+#' @title plot_grouped_binned_heatmap_tabular_data
+#' @description Internal utility to plot grouped binned heatmaps from tabular data.
+#' @param data data.table or data.frame containing grouped binned x/y/z columns.
+#' @param xvar Name of binned x-axis center column.
+#' @param yvar Name of binned y-axis center column.
+#' @param zvar Name of heatmap value column.
+#' @param tracevar Name of trace grouping column.
+#' @param labelvar Optional label/hover text column for bin annotations.
+#' @param interactive Logical, use plotly if TRUE, ggplot2 otherwise.
+#' @param title Plot title.
+#' @param xLab X axis label.
+#' @param yLab Y axis label.
+#' @param colorPalette Optional base colors, one per trace.
+#' @param showLabels Logical, overlay labels for populated bins.
+#' @return Plot object (plotly or ggplot2)
+#' @noRd
+.plot_grouped_binned_heatmap_tabular_data <- function(
+  data,
+  xvar,
+  yvar,
+  zvar,
+  tracevar,
+  labelvar = NULL,
+  interactive = TRUE,
+  title = NULL,
+  xLab = NULL,
+  yLab = NULL,
+  colorPalette = NULL,
+  showLabels = FALSE
+) {
+  dt <- data.table::as.data.table(data)
+  required_cols <- c(xvar, yvar, zvar, tracevar)
+  missing_cols <- setdiff(required_cols, colnames(dt))
+  if (length(missing_cols) > 0) {
+    stop("Missing required grouped heatmap columns: ", paste(missing_cols, collapse = ", "))
+  }
+  if (nrow(dt) == 0) {
+    return(NULL)
+  }
+
+  if (is.null(xLab)) xLab <- xvar
+  if (is.null(yLab)) yLab <- yvar
+  if (is.null(title)) title <- paste(zvar, "heatmap")
+
+  dt[, trace_label := as.character(get(tracevar))]
+  trace_labels <- unique(dt$trace_label)
+  if (is.null(colorPalette)) {
+    base_colors <- .get_colors(trace_labels)
+  } else {
+    base_colors <- colorPalette
+    if (length(base_colors) < length(trace_labels)) {
+      base_colors <- rep(base_colors, length.out = length(trace_labels))
+    }
+    base_colors <- stats::setNames(base_colors[seq_along(trace_labels)], trace_labels)
+  }
+
+  if (!interactive) {
+    plot <- ggplot2::ggplot(
+      dt,
+      ggplot2::aes(x = .data[[xvar]], y = .data[[yvar]], fill = .data[[zvar]])
+    ) +
+      ggplot2::geom_raster() +
+      ggplot2::facet_wrap(stats::as.formula(paste("~", tracevar))) +
+      ggplot2::scale_fill_viridis_c() +
+      ggplot2::theme_classic() +
+      ggplot2::labs(title = title, x = xLab, y = yLab, fill = zvar)
+
+    if (showLabels && !is.null(labelvar) && labelvar %in% colnames(dt)) {
+      plot <- plot +
+        ggplot2::geom_text(
+          ggplot2::aes(label = .data[[labelvar]]),
+          size = 2
+        )
+    }
+
+    return(plot)
+  }
+
+  plot <- plotly::plot_ly()
+  for (i in seq_along(trace_labels)) {
+    trace_label <- trace_labels[[i]]
+    trace_label_value <- trace_label
+    trace_dt <- dt[get("trace_label") == trace_label_value]
+    trace_dt <- trace_dt[is.finite(get(zvar)) & get(zvar) > 0]
+    if (nrow(trace_dt) == 0) {
+      next
+    }
+    x_vals <- sort(unique(trace_dt[[xvar]]))
+    y_vals <- sort(unique(trace_dt[[yvar]]))
+    marker_size <- .resolve_binned_marker_size(x_vals, y_vals)
+    if (!is.null(labelvar) && labelvar %in% colnames(trace_dt)) {
+      hover_text <- paste0(
+        tracevar, ": ", trace_label,
+        "<br>", xLab, ": ", signif(trace_dt[[xvar]], 6),
+        "<br>", yLab, ": ", signif(trace_dt[[yvar]], 6),
+        "<br>", trace_dt[[labelvar]]
+      )
+    } else {
+      hover_text <- paste0(
+        tracevar, ": ", trace_label,
+        "<br>", xLab, ": ", signif(trace_dt[[xvar]], 6),
+        "<br>", yLab, ": ", signif(trace_dt[[yvar]], 6),
+        "<br>", zvar, ": ", signif(trace_dt[[zvar]], 6)
+      )
+    }
+
+    plot <- plotly::add_trace(
+      plot,
+      x = trace_dt[[xvar]],
+      y = trace_dt[[yvar]],
+      type = "scattergl",
+      mode = "markers",
+      text = hover_text,
+      marker = list(
+        symbol = "square",
+        size = marker_size,
+        color = trace_dt[[zvar]],
+        colorscale = .build_trace_colorscale(base_colors[[trace_label]]),
+        cmin = min(trace_dt[[zvar]], na.rm = TRUE),
+        cmax = max(trace_dt[[zvar]], na.rm = TRUE),
+        showscale = FALSE,
+        line = list(width = 0)
+      ),
+      name = trace_label,
+      legendgroup = trace_label,
+      showlegend = TRUE,
+      hoverinfo = "text"
+    )
+
+    if (showLabels && !is.null(labelvar) && labelvar %in% colnames(trace_dt)) {
+      plot <- plotly::add_trace(
+        plot,
+        data = trace_dt,
+        x = as.formula(paste0("~", xvar)),
+        y = as.formula(paste0("~", yvar)),
+        text = as.formula(paste0("~", labelvar)),
+        type = "scattergl",
+        mode = "text",
+        textposition = "middle center",
+        textfont = list(size = 8, color = base_colors[[trace_label]]),
+        hoverinfo = "skip",
+        name = trace_label,
+        legendgroup = trace_label,
+        showlegend = FALSE
+      )
+    }
+  }
+
+  plotly::layout(
+    plot,
+    title = list(text = title, font = list(size = 12, color = "black")),
+    xaxis = list(title = xLab, linecolor = "black"),
+    yaxis = list(title = yLab, linecolor = "black")
+  )
+}
+
+.interpolate_surface_matrix <- function(z_mat, x_vals, y_vals) {
+  out <- z_mat
+
+  for (col_idx in seq_len(ncol(out))) {
+    observed <- which(is.finite(out[, col_idx]))
+    if (length(observed) >= 2L) {
+      out[, col_idx] <- stats::approx(
+        x = y_vals[observed],
+        y = out[observed, col_idx],
+        xout = y_vals,
+        rule = 1
+      )$y
+    }
+  }
+
+  for (row_idx in seq_len(nrow(out))) {
+    observed <- which(is.finite(out[row_idx, ]))
+    if (length(observed) >= 2L) {
+      out[row_idx, ] <- stats::approx(
+        x = x_vals[observed],
+        y = out[row_idx, observed],
+        xout = x_vals,
+        rule = 1
+      )$y
+    }
+  }
+
+  if (all(!is.finite(out))) {
+    return(out)
+  }
+
+  out[!is.finite(out)] <- 0
+  out
+}
+
+#' @title plot_grouped_3d_surface_tabular_data
+#' @description Internal utility to plot grouped 3D surfaces from tabular data.
+#' @param data data.table or data.frame containing grouped binned x/y/z columns.
+#' @param xvar Name of x-axis column.
+#' @param yvar Name of y-axis column.
+#' @param zvar Name of z-axis column.
+#' @param tracevar Name of trace grouping column.
+#' @param interactive Logical, use plotly if TRUE, ggplot2 otherwise.
+#' @param title Plot title.
+#' @param xLab X axis label.
+#' @param yLab Y axis label.
+#' @param zLab Z axis label.
+#' @param colorPalette Optional base colors, one per trace.
+#' @return Plot object.
+#' @noRd
+.plot_grouped_3d_surface_tabular_data <- function(
+  data,
+  xvar,
+  yvar,
+  zvar,
+  tracevar,
+  interactive = TRUE,
+  title = NULL,
+  xLab = NULL,
+  yLab = NULL,
+  zLab = NULL,
+  colorPalette = NULL
+) {
+  dt <- data.table::as.data.table(data)
+  required_cols <- c(xvar, yvar, zvar, tracevar)
+  missing_cols <- setdiff(required_cols, colnames(dt))
+  if (length(missing_cols) > 0) {
+    stop("Missing required grouped 3D columns: ", paste(missing_cols, collapse = ", "))
+  }
+  if (nrow(dt) == 0) {
+    return(NULL)
+  }
+  if (!interactive) {
+    stop("3D surface plots are only available in interactive mode.")
+  }
+
+  if (is.null(xLab)) xLab <- xvar
+  if (is.null(yLab)) yLab <- yvar
+  if (is.null(zLab)) zLab <- zvar
+  if (is.null(title)) title <- paste(zvar, "3D surface")
+
+  dt[, trace_label := as.character(get(tracevar))]
+  trace_labels <- unique(dt$trace_label)
+  if (is.null(colorPalette)) {
+    base_colors <- .get_colors(trace_labels)
+  } else {
+    base_colors <- colorPalette
+    if (length(base_colors) < length(trace_labels)) {
+      base_colors <- rep(base_colors, length.out = length(trace_labels))
+    }
+    base_colors <- stats::setNames(base_colors[seq_along(trace_labels)], trace_labels)
+  }
+
+  plot <- plotly::plot_ly()
+  for (trace_label in trace_labels) {
+    trace_label_value <- trace_label
+    trace_dt <- dt[get("trace_label") == trace_label_value]
+    if (nrow(trace_dt) == 0) {
+      next
+    }
+    x_vals <- sort(unique(trace_dt[[xvar]]))
+    y_vals <- sort(unique(trace_dt[[yvar]]))
+    if (length(x_vals) < 2L || length(y_vals) < 2L) {
+      next
+    }
+    x_index <- match(trace_dt[[xvar]], x_vals)
+    y_index <- match(trace_dt[[yvar]], y_vals)
+    z_mat <- matrix(NA_real_, nrow = length(y_vals), ncol = length(x_vals))
+    z_mat[cbind(y_index, x_index)] <- as.numeric(trace_dt[[zvar]])
+    z_mat <- .interpolate_surface_matrix(z_mat, x_vals = x_vals, y_vals = y_vals)
+    if (all(!is.finite(z_mat)) || max(z_mat, na.rm = TRUE) <= 0) {
+      next
+    }
+    text_mat <- matrix("", nrow = length(y_vals), ncol = length(x_vals))
+    text_mat[cbind(y_index, x_index)] <- paste0(
+      tracevar, ": ", trace_label,
+      "<br>", xLab, ": ", signif(trace_dt[[xvar]], 6),
+      "<br>", yLab, ": ", signif(trace_dt[[yvar]], 6),
+      "<br>", zLab, ": ", signif(trace_dt[[zvar]], 6)
+    )
+
+    plot <- plotly::add_surface(
+      plot,
+      x = x_vals,
+      y = y_vals,
+      z = z_mat,
+      text = text_mat,
+      hoverinfo = "text",
+      colorscale = .build_trace_colorscale(base_colors[[trace_label]]),
+      showscale = FALSE,
+      opacity = 0.9,
+      name = trace_label,
+      showlegend = TRUE,
+      contours = list(
+        z = list(show = TRUE, usecolormap = TRUE, highlightwidth = 1)
+      )
+    )
+  }
+
+  plotly::layout(
+    plot,
+    title = list(text = title, font = list(size = 12, color = "black")),
+    scene = list(
+      xaxis = list(title = xLab),
+      yaxis = list(title = yLab),
+      zaxis = list(title = zLab)
+    )
+  )
+}
