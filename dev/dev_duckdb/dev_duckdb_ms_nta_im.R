@@ -26,9 +26,15 @@ stop_time <- Sys.time()
 ellapsed_time <- stop_time - start_time
 print(ellapsed_time)
 
+get_analyses(nta)
+
+head(get_spectra_headers(nta, analyses = 11)[10000:10100, ])
+
+colnames(hd)
+
 htmlwidgets::saveWidget(
   plot_spectra_tic_heatmap(nta, reduction = 0.2),
-  file = file.path("dev", "dev_duckdb", "tic_plot.html"),
+  file = file.path("dev", "dev_duckdb", "bpc_plot.html"),
   selfcontained = TRUE
 )
 
@@ -71,15 +77,7 @@ htmlwidgets::saveWidget(
 
 
 
-get_analyses(nta)
 
-
-
-
-
-
-
-colnames(hd)
 
 
 

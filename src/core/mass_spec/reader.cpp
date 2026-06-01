@@ -12,6 +12,7 @@
 #include <cstring>
 #include <stdexcept>
 #include <array>
+#include <string_view>
 #include <zlib.h>
 
 namespace mass_spec
@@ -667,7 +668,7 @@ namespace mass_spec
         return out;
       }
 
-      MS_SPECTRA_HEADERS Reader::get_spectra_headers(std::vector<int> indices)
+      MS_SPECTRA_HEADERS Reader::get_spectra_headers(std::vector<int> indices, bool derive_missing_stats)
       {
         if (indices.empty())
         {
@@ -752,42 +753,84 @@ namespace mass_spec
         std::vector<float> values;
       };
 
-      bool cv_has_name(const pugi::xml_node &node, const char *needle)
+      constexpr std::string_view accession_ms_level = "MS:1000511";
+      constexpr std::string_view accession_positive_scan = "MS:1000130";
+      constexpr std::string_view accession_negative_scan = "MS:1000129";
+      constexpr std::string_view accession_lowest_observed_mz = "MS:1000528";
+      constexpr std::string_view accession_highest_observed_mz = "MS:1000527";
+      constexpr std::string_view accession_base_peak_mz = "MS:1000504";
+      constexpr std::string_view accession_base_peak_intensity = "MS:1000505";
+      constexpr std::string_view accession_total_ion_current = "MS:1000285";
+      constexpr std::string_view accession_scan_start_time = "MS:1000016";
+      constexpr std::string_view accession_selected_ion_mz = "MS:1000744";
+      constexpr std::string_view accession_peak_intensity = "MS:1000042";
+      constexpr std::string_view accession_charge_state = "MS:1000041";
+      constexpr std::string_view accession_collision_energy = "MS:1000045";
+      constexpr std::string_view accession_isolation_window_target_mz = "MS:1000827";
+      constexpr std::string_view accession_ion_mobility_drift_time = "MS:1002476";
+      constexpr std::string_view accession_inverse_reduced_ion_mobility = "MS:1002815";
+      constexpr std::string_view accession_zlib_compression = "MS:1000574";
+      constexpr std::string_view accession_64_bit_float = "MS:1000523";
+      constexpr std::string_view accession_mz_array = "MS:1000514";
+      constexpr std::string_view accession_intensity_array = "MS:1000515";
+      constexpr std::string_view accession_time_array = "MS:1000595";
+
+      constexpr std::string_view unit_second = "UO:0000010";
+      constexpr std::string_view unit_minute = "UO:0000031";
+      constexpr std::string_view unit_millisecond = "UO:0000028";
+
+      inline bool accession_equals(const pugi::xml_node &cv, std::string_view accession)
       {
-        for (auto cv : node.children("cvParam"))
-        {
-          const std::string name = cv.attribute("name").as_string();
-          const std::string accession = cv.attribute("accession").as_string();
-          if (name.find(needle) != std::string::npos || accession.find(needle) != std::string::npos)
-            return true;
-        }
-        return false;
+        return std::string_view(cv.attribute("accession").as_string()) == accession;
       }
 
-      std::string cv_first_name(const pugi::xml_node &node, const char *needle)
+      inline bool name_contains(const pugi::xml_node &cv, std::string_view needle)
       {
-        for (auto cv : node.children("cvParam"))
+        return std::string_view(cv.attribute("name").as_string()).find(needle) != std::string_view::npos;
+      }
+
+      inline bool unit_equals(const pugi::xml_node &cv, std::string_view unit_accession)
+      {
+        return std::string_view(cv.attribute("unitAccession").as_string()) == unit_accession;
+      }
+
+      pugi::xml_node mzml_root_node(const pugi::xml_document &doc)
+      {
+        auto root = doc.document_element();
+        if (!root)
         {
-          const std::string name = cv.attribute("name").as_string();
-          const std::string accession = cv.attribute("accession").as_string();
-          if (name.find(needle) != std::string::npos || accession.find(needle) != std::string::npos)
-            return name;
+          return {};
         }
-        return {};
+        const std::string_view root_name = root.name();
+        if (root_name == "mzML")
+        {
+          return root;
+        }
+        if (root_name == "indexedmzML")
+        {
+          return root.child("mzML");
+        }
+        return root.child("mzML");
       }
 
       float parse_scan_time(const pugi::xml_node &scan_node)
       {
         for (auto cv : scan_node.children("cvParam"))
         {
-          const std::string name = cv.attribute("name").as_string();
-          if (name.find("scan start time") != std::string::npos)
+          const std::string_view accession = cv.attribute("accession").as_string();
+          const bool is_scan_time = !accession.empty()
+            ? accession == accession_scan_start_time
+            : name_contains(cv, "scan start time");
+          if (is_scan_time)
           {
-            const std::string unit = cv.attribute("unitName").as_string();
             const float value = static_cast<float>(cv.attribute("value").as_double());
-            if (unit.find("minute") != std::string::npos)
+            if (unit_equals(cv, unit_minute) || name_contains(cv, "minute"))
             {
               return value * 60.0f;
+            }
+            if (unit_equals(cv, unit_millisecond) || name_contains(cv, "millisecond"))
+            {
+              return value / 1000.0f;
             }
             return value;
           }
@@ -799,19 +842,20 @@ namespace mass_spec
       {
         for (auto cv : scan_node.children("cvParam"))
         {
-          const std::string accession = cv.attribute("accession").as_string();
-          const std::string name = cv.attribute("name").as_string();
-          if (accession == "MS:1002476" || accession == "MS:1002815" ||
-              name.find("ion mobility drift time") != std::string::npos ||
-              name.find("inverse reduced ion mobility") != std::string::npos)
+          const std::string_view accession = cv.attribute("accession").as_string();
+          const bool is_mobility = !accession.empty()
+            ? (accession == accession_ion_mobility_drift_time ||
+                accession == accession_inverse_reduced_ion_mobility)
+            : (name_contains(cv, "ion mobility drift time") ||
+                name_contains(cv, "inverse reduced ion mobility"));
+          if (is_mobility)
           {
-            const std::string unit = cv.attribute("unitName").as_string();
             const float value = static_cast<float>(cv.attribute("value").as_double());
-            if (unit.find("second") != std::string::npos)
+            if (unit_equals(cv, unit_second) || name_contains(cv, "second"))
             {
               return value * 1000.0f;
             }
-            if (unit.find("minute") != std::string::npos)
+            if (unit_equals(cv, unit_minute) || name_contains(cv, "minute"))
             {
               return value * 60000.0f;
             }
@@ -831,10 +875,12 @@ namespace mass_spec
         bool precision64 = false;
         for (auto cv : array_node.children("cvParam"))
         {
-          const std::string name = cv.attribute("name").as_string();
-          if (name.find("zlib compression") != std::string::npos)
+          const std::string_view accession = cv.attribute("accession").as_string();
+          if ((!accession.empty() && accession == accession_zlib_compression) ||
+              (accession.empty() && name_contains(cv, "zlib compression")))
             compressed = true;
-          if (name.find("64-bit float") != std::string::npos)
+          if ((!accession.empty() && accession == accession_64_bit_float) ||
+              (accession.empty() && name_contains(cv, "64-bit float")))
             precision64 = true;
         }
 
@@ -851,10 +897,23 @@ namespace mass_spec
         ParsedArray out;
         for (auto cv : array_node.children("cvParam"))
         {
-          const std::string name = cv.attribute("name").as_string();
-          if (name.find("m/z array") != std::string::npos || name.find("intensity array") != std::string::npos || name.find("time array") != std::string::npos)
+          const std::string_view accession = cv.attribute("accession").as_string();
+          if ((!accession.empty() && accession == accession_mz_array) ||
+              (accession.empty() && name_contains(cv, "m/z array")))
           {
-            out.name = name;
+            out.name = "m/z array";
+            break;
+          }
+          if ((!accession.empty() && accession == accession_intensity_array) ||
+              (accession.empty() && name_contains(cv, "intensity array")))
+          {
+            out.name = "intensity array";
+            break;
+          }
+          if ((!accession.empty() && accession == accession_time_array) ||
+              (accession.empty() && name_contains(cv, "time array")))
+          {
+            out.name = "time array";
             break;
           }
         }
@@ -940,23 +999,45 @@ namespace mass_spec
 
         for (auto cv : spectrum_node.children("cvParam"))
         {
-          const std::string name = cv.attribute("name").as_string();
-          if (name == "ms level")
-            ms_level = cv.attribute("value").as_int(1);
-          else if (name.find("positive scan") != std::string::npos)
-            polarity = 1;
-          else if (name.find("negative scan") != std::string::npos)
-            polarity = -1;
-          else if (name.find("lowest observed m/z") != std::string::npos)
-            s.lowmz = cv.attribute("value").as_float(0.0f);
-          else if (name.find("highest observed m/z") != std::string::npos)
-            s.highmz = cv.attribute("value").as_float(0.0f);
-          else if (name.find("base peak m/z") != std::string::npos)
-            s.bpmz = cv.attribute("value").as_float(0.0f);
-          else if (name.find("base peak intensity") != std::string::npos)
-            s.bpint = cv.attribute("value").as_float(0.0f);
-          else if (name.find("total ion current") != std::string::npos)
-            s.tic = cv.attribute("value").as_float(0.0f);
+          const std::string_view accession = cv.attribute("accession").as_string();
+          if (!accession.empty())
+          {
+            if (accession == accession_ms_level)
+              ms_level = cv.attribute("value").as_int(1);
+            else if (accession == accession_positive_scan)
+              polarity = 1;
+            else if (accession == accession_negative_scan)
+              polarity = -1;
+            else if (accession == accession_lowest_observed_mz)
+              s.lowmz = cv.attribute("value").as_float(0.0f);
+            else if (accession == accession_highest_observed_mz)
+              s.highmz = cv.attribute("value").as_float(0.0f);
+            else if (accession == accession_base_peak_mz)
+              s.bpmz = cv.attribute("value").as_float(0.0f);
+            else if (accession == accession_base_peak_intensity)
+              s.bpint = cv.attribute("value").as_float(0.0f);
+            else if (accession == accession_total_ion_current)
+              s.tic = cv.attribute("value").as_float(0.0f);
+          }
+          else
+          {
+            if (name_contains(cv, "ms level"))
+              ms_level = cv.attribute("value").as_int(1);
+            else if (name_contains(cv, "positive scan"))
+              polarity = 1;
+            else if (name_contains(cv, "negative scan"))
+              polarity = -1;
+            else if (name_contains(cv, "lowest observed m/z"))
+              s.lowmz = cv.attribute("value").as_float(0.0f);
+            else if (name_contains(cv, "highest observed m/z"))
+              s.highmz = cv.attribute("value").as_float(0.0f);
+            else if (name_contains(cv, "base peak m/z"))
+              s.bpmz = cv.attribute("value").as_float(0.0f);
+            else if (name_contains(cv, "base peak intensity"))
+              s.bpint = cv.attribute("value").as_float(0.0f);
+            else if (name_contains(cv, "total ion current"))
+              s.tic = cv.attribute("value").as_float(0.0f);
+          }
         }
         s.level = ms_level;
         s.polarity = polarity;
@@ -981,8 +1062,10 @@ namespace mass_spec
           {
             for (auto cv : precursor.children("cvParam"))
             {
-              const std::string name = cv.attribute("name").as_string();
-              if (name.find("activation energy") != std::string::npos)
+              const std::string_view accession = cv.attribute("accession").as_string();
+              if ((!accession.empty() && accession == accession_collision_energy) ||
+                  (accession.empty() &&
+                    (name_contains(cv, "collision energy") || name_contains(cv, "activation energy"))))
                 ce = cv.attribute("value").as_float(0.0f);
             }
             auto selected = precursor.child("selectedIonList").child("selectedIon");
@@ -990,13 +1073,25 @@ namespace mass_spec
             {
               for (auto cv : selected.children("cvParam"))
               {
-                const std::string name = cv.attribute("name").as_string();
-                if (name.find("selected ion m/z") != std::string::npos)
-                  prec_mz = cv.attribute("value").as_float(0.0f);
-                else if (name.find("peak intensity") != std::string::npos)
-                  prec_int = cv.attribute("value").as_float(0.0f);
-                else if (name.find("charge state") != std::string::npos)
-                  prec_charge = cv.attribute("value").as_int(0);
+                const std::string_view accession = cv.attribute("accession").as_string();
+                if (!accession.empty())
+                {
+                  if (accession == accession_selected_ion_mz)
+                    prec_mz = cv.attribute("value").as_float(0.0f);
+                  else if (accession == accession_peak_intensity)
+                    prec_int = cv.attribute("value").as_float(0.0f);
+                  else if (accession == accession_charge_state)
+                    prec_charge = cv.attribute("value").as_int(0);
+                }
+                else
+                {
+                  if (name_contains(cv, "selected ion m/z"))
+                    prec_mz = cv.attribute("value").as_float(0.0f);
+                  else if (name_contains(cv, "peak intensity"))
+                    prec_int = cv.attribute("value").as_float(0.0f);
+                  else if (name_contains(cv, "charge state"))
+                    prec_charge = cv.attribute("value").as_int(0);
+                }
               }
             }
           }
@@ -1029,10 +1124,12 @@ namespace mass_spec
           out.product_mz[i] = 0.0f;
           for (auto cv : ch.children("cvParam"))
           {
-            const std::string name = cv.attribute("name").as_string();
-            if (name.find("positive scan") != std::string::npos)
+            const std::string_view accession = cv.attribute("accession").as_string();
+            if ((!accession.empty() && accession == accession_positive_scan) ||
+                (accession.empty() && name_contains(cv, "positive scan")))
               out.polarity[i] = 1;
-            if (name.find("negative scan") != std::string::npos)
+            if ((!accession.empty() && accession == accession_negative_scan) ||
+                (accession.empty() && name_contains(cv, "negative scan")))
               out.polarity[i] = -1;
           }
           auto prec = ch.child("precursor");
@@ -1043,15 +1140,18 @@ namespace mass_spec
             {
               for (auto cv : sel.children("cvParam"))
               {
-                const std::string name = cv.attribute("name").as_string();
-                if (name.find("isolation window target m/z") != std::string::npos)
+                const std::string_view accession = cv.attribute("accession").as_string();
+                if ((!accession.empty() && accession == accession_isolation_window_target_mz) ||
+                    (accession.empty() && name_contains(cv, "isolation window target m/z")))
                   out.precursor_mz[i] = cv.attribute("value").as_float(0.0f);
               }
             }
             for (auto cv : prec.children("cvParam"))
             {
-              const std::string name = cv.attribute("name").as_string();
-              if (name.find("collision energy") != std::string::npos)
+              const std::string_view accession = cv.attribute("accession").as_string();
+              if ((!accession.empty() && accession == accession_collision_energy) ||
+                  (accession.empty() &&
+                    (name_contains(cv, "collision energy") || name_contains(cv, "activation energy"))))
                 out.activation_ce[i] = cv.attribute("value").as_float(0.0f);
             }
           }
@@ -1086,7 +1186,7 @@ namespace mass_spec
 
       bool spectrum_needs_derived_metrics(const MS_SPECTRUM &s)
       {
-        return s.lowmz == 0.0f || s.highmz == 0.0f || s.tic == 0.0f || s.bpmz == 0.0f;
+        return s.lowmz == 0.0f || s.highmz == 0.0f || s.tic == 0.0f;
       }
 
       void ensure_spectrum_stats(Impl &impl, std::size_t index)
@@ -1128,16 +1228,37 @@ namespace mass_spec
         pugi::xml_parse_result result = pimpl->doc.load_file(file.c_str());
         if (!result)
           throw std::runtime_error(std::string("Failed to parse mzML file: ") + result.description());
-        auto root = pimpl->doc.document_element();
-        for (auto node : root.select_nodes("//spectrumList/spectrum"))
+        auto mzml_root = mzml_root_node(pimpl->doc);
+        auto run = mzml_root.child("run");
+        auto spectrum_list = run.child("spectrumList");
+        auto chromatogram_list = run.child("chromatogramList");
+
+        const auto spectra_count = static_cast<std::size_t>(spectrum_list.attribute("count").as_ullong());
+        if (spectra_count > 0)
         {
-          pimpl->spectrum_nodes.push_back(node.node());
-          pimpl->spectra.push_back(make_spectrum(node.node(), false));
+          pimpl->spectra.reserve(spectra_count);
+          pimpl->spectrum_nodes.reserve(spectra_count);
+          pimpl->spectrum_binary_loaded.reserve(spectra_count);
+          pimpl->spectrum_stats_resolved.reserve(spectra_count);
+        }
+
+        for (auto node = spectrum_list.child("spectrum"); node; node = node.next_sibling("spectrum"))
+        {
+          pimpl->spectrum_nodes.push_back(node);
+          pimpl->spectra.push_back(make_spectrum(node, false));
           pimpl->spectrum_binary_loaded.push_back(false);
           pimpl->spectrum_stats_resolved.push_back(false);
         }
-        for (auto node : root.select_nodes("//chromatogramList/chromatogram"))
-          pimpl->chrom_nodes.push_back(node.node());
+
+        const auto chromatogram_count = static_cast<std::size_t>(chromatogram_list.attribute("count").as_ullong());
+        if (chromatogram_count > 0)
+        {
+          pimpl->chrom_nodes.reserve(chromatogram_count);
+        }
+        for (auto node = chromatogram_list.child("chromatogram"); node; node = node.next_sibling("chromatogram"))
+        {
+          pimpl->chrom_nodes.push_back(node);
+        }
         pimpl->loaded = true;
       }
 
@@ -1398,8 +1519,9 @@ namespace mass_spec
         return out;
       }
 
-      MS_SPECTRA_HEADERS Reader::get_spectra_headers(std::vector<int> indices)
+      MS_SPECTRA_HEADERS Reader::get_spectra_headers(std::vector<int> indices, bool derive_missing_stats)
       {
+        (void)derive_missing_stats;
         if (indices.empty())
         {
           indices.resize(pimpl->spectra.size());
@@ -1412,7 +1534,10 @@ namespace mass_spec
         {
           if (i < 0 || static_cast<size_t>(i) >= pimpl->spectra.size())
             continue;
-          ensure_spectrum_stats(*pimpl, static_cast<std::size_t>(i));
+          if (derive_missing_stats)
+          {
+            ensure_spectrum_stats(*pimpl, static_cast<std::size_t>(i));
+          }
           const auto &s = pimpl->spectra[i];
           h.index[j] = s.index;
           h.scan[j] = s.scan;

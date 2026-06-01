@@ -202,7 +202,8 @@ namespace mass_spec
       virtual std::vector<float> get_spectra_precursor_window_mzlow(std::vector<int> indices = {}) = 0;
       virtual std::vector<float> get_spectra_precursor_window_mzhigh(std::vector<int> indices = {}) = 0;
       virtual std::vector<float> get_spectra_collision_energy(std::vector<int> indices = {}) = 0;
-      virtual MS_SPECTRA_HEADERS get_spectra_headers(std::vector<int> indices = {}) = 0;
+      virtual MS_SPECTRA_HEADERS get_spectra_headers(std::vector<int> indices = {},
+                                                     bool derive_missing_stats = false) = 0;
       virtual MS_CHROMATOGRAMS_HEADERS get_chromatograms_headers(std::vector<int> indices = {}) = 0;
       virtual std::vector<std::vector<std::vector<float>>> get_spectra(std::vector<int> indices = {}) = 0;
       virtual std::vector<std::vector<std::vector<float>>> get_chromatograms(std::vector<int> indices = {}) = 0;
@@ -256,7 +257,8 @@ namespace mass_spec
       std::vector<float> get_spectra_precursor_window_mzlow(std::vector<int> indices = {}) { return ms->get_spectra_precursor_window_mzlow(indices); }
       std::vector<float> get_spectra_precursor_window_mzhigh(std::vector<int> indices = {}) { return ms->get_spectra_precursor_window_mzhigh(indices); }
       std::vector<float> get_spectra_collision_energy(std::vector<int> indices = {}) { return ms->get_spectra_collision_energy(indices); }
-      MS_SPECTRA_HEADERS get_spectra_headers(std::vector<int> indices = {}) { return ms->get_spectra_headers(indices); }
+      MS_SPECTRA_HEADERS get_spectra_headers(std::vector<int> indices = {},
+                                             bool derive_missing_stats = false) { return ms->get_spectra_headers(indices, derive_missing_stats); }
       MS_CHROMATOGRAMS_HEADERS get_chromatograms_headers(std::vector<int> indices = {}) { return ms->get_chromatograms_headers(indices); }
       std::vector<std::vector<std::vector<float>>> get_spectra(std::vector<int> indices = {}) { return ms->get_spectra(indices); }
       std::vector<std::vector<std::vector<float>>> get_chromatograms(std::vector<int> indices = {}) { return ms->get_chromatograms(indices); }
@@ -324,7 +326,8 @@ namespace mass_spec
         std::vector<float> get_spectra_precursor_window_mzlow(std::vector<int> indices = {}) override;
         std::vector<float> get_spectra_precursor_window_mzhigh(std::vector<int> indices = {}) override;
         std::vector<float> get_spectra_collision_energy(std::vector<int> indices = {}) override;
-        MS_SPECTRA_HEADERS get_spectra_headers(std::vector<int> indices = {}) override;
+        MS_SPECTRA_HEADERS get_spectra_headers(std::vector<int> indices = {},
+                                               bool derive_missing_stats = false) override;
         MS_CHROMATOGRAMS_HEADERS get_chromatograms_headers(std::vector<int> indices = {}) override;
         std::vector<std::vector<std::vector<float>>> get_spectra(std::vector<int> indices = {}) override;
         std::vector<std::vector<std::vector<float>>> get_chromatograms(std::vector<int> indices = {}) override;
@@ -384,7 +387,8 @@ namespace mass_spec
         std::vector<float> get_spectra_precursor_window_mzlow(std::vector<int> indices = {}) override;
         std::vector<float> get_spectra_precursor_window_mzhigh(std::vector<int> indices = {}) override;
         std::vector<float> get_spectra_collision_energy(std::vector<int> indices = {}) override;
-        MS_SPECTRA_HEADERS get_spectra_headers(std::vector<int> indices = {}) override;
+        MS_SPECTRA_HEADERS get_spectra_headers(std::vector<int> indices = {},
+                                               bool derive_missing_stats = false) override;
         MS_CHROMATOGRAMS_HEADERS get_chromatograms_headers(std::vector<int> indices = {}) override;
         std::vector<std::vector<std::vector<float>>> get_spectra(std::vector<int> indices = {}) override;
         std::vector<std::vector<std::vector<float>>> get_chromatograms(std::vector<int> indices = {}) override;

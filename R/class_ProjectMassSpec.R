@@ -1102,6 +1102,28 @@ get_spectra_headers.ProjectMassSpec <- function(x, analyses = character()) {
   )
 }
 
+.warn_missing_bpc_metadata <- function(data, context = "BPC") {
+  dt <- data.table::as.data.table(data)
+  if (!all(c("bpmz", "bpint") %in% colnames(dt)) || nrow(dt) == 0) {
+    return(invisible(FALSE))
+  }
+  has_bpc <- any(
+    is.finite(dt$bpint) & dt$bpint > 0 &
+      is.finite(dt$bpmz) & dt$bpmz > 0,
+    na.rm = TRUE
+  )
+  if (!has_bpc) {
+    warning(
+      context,
+      " metadata is unavailable in the imported headers. ",
+      "This file appears not to provide base peak metadata in the mzML header, ",
+      "and fast import mode skips deriving bpmz/bpint from binary arrays during import.",
+      call. = FALSE
+    )
+  }
+  invisible(!has_bpc)
+}
+
 #' @describeIn ProjectMassSpecS3 Return spectra TIC rows for selected analyses.
 #' @method get_spectra_tic ProjectMassSpec
 #' @export
@@ -1199,6 +1221,7 @@ plot_spectra_bpc.ProjectMassSpec <- function(
     message("\U2717 BPC not found for the analyses!")
     return(NULL)
   }
+  .warn_missing_bpc_metadata(bpc, context = "BPC plot")
   bpc <- bpc[, .(analysis, replicate, polarity, level, rt, bpmz, bpint)]
   if (!is.null(downsize) && downsize > 0 && nrow(bpc) > downsize) {
     bpc[, rt := floor(rt / downsize) * downsize]
@@ -1362,6 +1385,7 @@ plot_spectra_bpc_heatmap.ProjectMassSpec <- function(
 ) {
   checkmate::assert_class(x, "ProjectMassSpec")
   prepared <- .prepare_spectra_heatmap_headers(x, analyses, levels, rtmin, rtmax)
+  .warn_missing_bpc_metadata(prepared$headers, context = "BPC heatmap")
   if (!prepared$has_im) {
     return(plot_spectra_bpc.ProjectMassSpec(
       x,
@@ -1425,6 +1449,7 @@ plot_spectra_bpc_3d.ProjectMassSpec <- function(
     message("\U2717 BPC not found for the analyses!")
     return(NULL)
   }
+  .warn_missing_bpc_metadata(bpc, context = "BPC 3D plot")
   axis_spec <- .resolve_surface_axis(bpc, useMobility = useMobility, mzVar = "bpmz")
   binned <- .bin_grouped_3d_surface(
     data = bpc,
