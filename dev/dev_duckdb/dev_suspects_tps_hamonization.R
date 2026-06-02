@@ -153,6 +153,21 @@ istd <- data.table::fread(
   )
 )
 
+get_suspects_screening_csv(
+  suspects = data.table::fread(file.path(
+    getwd(),
+    "dev",
+    "dev_duckdb",
+    "internal_standards.csv"
+  ))[, c("name", "InChI")],
+  file = file.path(
+    getwd(),
+    "dev",
+    "dev_duckdb",
+    "internal_standards_v2.csv"
+  )
+)
+
 # plot_spectra_eic(
 #   ms$Analyses,
 #   mass = istd,
