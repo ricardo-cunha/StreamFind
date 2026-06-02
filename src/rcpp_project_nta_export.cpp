@@ -156,29 +156,77 @@ namespace nta_rcpp
     return {};
   }
 
-  std::vector<std::string> as_character_selection(SEXP value, const std::string &column_a, const std::string &column_b = "")
+  struct CharacterSelection
   {
+    std::vector<std::string> values;
+    std::unordered_map<std::string, std::string> labels;
+  };
+
+  CharacterSelection as_character_selection(SEXP value, const std::string &column_a, const std::string &column_b = "")
+  {
+    CharacterSelection out;
     if (Rf_isNull(value))
     {
-      return {};
+      return out;
     }
     if (Rf_inherits(value, "data.frame"))
     {
       Rcpp::DataFrame df = Rcpp::as<Rcpp::DataFrame>(value);
+      std::string value_column;
       if (df.containsElementNamed(column_a.c_str()))
       {
-        return Rcpp::as<std::vector<std::string>>(df[column_a]);
+        value_column = column_a;
       }
-      if (!column_b.empty() && df.containsElementNamed(column_b.c_str()))
+      else if (!column_b.empty() && df.containsElementNamed(column_b.c_str()))
       {
-        return Rcpp::as<std::vector<std::string>>(df[column_b]);
+        value_column = column_b;
       }
-      Rcpp::stop("Selection data.frame must contain '%s'%s%s",
-                 column_a.c_str(),
-                 column_b.empty() ? "" : " or '",
-                 column_b.empty() ? "" : column_b.c_str());
+      else
+      {
+        Rcpp::stop("Selection data.frame must contain '%s'%s%s",
+                   column_a.c_str(),
+                   column_b.empty() ? "" : " or '",
+                   column_b.empty() ? "" : column_b.c_str());
+      }
+
+      out.values = Rcpp::as<std::vector<std::string>>(df[value_column]);
+
+      std::vector<std::string> label_values;
+      if (df.containsElementNamed("id"))
+      {
+        label_values = strings_from_character_vector(df["id"]);
+      }
+      else if (df.containsElementNamed("name"))
+      {
+        label_values = strings_from_character_vector(df["name"]);
+      }
+      if (!label_values.empty())
+      {
+        for (std::size_t i = 0; i < out.values.size() && i < label_values.size(); ++i)
+        {
+          if (!out.values[i].empty() && !label_values[i].empty())
+          {
+            out.labels[out.values[i]] = label_values[i];
+          }
+        }
+      }
+      return out;
     }
-    return Rcpp::as<std::vector<std::string>>(Rcpp::as<Rcpp::CharacterVector>(value));
+
+    Rcpp::CharacterVector vec = Rcpp::as<Rcpp::CharacterVector>(value);
+    out.values = Rcpp::as<std::vector<std::string>>(vec);
+    if (!Rf_isNull(vec.names()))
+    {
+      const auto labels = strings_from_character_vector(vec.names());
+      for (std::size_t i = 0; i < out.values.size() && i < labels.size(); ++i)
+      {
+        if (!out.values[i].empty() && !labels[i].empty())
+        {
+          out.labels[out.values[i]] = labels[i];
+        }
+      }
+    }
+    return out;
   }
 
   std::vector<std::string> analyses_from_selection(SEXP value)
@@ -213,9 +261,15 @@ namespace nta_rcpp
     {
       query.analyses = Rcpp::as<std::vector<std::string>>(Rcpp::as<Rcpp::CharacterVector>(analyses));
     }
-    query.features = as_character_selection(features, "feature");
-    query.feature_groups = as_character_selection(groups, "feature_group", "group");
-    query.feature_components = as_character_selection(components, "feature_component", "component");
+    const auto feature_selection = as_character_selection(features, "feature");
+    const auto group_selection = as_character_selection(groups, "feature_group", "group");
+    const auto component_selection = as_character_selection(components, "feature_component", "component");
+    query.features = feature_selection.values;
+    query.feature_labels = feature_selection.labels;
+    query.feature_groups = group_selection.values;
+    query.feature_group_labels = group_selection.labels;
+    query.feature_components = component_selection.values;
+    query.feature_component_labels = component_selection.labels;
     query.targets.analyses = query.analyses;
     query.targets.mass = ms_targets_input_from_object(mass, "mass");
     query.targets.mz = ms_targets_input_from_object(mz, "mz");
@@ -377,6 +431,7 @@ namespace nta_rcpp
     Rcpp::CharacterVector project_id(n);
     Rcpp::CharacterVector analysis(n);
     Rcpp::CharacterVector feature(n);
+    Rcpp::CharacterVector id(n);
     Rcpp::CharacterVector feature_component(n);
     Rcpp::CharacterVector feature_group(n);
     Rcpp::CharacterVector adduct(n);
@@ -429,6 +484,7 @@ namespace nta_rcpp
       project_id[i] = row.project_id;
       analysis[i] = row.analysis;
       feature[i] = row.feature;
+      id[i] = row.id.empty() ? NA_STRING : Rcpp::String(row.id);
       feature_component[i] = row.feature_component.empty() ? NA_STRING : Rcpp::String(row.feature_component);
       feature_group[i] = row.feature_group.empty() ? NA_STRING : Rcpp::String(row.feature_group);
       adduct[i] = row.adduct.empty() ? NA_STRING : Rcpp::String(row.adduct);
@@ -480,6 +536,7 @@ namespace nta_rcpp
         Rcpp::Named("project_id") = project_id,
         Rcpp::Named("analysis") = analysis,
         Rcpp::Named("feature") = feature,
+        Rcpp::Named("id") = id,
         Rcpp::Named("feature_component") = feature_component,
         Rcpp::Named("feature_group") = feature_group,
         Rcpp::Named("adduct") = adduct,

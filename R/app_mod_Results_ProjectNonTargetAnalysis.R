@@ -114,6 +114,9 @@
       min-height: 0;
       height: 100% !important;
     }
+    .sf-nta-results-summary .bslib-sidebar-resize-handle .visually-hidden {
+      display: none !important;
+    }
     .nav-tabs {
       border-bottom: 2px solid #e3e6f0;
     }
@@ -276,7 +279,7 @@
       inset: 0;
       z-index: 8100;
       pointer-events: none;
-      background-color: rgba(255, 255, 255, 0.96);
+      background-color: transparent;
       background-image: url('/www/logo_StreamFind.png');
       background-repeat: no-repeat;
       background-position: center center;
@@ -333,11 +336,6 @@
       display: flex;
       flex-direction: column;
       background: transparent;
-    }
-    .sf-nta-plot-toolbar {
-      flex: 0 0 30px;
-      height: 30px;
-      position: relative;
     }
     .sf-nta-plot-body {
       flex: 1 1 auto;
@@ -518,8 +516,6 @@
   shiny::tagList(
     custom_css,
     custom_js,
-    .app_util_plot_maximize_js(),
-    .app_util_create_plot_modal(ns_full),
     shiny::conditionalPanel(
       "input.sf_active_subtab === 'summary'",
         shiny::div(
@@ -664,7 +660,6 @@
                 shiny::div(
                   id = ns_full("features_chart_surface"),
                   class = "position-relative sf-nta-summary-plot sf-nta-loading-surface",
-                  .app_util_create_maximize_button("features_chart", ns_full),
                   plotly::plotlyOutput(ns_full("features_chart"), height = "100%")
                 )
             )
@@ -833,10 +828,6 @@
               shiny::div(
                 class = "sf-nta-feature-plot-shell",
                 shiny::div(
-                  class = "sf-nta-plot-toolbar",
-                  .app_util_create_maximize_button("features_scatter_plot", ns_full)
-                ),
-                shiny::div(
                   id = ns_full("features_scatter_surface"),
                   class = "sf-nta-feature-plot-holder sf-nta-loading-surface",
                   plotly::plotlyOutput(
@@ -863,10 +854,6 @@
                 shiny::div(
                   class = "sf-nta-plot-panel",
                   shiny::div(
-                    class = "sf-nta-plot-toolbar",
-                    .app_util_create_maximize_button("feature_peaks_plot_scatter", ns_full)
-                  ),
-                  shiny::div(
                     class = "sf-nta-plot-body",
                     plotly::plotlyOutput(
                       ns_full("feature_peaks_plot_scatter"),
@@ -880,10 +867,6 @@
                 height = "100%",
                 shiny::div(
                   class = "sf-nta-plot-panel",
-                  shiny::div(
-                    class = "sf-nta-plot-toolbar",
-                    .app_util_create_maximize_button("feature_xic_plot_scatter", ns_full)
-                  ),
                   shiny::div(
                     class = "sf-nta-plot-body",
                     plotly::plotlyOutput(
@@ -899,10 +882,6 @@
                 shiny::div(
                   class = "sf-nta-plot-panel",
                   shiny::div(
-                    class = "sf-nta-plot-toolbar",
-                    .app_util_create_maximize_button("feature_profile_plot_scatter", ns_full)
-                  ),
-                  shiny::div(
                     class = "sf-nta-plot-body",
                     plotly::plotlyOutput(
                       ns_full("feature_profile_plot_scatter"),
@@ -917,10 +896,6 @@
                 shiny::div(
                   class = "sf-nta-plot-panel",
                   shiny::div(
-                    class = "sf-nta-plot-toolbar",
-                    .app_util_create_maximize_button("feature_ms1_plot_scatter", ns_full)
-                  ),
-                  shiny::div(
                     class = "sf-nta-plot-body",
                     plotly::plotlyOutput(
                       ns_full("feature_ms1_plot_scatter"),
@@ -934,10 +909,6 @@
                 height = "100%",
                 shiny::div(
                   class = "sf-nta-plot-panel",
-                  shiny::div(
-                    class = "sf-nta-plot-toolbar",
-                    .app_util_create_maximize_button("feature_ms2_plot_scatter", ns_full)
-                  ),
                   shiny::div(
                     class = "sf-nta-plot-body",
                     plotly::plotlyOutput(

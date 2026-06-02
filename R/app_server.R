@@ -12,7 +12,7 @@ app_server <- function(input, output, session) {
   reactive_project_id <- shiny::reactiveVal(NA_character_)
   reactive_project_entry <- shiny::reactiveVal(NULL)
   reactive_theme_mode <- shiny::reactiveVal("light")
-  reactive_theme_palette <- shiny::reactiveVal("lagoon")
+  reactive_theme_palette <- shiny::reactiveVal("streamfind")
   reactive_create_class <- shiny::reactiveVal(NA_character_)
   reactive_create_db <- shiny::reactiveVal(NA_character_)
   reactive_open_db <- shiny::reactiveVal(NA_character_)
@@ -51,6 +51,15 @@ app_server <- function(input, output, session) {
   reactive_app_mode <- shiny::reactiveVal(NA_character_)
   reactive_update_trigger <- shiny::reactiveVal(0)
 
+  sync_project_state <- function(project) {
+    shiny::req(!is.null(project))
+    reactive_metadata(get_metadata(project))
+    reactive_analyses(project)
+    reactive_workflow(get_workflow(project))
+    reactive_audit(project$get_audit())
+    reactive_results(.app_util_project_results(project))
+  }
+
   if (inherits(.init_project_object, "Project")) {
     project_obj <- .init_project_object
     reactive_skip_initial_project_load(TRUE)
@@ -58,11 +67,7 @@ app_server <- function(input, output, session) {
     reactive_project_id(project_obj$get_project_id())
     reactive_project_class(class(project_obj)[1])
     reactive_project_entry(projects_overview(class(project_obj)[1]))
-    reactive_metadata(project_obj$metadata)
-    reactive_analyses(project_obj)
-    reactive_workflow(get_workflow(project_obj))
-    reactive_audit(project_obj$get_audit())
-    reactive_results(.app_util_project_results(project_obj))
+    sync_project_state(project_obj)
     reactive_app_mode("Project")
 
     session$onFlushed(function() {
@@ -105,6 +110,31 @@ app_server <- function(input, output, session) {
       stop("Project open function not found: ", opener_name)
     }
     suppressMessages(opener(db = db, project_id = project_id))
+  }
+
+  normalize_duckdb_path <- function(path) {
+    if (!is.character(path) || length(path) == 0 || is.na(path)) {
+      return(NA_character_)
+    }
+    path <- trimws(path[[1]])
+    if (!nzchar(path)) {
+      return(NA_character_)
+    }
+    ext <- tolower(tools::file_ext(path))
+    if (!nzchar(ext)) {
+      return(paste0(path, ".duckdb"))
+    }
+    if (!identical(ext, "duckdb")) {
+      path <- paste0(tools::file_path_sans_ext(path), ".duckdb")
+    }
+    path
+  }
+
+  is_duckdb_path <- function(path) {
+    is.character(path) &&
+      length(path) > 0 &&
+      !is.na(path[[1]]) &&
+      identical(tolower(tools::file_ext(trimws(path[[1]]))), "duckdb")
   }
 
   no_project_loaded_ui <- function() {
@@ -157,16 +187,16 @@ app_server <- function(input, output, session) {
     )
   }
 
-  shinyFiles::shinyFileChoose(
+  shinyFiles::shinyFileSave(
     input, "create_project_db",
-    roots = reactive_volumes(),
+    roots = volumes,
     defaultRoot = "wd",
     session = session,
-    filetypes = "duckdb"
+    filetypes = list(duckdb = "duckdb")
   )
   shinyFiles::shinyFileChoose(
     input, "open_project_db",
-    roots = reactive_volumes(),
+    roots = volumes,
     defaultRoot = "wd",
     session = session,
     filetypes = "duckdb"
@@ -227,11 +257,17 @@ app_server <- function(input, output, session) {
     active_subtab <- value_or(input$sf_active_subtab, "")
 
     if (identical(active_tab, "explorer")) {
-      buttons <- list(
-        make_subbar_button("explorer", "spectra", "Spectra", active_subtab),
-        make_subbar_button("explorer", "chromatograms", "Chromatograms", active_subtab),
-        make_subbar_button("explorer", "eic", "EIC", active_subtab)
-      )
+      project <- reactive_analyses()
+      if (is.null(project)) {
+        return(NULL)
+      }
+      pages <- .app_util_explorer_pages(class(project)[1])
+      if (length(pages) == 0) {
+        return(NULL)
+      }
+      buttons <- lapply(pages, function(page) {
+        make_subbar_button("explorer", page$key, page$label, active_subtab)
+      })
       return(
         htmltools::div(
           id = "sf-subtopbar",
@@ -274,7 +310,15 @@ app_server <- function(input, output, session) {
     active_subtab <- value_or(input$sf_active_subtab, "")
 
     if (identical(active_tab, "explorer")) {
-      valid_subtabs <- c("spectra", "chromatograms", "eic")
+      project <- reactive_analyses()
+      if (is.null(project)) {
+        return(invisible(NULL))
+      }
+      pages <- .app_util_explorer_pages(class(project)[1])
+      if (length(pages) == 0) {
+        return(invisible(NULL))
+      }
+      valid_subtabs <- vapply(pages, `[[`, character(1), "key")
       if (!active_subtab %in% valid_subtabs) {
         session$sendCustomMessage("setActiveTab", list(tab = "explorer", subtab = valid_subtabs[[1]]))
       }
@@ -358,7 +402,7 @@ app_server <- function(input, output, session) {
     project_class <- reactive_project_class()
     project_db <- reactive_project_db()
     project_id <- reactive_project_id()
-    shiny::req(!is.na(project_class), !is.na(project_db), !is.na(project_id), file.exists(project_db), nzchar(project_id))
+    shiny::req(!is.na(project_class), !is.na(project_db), !is.na(project_id), nzchar(project_id))
 
     if (isTRUE(reactive_skip_initial_project_load())) {
       reactive_skip_initial_project_load(FALSE)
@@ -374,11 +418,7 @@ app_server <- function(input, output, session) {
       {
         project_obj <<- load_project_object(project_class, project_db, project_id)
         reactive_project_entry(projects_overview(project_class))
-        reactive_metadata(project_obj$metadata)
-        reactive_analyses(project_obj)
-        reactive_workflow(get_workflow(project_obj))
-        reactive_audit(project_obj$get_audit())
-        reactive_results(.app_util_project_results(project_obj))
+        sync_project_state(project_obj)
         reactive_app_mode("Project")
 
         session$onFlushed(function() {
@@ -400,18 +440,14 @@ app_server <- function(input, output, session) {
   shiny::observeEvent(reactive_update_trigger(), {
     if (!is.null(project_obj)) {
       reactive_project_entry(projects_overview(class(project_obj)[1]))
-      reactive_metadata(project_obj$metadata)
-      reactive_analyses(project_obj)
-      reactive_workflow(get_workflow(project_obj))
-      reactive_audit(project_obj$get_audit())
-      reactive_results(.app_util_project_results(project_obj))
+      sync_project_state(project_obj)
     }
   })
 
   shiny::observeEvent(input$create_project_db, {
-    fileinfo <- shinyFiles::parseFilePaths(reactive_volumes(), input$create_project_db)
+    fileinfo <- shinyFiles::parseSavePath(reactive_volumes(), input$create_project_db)
     if (nrow(fileinfo) > 0) {
-      reactive_create_db(fileinfo$datapath[1])
+      reactive_create_db(normalize_duckdb_path(fileinfo$datapath[1]))
     }
   }, ignoreInit = TRUE)
 
@@ -421,6 +457,12 @@ app_server <- function(input, output, session) {
       return()
     }
     db_path <- fileinfo$datapath[1]
+    if (!is_duckdb_path(db_path)) {
+      reactive_open_db(NA_character_)
+      reactive_open_resolution(structure(list(message = "Please select a file with the .duckdb extension."), class = "app_project_resolution_error"))
+      reactive_open_project_id(NA_character_)
+      return()
+    }
     reactive_open_db(db_path)
     resolution <- tryCatch(
       .app_util_resolve_project_db(db_path, registry = project_registry),
@@ -453,6 +495,7 @@ app_server <- function(input, output, session) {
       shiny::showNotification("Please choose a DuckDB file for the new project.", type = "warning", duration = 5)
       return()
     }
+    db_path <- normalize_duckdb_path(db_path)
     if (!nzchar(project_id)) {
       shiny::showNotification("Please enter a project ID.", type = "warning", duration = 5)
       return()
@@ -514,6 +557,7 @@ app_server <- function(input, output, session) {
       class = "sf-stack",
       htmltools::div(
         class = "sf-info-banner",
+        style = "margin-bottom: 12px;",
         htmltools::tags$strong(details$label),
         htmltools::tags$p(class = "sf-panel-copy", details$description),
         htmltools::tags$div(
@@ -524,10 +568,12 @@ app_server <- function(input, output, session) {
           htmltools::tags$span(paste(details$formats, collapse = ", "))
         )
       ),
-      shinyFiles::shinyFilesButton(
+      shinyFiles::shinySaveButton(
         "create_project_db",
         "Choose DuckDB File",
         "Select or create a DuckDB file for the project",
+        filename = "project",
+        filetype = list(duckdb = "duckdb"),
         multiple = FALSE,
         class = "btn btn-default"
       ),
@@ -552,9 +598,12 @@ app_server <- function(input, output, session) {
 
   output$create_project_db_ui <- shiny::renderUI({
     db_path <- reactive_create_db()
+    if (!is.character(db_path) || length(db_path) == 0 || is.na(db_path) || !nzchar(trimws(db_path))) {
+      return(NULL)
+    }
     htmltools::div(
       class = "sf-path-preview",
-      if (is.character(db_path) && nzchar(db_path)) db_path else "No DuckDB file selected."
+      db_path
     )
   })
 
@@ -646,6 +695,32 @@ app_server <- function(input, output, session) {
     )
   }
 
+  normalize_metadata_dt <- function(dt) {
+    if (is.null(dt)) {
+      return(data.table::data.table(Name = character(), Value = character()))
+    }
+    dt <- data.table::as.data.table(dt)
+    if (ncol(dt) >= 2) {
+      dt <- dt[, seq_len(2), with = FALSE]
+      data.table::setnames(dt, c("Name", "Value"))
+    }
+    dt[, Name := as.character(Name)]
+    dt[, Value := as.character(Value)]
+    dt <- dt[!(is.na(Name) | !nzchar(trimws(Name)))]
+    dt <- dt[!grepl("^place_holder_", Name)]
+    dt[is.na(Value), Value := ""]
+    dt[]
+  }
+
+  metadata_is_dirty <- shiny::reactive({
+    current_dt <- normalize_metadata_dt(metadata_dt())
+    stored_dt <- normalize_metadata_dt(metadata_to_dt(reactive_metadata()))
+    identical(
+      as.data.frame(current_dt, stringsAsFactors = FALSE),
+      as.data.frame(stored_dt, stringsAsFactors = FALSE)
+    ) == FALSE
+  })
+
   shiny::observe({
     tryCatch(
       {
@@ -658,11 +733,17 @@ app_server <- function(input, output, session) {
   output$update_metadata_ui <- shiny::renderUI({
     dt <- metadata_dt()
     if (!is.null(dt)) {
-      htmltools::div(
+      controls <- list(
         class = "sf-toolbar-inline",
-        shiny::actionButton("update_metadata", "Update Metadata"),
-        shiny::actionButton("discard_changes", "Discard Changes", class = "btn-danger")
+        shiny::actionButton("update_metadata", "Update Metadata")
       )
+      if (isTRUE(metadata_is_dirty())) {
+        controls <- c(
+          controls,
+          list(shiny::actionButton("discard_changes", "Discard Changes", class = "btn-danger"))
+        )
+      }
+      return(do.call(htmltools::div, controls))
     }
   })
 
@@ -752,11 +833,13 @@ app_server <- function(input, output, session) {
   shiny::observeEvent(input$update_metadata, {
     tryCatch(
       {
-        dt <- metadata_dt()
-        colnames(dt) <- c("name", "value")
-        dt <- dt[!grepl("^place_holder_", dt$name), ]
-        project_obj$metadata <- as.list(stats::setNames(dt$value, dt$name))
-        reactive_metadata(project_obj$metadata)
+        project <- reactive_analyses()
+        shiny::req(!is.null(project))
+        dt <- normalize_metadata_dt(metadata_dt())
+        metadata_list <- as.list(stats::setNames(dt$Value, dt$Name))
+        project$set_metadata(metadata_list)
+        sync_project_state(project)
+        metadata_dt(metadata_to_dt(reactive_metadata()))
       },
       error = function(e) message("Error updating metadata: ", e)
     )
@@ -893,9 +976,10 @@ app_server <- function(input, output, session) {
         htmltools::div(
           id = "sf-settings-dropdown",
           class = "sf-topbar-dropdown sf-settings-dropdown",
+          style = "max-height: calc(100vh - 44px); overflow-y: auto; overflow-x: hidden; font-size: 12px;",
           htmltools::div(
             class = "sf-settings-section",
-          htmltools::tags$h4(class = "sf-panel-title", "Mode"),
+          htmltools::tags$h4(class = "sf-panel-title", style = "font-size: 14px;", "Mode"),
           shiny::radioButtons(
             "settings_theme_mode",
             label = NULL,
@@ -906,7 +990,7 @@ app_server <- function(input, output, session) {
         ),
         htmltools::div(
           class = "sf-settings-section",
-          htmltools::tags$h4(class = "sf-panel-title", "Palette"),
+          htmltools::tags$h4(class = "sf-panel-title", style = "font-size: 14px;", "Palette"),
           shiny::selectInput(
             "settings_theme_palette",
             label = NULL,
@@ -916,11 +1000,13 @@ app_server <- function(input, output, session) {
               "Slate" = "slate",
               "StreamFind" = "streamfind"
             ),
-            selected = reactive_theme_palette()
+            selected = reactive_theme_palette(),
+            selectize = FALSE
           )
         ),
         htmltools::div(
           class = "sf-settings-note",
+          style = "font-size: 12px;",
           "Theme changes apply to the current app session only."
         )
       )
@@ -933,5 +1019,13 @@ app_server <- function(input, output, session) {
     .mod_Report_Server(project, "report", session$ns, reactive_volumes)
     .mod_Report_UI(project, "report", session$ns)
   })
+
+  shiny::outputOptions(output, "project_ui", suspendWhenHidden = FALSE)
+  shiny::outputOptions(output, "analyses_ui", suspendWhenHidden = FALSE)
+  shiny::outputOptions(output, "explorer_ui", suspendWhenHidden = FALSE)
+  shiny::outputOptions(output, "workflow_ui", suspendWhenHidden = FALSE)
+  shiny::outputOptions(output, "results_ui", suspendWhenHidden = FALSE)
+  shiny::outputOptions(output, "report_ui", suspendWhenHidden = FALSE)
+  shiny::outputOptions(output, "audit_ui", suspendWhenHidden = FALSE)
 
 }

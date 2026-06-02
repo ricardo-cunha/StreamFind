@@ -1,22 +1,53 @@
 
 library(data.table)
-all_files_dir <- "C:\\Users\\apoli\\Documents\\example_files\\peak_finding_files_ex"
+all_files_dir <- "E:\\example_files\\ms_merck"
 if (!dir.exists(all_files_dir)) {
-  all_files_dir <- "D:\\peak_finding_files_ex"
+  stop("Directory with example files not found: ", all_files_dir)
 }
-if (!dir.exists(all_files_dir)) {
-  all_files_dir <- "E:\\example_files\\ms_merck"
-}
-if (!dir.exists(all_files_dir)) {
-  stop("Directory with example files not found.")
-}
-all_files <- list.files(all_files_dir, full.names = TRUE, recursive = TRUE)
 
-files_merck <- all_files[grepl("merck/Beispieldaten Routine", all_files) & grepl("\\.mzML$", all_files)]
-cvs_merck <- all_files[grepl("merck/Beispieldaten Routine", all_files) & grepl("\\.csv$", all_files)]
+dir_merck_1 <- file.path(all_files_dir, "Beispieldaten Routine")
+dir_merck_2 <- file.path(all_files_dir, "More Data OLED Routine for Ricardo")
 
-files_merck_2 <- all_files[grepl("merck/More Data OLED Routine for Ricardo", all_files) & grepl("\\.mzML$", all_files)]
-cvs_merck_2 <- all_files[grepl("merck/More Data OLED Routine for Ricardo", all_files) & grepl("\\.csv$", all_files)]
+if (!dir.exists(dir_merck_1)) {
+  stop("Directory with Merck routine example files not found: ", dir_merck_1)
+}
+if (!dir.exists(dir_merck_2)) {
+  stop("Directory with Merck OLED example files not found: ", dir_merck_2)
+}
+
+files_merck <- list.files(
+  dir_merck_1,
+  pattern = "\\.mzML$",
+  full.names = TRUE,
+  recursive = FALSE
+)
+cvs_merck <- list.files(
+  dir_merck_1,
+  pattern = "\\.csv$",
+  full.names = TRUE,
+  recursive = FALSE
+)
+
+files_merck_2 <- list.files(
+  dir_merck_2,
+  pattern = "\\.mzML$",
+  full.names = TRUE,
+  recursive = FALSE
+)
+cvs_merck_2 <- list.files(
+  dir_merck_2,
+  pattern = "\\.csv$",
+  full.names = TRUE,
+  recursive = FALSE
+)
+
+mol_merck_2 <- list.files(
+  dir_merck_2,
+  pattern = "\\.mol$",
+  full.names = TRUE,
+  recursive = FALSE
+)
+
 acc_ids_merck_2 <- sub(".*(ACC1_\\d+).*", "\\1", basename(cvs_merck_2))
 
 merck_ex1 <- "ACC1_26393"
@@ -66,6 +97,7 @@ files_merck_ex <- data.table(
   ),
   file_path = c(files_merck_ex1_centroid, files_merck_ex2_centroid, files_merck_ex3_centroid, files_merck_ex4_centroid)
 )
+
 files_merck_ex$blank <- grepl("blank", files_merck_ex$file_name)
 
 db_merck_ex <- rbindlist(list(db_merck_ex1, db_merck_ex2, db_merck_ex3, db_merck_ex4))

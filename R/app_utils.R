@@ -141,6 +141,25 @@
 }
 
 #' @noRd
+.app_util_explorer_pages <- function(project_class) {
+  module_fns <- .app_util_module_functions(project_class, "explorer")
+  if (!is.function(module_fns$ui) || !is.function(module_fns$server)) {
+    return(list())
+  }
+
+  owner <- .app_util_module_owner(project_class, "explorer")
+  switch(
+    owner,
+    ProjectMassSpec = list(
+      list(key = "tic", label = "TIC"),
+      list(key = "chromatograms", label = "Chromatograms"),
+      list(key = "eic", label = "EIC")
+    ),
+    list()
+  )
+}
+
+#' @noRd
 .app_util_read_project_rows <- function(db) {
   checkmate::assert_file_exists(db)
   conn <- DBI::dbConnect(duckdb::duckdb(), dbdir = db, read_only = TRUE)
@@ -214,6 +233,24 @@
   available_projects <- names(project_registry)
 
   time_var <- format(Sys.time(), "%Y%m%d%H%M%S")
+
+  normalize_duckdb_path <- function(path) {
+    if (!is.character(path) || length(path) == 0 || is.na(path)) {
+      return(NA_character_)
+    }
+    path <- trimws(path[[1]])
+    if (!nzchar(path)) {
+      return(NA_character_)
+    }
+    ext <- tolower(tools::file_ext(path))
+    if (!nzchar(ext)) {
+      return(paste0(path, ".duckdb"))
+    }
+    if (!identical(ext, "duckdb")) {
+      path <- paste0(tools::file_path_sans_ext(path), ".duckdb")
+    }
+    path
+  }
 
   model_elements <- list()
 
@@ -290,32 +327,30 @@
       reactive_show_init_modal(FALSE)
       project_db_var <- paste0(time_var, "_select_ProjectDB")
       project_id_var <- paste0(time_var, "_project_id")
-      shinyFiles::shinyFileChoose(
+      shinyFiles::shinyFileSave(
         input,
         project_db_var,
         roots = volumes,
         defaultRoot = "wd",
         session = session,
-        filetypes = "duckdb"
+        filetypes = list(duckdb = "duckdb")
       )
       shiny::showModal(shiny::modalDialog(
         title = "Open Project",
         shiny::p("Select a StreamFind DuckDB file and enter the project ID."),
         shiny::div(
-          shinyFiles::shinyFilesButton(
+          shinyFiles::shinySaveButton(
             project_db_var,
             "Choose DuckDB File",
-            "Select a StreamFind .duckdb file",
+            "Select or create a StreamFind .duckdb file",
+            filename = "project",
+            filetype = list(duckdb = "duckdb"),
             multiple = FALSE,
             class = "btn btn-primary"
           ),
-          style = "text-align: center; margin: 20px 0;"
+          style = "text-align: center; margin: 32px 0 20px 0;"
         ),
-        shiny::div(
-          id = paste0(project_db_var, "_display"),
-          style = "margin-top: 15px; padding: 10px; background-color: var(--sf-content-bg, #f5f5f5); border: 1px solid rgba(128,128,128,0.2); border-radius: 4px; min-height: 30px;",
-          shiny::p("No database selected", style = "margin: 0; color: #999;")
-        ),
+        shiny::div(id = paste0(project_db_var, "_display")),
         shiny::div(
           style = "margin-top: 15px;",
           shiny::textInput(project_id_var, "Project ID", value = "default")
@@ -332,22 +367,25 @@
       ))
       shiny::observeEvent(input[[project_db_var]], {
         shiny::req(input[[project_db_var]])
-        fileinfo <- shinyFiles::parseFilePaths(volumes, input[[project_db_var]])
+        fileinfo <- shinyFiles::parseSavePath(volumes, input[[project_db_var]])
         if (nrow(fileinfo) > 0) {
-          project_db <- fileinfo$datapath[1]
+          project_db <- normalize_duckdb_path(fileinfo$datapath[1])
           shiny::removeUI(selector = paste0("#", project_db_var, "_display > *"))
           shiny::insertUI(
             selector = paste0("#", project_db_var, "_display"),
             where = "afterBegin",
-            shiny::p(project_db, style = "margin: 0; color: #333; word-break: break-all;")
+            htmltools::div(
+              class = "sf-path-preview",
+              project_db
+            )
           )
         }
       })
       shiny::observeEvent(input[[paste0(project_db_var, "_confirm")]], {
-        fileinfo <- shinyFiles::parseFilePaths(volumes, input[[project_db_var]])
+        fileinfo <- shinyFiles::parseSavePath(volumes, input[[project_db_var]])
         project_id <- input[[project_id_var]]
         if (nrow(fileinfo) > 0 && is.character(project_id) && nzchar(trimws(project_id))) {
-          reactive_project_db(fileinfo$datapath[1])
+          reactive_project_db(normalize_duckdb_path(fileinfo$datapath[1]))
           reactive_project_id(trimws(project_id))
           reactive_app_mode("WADB")
           shiny::removeModal()
@@ -413,7 +451,6 @@
       shiny::tags$div(
         class = "modal-content",
 
-        # Modal header
         shiny::tags$div(
           class = "modal-header",
           shiny::tags$h5(class = "modal-title", id = ns_full("plot_modal_title"), "Plot"),
@@ -426,7 +463,6 @@
           )
         ),
 
-        # Modal body
         shiny::tags$div(
           class = "modal-body p-0",
           id = ns_full("plot_modal_body")

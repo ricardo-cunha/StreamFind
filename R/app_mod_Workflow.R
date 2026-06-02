@@ -827,7 +827,7 @@
     shinyFiles::shinyFileChoose(
       input,
       "load_workflow",
-      roots = reactive_volumes(),
+      roots = .app_util_get_volumes(),
       defaultRoot = "wd",
       session = session,
       filetypes = list(json = "json", rds = "rds")

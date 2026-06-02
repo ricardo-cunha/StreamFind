@@ -1,3 +1,6 @@
+library(StreamFind)
+library(data.table)
+
 project_db <- file.path("dev", "dev_duckdb", "data_nta.duckdb")
 project_id <- "demo_nta"
 
@@ -152,38 +155,38 @@ workflow <- Workflow(list(
     removeAdducts = TRUE,
     removeLosses = TRUE
   ),
-  # Method_NonTargetAnalysis_SuspectScreening(
-  #   suspects = suspects,
-  #   ppm = 5,
-  #   sec = 10,
-  #   ppmMS2 = 10,
-  #   mzrMS2 = 0.008,
-  #   minCosineSimilarity = 0.7,
-  #   minSharedFragments = 3L,
-  #   filtered = TRUE
-  # ),
-  Method_NonTargetAnalysis_MetFragScreening(
-    metfrag_path = "C:\\Users\\cunha\\Documents\\patRoon_deps\\MetFragCommandLine-2.5.0.jar",
-    database_type = "LocalCSV",
-    database_path = file.path("dev", "dev_duckdb", "transformation_products_template.csv"),
-    ppm = 10,
-    sec = 15,
+  Method_NonTargetAnalysis_SuspectScreening(
+    suspects = suspects,
+    ppm = 5,
+    sec = 10,
     ppmMS2 = 10,
     mzrMS2 = 0.008,
-    top_n = 5L,
-    score_types = "FragmenterScore",
-    score_weights = 1,
-    pre_processing_candidate_filter = c("UnconnectedCompoundFilter", "IsotopeFilter"),
-    post_processing_candidate_filter = "InChIKeyFilter",
-    maximum_tree_depth = 2L,
-    number_threads = 1L,
-    use_smiles = TRUE,
-    filtered = FALSE,
-    java_path = "java",
-    run_dir = "",
-    debug = TRUE,
-    extra_params = list()
+    minCosineSimilarity = 0.7,
+    minSharedFragments = 3L,
+    filtered = TRUE
   )
+  # Method_NonTargetAnalysis_MetFragScreening(
+  #   metfrag_path = "C:\\Users\\cunha\\Documents\\patRoon_deps\\MetFragCommandLine-2.5.0.jar",
+  #   database_type = "LocalCSV",
+  #   database_path = file.path("dev", "dev_duckdb", "transformation_products_template.csv"),
+  #   ppm = 10,
+  #   sec = 15,
+  #   ppmMS2 = 10,
+  #   mzrMS2 = 0.008,
+  #   top_n = 5L,
+  #   score_types = "FragmenterScore",
+  #   score_weights = 1,
+  #   pre_processing_candidate_filter = c("UnconnectedCompoundFilter", "IsotopeFilter"),
+  #   post_processing_candidate_filter = "InChIKeyFilter",
+  #   maximum_tree_depth = 2L,
+  #   number_threads = 1L,
+  #   use_smiles = TRUE,
+  #   filtered = FALSE,
+  #   java_path = "java",
+  #   run_dir = "",
+  #   debug = TRUE,
+  #   extra_params = list()
+  # )
   # Method_NonTargetAnalysis_AssignTransformationProducts(
   #   transformation_products = transformation_products,
   #   chromatographic_phase = "reverse_phase",

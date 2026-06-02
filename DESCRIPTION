@@ -117,7 +117,7 @@ Collate:
     'app_utils.R'
     'app_mod_Workflow.R'
     'app_mod_Report.R'
-    'app_mod_MassSpecAnalyses.R'
+    'app_mod_Analyses_MassSpec.R'
     'app_mod_Explorer_MassSpec.R'
     'app_mod_Results_ProjectMassSpecChromatograms.R'
     'app_mod_Results_ProjectNonTargetAnalysis.R'

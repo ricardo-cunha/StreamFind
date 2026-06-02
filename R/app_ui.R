@@ -25,7 +25,7 @@ app_ui <- function(request) {
   shiny::tagList(
     golem_add_external_resources(),
     htmltools::div(
-      id = "sf-app", class = "sf-light",
+      id = "sf-app", class = "sf-light", `data-sf-palette` = "streamfind",
       # ---- Top bar (logo + horizontal nav + right controls) ----
       htmltools::div(
         id = "sf-topbar",
@@ -111,31 +111,80 @@ app_ui <- function(request) {
           ),
           shiny::conditionalPanel(
             "input.sf_active_tab === 'project'",
-            htmltools::div(class = "sf-page", shiny::uiOutput("project_ui"))
+            htmltools::div(
+              class = "sf-page",
+              htmltools::div(
+                id = "sf-project-surface",
+                class = "sf-page-loading-surface",
+                shiny::uiOutput("project_ui")
+              )
+            )
           ),
           shiny::conditionalPanel(
             "input.sf_active_tab === 'analyses'",
-            htmltools::div(class = "sf-page", shiny::uiOutput("analyses_ui"))
+            htmltools::div(
+              class = "sf-page",
+              htmltools::div(
+                id = "sf-analyses-surface",
+                class = "sf-page-loading-surface",
+                shiny::uiOutput("analyses_ui")
+              )
+            )
           ),
           shiny::conditionalPanel(
             "input.sf_active_tab === 'explorer'",
-            htmltools::div(class = "sf-page", shiny::uiOutput("explorer_ui"))
+            htmltools::div(
+              class = "sf-page",
+              htmltools::div(
+                id = "sf-explorer-surface",
+                class = "sf-page-loading-surface",
+                shiny::uiOutput("explorer_ui")
+              )
+            )
           ),
           shiny::conditionalPanel(
             "input.sf_active_tab === 'workflow'",
-            htmltools::div(class = "sf-page", shiny::uiOutput("workflow_ui"))
+            htmltools::div(
+              class = "sf-page",
+              htmltools::div(
+                id = "sf-workflow-surface",
+                class = "sf-page-loading-surface",
+                shiny::uiOutput("workflow_ui")
+              )
+            )
           ),
           shiny::conditionalPanel(
             "input.sf_active_tab === 'results'",
-            htmltools::div(class = "sf-page", shiny::uiOutput("results_ui"))
+            htmltools::div(
+              class = "sf-page",
+              htmltools::div(
+                id = "sf-results-surface",
+                class = "sf-page-loading-surface",
+                shiny::uiOutput("results_ui")
+              )
+            )
           ),
           shiny::conditionalPanel(
             "input.sf_active_tab === 'report'",
-            htmltools::div(class = "sf-page", shiny::uiOutput("report_ui"))
+            htmltools::div(
+              class = "sf-page",
+              htmltools::div(
+                id = "sf-report-surface",
+                class = "sf-page-loading-surface",
+                shiny::uiOutput("report_ui")
+              )
+            )
           ),
           shiny::conditionalPanel(
             "input.sf_active_tab === 'audit'",
-            htmltools::div(class = "sf-page", shiny::uiOutput("audit_ui"))
+            htmltools::div(
+              class = "sf-page",
+              htmltools::div(
+                id = "sf-audit-surface",
+                class = "sf-page-loading-surface",
+                shiny::uiOutput("audit_ui")
+              )
+            )
           ),
           
         )
@@ -185,9 +234,30 @@ golem_add_external_resources <- function() {
     ),
     # Navigation + theme toggle JS
     shiny::tags$script(htmltools::HTML("
+      function sfPageLoadingTarget(tab) {
+        var targets = {
+          project:   { outputId: 'project_ui',  surfaceId: 'sf-project-surface' },
+          analyses:  { outputId: 'analyses_ui', surfaceId: 'sf-analyses-surface' },
+          explorer:  { outputId: 'explorer_ui', surfaceId: 'sf-explorer-surface' },
+          workflow:  { outputId: 'workflow_ui', surfaceId: 'sf-workflow-surface' },
+          results:   { outputId: 'results_ui',  surfaceId: 'sf-results-surface' },
+          report:    { outputId: 'report_ui',   surfaceId: 'sf-report-surface' },
+          audit:     { outputId: 'audit_ui',    surfaceId: 'sf-audit-surface' }
+        };
+        return targets[tab] || null;
+      }
+
+      function sfMarkPageLoading(tab) {
+        var target = sfPageLoadingTarget(tab);
+        if (!target) return;
+        var surface = document.getElementById(target.surfaceId);
+        if (surface) surface.classList.add('loading');
+      }
+
       // sfNavigate: activate a main tab
       function sfNavigate(tab, subtab) {
         Shiny.setInputValue('sf_active_tab', tab, {priority: 'event'});
+        sfMarkPageLoading(tab);
 
         document.querySelectorAll('#sf-nav .sf-nav-group').forEach(function(grp) {
           grp.classList.toggle('active', grp.getAttribute('data-tab') === tab);
@@ -206,6 +276,7 @@ golem_add_external_resources <- function() {
       function sfSubNavigate(tab, subtab) {
         Shiny.setInputValue('sf_active_tab', tab, {priority: 'event'});
         Shiny.setInputValue('sf_active_subtab', subtab, {priority: 'event'});
+        sfMarkPageLoading(tab);
 
         document.querySelectorAll('#sf-nav .sf-nav-group').forEach(function(grp) {
           grp.classList.toggle('active', grp.getAttribute('data-tab') === tab);
@@ -245,7 +316,7 @@ golem_add_external_resources <- function() {
         var app = document.getElementById('sf-app');
         if (app) {
           var mode = (msg && msg.mode) ? msg.mode : 'light';
-          var palette = (msg && msg.palette) ? msg.palette : 'lagoon';
+          var palette = (msg && msg.palette) ? msg.palette : 'streamfind';
           app.classList.remove('sf-light', 'sf-dark');
           app.classList.add(mode === 'dark' ? 'sf-dark' : 'sf-light');
           app.setAttribute('data-sf-palette', palette);
@@ -339,6 +410,63 @@ golem_add_external_resources <- function() {
         });
         obs.observe(document.body, { childList: true, subtree: true });
 
+        function bindLoadingSurface(outputId, surfaceId) {
+          var output = document.getElementById(outputId);
+          var surface = document.getElementById(surfaceId);
+          if (!output || !surface) return false;
+
+          var syncLoading = function() {
+            var hasRenderedContent = output.children.length > 0 || output.textContent.trim().length > 0;
+            var hasNestedRecalculating = output.querySelector('.recalculating') !== null;
+            var isLoading = output.classList.contains('recalculating') ||
+              hasNestedRecalculating ||
+              !hasRenderedContent;
+            surface.classList.toggle('loading', isLoading);
+          };
+
+          syncLoading();
+
+          if (!window.__sfPageLoadingObservers) {
+            window.__sfPageLoadingObservers = {};
+          }
+          if (window.__sfPageLoadingObservers[outputId]) {
+            try { window.__sfPageLoadingObservers[outputId].disconnect(); } catch (e) {}
+          }
+
+          var observer = new MutationObserver(syncLoading);
+          observer.observe(output, {
+            attributes: true,
+            attributeFilter: ['class'],
+            childList: true,
+            subtree: true,
+            characterData: true
+          });
+          window.__sfPageLoadingObservers[outputId] = observer;
+          return true;
+        }
+
+        function bindLoadingSurfaceWhenReady(outputId, surfaceId) {
+          var attempts = 0;
+          var timer = window.setInterval(function() {
+            attempts += 1;
+            if (bindLoadingSurface(outputId, surfaceId) || attempts >= 50) {
+              window.clearInterval(timer);
+            }
+          }, 150);
+        }
+
+        [
+          ['project_ui', 'sf-project-surface'],
+          ['analyses_ui', 'sf-analyses-surface'],
+          ['explorer_ui', 'sf-explorer-surface'],
+          ['workflow_ui', 'sf-workflow-surface'],
+          ['results_ui', 'sf-results-surface'],
+          ['report_ui', 'sf-report-surface'],
+          ['audit_ui', 'sf-audit-surface']
+        ].forEach(function(pair) {
+          bindLoadingSurfaceWhenReady(pair[0], pair[1]);
+        });
+
         document.addEventListener('click', function(e) {
           var trigger = e.target.closest(
             '#create_project_confirm, #open_project_confirm'
@@ -354,7 +482,7 @@ golem_add_external_resources <- function() {
         var app = document.getElementById('sf-app');
         if (app) {
           document.body.setAttribute('data-sf-theme', app.classList.contains('sf-dark') ? 'dark' : 'light');
-          document.body.setAttribute('data-sf-palette', app.getAttribute('data-sf-palette') || 'lagoon');
+          document.body.setAttribute('data-sf-palette', app.getAttribute('data-sf-palette') || 'streamfind');
         }
       });
 

@@ -663,34 +663,7 @@ get_features.ProjectNonTargetAnalysis <- function(
   }
   rep_map <- analyses_info[, .(analysis, replicate)]
   fts <- merge(fts, rep_map, by = "analysis", all.x = TRUE)
-  if (is.data.frame(features) && "name" %in% colnames(features) && "feature" %in% colnames(features)) {
-    labels <- setNames(features$name, features$feature)
-    fts[, name := unname(labels[feature])]
-  } else if (!is.null(features) && !is.null(names(features))) {
-    labels <- setNames(names(features), as.character(features))
-    fts[, name := unname(labels[feature])]
-  }
-  if (is.data.frame(groups) && "name" %in% colnames(groups)) {
-    group_col <- intersect(c("feature_group", "group"), colnames(groups))
-    if (length(group_col) > 0) {
-      labels <- setNames(groups$name, groups[[group_col[1]]])
-      fts[, name := unname(labels[feature_group])]
-    }
-  } else if (!is.null(groups) && !is.null(names(groups))) {
-    labels <- setNames(names(groups), as.character(groups))
-    fts[, name := unname(labels[feature_group])]
-  }
-  if (is.data.frame(components) && "name" %in% colnames(components)) {
-    component_col <- intersect(c("feature_component", "component"), colnames(components))
-    if (length(component_col) > 0) {
-      labels <- setNames(components$name, components[[component_col[1]]])
-      fts[, name := unname(labels[feature_component])]
-    }
-  } else if (!is.null(components) && !is.null(names(components))) {
-    labels <- setNames(names(components), as.character(components))
-    fts[, name := unname(labels[feature_component])]
-  }
-  desired_order <- c("analysis", "replicate", "feature")
+  desired_order <- c("analysis", "replicate", "feature", "id")
   data.table::setcolorder(fts, c(intersect(desired_order, colnames(fts)), setdiff(colnames(fts), desired_order)))
   fts
 }

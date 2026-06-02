@@ -201,6 +201,7 @@ namespace nta
     {
       std::string analysis;
       std::string feature;
+      std::string id;
       std::string feature_component;
       std::string feature_group;
       std::string adduct;
@@ -1452,8 +1453,11 @@ namespace nta
     {
       std::vector<std::string> analyses;
       std::vector<std::string> features;
+      std::unordered_map<std::string, std::string> feature_labels;
       std::vector<std::string> feature_groups;
+      std::unordered_map<std::string, std::string> feature_group_labels;
       std::vector<std::string> feature_components;
+      std::unordered_map<std::string, std::string> feature_component_labels;
       mass_spec::spectra::MS_TARGETS_REQUEST targets;
       bool include_filtered = false;
     };

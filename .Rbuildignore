@@ -8,8 +8,12 @@
 ^\.github$
 ^\.quarto$
 ^\.vscode$
+^\.venv$
+^\.venv/.*$
 ^docs$
 ^dev$
+^\.ai_plan$
+^\.ai_plan/.*$
 ^log$
 ^cache$
 ^demo_data$

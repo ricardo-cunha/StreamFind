@@ -598,7 +598,7 @@ body[data-sf-theme][data-sf-palette] {
   right: 0;
   width: 260px;
   max-width: calc(100vw - 20px);
-  max-height: 70vh;
+  max-height: calc(100vh - var(--sf-topbar-height) - 8px);
   overflow-x: hidden;
   overflow-y: auto;
   padding: var(--sf-space-2);
@@ -650,6 +650,7 @@ body[data-sf-theme][data-sf-palette] {
 
 .sf-settings-dropdown {
   position: absolute;
+  max-height: calc(100vh - var(--sf-topbar-height) - 8px);
 }
 
 .sf-settings-dropdown.open {
@@ -665,6 +666,7 @@ body[data-sf-theme][data-sf-palette] {
 .sf-settings-dropdown .shiny-input-container {
   width: 100%;
   margin: 0;
+  font-size: 12px;
 }
 
 .sf-settings-dropdown .radio {
@@ -678,6 +680,22 @@ body[data-sf-theme][data-sf-palette] {
 
 .sf-settings-dropdown .control-label {
   display: none;
+}
+
+.sf-settings-dropdown .sf-panel-title {
+  font-size: 14px;
+}
+
+.sf-settings-dropdown,
+.sf-settings-dropdown .radio,
+.sf-settings-dropdown .radio label,
+.sf-settings-dropdown .form-control,
+.sf-settings-dropdown .selectize-input,
+.sf-settings-dropdown .selectize-dropdown,
+.sf-settings-dropdown .item,
+.sf-settings-dropdown .option,
+.sf-settings-dropdown .sf-settings-note {
+  font-size: 12px;
 }
 
 .sf-settings-dropdown .selectize-input,
@@ -751,6 +769,26 @@ body[data-sf-theme][data-sf-palette] {
   overflow: auto;
   background: var(--sf-content-bg);
   color: var(--sf-content-color);
+}
+
+.sf-page-loading-surface {
+  position: relative;
+  width: 100%;
+  min-height: calc(100vh - var(--sf-topbar-height) - var(--sf-subtopbar-height) - 10px);
+}
+
+.sf-page-loading-surface.loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 8100;
+  pointer-events: none;
+  background-color: rgba(255, 255, 255, 0.96);
+  background-image: url('/www/logo_StreamFind.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: min(280px, 42%);
+  animation: sf-logo-pulse 1.2s ease-in-out infinite;
 }
 
 .sf-page-shell {
@@ -1510,6 +1548,25 @@ ul.sf-info-list {
 #shiny-modal-wrapper .modal .recalculating > .spinner,
 .plot-modal .recalculating > .spinner {
   display: none !important;
+}
+
+.sf-explorer-plot-surface {
+  position: relative;
+  min-height: calc(100vh - 25px - 10px - 28px - 30px);
+}
+
+.sf-explorer-plot-surface.loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 8100;
+  pointer-events: none;
+  background-color: rgba(255, 255, 255, 0.96);
+  background-image: url('/www/logo_StreamFind.png');
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: auto 70%;
+  animation: sf-logo-pulse 1.2s ease-in-out infinite;
 }
 /* ============================================================
    Shiny Modal Layout (restart/init dialogs)

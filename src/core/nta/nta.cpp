@@ -116,6 +116,7 @@ namespace nta
         check_append_state(duckdb_append_int32(appender, features.ms2_size[i]), appender, "append NTA_FEATURES ms2_size");
         append_optional_varchar(appender, features.ms2_mz[i], "append NTA_FEATURES ms2_mz");
         append_optional_varchar(appender, features.ms2_intensity[i], "append NTA_FEATURES ms2_intensity");
+        check_append_state(duckdb_append_null(appender), appender, "append NTA_FEATURES created_at");
         check_append_state(duckdb_appender_end_row(appender), appender, "end NTA_FEATURES row");
       }
       check_append_state(duckdb_appender_close(appender), appender, "close NTA_FEATURES appender");
@@ -165,6 +166,7 @@ namespace nta
         check_append_state(duckdb_append_int32(appender, suspects.exp_ms2_size[i]), appender, "append NTA_SUSPECTS exp_ms2_size");
         append_optional_varchar(appender, suspects.exp_ms2_mz[i], "append NTA_SUSPECTS exp_ms2_mz");
         append_optional_varchar(appender, suspects.exp_ms2_intensity[i], "append NTA_SUSPECTS exp_ms2_intensity");
+        check_append_state(duckdb_append_null(appender), appender, "append NTA_SUSPECTS created_at");
         check_append_state(duckdb_appender_end_row(appender), appender, "end NTA_SUSPECTS row");
       }
       check_append_state(duckdb_appender_close(appender), appender, "close NTA_SUSPECTS appender");
@@ -214,6 +216,7 @@ namespace nta
         check_append_state(duckdb_append_int32(appender, internal_standards.exp_ms2_size[i]), appender, "append NTA_INTERNAL_STANDARDS exp_ms2_size");
         append_optional_varchar(appender, internal_standards.exp_ms2_mz[i], "append NTA_INTERNAL_STANDARDS exp_ms2_mz");
         append_optional_varchar(appender, internal_standards.exp_ms2_intensity[i], "append NTA_INTERNAL_STANDARDS exp_ms2_intensity");
+        check_append_state(duckdb_append_null(appender), appender, "append NTA_INTERNAL_STANDARDS created_at");
         check_append_state(duckdb_appender_end_row(appender), appender, "end NTA_INTERNAL_STANDARDS row");
       }
       check_append_state(duckdb_appender_close(appender), appender, "close NTA_INTERNAL_STANDARDS appender");
@@ -262,6 +265,7 @@ namespace nta
         check_append_state(duckdb_append_double(appender, products.main_precursor_cosine_similarity[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS main_precursor_cosine_similarity");
         check_append_state(duckdb_append_double(appender, products.rt_plausibility[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS rt_plausibility");
         check_append_state(duckdb_append_double(appender, products.main_precursor_rt_plausibility[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS main_precursor_rt_plausibility");
+        check_append_state(duckdb_append_null(appender), appender, "append NTA_TRANSFORMATION_PRODUCTS created_at");
         check_append_state(duckdb_appender_end_row(appender), appender, "end NTA_TRANSFORMATION_PRODUCTS row");
       }
       check_append_state(duckdb_appender_close(appender), appender, "close NTA_TRANSFORMATION_PRODUCTS appender");
@@ -1896,6 +1900,22 @@ namespace nta
       return out;
     }
 
+    std::unordered_map<std::string, std::string> sanitize_query_labels(
+        const std::unordered_map<std::string, std::string> &labels)
+    {
+      std::unordered_map<std::string, std::string> out;
+      out.reserve(labels.size());
+      for (const auto &[key, value] : labels)
+      {
+        const auto sanitized = sanitize_query_values({key});
+        if (!sanitized.empty() && !value.empty())
+        {
+          out[sanitized.front()] = value;
+        }
+      }
+      return out;
+    }
+
     bool has_target_filters(const NTA_QUERY_REQUEST &query)
     {
       return !query.targets.mass.empty() ||
@@ -1918,8 +1938,8 @@ namespace nta
       return analyses;
     }
 
-    bool matches_feature_target(const NTA_FEATURE_ROW &row,
-                                const mass_spec::spectra::MS_TARGETS &targets)
+    std::string matching_feature_target_id(const NTA_FEATURE_ROW &row,
+                                           const mass_spec::spectra::MS_TARGETS &targets)
     {
       for (std::size_t i = 0; i < targets.id.size(); ++i)
       {
@@ -1937,9 +1957,9 @@ namespace nta
         {
           continue;
         }
-        return true;
+        return i < targets.id.size() ? targets.id[i] : std::string();
       }
-      return false;
+      return {};
     }
 
     std::vector<NTA_FEATURE_ROW> filter_feature_rows_by_targets(const std::vector<NTA_FEATURE_ROW> &rows,
@@ -1985,12 +2005,46 @@ namespace nta
         {
           continue;
         }
-        if (matches_feature_target(row, it->second))
+        auto matched_row = row;
+        const auto target_id = matching_feature_target_id(row, it->second);
+        if (!target_id.empty())
         {
-          out.push_back(row);
+          matched_row.id = target_id;
+          out.push_back(std::move(matched_row));
         }
       }
       return out;
+    }
+
+    void annotate_feature_rows_by_query_labels(std::vector<NTA_FEATURE_ROW> &rows,
+                                               const NTA_QUERY_REQUEST &query)
+    {
+      const auto feature_labels = sanitize_query_labels(query.feature_labels);
+      const auto feature_group_labels = sanitize_query_labels(query.feature_group_labels);
+      const auto feature_component_labels = sanitize_query_labels(query.feature_component_labels);
+
+      if (feature_labels.empty() && feature_group_labels.empty() && feature_component_labels.empty())
+      {
+        return;
+      }
+
+      for (auto &row : rows)
+      {
+        if (const auto it = feature_labels.find(row.feature); it != feature_labels.end())
+        {
+          row.id = it->second;
+          continue;
+        }
+        if (const auto it = feature_group_labels.find(row.feature_group); it != feature_group_labels.end())
+        {
+          row.id = it->second;
+          continue;
+        }
+        if (const auto it = feature_component_labels.find(row.feature_component); it != feature_component_labels.end())
+        {
+          row.id = it->second;
+        }
+      }
     }
 
     std::unordered_set<std::string> feature_keys_from_rows(const std::vector<NTA_FEATURE_ROW> &rows)
@@ -2685,9 +2739,17 @@ namespace nta
         store_feature_cache(cache_key, description);
         return true;
       }
+      catch (const std::exception &e)
+      {
+        throw project::error::ERROR(
+            project::error::ERROR_CODE::Unknown,
+            "NTA step '" + step + "' failed: " + std::string(e.what()));
+      }
       catch (...)
       {
-        return false;
+        throw project::error::ERROR(
+            project::error::ERROR_CODE::Unknown,
+            "NTA step '" + step + "' failed with an unknown native error.");
       }
     }
 
@@ -2710,9 +2772,17 @@ namespace nta
         store_suspect_cache(cache_key, description);
         return true;
       }
+      catch (const std::exception &e)
+      {
+        throw project::error::ERROR(
+            project::error::ERROR_CODE::Unknown,
+            "NTA step '" + step + "' failed: " + std::string(e.what()));
+      }
       catch (...)
       {
-        return false;
+        throw project::error::ERROR(
+            project::error::ERROR_CODE::Unknown,
+            "NTA step '" + step + "' failed with an unknown native error.");
       }
     }
 
@@ -2735,9 +2805,17 @@ namespace nta
         store_internal_standard_cache(cache_key, description);
         return true;
       }
+      catch (const std::exception &e)
+      {
+        throw project::error::ERROR(
+            project::error::ERROR_CODE::Unknown,
+            "NTA step '" + step + "' failed: " + std::string(e.what()));
+      }
       catch (...)
       {
-        return false;
+        throw project::error::ERROR(
+            project::error::ERROR_CODE::Unknown,
+            "NTA step '" + step + "' failed with an unknown native error.");
       }
     }
 
@@ -2760,9 +2838,17 @@ namespace nta
         store_transformation_products_cache(cache_key, description, products);
         return true;
       }
+      catch (const std::exception &e)
+      {
+        throw project::error::ERROR(
+            project::error::ERROR_CODE::Unknown,
+            "NTA step '" + step + "' failed: " + std::string(e.what()));
+      }
       catch (...)
       {
-        return false;
+        throw project::error::ERROR(
+            project::error::ERROR_CODE::Unknown,
+            "NTA step '" + step + "' failed with an unknown native error.");
       }
     }
 
@@ -2984,7 +3070,7 @@ namespace nta
     void PROJECT_NON_TARGET_ANALYSIS::validate_schema(const std::shared_ptr<project::api::CONTEXT> &ctx)
     {
       auto guard = mass_spec::api::connect_checked(ctx);
-      project::db::validate_columns_present(
+      project::db::validate_columns(
           guard.get(),
           features_table_name(),
           {{"project_id", "VARCHAR", true},
@@ -3284,7 +3370,9 @@ namespace nta
                          } }, [&](duckdb_result &result)
                                 { out = project::db::rows_from_result(&result, [&](idx_t row)
                                                                       { return feature_row_from_result(result, row); }); });
-      return filter_feature_rows_by_targets(out, query);
+      out = filter_feature_rows_by_targets(out, query);
+      annotate_feature_rows_by_query_labels(out, query);
+      return out;
     }
 
     std::vector<NTA_SUSPECT_ROW> PROJECT_NON_TARGET_ANALYSIS::get_suspects(const NTA_QUERY_REQUEST &query) const

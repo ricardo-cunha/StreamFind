@@ -23,14 +23,15 @@
   shiny::moduleServer(id, function(input, output, session) {
     ns2 <- shiny::NS(id)
 
-    reactive_analyses_info <- shiny::reactiveVal(info(reactive_analyses()))
-    project_details <- projects_overview(class(reactive_analyses())[1])
+    analyses_obj <- shiny::isolate(reactive_analyses())
+    reactive_analyses_info <- shiny::reactiveVal(info(analyses_obj))
+    project_details <- projects_overview(class(analyses_obj)[1])
 
     # Register shinyFileChoose once (must be outside renderUI) -----
     shinyFiles::shinyFileChoose(
       input,
       "add_analyses_button",
-      roots = reactive_volumes(),
+      roots = .app_util_get_volumes(),
       defaultRoot = "wd",
       session = session,
       filetypes = project_details$formats
@@ -38,7 +39,7 @@
     shinyFiles::shinyFileChoose(
       input,
       "upload_analyses_info",
-      roots = reactive_volumes(),
+      roots = .app_util_get_volumes(),
       defaultRoot = "wd",
       session = session,
       filetypes = "csv"
@@ -122,8 +123,12 @@
         rownames = FALSE
       )
 
-      analyses_info$blank[analyses_info$blank %in% ""] <- NA_character_
-      set_replicate_names(analyses, analyses_info$replicate)
+      replicate_values <- as.character(analyses_info$replicate)
+      replicate_values[is.na(replicate_values)] <- ""
+      set_replicate_names(analyses, replicate_values)
+
+      blank_values <- as.character(analyses_info$blank)
+      blank_values[blank_values %in% ""] <- NA_character_
 
       # Handle concentration updates
       if ("concentration" %in% colnames(analyses_info)) {
@@ -151,7 +156,7 @@
         }
       }
 
-      if (any(!(analyses_info$blank %in% analyses_info$replicate) & !is.na(analyses_info$blank))) {
+      if (any(!(blank_values %in% replicate_values) & !is.na(blank_values))) {
         reactive_warnings(
           .app_util_add_notifications(
             reactive_warnings(),
@@ -166,7 +171,9 @@
             "blank_names_not_in_replicate"
           )
         )
-        set_blank_names(analyses, analyses_info$blank)
+        blank_values_setter <- blank_values
+        blank_values_setter[is.na(blank_values_setter)] <- ""
+        set_blank_names(analyses, blank_values_setter)
       }
       reactive_analyses_info(info(analyses))
       reactive_analyses(analyses)

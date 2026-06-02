@@ -10,7 +10,7 @@ devtools::document()
 devtools::document()
 
 # Installs the package
-devtools::install(upgrade = "never", dependencies = TRUE, build_vignettes = FALSE)
+devtools::install(upgrade = FALSE, dependencies = TRUE, build_vignettes = FALSE)
 
 # Builds/Updates the GitHub page
 pkgdown::clean_cache()

@@ -1849,8 +1849,11 @@ std::vector<nta::api::NTA_FEATURE_ROW> nta::deconvolution::process_polarity_clus
       // Basic identification with polarity-specific naming
       std::string polarity_suffix = (polarity_sign > 0) ? "POS" : "NEG";
       feature.analysis = analysis_name;
-      feature.feature = "CL" + std::to_string(cluster_id) + "_MZ" + std::to_string(static_cast<int>(std::round(mz_at_max))) +
-                       "_RT" + std::to_string(static_cast<int>(std::round(rt_at_max))) + "_" + polarity_suffix;
+      feature.feature = "CL" + std::to_string(cluster_id) +
+                       "_PK" + std::to_string(peak_idx) +
+                       "_MZ" + std::to_string(static_cast<int>(std::round(mz_at_max))) +
+                       "_RT" + std::to_string(static_cast<int>(std::round(rt_at_max))) +
+                       "_" + polarity_suffix;
       feature.feature_group = "";
       feature.feature_component = "";
       feature.adduct = adduct_name; // Set polarity-specific adduct

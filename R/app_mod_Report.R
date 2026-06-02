@@ -98,7 +98,7 @@
     shinyFiles::shinyFileChoose(
       input,
       "select_qmd_file",
-      roots = reactive_volumes(),
+      roots = .app_util_get_volumes(),
       defaultRoot = "wd",
       session = session,
       filetypes = "qmd"
@@ -107,7 +107,7 @@
     shinyFiles::shinyFileSave(
       input,
       "select_output_file",
-      roots = reactive_volumes(),
+      roots = .app_util_get_volumes(),
       defaultRoot = "wd",
       session = session
     )
@@ -115,7 +115,7 @@
     shinyFiles::shinyDirChoose(
       input,
       "select_execute_dir",
-      roots = reactive_volumes(),
+      roots = .app_util_get_volumes(),
       defaultRoot = "wd",
       session = session
     )

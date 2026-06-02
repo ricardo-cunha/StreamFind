@@ -2,11 +2,56 @@
 ##' @export
 .mod_Explorer_UI.ProjectMassSpec <- function(x, id, ns) {
   ns2 <- shiny::NS(id)
+  summary_plot_id <- ns(ns2("summary_plotly"))
+  summary_surface_id <- ns(ns2("summary_plot_surface"))
+  chrom_plot_id <- ns(ns2("chrom_plotly"))
+  chrom_surface_id <- ns(ns2("chrom_plot_surface"))
 
   htmltools::div(
     style = "height: calc(100vh - 35px); overflow: hidden;",
+    htmltools::tags$script(htmltools::HTML(sprintf(
+      "(function() {
+          var bindSurface = function(outputId, surfaceId) {
+            var output = document.getElementById(outputId);
+            var surface = document.getElementById(surfaceId);
+            if (!output || !surface) return false;
+
+            var syncLoading = function() {
+              surface.classList.toggle('loading', output.classList.contains('recalculating'));
+            };
+
+            syncLoading();
+
+            if (!window.__sfExplorerLoadingObservers) {
+              window.__sfExplorerLoadingObservers = {};
+            }
+            if (window.__sfExplorerLoadingObservers[outputId]) {
+              try { window.__sfExplorerLoadingObservers[outputId].disconnect(); } catch (e) {}
+            }
+
+            var observer = new MutationObserver(syncLoading);
+            observer.observe(output, { attributes: true, attributeFilter: ['class'] });
+            window.__sfExplorerLoadingObservers[outputId] = observer;
+            return true;
+          };
+
+          var bindWhenReady = function(outputId, surfaceId) {
+            var attempts = 0;
+            var timer = window.setInterval(function() {
+              attempts += 1;
+              if (bindSurface(outputId, surfaceId) || attempts >= 50) {
+                window.clearInterval(timer);
+              }
+            }, 150);
+          };
+
+          bindWhenReady('%s', '%s');
+          bindWhenReady('%s', '%s');
+        })();",
+      summary_plot_id, summary_surface_id, chrom_plot_id, chrom_surface_id
+    ))),
     shiny::conditionalPanel(
-      "input.sf_active_subtab === 'spectra'",
+      "input.sf_active_subtab === 'tic'",
       shiny::fluidRow(
         shiny::column(
           3,
@@ -18,7 +63,10 @@
         shiny::column(9,
           bslib::layout_sidebar(
             sidebar = bslib::sidebar(
+              width = "200px",
               bg = NULL,
+              resizable = FALSE,
+              class = "sf-explorer-sidebar",
               shiny::uiOutput(ns(ns2("summary_plot_controls")))
             ),
             shiny::uiOutput(ns(ns2("summary_plot_ui")))
@@ -40,7 +88,10 @@
         shiny::column(9,
           bslib::layout_sidebar(
             sidebar = bslib::sidebar(
+              width = "200px",
               bg = NULL,
+              resizable = FALSE,
+              class = "sf-explorer-sidebar",
               shiny::uiOutput(ns(ns2("chrom_plot_controls")))
             ),
             shiny::uiOutput(ns(ns2("chrom_plot_ui")))
@@ -93,16 +144,12 @@
         return(invisible(NULL))
       }
 
-      analyses_info <- info(analyses_obj)
+      analyses_info <- info.ProjectMassSpec(analyses_obj)
       reactive_number_analyses(nrow(analyses_info))
-      if (nrow(analyses_info) > 0) {
-        reactive_has_results_spectra(sum(analyses_info$spectra) > 0)
-        reactive_has_results_chromatograms(sum(analyses_info$chromatograms) > 0)
-      } else {
-        reactive_has_results_spectra(FALSE)
-        reactive_has_results_chromatograms(FALSE)
-      }
       hd <- get_spectra_headers(analyses_obj)
+      chrom_hd <- get_chromatograms_headers(analyses_obj)
+      reactive_has_results_spectra(nrow(hd) > 0)
+      reactive_has_results_chromatograms(nrow(chrom_hd) > 0)
       if (nrow(hd) > 0) {
         reactive_levels(as.numeric(unique(hd$level)))
         reactive_rt_end(round(max(hd$rt), digits = 0))
@@ -139,7 +186,7 @@
     shinyFiles::shinyFileSave(
       input,
       "summary_plot_save",
-      roots = reactive_volumes(),
+      roots = .app_util_get_volumes(),
       defaultRoot = "wd",
       session = session
     )
@@ -147,7 +194,7 @@
     shinyFiles::shinyFileSave(
       input,
       "chrom_plot_save",
-      roots = reactive_volumes(),
+      roots = .app_util_get_volumes(),
       defaultRoot = "wd",
       session = session
     )
@@ -172,12 +219,25 @@
       "id+replicate"
     )
 
+    selected_analysis_names <- function(selected_rows) {
+      analyses_obj <- reactive_analyses()
+      if (is.null(analyses_obj) || length(selected_rows) == 0) {
+        return(character())
+      }
+      analyses_info <- info.ProjectMassSpec(analyses_obj)
+      selected_rows <- selected_rows[selected_rows >= 1 & selected_rows <= nrow(analyses_info)]
+      if (length(selected_rows) == 0) {
+        return(character())
+      }
+      analyses_info$analysis[selected_rows]
+    }
+
     # out Analyses Table -----
     output$spectraAnalysesTable <- DT::renderDT({
       if (reactive_number_analyses() == 0) return()
       analyses_obj <- reactive_analyses()
       if (is.null(analyses_obj)) return()
-      analyses_info <- info(analyses_obj)
+      analyses_info <- info.ProjectMassSpec(analyses_obj)
       DT::datatable(
         analyses_info[, c("analysis", "replicate")],
         selection = list(mode = "multiple", selected = 1, target = "row"),
@@ -198,9 +258,13 @@
           htmltools::h4("No analyses found!")
         )
       } else if (reactive_has_results_spectra()) {
-        plotly::plotlyOutput(
-          ns(ns2("summary_plotly")),
-          height = "calc(100vh - 25px - 10px - 28px - 30px)"
+        htmltools::div(
+          id = ns(ns2("summary_plot_surface")),
+          class = "sf-explorer-plot-surface",
+          plotly::plotlyOutput(
+            ns(ns2("summary_plotly")),
+            height = "calc(100vh - 25px - 10px - 28px - 30px)"
+          )
         )
       } else {
         htmltools::div(
@@ -214,7 +278,7 @@
     output$summary_plot_controls <- shiny::renderUI({
       if (reactive_number_analyses() == 0) return()
       if (reactive_has_results_spectra()) {
-        analyses <- reactive_analyses()
+        plot_view <- if (!is.null(input$summary_plot_view)) input$summary_plot_view else "tic"
         htmltools::div(
           style = "display: flex; flex-direction: column; gap: 10px; padding: 10px;",
           htmltools::div(
@@ -228,10 +292,10 @@
           ),
           htmltools::div(
             shiny::selectInput(
-              ns(ns2("summary_plot_type")),
-              label = "Type",
-              choices = c("TIC", "BPC"),
-              selected = "TIC",
+              ns(ns2("summary_plot_view")),
+              label = "Plot",
+              choices = c("TIC" = "tic", "TIC 3D" = "tic_3d"),
+              selected = plot_view,
               width = "100%"
             )
           ),
@@ -240,7 +304,7 @@
               ns(ns2("summary_plot_group_by")),
               label = "Group by",
               choices = group_by_spectra,
-              selected = "analyses",
+              selected = "analysis",
               width = "100%"
             )
           ),
@@ -256,11 +320,11 @@
           htmltools::div(
             shiny::numericInput(
               ns(ns2("summary_plot_downsize")),
-              label = "Downsize",
-              min = 1,
-              max = 100,
-              value = 1,
-              step = 1,
+              label = if (identical(plot_view, "tic_3d")) "Reduction" else "Downsize",
+              min = if (identical(plot_view, "tic_3d")) 0.01 else 1,
+              max = if (identical(plot_view, "tic_3d")) 1 else 100,
+              value = if (identical(plot_view, "tic_3d")) 0.1 else 1,
+              step = if (identical(plot_view, "tic_3d")) 0.01 else 1,
               width = "100%"
             )
           ),
@@ -274,85 +338,119 @@
               step = 1,
               width = "100%"
             )
-          )
+          ),
+          if (identical(plot_view, "tic_3d")) {
+            htmltools::div(
+              shiny::checkboxInput(
+                ns(ns2("summary_plot_use_mobility")),
+                label = "Use mobility axis",
+                value = TRUE,
+                width = "100%"
+              )
+            )
+          }
         )
       }
     })
 
     # out Summary plotly -----
     output$summary_plotly <- plotly::renderPlotly({
-      if (reactive_number_analyses() == 0) return()
-      if (!is.null(input$summary_plot_type)) {
-        selected <- input$spectraAnalysesTable_rows_selected
-        if (length(selected) == 0) {
-          return()
+      tryCatch({
+        if (reactive_number_analyses() == 0) return()
+        if (!is.null(input$summary_plot_view)) {
+          selected <- selected_analysis_names(input$spectraAnalysesTable_rows_selected)
+          if (length(selected) == 0) {
+            return()
+          }
+          if (identical(input$summary_plot_view, "tic")) {
+            p <- suppressWarnings(plot_spectra_tic(
+              reactive_analyses(),
+              analyses = selected,
+              groupBy = strsplit(input$summary_plot_group_by, "\\+")[[1]],
+              levels = input$summary_plot_level,
+              rtmin = input$summary_plot_rt[1],
+              rtmax = input$summary_plot_rt[2],
+              downsize = input$summary_plot_downsize,
+              interactive = TRUE
+            ))
+            return(plotly::layout(
+              p,
+              title = NULL,
+              paper_bgcolor = "rgba(0,0,0,0)",
+              plot_bgcolor = "rgba(0,0,0,0)"
+            ))
+          } else if (identical(input$summary_plot_view, "tic_3d")) {
+            p <- suppressWarnings(plot_spectra_tic_3d(
+              reactive_analyses(),
+              analyses = selected,
+              groupBy = strsplit(input$summary_plot_group_by, "\\+")[[1]],
+              levels = input$summary_plot_level,
+              rtmin = input$summary_plot_rt[1],
+              rtmax = input$summary_plot_rt[2],
+              reduction = input$summary_plot_downsize,
+              useMobility = isTRUE(input$summary_plot_use_mobility)
+            ))
+            return(plotly::layout(
+              p,
+              title = NULL,
+              paper_bgcolor = "rgba(0,0,0,0)",
+              plot_bgcolor = "rgba(0,0,0,0)"
+            ))
+          }
         }
-        if (input$summary_plot_type %in% "TIC") {
-          p <- plot_spectra_tic(
-            reactive_analyses(),
-            analyses = selected,
-            groupBy = strsplit(input$summary_plot_group_by, "\\+")[[1]],
-            level = input$summary_plot_level,
-            rt = input$summary_plot_rt,
-            downsize = input$summary_plot_downsize,
-            interactive = TRUE
-          )
-          return(plotly::layout(
-            p,
-            title = NULL,
-            paper_bgcolor = "rgba(0,0,0,0)",
-            plot_bgcolor = "rgba(0,0,0,0)"
-          ))
-        } else if (input$summary_plot_type %in% "BPC") {
-          p <- plot_spectra_bpc(
-            reactive_analyses(),
-            analyses = selected,
-            groupBy = strsplit(input$summary_plot_group_by, "\\+")[[1]],
-            level = input$summary_plot_level,
-            rt = input$summary_plot_rt,
-            interactive = TRUE
-          )
-          return(plotly::layout(
-            p,
-            title = NULL,
-            paper_bgcolor = "rgba(0,0,0,0)",
-            plot_bgcolor = "rgba(0,0,0,0)"
-          ))
-        }
-      }
+      }, error = function(e) {
+        shiny::showNotification(
+          paste("Unable to render TIC plot:", conditionMessage(e)),
+          duration = 8,
+          type = "warning"
+        )
+        return(NULL)
+      })
     })
 
     # out Summary plot -----
     output$summary_plot <- shiny::renderPlot({
-      if (reactive_number_analyses() == 0) return()
-      if (
-        !is.null(input$summary_plot_type) && !as.logical(input$summary_plot_interactive)
-      ) {
-        selected <- input$spectraAnalysesTable_rows_selected
-        if (length(selected) == 0) {
-          return()
+      tryCatch({
+        if (reactive_number_analyses() == 0) return()
+        if (
+          !is.null(input$summary_plot_view) && !as.logical(input$summary_plot_interactive)
+        ) {
+          selected <- selected_analysis_names(input$spectraAnalysesTable_rows_selected)
+          if (length(selected) == 0) {
+            return()
+          }
+          if (identical(input$summary_plot_view, "tic")) {
+            suppressWarnings(plot_spectra_tic(
+              reactive_analyses(),
+              analyses = selected,
+              groupBy = strsplit(input$summary_plot_group_by, "\\+")[[1]],
+              levels = input$summary_plot_level,
+              rtmin = input$summary_plot_rt[1],
+              rtmax = input$summary_plot_rt[2],
+              downsize = input$summary_plot_downsize,
+              interactive = as.logical(input$summary_plot_interactive)
+            ))
+          } else if (identical(input$summary_plot_view, "tic_3d")) {
+            suppressWarnings(plot_spectra_tic_3d(
+              reactive_analyses(),
+              analyses = selected,
+              groupBy = strsplit(input$summary_plot_group_by, "\\+")[[1]],
+              levels = input$summary_plot_level,
+              rtmin = input$summary_plot_rt[1],
+              rtmax = input$summary_plot_rt[2],
+              reduction = input$summary_plot_downsize,
+              useMobility = isTRUE(input$summary_plot_use_mobility)
+            ))
+          }
         }
-        if (input$summary_plot_type %in% "TIC") {
-          plot_spectra_tic(
-            reactive_analyses(),
-            analyses = selected,
-            groupBy = strsplit(input$summary_plot_group_by, "\\+")[[1]],
-            level = input$summary_plot_level,
-            rt = input$summary_plot_rt,
-            downsize = input$summary_plot_downsize,
-            interactive = as.logical(input$summary_plot_interactive)
-          )
-        } else if (input$summary_plot_type %in% "BPC") {
-          plot_spectra_bpc(
-            reactive_analyses(),
-            analyses = selected,
-            groupBy = strsplit(input$summary_plot_group_by, "\\+")[[1]],
-            level = input$summary_plot_level,
-            rt = input$summary_plot_rt,
-            interactive = as.logical(input$summary_plot_interactive)
-          )
-        }
-      }
+      }, error = function(e) {
+        shiny::showNotification(
+          paste("Unable to render TIC plot:", conditionMessage(e)),
+          duration = 8,
+          type = "warning"
+        )
+        return(invisible(NULL))
+      })
     }, bg = "transparent")
 
     # event Summary plot export -----
@@ -362,18 +460,14 @@
         shiny::showNotification(msg, duration = 5, type = "warning")
         return()
       }
-      if (!is.null(input$summary_plot_type)) {
-        selected <- input$spectraAnalysesTable_rows_selected
+      if (!is.null(input$summary_plot_view)) {
+        selected <- selected_analysis_names(input$spectraAnalysesTable_rows_selected)
         if (length(selected) == 0) return()
         csv <- reactive_analyses()$get_spectra_tic(
           analyses = selected,
           levels = input$summary_plot_level
         )
-        if (input$summary_plot_type %in% "TIC") {
-          csv <- csv[, .(analysis, replicate, polarity, level, rt, tic)]
-        } else if (input$summary_plot_type %in% "BPC") {
-          csv <- csv[, .(analysis, replicate, polarity, level, rt, bpmz, bpint)]
-        }
+        csv <- csv[, .(analysis, replicate, polarity, level, rt, tic)]
         fileinfo <- shinyFiles::parseSavePath(
           reactive_volumes(),
           input$summary_plot_save
@@ -394,7 +488,7 @@
       if (reactive_number_analyses() == 0) return()
       analyses_obj <- reactive_analyses()
       if (is.null(analyses_obj)) return()
-      analyses_info <- info(analyses_obj)
+      analyses_info <- info.ProjectMassSpec(analyses_obj)
       DT::datatable(
         analyses_info[, c("analysis", "replicate")],
         selection = list(mode = "multiple", selected = 1, target = "row"),
@@ -415,9 +509,13 @@
           htmltools::h4("No analyses found!")
         )
       } else if (reactive_has_results_chromatograms()) {
-        plotly::plotlyOutput(
-          ns(ns2("chrom_plotly")),
-          height = "calc(100vh - 25px - 10px - 28px - 30px)"
+        htmltools::div(
+          id = ns(ns2("chrom_plot_surface")),
+          class = "sf-explorer-plot-surface",
+          plotly::plotlyOutput(
+            ns(ns2("chrom_plotly")),
+            height = "calc(100vh - 25px - 10px - 28px - 30px)"
+          )
         )
       } else {
         htmltools::div(
@@ -447,7 +545,7 @@
               ns(ns2("summary_chrom_group_by")),
               label = "Group by",
               choices = group_by_chromatograms,
-              selected = "targets",
+              selected = "analysis",
               width = "100%"
             )
           )
@@ -458,7 +556,7 @@
     # out Chromatograms plotly -----
     output$chrom_plotly <- plotly::renderPlotly({
       if (reactive_number_analyses() == 0) return()
-      selected <- input$chromAnalysesTable_rows_selected
+      selected <- selected_analysis_names(input$chromAnalysesTable_rows_selected)
       if (length(selected) == 0) return()
       if (!reactive_has_results_chromatograms()) return()
       p <- plot_raw_chromatograms(
@@ -478,7 +576,7 @@
     # out Chromatograms plot -----
     output$chrom_plot <- shiny::renderPlot({
       if (reactive_number_analyses() == 0) return()
-      selected <- input$chromAnalysesTable_rows_selected
+      selected <- selected_analysis_names(input$chromAnalysesTable_rows_selected)
       if (length(selected) == 0) return()
       if (!reactive_has_results_chromatograms()) return()
       plot_raw_chromatograms(
@@ -496,7 +594,7 @@
         shiny::showNotification(msg, duration = 5, type = "warning")
         return()
       }
-      selected <- input$chromAnalysesTable_rows_selected
+      selected <- selected_analysis_names(input$chromAnalysesTable_rows_selected)
       if (length(selected) == 0) {
         return()
       }
