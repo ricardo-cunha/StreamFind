@@ -27,15 +27,27 @@ namespace sf::obabel
     return out;
   }
 
+  StructureSvg from_svg_result(
+      const streamfind_ob_svg_result &result)
+  {
+    StructureSvg out;
+    out.ok = result.ok != 0;
+    out.error = result.error;
+    out.svg = result.svg;
+    return out;
+  }
+
 #ifdef _WIN32
   using openbabel_available_fn = int (*)();
   using normalize_structure_fn = int (*)(const char *, const char *, streamfind_ob_normalized_result *);
+  using render_structure_svg_fn = int (*)(const char *, const char *, int, int, const char *, streamfind_ob_svg_result *);
 
   struct OpenBabelApi
   {
     HMODULE module = nullptr;
     openbabel_available_fn available = nullptr;
     normalize_structure_fn normalize = nullptr;
+    render_structure_svg_fn render_svg = nullptr;
     std::string error;
   };
 
@@ -123,8 +135,10 @@ namespace sf::obabel
         GetProcAddress(api.module, "sf_ob_openbabel_available"));
     api.normalize = reinterpret_cast<normalize_structure_fn>(
         GetProcAddress(api.module, "sf_ob_normalize_structure"));
+    api.render_svg = reinterpret_cast<render_structure_svg_fn>(
+        GetProcAddress(api.module, "sf_ob_render_structure_svg"));
 
-    if (api.available == nullptr || api.normalize == nullptr)
+    if (api.available == nullptr || api.normalize == nullptr || api.render_svg == nullptr)
     {
       api.error = "Could not resolve Open Babel StreamFind API exports from " +
                   std::string(loaded_path.begin(), loaded_path.end());
@@ -132,6 +146,7 @@ namespace sf::obabel
       api.module = nullptr;
       api.available = nullptr;
       api.normalize = nullptr;
+      api.render_svg = nullptr;
     }
 
     return api;
@@ -174,6 +189,44 @@ namespace sf::obabel
         inchi.empty() ? nullptr : inchi.c_str(),
         &result);
     return from_c_result(result);
+#endif
+  }
+
+  StructureSvg render_structure_svg(
+      const std::string &smiles,
+      const std::string &inchi,
+      int width_px,
+      int height_px,
+      const std::string &bond_color)
+  {
+#ifdef _WIN32
+    const OpenBabelApi api = load_openbabel_api();
+    if (api.render_svg == nullptr)
+    {
+      StructureSvg out;
+      out.error = api.error.empty() ? "Open Babel runtime unavailable." : api.error;
+      return out;
+    }
+
+    streamfind_ob_svg_result result{};
+    api.render_svg(
+        smiles.empty() ? nullptr : smiles.c_str(),
+        inchi.empty() ? nullptr : inchi.c_str(),
+        width_px,
+        height_px,
+        bond_color.empty() ? nullptr : bond_color.c_str(),
+        &result);
+    return from_svg_result(result);
+#else
+    streamfind_ob_svg_result result{};
+    sf_ob_render_structure_svg(
+        smiles.empty() ? nullptr : smiles.c_str(),
+        inchi.empty() ? nullptr : inchi.c_str(),
+        width_px,
+        height_px,
+        bond_color.empty() ? nullptr : bond_color.c_str(),
+        &result);
+    return from_svg_result(result);
 #endif
   }
 } // namespace sf::obabel

@@ -69,6 +69,8 @@ function(streamfind_enable_openbabel target repo_root)
         ${repo_root}/tools/openbabel_sources/openbabel_cpp.txt
         ${repo_root}/tools/openbabel_sources/inchi_c.txt
         ${repo_root}/src/core/external/openbabel/inchi-iupac-1.07.5/src/ichilnct.c
+        ${repo_root}/src/core/external/openbabel/openbabel_c_api.cpp
+        ${repo_root}/src/core/external/openbabel/streamfind_openbabel_api.h
       COMMENT "Building vendored Open Babel archives"
       VERBATIM
     )

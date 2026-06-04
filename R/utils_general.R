@@ -243,11 +243,21 @@
 }
 
 #' @noRd
+.color_with_alpha <- function(color, alpha = 1) {
+  grDevices::adjustcolor(color, alpha.f = alpha)
+}
+
+#' @noRd
 .ggplot_plot_theme <- function(darkMode = FALSE) {
   theme <- .get_plot_theme(darkMode = darkMode)
+  grid_color <- if (isTRUE(darkMode)) {
+    .color_with_alpha("#ffffff", 0.52)
+  } else {
+    .color_with_alpha("#475569", 0.52)
+  }
   ggplot2::theme_classic() +
     ggplot2::theme(
-      panel.grid.major = ggplot2::element_line(color = theme$grid, linewidth = 0.4),
+      panel.grid.major = ggplot2::element_line(color = grid_color, linewidth = 0.4),
       panel.grid.minor = ggplot2::element_blank(),
       axis.line = ggplot2::element_line(color = theme$axis, linewidth = 0.4),
       axis.ticks = ggplot2::element_line(color = theme$axis, linewidth = 0.35),

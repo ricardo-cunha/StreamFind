@@ -102,12 +102,68 @@ namespace
       std::memset(out, 0, sizeof(*out));
   }
 
+  void zero_svg_result(streamfind_ob_svg_result *out)
+  {
+    if (out != nullptr)
+      std::memset(out, 0, sizeof(*out));
+  }
+
   void copy_text(char *dest, size_t capacity, const std::string &value)
   {
     if (dest == nullptr || capacity == 0)
       return;
     std::strncpy(dest, value.c_str(), capacity - 1);
     dest[capacity - 1] = '\0';
+  }
+
+  std::string normalize_svg_output(std::string svg, int width_px, int height_px)
+  {
+    if (width_px > 0)
+    {
+      const std::string width_attr = "width=\"";
+      const size_t width_pos = svg.find(width_attr);
+      if (width_pos != std::string::npos)
+      {
+        const size_t width_end = svg.find('"', width_pos + width_attr.size());
+        if (width_end != std::string::npos)
+        {
+          svg.replace(width_pos + width_attr.size(), width_end - (width_pos + width_attr.size()), std::to_string(width_px) + "px");
+        }
+      }
+    }
+    if (height_px > 0)
+    {
+      const std::string height_attr = "height=\"";
+      const size_t height_pos = svg.find(height_attr);
+      if (height_pos != std::string::npos)
+      {
+        const size_t height_end = svg.find('"', height_pos + height_attr.size());
+        if (height_end != std::string::npos)
+        {
+          svg.replace(height_pos + height_attr.size(), height_end - (height_pos + height_attr.size()), std::to_string(height_px) + "px");
+        }
+      }
+    }
+
+    const std::string rect_token = "<rect";
+    const std::string fill_token = "fill=\"none\"";
+    size_t search_pos = 0;
+    while ((search_pos = svg.find(rect_token, search_pos)) != std::string::npos)
+    {
+      const size_t tag_end = svg.find('>', search_pos);
+      if (tag_end == std::string::npos)
+        break;
+      const std::string tag = svg.substr(search_pos, tag_end - search_pos + 1);
+      if (tag.find(fill_token) == std::string::npos &&
+          tag.find("width=\"100%\"") != std::string::npos &&
+          tag.find("height=\"100%\"") != std::string::npos)
+      {
+        svg.erase(search_pos, tag_end - search_pos + 1);
+        continue;
+      }
+      search_pos = tag_end + 1;
+    }
+    return svg;
   }
 }
 
@@ -188,6 +244,62 @@ extern "C"
       }
     }
 
+    out->ok = 1;
+    return 1;
+  }
+
+  int sf_ob_render_structure_svg(
+    const char *smiles,
+    const char *inchi,
+    int width_px,
+    int height_px,
+    const char *bond_color,
+    streamfind_ob_svg_result *out)
+  {
+    zero_svg_result(out);
+    if (out == nullptr)
+      return 0;
+
+    OpenBabel::obErrorLog.SetOutputLevel(OpenBabel::obError);
+
+    OpenBabel::OBMol mol;
+    std::string parse_error;
+    bool parsed = false;
+
+    if (smiles != nullptr && *smiles != '\0')
+      parsed = read_molecule(mol, smiles, "smi", parse_error);
+    if (!parsed && inchi != nullptr && *inchi != '\0')
+    {
+      mol.Clear();
+      parsed = read_molecule(mol, inchi, "inchi", parse_error);
+    }
+    if (!parsed)
+    {
+      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY,
+                parse_error.empty() ? std::string("No valid structure source available.") : parse_error);
+      return 0;
+    }
+
+    OpenBabel::OBConversion conv;
+    if (!conv.SetOutFormat("svg"))
+    {
+      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY, "Open Babel format unavailable: svg");
+      return 0;
+    }
+
+    conv.AddOption("b", OpenBabel::OBConversion::OUTOPTIONS, "none");
+    if (bond_color != nullptr && *bond_color != '\0')
+      conv.AddOption("B", OpenBabel::OBConversion::OUTOPTIONS, bond_color);
+    std::string error;
+    std::string svg = trim_copy(conv.WriteString(&mol, true));
+    if (svg.empty())
+    {
+      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY, "Open Babel could not write svg");
+      return 0;
+    }
+
+    svg = normalize_svg_output(svg, width_px, height_px);
+    copy_text(out->svg, STREAMFIND_OB_SVG_CAPACITY, svg);
     out->ok = 1;
     return 1;
   }

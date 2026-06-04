@@ -35,7 +35,9 @@ $(OBJECTS): $(OPENBABEL_STAMP)
 	@mkdir -p "$(dir $@)"
 	$(CXX17) $(CXX17STD) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(CXX17FLAGS) $(CXX17PICFLAGS) -c $< -o $@
 
-$(OPENBABEL_STAMP): ../tools/build_openbabel.py ../tools/openbabel_sources/openbabel_cpp.txt ../tools/openbabel_sources/inchi_c.txt ../src/core/external/openbabel/inchi-iupac-1.07.5/src/ichilnct.c
+FORCE:
+
+$(OPENBABEL_STAMP): FORCE ../tools/build_openbabel.py ../tools/openbabel_sources/openbabel_cpp.txt ../tools/openbabel_sources/inchi_c.txt ../src/core/external/openbabel/inchi-iupac-1.07.5/src/ichilnct.c
 	"$(PYTHON)" ../tools/build_openbabel.py --repo-root .. --platform windows --cc "$(CC)" --cxx "$(CXX17)" --ar "$(AR)" --cflag=-D__USE_MINGW_ANSI_STDIO=1 --cflag=-O2 --cflag=-w --cxxflag="$(CXX17STD)" --cxxflag=-D__USE_MINGW_ANSI_STDIO=1 --cxxflag=-O2 --cxxflag=-w $(if $(filter 1 TRUE true yes YES,$(OPENBABEL_RELEASE_ARTIFACT_ONLY)),--release-artifact-only,)
 
 PKG_CXXFLAGS += $(SHLIB_OPENMP_CXXFLAGS) -D__USE_MINGW_ANSI_STDIO

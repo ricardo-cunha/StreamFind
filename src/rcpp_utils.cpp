@@ -4,6 +4,7 @@
 
 namespace obabel
 {
+  // Shared helpers for the native Open Babel Rcpp bridge.
   static inline bool has_column(const Rcpp::DataFrame &df, const char *name)
   {
     return df.containsElementNamed(name);
@@ -85,6 +86,39 @@ namespace obabel
     Rcpp::Function fwrite = dt["fwrite"];
     fwrite(Rcpp::Named("x") = out, Rcpp::Named("file") = file_path);
   }
+}
+
+//' Render a structure as SVG with the native Open Babel backend
+//'
+//' Converts a `SMILES` or `InChI` structure into an SVG depiction using the
+//' embedded Open Babel runtime. The returned SVG has a transparent background.
+//'
+//' @param SMILES Optional structure in SMILES format.
+//' @param InChI Optional structure in InChI format.
+//' @param width Width in pixels.
+//' @param height Height in pixels.
+//' @param darkMode Logical, use a light bond color suitable for dark backgrounds.
+//' @return A length-one character string containing SVG markup, or `""` on failure.
+//' @export
+// [[Rcpp::export]]
+std::string rcpp_openbabel_structure_svg(
+  Rcpp::Nullable<std::string> SMILES = R_NilValue,
+  Rcpp::Nullable<std::string> InChI = R_NilValue,
+  int width = 140,
+  int height = 120,
+  bool darkMode = false)
+{
+  const std::string smiles = SMILES.isNull() ? std::string() : Rcpp::as<std::string>(SMILES);
+  const std::string inchi = InChI.isNull() ? std::string() : Rcpp::as<std::string>(InChI);
+  const std::string bond_color = darkMode ? "#e6edf4" : "#1e2129";
+  const sf::obabel::StructureSvg svg = sf::obabel::render_structure_svg(
+    smiles,
+    inchi,
+    width,
+    height,
+    bond_color
+  );
+  return svg.ok ? svg.svg : std::string();
 }
 
 //' Create a suspect screening table with the native Open Babel backend

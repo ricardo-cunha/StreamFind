@@ -19,7 +19,9 @@ enum
   STREAMFIND_OB_FORMULA_CAPACITY = 256,
   STREAMFIND_OB_INCHI_CAPACITY = 8192,
   STREAMFIND_OB_INCHIKEY_CAPACITY = 128,
-  STREAMFIND_OB_ERROR_CAPACITY = 2048
+  STREAMFIND_OB_ERROR_CAPACITY = 2048,
+  STREAMFIND_OB_COLOR_CAPACITY = 64,
+  STREAMFIND_OB_SVG_CAPACITY = 262144
 };
 
 typedef struct streamfind_ob_normalized_result
@@ -35,12 +37,27 @@ typedef struct streamfind_ob_normalized_result
   char error[STREAMFIND_OB_ERROR_CAPACITY];
 } streamfind_ob_normalized_result;
 
+typedef struct streamfind_ob_svg_result
+{
+  int ok;
+  char svg[STREAMFIND_OB_SVG_CAPACITY];
+  char error[STREAMFIND_OB_ERROR_CAPACITY];
+} streamfind_ob_svg_result;
+
 STREAMFIND_OPENBABEL_API int sf_ob_openbabel_available(void);
 
 STREAMFIND_OPENBABEL_API int sf_ob_normalize_structure(
   const char *smiles,
   const char *inchi,
   streamfind_ob_normalized_result *out);
+
+STREAMFIND_OPENBABEL_API int sf_ob_render_structure_svg(
+  const char *smiles,
+  const char *inchi,
+  int width_px,
+  int height_px,
+  const char *bond_color,
+  streamfind_ob_svg_result *out);
 
 #ifdef __cplusplus
 }

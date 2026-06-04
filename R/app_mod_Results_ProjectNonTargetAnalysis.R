@@ -143,16 +143,20 @@
       color: #000000 !important;
     }
     .suspect-structure-img {
-      width: 140px;
-      height: 120px;
-      object-fit: contain;
+      width: 180px;
+      height: 200px;
       display: block;
+      border: none;
+      background: transparent;
+      object-fit: contain;
+      object-position: center;
     }
     .suspect-spectra-img {
       width: 360px;
       height: 200px;
-      object-fit: contain;
       display: block;
+      border: none;
+      background: transparent;
     }
     .plot-container {
       border-radius: 0;
@@ -1002,28 +1006,36 @@
     })
 
     # MARK: create_structure_image
-    create_structure_image <- function(smiles, width = 140, height = 120) {
-      if (is.null(smiles) || is.na(smiles) || !nzchar(smiles)) return("")
-      if (!requireNamespace("rcdk", quietly = TRUE)) return("")
-      if (!requireNamespace("rJava", quietly = TRUE)) return("")
+    normalize_inline_svg <- function(svg) {
+      if (is.null(svg) || !nzchar(svg)) return("")
+      svg <- sub("^\\s*<\\?xml[^>]*>\\s*", "", svg)
+      svg <- sub("^\\s*<!DOCTYPE[^>]*>\\s*", "", svg, ignore.case = TRUE)
+      svg
+    }
+
+    svg_data_uri <- function(svg) {
+      if (is.null(svg) || !nzchar(svg)) return("")
+      paste0(
+        "data:image/svg+xml;base64,",
+        base64enc::base64encode(charToRaw(enc2utf8(svg)))
+      )
+    }
+
+    create_structure_image <- function(smiles, inchi = NULL, width = 180, height = 200, darkMode = FALSE) {
+      if ((is.null(smiles) || is.na(smiles) || !nzchar(smiles)) &&
+          (is.null(inchi) || is.na(inchi) || !nzchar(inchi))) return("")
       if (!requireNamespace("base64enc", quietly = TRUE)) return("")
-      if (!requireNamespace("magick", quietly = TRUE)) return("")
       tryCatch(
         {
-          mol <- rcdk::parse.smiles(smiles)[[1]]
-          img <- rcdk::view.image.2d(mol)
-          temp_file <- tempfile(fileext = ".png")
-          grDevices::png(filename = temp_file, width = width, height = height, res = 120, bg = "transparent")
-          graphics::par(mar = c(0, 0, 0, 0))
-          graphics::plot.new()
-          graphics::rasterImage(img, 0, 0, 1, 1)
-          grDevices::dev.off()
-          magick_img <- magick::image_read(temp_file)
-          magick_img <- magick::image_transparent(magick_img, "white", fuzz = 5)
-          magick::image_write(magick_img, path = temp_file, format = "png")
-          img_base64 <- base64enc::base64encode(temp_file)
-          unlink(temp_file)
-          paste0("data:image/png;base64,", img_base64)
+          svg <- rcpp_openbabel_structure_svg(
+            SMILES = if (!is.null(smiles) && !is.na(smiles) && nzchar(smiles)) smiles else NULL,
+            InChI = if (!is.null(inchi) && !is.na(inchi) && nzchar(inchi)) inchi else NULL,
+            width = as.integer(width),
+            height = as.integer(height),
+            darkMode = isTRUE(darkMode)
+          )
+          if (is.null(svg) || !nzchar(svg)) return("")
+          svg_data_uri(normalize_inline_svg(svg))
         },
         error = function(e) {
           ""
@@ -1032,26 +1044,30 @@
     }
 
     # MARK: create_spectra_image
-    create_spectra_image <- function(nts, analysis, feature, width = 900, height = 450) {
+    create_spectra_image <- function(nts, analysis, feature, width = 900, height = 450, darkMode = FALSE) {
       if (is.null(analysis) || is.null(feature)) return("")
       if (!requireNamespace("base64enc", quietly = TRUE)) return("")
       if (!requireNamespace("ggplot2", quietly = TRUE)) return("")
+      if (!capabilities("cairo")) return("")
       tryCatch(
         {
           sel <- data.table::data.table(analysis = analysis, feature = feature)
-          p <- plot_suspects_ms2(nts, features = sel, interactive = FALSE, showLegend = FALSE, showText = FALSE)
-          p <- p + ggplot2::theme(
-            panel.background = ggplot2::element_rect(fill = "transparent", colour = NA),
-            plot.background = ggplot2::element_rect(fill = "transparent", colour = NA)
+          p <- plot_suspects_ms2(
+            nts,
+            features = sel,
+            interactive = FALSE,
+            showLegend = FALSE,
+            showText = FALSE,
+            darkMode = darkMode
           )
           if (is.null(p)) return("")
-          temp_file <- tempfile(fileext = ".png")
-          grDevices::png(filename = temp_file, width = width, height = height, res = 120, bg = "transparent")
+          temp_file <- tempfile(fileext = ".svg")
+          grDevices::svg(filename = temp_file, width = width / 72, height = height / 72, bg = "transparent", onefile = TRUE)
           print(p)
           grDevices::dev.off()
-          img_base64 <- base64enc::base64encode(temp_file)
+          svg <- paste(readLines(temp_file, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
           unlink(temp_file)
-          paste0("data:image/png;base64,", img_base64)
+          svg_data_uri(normalize_inline_svg(svg))
         },
         error = function(e) {
           ""
@@ -1812,21 +1828,28 @@
       } else {
         rep(NA_character_, nrow(suspects))
       }
-      suspects$structure <- vapply(
-        smiles_vec,
-        function(smiles) {
-          img_uri <- create_structure_image(smiles)
+      inchi_vec <- if ("InChI" %in% colnames(suspects)) {
+        suspects$InChI
+      } else {
+        rep(NA_character_, nrow(suspects))
+      }
+      suspects$structure <- mapply(
+        function(smiles, inchi) {
+          img_uri <- create_structure_image(smiles, inchi, darkMode = dark_mode())
           if (!nzchar(img_uri)) return("")
-          sprintf("<img src='%s' class='suspect-structure-img'/>", img_uri)
+          sprintf("<img class='suspect-structure-img' src='%s' alt=''/>", img_uri)
         },
-        character(1)
+        smiles_vec,
+        inchi_vec,
+        SIMPLIFY = TRUE,
+        USE.NAMES = FALSE
       )
 
       suspects$spectra <- mapply(
         function(analysis, feature) {
-          img_uri <- create_spectra_image(nts, analysis, feature)
+          img_uri <- create_spectra_image(nts, analysis, feature, darkMode = dark_mode())
           if (!nzchar(img_uri)) return("")
-          sprintf("<img src='%s' class='suspect-spectra-img'/>", img_uri)
+          sprintf("<img class='suspect-spectra-img' src='%s' alt=''/>", img_uri)
         },
         suspects$analysis,
         suspects$feature,
@@ -1857,13 +1880,7 @@
           paging = FALSE,
           autoWidth = TRUE,
           scrollX = TRUE,
-          scrollY = "calc(100vh - 293px)",
-          rowCallback = DT::JS(
-            "function(row, data, num, index){",
-            "  $(row).css('background-color', '#ffffff');",
-            "  $('td', row).css('background-color', '#ffffff');",
-            "}"
-          )
+          scrollY = "calc(100vh - 293px)"
         ),
         escape = FALSE,
         style = "bootstrap",

@@ -34,6 +34,7 @@ src/core/external/openbabel/openbabel-3-2-0/src/obiter.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/obmolecformat.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/obutil.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/op.cpp
+src/core/external/openbabel/openbabel-3-2-0/src/ops/gen2D.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/parsmart.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/patty.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/phmodel.cpp
@@ -65,6 +66,9 @@ src/core/external/openbabel/openbabel-3-2-0/src/stereo/perception.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/stereo/facade.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/stereo/gen3dstereohelper.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/formats/smilesformat.cpp
+src/core/external/openbabel/openbabel-3-2-0/src/formats/svgformat.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/formats/getinchi.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/formats/inchiformat.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/descriptors/groupcontrib.cpp
+src/core/external/openbabel/openbabel-3-2-0/src/depict/depict.cpp
+src/core/external/openbabel/openbabel-3-2-0/src/depict/svgpainter.cpp

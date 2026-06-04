@@ -20,11 +20,25 @@ namespace sf::obabel
     bool has_xlogp = false;
   };
 
+  struct StructureSvg
+  {
+    bool ok = false;
+    std::string error;
+    std::string svg;
+  };
+
   bool openbabel_available();
 
   NormalizedStructure normalize_structure(
       const std::string &smiles,
       const std::string &inchi);
+
+  StructureSvg render_structure_svg(
+      const std::string &smiles,
+      const std::string &inchi,
+      int width_px,
+      int height_px,
+      const std::string &bond_color = "");
 
 } // namespace sf::obabel
 

@@ -305,6 +305,22 @@ duckdb_json_extension_info <- function(db_path) {
     .Call(`_StreamFind_duckdb_json_extension_info`, db_path)
 }
 
+#' Render a structure as SVG with the native Open Babel backend
+#'
+#' Converts a `SMILES` or `InChI` structure into an SVG depiction using the
+#' embedded Open Babel runtime. The returned SVG has a transparent background.
+#'
+#' @param SMILES Optional structure in SMILES format.
+#' @param InChI Optional structure in InChI format.
+#' @param width Width in pixels.
+#' @param height Height in pixels.
+#' @param darkMode Logical, use a light bond color suitable for dark backgrounds.
+#' @return A length-one character string containing SVG markup, or `""` on failure.
+#' @export
+rcpp_openbabel_structure_svg <- function(SMILES = NULL, InChI = NULL, width = 140L, height = 120L, darkMode = FALSE) {
+    .Call(`_StreamFind_rcpp_openbabel_structure_svg`, SMILES, InChI, width, height, darkMode)
+}
+
 #' Create a suspect screening table with the native Open Babel backend
 #'
 #' Normalizes suspect structures with the embedded Open Babel runtime and

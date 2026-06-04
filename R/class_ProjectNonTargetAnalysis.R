@@ -2182,6 +2182,7 @@ plot_suspects_ms2.ProjectNonTargetAnalysis <- function(
   if (!interactive) {
     if (is.null(xLab)) xLab <- expression(italic("m/z ") / " Da")
     if (is.null(yLab)) yLab <- "Intensity / counts"
+    theme <- .get_plot_theme(darkMode = darkMode)
     suspects_ms2$linesize <- ifelse(suspects_ms2$source == "db", 1.5, 1)
     min_mz <- min(suspects_ms2$mz, na.rm = TRUE)
     max_mz <- max(suspects_ms2$mz, na.rm = TRUE)
@@ -2196,17 +2197,21 @@ plot_suspects_ms2.ProjectNonTargetAnalysis <- function(
     return(
       plot +
         ggplot2::scale_y_continuous(expand = c(0, 0), limits = c(-max_abs_int * 1.5, max_abs_int * 1.5)) +
-        ggplot2::annotate("segment", x = min_mz, xend = max_mz, y = 0, yend = 0, color = "black", linewidth = 0.3) +
-        ggplot2::geom_segment(data = data.table::data.table(x = x_breaks), ggplot2::aes(x = x, xend = x, y = 0, yend = -max_abs_int * 0.04), inherit.aes = FALSE, color = "black", linewidth = 0.3) +
-        ggplot2::geom_text(data = data.table::data.table(x = x_breaks), ggplot2::aes(x = x, y = -max_abs_int * 0.09, label = round(x, 2)), inherit.aes = FALSE, size = 3) +
+        ggplot2::annotate("segment", x = min_mz, xend = max_mz, y = 0, yend = 0, color = theme$axis, linewidth = 0.3) +
+        ggplot2::geom_segment(data = data.table::data.table(x = x_breaks), ggplot2::aes(x = x, xend = x, y = 0, yend = -max_abs_int * 0.04), inherit.aes = FALSE, color = theme$axis, linewidth = 0.3) +
+        ggplot2::geom_text(data = data.table::data.table(x = x_breaks), ggplot2::aes(x = x, y = -max_abs_int * 0.09, label = round(x, 2)), inherit.aes = FALSE, size = 3, color = theme$text) +
         ggplot2::scale_color_manual(values = cl, name = paste(groupBy, collapse = " - ")) +
         ggplot2::labs(x = xLab, y = yLab, title = title) +
-        ggplot2::theme_classic() +
+        .ggplot_plot_theme(darkMode = darkMode) +
         ggplot2::theme(
+          panel.background = ggplot2::element_rect(fill = "transparent", colour = NA),
+          plot.background = ggplot2::element_rect(fill = "transparent", colour = NA),
           axis.line.x = ggplot2::element_blank(),
           axis.ticks.x = ggplot2::element_blank(),
           axis.text.x = ggplot2::element_blank(),
           axis.title.x = ggplot2::element_blank(),
+          legend.text = ggplot2::element_text(color = theme$text),
+          legend.title = ggplot2::element_text(color = theme$text),
           legend.position = if (isTRUE(showLegend)) "right" else "none"
         )
     )
