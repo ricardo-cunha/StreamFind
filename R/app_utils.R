@@ -127,7 +127,8 @@
     owner,
     ProjectNonTargetAnalysis = list(
       list(key = "summary", label = "Summary"),
-      list(key = "features", label = "Features")
+      list(key = "features", label = "Features"),
+      list(key = "internal_standards", label = "Internal Standards")
     ),
     ProjectMassSpecChromatograms = list(
       list(key = "chromatograms", label = "Chromatograms"),

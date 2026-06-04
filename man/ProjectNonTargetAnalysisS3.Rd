@@ -19,6 +19,8 @@
 \alias{plot_features_ms1.ProjectNonTargetAnalysis}
 \alias{plot_features_ms2.ProjectNonTargetAnalysis}
 \alias{get_internal_standards.ProjectNonTargetAnalysis}
+\alias{get_internal_standards_profile.ProjectNonTargetAnalysis}
+\alias{plot_internal_standards_profile.ProjectNonTargetAnalysis}
 \alias{get_suspects.ProjectNonTargetAnalysis}
 \alias{plot_suspects_ms2.ProjectNonTargetAnalysis}
 \alias{get_fold_change.ProjectNonTargetAnalysis}
@@ -279,6 +281,44 @@
   ...
 )
 
+\method{get_internal_standards_profile}{ProjectNonTargetAnalysis}(
+  x,
+  analyses = NULL,
+  features = NULL,
+  names = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  normalized = FALSE,
+  ...
+)
+
+\method{plot_internal_standards_profile}{ProjectNonTargetAnalysis}(
+  x,
+  analyses = NULL,
+  features = NULL,
+  names = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  groupBy = "analysis",
+  normalized = FALSE,
+  yLab = NULL,
+  title = NULL,
+  interactive = TRUE,
+  showLegend = TRUE,
+  darkMode = FALSE,
+  ...
+)
+
 \method{get_suspects}{ProjectNonTargetAnalysis}(
   x,
   analyses = NULL,
@@ -472,6 +512,8 @@ the added targets as legend of the plot.}
 
 \item{showText}{Logical (length 1), set to \code{TRUE} to show the text annotations.}
 
+\item{names}{Character vector of internal standard names to include. May also be a data frame containing a \code{name} column.}
+
 \item{replicatesIn}{Character vector with replicate names used as denominator.}
 
 \item{replicatesOut}{Character vector with replicate names used as numerator.}
@@ -545,6 +587,10 @@ S3 interface methods for \code{ProjectNonTargetAnalysis}.
 \item \code{plot_features_ms2(ProjectNonTargetAnalysis)}: Plot MS2 features for selected analyses.
 
 \item \code{get_internal_standards(ProjectNonTargetAnalysis)}: Return internal standards for selected analyses.
+
+\item \code{get_internal_standards_profile(ProjectNonTargetAnalysis)}: Return internal-standard profiles across analyses.
+
+\item \code{plot_internal_standards_profile(ProjectNonTargetAnalysis)}: Plot internal-standard profiles for selected analyses.
 
 \item \code{get_suspects(ProjectNonTargetAnalysis)}: Return suspects for selected analyses.
 

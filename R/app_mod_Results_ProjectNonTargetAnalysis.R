@@ -67,14 +67,16 @@
       border: none !important;
     }
     .sf-nta-results-summary .bslib-sidebar-layout,
-    .sf-nta-results-features .bslib-sidebar-layout {
+    .sf-nta-results-features .bslib-sidebar-layout,
+    .sf-nta-results-internal-standards .bslib-sidebar-layout {
       flex: 1 1 auto;
       display: flex;
       min-height: 0;
       overflow: hidden;
     }
     .sf-nta-results-summary .bslib-sidebar-layout > .main,
-    .sf-nta-results-features .bslib-sidebar-layout > .main {
+    .sf-nta-results-features .bslib-sidebar-layout > .main,
+    .sf-nta-results-internal-standards .bslib-sidebar-layout > .main {
       flex: 1 1 auto;
       display: flex;
       flex-direction: column;
@@ -82,7 +84,8 @@
       overflow: hidden;
     }
     .sf-nta-results-summary .bslib-sidebar-layout > .sidebar,
-    .sf-nta-results-features .bslib-sidebar-layout > .sidebar {
+    .sf-nta-results-features .bslib-sidebar-layout > .sidebar,
+    .sf-nta-results-internal-standards .bslib-sidebar-layout > .sidebar {
       overflow: auto;
     }
     .sf-nta-results-root .bslib-gap-spacing,
@@ -197,7 +200,8 @@
       overflow: hidden;
       gap: 0;
     }
-    .sf-nta-results-features > .features-controls-bar {
+    .sf-nta-results-features > .features-controls-bar,
+    .sf-nta-results-internal-standards > .features-controls-bar {
       flex: 0 0 60px;
     }
     .sf-nta-features-plot-pane {
@@ -506,8 +510,9 @@
             }
           });
 
-          $(document).on('shown.bs.tab', '#%s li a[data-toggle=\"tab\"]', function() {
+          $(document).on('shown.bs.tab', '#%s li a[data-toggle=\"tab\"], #%s li a[data-toggle=\"tab\"]', function() {
             var ids = [
+              '%s', '%s', '%s', '%s', '%s', '%s',
               '%s', '%s', '%s', '%s', '%s', '%s'
             ];
             setTimeout(function() {
@@ -531,12 +536,19 @@
         })();
         ",
         ns_full("feature_scatter_details_tabs"),
+        ns_full("istd_details_tabs"),
         ns_full("features_scatter_plot"),
         ns_full("feature_peaks_plot_scatter"),
         ns_full("feature_xic_plot_scatter"),
         ns_full("feature_profile_plot_scatter"),
         ns_full("feature_ms1_plot_scatter"),
         ns_full("feature_ms2_plot_scatter"),
+        ns_full("internal_standards_scatter_plot"),
+        ns_full("internal_standard_eic_plot"),
+        ns_full("internal_standard_xic_plot"),
+        ns_full("internal_standard_profile_plot"),
+        ns_full("internal_standard_ms1_plot"),
+        ns_full("internal_standard_ms2_plot"),
         ns_full("features_chart"),
         ns_full("features_chart_surface"),
         ns_full("features_scatter_plot"),
@@ -703,6 +715,10 @@
     shiny::conditionalPanel(
       "input.sf_active_subtab === 'features'",
       shiny::uiOutput(ns_full("features_results_ui"))
+    ),
+    shiny::conditionalPanel(
+      "input.sf_active_subtab === 'internal_standards'",
+      shiny::uiOutput(ns_full("internal_standards_results_ui"))
     )
   )
 }
@@ -813,7 +829,7 @@
                   ns_full("scatter_color_by"),
                   label = NULL,
                   choices = c("Analysis" = "analysis", "Replicate" = "replicate"),
-                  selected = "analysis",
+                  selected = "replicate",
                   inline = TRUE
                 )
               )
@@ -835,10 +851,10 @@
             shiny::actionButton(ns_full("scatter_prop_20_80"), "20:80", class = "btn btn-outline-primary btn-sm"),
             shiny::actionButton(ns_full("scatter_prop_30_70"), "30:70", class = "btn btn-outline-primary btn-sm"),
             shiny::actionButton(ns_full("scatter_prop_40_60"), "40:60", class = "btn btn-outline-primary btn-sm"),
-            shiny::actionButton(ns_full("scatter_prop_50_50"), "50:50", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("scatter_prop_50_50"), "50:50", class = "btn btn-outline-primary btn-sm active"),
             shiny::actionButton(ns_full("scatter_prop_60_40"), "60:40", class = "btn btn-outline-primary btn-sm"),
             shiny::actionButton(ns_full("scatter_prop_70_30"), "70:30", class = "btn btn-outline-primary btn-sm"),
-            shiny::actionButton(ns_full("scatter_prop_80_20"), "80:20", class = "btn btn-outline-primary btn-sm active")
+            shiny::actionButton(ns_full("scatter_prop_80_20"), "80:20", class = "btn btn-outline-primary btn-sm")
           )
         ),
         shiny::div(
@@ -847,7 +863,7 @@
           shiny::div(
             id = ns_full("features_scatter_panel"),
             class = "sf-nta-features-plot-pane",
-            style = "flex: 0 0 calc(80% - 10px); max-width: calc(80% - 10px);",
+            style = "flex: 0 0 calc(50% - 10px); max-width: calc(50% - 10px);",
             shiny::div(
               class = "sf-nta-feature-pane-shell",
               shiny::div(
@@ -878,7 +894,7 @@
           shiny::div(
             id = ns_full("features_scatter_details_panel"),
             class = "sf-nta-features-details-pane",
-            style = "flex: 0 0 calc(20% - 10px); max-width: calc(20% - 10px);",
+            style = "flex: 0 0 calc(50% - 10px); max-width: calc(50% - 10px);",
             shiny::div(
               class = "sf-nta-details-tabs",
               shiny::tabsetPanel(
@@ -974,10 +990,185 @@
       )
     })
 
+    has_internal_standards <- shiny::reactive({
+      nrow(internal_standards_data()) > 0
+    })
+
+    output$internal_standards_results_ui <- shiny::renderUI({
+      if (!isTRUE(has_internal_standards())) {
+        return(
+          htmltools::div(
+            class = "sf-empty-state",
+            htmltools::div(
+              class = "sf-page-title-block",
+              htmltools::tags$h3(class = "sf-page-title", "No Internal Standards Available"),
+              htmltools::tags$p(
+                class = "sf-page-subtitle",
+                "Run the Internal Standards workflow step to inspect assigned standards."
+              )
+            )
+          )
+        )
+      }
+
+      shiny::div(
+        class = "sf-nta-results-root sf-nta-results-internal-standards tab-content",
+        shiny::div(
+          class = "features-controls-bar",
+          style = "display: flex; align-items: center; justify-content: space-between;",
+          shiny::div(
+            style = "display: flex; align-items: center; gap: 10px; flex-wrap: wrap;",
+            shiny::div(
+              style = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;",
+              shiny::span("Group by:", style = "font-weight: 500;"),
+              shiny::div(
+                style = "display: flex; align-items: center;",
+                shiny::radioButtons(
+                  ns_full("istd_color_by"),
+                  label = NULL,
+                  choices = c("Analysis" = "analysis", "Replicate" = "replicate"),
+                  selected = "replicate",
+                  inline = TRUE
+                )
+              )
+            ),
+            shiny::div(
+              style = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;",
+              shiny::span("Select by:", style = "font-weight: 500;"),
+                shiny::radioButtons(
+                  ns_full("istd_select_by"),
+                  label = NULL,
+                  choices = c("Feature" = "feature", "Internal Standard" = "name"),
+                  selected = "feature",
+                  inline = TRUE
+                )
+            )
+          ),
+          shiny::div(
+            class = "btn-group btn-group-sm",
+            shiny::actionButton(ns_full("istd_prop_20_80"), "20:80", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("istd_prop_30_70"), "30:70", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("istd_prop_40_60"), "40:60", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("istd_prop_50_50"), "50:50", class = "btn btn-outline-primary btn-sm active"),
+            shiny::actionButton(ns_full("istd_prop_60_40"), "60:40", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("istd_prop_70_30"), "70:30", class = "btn btn-outline-primary btn-sm"),
+            shiny::actionButton(ns_full("istd_prop_80_20"), "80:20", class = "btn btn-outline-primary btn-sm")
+          )
+        ),
+        shiny::div(
+          id = ns_full("istd_content_container"),
+          class = "sf-nta-features-layout",
+          shiny::div(
+            id = ns_full("internal_standards_scatter_panel"),
+            class = "sf-nta-features-plot-pane",
+            style = "flex: 0 0 calc(50% - 10px); max-width: calc(50% - 10px);",
+            shiny::div(
+              class = "sf-nta-feature-plot-shell",
+              shiny::div(
+                id = ns_full("internal_standards_scatter_surface"),
+                class = "sf-nta-feature-plot-holder sf-nta-loading-surface",
+                plotly::plotlyOutput(
+                  ns_full("internal_standards_scatter_plot"),
+                  height = "100%",
+                  width = "100%"
+                )
+              )
+            )
+          ),
+          shiny::div(
+            id = ns_full("internal_standards_details_panel"),
+            class = "sf-nta-features-details-pane",
+            style = "flex: 0 0 calc(50% - 10px); max-width: calc(50% - 10px);",
+            shiny::div(
+              class = "sf-nta-details-tabs",
+              shiny::tabsetPanel(
+                id = ns_full("istd_details_tabs"),
+                type = "tabs",
+                shiny::tabPanel(
+                  title = "EIC",
+                  height = "100%",
+                  shiny::div(
+                    class = "sf-nta-plot-panel",
+                    shiny::div(class = "sf-nta-plot-body", plotly::plotlyOutput(ns_full("internal_standard_eic_plot"), height = "100%"))
+                  )
+                ),
+                shiny::tabPanel(
+                  title = "XIC",
+                  height = "100%",
+                  shiny::div(
+                    class = "sf-nta-plot-panel",
+                    shiny::div(class = "sf-nta-plot-body", plotly::plotlyOutput(ns_full("internal_standard_xic_plot"), height = "100%"))
+                  )
+                ),
+                shiny::tabPanel(
+                  title = "Profile",
+                  height = "100%",
+                  shiny::div(
+                    class = "sf-nta-plot-panel",
+                    shiny::div(class = "sf-nta-plot-body", plotly::plotlyOutput(ns_full("internal_standard_profile_plot"), height = "100%"))
+                  )
+                ),
+                shiny::tabPanel(
+                  title = "MS1",
+                  height = "100%",
+                  shiny::div(
+                    class = "sf-nta-plot-panel",
+                    shiny::div(class = "sf-nta-plot-body", plotly::plotlyOutput(ns_full("internal_standard_ms1_plot"), height = "100%"))
+                  )
+                ),
+                shiny::tabPanel(
+                  title = "MS2",
+                  height = "100%",
+                  shiny::div(
+                    class = "sf-nta-plot-panel",
+                    shiny::div(class = "sf-nta-plot-body", plotly::plotlyOutput(ns_full("internal_standard_ms2_plot"), height = "100%"))
+                  )
+                ),
+                shiny::tabPanel(
+                  title = "Details",
+                  shiny::div(class = "sf-nta-table-panel", DT::dataTableOutput(ns_full("internal_standard_details_table")))
+                ),
+                shiny::tabPanel(
+                  title = "Compound",
+                  shiny::div(class = "sf-nta-table-panel", DT::dataTableOutput(ns_full("internal_standard_identification_table")))
+                ),
+                shiny::tabPanel(
+                  title = "Metrics",
+                  shiny::div(
+                    class = "sf-nta-plot-panel",
+                    shiny::div(
+                      class = "sf-nta-plot-body",
+                      plotly::plotlyOutput(ns_full("internal_standard_metrics_plot"), height = "100%")
+                    )
+                  )
+                )
+              )
+            )
+          )
+        )
+      )
+    })
+
     # MARK: internal_standards_data
     internal_standards_data <- shiny::reactive({
       nts <- nta_data()
-      istd <- get_internal_standards(nts)
+      istd <- data.table::as.data.table(get_internal_standards(nts))
+      if (nrow(istd) == 0) return(istd)
+      istd <- data.table::copy(istd)
+      digits_for_col <- function(col) {
+        col_lower <- tolower(col)
+        if (col_lower %in% c("candidate_rank", "polarity", "shared_fragments", "db_ms2_size", "exp_ms2_size")) return(0)
+        if (grepl("mass|mz", col_lower)) return(4)
+        if (grepl("^rt|_rt$", col_lower)) return(2)
+        if (col_lower == "error_mass") return(1)
+        if (col_lower %in% c("intensity", "area")) return(0)
+        if (col_lower %in% c("score", "cosine_similarity", "xlogp")) return(3)
+        2
+      }
+      num_cols <- names(istd)[sapply(istd, is.numeric)]
+      for (col in num_cols) {
+        istd[[col]] <- round(istd[[col]], digits_for_col(col))
+      }
       istd
     })
 
@@ -1073,6 +1264,144 @@
           ""
         }
       )
+    }
+
+    create_feature_spectra_image <- function(nts, analysis, feature, width = 900, height = 450, darkMode = FALSE) {
+      if (is.null(analysis) || is.null(feature)) return("")
+      if (!requireNamespace("base64enc", quietly = TRUE)) return("")
+      if (!requireNamespace("ggplot2", quietly = TRUE)) return("")
+      if (!capabilities("cairo")) return("")
+      tryCatch(
+        {
+          sel <- data.table::data.table(analysis = analysis, feature = feature)
+          p <- plot_features_ms2(
+            nts,
+            features = sel,
+            interactive = FALSE,
+            showLegend = FALSE,
+            darkMode = darkMode
+          )
+          if (is.null(p)) return("")
+          temp_file <- tempfile(fileext = ".svg")
+          grDevices::svg(filename = temp_file, width = width / 72, height = height / 72, bg = "transparent", onefile = TRUE)
+          print(p)
+          grDevices::dev.off()
+          svg <- paste(readLines(temp_file, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
+          unlink(temp_file)
+          svg_data_uri(normalize_inline_svg(svg))
+        },
+        error = function(e) {
+          ""
+        }
+      )
+    }
+
+    analyses_info <- shiny::reactive({
+      info(nta_data())
+    })
+
+    add_replicates <- function(dt, analyses_info_dt = analyses_info()) {
+      dt <- data.table::copy(data.table::as.data.table(dt))
+      if (!"analysis" %in% colnames(dt) || !"replicate" %in% colnames(analyses_info_dt)) return(dt)
+      rep_map <- analyses_info_dt$replicate
+      names(rep_map) <- analyses_info_dt$analysis
+      dt$replicate <- rep_map[as.character(dt$analysis)]
+      dt
+    }
+
+    build_identification_table <- function(
+        dt,
+        nts,
+        darkMode = FALSE,
+        spectra_mode = c("suspect", "feature")) {
+      spectra_mode <- match.arg(spectra_mode)
+      dt <- data.table::copy(data.table::as.data.table(dt))
+      if (nrow(dt) == 0) return(dt)
+
+      dt <- add_replicates(dt)
+
+      smiles_vec <- if ("SMILES" %in% colnames(dt)) dt$SMILES else rep(NA_character_, nrow(dt))
+      inchi_vec <- if ("InChI" %in% colnames(dt)) dt$InChI else rep(NA_character_, nrow(dt))
+      dt$structure <- mapply(
+        function(smiles, inchi) {
+          img_uri <- create_structure_image(smiles, inchi, darkMode = darkMode)
+          if (!nzchar(img_uri)) return("")
+          sprintf("<img class='suspect-structure-img' src='%s' alt=''/>", img_uri)
+        },
+        smiles_vec,
+        inchi_vec,
+        SIMPLIFY = TRUE,
+        USE.NAMES = FALSE
+      )
+
+      dt$spectra <- mapply(
+        function(analysis, feature) {
+          img_uri <- if (identical(spectra_mode, "suspect")) {
+            create_spectra_image(nts, analysis, feature, darkMode = darkMode)
+          } else {
+            create_feature_spectra_image(nts, analysis, feature, darkMode = darkMode)
+          }
+          if (!nzchar(img_uri)) return("")
+          sprintf("<img class='suspect-spectra-img' src='%s' alt=''/>", img_uri)
+        },
+        dt$analysis,
+        dt$feature,
+        SIMPLIFY = TRUE,
+        USE.NAMES = FALSE
+      )
+
+      exclude_cols <- c(
+        "db_ms2_mz",
+        "db_ms2_intensity",
+        "db_ms2_formula",
+        "exp_ms2_mz",
+        "exp_ms2_intensity",
+        "created_at"
+      )
+      keep_cols <- setdiff(colnames(dt), exclude_cols)
+      base_cols <- c(
+        "structure", "name", "spectra", "analysis", "replicate",
+        "feature", "feature_component", "feature_group", "candidate_rank",
+        "id_level", "score", "shared_fragments", "cosine_similarity",
+        "formula", "InChIKey", "xLogP", "error_mass", "error_rt",
+        "db_ms2_size", "exp_ms2_size"
+      )
+      base_cols <- base_cols[base_cols %in% keep_cols]
+      rest_cols <- setdiff(keep_cols, base_cols)
+      dt[, c(base_cols, rest_cols), with = FALSE]
+    }
+
+    metrics_summary_table <- function(dt) {
+      dt <- data.table::copy(data.table::as.data.table(dt))
+      if (nrow(dt) == 0) return(dt)
+      dt <- add_replicates(dt)
+      safe_mean <- function(x) if (sum(is.finite(x)) > 0) mean(x, na.rm = TRUE) else NA_real_
+      safe_sd <- function(x) if (sum(is.finite(x)) > 1) stats::sd(x, na.rm = TRUE) else NA_real_
+      safe_cv <- function(x) {
+        mu <- safe_mean(x)
+        sdv <- safe_sd(x)
+        if (!is.finite(mu) || isTRUE(all.equal(mu, 0)) || !is.finite(sdv)) return(NA_real_)
+        100 * sdv / abs(mu)
+      }
+      dt[, .(
+        n_hits = .N,
+        exp_rt_mean = safe_mean(exp_rt),
+        exp_rt_sd = safe_sd(exp_rt),
+        exp_rt_cv = safe_cv(exp_rt),
+        exp_mass_mean = safe_mean(exp_mass),
+        exp_mass_sd = safe_sd(exp_mass),
+        exp_mass_cv = safe_cv(exp_mass),
+        intensity_mean = safe_mean(intensity),
+        intensity_sd = safe_sd(intensity),
+        intensity_cv = safe_cv(intensity),
+        area_mean = safe_mean(area),
+        area_sd = safe_sd(area),
+        area_cv = safe_cv(area),
+        error_rt_mean = safe_mean(error_rt),
+        error_rt_abs_mean = safe_mean(abs(error_rt)),
+        error_mass_mean = safe_mean(error_mass),
+        error_mass_abs_mean = safe_mean(abs(error_mass))
+      ), by = .(name, replicate)][order(name, replicate)]
     }
 
     # MARK: Summary Tab
@@ -1207,7 +1536,7 @@
     # Features Tab ------
 
     # MARK: Layout proportions
-    scatter_layout_proportions <- shiny::reactiveVal(c(80, 20))
+    scatter_layout_proportions <- shiny::reactiveVal(c(50, 50))
     scatter_filters_open <- shiny::reactiveVal(FALSE)
     scatter_numeric_cols <- shiny::reactive({
       fts <- data.table::as.data.table(features_data())
@@ -1804,6 +2133,501 @@
         )
       })
 
+    # Internal Standards ------
+
+    istd_layout_proportions <- shiny::reactiveVal(c(50, 50))
+    shiny::observeEvent(input$istd_prop_20_80, { istd_layout_proportions(c(20, 80)) })
+    shiny::observeEvent(input$istd_prop_30_70, { istd_layout_proportions(c(30, 70)) })
+    shiny::observeEvent(input$istd_prop_40_60, { istd_layout_proportions(c(40, 60)) })
+    shiny::observeEvent(input$istd_prop_50_50, { istd_layout_proportions(c(50, 50)) })
+    shiny::observeEvent(input$istd_prop_60_40, { istd_layout_proportions(c(60, 40)) })
+    shiny::observeEvent(input$istd_prop_70_30, { istd_layout_proportions(c(70, 30)) })
+    shiny::observeEvent(input$istd_prop_80_20, { istd_layout_proportions(c(80, 20)) })
+
+    resize_internal_standard_plots <- function() {
+      session$sendCustomMessage("sf-plotly-resize", list(
+        ids = unname(c(
+          ns_full("internal_standards_scatter_plot"),
+          ns_full("internal_standard_eic_plot"),
+          ns_full("internal_standard_xic_plot"),
+          ns_full("internal_standard_profile_plot"),
+          ns_full("internal_standard_ms1_plot"),
+          ns_full("internal_standard_ms2_plot")
+        ))
+      ))
+    }
+    schedule_internal_standard_plot_resize <- function() {
+      session$onFlushed(function() {
+        resize_internal_standard_plots()
+      }, once = TRUE)
+    }
+    sync_internal_standard_layout <- function() {
+      props <- istd_layout_proportions()
+      active_prop <- paste0(props[1], "_", props[2])
+      session$sendCustomMessage("sf-nta-feature-layout", list(
+        left_id = ns_full("internal_standards_scatter_panel"),
+        right_id = ns_full("internal_standards_details_panel"),
+        left_basis = props[1],
+        right_basis = props[2],
+        filters_open = FALSE,
+        prop_button_ids = unname(c(
+          ns_full("istd_prop_20_80"),
+          ns_full("istd_prop_30_70"),
+          ns_full("istd_prop_40_60"),
+          ns_full("istd_prop_50_50"),
+          ns_full("istd_prop_60_40"),
+          ns_full("istd_prop_70_30"),
+          ns_full("istd_prop_80_20")
+        )),
+        active_prop_button_id = ns_full(paste0("istd_prop_", active_prop))
+      ))
+    }
+    shiny::observeEvent(istd_layout_proportions(), {
+      sync_internal_standard_layout()
+      later::later(schedule_internal_standard_plot_resize, delay = 0.08)
+    }, ignoreInit = FALSE)
+
+    internal_standards_scatter_data <- shiny::reactive({
+      istd <- data.table::copy(internal_standards_data())
+      if (nrow(istd) == 0) return(istd)
+      istd$analysis <- as.character(istd$analysis)
+      istd$feature <- as.character(istd$feature)
+      if ("feature_group" %in% colnames(istd)) istd$feature_group <- as.character(istd$feature_group)
+      if ("name" %in% colnames(istd)) istd$name <- as.character(istd$name)
+      istd$replicate <- as.character(istd$replicate)
+      max_intensity_global <- if ("intensity" %in% colnames(istd)) max(istd$intensity, na.rm = TRUE) else NA_real_
+      istd$rel_intensity <- if (is.finite(max_intensity_global) && max_intensity_global > 0) istd$intensity / max_intensity_global else 0
+      istd$rel_intensity[!is.finite(istd$rel_intensity)] <- 0
+      istd$dot_size <- 6 + 10 * istd$rel_intensity
+      istd
+    })
+
+    istd_color_cols <- shiny::reactive({
+      sel <- input$istd_color_by
+      if (is.null(sel) || !nzchar(sel)) sel <- "analysis"
+      sel
+    })
+
+    istd_selection_cols <- shiny::reactive({
+      sel <- input$istd_select_by
+      if (is.null(sel) || !nzchar(sel)) sel <- "feature"
+      switch(
+        sel,
+        feature = c("analysis", "feature"),
+        name = "name",
+        c("analysis", "feature")
+      )
+    })
+
+    istd_details_group_by <- shiny::reactive({
+      color_col <- istd_color_cols()
+      if (!is.character(color_col) || length(color_col) != 1 || !nzchar(color_col)) {
+        color_col <- "analysis"
+      }
+      unique(c(color_col, "feature"))
+    })
+
+    output$internal_standards_scatter_plot <- plotly::renderPlotly({
+      istd <- data.table::copy(internal_standards_scatter_data())
+      shiny::validate(shiny::need(nrow(istd) > 0, "No internal standards available to plot."))
+
+      color_cols <- istd_color_cols()
+      color_cols <- color_cols[color_cols %in% colnames(istd)]
+      if (length(color_cols) == 0) color_cols <- "analysis"
+      istd[, (color_cols) := lapply(.SD, as.character), .SDcols = color_cols]
+      for (col in color_cols) istd[[col]][is.na(istd[[col]])] <- ""
+      istd$color_var <- do.call(paste, c(istd[, ..color_cols], sep = "_"))
+
+      sel_cols <- istd_selection_cols()
+      sel_cols <- sel_cols[sel_cols %in% colnames(istd)]
+      if (length(sel_cols) == 0) sel_cols <- intersect(c("analysis", "feature"), colnames(istd))
+      istd[, (sel_cols) := lapply(.SD, as.character), .SDcols = sel_cols]
+      for (col in sel_cols) istd[[col]][is.na(istd[[col]])] <- ""
+      if ("feature_group" %in% sel_cols) {
+        istd <- istd[!is.na(istd$feature_group) & nzchar(istd$feature_group), ]
+      }
+      if ("name" %in% sel_cols) {
+        istd <- istd[!is.na(istd$name) & nzchar(istd$name), ]
+      }
+      shiny::validate(shiny::need(nrow(istd) > 0, "No internal standards available for the current selection mode."))
+      istd$scatter_key <- do.call(paste, c(istd[, ..sel_cols], sep = "||"))
+
+      pal <- .get_colors(unique(istd$color_var), darkMode = dark_mode())
+      hide_legend <- length(unique(istd$color_var)) > 50
+
+      p <- plotly::plot_ly(
+        data = istd,
+        source = "internal_standards_scatter",
+        x = ~exp_rt,
+        y = ~exp_mass,
+        type = "scattergl",
+        mode = "markers",
+        color = ~color_var,
+        colors = pal,
+        marker = list(
+          sizemode = "diameter",
+          size = ~dot_size,
+          sizemin = 3,
+          line = list(width = 0)
+        ),
+        key = ~scatter_key,
+        hoverinfo = "text",
+        text = ~paste0(
+          "<b>", name, "</b><br>",
+          "Analysis: ", analysis, "<br>",
+          "Feature: ", feature, "<br>",
+          "RT: ", exp_rt, "<br>",
+          "Mass: ", exp_mass
+        )
+      )
+
+      p <- plotly::layout(
+        p,
+        title = NULL,
+        margin = list(l = 60, r = 30, t = 30, b = 88),
+        paper_bgcolor = "rgba(0,0,0,0)",
+        plot_bgcolor = "rgba(0,0,0,0)",
+        xaxis = .plotly_axis_spec(
+          title = list(text = "Retention Time"),
+          darkMode = dark_mode(),
+          tickfont = list(size = 12, color = .get_plot_theme(dark_mode())$text)
+        ),
+        yaxis = .plotly_axis_spec(
+          title = list(text = "Experimental Mass"),
+          darkMode = dark_mode(),
+          tickfont = list(size = 12, color = .get_plot_theme(dark_mode())$text)
+        ),
+        font = list(color = .get_plot_theme(dark_mode())$text),
+        legend = list(
+          title = list(text = paste(color_cols, collapse = ", ")),
+          orientation = "h",
+          x = 0,
+          xanchor = "left",
+          y = -0.16,
+          yanchor = "top"
+        ),
+        showlegend = !hide_legend
+      )
+
+      p <- plotly::config(p, displayModeBar = TRUE, displaylogo = FALSE, responsive = FALSE)
+      p <- plotly::event_register(p, "plotly_selected")
+      p <- plotly::event_register(p, "plotly_click")
+      p
+    })
+
+    selected_internal_standards_rows <- shiny::reactive({
+      evt <- plotly::event_data("plotly_selected", source = "internal_standards_scatter")
+      if (is.null(evt) || nrow(evt) == 0) {
+        evt <- plotly::event_data("plotly_click", source = "internal_standards_scatter")
+      }
+      if (is.null(evt) || nrow(evt) == 0) return(NULL)
+      keys <- evt$key
+      if (is.null(keys)) return(NULL)
+      keys <- as.character(keys)
+
+      istd <- data.table::copy(internal_standards_scatter_data())
+      if (!nrow(istd)) return(NULL)
+
+      sel_cols <- istd_selection_cols()
+      sel_cols <- sel_cols[sel_cols %in% colnames(istd)]
+      if (length(sel_cols) == 0) sel_cols <- intersect(c("analysis", "feature"), colnames(istd))
+      if ("feature_group" %in% sel_cols) {
+        istd <- istd[!is.na(feature_group) & nzchar(feature_group), ]
+      }
+      if ("name" %in% sel_cols) {
+        istd <- istd[!is.na(name) & nzchar(name), ]
+      }
+      if (!nrow(istd)) return(NULL)
+
+      istd$scatter_key <- do.call(paste, c(istd[, ..sel_cols], sep = "||"))
+      selected_entities <- unique(istd[scatter_key %in% keys, ..sel_cols])
+      if (nrow(selected_entities) == 0) return(NULL)
+      istd[selected_entities, on = sel_cols, nomatch = 0]
+    })
+
+    selected_internal_standards_features <- shiny::reactive({
+      sel <- selected_internal_standards_rows()
+      if (is.null(sel) || nrow(sel) == 0) return(NULL)
+      unique(sel[, c("analysis", "feature"), with = FALSE])
+    })
+
+    output$internal_standard_eic_plot <- plotly::renderPlotly({
+      sel <- selected_internal_standards_features()
+      shiny::validate(shiny::need(!is.null(sel) && nrow(sel) > 0, "Select one or more points to view EIC."))
+      p <- plot_features(
+        nta_data(),
+        features = sel,
+        groupBy = istd_details_group_by(),
+        filtered = TRUE,
+        showDetails = TRUE,
+        darkMode = dark_mode()
+      )
+      shiny::validate(shiny::need(!is.null(p), "No EIC data for selected internal standards."))
+      plotly::layout(p, title = NULL, margin = list(l = 50, r = 30, t = 30, b = 50), paper_bgcolor = "rgba(0,0,0,0)", plot_bgcolor = "rgba(0,0,0,0)") %>%
+        plotly::config(displaylogo = FALSE, responsive = TRUE)
+    })
+
+    output$internal_standard_xic_plot <- plotly::renderPlotly({
+      sel <- selected_internal_standards_features()
+      shiny::validate(shiny::need(!is.null(sel) && nrow(sel) > 0, "Select one or more points to view XIC."))
+      p <- map_features(
+        nta_data(),
+        features = sel,
+        groupBy = istd_details_group_by(),
+        filtered = TRUE,
+        showDetails = TRUE,
+        darkMode = dark_mode()
+      )
+      shiny::validate(shiny::need(!is.null(p), "No XIC data for selected internal standards."))
+      plotly::layout(p, title = NULL, margin = list(l = 50, r = 30, t = 30, b = 50), paper_bgcolor = "rgba(0,0,0,0)", plot_bgcolor = "rgba(0,0,0,0)") %>%
+        plotly::config(displaylogo = FALSE, responsive = TRUE)
+    })
+
+    output$internal_standard_profile_plot <- plotly::renderPlotly({
+      sel <- selected_internal_standards_rows()
+      shiny::validate(shiny::need(!is.null(sel) && nrow(sel) > 0, "Select one or more points to view profile."))
+      names_sel <- unique(sel$name)
+      names_sel <- names_sel[!is.na(names_sel) & nzchar(names_sel)]
+      shiny::validate(shiny::need(length(names_sel) > 0, "No internal standard names available for selected rows."))
+      p <- plot_internal_standards_profile(
+        nta_data(),
+        names = names_sel,
+        groupBy = if (identical(input$istd_color_by, "replicate")) "replicate" else "analysis",
+        showLegend = FALSE,
+        darkMode = dark_mode()
+      )
+      shiny::validate(shiny::need(!is.null(p), "No profile data for selected internal standards."))
+      plotly::layout(p, title = NULL, margin = list(l = 50, r = 30, t = 30, b = 50), paper_bgcolor = "rgba(0,0,0,0)", plot_bgcolor = "rgba(0,0,0,0)") %>%
+        plotly::config(displaylogo = FALSE, responsive = TRUE)
+    })
+
+    output$internal_standard_ms1_plot <- plotly::renderPlotly({
+      sel <- selected_internal_standards_features()
+      shiny::validate(shiny::need(!is.null(sel) && nrow(sel) > 0, "Select one or more points to view MS1."))
+      p <- plot_features_ms1(
+        nta_data(),
+        features = sel,
+        groupBy = istd_details_group_by(),
+        filtered = TRUE,
+        darkMode = dark_mode()
+      )
+      shiny::validate(shiny::need(!is.null(p), "No MS1 data for selected internal standards."))
+      plotly::layout(p, title = NULL, margin = list(l = 50, r = 30, t = 30, b = 50), paper_bgcolor = "rgba(0,0,0,0)", plot_bgcolor = "rgba(0,0,0,0)") %>%
+        plotly::config(displaylogo = FALSE, responsive = TRUE)
+    })
+
+    output$internal_standard_ms2_plot <- plotly::renderPlotly({
+      sel <- selected_internal_standards_features()
+      shiny::validate(shiny::need(!is.null(sel) && nrow(sel) > 0, "Select one or more points to view MS2."))
+      p <- plot_features_ms2(
+        nta_data(),
+        features = sel,
+        groupBy = istd_details_group_by(),
+        filtered = TRUE,
+        darkMode = dark_mode()
+      )
+      shiny::validate(shiny::need(!is.null(p), "No MS2 data for selected internal standards."))
+      plotly::layout(p, title = NULL, margin = list(l = 50, r = 30, t = 30, b = 50), paper_bgcolor = "rgba(0,0,0,0)", plot_bgcolor = "rgba(0,0,0,0)") %>%
+        plotly::config(displaylogo = FALSE, responsive = TRUE)
+    })
+
+    output$internal_standard_details_table <- DT::renderDT({
+      rows <- selected_internal_standards_rows()
+      shiny::validate(shiny::need(!is.null(rows) && nrow(rows) > 0, "Select one or more points to view details."))
+      rows <- data.table::copy(rows)
+      rows <- rows[, setdiff(colnames(rows), c("db_ms2_mz", "db_ms2_intensity", "db_ms2_formula", "exp_ms2_mz", "exp_ms2_intensity", "rel_intensity", "dot_size")), with = FALSE]
+      n_sel <- nrow(rows)
+      prop_names <- colnames(rows)
+      details_rows <- lapply(prop_names, function(p) {
+        vals <- as.character(rows[[p]])
+        data.frame(
+          Property = p,
+          t(as.matrix(vals)),
+          stringsAsFactors = FALSE
+        )
+      })
+      details_dt <- data.table::rbindlist(details_rows, fill = TRUE)
+      if (n_sel > 1) {
+        data.table::setnames(details_dt, c("Property", paste0("Value ", seq_len(n_sel))))
+      } else {
+        data.table::setnames(details_dt, c("Property", "Value"))
+      }
+      DT::datatable(
+        details_dt,
+        options = list(
+          dom = "tip",
+          paging = FALSE,
+          ordering = FALSE,
+          autoWidth = FALSE,
+          scrollX = TRUE,
+          scrollCollapse = TRUE,
+          fixedColumns = list(leftColumns = 1)
+        ),
+        selection = "single",
+        extensions = "FixedColumns",
+        style = "bootstrap",
+        class = "table table-striped table-hover",
+        width = "100%",
+        rownames = FALSE
+      )
+    })
+
+    output$internal_standard_identification_table <- DT::renderDT({
+      rows <- selected_internal_standards_rows()
+      shiny::validate(shiny::need(!is.null(rows) && nrow(rows) > 0, "Select one or more points to view identification."))
+      rows <- build_identification_table(rows, nta_data(), darkMode = dark_mode(), spectra_mode = "feature")
+      DT::datatable(
+        rows,
+        options = list(dom = "t", paging = FALSE, autoWidth = TRUE, scrollX = TRUE, scrollY = "calc(100vh - 293px)"),
+        escape = FALSE,
+        style = "bootstrap",
+        class = "table table-hover suspects-table",
+        rownames = FALSE
+      )
+    })
+
+    output$internal_standard_metrics_plot <- plotly::renderPlotly({
+      rows <- selected_internal_standards_rows()
+      if (is.null(rows) || nrow(rows) == 0) {
+        rows <- internal_standards_data()
+      }
+      shiny::validate(shiny::need(nrow(rows) > 0, "No internal standards available for metrics."))
+      rows <- add_replicates(rows)
+      rows <- rows[!is.na(name) & nzchar(name)]
+      shiny::validate(shiny::need(nrow(rows) > 0, "No named internal standards available for metrics."))
+
+      metric_specs <- list(
+        list(col = "exp_rt", label = "RT"),
+        list(col = "exp_mass", label = "Mass"),
+        list(col = "intensity", label = "Intensity"),
+        list(col = "area", label = "Area"),
+        list(col = "error_rt", label = "RT Error"),
+        list(col = "error_mass", label = "Mass Error")
+      )
+
+      summarize_metric <- function(dt, value_col) {
+        dt <- dt[is.finite(get(value_col))]
+        if (nrow(dt) == 0) return(data.table::data.table())
+        dt[, .(
+          mean_value = mean(get(value_col), na.rm = TRUE),
+          sd_value = if (.N > 1) stats::sd(get(value_col), na.rm = TRUE) else 0
+        ), by = .(name, replicate)]
+      }
+
+      selected_names <- unique(as.character(rows$name))
+      selected_names <- selected_names[!is.na(selected_names) & nzchar(selected_names)]
+      shiny::validate(shiny::need(length(selected_names) > 0, "No internal standard names available for metrics."))
+      rep_levels <- unique(as.character(rows$replicate))
+      rep_levels <- rep_levels[!is.na(rep_levels) & nzchar(rep_levels)]
+      if (length(rep_levels) == 0) {
+        rep_levels <- unique(as.character(rows$analysis))
+      }
+
+      name_colors <- .get_colors(selected_names, darkMode = dark_mode())
+      metric_plots <- lapply(metric_specs, function(spec) {
+        metric_dt <- summarize_metric(rows, spec$col)
+        shiny::validate(shiny::need(nrow(metric_dt) > 0, paste("No", spec$label, "data available for metrics.")))
+        metric_dt$replicate <- as.character(metric_dt$replicate)
+        metric_dt$replicate[is.na(metric_dt$replicate) | !nzchar(metric_dt$replicate)] <- "NA"
+        rep_axis <- unique(c(rep_levels, metric_dt$replicate))
+        metric_dt$replicate <- factor(metric_dt$replicate, levels = rep_axis)
+
+        overall_vals <- rows[[spec$col]]
+        overall_vals <- overall_vals[is.finite(overall_vals)]
+        overall_mean <- if (length(overall_vals) > 0) mean(overall_vals, na.rm = TRUE) else NA_real_
+        overall_sd <- if (length(overall_vals) > 1) stats::sd(overall_vals, na.rm = TRUE) else NA_real_
+
+        p_metric <- plotly::plot_ly()
+        if (is.finite(overall_mean) && is.finite(overall_sd) && overall_sd > 0) {
+          band_df <- data.frame(
+            replicate = factor(rep_axis, levels = rep_axis),
+            lower = rep(overall_mean - overall_sd, length(rep_axis)),
+            upper = rep(overall_mean + overall_sd, length(rep_axis))
+          )
+          p_metric <- plotly::add_trace(
+            p_metric,
+            data = band_df,
+            x = ~replicate,
+            y = ~lower,
+            type = "scatter",
+            mode = "lines",
+            line = list(color = "rgba(0,0,0,0)", width = 0),
+            hoverinfo = "skip",
+            showlegend = FALSE,
+            inherit = FALSE
+          )
+          p_metric <- plotly::add_trace(
+            p_metric,
+            data = band_df,
+            x = ~replicate,
+            y = ~upper,
+            type = "scatter",
+            mode = "lines",
+            line = list(color = "rgba(0,0,0,0)", width = 0),
+            fill = "tonexty",
+            fillcolor = "rgba(34, 197, 94, 0.16)",
+            hoverinfo = "skip",
+            showlegend = FALSE,
+            inherit = FALSE
+          )
+        }
+        for (nm in selected_names) {
+          seg <- metric_dt[name == nm]
+          if (nrow(seg) == 0) next
+          trace_color <- unname(name_colors[nm])
+          p_metric <- plotly::add_trace(
+            p_metric,
+            data = seg,
+            x = ~replicate,
+            y = ~mean_value,
+            type = "scatter",
+            mode = "lines+markers",
+            name = nm,
+            legendgroup = nm,
+            showlegend = identical(spec$col, metric_specs[[1]]$col),
+            line = list(color = trace_color, width = 2),
+            marker = list(color = trace_color, size = 8),
+            error_y = list(type = "data", array = seg$sd_value, visible = TRUE, color = trace_color, thickness = 1.5, width = 4),
+            hovertemplate = paste0(
+              "name: ", nm,
+              "<br>replicate: %{x}",
+              "<br>mean: %{y}<extra></extra>"
+            )
+          )
+        }
+        plotly::layout(
+          p_metric,
+          title = .plotly_title_spec(spec$label, darkMode = dark_mode()),
+          xaxis = .plotly_axis_spec(title = "Replicate", darkMode = dark_mode()),
+          yaxis = .plotly_axis_spec(title = spec$label, darkMode = dark_mode()),
+          paper_bgcolor = .get_plot_theme(dark_mode())$background,
+          plot_bgcolor = .get_plot_theme(dark_mode())$background,
+          font = list(color = .get_plot_theme(dark_mode())$text),
+          margin = list(l = 60, r = 30, t = 46, b = 54)
+        )
+      })
+
+      subplot <- plotly::subplot(
+        metric_plots,
+        nrows = ceiling(length(metric_plots) / 2),
+        shareX = FALSE,
+        shareY = FALSE,
+        margin = 0.085,
+        titleX = TRUE,
+        titleY = TRUE
+      )
+
+      plotly::layout(
+        subplot,
+        showlegend = length(selected_names) > 0,
+        legend = list(orientation = "h", x = 0, xanchor = "left", y = 1.08, yanchor = "bottom"),
+        paper_bgcolor = .get_plot_theme(dark_mode())$background,
+        plot_bgcolor = .get_plot_theme(dark_mode())$background,
+        font = list(color = .get_plot_theme(dark_mode())$text)
+      ) %>%
+        plotly::config(displaylogo = FALSE, responsive = TRUE)
+    })
+
     # Suspects ------
 
     # MARK: suspects_table_scatter
@@ -1818,60 +2642,7 @@
       suspects <- suspects[analysis %in% sel$analysis & feature %in% sel$feature, ]
       shiny::validate(shiny::need(nrow(suspects) > 0, "No suspects available for selected features."))
 
-      analyses_info <- info(nts)
-      rep_map <- analyses_info$replicate
-      names(rep_map) <- analyses_info$analysis
-      suspects$replicate <- rep_map[suspects$analysis]
-
-      smiles_vec <- if ("SMILES" %in% colnames(suspects)) {
-        suspects$SMILES
-      } else {
-        rep(NA_character_, nrow(suspects))
-      }
-      inchi_vec <- if ("InChI" %in% colnames(suspects)) {
-        suspects$InChI
-      } else {
-        rep(NA_character_, nrow(suspects))
-      }
-      suspects$structure <- mapply(
-        function(smiles, inchi) {
-          img_uri <- create_structure_image(smiles, inchi, darkMode = dark_mode())
-          if (!nzchar(img_uri)) return("")
-          sprintf("<img class='suspect-structure-img' src='%s' alt=''/>", img_uri)
-        },
-        smiles_vec,
-        inchi_vec,
-        SIMPLIFY = TRUE,
-        USE.NAMES = FALSE
-      )
-
-      suspects$spectra <- mapply(
-        function(analysis, feature) {
-          img_uri <- create_spectra_image(nts, analysis, feature, darkMode = dark_mode())
-          if (!nzchar(img_uri)) return("")
-          sprintf("<img class='suspect-spectra-img' src='%s' alt=''/>", img_uri)
-        },
-        suspects$analysis,
-        suspects$feature,
-        SIMPLIFY = TRUE,
-        USE.NAMES = FALSE
-      )
-
-      exclude_cols <- c(
-        "db_ms2_mz",
-        "db_ms2_intensity",
-        "db_ms2_formula",
-        "exp_ms2_mz",
-        "exp_ms2_intensity"
-      )
-      keep_cols <- setdiff(colnames(suspects), exclude_cols)
-      base_cols <- c(
-        "structure", "name", "spectra", "analysis", "replicate",
-        "feature", "feature_component", "feature_group"
-      )
-      base_cols <- base_cols[base_cols %in% keep_cols]
-      rest_cols <- setdiff(keep_cols, base_cols)
-      suspects <- suspects[, c(base_cols, rest_cols), with = FALSE]
+      suspects <- build_identification_table(suspects, nts, darkMode = dark_mode(), spectra_mode = "suspect")
 
       DT::datatable(
         suspects,

@@ -7,6 +7,7 @@
 #' @template arg-ProjectMassSpec-analyses
 #' @template arg-ProjectNonTargetAnalysis-features
 #' @template arg-ProjectNonTargetAnalysis-groups
+#' @template arg-ProjectNonTargetAnalysis-names
 #' @template arg-ProjectNonTargetAnalysis-components
 #' @template arg-ProjectMassSpec-mass
 #' @template arg-ProjectMassSpec-mz
@@ -341,6 +342,40 @@ ProjectNonTargetAnalysis <- R6::R6Class(
                                       millisec = 5) {
       get_internal_standards.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, groups = groups, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec)
     },
+    #' @description Return internal-standard intensity profiles across analyses.
+    get_internal_standards_profile = function(analyses = NULL,
+                                              features = NULL,
+                                              names = NULL,
+                                              mass = NULL,
+                                              mz = NULL,
+                                              rt = NULL,
+                                              mobility = NULL,
+                                              ppm = 20,
+                                              sec = 60,
+                                              millisec = 5,
+                                              normalized = FALSE) {
+      get_internal_standards_profile.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, names = names, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, normalized = normalized)
+    },
+    #' @description Plot internal-standard intensity profiles across analyses or replicates.
+    plot_internal_standards_profile = function(analyses = NULL,
+                                               features = NULL,
+                                               names = NULL,
+                                               mass = NULL,
+                                               mz = NULL,
+                                               rt = NULL,
+                                               mobility = NULL,
+                                               ppm = 20,
+                                               sec = 60,
+                                               millisec = 5,
+                                               groupBy = "analysis",
+                                               normalized = FALSE,
+                                               yLab = NULL,
+                                               title = NULL,
+                                               interactive = TRUE,
+                                               showLegend = TRUE,
+                                               darkMode = FALSE) {
+      plot_internal_standards_profile.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, names = names, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, groupBy = groupBy, normalized = normalized, yLab = yLab, title = title, interactive = interactive, showLegend = showLegend, darkMode = darkMode)
+    },
     #' @description Return shared `NTS_SUSPECTS` rows for selected analyses.
     get_suspects = function(analyses = NULL,
                             features = NULL,
@@ -450,6 +485,7 @@ ProjectNonTargetAnalysis <- R6::R6Class(
 #' @template arg-ProjectMassSpec-analyses
 #' @template arg-ProjectNonTargetAnalysis-features
 #' @template arg-ProjectNonTargetAnalysis-groups
+#' @template arg-ProjectNonTargetAnalysis-names
 #' @template arg-ProjectNonTargetAnalysis-components
 #' @template arg-ProjectMassSpec-mass
 #' @template arg-ProjectMassSpec-mz
@@ -1997,6 +2033,235 @@ get_internal_standards.ProjectNonTargetAnalysis <- function(
   col_order <- c("analysis", "replicate", "feature", "feature_group", "feature_component", "adduct", "polarity")
   data.table::setcolorder(internal_standards, c(intersect(col_order, colnames(internal_standards)), setdiff(colnames(internal_standards), col_order)))
   internal_standards
+}
+
+#' @describeIn ProjectNonTargetAnalysisS3 Return internal-standard profiles across analyses.
+#' @method get_internal_standards_profile ProjectNonTargetAnalysis
+#' @export
+get_internal_standards_profile.ProjectNonTargetAnalysis <- function(
+  x,
+  analyses = NULL,
+  features = NULL,
+  names = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  normalized = FALSE,
+  ...
+) {
+  checkmate::assert_class(x, "ProjectNonTargetAnalysis")
+  istd <- get_internal_standards(
+    x,
+    analyses = analyses,
+    features = features,
+    mass = mass,
+    mz = mz,
+    rt = rt,
+    mobility = mobility,
+    ppm = ppm,
+    sec = sec,
+    millisec = millisec
+  )
+  if (nrow(istd) == 0) {
+    return(data.table::data.table())
+  }
+
+  if (!is.null(names)) {
+    name_values <- if (is.data.frame(names)) {
+      col_name <- intersect(c("name", "names"), colnames(names))[1]
+      if (is.na(col_name)) stop("Selection for 'names' must include a 'name' column")
+      names[[col_name]]
+    } else {
+      names
+    }
+    istd <- istd[name %in% name_values]
+  }
+  if (nrow(istd) == 0) {
+    return(data.table::data.table())
+  }
+  if (!"name" %in% colnames(istd)) {
+    warning("Internal standard names not found!")
+    return(data.table::data.table())
+  }
+  istd <- istd[!is.na(name) & name != ""]
+  if (nrow(istd) == 0) {
+    return(data.table::data.table())
+  }
+
+  prof <- istd[, .(intensity = max(intensity, na.rm = TRUE)), by = c("name", "analysis")]
+  prof$intensity[is.na(prof$intensity) | is.infinite(prof$intensity)] <- 0
+  if ("replicate" %in% colnames(istd)) {
+    rep_map <- unique(istd[, .(analysis, replicate)])
+    prof <- merge(prof, rep_map, by = "analysis", all.x = TRUE)
+  }
+  if (normalized) {
+    prof[, intensity := {
+      max_int <- max(intensity, na.rm = TRUE)
+      if (!is.finite(max_int) || max_int == 0) 0 else intensity / max_int
+    }, by = name]
+  }
+  desired_order <- c("analysis", "replicate", "name", "intensity")
+  desired_order <- desired_order[desired_order %in% colnames(prof)]
+  data.table::setcolorder(prof, c(intersect(desired_order, colnames(prof)), setdiff(colnames(prof), desired_order)))
+  prof
+}
+
+#' @describeIn ProjectNonTargetAnalysisS3 Plot internal-standard profiles for selected analyses.
+#' @method plot_internal_standards_profile ProjectNonTargetAnalysis
+#' @export
+plot_internal_standards_profile.ProjectNonTargetAnalysis <- function(
+  x,
+  analyses = NULL,
+  features = NULL,
+  names = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  groupBy = "analysis",
+  normalized = FALSE,
+  yLab = NULL,
+  title = NULL,
+  interactive = TRUE,
+  showLegend = TRUE,
+  darkMode = FALSE,
+  ...
+) {
+  checkmate::assert_class(x, "ProjectNonTargetAnalysis")
+  prof <- get_internal_standards_profile(
+    x,
+    analyses = analyses,
+    features = features,
+    names = names,
+    mass = mass,
+    mz = mz,
+    rt = rt,
+    mobility = mobility,
+    ppm = ppm,
+    sec = sec,
+    millisec = millisec,
+    normalized = normalized
+  )
+
+  if (nrow(prof) == 0) {
+    return(NULL)
+  }
+
+  allowed_group_by <- c("analysis", "replicate")
+  if (!is.character(groupBy) || length(groupBy) != 1 || !(groupBy %in% allowed_group_by)) {
+    stop("groupBy must be one of: ", paste(allowed_group_by, collapse = ", "))
+  }
+
+  analyses_info <- data.table::as.data.table(get_analyses(x))
+  analysis_in_prof <- unique(as.character(prof$analysis))
+  analysis_order <- analyses_info$analysis[analyses_info$analysis %in% analysis_in_prof]
+  missing_analyses <- setdiff(analysis_in_prof, analysis_order)
+  if (length(missing_analyses) > 0) {
+    analysis_order <- c(analysis_order, missing_analyses)
+  }
+
+  replicate_order <- unique(analyses_info$replicate[analyses_info$analysis %in% analysis_order])
+  replicate_order <- as.character(replicate_order[!is.na(replicate_order)])
+  if ("replicate" %in% colnames(prof)) {
+    replicate_in_prof <- unique(as.character(prof$replicate))
+    missing_replicates <- setdiff(replicate_in_prof, replicate_order)
+    if (length(missing_replicates) > 0) {
+      replicate_order <- c(replicate_order, missing_replicates)
+    }
+  }
+
+  if (groupBy == "replicate") {
+    if (!"replicate" %in% colnames(prof)) {
+      warning("Replicate information not available for internal standard profiles.")
+      return(NULL)
+    }
+    prof <- prof[, .(
+      intensity = mean(intensity, na.rm = TRUE),
+      analysis_sd = stats::sd(intensity, na.rm = TRUE)
+    ), by = c("name", "replicate")]
+    prof$analysis_sd[is.na(prof$analysis_sd)] <- 0
+  }
+
+  x_col <- if (groupBy == "replicate") "replicate" else "analysis"
+  prof$name <- as.character(prof$name)
+
+  if (groupBy == "replicate") {
+    ord <- replicate_order[replicate_order %in% as.character(prof$replicate)]
+    if (length(ord) == 0) ord <- unique(as.character(prof$replicate))
+    prof$replicate <- factor(as.character(prof$replicate), levels = ord)
+  } else {
+    ord <- analysis_order[analysis_order %in% as.character(prof$analysis)]
+    if (length(ord) == 0) ord <- unique(as.character(prof$analysis))
+    prof$analysis <- factor(as.character(prof$analysis), levels = ord)
+  }
+  data.table::setorderv(prof, c("name", x_col))
+
+  if (is.null(yLab)) {
+    yLab <- if (normalized) "Relative intensity" else "Intensity"
+  }
+  xLab <- if (groupBy == "replicate") "Replicate" else "Analysis"
+
+  if (!interactive) {
+    plot <- ggplot2::ggplot(
+      prof,
+      ggplot2::aes(x = .data[[x_col]], y = intensity, group = name, color = name)
+    ) +
+      ggplot2::geom_line() +
+      ggplot2::geom_point()
+    if (groupBy == "replicate") {
+      plot <- plot +
+        ggplot2::geom_errorbar(
+          ggplot2::aes(ymin = intensity - analysis_sd, ymax = intensity + analysis_sd),
+          width = 0.2,
+          alpha = 0.6
+        )
+    }
+    plot <- plot +
+      .ggplot_plot_theme(darkMode = darkMode) +
+      ggplot2::labs(x = xLab, y = yLab, title = title, color = "name")
+    return(plot)
+  }
+
+  colors_tag <- .get_colors(unique(prof$name), darkMode = darkMode)
+  hover_text <- paste0(
+    "name: ", prof$name,
+    "<br>", xLab, ": ", as.character(prof[[x_col]]),
+    "<br>intensity: ", round(prof$intensity, 3)
+  )
+
+  error_y <- NULL
+  if (groupBy == "replicate") {
+    error_y <- list(type = "data", array = prof$analysis_sd, visible = TRUE)
+  }
+
+  plotly::plot_ly(
+    data = prof,
+    x = stats::as.formula(paste0("~", x_col)),
+    y = ~intensity,
+    type = "scatter",
+    mode = "lines+markers",
+    color = ~name,
+    colors = colors_tag,
+    text = hover_text,
+    hoverinfo = "text",
+    error_y = error_y,
+    showlegend = showLegend
+  ) %>%
+    plotly::layout(
+      title = .plotly_title_spec(title, darkMode = darkMode),
+      xaxis = .plotly_axis_spec(title = xLab, darkMode = darkMode),
+      yaxis = .plotly_axis_spec(title = yLab, darkMode = darkMode),
+      paper_bgcolor = .get_plot_theme(darkMode)$background,
+      plot_bgcolor = .get_plot_theme(darkMode)$background,
+      font = list(color = .get_plot_theme(darkMode)$text)
+    )
 }
 
 #' @describeIn ProjectNonTargetAnalysisS3 Return suspects for selected analyses.

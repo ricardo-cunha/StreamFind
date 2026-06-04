@@ -353,6 +353,17 @@ get_internal_standards <- function(x, ...) {
   UseMethod("get_internal_standards")
 }
 
+#' @title S3 generic `get_internal_standards_profile`
+#' @description S3 generic to get internal-standard profiles from `x`.
+#' @param x An object from which the internal-standard profiles will be retrieved.
+#' @param ... Additional arguments passed to the method.
+#' @export
+#' @noRd
+#'
+get_internal_standards_profile <- function(x, ...) {
+  UseMethod("get_internal_standards_profile")
+}
+
 #' @title S3 generic `get_matrix_suppression`
 #' @description S3 generic to get matrix suppression from `x`.
 #' @param x An object from which the matrix suppression will be retrieved.
@@ -1119,6 +1130,17 @@ plot_groups_profile <- function(x, ...) {
 #'
 plot_internal_standards <- function(x, ...) {
   UseMethod("plot_internal_standards")
+}
+
+#' @title Generic `plot_internal_standards_profile`
+#' @description S3 generic to plot internal-standard profiles from `x`.
+#' @param x An object from which the internal-standard profiles will be plotted.
+#' @param ... Additional arguments passed to the method.
+#' @export
+#' @noRd
+#'
+plot_internal_standards_profile <- function(x, ...) {
+  UseMethod("plot_internal_standards_profile")
 }
 
 #' @title Generic `plot_loadings`
