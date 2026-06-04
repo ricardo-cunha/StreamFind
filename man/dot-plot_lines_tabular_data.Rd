@@ -14,7 +14,8 @@
   title = NULL,
   xLab = NULL,
   yLab = NULL,
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 )
 }
 \arguments{

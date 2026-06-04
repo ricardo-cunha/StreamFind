@@ -17,25 +17,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 # -----------------------------------------------------------------------------
 # Locate CogniFlow contract headers
 # -----------------------------------------------------------------------------
-if(NOT DEFINED CF_CONTRACTS_INCLUDE OR CF_CONTRACTS_INCLUDE STREQUAL "")
-  execute_process(
-    COMMAND ${Python3_EXECUTABLE} -c "import cf_package_contracts as c; p = getattr(c, 'cf_contracts_include_path', lambda: '')(); print(p if p else '')"
-    OUTPUT_VARIABLE _CF_PY_INCLUDE
-    OUTPUT_STRIP_TRAILING_WHITESPACE
-    ERROR_QUIET
-  )
-  if(NOT _CF_PY_INCLUDE STREQUAL "" AND EXISTS "${_CF_PY_INCLUDE}/cf_step_abi.h")
-    set(CF_CONTRACTS_INCLUDE "${_CF_PY_INCLUDE}")
-  endif()
-endif()
-
-if(NOT DEFINED CF_CONTRACTS_INCLUDE OR CF_CONTRACTS_INCLUDE STREQUAL "")
-  message(FATAL_ERROR "cf_package_contracts include path not found. Install cf-package-contracts.")
-endif()
-
-if(NOT EXISTS "${CF_CONTRACTS_INCLUDE}/cf_step_abi.h")
-  message(FATAL_ERROR "cf_step_abi.h not found in '${CF_CONTRACTS_INCLUDE}'")
-endif()
+include(${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake/cf_contracts_include.cmake)
+include(${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake/streamfind_openbabel.cmake)
 
 # -----------------------------------------------------------------------------
 # Vendored zlib for Python/native builds
@@ -96,7 +79,7 @@ file(GLOB JSON_SCHEMA_VALIDATOR_SOURCES CONFIGURE_DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/json-schema-validator/src/*.cpp
 )
 file(GLOB JSON_CORE_SOURCES CONFIGURE_DEPENDS
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/json_core/*.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/json/*.cpp
 )
 file(GLOB ASM_SOURCES CONFIGURE_DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/asm/*.cpp
@@ -113,6 +96,7 @@ file(GLOB MASS_SPEC_SOURCES CONFIGURE_DEPENDS
 
 set(STREAMFIND_CORE_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/simdutf_wrapper.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/openbabel_adapter.cpp
   ${JSON_SCHEMA_VALIDATOR_SOURCES}
   ${JSON_CORE_SOURCES}
   ${ASM_SOURCES}
@@ -153,13 +137,14 @@ target_include_directories(cf_streamfind_steps PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/nlohmann
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/json-schema-validator/src
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/pugixml-1.14/src
-  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/json_core
+  ${CMAKE_CURRENT_SOURCE_DIR}/src/core/json
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/mass_spec
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/nta
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/project
   ${CF_STREAMFIND_DUCKDB_INCLUDE}
 )
 
+streamfind_enable_openbabel(cf_streamfind_steps ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(cf_streamfind_steps PRIVATE ${CF_STREAMFIND_DUCKDB_LIB})
 
 target_link_libraries(cf_streamfind_steps PRIVATE StreamFind::zlib)

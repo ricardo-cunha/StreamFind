@@ -1,0 +1,11 @@
+*
+!.gitignore
+!windows/
+windows/*
+!windows/.stamp
+!windows/bin/
+windows/bin/*
+!windows/bin/*.dll
+!windows/lib/
+windows/lib/*
+!windows/lib/*.a

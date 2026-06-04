@@ -115,7 +115,6 @@ app_ui <- function(request) {
               class = "sf-page",
               htmltools::div(
                 id = "sf-project-surface",
-                class = "sf-page-loading-surface",
                 shiny::uiOutput("project_ui")
               )
             )
@@ -126,7 +125,6 @@ app_ui <- function(request) {
               class = "sf-page",
               htmltools::div(
                 id = "sf-analyses-surface",
-                class = "sf-page-loading-surface",
                 shiny::uiOutput("analyses_ui")
               )
             )
@@ -137,7 +135,6 @@ app_ui <- function(request) {
               class = "sf-page",
               htmltools::div(
                 id = "sf-explorer-surface",
-                class = "sf-page-loading-surface",
                 shiny::uiOutput("explorer_ui")
               )
             )
@@ -148,7 +145,6 @@ app_ui <- function(request) {
               class = "sf-page",
               htmltools::div(
                 id = "sf-workflow-surface",
-                class = "sf-page-loading-surface",
                 shiny::uiOutput("workflow_ui")
               )
             )
@@ -159,7 +155,6 @@ app_ui <- function(request) {
               class = "sf-page",
               htmltools::div(
                 id = "sf-results-surface",
-                class = "sf-page-loading-surface",
                 shiny::uiOutput("results_ui")
               )
             )
@@ -170,7 +165,6 @@ app_ui <- function(request) {
               class = "sf-page",
               htmltools::div(
                 id = "sf-report-surface",
-                class = "sf-page-loading-surface",
                 shiny::uiOutput("report_ui")
               )
             )
@@ -181,7 +175,6 @@ app_ui <- function(request) {
               class = "sf-page",
               htmltools::div(
                 id = "sf-audit-surface",
-                class = "sf-page-loading-surface",
                 shiny::uiOutput("audit_ui")
               )
             )
@@ -455,15 +448,7 @@ golem_add_external_resources <- function() {
           }, 150);
         }
 
-        [
-          ['project_ui', 'sf-project-surface'],
-          ['analyses_ui', 'sf-analyses-surface'],
-          ['explorer_ui', 'sf-explorer-surface'],
-          ['workflow_ui', 'sf-workflow-surface'],
-          ['results_ui', 'sf-results-surface'],
-          ['report_ui', 'sf-report-surface'],
-          ['audit_ui', 'sf-audit-surface']
-        ].forEach(function(pair) {
+        [].forEach(function(pair) {
           bindLoadingSurfaceWhenReady(pair[0], pair[1]);
         });
 

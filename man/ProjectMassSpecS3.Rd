@@ -90,7 +90,8 @@
   title = NULL,
   groupBy = "analysis",
   interactive = TRUE,
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 )
 
 \method{plot_spectra_bpc}{ProjectMassSpec}(
@@ -105,7 +106,8 @@
   title = NULL,
   groupBy = "analysis",
   interactive = TRUE,
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 )
 
 \method{plot_spectra_tic_heatmap}{ProjectMassSpec}(
@@ -121,7 +123,8 @@
   groupBy = "analysis",
   interactive = TRUE,
   colors = NULL,
-  showLabels = FALSE
+  showLabels = FALSE,
+  darkMode = FALSE
 )
 
 \method{plot_spectra_tic_3d}{ProjectMassSpec}(
@@ -137,7 +140,8 @@
   zLab = NULL,
   title = NULL,
   groupBy = "analysis",
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 )
 
 \method{plot_spectra_bpc_heatmap}{ProjectMassSpec}(
@@ -153,7 +157,8 @@
   groupBy = "analysis",
   interactive = TRUE,
   colors = NULL,
-  showLabels = TRUE
+  showLabels = TRUE,
+  darkMode = FALSE
 )
 
 \method{plot_spectra_bpc_3d}{ProjectMassSpec}(
@@ -169,7 +174,8 @@
   zLab = NULL,
   title = NULL,
   groupBy = "analysis",
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 )
 
 \method{get_raw_spectra}{ProjectMassSpec}(
@@ -220,7 +226,8 @@
   title = NULL,
   groupBy = c("analysis", "id"),
   interactive = TRUE,
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 )
 
 \method{plot_raw_spectra_eic_heatmap}{ProjectMassSpec}(
@@ -241,7 +248,8 @@
   groupBy = c("analysis", "id"),
   interactive = TRUE,
   colorPalette = NULL,
-  showLabels = FALSE
+  showLabels = FALSE,
+  darkMode = FALSE
 )
 
 \method{plot_raw_spectra_eic_3d}{ProjectMassSpec}(
@@ -369,7 +377,8 @@
   title = NULL,
   groupBy = "analysis",
   interactive = TRUE,
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 )
 }
 \arguments{
@@ -407,6 +416,8 @@ object.}
 \item{interactive}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
 
 \item{colorPalette}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{darkMode}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 
 \item{reduction}{Numeric reduction factor for heatmap binning density. Values
 in \code{0-1} are treated as fractions; values above \code{1} are treated as

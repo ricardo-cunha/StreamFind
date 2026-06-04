@@ -1,7 +1,6 @@
 #include "reader.h"
 
-#include "json_core/io.h"
-#include "json_core/validator.h"
+#include "json/json.h"
 
 #include <vector>
 

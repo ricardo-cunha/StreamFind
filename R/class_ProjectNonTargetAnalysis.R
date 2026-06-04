@@ -25,6 +25,7 @@
 #' @template arg-ProjectNonTargetAnalysis-yLab
 #' @template arg-ProjectNonTargetAnalysis-title
 #' @template arg-ProjectNonTargetAnalysis-interactive
+#' @template arg-ProjectNonTargetAnalysis-darkMode
 #' @template arg-ProjectNonTargetAnalysis-showLegend
 #' @template arg-ProjectNonTargetAnalysis-labs
 #' @template arg-ms-colorBy
@@ -171,7 +172,8 @@ ProjectNonTargetAnalysis <- R6::R6Class(
                                        downsize = 1,
                                        interactive = TRUE,
                                        showLegend = TRUE,
-                                       renderEngine = "webgl") {
+                                       renderEngine = "webgl",
+                                       darkMode = FALSE) {
       plot_matrix_suppression.ProjectNonTargetAnalysis(
         self,
         analyses = analyses,
@@ -185,7 +187,8 @@ ProjectNonTargetAnalysis <- R6::R6Class(
         downsize = downsize,
         interactive = interactive,
         showLegend = showLegend,
-        renderEngine = renderEngine
+        renderEngine = renderEngine,
+        darkMode = darkMode
       )
     },
     #' @description Plot the number of features for selected analyses.
@@ -195,8 +198,9 @@ ProjectNonTargetAnalysis <- R6::R6Class(
                                    title = NULL,
                                    groupBy = "analysis",
                                    showLegend = TRUE,
-                                   showHoverText = TRUE) {
-      plot_features_count.ProjectNonTargetAnalysis(self, analyses = analyses, filtered = filtered, yLab = yLab, title = title, groupBy = groupBy, showLegend = showLegend, showHoverText = showHoverText)
+                                   showHoverText = TRUE,
+                                   darkMode = FALSE) {
+      plot_features_count.ProjectNonTargetAnalysis(self, analyses = analyses, filtered = filtered, yLab = yLab, title = title, groupBy = groupBy, showLegend = showLegend, showHoverText = showHoverText, darkMode = darkMode)
     },
     #' @description Return feature-group profiles across analyses.
     get_features_profile = function(analyses = NULL,
@@ -229,8 +233,9 @@ ProjectNonTargetAnalysis <- R6::R6Class(
                                      yLab = NULL,
                                      title = NULL,
                                      interactive = TRUE,
-                                     showLegend = TRUE) {
-      plot_features_profile.ProjectNonTargetAnalysis(self, analyses = analyses, groups = groups, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, filtered = filtered, corrected = corrected, groupBy = groupBy, normalized = normalized, yLab = yLab, title = title, interactive = interactive, showLegend = showLegend)
+                                     showLegend = TRUE,
+                                     darkMode = FALSE) {
+      plot_features_profile.ProjectNonTargetAnalysis(self, analyses = analyses, groups = groups, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, filtered = filtered, corrected = corrected, groupBy = groupBy, normalized = normalized, yLab = yLab, title = title, interactive = interactive, showLegend = showLegend, darkMode = darkMode)
     },
     #' @description Plot EIC traces for selected features.
     plot_features = function(analyses = NULL,
@@ -250,8 +255,9 @@ ProjectNonTargetAnalysis <- R6::R6Class(
                              title = NULL,
                              groupBy = "feature",
                              interactive = TRUE,
-                             showDetails = FALSE) {
-      plot_features.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, groups = groups, components = components, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, filtered = filtered, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, interactive = interactive, showDetails = showDetails)
+                             showDetails = FALSE,
+                             darkMode = FALSE) {
+      plot_features.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, groups = groups, components = components, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, filtered = filtered, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, interactive = interactive, showDetails = showDetails, darkMode = darkMode)
     },
     #' @description Plot RT versus m/z traces for selected features.
     map_features = function(analyses = NULL,
@@ -272,8 +278,9 @@ ProjectNonTargetAnalysis <- R6::R6Class(
                             groupBy = "feature",
                             globalNormalization = FALSE,
                             interactive = TRUE,
-                            showDetails = FALSE) {
-      map_features.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, groups = groups, components = components, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, filtered = filtered, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, globalNormalization = globalNormalization, interactive = interactive, showDetails = showDetails)
+                            showDetails = FALSE,
+                            darkMode = FALSE) {
+      map_features.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, groups = groups, components = components, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, filtered = filtered, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, globalNormalization = globalNormalization, interactive = interactive, showDetails = showDetails, darkMode = darkMode)
     },
     #' @description Plot MS1 spectra for selected features.
     plot_features_ms1 = function(analyses = NULL,
@@ -294,8 +301,9 @@ ProjectNonTargetAnalysis <- R6::R6Class(
                                  title = NULL,
                                  groupBy = "feature",
                                  showText = TRUE,
-                                 interactive = TRUE) {
-      plot_features_ms1.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, groups = groups, components = components, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, normalized = normalized, filtered = filtered, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, showText = showText, interactive = interactive)
+                                 interactive = TRUE,
+                                 darkMode = FALSE) {
+      plot_features_ms1.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, groups = groups, components = components, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, normalized = normalized, filtered = filtered, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, showText = showText, interactive = interactive, darkMode = darkMode)
     },
     #' @description Plot MS2 spectra for selected features.
     plot_features_ms2 = function(analyses = NULL,
@@ -316,8 +324,9 @@ ProjectNonTargetAnalysis <- R6::R6Class(
                                  title = NULL,
                                  groupBy = "feature",
                                  showText = TRUE,
-                                 interactive = TRUE) {
-      plot_features_ms2.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, groups = groups, components = components, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, normalized = normalized, filtered = filtered, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, showText = showText, interactive = interactive)
+                                 interactive = TRUE,
+                                 darkMode = FALSE) {
+      plot_features_ms2.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, groups = groups, components = components, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, normalized = normalized, filtered = filtered, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, showText = showText, interactive = interactive, darkMode = darkMode)
     },
     #' @description Return shared `NTS_INTERNAL_STANDARDS` rows for selected analyses.
     get_internal_standards = function(analyses = NULL,
@@ -364,8 +373,9 @@ ProjectNonTargetAnalysis <- R6::R6Class(
                                  groupBy = c("feature", "name"),
                                  showText = TRUE,
                                  interactive = TRUE,
-                                 showLegend = TRUE) {
-      plot_suspects_ms2.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, groups = groups, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, normalized = normalized, filtered = filtered, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, showText = showText, interactive = interactive, showLegend = showLegend)
+                                 showLegend = TRUE,
+                                 darkMode = FALSE) {
+      plot_suspects_ms2.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, groups = groups, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, normalized = normalized, filtered = filtered, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, showText = showText, interactive = interactive, showLegend = showLegend, darkMode = darkMode)
     },
     #' @description Return fold-change categories between replicate groups.
     get_fold_change = function(replicatesIn = NULL,
@@ -457,6 +467,7 @@ ProjectNonTargetAnalysis <- R6::R6Class(
 #' @template arg-ProjectNonTargetAnalysis-yLab
 #' @template arg-ProjectNonTargetAnalysis-title
 #' @template arg-ProjectNonTargetAnalysis-interactive
+#' @template arg-ProjectNonTargetAnalysis-darkMode
 #' @template arg-ProjectNonTargetAnalysis-showLegend
 #' @template arg-ProjectNonTargetAnalysis-labs
 #' @template arg-ms-colorBy
@@ -834,6 +845,7 @@ plot_matrix_suppression.ProjectNonTargetAnalysis <- function(
   interactive = TRUE,
   showLegend = TRUE,
   renderEngine = "webgl",
+  darkMode = FALSE,
   ...
 ) {
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
@@ -881,7 +893,7 @@ plot_matrix_suppression.ProjectNonTargetAnalysis <- function(
     mp[, var := unname(mapped[var])]
   }
   mp[, loop := paste0(analysis, replicate, id, var)]
-  cl <- .get_colors(unique(mp$var))
+  cl <- .get_colors(unique(mp$var), darkMode = darkMode)
 
   if (!interactive) {
     return(
@@ -893,17 +905,9 @@ plot_matrix_suppression.ProjectNonTargetAnalysis <- function(
     )
   }
 
-  title_spec <- list(text = title, font = list(size = 12, color = "black"))
-  xaxis <- list(
-    linecolor = "black",
-    title = xLab,
-    titlefont = list(size = 12, color = "black")
-  )
-  yaxis <- list(
-    linecolor = "black",
-    title = yLab,
-    titlefont = list(size = 12, color = "black")
-  )
+  title_spec <- .plotly_title_spec(title, darkMode = darkMode)
+  xaxis <- .plotly_axis_spec(title = xLab, darkMode = darkMode)
+  yaxis <- .plotly_axis_spec(title = yLab, darkMode = darkMode)
 
   loop <- NULL
   plot <- mp %>%
@@ -931,7 +935,10 @@ plot_matrix_suppression.ProjectNonTargetAnalysis <- function(
     plotly::layout(
       xaxis = xaxis,
       yaxis = yaxis,
-      title = title_spec
+      title = title_spec,
+      paper_bgcolor = .get_plot_theme(darkMode)$background,
+      plot_bgcolor = .get_plot_theme(darkMode)$background,
+      font = list(color = .get_plot_theme(darkMode)$text)
     )
 
   if (identical(renderEngine, "webgl")) {
@@ -952,7 +959,8 @@ plot_features_count.ProjectNonTargetAnalysis <- function(
   title = NULL,
   groupBy = "analysis",
   showLegend = TRUE,
-  showHoverText = TRUE
+  showHoverText = TRUE,
+  darkMode = FALSE
 ) {
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
   info <- get_features_count(x, analyses = analyses, filtered = filtered)
@@ -995,7 +1003,7 @@ plot_features_count.ProjectNonTargetAnalysis <- function(
     ""
   }
   info <- info[order(info$analysis), ]
-  colors_tag <- .get_colors(info$analysis)
+  colors_tag <- .get_colors(info$analysis, darkMode = darkMode)
   if (is.null(yLab)) {
     yLab <- "Number of features"
   }
@@ -1017,13 +1025,24 @@ plot_features_count.ProjectNonTargetAnalysis <- function(
     showlegend = showLegend
   ) %>%
     plotly::layout(
-      title = title,
-      xaxis = list(title = NULL, tickfont = list(size = 14)),
+      title = .plotly_title_spec(title, darkMode = darkMode),
+      xaxis = .plotly_axis_spec(
+        title = NULL,
+        darkMode = darkMode,
+        tickfont = list(size = 14, color = .get_plot_theme(darkMode)$text)
+      ),
       yaxis = list(
         title = yLab,
-        tickfont = list(size = 14),
-        titlefont = list(size = 18)
-      )
+        tickfont = list(size = 14, color = .get_plot_theme(darkMode)$text),
+        titlefont = list(size = 18, color = .get_plot_theme(darkMode)$text),
+        linecolor = .get_plot_theme(darkMode)$axis,
+        tickcolor = .get_plot_theme(darkMode)$axis,
+        gridcolor = .get_plot_theme(darkMode)$grid,
+        zeroline = FALSE
+      ),
+      paper_bgcolor = .get_plot_theme(darkMode)$background,
+      plot_bgcolor = .get_plot_theme(darkMode)$background,
+      font = list(color = .get_plot_theme(darkMode)$text)
     )
 }
 
@@ -1120,6 +1139,7 @@ plot_features_profile.ProjectNonTargetAnalysis <- function(
   title = NULL,
   interactive = TRUE,
   showLegend = TRUE,
+  darkMode = FALSE,
   ...
 ) {
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
@@ -1224,7 +1244,7 @@ plot_features_profile.ProjectNonTargetAnalysis <- function(
     return(plot)
   }
 
-  colors_tag <- .get_colors(unique(prof$feature_group))
+  colors_tag <- .get_colors(unique(prof$feature_group), darkMode = darkMode)
   hover_text <- paste0(
     "group: ", prof$feature_group,
     "<br>", xLab, ": ", as.character(prof[[x_col]]),
@@ -1250,16 +1270,24 @@ plot_features_profile.ProjectNonTargetAnalysis <- function(
     showlegend = showLegend
   ) %>%
     plotly::layout(
-      title = title,
-      xaxis = list(
+      title = .plotly_title_spec(title, darkMode = darkMode),
+      xaxis = .plotly_axis_spec(
         title = NULL,
-        tickfont = list(size = 12),
+        darkMode = darkMode,
+        tickfont = list(size = 12, color = .get_plot_theme(darkMode)$text),
         type = "category",
         categoryorder = "array",
         categoryarray = as.list(ord)
       ),
-      yaxis = list(title = yLab, tickfont = list(size = 12)),
-      legend = list(title = list(text = "feature_group"))
+      yaxis = .plotly_axis_spec(
+        title = yLab,
+        darkMode = darkMode,
+        tickfont = list(size = 12, color = .get_plot_theme(darkMode)$text)
+      ),
+      legend = list(title = list(text = "feature_group")),
+      paper_bgcolor = .get_plot_theme(darkMode)$background,
+      plot_bgcolor = .get_plot_theme(darkMode)$background,
+      font = list(color = .get_plot_theme(darkMode)$text)
     )
 }
 
@@ -1286,6 +1314,7 @@ plot_features.ProjectNonTargetAnalysis <- function(
   groupBy = "feature",
   interactive = TRUE,
   showDetails = FALSE,
+  darkMode = FALSE,
   ...
 ) {
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
@@ -1364,7 +1393,7 @@ plot_features.ProjectNonTargetAnalysis <- function(
   fts$var <- do.call(paste, c(vals, sep = " - "))
   var_levels <- unique(fts$var)
   fts$var <- factor(fts$var, levels = var_levels)
-  cl <- .get_colors(var_levels)
+  cl <- .get_colors(var_levels, darkMode = darkMode)
   cl50 <- paste(cl, "50", sep = "")
   names(cl50) <- names(cl)
 
@@ -1399,9 +1428,9 @@ plot_features.ProjectNonTargetAnalysis <- function(
     )
   }
 
-  title <- list(text = title, font = list(size = 12, color = "black"))
-  xaxis <- list(linecolor = "black", title = xLab, titlefont = list(size = 12, color = "black"))
-  yaxis <- list(linecolor = "black", title = yLab, titlefont = list(size = 12, color = "black"))
+  title <- .plotly_title_spec(title, darkMode = darkMode)
+  xaxis <- .plotly_axis_spec(title = xLab, darkMode = darkMode)
+  yaxis <- .plotly_axis_spec(title = yLab, darkMode = darkMode)
   make_hover_text <- function(pk_row) {
     fmt_num <- function(x, digits = 2) {
       if (is.null(x)) {
@@ -1514,7 +1543,14 @@ plot_features.ProjectNonTargetAnalysis <- function(
         )
     }
   }
-  plot %>% plotly::layout(xaxis = xaxis, yaxis = yaxis, title = title)
+  plot %>% plotly::layout(
+    xaxis = xaxis,
+    yaxis = yaxis,
+    title = title,
+    paper_bgcolor = .get_plot_theme(darkMode)$background,
+    plot_bgcolor = .get_plot_theme(darkMode)$background,
+    font = list(color = .get_plot_theme(darkMode)$text)
+  )
 }
 
 #' @describeIn ProjectNonTargetAnalysisS3 Map features across analyses (visualization).
@@ -1541,6 +1577,7 @@ map_features.ProjectNonTargetAnalysis <- function(
   globalNormalization = FALSE,
   interactive = TRUE,
   showDetails = FALSE,
+  darkMode = FALSE,
   ...
 ) {
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
@@ -1575,7 +1612,7 @@ map_features.ProjectNonTargetAnalysis <- function(
   fts$var <- do.call(paste, c(vals, sep = " - "))
   var_levels <- unique(fts$var)
   fts$var <- factor(fts$var, levels = var_levels)
-  cl <- .get_colors(var_levels)
+  cl <- .get_colors(var_levels, darkMode = darkMode)
 
   pt_list <- list()
   for (i in seq_len(nrow(fts))) {
@@ -1638,9 +1675,9 @@ map_features.ProjectNonTargetAnalysis <- function(
     )
   }
 
-  title <- list(text = title, font = list(size = 12, color = "black"))
-  xaxis <- list(linecolor = "black", title = xLab, titlefont = list(size = 12, color = "black"))
-  yaxis <- list(linecolor = "black", title = yLab, titlefont = list(size = 12, color = "black"))
+  title <- .plotly_title_spec(title, darkMode = darkMode)
+  xaxis <- .plotly_axis_spec(title = xLab, darkMode = darkMode)
+  yaxis <- .plotly_axis_spec(title = yLab, darkMode = darkMode)
   hover_vals <- if (showDetails) {
     paste0(
       "analysis: ", pts$analysis,
@@ -1669,7 +1706,15 @@ map_features.ProjectNonTargetAnalysis <- function(
     text = hover_vals,
     hoverinfo = if (showDetails) "text" else "skip"
   ) %>%
-    plotly::layout(title = title, xaxis = xaxis, yaxis = yaxis, legend = list(title = list(text = groupBy)))
+    plotly::layout(
+      title = title,
+      xaxis = xaxis,
+      yaxis = yaxis,
+      legend = list(title = list(text = groupBy)),
+      paper_bgcolor = .get_plot_theme(darkMode)$background,
+      plot_bgcolor = .get_plot_theme(darkMode)$background,
+      font = list(color = .get_plot_theme(darkMode)$text)
+    )
 }
 
 #' @describeIn ProjectNonTargetAnalysisS3 Plot MS1 features for selected analyses.
@@ -1696,6 +1741,7 @@ plot_features_ms1.ProjectNonTargetAnalysis <- function(
   groupBy = "feature",
   showText = TRUE,
   interactive = TRUE,
+  darkMode = FALSE,
   ...
 ) {
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
@@ -1728,7 +1774,7 @@ plot_features_ms1.ProjectNonTargetAnalysis <- function(
   vals <- lapply(groupBy, function(col) as.character(ms1[[col]]))
   ms1$var <- do.call(paste, c(vals, sep = " - "))
   ms1$loop <- paste0(ms1$analysis, ms1$replicate, ms1$feature, ms1$var)
-  cl <- .get_colors(unique(ms1$var))
+  cl <- .get_colors(unique(ms1$var), darkMode = darkMode)
   ms1$text_string <- if (showText) paste0(round(ms1$mz, 4)) else ""
 
   if (!interactive) {
@@ -1752,9 +1798,9 @@ plot_features_ms1.ProjectNonTargetAnalysis <- function(
   if (is.null(yLab)) yLab <- "Intensity / counts"
   ticksMin <- plyr::round_any(min(ms1$mz, na.rm = TRUE) * 0.9, 10)
   ticksMax <- plyr::round_any(max(ms1$mz, na.rm = TRUE) * 1.1, 10)
-  title <- list(text = title, font = list(size = 12, color = "black"))
-  xaxis <- list(linecolor = "black", title = xLab, titlefont = list(size = 12, color = "black"), range = c(ticksMin, ticksMax), dtick = round((max(ms1$mz) / 10), -1), ticks = "outside")
-  yaxis <- list(linecolor = "black", title = yLab, titlefont = list(size = 12, color = "black"), range = c(0, max(ms1$intensity) * 1.5))
+  title <- .plotly_title_spec(title, darkMode = darkMode)
+  xaxis <- .plotly_axis_spec(title = xLab, darkMode = darkMode, range = c(ticksMin, ticksMax), dtick = round((max(ms1$mz) / 10), -1), ticks = "outside")
+  yaxis <- .plotly_axis_spec(title = yLab, darkMode = darkMode, range = c(0, max(ms1$intensity) * 1.5))
   plot <- plot_ly()
   seen_vars <- character(0)
   for (lp in unique(ms1$loop)) {
@@ -1770,7 +1816,15 @@ plot_features_ms1.ProjectNonTargetAnalysis <- function(
       plot <- plot %>% add_trace(x = seg$mz, y = seg$intensity, type = "scattergl", mode = "markers+text", marker = list(size = 2, color = cl[var_val]), text = seg$text_string, textposition = "top center", textfont = list(size = 9, color = cl[var_val]), hoverinfo = "text", name = var_val, legendgroup = var_val, showlegend = FALSE)
     }
   }
-  plot %>% plotly::layout(title = title, xaxis = xaxis, yaxis = yaxis, uniformtext = list(minsize = 6, mode = "show"))
+  plot %>% plotly::layout(
+    title = title,
+    xaxis = xaxis,
+    yaxis = yaxis,
+    paper_bgcolor = .get_plot_theme(darkMode)$background,
+    plot_bgcolor = .get_plot_theme(darkMode)$background,
+    font = list(color = .get_plot_theme(darkMode)$text),
+    uniformtext = list(minsize = 6, mode = "show")
+  )
 }
 
 #' @describeIn ProjectNonTargetAnalysisS3 Plot MS2 features for selected analyses.
@@ -1797,6 +1851,7 @@ plot_features_ms2.ProjectNonTargetAnalysis <- function(
   groupBy = "feature",
   showText = TRUE,
   interactive = TRUE,
+  darkMode = FALSE,
   ...
 ) {
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
@@ -1832,7 +1887,7 @@ plot_features_ms2.ProjectNonTargetAnalysis <- function(
   ms2$text_string <- if (showText) paste0(round(ms2$mz, 4)) else ""
   ms2$text_string[ms2$is_pre] <- paste0("Pre ", ms2$text_string[ms2$is_pre])
   ms2$loop <- paste0(ms2$analysis, ms2$replicate, ms2$feature, ms2$var)
-  cl <- .get_colors(unique(ms2$var))
+  cl <- .get_colors(unique(ms2$var), darkMode = darkMode)
 
   if (!interactive) {
     if (is.null(xLab)) xLab <- expression(italic("m/z ") / " Da")
@@ -1861,9 +1916,9 @@ plot_features_ms2.ProjectNonTargetAnalysis <- function(
   ms2$linesize[ms2$is_pre] <- 2
   ticksMin <- plyr::round_any(min(ms2$mz, na.rm = TRUE) * 0.9, 10)
   ticksMax <- plyr::round_any(max(ms2$mz, na.rm = TRUE) * 1.1, 10)
-  title <- list(text = title, font = list(size = 12, color = "black"))
-  xaxis <- list(linecolor = "black", title = xLab, titlefont = list(size = 12, color = "black"), range = c(ticksMin, ticksMax), dtick = round((max(ms2$mz) / 10), -1), ticks = "outside")
-  yaxis <- list(linecolor = "black", title = yLab, titlefont = list(size = 12, color = "black"), range = c(0, max(ms2$intensity) * 1.5))
+  title <- .plotly_title_spec(title, darkMode = darkMode)
+  xaxis <- .plotly_axis_spec(title = xLab, darkMode = darkMode, range = c(ticksMin, ticksMax), dtick = round((max(ms2$mz) / 10), -1), ticks = "outside")
+  yaxis <- .plotly_axis_spec(title = yLab, darkMode = darkMode, range = c(0, max(ms2$intensity) * 1.5))
   plot <- plot_ly()
   seen_vars <- character(0)
   for (lp in unique(ms2$loop)) {
@@ -1879,7 +1934,15 @@ plot_features_ms2.ProjectNonTargetAnalysis <- function(
       plot <- plot %>% add_trace(x = seg$mz, y = seg$intensity, type = "scattergl", mode = "markers+text", marker = list(size = 2, color = cl[var_val]), text = paste0(seg$text_string, "  "), textposition = "top center", textfont = list(size = 9, color = cl[var_val]), hoverinfo = "text", name = var_val, legendgroup = var_val, showlegend = FALSE)
     }
   }
-  plot %>% plotly::layout(title = title, xaxis = xaxis, yaxis = yaxis, uniformtext = list(minsize = 6, mode = "show"))
+  plot %>% plotly::layout(
+    title = title,
+    xaxis = xaxis,
+    yaxis = yaxis,
+    paper_bgcolor = .get_plot_theme(darkMode)$background,
+    plot_bgcolor = .get_plot_theme(darkMode)$background,
+    font = list(color = .get_plot_theme(darkMode)$text),
+    uniformtext = list(minsize = 6, mode = "show")
+  )
 }
 
 #' @describeIn ProjectNonTargetAnalysisS3 Return internal standards for selected analyses.
@@ -2014,6 +2077,7 @@ plot_suspects_ms2.ProjectNonTargetAnalysis <- function(
   showText = TRUE,
   interactive = TRUE,
   showLegend = TRUE,
+  darkMode = FALSE,
   ...
 ) {
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
@@ -2103,7 +2167,7 @@ plot_suspects_ms2.ProjectNonTargetAnalysis <- function(
   vals <- lapply(groupBy, function(col) as.character(suspects_ms2[[col]]))
   suspects_ms2$var <- do.call(paste, c(vals, sep = " - "))
   suspects_ms2$loop <- paste0(suspects_ms2$analysis, "-", suspects_ms2$feature, "-", suspects_ms2$name, "-", suspects_ms2$source, "-", suspects_ms2$var)
-  cl <- .get_colors(unique(suspects_ms2$var))
+  cl <- .get_colors(unique(suspects_ms2$var), darkMode = darkMode)
   max_abs_int <- max(abs(suspects_ms2$intensity), na.rm = TRUE)
   if (!is.finite(max_abs_int) || max_abs_int == 0) max_abs_int <- 1
 
@@ -2152,9 +2216,9 @@ plot_suspects_ms2.ProjectNonTargetAnalysis <- function(
   if (is.null(yLab)) yLab <- "Intensity / counts"
   ticksMin <- plyr::round_any(min(suspects_ms2$mz, na.rm = TRUE) * 0.9, 10)
   ticksMax <- plyr::round_any(max(suspects_ms2$mz, na.rm = TRUE) * 1.1, 10)
-  title <- list(text = title, font = list(size = 12, color = "black"))
-  xaxis <- list(linecolor = "black", title = xLab, titlefont = list(size = 12, color = "black"), range = c(ticksMin, ticksMax), dtick = round((max(suspects_ms2$mz) / 10), -1), ticks = "outside")
-  yaxis <- list(linecolor = "black", title = yLab, titlefont = list(size = 12, color = "black"), range = c(-max_abs_int * 1.2, max_abs_int * 1.2))
+  title <- .plotly_title_spec(title, darkMode = darkMode)
+  xaxis <- .plotly_axis_spec(title = xLab, darkMode = darkMode, range = c(ticksMin, ticksMax), dtick = round((max(suspects_ms2$mz) / 10), -1), ticks = "outside")
+  yaxis <- .plotly_axis_spec(title = yLab, darkMode = darkMode, range = c(-max_abs_int * 1.2, max_abs_int * 1.2))
   plot <- plot_ly()
   seen_vars <- character(0)
   for (lp in unique(suspects_ms2$loop)) {
@@ -2189,7 +2253,17 @@ plot_suspects_ms2.ProjectNonTargetAnalysis <- function(
       plot <- plot %>% add_trace(x = seg$mz, y = seg$intensity, type = "scattergl", mode = "text", text = seg$text_label, textposition = text_pos, textfont = list(size = 9, color = cl[var_val]), hoverinfo = "text", hovertext = hover_text, name = var_val, legendgroup = var_val, showlegend = FALSE)
     }
   }
-  plot %>% plotly::layout(title = title, xaxis = xaxis, yaxis = yaxis, uniformtext = list(minsize = 6, mode = "show"), showlegend = showLegend, hoverlabel = list(align = "left"))
+  plot %>% plotly::layout(
+    title = title,
+    xaxis = xaxis,
+    yaxis = yaxis,
+    paper_bgcolor = .get_plot_theme(darkMode)$background,
+    plot_bgcolor = .get_plot_theme(darkMode)$background,
+    font = list(color = .get_plot_theme(darkMode)$text),
+    uniformtext = list(minsize = 6, mode = "show"),
+    showlegend = showLegend,
+    hoverlabel = list(align = "left")
+  )
 }
 
 #' @describeIn ProjectNonTargetAnalysisS3 Compute fold change between replicate sets.

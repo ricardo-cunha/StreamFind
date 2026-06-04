@@ -176,20 +176,28 @@
 }
 
 #' @noRd
-.get_colors <- function(obj) {
-  colors <- c(
-    brewer.pal(8, "Greys")[6],
-    brewer.pal(8, "Greens")[6],
-    brewer.pal(8, "Blues")[6],
-    brewer.pal(8, "Oranges")[6],
-    brewer.pal(8, "Purples")[6],
-    brewer.pal(8, "PuRd")[6],
-    brewer.pal(8, "YlOrRd")[6],
-    brewer.pal(8, "PuBuGn")[6],
-    brewer.pal(8, "GnBu")[6],
-    brewer.pal(8, "BuPu")[6],
-    brewer.pal(8, "Dark2")
-  )
+.get_colors <- function(obj, darkMode = FALSE) {
+  colors <- if (isTRUE(darkMode)) {
+    c(
+      brewer.pal(8, "Dark2")[c(1, 2, 3, 4, 5, 6, 8, 7)],
+      brewer.pal(8, "Set2")[c(1, 2, 3, 5, 6, 7, 8, 4)],
+      brewer.pal(9, "Set1")[c(1, 2, 3, 4, 5, 7, 8, 9, 6)]
+    )
+  } else {
+    c(
+      brewer.pal(8, "Greys")[6],
+      brewer.pal(8, "Greens")[6],
+      brewer.pal(8, "Blues")[6],
+      brewer.pal(8, "Oranges")[6],
+      brewer.pal(8, "Purples")[6],
+      brewer.pal(8, "PuRd")[6],
+      brewer.pal(8, "YlOrRd")[6],
+      brewer.pal(8, "PuBuGn")[6],
+      brewer.pal(8, "GnBu")[6],
+      brewer.pal(8, "BuPu")[6],
+      brewer.pal(8, "Dark2")
+    )
+  }
 
   Ncol <- length(unique(obj))
 
@@ -212,6 +220,95 @@
   }
 
   Vcol
+}
+
+#' @noRd
+.get_plot_theme <- function(darkMode = FALSE) {
+  if (isTRUE(darkMode)) {
+    return(list(
+      text = "#e6edf4",
+      axis = "#d7e2ec",
+      grid = "rgba(255,255,255,0.52)",
+      zeroline = "rgba(255,255,255,0.72)",
+      background = "rgba(0,0,0,0)"
+    ))
+  }
+  list(
+    text = "#1e2129",
+    axis = "#334155",
+    grid = "rgba(71,85,105,0.52)",
+    zeroline = "rgba(51,65,85,0.68)",
+    background = "rgba(0,0,0,0)"
+  )
+}
+
+#' @noRd
+.ggplot_plot_theme <- function(darkMode = FALSE) {
+  theme <- .get_plot_theme(darkMode = darkMode)
+  ggplot2::theme_classic() +
+    ggplot2::theme(
+      panel.grid.major = ggplot2::element_line(color = theme$grid, linewidth = 0.4),
+      panel.grid.minor = ggplot2::element_blank(),
+      axis.line = ggplot2::element_line(color = theme$axis, linewidth = 0.4),
+      axis.ticks = ggplot2::element_line(color = theme$axis, linewidth = 0.35),
+      axis.text = ggplot2::element_text(color = theme$text),
+      axis.title = ggplot2::element_text(color = theme$text),
+      plot.title = ggplot2::element_text(color = theme$text)
+    )
+}
+
+#' @noRd
+.plotly_title_spec <- function(title = NULL, darkMode = FALSE, size = 12) {
+  theme <- .get_plot_theme(darkMode = darkMode)
+  if (is.list(title)) {
+    existing_font <- title$font
+    if (is.null(existing_font)) existing_font <- list()
+    title$font <- utils::modifyList(list(size = size, color = theme$text), existing_font)
+    return(title)
+  }
+  list(text = title, font = list(size = size, color = theme$text))
+}
+
+#' @noRd
+.plotly_axis_spec <- function(title = NULL, darkMode = FALSE, ...) {
+  theme <- .get_plot_theme(darkMode = darkMode)
+  defaults <- list(
+    title = title,
+    linecolor = theme$axis,
+    tickcolor = theme$axis,
+    titlefont = list(size = 12, color = theme$text),
+    tickfont = list(color = theme$text),
+    showgrid = TRUE,
+    gridcolor = theme$grid,
+    zeroline = FALSE,
+    zerolinecolor = theme$zeroline
+  )
+  utils::modifyList(defaults, list(...))
+}
+
+#' @noRd
+.plotly_scene_axis_spec <- function(title = NULL, darkMode = FALSE, ...) {
+  theme <- .get_plot_theme(darkMode = darkMode)
+  defaults <- list(
+    title = title,
+    color = theme$text,
+    linecolor = theme$axis,
+    gridcolor = theme$grid,
+    zerolinecolor = theme$zeroline,
+    showbackground = FALSE
+  )
+  utils::modifyList(defaults, list(...))
+}
+
+#' @noRd
+.plotly_layout_theme <- function(darkMode = FALSE, ...) {
+  theme <- .get_plot_theme(darkMode = darkMode)
+  defaults <- list(
+    font = list(color = theme$text),
+    paper_bgcolor = theme$background,
+    plot_bgcolor = theme$background
+  )
+  utils::modifyList(defaults, list(...))
 }
 
 # MARK: DB Utilitiy Functions

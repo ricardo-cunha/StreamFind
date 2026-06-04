@@ -5,7 +5,7 @@
   htmltools::div(
     style = "height: calc(100vh - 35px); overflow: hidden; padding: 0px;",
     htmltools::div(
-      style = "display: flex; flex-direction: row; height: 100%; overflow: hidden;",
+      style = "display: flex; flex-direction: row; height: 100%; overflow: hidden; gap: 5px;",
       htmltools::div(
         class = "workflow-column",
         style = "flex: 0 0 50%; width: 50%; min-width: 0; overflow: hidden;",
@@ -306,26 +306,26 @@
       htmltools::div(
         style = "height: calc(100vh - 35px - 10px); overflow: hidden;",
         class = "workflow-box",
-        htmltools::div(
-          style = "display: flex; flex-direction: column; height: 100%;",
-          shiny::column(
-            width = 12,
-            htmltools::div(
-              style = "display: flex; align-items: center; margin-bottom: 5px; gap: 10px; flex-wrap: wrap;",
-              shiny::uiOutput(ns(ns2("load_workflow_ui"))),
-              shiny::uiOutput(ns(ns2("save_workflow_ui"))),
-              shiny::uiOutput(ns(ns2("clear_workflow_ui"))),
-              shiny::uiOutput(ns(ns2("persist_workflow_ui"))),
-              shiny::uiOutput(ns(ns2("discard_changes_ui")))
-            )
-          ),
-          shiny::column(
-            width = 12,
-            htmltools::div(
-              style = "display: flex; align-items: center; margin-bottom: 5px; gap: 10px;",
-              shiny::uiOutput(ns(ns2("run_workflow_ui")))
-            )
-          ),
+      htmltools::div(
+        style = "display: flex; flex-direction: column; height: 100%; gap: 5px;",
+        shiny::column(
+          width = 12,
+          htmltools::div(
+            style = "display: flex; align-items: center; gap: 10px; flex-wrap: wrap;",
+            shiny::uiOutput(ns(ns2("load_workflow_ui"))),
+            shiny::uiOutput(ns(ns2("save_workflow_ui"))),
+            shiny::uiOutput(ns(ns2("clear_workflow_ui"))),
+            shiny::uiOutput(ns(ns2("persist_workflow_ui"))),
+            shiny::uiOutput(ns(ns2("discard_changes_ui")))
+          )
+        ),
+        shiny::column(
+          width = 12,
+          htmltools::div(
+            style = "display: flex; align-items: center; gap: 10px;",
+            shiny::uiOutput(ns(ns2("run_workflow_ui")))
+          )
+        ),
           shiny::column(width = 12, htmltools::p("Select Processing Method", style = "margin-bottom: 5px; margin-top: 5px;")),
           shiny::column(
             width = 12,

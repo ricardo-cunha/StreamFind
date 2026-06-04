@@ -28,7 +28,8 @@
   title = NULL,
   xLab = NULL,
   yLab = NULL,
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 ) {
   stopifnot(xvar %in% colnames(data), yvar %in% colnames(data))
   if (is.null(xLab)) xLab <- xvar
@@ -48,20 +49,20 @@
         group_values <- lapply(groupBy, function(col) as.character(data[[col]]))
         data$color_group <- do.call(paste, c(group_values, sep = "-"))
         groups <- unique(data$color_group)
-        colors <- if (!is.null(colorPalette)) colorPalette else .get_colors(groups)
+        colors <- if (!is.null(colorPalette)) colorPalette else .get_colors(groups, darkMode = darkMode)
       }
     } else if (groupBy %in% colnames(data)) {
       groups <- unique(data[[groupBy]])
-      colors <- if (!is.null(colorPalette)) colorPalette else .get_colors(groups)
+      colors <- if (!is.null(colorPalette)) colorPalette else .get_colors(groups, darkMode = darkMode)
       data$color_group <- data[[groupBy]]
     } else {
       warning("groupBy column '", groupBy, "' not found in data")
       data$color_group <- "all"
-      colors <- .get_colors("all")
+      colors <- .get_colors("all", darkMode = darkMode)
     }
   } else {
     data$color_group <- "all"
-    colors <- .get_colors("all")
+    colors <- .get_colors("all", darkMode = darkMode)
   }
 
   # Trace grouping (basicGroupBy): determines the individual traces
@@ -105,7 +106,7 @@
     p <- ggplot(data, aes(x = .data[[xvar]], y = .data[[yvar]], color = color_group, group = basic_group)) +
       geom_line() +
       scale_color_manual(values = colors) +
-      theme_classic() +
+      .ggplot_plot_theme(darkMode = darkMode) +
       labs(x = xLab, y = yLab, title = title, color = groupBy)
     return(p)
   } else {
@@ -146,9 +147,12 @@
     }
     p <- plotly::layout(
       p,
-      title = list(text = title, font = list(size = 12, color = "black")),
-      xaxis = list(title = xLab, linecolor = "black", titlefont = list(size = 12, color = "black")),
-      yaxis = list(title = yLab, linecolor = "black", titlefont = list(size = 12, color = "black"))
+      title = .plotly_title_spec(title, darkMode = darkMode),
+      xaxis = .plotly_axis_spec(title = xLab, darkMode = darkMode),
+      yaxis = .plotly_axis_spec(title = yLab, darkMode = darkMode),
+      paper_bgcolor = .get_plot_theme(darkMode)$background,
+      plot_bgcolor = .get_plot_theme(darkMode)$background,
+      font = list(color = .get_plot_theme(darkMode)$text)
     )
     return(p)
   }
@@ -177,7 +181,8 @@
   xLab = NULL,
   yLab = NULL,
   showText = TRUE,
-  precursorTol = NULL
+  precursorTol = NULL,
+  darkMode = FALSE
 ) {
   data <- data.table::as.data.table(data)
   if (nrow(data) == 0) {
@@ -235,7 +240,7 @@
     data[is_pre == TRUE, line_size := 2]
   }
 
-  cl <- .get_colors(unique(data$var))
+  cl <- .get_colors(unique(data$var), darkMode = darkMode)
 
   if (!interactive) {
     if (is.null(xLab)) xLab <- expression(italic("m/z ") / " Da")
@@ -260,7 +265,7 @@
         ggplot2::labs(title = title, x = xLab, y = yLab) +
         ggplot2::scale_color_manual(values = cl) +
         ggplot2::scale_linewidth_continuous(range = c(1, 2), guide = "none") +
-        ggplot2::theme_classic() +
+        .ggplot_plot_theme(darkMode = darkMode) +
         ggplot2::labs(color = paste(groupBy, collapse = ", "))
     )
   }
@@ -270,19 +275,17 @@
 
   ticks_min <- plyr::round_any(min(data$mz, na.rm = TRUE) * 0.9, 10)
   ticks_max <- plyr::round_any(max(data$mz, na.rm = TRUE) * 1.1, 10)
-  title_layout <- list(text = title, font = list(size = 12, color = "black"))
-  xaxis <- list(
-    linecolor = "black",
+  title_layout <- .plotly_title_spec(title, darkMode = darkMode)
+  xaxis <- .plotly_axis_spec(
     title = xLab,
-    titlefont = list(size = 12, color = "black"),
+    darkMode = darkMode,
     range = c(ticks_min, ticks_max),
     dtick = round((max(data$mz, na.rm = TRUE) / 10), -1),
     ticks = "outside"
   )
-  yaxis <- list(
-    linecolor = "black",
+  yaxis <- .plotly_axis_spec(
     title = yLab,
-    titlefont = list(size = 12, color = "black"),
+    darkMode = darkMode,
     range = c(0, max(data$intensity, na.rm = TRUE) * 1.5)
   )
 
@@ -329,6 +332,9 @@
     title = title_layout,
     xaxis = xaxis,
     yaxis = yaxis,
+    paper_bgcolor = .get_plot_theme(darkMode)$background,
+    plot_bgcolor = .get_plot_theme(darkMode)$background,
+    font = list(color = .get_plot_theme(darkMode)$text),
     uniformtext = list(minsize = 6, mode = "show")
   )
 }
@@ -359,7 +365,8 @@
   xLab = NULL,
   yLab = NULL,
   colors = NULL,
-  showLabels = FALSE
+  showLabels = FALSE,
+  darkMode = FALSE
 ) {
   dt <- data.table::as.data.table(data)
   required_cols <- c(xvar, yvar, zvar)
@@ -392,7 +399,7 @@
     ) +
       ggplot2::geom_raster() +
       ggplot2::scale_fill_gradientn(colours = colors) +
-      ggplot2::theme_classic() +
+      .ggplot_plot_theme(darkMode = darkMode) +
       ggplot2::labs(title = title, x = xLab, y = yLab, fill = zvar)
 
     if (showLabels && !is.null(labelvar) && labelvar %in% colnames(dt)) {
@@ -436,16 +443,19 @@
         hoverinfo = "text",
         showlegend = FALSE,
         textposition = "middle center",
-        textfont = list(size = 8, color = "black")
+        textfont = list(size = 8, color = .get_plot_theme(darkMode)$text)
       )
     }
   }
 
   plotly::layout(
     plot,
-    title = list(text = title, font = list(size = 12, color = "black")),
-    xaxis = list(title = xLab, linecolor = "black"),
-    yaxis = list(title = yLab, linecolor = "black")
+    title = .plotly_title_spec(title, darkMode = darkMode),
+    xaxis = .plotly_axis_spec(title = xLab, darkMode = darkMode),
+    yaxis = .plotly_axis_spec(title = yLab, darkMode = darkMode),
+    paper_bgcolor = .get_plot_theme(darkMode)$background,
+    plot_bgcolor = .get_plot_theme(darkMode)$background,
+    font = list(color = .get_plot_theme(darkMode)$text)
   )
 }
 
@@ -494,7 +504,8 @@
   xLab = NULL,
   yLab = NULL,
   colorPalette = NULL,
-  showLabels = FALSE
+  showLabels = FALSE,
+  darkMode = FALSE
 ) {
   dt <- data.table::as.data.table(data)
   required_cols <- c(xvar, yvar, zvar, tracevar)
@@ -513,7 +524,7 @@
   dt[, trace_label := as.character(get(tracevar))]
   trace_labels <- unique(dt$trace_label)
   if (is.null(colorPalette)) {
-    base_colors <- .get_colors(trace_labels)
+    base_colors <- .get_colors(trace_labels, darkMode = darkMode)
   } else {
     base_colors <- colorPalette
     if (length(base_colors) < length(trace_labels)) {
@@ -530,7 +541,7 @@
       ggplot2::geom_raster() +
       ggplot2::facet_wrap(stats::as.formula(paste("~", tracevar))) +
       ggplot2::scale_fill_viridis_c() +
-      ggplot2::theme_classic() +
+      .ggplot_plot_theme(darkMode = darkMode) +
       ggplot2::labs(title = title, x = xLab, y = yLab, fill = zvar)
 
     if (showLabels && !is.null(labelvar) && labelvar %in% colnames(dt)) {
@@ -616,9 +627,12 @@
 
   plotly::layout(
     plot,
-    title = list(text = title, font = list(size = 12, color = "black")),
-    xaxis = list(title = xLab, linecolor = "black"),
-    yaxis = list(title = yLab, linecolor = "black")
+    title = .plotly_title_spec(title, darkMode = darkMode),
+    xaxis = .plotly_axis_spec(title = xLab, darkMode = darkMode),
+    yaxis = .plotly_axis_spec(title = yLab, darkMode = darkMode),
+    paper_bgcolor = .get_plot_theme(darkMode)$background,
+    plot_bgcolor = .get_plot_theme(darkMode)$background,
+    font = list(color = .get_plot_theme(darkMode)$text)
   )
 }
 
@@ -683,7 +697,8 @@
   xLab = NULL,
   yLab = NULL,
   zLab = NULL,
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 ) {
   dt <- data.table::as.data.table(data)
   required_cols <- c(xvar, yvar, zvar, tracevar)
@@ -706,7 +721,7 @@
   dt[, trace_label := as.character(get(tracevar))]
   trace_labels <- unique(dt$trace_label)
   if (is.null(colorPalette)) {
-    base_colors <- .get_colors(trace_labels)
+    base_colors <- .get_colors(trace_labels, darkMode = darkMode)
   } else {
     base_colors <- colorPalette
     if (length(base_colors) < length(trace_labels)) {
@@ -763,11 +778,14 @@
 
   plotly::layout(
     plot,
-    title = list(text = title, font = list(size = 12, color = "black")),
+    title = .plotly_title_spec(title, darkMode = darkMode),
+    paper_bgcolor = .get_plot_theme(darkMode)$background,
+    plot_bgcolor = .get_plot_theme(darkMode)$background,
+    font = list(color = .get_plot_theme(darkMode)$text),
     scene = list(
-      xaxis = list(title = xLab),
-      yaxis = list(title = yLab),
-      zaxis = list(title = zLab)
+      xaxis = .plotly_scene_axis_spec(title = xLab, darkMode = darkMode),
+      yaxis = .plotly_scene_axis_spec(title = yLab, darkMode = darkMode),
+      zaxis = .plotly_scene_axis_spec(title = zLab, darkMode = darkMode)
     )
   )
 }

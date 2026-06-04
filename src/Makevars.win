@@ -1,15 +1,23 @@
-# Compile all C++ sources with C++17 and OpenMP support.
-PKG_CPPFLAGS += -Icore -Icore/asm -Icore/external -Icore/json_core -Icore/mass_spec -Icore/nta -Icore/project
-PKG_CPPFLAGS += -Icore/external/simdutf -Icore/external/nlohmann -Icore/external/json-schema-validator/src -Icore/external/pugixml-1.14/src
-PKG_CXXFLAGS += -std=c++17
+# Compile package sources with C++17 and OpenMP support.
+CXX_STD = CXX17
+PYTHON ?= python
+OPENBABEL_RELEASE_ARTIFACT_ONLY ?= 1
 
-# Pull in package sources, vendored dependencies, and the new generic JSON layer.
+OPENBABEL_ROOT = core/external/openbabel/openbabel-3-2-0
+OPENBABEL_BUILD_ROOT = core/external/openbabel/build/windows
+OPENBABEL_STAMP = $(OPENBABEL_BUILD_ROOT)/.stamp
+
+PKG_CPPFLAGS += -Icore -Icore/asm -Icore/external -Icore/json -Icore/mass_spec -Icore/nta -Icore/project
+PKG_CPPFLAGS += -Icore/external/simdutf -Icore/external/nlohmann -Icore/external/json-schema-validator/src -Icore/external/pugixml-1.14/src
+PKG_CPPFLAGS += -I$(OPENBABEL_ROOT)/include -I$(OPENBABEL_ROOT)/include/inchi -I$(OPENBABEL_ROOT)/src -I$(OPENBABEL_ROOT)/data -I$(OPENBABEL_ROOT)/src/formats/libinchi -DTARGET_API_LIB
+
 SOURCES = RcppExports.cpp
 SOURCES += $(filter-out RcppExports.cpp, $(wildcard *.cpp))
 SOURCES += core/external/simdutf_wrapper.cpp
+SOURCES += core/external/openbabel_adapter.cpp
 SOURCES += $(wildcard core/external/json-schema-validator/src/*.cpp)
 SOURCES += $(wildcard core/project/*.cpp)
-SOURCES += $(wildcard core/json_core/*.cpp)
+SOURCES += $(wildcard core/json/*.cpp)
 SOURCES += $(wildcard core/asm/*.cpp)
 SOURCES += $(wildcard core/nta/*.cpp)
 SOURCES += $(wildcard core/mass_spec/*.cpp)
@@ -17,9 +25,19 @@ SOURCES += $(wildcard core/mass_spec/*.cpp)
 # Keep simdutf compiled through the wrapper rather than as raw source files.
 SOURCES := $(filter-out core/external/simdutf/simdutf.cpp core/external/simdutf/amalgamation_demo.cpp, $(SOURCES))
 
-OBJECTS = $(SOURCES:.cpp=.o)
+OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 
-# Link against OpenMP and system zlib.
+all: $(SHLIB)
+
+$(OBJECTS): $(OPENBABEL_STAMP)
+
+%.o: %.cpp $(OPENBABEL_STAMP)
+	@mkdir -p "$(dir $@)"
+	$(CXX17) $(CXX17STD) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(CXX17FLAGS) $(CXX17PICFLAGS) -c $< -o $@
+
+$(OPENBABEL_STAMP): ../tools/build_openbabel.py ../tools/openbabel_sources/openbabel_cpp.txt ../tools/openbabel_sources/inchi_c.txt ../src/core/external/openbabel/inchi-iupac-1.07.5/src/ichilnct.c
+	"$(PYTHON)" ../tools/build_openbabel.py --repo-root .. --platform windows --cc "$(CC)" --cxx "$(CXX17)" --ar "$(AR)" --cflag=-D__USE_MINGW_ANSI_STDIO=1 --cflag=-O2 --cflag=-w --cxxflag="$(CXX17STD)" --cxxflag=-D__USE_MINGW_ANSI_STDIO=1 --cxxflag=-O2 --cxxflag=-w $(if $(filter 1 TRUE true yes YES,$(OPENBABEL_RELEASE_ARTIFACT_ONLY)),--release-artifact-only,)
+
 PKG_CXXFLAGS += $(SHLIB_OPENMP_CXXFLAGS) -D__USE_MINGW_ANSI_STDIO
 PKG_LIBS += $(SHLIB_OPENMP_CXXFLAGS) -lz
 

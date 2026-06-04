@@ -1,6 +1,6 @@
 #include "file.h"
 
-#include "json_core/error.h"
+#include "json/json.h"
 
 namespace asm_json {
 

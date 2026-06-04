@@ -168,6 +168,51 @@ get_suspects_screening_csv(
   )
 )
 
+get_suspects_screening_csv_obabel(
+  suspects = data.table::fread(file.path(
+    getwd(),
+    "dev",
+    "dev_duckdb",
+    "internal_standards.csv"
+  ))[, c("name", "InChI")],
+  file = file.path(
+    getwd(),
+    "dev",
+    "dev_duckdb",
+    "internal_standards_v3.csv"
+  )
+)
+
+get_suspects_screening_csv_obabel(
+  suspects = data.table::fread(file.path(
+    getwd(),
+    "dev",
+    "dev_duckdb",
+    "internal_standards_fants_V2.csv"
+  ))[, c("name", "InChI")],
+  file = file.path(
+    getwd(),
+    "dev",
+    "dev_duckdb",
+    "internal_standards_fants_V3.csv"
+  )
+)
+
+rcpp_get_suspects_screening_csv(
+  suspects = data.table::fread(file.path(
+    getwd(),
+    "dev",
+    "dev_duckdb",
+    "internal_standards_fants_V2.csv"
+  ))[, c("name", "InChI")],
+  file = file.path(
+    getwd(),
+    "dev",
+    "dev_duckdb",
+    "internal_standards_fants_V4.csv"
+  )
+)
+
 # plot_spectra_eic(
 #   ms$Analyses,
 #   mass = istd,

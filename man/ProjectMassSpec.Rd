@@ -509,7 +509,8 @@ Plot raw chromatograms for selected analyses.
   title = NULL,
   groupBy = "analysis",
   interactive = TRUE,
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -636,6 +637,8 @@ object.}
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -846,7 +849,8 @@ Plot total ion current traces for selected analyses.
   title = NULL,
   groupBy = "analysis",
   interactive = TRUE,
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -979,6 +983,8 @@ object.}
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -1001,7 +1007,8 @@ Plot TIC overview as grouped 3D surfaces.
   zLab = NULL,
   title = NULL,
   groupBy = "analysis",
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -1172,6 +1179,8 @@ When \code{FALSE}, use \code{mz} or \code{bpmz} on the y axis depending on the p
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -1193,7 +1202,8 @@ Plot base peak chromatogram traces for selected analyses.
   title = NULL,
   groupBy = "analysis",
   interactive = TRUE,
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -1326,6 +1336,8 @@ object.}
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -1348,7 +1360,8 @@ Plot BPC overview as grouped 3D surfaces.
   zLab = NULL,
   title = NULL,
   groupBy = "analysis",
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -1519,6 +1532,8 @@ When \code{FALSE}, use \code{mz} or \code{bpmz} on the y axis depending on the p
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -1541,7 +1556,8 @@ Plot TIC overview as RT x mobility heatmap when ion mobility data is available.
   groupBy = "analysis",
   interactive = TRUE,
   colors = NULL,
-  showLabels = FALSE
+  showLabels = FALSE,
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -1704,6 +1720,8 @@ percentages.}
 \item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
 
 \item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -1726,7 +1744,8 @@ Plot BPC overview as RT x mobility heatmap when ion mobility data is available.
   groupBy = "analysis",
   interactive = TRUE,
   colors = NULL,
-  showLabels = TRUE
+  showLabels = TRUE,
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -1889,6 +1908,8 @@ percentages.}
 \item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
 
 \item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -2075,7 +2096,8 @@ Plot extracted ion chromatograms for selected analyses.
   title = NULL,
   groupBy = c("analysis", "id"),
   interactive = TRUE,
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -2292,6 +2314,8 @@ combination of the \emph{m/z} and retention time ranges or values.}
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 
 \item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -2601,7 +2625,8 @@ Plot extracted ion chromatograms as RT x mobility heatmaps for selected analyses
   groupBy = c("analysis", "id"),
   interactive = TRUE,
   colorPalette = NULL,
-  showLabels = FALSE
+  showLabels = FALSE,
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -2852,6 +2877,8 @@ percentages.}
 \item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
 
 \item{\code{showLabels}}{Logical; overlay bin labels for populated bins.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }

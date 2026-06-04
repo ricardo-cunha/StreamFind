@@ -17,6 +17,16 @@
   --sf-shadow-sm: none;
   --sf-shadow-md: none;
   --sf-font-family: "Space Grotesk", "Segoe UI", Helvetica, Arial, sans-serif;
+  --sf-app-bg: #ffffff;
+  --sf-control-bg: #1e2129;
+  --sf-control-color: #ffffff;
+  --sf-control-hover-bg: #2a2f3a;
+  --sf-control-hover-color: #ffffff;
+  --sf-control-active-bg: #1e2129;
+  --sf-control-active-color: #ffffff;
+  --sf-btn-bg: var(--sf-control-bg);
+  --sf-btn-color: var(--sf-control-color);
+  --sf-btn-hover-bg: var(--sf-control-hover-bg);
 }
 
 /* ---- CSS Custom Properties: Light (default) ---- */
@@ -45,12 +55,15 @@
   --sf-nav-active-color:   #ffffff;
   --sf-nav-hover-bg:       rgba(30, 33, 41, 0.10);
 
+  --sf-app-bg:             #ffffff;
   --sf-content-bg:         #ffffff;
   --sf-content-color:      #333333;
-
-  --sf-btn-bg:             #1e2129;
-  --sf-btn-color:          #ffffff;
-  --sf-btn-hover-bg:       #2a2f3a;
+  --sf-control-bg:         #1e2129;
+  --sf-control-color:      #ffffff;
+  --sf-control-hover-bg:   #2a2f3a;
+  --sf-control-hover-color:#ffffff;
+  --sf-control-active-bg:  #1e2129;
+  --sf-control-active-color:#ffffff;
 
   --sf-notif-bg:           #ffffff;
   --sf-notif-border:       #e0e0e0;
@@ -67,12 +80,16 @@
   --sf-topbar-bg: #ffffff;
   --sf-topbar-color: #1e2129;
   --sf-topbar-border: #dbe9e6;
+  --sf-app-bg: #ffffff;
   --sf-nav-active-bg: #0b6f6b;
   --sf-nav-active-color: #ffffff;
   --sf-nav-hover-bg: rgba(11, 111, 107, 0.10);
-  --sf-btn-bg: #0b6f6b;
-  --sf-btn-color: #ffffff;
-  --sf-btn-hover-bg: #095754;
+  --sf-control-bg: #0b6f6b;
+  --sf-control-color: #ffffff;
+  --sf-control-hover-bg: #095754;
+  --sf-control-hover-color: #ffffff;
+  --sf-control-active-bg: #0b6f6b;
+  --sf-control-active-color: #ffffff;
   --sf-content-bg: #ffffff;
 }
 
@@ -84,16 +101,20 @@
   --sf-text-2: #6a5143;
   --sf-text-3: #8b6e5f;
   --sf-accent: #a65a3a;
-  --sf-topbar-bg: #fff8f2;
+  --sf-topbar-bg: #ffffff;
   --sf-topbar-color: #2b1b12;
   --sf-topbar-border: #ead6c8;
+  --sf-app-bg: #ffffff;
   --sf-nav-active-bg: #a65a3a;
   --sf-nav-active-color: #fffaf5;
   --sf-nav-hover-bg: rgba(166, 90, 58, 0.10);
-  --sf-btn-bg: #a65a3a;
-  --sf-btn-color: #fffaf5;
-  --sf-btn-hover-bg: #8b4a2e;
-  --sf-content-bg: #fff8f2;
+  --sf-control-bg: #a65a3a;
+  --sf-control-color: #fffaf5;
+  --sf-control-hover-bg: #8b4a2e;
+  --sf-control-hover-color: #fffaf5;
+  --sf-control-active-bg: #a65a3a;
+  --sf-control-active-color: #fffaf5;
+  --sf-content-bg: #ffffff;
 }
 
 #sf-app.sf-light[data-sf-palette="slate"] {
@@ -107,12 +128,16 @@
   --sf-topbar-bg: #ffffff;
   --sf-topbar-color: #111827;
   --sf-topbar-border: #dde3ea;
+  --sf-app-bg: #ffffff;
   --sf-nav-active-bg: #334155;
   --sf-nav-active-color: #ffffff;
   --sf-nav-hover-bg: rgba(51, 65, 85, 0.10);
-  --sf-btn-bg: #334155;
-  --sf-btn-color: #ffffff;
-  --sf-btn-hover-bg: #1f2937;
+  --sf-control-bg: #334155;
+  --sf-control-color: #ffffff;
+  --sf-control-hover-bg: #1f2937;
+  --sf-control-hover-color: #ffffff;
+  --sf-control-active-bg: #334155;
+  --sf-control-active-color: #ffffff;
   --sf-content-bg: #ffffff;
 }
 
@@ -124,16 +149,20 @@
   --sf-text-2: #46643a;
   --sf-text-3: #6a7c61;
   --sf-accent: #5a8d37;
-  --sf-topbar-bg: #f7faf5;
+  --sf-topbar-bg: #ffffff;
   --sf-topbar-color: #102a66;
   --sf-topbar-border: #d8e2d2;
+  --sf-app-bg: #ffffff;
   --sf-nav-active-bg: #102a66;
   --sf-nav-active-color: #f7faf5;
   --sf-nav-hover-bg: rgba(16, 42, 102, 0.10);
-  --sf-btn-bg: #5a8d37;
-  --sf-btn-color: #f7faf5;
-  --sf-btn-hover-bg: #4c772e;
-  --sf-content-bg: #f7faf5;
+  --sf-control-bg: #102a66;
+  --sf-control-color: #f7faf5;
+  --sf-control-hover-bg: #173983;
+  --sf-control-hover-color: #f7faf5;
+  --sf-control-active-bg: #102a66;
+  --sf-control-active-color: #f7faf5;
+  --sf-content-bg: #ffffff;
 }
 
 /* ---- CSS Custom Properties: Dark ---- */
@@ -162,12 +191,15 @@
   --sf-nav-active-color:   #1e2129;
   --sf-nav-hover-bg:       rgba(255, 255, 255, 0.14);
 
+  --sf-app-bg:             #1e2129;
   --sf-content-bg:         #1e2129;
   --sf-content-color:      #e0e0e0;
-
-  --sf-btn-bg:             #ffffff;
-  --sf-btn-color:          #1e2129;
-  --sf-btn-hover-bg:       #e8eaf0;
+  --sf-control-bg:         #ffffff;
+  --sf-control-color:      #1e2129;
+  --sf-control-hover-bg:   #e8eaf0;
+  --sf-control-hover-color:#1e2129;
+  --sf-control-active-bg:  #ffffff;
+  --sf-control-active-color:#1e2129;
 
   --sf-notif-bg:           #2a2f3a;
   --sf-notif-border:       #3a3f4a;
@@ -184,12 +216,16 @@
   --sf-topbar-bg: #091211;
   --sf-topbar-color: #ffffff;
   --sf-topbar-border: rgba(70, 193, 187, 0.18);
+  --sf-app-bg: #091211;
   --sf-nav-active-bg: #46c1bb;
   --sf-nav-active-color: #091211;
   --sf-nav-hover-bg: rgba(70, 193, 187, 0.18);
-  --sf-btn-bg: #46c1bb;
-  --sf-btn-color: #091211;
-  --sf-btn-hover-bg: #2fa39e;
+  --sf-control-bg: #46c1bb;
+  --sf-control-color: #091211;
+  --sf-control-hover-bg: #2fa39e;
+  --sf-control-hover-color: #091211;
+  --sf-control-active-bg: #46c1bb;
+  --sf-control-active-color: #091211;
   --sf-content-bg: #091211;
 }
 
@@ -204,12 +240,16 @@
   --sf-topbar-bg: #150e0a;
   --sf-topbar-color: #fff7f2;
   --sf-topbar-border: rgba(208, 138, 95, 0.20);
+  --sf-app-bg: #150e0a;
   --sf-nav-active-bg: #d08a5f;
   --sf-nav-active-color: #150e0a;
   --sf-nav-hover-bg: rgba(208, 138, 95, 0.18);
-  --sf-btn-bg: #d08a5f;
-  --sf-btn-color: #150e0a;
-  --sf-btn-hover-bg: #b26f47;
+  --sf-control-bg: #d08a5f;
+  --sf-control-color: #150e0a;
+  --sf-control-hover-bg: #b26f47;
+  --sf-control-hover-color: #150e0a;
+  --sf-control-active-bg: #d08a5f;
+  --sf-control-active-color: #150e0a;
   --sf-content-bg: #150e0a;
 }
 
@@ -224,12 +264,16 @@
   --sf-topbar-bg: #0b1220;
   --sf-topbar-color: #f8fafc;
   --sf-topbar-border: rgba(148, 163, 184, 0.18);
+  --sf-app-bg: #0b1220;
   --sf-nav-active-bg: #94a3b8;
   --sf-nav-active-color: #0b1220;
   --sf-nav-hover-bg: rgba(148, 163, 184, 0.18);
-  --sf-btn-bg: #94a3b8;
-  --sf-btn-color: #0b1220;
-  --sf-btn-hover-bg: #cbd5e1;
+  --sf-control-bg: #94a3b8;
+  --sf-control-color: #0b1220;
+  --sf-control-hover-bg: #cbd5e1;
+  --sf-control-hover-color: #0b1220;
+  --sf-control-active-bg: #94a3b8;
+  --sf-control-active-color: #0b1220;
   --sf-content-bg: #0b1220;
 }
 
@@ -244,12 +288,16 @@
   --sf-topbar-bg: #08101d;
   --sf-topbar-color: #f4f8ef;
   --sf-topbar-border: rgba(127, 178, 79, 0.20);
+  --sf-app-bg: #08101d;
   --sf-nav-active-bg: #7fb24f;
   --sf-nav-active-color: #08101d;
   --sf-nav-hover-bg: rgba(127, 178, 79, 0.18);
-  --sf-btn-bg: #102a66;
-  --sf-btn-color: #f4f8ef;
-  --sf-btn-hover-bg: #173983;
+  --sf-control-bg: #7fb24f;
+  --sf-control-color: #08101d;
+  --sf-control-hover-bg: #96c266;
+  --sf-control-hover-color: #08101d;
+  --sf-control-active-bg: #7fb24f;
+  --sf-control-active-color: #08101d;
   --sf-content-bg: #08101d;
 }
 
@@ -268,63 +316,39 @@ body {
 }
 
 body[data-sf-theme="light"][data-sf-palette="lagoon"] {
-  --sf-topbar-bg: #ffffff;
-  --sf-btn-bg: #0b6f6b;
-  --sf-btn-color: #ffffff;
-  --sf-btn-hover-bg: #095754;
+  --sf-app-bg: #ffffff;
 }
 
 body[data-sf-theme="light"][data-sf-palette="copper"] {
-  --sf-topbar-bg: #fff8f2;
-  --sf-btn-bg: #a65a3a;
-  --sf-btn-color: #fffaf5;
-  --sf-btn-hover-bg: #8b4a2e;
+  --sf-app-bg: #ffffff;
 }
 
 body[data-sf-theme="light"][data-sf-palette="slate"] {
-  --sf-topbar-bg: #ffffff;
-  --sf-btn-bg: #334155;
-  --sf-btn-color: #ffffff;
-  --sf-btn-hover-bg: #1f2937;
+  --sf-app-bg: #ffffff;
 }
 
 body[data-sf-theme="light"][data-sf-palette="streamfind"] {
-  --sf-topbar-bg: #f7faf5;
-  --sf-btn-bg: #5a8d37;
-  --sf-btn-color: #f7faf5;
-  --sf-btn-hover-bg: #4c772e;
+  --sf-app-bg: #ffffff;
 }
 
 body[data-sf-theme="dark"][data-sf-palette="lagoon"] {
-  --sf-topbar-bg: #091211;
-  --sf-btn-bg: #46c1bb;
-  --sf-btn-color: #091211;
-  --sf-btn-hover-bg: #2fa39e;
+  --sf-app-bg: #091211;
 }
 
 body[data-sf-theme="dark"][data-sf-palette="copper"] {
-  --sf-topbar-bg: #150e0a;
-  --sf-btn-bg: #d08a5f;
-  --sf-btn-color: #150e0a;
-  --sf-btn-hover-bg: #b26f47;
+  --sf-app-bg: #150e0a;
 }
 
 body[data-sf-theme="dark"][data-sf-palette="slate"] {
-  --sf-topbar-bg: #0b1220;
-  --sf-btn-bg: #94a3b8;
-  --sf-btn-color: #0b1220;
-  --sf-btn-hover-bg: #cbd5e1;
+  --sf-app-bg: #0b1220;
 }
 
 body[data-sf-theme="dark"][data-sf-palette="streamfind"] {
-  --sf-topbar-bg: #08101d;
-  --sf-btn-bg: #102a66;
-  --sf-btn-color: #f4f8ef;
-  --sf-btn-hover-bg: #173983;
+  --sf-app-bg: #08101d;
 }
 
 body[data-sf-theme][data-sf-palette] {
-  background: var(--sf-topbar-bg);
+  background: var(--sf-app-bg);
 }
 
 /* ============================================================
@@ -336,6 +360,10 @@ body[data-sf-theme][data-sf-palette] {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+}
+
+#sf-content {
+  padding: 5px;
 }
 
 /* ============================================================
@@ -762,7 +790,7 @@ body[data-sf-theme][data-sf-palette] {
 
 /* Conditionally shown page wrappers */
 .sf-page {
-  padding: 5px;
+  padding: 0;
   height: 100%;
   min-height: 0;
   width: 100%;
@@ -1185,54 +1213,72 @@ body[data-sf-theme][data-sf-palette] {
   box-shadow: none !important;
 }
 
-#sf-app #sf-content .js-plotly-plot .modebar-btn {
-  background: var(--sf-btn-bg) !important;
+#sf-app #sf-content .js-plotly-plot .modebar-btn,
+#sf-app #sf-content .js-plotly-plot .modebar-btn:not(.active) {
+  background: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
   border: none !important;
   box-shadow: none !important;
-  color: var(--sf-btn-color) !important;
+  color: var(--sf-topbar-color) !important;
   opacity: 1 !important;
 }
 
-#sf-app #sf-content .js-plotly-plot .modebar-btn:hover,
-#sf-app #sf-content .js-plotly-plot .modebar-btn:focus {
-  background: var(--sf-btn-hover-bg) !important;
+#sf-app #sf-content .js-plotly-plot .modebar-btn:not(.active):hover,
+#sf-app #sf-content .js-plotly-plot .modebar-btn:not(.active):focus {
+  background: var(--sf-nav-hover-bg) !important;
+  background-color: var(--sf-nav-hover-bg) !important;
   border: none !important;
   box-shadow: none !important;
-  color: var(--sf-btn-color) !important;
+  color: var(--sf-topbar-color) !important;
 }
 
-#sf-app #sf-content .js-plotly-plot .modebar-btn svg,
-#sf-app #sf-content .js-plotly-plot .modebar-btn path {
-  fill: var(--sf-btn-color) !important;
+#sf-app #sf-content .js-plotly-plot .modebar-btn:not(.active) svg,
+#sf-app #sf-content .js-plotly-plot .modebar-btn:not(.active) svg * {
+  fill: currentColor !important;
+  stroke: currentColor !important;
 }
 
 #sf-app #sf-content .js-plotly-plot .modebar-btn.active,
 #sf-app #sf-content .js-plotly-plot .modebar-btn--logo,
 #sf-app #sf-content .js-plotly-plot .modebar-btn.active:hover {
-  background: var(--sf-accent) !important;
-  color: var(--sf-topbar-bg) !important;
+  background: var(--sf-nav-active-bg) !important;
+  background-color: var(--sf-nav-active-bg) !important;
+  color: var(--sf-nav-active-color) !important;
 }
 
 #sf-app #sf-content .js-plotly-plot .modebar-btn.active svg,
-#sf-app #sf-content .js-plotly-plot .modebar-btn.active path {
-  fill: var(--sf-topbar-bg) !important;
+#sf-app #sf-content .js-plotly-plot .modebar-btn.active svg * {
+  fill: currentColor !important;
+  stroke: currentColor !important;
 }
 
-/* Keep grid lines visually identical in both light/dark modes. */
+/* Plotly grid lines: darker in light mode, white in dark mode. */
 #sf-app #sf-content .js-plotly-plot .gridlayer .xgrid,
 #sf-app #sf-content .js-plotly-plot .gridlayer .ygrid,
 #sf-app #sf-content .js-plotly-plot .gridlayer .zgrid {
-  stroke: #e0e0e0 !important;
+  stroke: rgba(71, 85, 105, 0.52) !important;
   stroke-width: 1px !important;
   opacity: 1 !important;
 }
 
-/* Dark mode: hide plot grid lines completely. */
 #sf-app.sf-dark #sf-content .js-plotly-plot .gridlayer .xgrid,
 #sf-app.sf-dark #sf-content .js-plotly-plot .gridlayer .ygrid,
 #sf-app.sf-dark #sf-content .js-plotly-plot .gridlayer .zgrid {
-  stroke: transparent !important;
-  opacity: 0 !important;
+  stroke: rgba(255, 255, 255, 0.52) !important;
+  opacity: 1 !important;
+}
+
+#sf-app #sf-content .js-plotly-plot .zerolinelayer .xzl,
+#sf-app #sf-content .js-plotly-plot .zerolinelayer .yzl {
+  stroke: rgba(51, 65, 85, 0.68) !important;
+  opacity: 1 !important;
+}
+
+#sf-app.sf-dark #sf-content .js-plotly-plot .zerolinelayer .xzl,
+#sf-app.sf-dark #sf-content .js-plotly-plot .zerolinelayer .yzl {
+  stroke: rgba(255, 255, 255, 0.72) !important;
+  opacity: 1 !important;
 }
 
 /* ============================================================
@@ -1385,10 +1431,10 @@ ul.sf-info-list {
 #sf-app .btn:not(.sf-topbar-btn):not(.btn-danger),
 #shiny-modal-wrapper .modal .btn:not(.btn-danger),
 .plot-modal .btn:not(.btn-danger) {
-  background-color: var(--sf-btn-bg) !important;
+  background-color: var(--sf-control-bg) !important;
   background-image: none !important;
-  color: var(--sf-btn-color) !important;
-  border: 1px solid var(--sf-btn-bg) !important;
+  color: var(--sf-control-color) !important;
+  border: 1px solid var(--sf-control-bg) !important;
   box-shadow: none !important;
   text-shadow: none !important;
   border-radius: var(--sf-radius-sm);
@@ -1399,10 +1445,10 @@ ul.sf-info-list {
 #shiny-modal-wrapper .modal .btn:not(.btn-danger):focus,
 .plot-modal .btn:not(.btn-danger):hover,
 .plot-modal .btn:not(.btn-danger):focus {
-  background-color: var(--sf-btn-hover-bg) !important;
+  background-color: var(--sf-control-hover-bg) !important;
   background-image: none !important;
-  color: var(--sf-btn-color) !important;
-  border-color: var(--sf-btn-hover-bg) !important;
+  color: var(--sf-control-hover-color) !important;
+  border-color: var(--sf-control-hover-bg) !important;
   box-shadow: none !important;
   outline: none;
 }
@@ -1418,7 +1464,7 @@ ul.sf-info-list {
 .plot-modal .btn:not(.btn-danger) span,
 .plot-modal .btn:not(.btn-danger) .fa,
 .plot-modal .btn:not(.btn-danger) i {
-  color: var(--sf-btn-color) !important;
+  color: var(--sf-control-color) !important;
 }
 
 /* ---- Disabled buttons: visually dimmed, not hidden ---- */

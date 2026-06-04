@@ -26,6 +26,7 @@
 #' @template arg-ProjectMassSpec-plot-title
 #' @template arg-ProjectMassSpec-plot-groupBy
 #' @template arg-ProjectMassSpec-plot-interactive
+#' @template arg-ProjectMassSpec-darkMode
 #' @template arg-ProjectMassSpec-plot-colorPalette
 #' @template arg-ProjectMassSpec-plot-colors
 #' @template arg-ProjectMassSpec-normalized
@@ -152,8 +153,9 @@ ProjectMassSpec <- R6::R6Class(
                                       title = NULL,
                                       groupBy = "analysis",
                                       interactive = TRUE,
-                                      colorPalette = NULL) {
-      plot_raw_chromatograms.ProjectMassSpec(self, analyses = analyses, chromatograms = chromatograms, rtmin = rtmin, rtmax = rtmax, minIntensity = minIntensity, downsize = downsize, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, interactive = interactive, colorPalette = colorPalette)
+                                      colorPalette = NULL,
+                                      darkMode = FALSE) {
+      plot_raw_chromatograms.ProjectMassSpec(self, analyses = analyses, chromatograms = chromatograms, rtmin = rtmin, rtmax = rtmax, minIntensity = minIntensity, downsize = downsize, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, interactive = interactive, colorPalette = colorPalette, darkMode = darkMode)
     },
     #' @description Get raw spectra data for selected analyses.
     get_raw_spectra = function(analyses = character(),
@@ -183,8 +185,9 @@ ProjectMassSpec <- R6::R6Class(
                                 title = NULL,
                                 groupBy = "analysis",
                                 interactive = TRUE,
-                                colorPalette = NULL) {
-      plot_spectra_tic.ProjectMassSpec(self, analyses = analyses, levels = levels, rtmin = rtmin, rtmax = rtmax, downsize = downsize, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, interactive = interactive, colorPalette = colorPalette)
+                                colorPalette = NULL,
+                                darkMode = FALSE) {
+      plot_spectra_tic.ProjectMassSpec(self, analyses = analyses, levels = levels, rtmin = rtmin, rtmax = rtmax, downsize = downsize, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, interactive = interactive, colorPalette = colorPalette, darkMode = darkMode)
     },
     #' @description Plot TIC overview as grouped 3D surfaces.
     #' @template arg-ProjectMassSpec-analyses
@@ -210,7 +213,8 @@ ProjectMassSpec <- R6::R6Class(
                                    zLab = NULL,
                                    title = NULL,
                                    groupBy = "analysis",
-                                   colorPalette = NULL) {
+                                   colorPalette = NULL,
+                                   darkMode = FALSE) {
       plot_spectra_tic_3d.ProjectMassSpec(
         self,
         analyses = analyses,
@@ -224,7 +228,8 @@ ProjectMassSpec <- R6::R6Class(
         zLab = zLab,
         title = title,
         groupBy = groupBy,
-        colorPalette = colorPalette
+        colorPalette = colorPalette,
+        darkMode = darkMode
       )
     },
     #' @description Plot base peak chromatogram traces for selected analyses.
@@ -238,8 +243,9 @@ ProjectMassSpec <- R6::R6Class(
                                 title = NULL,
                                 groupBy = "analysis",
                                 interactive = TRUE,
-                                colorPalette = NULL) {
-      plot_spectra_bpc.ProjectMassSpec(self, analyses = analyses, levels = levels, rtmin = rtmin, rtmax = rtmax, downsize = downsize, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, interactive = interactive, colorPalette = colorPalette)
+                                colorPalette = NULL,
+                                darkMode = FALSE) {
+      plot_spectra_bpc.ProjectMassSpec(self, analyses = analyses, levels = levels, rtmin = rtmin, rtmax = rtmax, downsize = downsize, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, interactive = interactive, colorPalette = colorPalette, darkMode = darkMode)
     },
     #' @description Plot BPC overview as grouped 3D surfaces.
     #' @template arg-ProjectMassSpec-analyses
@@ -265,7 +271,8 @@ ProjectMassSpec <- R6::R6Class(
                                    zLab = NULL,
                                    title = NULL,
                                    groupBy = "analysis",
-                                   colorPalette = NULL) {
+                                   colorPalette = NULL,
+                                   darkMode = FALSE) {
       plot_spectra_bpc_3d.ProjectMassSpec(
         self,
         analyses = analyses,
@@ -279,7 +286,8 @@ ProjectMassSpec <- R6::R6Class(
         zLab = zLab,
         title = title,
         groupBy = groupBy,
-        colorPalette = colorPalette
+        colorPalette = colorPalette,
+        darkMode = darkMode
       )
     },
     #' @description Plot TIC overview as RT x mobility heatmap when ion mobility data is available.
@@ -306,7 +314,8 @@ ProjectMassSpec <- R6::R6Class(
                                         groupBy = "analysis",
                                         interactive = TRUE,
                                         colors = NULL,
-                                        showLabels = FALSE) {
+                                        showLabels = FALSE,
+                                        darkMode = FALSE) {
       plot_spectra_tic_heatmap.ProjectMassSpec(
         self,
         analyses = analyses,
@@ -320,7 +329,8 @@ ProjectMassSpec <- R6::R6Class(
         groupBy = groupBy,
         interactive = interactive,
         colors = colors,
-        showLabels = showLabels
+        showLabels = showLabels,
+        darkMode = darkMode
       )
     },
     #' @description Plot BPC overview as RT x mobility heatmap when ion mobility data is available.
@@ -347,7 +357,8 @@ ProjectMassSpec <- R6::R6Class(
                                         groupBy = "analysis",
                                         interactive = TRUE,
                                         colors = NULL,
-                                        showLabels = TRUE) {
+                                        showLabels = TRUE,
+                                        darkMode = FALSE) {
       plot_spectra_bpc_heatmap.ProjectMassSpec(
         self,
         analyses = analyses,
@@ -361,7 +372,8 @@ ProjectMassSpec <- R6::R6Class(
         groupBy = groupBy,
         interactive = interactive,
         colors = colors,
-        showLabels = showLabels
+        showLabels = showLabels,
+        darkMode = darkMode
       )
     },
     #' @description Get extracted ion chromatograms for selected analyses.
@@ -392,8 +404,9 @@ ProjectMassSpec <- R6::R6Class(
                                     title = NULL,
                                     groupBy = c("analysis", "id"),
                                     interactive = TRUE,
-                                    colorPalette = NULL) {
-      plot_raw_spectra_eic.ProjectMassSpec(self, analyses = analyses, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, id = id, downsize = downsize, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, interactive = interactive, colorPalette = colorPalette)
+                                    colorPalette = NULL,
+                                    darkMode = FALSE) {
+      plot_raw_spectra_eic.ProjectMassSpec(self, analyses = analyses, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, id = id, downsize = downsize, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, interactive = interactive, colorPalette = colorPalette, darkMode = darkMode)
     },
     #' @description Plot extracted ion chromatograms as grouped 3D surfaces.
     #' @template arg-ProjectMassSpec-analyses
@@ -485,7 +498,8 @@ ProjectMassSpec <- R6::R6Class(
                                             groupBy = c("analysis", "id"),
                                             interactive = TRUE,
                                             colorPalette = NULL,
-                                            showLabels = FALSE) {
+                                            showLabels = FALSE,
+                                            darkMode = FALSE) {
       plot_raw_spectra_eic_heatmap.ProjectMassSpec(
         self,
         analyses = analyses,
@@ -504,7 +518,8 @@ ProjectMassSpec <- R6::R6Class(
         groupBy = groupBy,
         interactive = interactive,
         colorPalette = colorPalette,
-        showLabels = showLabels
+        showLabels = showLabels,
+        darkMode = darkMode
       )
     },
     #' @description Get clustered MS1 spectra for selected analyses.
@@ -625,6 +640,7 @@ ProjectMassSpec <- R6::R6Class(
 #' @template arg-ProjectMassSpec-plot-title
 #' @template arg-ProjectMassSpec-plot-groupBy
 #' @template arg-ProjectMassSpec-plot-interactive
+#' @template arg-ProjectMassSpec-darkMode
 #' @template arg-ProjectMassSpec-plot-colorPalette
 #' @template arg-ProjectMassSpec-plot-colors
 #' @template arg-ProjectMassSpec-normalized
@@ -1067,7 +1083,8 @@ get_spectra_headers.ProjectMassSpec <- function(x, analyses = character()) {
                                             title = NULL,
                                             groupBy = c("analysis", "id"),
                                             interactive = TRUE,
-                                            colorPalette = NULL) {
+                                            colorPalette = NULL,
+                                            darkMode = FALSE) {
   if (nrow(eic) == 0) {
     message("\U2717 EIC not found for the analyses!")
     return(NULL)
@@ -1098,7 +1115,8 @@ get_spectra_headers.ProjectMassSpec <- function(x, analyses = character()) {
     title = title,
     xLab = xLab,
     yLab = yLab,
-    colorPalette = colorPalette
+    colorPalette = colorPalette,
+    darkMode = darkMode
   )
 }
 
@@ -1161,7 +1179,8 @@ plot_spectra_tic.ProjectMassSpec <- function(
   title = NULL,
   groupBy = "analysis",
   interactive = TRUE,
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 ) {
   checkmate::assert_class(x, "ProjectMassSpec")
   tic <- data.table::as.data.table(get_spectra_tic.ProjectMassSpec(x, analyses, levels, rtmin, rtmax))
@@ -1194,7 +1213,8 @@ plot_spectra_tic.ProjectMassSpec <- function(
     title = title,
     xLab = xLab,
     yLab = yLab,
-    colorPalette = colorPalette
+    colorPalette = colorPalette,
+    darkMode = darkMode
   )
 }
 
@@ -1213,7 +1233,8 @@ plot_spectra_bpc.ProjectMassSpec <- function(
   title = NULL,
   groupBy = "analysis",
   interactive = TRUE,
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 ) {
   checkmate::assert_class(x, "ProjectMassSpec")
   bpc <- data.table::as.data.table(get_spectra_tic.ProjectMassSpec(x, analyses, levels, rtmin, rtmax))
@@ -1247,7 +1268,8 @@ plot_spectra_bpc.ProjectMassSpec <- function(
     title = title,
     xLab = xLab,
     yLab = yLab,
-    colorPalette = colorPalette
+    colorPalette = colorPalette,
+    darkMode = darkMode
   )
 }
 
@@ -1267,7 +1289,8 @@ plot_spectra_tic_heatmap.ProjectMassSpec <- function(
   groupBy = "analysis",
   interactive = TRUE,
   colors = NULL,
-  showLabels = FALSE
+  showLabels = FALSE,
+  darkMode = FALSE
 ) {
   checkmate::assert_class(x, "ProjectMassSpec")
   prepared <- .prepare_spectra_heatmap_headers(x, analyses, levels, rtmin, rtmax)
@@ -1282,7 +1305,8 @@ plot_spectra_tic_heatmap.ProjectMassSpec <- function(
       yLab = yLab,
       title = title,
       groupBy = groupBy,
-      interactive = interactive
+      interactive = interactive,
+      darkMode = darkMode
     ))
   }
   binned <- .bin_spectra_heatmap_tic(prepared$headers, reduction = reduction, groupBy = groupBy)
@@ -1305,7 +1329,8 @@ plot_spectra_tic_heatmap.ProjectMassSpec <- function(
     xLab = xLab,
     yLab = yLab,
     colorPalette = colors,
-    showLabels = showLabels
+    showLabels = showLabels,
+    darkMode = darkMode
   )
 }
 
@@ -1325,7 +1350,8 @@ plot_spectra_tic_3d.ProjectMassSpec <- function(
   zLab = NULL,
   title = NULL,
   groupBy = "analysis",
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 ) {
   checkmate::assert_class(x, "ProjectMassSpec")
   prepared <- .prepare_spectra_heatmap_headers(x, analyses, levels, rtmin, rtmax)
@@ -1361,7 +1387,8 @@ plot_spectra_tic_3d.ProjectMassSpec <- function(
     xLab = xLab,
     yLab = yLab,
     zLab = zLab,
-    colorPalette = colorPalette
+    colorPalette = colorPalette,
+    darkMode = darkMode
   )
 }
 
@@ -1381,7 +1408,8 @@ plot_spectra_bpc_heatmap.ProjectMassSpec <- function(
   groupBy = "analysis",
   interactive = TRUE,
   colors = NULL,
-  showLabels = TRUE
+  showLabels = TRUE,
+  darkMode = FALSE
 ) {
   checkmate::assert_class(x, "ProjectMassSpec")
   prepared <- .prepare_spectra_heatmap_headers(x, analyses, levels, rtmin, rtmax)
@@ -1397,7 +1425,8 @@ plot_spectra_bpc_heatmap.ProjectMassSpec <- function(
       yLab = yLab,
       title = title,
       groupBy = groupBy,
-      interactive = interactive
+      interactive = interactive,
+      darkMode = darkMode
     ))
   }
   binned <- .bin_spectra_heatmap_bpc(prepared$headers, reduction = reduction, groupBy = groupBy)
@@ -1420,7 +1449,8 @@ plot_spectra_bpc_heatmap.ProjectMassSpec <- function(
     xLab = xLab,
     yLab = yLab,
     colorPalette = colors,
-    showLabels = showLabels
+    showLabels = showLabels,
+    darkMode = darkMode
   )
 }
 
@@ -1440,7 +1470,8 @@ plot_spectra_bpc_3d.ProjectMassSpec <- function(
   zLab = NULL,
   title = NULL,
   groupBy = "analysis",
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 ) {
   checkmate::assert_class(x, "ProjectMassSpec")
   prepared <- .prepare_spectra_heatmap_headers(x, analyses, levels, rtmin, rtmax)
@@ -1477,7 +1508,8 @@ plot_spectra_bpc_3d.ProjectMassSpec <- function(
     xLab = xLab,
     yLab = yLab,
     zLab = zLab,
-    colorPalette = colorPalette
+    colorPalette = colorPalette,
+    darkMode = darkMode
   )
 }
 
@@ -1621,7 +1653,8 @@ plot_raw_spectra_eic.ProjectMassSpec <- function(
   title = NULL,
   groupBy = c("analysis", "id"),
   interactive = TRUE,
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 ) {
   checkmate::assert_class(x, "ProjectMassSpec")
   eic <- get_raw_spectra_eic.ProjectMassSpec(x, analyses, mass, mz, rt, mobility, ppm, sec, millisec, id)
@@ -1633,7 +1666,8 @@ plot_raw_spectra_eic.ProjectMassSpec <- function(
     title = title,
     groupBy = groupBy,
     interactive = interactive,
-    colorPalette = colorPalette
+    colorPalette = colorPalette,
+    darkMode = darkMode
   )
 }
 
@@ -1658,7 +1692,8 @@ plot_raw_spectra_eic_heatmap.ProjectMassSpec <- function(
   groupBy = c("analysis", "id"),
   interactive = TRUE,
   colorPalette = NULL,
-  showLabels = FALSE
+  showLabels = FALSE,
+  darkMode = FALSE
 ) {
   checkmate::assert_class(x, "ProjectMassSpec")
   eic <- get_raw_spectra_eic.ProjectMassSpec(x, analyses, mass, mz, rt, mobility, ppm, sec, millisec, id)
@@ -1675,7 +1710,8 @@ plot_raw_spectra_eic_heatmap.ProjectMassSpec <- function(
       downsize = NULL,
       groupBy = groupBy,
       interactive = interactive,
-      colorPalette = colorPalette
+      colorPalette = colorPalette,
+      darkMode = darkMode
     ))
   }
   binned <- .bin_raw_spectra_eic_heatmap(eic, reduction = reduction, groupBy = groupBy)
@@ -1698,7 +1734,8 @@ plot_raw_spectra_eic_heatmap.ProjectMassSpec <- function(
     xLab = xLab,
     yLab = yLab,
     colorPalette = colorPalette,
-    showLabels = showLabels
+    showLabels = showLabels,
+    darkMode = darkMode
   )
 }
 
@@ -2043,7 +2080,8 @@ plot_raw_chromatograms.ProjectMassSpec <- function(
   title = NULL,
   groupBy = "analysis",
   interactive = TRUE,
-  colorPalette = NULL
+  colorPalette = NULL,
+  darkMode = FALSE
 ) {
   checkmate::assert_class(x, "ProjectMassSpec")
   chrom <- get_raw_chromatograms.ProjectMassSpec(x, analyses, chromatograms, rtmin, rtmax, minIntensity)
@@ -2076,6 +2114,7 @@ plot_raw_chromatograms.ProjectMassSpec <- function(
     title = title,
     xLab = xLab,
     yLab = yLab,
-    colorPalette = colorPalette
+    colorPalette = colorPalette,
+    darkMode = darkMode
   )
 }

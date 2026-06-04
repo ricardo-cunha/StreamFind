@@ -8,10 +8,10 @@ get_suspects_screening_csv(suspects, file)
 }
 \arguments{
 \item{suspects}{data.table or data.frame with required column: \code{name}.
-One of \code{SMILES} or \code{mol} is required. \code{mol} is a file path to a
-\code{.mol} file per row. When provided, the \code{.mol} file is used to derive
-canonical SMILES and properties. \code{rt} can be provided to populate the
-\code{rt} column in the output.}
+One of \code{SMILES}, \code{InChI}, or \code{mol} is required. \code{mol} is a
+file path to a \code{.mol} file per row. When provided, the \code{.mol} file is
+used to derive canonical SMILES and properties. \code{rt} can be provided to
+populate the \code{rt} column in the output.}
 
 \item{file}{Character (length 1). Output CSV file path.}
 }

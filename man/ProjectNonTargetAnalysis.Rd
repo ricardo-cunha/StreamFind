@@ -457,7 +457,8 @@ Plot TIC-based matrix-suppression profiles for selected analyses.
   downsize = 1,
   interactive = TRUE,
   showLegend = TRUE,
-  renderEngine = "webgl"
+  renderEngine = "webgl",
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -492,6 +493,8 @@ the added targets as legend of the plot.}
 \item{\code{showLegend}}{Logical (length 1). Set to \code{TRUE} to show legend.}
 
 \item{\code{renderEngine}}{The engine to render the data. The default is "webgl".}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -509,7 +512,8 @@ Plot the number of features for selected analyses.
   title = NULL,
   groupBy = "analysis",
   showLegend = TRUE,
-  showHoverText = TRUE
+  showHoverText = TRUE,
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -532,6 +536,8 @@ object.}
 \item{\code{showLegend}}{Logical (length 1). Set to \code{TRUE} to show legend.}
 
 \item{\code{showHoverText}}{Logical (length 1), set to \code{TRUE} to show hovering text annotations.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -629,7 +635,8 @@ Plot feature-group profiles across analyses or replicates.
   yLab = NULL,
   title = NULL,
   interactive = TRUE,
-  showLegend = TRUE
+  showLegend = TRUE,
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -692,6 +699,8 @@ in milliseconds.}
 \item{\code{interactive}}{Logical (length 1). When \code{TRUE}, the data is plotted interactively using \pkg{plotly}.}
 
 \item{\code{showLegend}}{Logical (length 1). Set to \code{TRUE} to show legend.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -720,7 +729,8 @@ Plot EIC traces for selected features.
   title = NULL,
   groupBy = "feature",
   interactive = TRUE,
-  showDetails = FALSE
+  showDetails = FALSE,
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -786,6 +796,8 @@ in milliseconds.}
 \item{\code{interactive}}{Logical (length 1). When \code{TRUE}, the data is plotted interactively using \pkg{plotly}.}
 
 \item{\code{showDetails}}{Logical (length 1), show hover details in interactive plots.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -815,7 +827,8 @@ Plot RT versus m/z traces for selected features.
   groupBy = "feature",
   globalNormalization = FALSE,
   interactive = TRUE,
-  showDetails = FALSE
+  showDetails = FALSE,
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -883,6 +896,8 @@ in milliseconds.}
 \item{\code{interactive}}{Logical (length 1). When \code{TRUE}, the data is plotted interactively using \pkg{plotly}.}
 
 \item{\code{showDetails}}{Logical (length 1), show hover details in interactive plots.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -912,7 +927,8 @@ Plot MS1 spectra for selected features.
   title = NULL,
   groupBy = "feature",
   showText = TRUE,
-  interactive = TRUE
+  interactive = TRUE,
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -980,6 +996,8 @@ in milliseconds.}
 \item{\code{showText}}{Logical (length 1), set to \code{TRUE} to show the text annotations.}
 
 \item{\code{interactive}}{Logical (length 1). When \code{TRUE}, the data is plotted interactively using \pkg{plotly}.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -1009,7 +1027,8 @@ Plot MS2 spectra for selected features.
   title = NULL,
   groupBy = "feature",
   showText = TRUE,
-  interactive = TRUE
+  interactive = TRUE,
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -1077,6 +1096,8 @@ in milliseconds.}
 \item{\code{showText}}{Logical (length 1), set to \code{TRUE} to show the text annotations.}
 
 \item{\code{interactive}}{Logical (length 1). When \code{TRUE}, the data is plotted interactively using \pkg{plotly}.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }
@@ -1242,7 +1263,8 @@ Plot suspect MS2 spectra for selected features.
   groupBy = c("feature", "name"),
   showText = TRUE,
   interactive = TRUE,
-  showLegend = TRUE
+  showLegend = TRUE,
+  darkMode = FALSE
 )}\if{html}{\out{</div>}}
 }
 
@@ -1310,6 +1332,8 @@ in milliseconds.}
 \item{\code{interactive}}{Logical (length 1). When \code{TRUE}, the data is plotted interactively using \pkg{plotly}.}
 
 \item{\code{showLegend}}{Logical (length 1). Set to \code{TRUE} to show legend.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }

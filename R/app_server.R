@@ -877,7 +877,7 @@ app_server <- function(input, output, session) {
         if (!is.function(module_fns$ui) || !is.function(module_fns$server)) {
           return(htmltools::div(class = "sf-empty-state", "No explorer module available for this project class."))
         }
-        module_fns$server(project, "explorer", session$ns, reactive_analyses, reactive_volumes)
+        module_fns$server(project, "explorer", session$ns, reactive_analyses, reactive_volumes, reactive_theme_mode)
         module_fns$ui(project, "explorer", session$ns)
       },
       error = function(e) {
@@ -912,7 +912,7 @@ app_server <- function(input, output, session) {
     server_fun <- module_fns$server
     tab_id <- "results"
     if (is.function(server_fun)) {
-      server_fun(project, tab_id, session$ns, reactive_analyses, reactive_volumes)
+      server_fun(project, tab_id, session$ns, reactive_analyses, reactive_volumes, reactive_theme_mode)
     }
     if (is.function(ui_fun)) ui_fun(project, tab_id, session$ns)
     else htmltools::div(class = "sf-empty-state", paste0("No results UI available for ", class(project)[1]))

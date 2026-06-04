@@ -6,10 +6,13 @@ project_id <- "demo_nta"
 
 # if (file.exists(project_db)) file.remove(project_db)
 
-internal_standards <- fread(file.path("dev", "dev_duckdb", "internal_standards.csv"))
+internal_standards <- fread(file.path("dev", "dev_duckdb", "internal_standards_v3.csv"))
 internal_standards <- internal_standards[!is.na(rt), ]
+internal_standards <- internal_standards[, c("name", "InChI", "rt", "ms2_positive")]
 
 suspects <- fread(file.path("dev", "dev_duckdb", "suspects_with_ms2_template.csv"))
+suspects <- suspects[, c("name", "InChI", "rt", "ms2_positive")]
+
 transformation_products <- fread(file.path("dev", "dev_duckdb", "transformation_products_template.csv"))
 
 ms_files <- StreamFindData::get_ms_file_paths()
@@ -164,7 +167,7 @@ workflow <- Workflow(list(
     minCosineSimilarity = 0.7,
     minSharedFragments = 3L,
     filtered = TRUE
-  )
+  ),
   # Method_NonTargetAnalysis_MetFragScreening(
   #   metfrag_path = "C:\\Users\\cunha\\Documents\\patRoon_deps\\MetFragCommandLine-2.5.0.jar",
   #   database_type = "LocalCSV",
@@ -194,7 +197,7 @@ workflow <- Workflow(list(
   # )
 ))
 
-set_workflow(nta, workflow[1:12])
+set_workflow(nta, workflow)
 
 show(nta$get_workflow())
 
@@ -224,8 +227,14 @@ nta$run_workflow()
 
 
 
+run(suspect_screening_method, nta)
+
+head(get_suspects(nta)[id_level == 1, ])
+
+
 nrow(get_internal_standards(nta))
 
+head(get_internal_standards(nta))
 
 class(nta$get_workflow())
 
@@ -419,6 +428,7 @@ print(fp)
 if (!require("BiocManager", quietly = TRUE)) install.packages("BiocManager")
 BiocManager::install("Rdisop")
 remotes::install_github("kruvelab/MS2Tox", INSTALL_opts="--no-multiarch", force = TRUE)
+
 library(MS2Tox)
 lc50 <- LC50fromSMILES(compoundslistwithSMILES = sus_smiles[11, ])
 
@@ -442,7 +452,6 @@ cat(mg_per_L, " mg/L\n")
 
 
 #Before installing MS2Tox package Rdisop is needed to be installed. To install this package, start R (version "4.1") and enter:
-
 
 
 

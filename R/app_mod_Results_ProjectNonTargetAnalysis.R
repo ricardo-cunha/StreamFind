@@ -85,6 +85,11 @@
     .sf-nta-results-features .bslib-sidebar-layout > .sidebar {
       overflow: auto;
     }
+    .sf-nta-results-root .bslib-gap-spacing,
+    .sf-nta-results-root .html-fill-container {
+      padding: 5px !important;
+      box-sizing: border-box;
+    }
     .sf-nta-summary-main {
       flex: 1 1 auto;
       height: 100%;
@@ -116,23 +121,6 @@
     }
     .sf-nta-results-summary .bslib-sidebar-resize-handle .visually-hidden {
       display: none !important;
-    }
-    .nav-tabs {
-      border-bottom: 2px solid #e3e6f0;
-    }
-    .nav-tabs .nav-link.active {
-      border-color: transparent;
-      border-bottom: 3px solid #222d32;
-      font-weight: 600;
-    }
-    .nav-tabs .nav-link {
-      border: none;
-      color: #5a5c69;
-      padding: 2px 8px;
-    }
-    .nav-tabs .nav-link:hover {
-      border-color: transparent;
-      border-bottom: 3px solid #555;
     }
     .suspects-table td {
       vertical-align: top;
@@ -179,7 +167,7 @@
       background: transparent;
       border: none;
       box-shadow: none;
-      padding: 10px 15px;
+      padding: 5px;
       height: 60px;
       display: flex;
       align-items: center;
@@ -314,9 +302,49 @@
       overflow-x: auto;
       overflow-y: hidden;
       white-space: nowrap;
+      gap: 6px;
+      padding: 0 0 5px 0;
+      border-bottom: none;
     }
     .sf-nta-details-tabs > .tabbable > .nav-tabs > li {
       flex: 0 0 auto;
+      margin: 0;
+    }
+    .sf-nta-details-tabs > .tabbable > .nav-tabs > li > a,
+    .sf-nta-details-tabs > .tabbable > .nav-tabs > li > a.nav-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 28px;
+      padding: 4px 10px;
+      margin: 0;
+      background: transparent !important;
+      border: none !important;
+      border-radius: var(--sf-radius-sm);
+      color: var(--sf-topbar-color) !important;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.01em;
+      line-height: 1.2;
+      transition: background 0.15s, color 0.15s;
+    }
+    .sf-nta-details-tabs > .tabbable > .nav-tabs > li > a:hover,
+    .sf-nta-details-tabs > .tabbable > .nav-tabs > li > a:focus,
+    .sf-nta-details-tabs > .tabbable > .nav-tabs > li > a.nav-link:hover,
+    .sf-nta-details-tabs > .tabbable > .nav-tabs > li > a.nav-link:focus {
+      background: var(--sf-nav-hover-bg) !important;
+      color: var(--sf-topbar-color) !important;
+      border: none !important;
+    }
+    .sf-nta-details-tabs > .tabbable > .nav-tabs > li.active > a,
+    .sf-nta-details-tabs > .tabbable > .nav-tabs > li.active > a:hover,
+    .sf-nta-details-tabs > .tabbable > .nav-tabs > li.active > a:focus,
+    .sf-nta-details-tabs > .tabbable > .nav-tabs > li > a.active,
+    .sf-nta-details-tabs > .tabbable > .nav-tabs > li > a.nav-link.active {
+      background: var(--sf-nav-active-bg) !important;
+      color: var(--sf-nav-active-color) !important;
+      border: none !important;
+      font-weight: 600;
     }
     .sf-nta-details-tabs > .tabbable > .tab-content {
       flex: 1 1 auto;
@@ -522,6 +550,8 @@
           class = "sf-nta-results-root sf-nta-results-summary tab-content",
           bslib::layout_sidebar(
             sidebar = bslib::sidebar(
+              width = "250px",
+              resizable = FALSE,
               shiny::div(
                 class = "status-panel",
                 shiny::div(
@@ -681,9 +711,11 @@
     id,
     ns,
     reactive_analyses,
-    reactive_volumes) {
+    reactive_volumes,
+    reactive_theme_mode = shiny::reactive("light")) {
   shiny::moduleServer(id, function(input, output, session) {
     ns_full <- session$ns
+    dark_mode <- shiny::reactive(identical(reactive_theme_mode(), "dark"))
 
     # Helpers and Data Reactives ------
 
@@ -1139,7 +1171,7 @@
       nts <- nta_data()
       shiny::validate(shiny::need(!is.null(nts), "NTA data is not available"))
       group_by <- if (identical(chart_color_by(), "replicate")) "replicate" else "analysis"
-      p <- plot_features_count(nts, groupBy = group_by, showLegend = FALSE)
+      p <- plot_features_count(nts, groupBy = group_by, showLegend = FALSE, darkMode = dark_mode())
       shiny::validate(shiny::need(!is.null(p), "No features available to plot."))
       p %>%
         plotly::layout(
@@ -1433,7 +1465,7 @@
       for (col in color_cols) fts[[col]][is.na(fts[[col]])] <- ""
       fts$color_var <- do.call(paste, c(fts[, color_cols, drop = FALSE], sep = "_"))
 
-      pal <- .get_colors(unique(fts$color_var))
+      pal <- .get_colors(unique(fts$color_var), darkMode = dark_mode())
       hide_legend <- length(unique(fts$color_var)) > 50
 
       sel_cols <- scatter_selection_cols()
@@ -1471,16 +1503,17 @@
         margin = list(l = 60, r = 30, t = 30, b = 88),
         paper_bgcolor = "rgba(0,0,0,0)",
         plot_bgcolor = "rgba(0,0,0,0)",
-        xaxis = list(
+        xaxis = .plotly_axis_spec(
           title = list(text = "Retention Time"),
-          tickfont = list(size = 12),
-          gridcolor = "#eee"
+          darkMode = dark_mode(),
+          tickfont = list(size = 12, color = .get_plot_theme(dark_mode())$text)
         ),
-        yaxis = list(
+        yaxis = .plotly_axis_spec(
           title = list(text = "<i>m/z</i>"),
-          tickfont = list(size = 12),
-          gridcolor = "#eee"
+          darkMode = dark_mode(),
+          tickfont = list(size = 12, color = .get_plot_theme(dark_mode())$text)
         ),
+        font = list(color = .get_plot_theme(dark_mode())$text),
         legend = list(
           title = list(text = paste(color_cols, collapse = ", ")),
           orientation = "h",
@@ -1557,7 +1590,8 @@
         features = selected_features_scatter(),
         groupBy = scatter_details_group_by(),
         filtered = TRUE,
-        showDetails = TRUE
+        showDetails = TRUE,
+        darkMode = dark_mode()
       )
       shiny::validate(shiny::need(!is.null(p), "No EIC data for selected features."))
       plotly::layout(
@@ -1583,7 +1617,8 @@
         nts,
         features = selected_features_scatter(),
         groupBy = scatter_details_group_by(),
-        filtered = TRUE
+        filtered = TRUE,
+        darkMode = dark_mode()
       )
       shiny::validate(shiny::need(!is.null(p), "No MS1 data for selected features."))
       plotly::layout(
@@ -1609,7 +1644,8 @@
         nts,
         features = selected_features_scatter(),
         groupBy = scatter_details_group_by(),
-        filtered = TRUE
+        filtered = TRUE,
+        darkMode = dark_mode()
       )
       shiny::validate(shiny::need(!is.null(p), "No MS2 data for selected features."))
       plotly::layout(
@@ -1635,7 +1671,8 @@
         features = selected_features_scatter(),
         groupBy = scatter_details_group_by(),
         filtered = TRUE,
-        showDetails = TRUE
+        showDetails = TRUE,
+        darkMode = dark_mode()
       )
       shiny::validate(shiny::need(!is.null(p), "No XIC data for selected features."))
       plotly::layout(
@@ -1670,7 +1707,8 @@
         nts,
         groups = groups,
         groupBy = if (identical(input$scatter_color_by, "replicate")) "replicate" else "analysis",
-        showLegend = FALSE
+        showLegend = FALSE,
+        darkMode = dark_mode()
       )
       shiny::validate(shiny::need(!is.null(p), "No profile data for selected features."))
       plotly::layout(

@@ -110,6 +110,7 @@
   interactive = TRUE,
   showLegend = TRUE,
   renderEngine = "webgl",
+  darkMode = FALSE,
   ...
 )
 
@@ -121,7 +122,8 @@
   title = NULL,
   groupBy = "analysis",
   showLegend = TRUE,
-  showHoverText = TRUE
+  showHoverText = TRUE,
+  darkMode = FALSE
 )
 
 \method{get_features_profile}{ProjectNonTargetAnalysis}(
@@ -159,6 +161,7 @@
   title = NULL,
   interactive = TRUE,
   showLegend = TRUE,
+  darkMode = FALSE,
   ...
 )
 
@@ -182,6 +185,7 @@
   groupBy = "feature",
   interactive = TRUE,
   showDetails = FALSE,
+  darkMode = FALSE,
   ...
 )
 
@@ -206,6 +210,7 @@
   globalNormalization = FALSE,
   interactive = TRUE,
   showDetails = FALSE,
+  darkMode = FALSE,
   ...
 )
 
@@ -230,6 +235,7 @@
   groupBy = "feature",
   showText = TRUE,
   interactive = TRUE,
+  darkMode = FALSE,
   ...
 )
 
@@ -254,6 +260,7 @@
   groupBy = "feature",
   showText = TRUE,
   interactive = TRUE,
+  darkMode = FALSE,
   ...
 )
 
@@ -308,6 +315,7 @@
   showText = TRUE,
   interactive = TRUE,
   showLegend = TRUE,
+  darkMode = FALSE,
   ...
 )
 
@@ -451,6 +459,8 @@ the added targets as legend of the plot.}
 \item{showLegend}{Logical (length 1). Set to \code{TRUE} to show legend.}
 
 \item{renderEngine}{The engine to render the data. The default is "webgl".}
+
+\item{darkMode}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 
 \item{groupBy}{Column to use for color grouping (default: "analysis").}
 

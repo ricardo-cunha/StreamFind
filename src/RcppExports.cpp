@@ -10,174 +10,6 @@ Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
 Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 #endif
 
-// rcpp_json_read_file
-std::string rcpp_json_read_file(std::string file_path);
-RcppExport SEXP _StreamFind_rcpp_json_read_file(SEXP file_pathSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_json_read_file(file_path));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpp_json_read_subtree
-std::string rcpp_json_read_subtree(std::string file_path, std::string path);
-RcppExport SEXP _StreamFind_rcpp_json_read_subtree(SEXP file_pathSEXP, SEXP pathSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
-    Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_json_read_subtree(file_path, path));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpp_json_list_children
-Rcpp::CharacterVector rcpp_json_list_children(std::string file_path, std::string path);
-RcppExport SEXP _StreamFind_rcpp_json_list_children(SEXP file_pathSEXP, SEXP pathSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
-    Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_json_list_children(file_path, path));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpp_asm_read_file
-std::string rcpp_asm_read_file(std::string file_path);
-RcppExport SEXP _StreamFind_rcpp_asm_read_file(SEXP file_pathSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_asm_read_file(file_path));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpp_asm_index_table
-Rcpp::DataFrame rcpp_asm_index_table(std::string file_path);
-RcppExport SEXP _StreamFind_rcpp_asm_index_table(SEXP file_pathSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_asm_index_table(file_path));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpp_asm_read_subtree
-std::string rcpp_asm_read_subtree(std::string file_path, std::string path);
-RcppExport SEXP _StreamFind_rcpp_asm_read_subtree(SEXP file_pathSEXP, SEXP pathSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
-    Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_asm_read_subtree(file_path, path));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpp_asm_read_primary_data
-std::string rcpp_asm_read_primary_data(std::string file_path);
-RcppExport SEXP _StreamFind_rcpp_asm_read_primary_data(SEXP file_pathSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_asm_read_primary_data(file_path));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpp_asm_list_children
-Rcpp::CharacterVector rcpp_asm_list_children(std::string file_path, std::string path);
-RcppExport SEXP _StreamFind_rcpp_asm_list_children(SEXP file_pathSEXP, SEXP pathSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
-    Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_asm_list_children(file_path, path));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpp_asm_validate_file
-bool rcpp_asm_validate_file(std::string json_file_path, std::string schema_file, std::string schema_root_dir);
-RcppExport SEXP _StreamFind_rcpp_asm_validate_file(SEXP json_file_pathSEXP, SEXP schema_fileSEXP, SEXP schema_root_dirSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type json_file_path(json_file_pathSEXP);
-    Rcpp::traits::input_parameter< std::string >::type schema_file(schema_fileSEXP);
-    Rcpp::traits::input_parameter< std::string >::type schema_root_dir(schema_root_dirSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_asm_validate_file(json_file_path, schema_file, schema_root_dir));
-    return rcpp_result_gen;
-END_RCPP
-}
-// duckdb_list_tables
-CharacterVector duckdb_list_tables(std::string db_path);
-RcppExport SEXP _StreamFind_duckdb_list_tables(SEXP db_pathSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type db_path(db_pathSEXP);
-    rcpp_result_gen = Rcpp::wrap(duckdb_list_tables(db_path));
-    return rcpp_result_gen;
-END_RCPP
-}
-// duckdb_json_extension_info
-List duckdb_json_extension_info(std::string db_path);
-RcppExport SEXP _StreamFind_duckdb_json_extension_info(SEXP db_pathSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< std::string >::type db_path(db_pathSEXP);
-    rcpp_result_gen = Rcpp::wrap(duckdb_json_extension_info(db_path));
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpp_json_schema_validation_ok
-bool rcpp_json_schema_validation_ok();
-RcppExport SEXP _StreamFind_rcpp_json_schema_validation_ok() {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(rcpp_json_schema_validation_ok());
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpp_json_schema_validation_error
-std::string rcpp_json_schema_validation_error();
-RcppExport SEXP _StreamFind_rcpp_json_schema_validation_error() {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(rcpp_json_schema_validation_error());
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpp_json_make_example
-std::string rcpp_json_make_example();
-RcppExport SEXP _StreamFind_rcpp_json_make_example() {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    rcpp_result_gen = Rcpp::wrap(rcpp_json_make_example());
-    return rcpp_result_gen;
-END_RCPP
-}
-// rcpp_json_parse
-Rcpp::List rcpp_json_parse(const std::string& s);
-RcppExport SEXP _StreamFind_rcpp_json_parse(SEXP sSEXP) {
-BEGIN_RCPP
-    Rcpp::RObject rcpp_result_gen;
-    Rcpp::RNGScope rcpp_rngScope_gen;
-    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_json_parse(s));
-    return rcpp_result_gen;
-END_RCPP
-}
 // rcpp_project_new
 SEXP rcpp_project_new(std::string db_path, std::string project_id);
 RcppExport SEXP _StreamFind_rcpp_project_new(SEXP db_pathSEXP, SEXP project_idSEXP) {
@@ -1108,23 +940,188 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_json_make_example
+std::string rcpp_json_make_example();
+RcppExport SEXP _StreamFind_rcpp_json_make_example() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(rcpp_json_make_example());
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_json_parse
+Rcpp::List rcpp_json_parse(const std::string& s);
+RcppExport SEXP _StreamFind_rcpp_json_parse(SEXP sSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< const std::string& >::type s(sSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_json_parse(s));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_json_read_file
+std::string rcpp_json_read_file(std::string file_path);
+RcppExport SEXP _StreamFind_rcpp_json_read_file(SEXP file_pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_json_read_file(file_path));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_json_read_subtree
+std::string rcpp_json_read_subtree(std::string file_path, std::string path);
+RcppExport SEXP _StreamFind_rcpp_json_read_subtree(SEXP file_pathSEXP, SEXP pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
+    Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_json_read_subtree(file_path, path));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_json_list_children
+Rcpp::CharacterVector rcpp_json_list_children(std::string file_path, std::string path);
+RcppExport SEXP _StreamFind_rcpp_json_list_children(SEXP file_pathSEXP, SEXP pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
+    Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_json_list_children(file_path, path));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_json_schema_validation_ok
+bool rcpp_json_schema_validation_ok();
+RcppExport SEXP _StreamFind_rcpp_json_schema_validation_ok() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(rcpp_json_schema_validation_ok());
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_json_schema_validation_error
+std::string rcpp_json_schema_validation_error();
+RcppExport SEXP _StreamFind_rcpp_json_schema_validation_error() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(rcpp_json_schema_validation_error());
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_asm_read_file
+std::string rcpp_asm_read_file(std::string file_path);
+RcppExport SEXP _StreamFind_rcpp_asm_read_file(SEXP file_pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_asm_read_file(file_path));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_asm_index_table
+Rcpp::DataFrame rcpp_asm_index_table(std::string file_path);
+RcppExport SEXP _StreamFind_rcpp_asm_index_table(SEXP file_pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_asm_index_table(file_path));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_asm_read_subtree
+std::string rcpp_asm_read_subtree(std::string file_path, std::string path);
+RcppExport SEXP _StreamFind_rcpp_asm_read_subtree(SEXP file_pathSEXP, SEXP pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
+    Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_asm_read_subtree(file_path, path));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_asm_read_primary_data
+std::string rcpp_asm_read_primary_data(std::string file_path);
+RcppExport SEXP _StreamFind_rcpp_asm_read_primary_data(SEXP file_pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_asm_read_primary_data(file_path));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_asm_list_children
+Rcpp::CharacterVector rcpp_asm_list_children(std::string file_path, std::string path);
+RcppExport SEXP _StreamFind_rcpp_asm_list_children(SEXP file_pathSEXP, SEXP pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
+    Rcpp::traits::input_parameter< std::string >::type path(pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_asm_list_children(file_path, path));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_asm_validate_file
+bool rcpp_asm_validate_file(std::string json_file_path, std::string schema_file, std::string schema_root_dir);
+RcppExport SEXP _StreamFind_rcpp_asm_validate_file(SEXP json_file_pathSEXP, SEXP schema_fileSEXP, SEXP schema_root_dirSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type json_file_path(json_file_pathSEXP);
+    Rcpp::traits::input_parameter< std::string >::type schema_file(schema_fileSEXP);
+    Rcpp::traits::input_parameter< std::string >::type schema_root_dir(schema_root_dirSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_asm_validate_file(json_file_path, schema_file, schema_root_dir));
+    return rcpp_result_gen;
+END_RCPP
+}
+// duckdb_list_tables
+CharacterVector duckdb_list_tables(std::string db_path);
+RcppExport SEXP _StreamFind_duckdb_list_tables(SEXP db_pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type db_path(db_pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(duckdb_list_tables(db_path));
+    return rcpp_result_gen;
+END_RCPP
+}
+// duckdb_json_extension_info
+List duckdb_json_extension_info(std::string db_path);
+RcppExport SEXP _StreamFind_duckdb_json_extension_info(SEXP db_pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type db_path(db_pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(duckdb_json_extension_info(db_path));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_suspects_screening_csv
+Rcpp::DataFrame rcpp_get_suspects_screening_csv(Rcpp::DataFrame suspects, Rcpp::Nullable<std::string> file);
+RcppExport SEXP _StreamFind_rcpp_get_suspects_screening_csv(SEXP suspectsSEXP, SEXP fileSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::DataFrame >::type suspects(suspectsSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<std::string> >::type file(fileSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_suspects_screening_csv(suspects, file));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_StreamFind_rcpp_json_read_file", (DL_FUNC) &_StreamFind_rcpp_json_read_file, 1},
-    {"_StreamFind_rcpp_json_read_subtree", (DL_FUNC) &_StreamFind_rcpp_json_read_subtree, 2},
-    {"_StreamFind_rcpp_json_list_children", (DL_FUNC) &_StreamFind_rcpp_json_list_children, 2},
-    {"_StreamFind_rcpp_asm_read_file", (DL_FUNC) &_StreamFind_rcpp_asm_read_file, 1},
-    {"_StreamFind_rcpp_asm_index_table", (DL_FUNC) &_StreamFind_rcpp_asm_index_table, 1},
-    {"_StreamFind_rcpp_asm_read_subtree", (DL_FUNC) &_StreamFind_rcpp_asm_read_subtree, 2},
-    {"_StreamFind_rcpp_asm_read_primary_data", (DL_FUNC) &_StreamFind_rcpp_asm_read_primary_data, 1},
-    {"_StreamFind_rcpp_asm_list_children", (DL_FUNC) &_StreamFind_rcpp_asm_list_children, 2},
-    {"_StreamFind_rcpp_asm_validate_file", (DL_FUNC) &_StreamFind_rcpp_asm_validate_file, 3},
-    {"_StreamFind_duckdb_list_tables", (DL_FUNC) &_StreamFind_duckdb_list_tables, 1},
-    {"_StreamFind_duckdb_json_extension_info", (DL_FUNC) &_StreamFind_duckdb_json_extension_info, 1},
-    {"_StreamFind_rcpp_json_schema_validation_ok", (DL_FUNC) &_StreamFind_rcpp_json_schema_validation_ok, 0},
-    {"_StreamFind_rcpp_json_schema_validation_error", (DL_FUNC) &_StreamFind_rcpp_json_schema_validation_error, 0},
-    {"_StreamFind_rcpp_json_make_example", (DL_FUNC) &_StreamFind_rcpp_json_make_example, 0},
-    {"_StreamFind_rcpp_json_parse", (DL_FUNC) &_StreamFind_rcpp_json_parse, 1},
     {"_StreamFind_rcpp_project_new", (DL_FUNC) &_StreamFind_rcpp_project_new, 2},
     {"_StreamFind_rcpp_project_get_domain", (DL_FUNC) &_StreamFind_rcpp_project_get_domain, 1},
     {"_StreamFind_rcpp_project_copy", (DL_FUNC) &_StreamFind_rcpp_project_copy, 3},
@@ -1186,6 +1183,22 @@ static const R_CallMethodDef CallEntries[] = {
     {"_StreamFind_rcpp_project_nta_filter_features_ms2", (DL_FUNC) &_StreamFind_rcpp_project_nta_filter_features_ms2, 8},
     {"_StreamFind_rcpp_project_nta_metfrag_screening", (DL_FUNC) &_StreamFind_rcpp_project_nta_metfrag_screening, 22},
     {"_StreamFind_rcpp_project_nta_assign_transformation_products", (DL_FUNC) &_StreamFind_rcpp_project_nta_assign_transformation_products, 4},
+    {"_StreamFind_rcpp_json_make_example", (DL_FUNC) &_StreamFind_rcpp_json_make_example, 0},
+    {"_StreamFind_rcpp_json_parse", (DL_FUNC) &_StreamFind_rcpp_json_parse, 1},
+    {"_StreamFind_rcpp_json_read_file", (DL_FUNC) &_StreamFind_rcpp_json_read_file, 1},
+    {"_StreamFind_rcpp_json_read_subtree", (DL_FUNC) &_StreamFind_rcpp_json_read_subtree, 2},
+    {"_StreamFind_rcpp_json_list_children", (DL_FUNC) &_StreamFind_rcpp_json_list_children, 2},
+    {"_StreamFind_rcpp_json_schema_validation_ok", (DL_FUNC) &_StreamFind_rcpp_json_schema_validation_ok, 0},
+    {"_StreamFind_rcpp_json_schema_validation_error", (DL_FUNC) &_StreamFind_rcpp_json_schema_validation_error, 0},
+    {"_StreamFind_rcpp_asm_read_file", (DL_FUNC) &_StreamFind_rcpp_asm_read_file, 1},
+    {"_StreamFind_rcpp_asm_index_table", (DL_FUNC) &_StreamFind_rcpp_asm_index_table, 1},
+    {"_StreamFind_rcpp_asm_read_subtree", (DL_FUNC) &_StreamFind_rcpp_asm_read_subtree, 2},
+    {"_StreamFind_rcpp_asm_read_primary_data", (DL_FUNC) &_StreamFind_rcpp_asm_read_primary_data, 1},
+    {"_StreamFind_rcpp_asm_list_children", (DL_FUNC) &_StreamFind_rcpp_asm_list_children, 2},
+    {"_StreamFind_rcpp_asm_validate_file", (DL_FUNC) &_StreamFind_rcpp_asm_validate_file, 3},
+    {"_StreamFind_duckdb_list_tables", (DL_FUNC) &_StreamFind_duckdb_list_tables, 1},
+    {"_StreamFind_duckdb_json_extension_info", (DL_FUNC) &_StreamFind_duckdb_json_extension_info, 1},
+    {"_StreamFind_rcpp_get_suspects_screening_csv", (DL_FUNC) &_StreamFind_rcpp_get_suspects_screening_csv, 2},
     {NULL, NULL, 0}
 };
 

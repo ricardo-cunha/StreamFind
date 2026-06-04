@@ -114,9 +114,11 @@
     id,
     ns,
     reactive_analyses,
-    reactive_volumes) {
+    reactive_volumes,
+    reactive_theme_mode = shiny::reactive("light")) {
   shiny::moduleServer(id, function(input, output, session) {
     ns2 <- shiny::NS(id)
+    dark_mode <- shiny::reactive(identical(reactive_theme_mode(), "dark"))
     reactive_has_results_spectra <- shiny::reactiveVal(FALSE)
     reactive_has_results_chromatograms <- shiny::reactiveVal(FALSE)
     reactive_levels <- shiny::reactiveVal(1)
@@ -371,7 +373,8 @@
               rtmin = input$summary_plot_rt[1],
               rtmax = input$summary_plot_rt[2],
               downsize = input$summary_plot_downsize,
-              interactive = TRUE
+              interactive = TRUE,
+              darkMode = dark_mode()
             ))
             return(plotly::layout(
               p,
@@ -388,7 +391,8 @@
               rtmin = input$summary_plot_rt[1],
               rtmax = input$summary_plot_rt[2],
               reduction = input$summary_plot_downsize,
-              useMobility = isTRUE(input$summary_plot_use_mobility)
+              useMobility = isTRUE(input$summary_plot_use_mobility),
+              darkMode = dark_mode()
             ))
             return(plotly::layout(
               p,
@@ -428,7 +432,8 @@
               rtmin = input$summary_plot_rt[1],
               rtmax = input$summary_plot_rt[2],
               downsize = input$summary_plot_downsize,
-              interactive = as.logical(input$summary_plot_interactive)
+              interactive = as.logical(input$summary_plot_interactive),
+              darkMode = dark_mode()
             ))
           } else if (identical(input$summary_plot_view, "tic_3d")) {
             suppressWarnings(plot_spectra_tic_3d(
@@ -439,7 +444,8 @@
               rtmin = input$summary_plot_rt[1],
               rtmax = input$summary_plot_rt[2],
               reduction = input$summary_plot_downsize,
-              useMobility = isTRUE(input$summary_plot_use_mobility)
+              useMobility = isTRUE(input$summary_plot_use_mobility),
+              darkMode = dark_mode()
             ))
           }
         }
@@ -563,7 +569,8 @@
         reactive_analyses(),
         analyses = selected,
         groupBy = strsplit(input$summary_chrom_group_by, "\\+")[[1]],
-        interactive = TRUE
+        interactive = TRUE,
+        darkMode = dark_mode()
       )
       plotly::layout(
         p,
@@ -583,7 +590,8 @@
         reactive_analyses(),
         analyses = selected,
         groupBy = strsplit(input$summary_chrom_group_by, "\\+")[[1]],
-        interactive = as.logical(input$summary_chrom_interactive)
+        interactive = as.logical(input$summary_chrom_interactive),
+        darkMode = dark_mode()
       )
     }, bg = "transparent")
 

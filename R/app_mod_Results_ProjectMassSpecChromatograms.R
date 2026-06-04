@@ -80,9 +80,11 @@
     id,
     ns,
     reactive_analyses,
-    reactive_volumes) {
+    reactive_volumes,
+    reactive_theme_mode = shiny::reactive("light")) {
   shiny::moduleServer(id, function(input, output, session) {
     ns_full <- session$ns
+    dark_mode <- shiny::reactive(identical(reactive_theme_mode(), "dark"))
 
     # MARK: reactive data -----
     chrom_results <- shiny::reactiveVal()
@@ -202,7 +204,8 @@
         analyses = sel_analyses,
         colorBy = if (!is.null(input$chrom_color_by)) input$chrom_color_by else "analyses+targets",
         normalized = isTRUE(input$chrom_normalized),
-        interactive = TRUE
+        interactive = TRUE,
+        darkMode = dark_mode()
       )
       plotly::layout(
         p,
@@ -225,7 +228,8 @@
         analyses = sel_analyses,
         colorBy = if (!is.null(input$chrom_color_by)) input$chrom_color_by else "analyses+targets",
         normalized = isTRUE(input$chrom_normalized),
-        interactive = FALSE
+        interactive = FALSE,
+        darkMode = dark_mode()
       )
     }, bg = "transparent")
 
@@ -286,7 +290,8 @@
         res,
         analyses = sel_analyses,
         colorBy = if (!is.null(input$peaks_color_by)) input$peaks_color_by else "analyses+targets",
-        interactive = TRUE
+        interactive = TRUE,
+        darkMode = dark_mode()
       )
       plotly::layout(
         p,
@@ -308,7 +313,8 @@
         res,
         analyses = sel_analyses,
         colorBy = if (!is.null(input$peaks_color_by)) input$peaks_color_by else "analyses+targets",
-        interactive = FALSE
+        interactive = FALSE,
+        darkMode = dark_mode()
       )
     }, bg = "transparent")
 
