@@ -158,38 +158,38 @@ workflow <- Workflow(list(
     removeAdducts = TRUE,
     removeLosses = TRUE
   ),
-  Method_NonTargetAnalysis_SuspectScreening(
-    suspects = suspects,
-    ppm = 5,
-    sec = 10,
-    ppmMS2 = 10,
-    mzrMS2 = 0.008,
-    minCosineSimilarity = 0.7,
-    minSharedFragments = 3L,
-    filtered = TRUE
-  ),
-  # Method_NonTargetAnalysis_MetFragScreening(
-  #   metfrag_path = "C:\\Users\\cunha\\Documents\\patRoon_deps\\MetFragCommandLine-2.5.0.jar",
-  #   database_type = "LocalCSV",
-  #   database_path = file.path("dev", "dev_duckdb", "transformation_products_template.csv"),
-  #   ppm = 10,
-  #   sec = 15,
+  # Method_NonTargetAnalysis_SuspectScreening(
+  #   suspects = suspects,
+  #   ppm = 5,
+  #   sec = 10,
   #   ppmMS2 = 10,
   #   mzrMS2 = 0.008,
-  #   top_n = 5L,
-  #   score_types = "FragmenterScore",
-  #   score_weights = 1,
-  #   pre_processing_candidate_filter = c("UnconnectedCompoundFilter", "IsotopeFilter"),
-  #   post_processing_candidate_filter = "InChIKeyFilter",
-  #   maximum_tree_depth = 2L,
-  #   number_threads = 1L,
-  #   use_smiles = TRUE,
-  #   filtered = FALSE,
-  #   java_path = "java",
-  #   run_dir = "",
-  #   debug = TRUE,
-  #   extra_params = list()
-  # )
+  #   minCosineSimilarity = 0.7,
+  #   minSharedFragments = 3L,
+  #   filtered = TRUE
+  # ),
+  Method_NonTargetAnalysis_MetFragScreening(
+    metfrag_path = "C:\\Users\\cunha\\Documents\\patRoon_deps\\MetFragCommandLine-2.5.0.jar",
+    database_type = "LocalCSV",
+    database_path = file.path("dev", "dev_duckdb", "suspects_template_V2.csv"),
+    ppm = 10,
+    sec = 15,
+    ppmMS2 = 10,
+    mzrMS2 = 0.008,
+    top_n = 5L,
+    score_types = "FragmenterScore",
+    score_weights = 1,
+    pre_processing_candidate_filter = c("UnconnectedCompoundFilter", "IsotopeFilter"),
+    post_processing_candidate_filter = "InChIKeyFilter",
+    maximum_tree_depth = 2L,
+    number_threads = 1L,
+    use_smiles = TRUE,
+    filtered = FALSE,
+    java_path = "java",
+    run_dir = "",
+    debug = TRUE,
+    extra_params = list()
+  )
   # Method_NonTargetAnalysis_AssignTransformationProducts(
   #   transformation_products = transformation_products,
   #   chromatographic_phase = "reverse_phase",
@@ -229,7 +229,7 @@ nta$run_workflow()
 
 run(suspect_screening_method, nta)
 
-head(get_suspects(nta)[id_level == 1, ])
+head(get_suspects(nta)[id_level == 2, ])
 
 
 nrow(get_internal_standards(nta))
@@ -245,7 +245,6 @@ rm(nta)
 gc()
 devtools::load_all()
 
-
 nta <- open_ProjectNonTargetAnalysis(
   db = project_db,
   project_id = project_id
@@ -255,8 +254,15 @@ nta <- open_ProjectNonTargetAnalysis(
 
 nta$run_app()
 
+
 run_app()
 
+
+comp <- "FC38_RT1007_POS"
+fts <- get_features(nta, filtered = TRUE)
+fts_comp <- fts[feature_component == comp, ]
+
+fts_comp[, .(feature, mass, adduct)]
 
 # -----------------------------------------------------------------------------
 # 4. Inspect the results

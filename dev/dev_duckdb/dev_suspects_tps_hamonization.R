@@ -213,6 +213,21 @@ rcpp_get_suspects_screening_csv(
   )
 )
 
+rcpp_get_suspects_screening_csv(
+  suspects = data.table::fread(file.path(
+    getwd(),
+    "dev",
+    "dev_duckdb",
+    "suspects_template.csv"
+  ))[, c("name", "InChI", "rt")],
+  file = file.path(
+    getwd(),
+    "dev",
+    "dev_duckdb",
+    "suspects_template_V2.csv"
+  )
+)
+
 # plot_spectra_eic(
 #   ms$Analyses,
 #   mass = istd,

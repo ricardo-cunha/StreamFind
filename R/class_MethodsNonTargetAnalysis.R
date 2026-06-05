@@ -1124,7 +1124,9 @@ validate_object.Method_NonTargetAnalysis_SuspectScreening <- function(x, ...) {
   suspects <- data.table::as.data.table(x$parameters$suspects)
   checkmate::assert_data_frame(suspects)
   checkmate::assert_true("name" %in% names(suspects))
-  checkmate::assert_true(any(c("mass", "mz") %in% names(suspects)) || nrow(suspects) == 0L)
+  checkmate::assert_true(
+    any(c("mass", "mz", "SMILES", "InChI") %in% names(suspects)) || nrow(suspects) == 0L
+  )
   checkmate::assert_character(x$parameters$analyses, any.missing = FALSE)
   checkmate::assert_number(x$parameters$ppm, lower = 0, finite = TRUE)
   checkmate::assert_number(x$parameters$sec, lower = 0, finite = TRUE)
@@ -1224,7 +1226,9 @@ validate_object.Method_NonTargetAnalysis_FindInternalStandards <- function(x, ..
   suspects <- data.table::as.data.table(x$parameters$suspects)
   checkmate::assert_data_frame(suspects)
   checkmate::assert_true("name" %in% names(suspects))
-  checkmate::assert_true(any(c("mass", "mz") %in% names(suspects)) || nrow(suspects) == 0L)
+  checkmate::assert_true(
+    any(c("mass", "mz", "SMILES", "InChI") %in% names(suspects)) || nrow(suspects) == 0L
+  )
   checkmate::assert_character(x$parameters$analyses, any.missing = FALSE)
   checkmate::assert_number(x$parameters$ppm, lower = 0, finite = TRUE)
   checkmate::assert_number(x$parameters$sec, lower = 0, finite = TRUE)

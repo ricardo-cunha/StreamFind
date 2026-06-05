@@ -1033,15 +1033,7 @@
               )
             ),
             shiny::div(
-              style = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;",
-              shiny::span("Select by:", style = "font-weight: 500;"),
-                shiny::radioButtons(
-                  ns_full("istd_select_by"),
-                  label = NULL,
-                  choices = c("Feature" = "feature", "Internal Standard" = "name"),
-                  selected = "feature",
-                  inline = TRUE
-                )
+              style = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;"
             )
           ),
           shiny::div(
@@ -1792,10 +1784,12 @@
     scatter_details_group_by <- shiny::reactive({
       sel <- input$scatter_select_by
       if (identical(sel, "feature_component")) {
-        return(c("analysis", "feature"))
+        return("feature")
       }
       unique(c(scatter_color_cols(), scatter_selection_cols()))
     })
+
+    features_scatter_events_ready <- shiny::reactiveVal(FALSE)
 
     # MARK: features_scatter_plot
     output$features_scatter_plot <- plotly::renderPlotly({
@@ -1823,8 +1817,10 @@
       # Ensure size is numeric vector to avoid ordering issues with formula notation
       # size_values <- as.numeric(fts$dot_size)
 
+      fts_highlight <- plotly::highlight_key(fts, ~scatter_key)
+
       p <- plotly::plot_ly(
-        data = fts,
+        data = fts_highlight,
         source = "features_scatter",
         x = ~rt,
         y = ~mz,
@@ -1836,9 +1832,9 @@
           sizemode = "diameter",
           size = ~dot_size,
           sizemin = 3,
+          opacity = 0.95,
           line = list(width = 0)
         ),
-        key = ~scatter_key,
         hoverinfo = "none"
       )
 
@@ -1867,6 +1863,7 @@
           y = -0.16,
           yanchor = "top"
         ),
+        dragmode = "zoom",
         showlegend = !hide_legend
       )
 
@@ -1874,24 +1871,52 @@
               p,
               displayModeBar = TRUE,
               displaylogo = FALSE,
-              responsive = FALSE
+              responsive = FALSE,
+              modeBarButtonsToRemove = c("select2d", "lasso2d")
             )
 
-      p <- plotly::event_register(p, "plotly_selected")
+      p <- plotly::highlight(
+        p,
+        on = "plotly_click",
+        off = "plotly_doubleclick",
+        persistent = FALSE,
+        dynamic = FALSE,
+        opacityDim = 0.22,
+        selected = plotly::attrs_selected(
+          marker = list(
+            opacity = 1
+          )
+        )
+      )
+
       p <- plotly::event_register(p, "plotly_click")
+      p <- plotly::event_register(p, "plotly_doubleclick")
+      features_scatter_events_ready(TRUE)
       p
     })
 
+    selected_features_scatter_keys <- shiny::reactiveVal(NULL)
+
+    shiny::observeEvent({
+      shiny::req(features_scatter_events_ready())
+      plotly::event_data("plotly_click", source = "features_scatter")
+    }, {
+      evt <- plotly::event_data("plotly_click", source = "features_scatter")
+      if (is.null(evt) || nrow(evt) == 0 || is.null(evt$key)) return()
+      selected_features_scatter_keys(as.character(evt$key))
+    }, ignoreNULL = TRUE)
+
+    shiny::observeEvent({
+      shiny::req(features_scatter_events_ready())
+      plotly::event_data("plotly_doubleclick", source = "features_scatter")
+    }, {
+      selected_features_scatter_keys(NULL)
+    }, ignoreInit = TRUE)
+
     # MARK: selected_features_scatter
     selected_features_scatter <- shiny::reactive({
-      evt <- plotly::event_data("plotly_selected", source = "features_scatter")
-      if (is.null(evt) || nrow(evt) == 0) {
-        evt <- plotly::event_data("plotly_click", source = "features_scatter")
-      }
-      if (is.null(evt) || nrow(evt) == 0) return(NULL)
-      keys <- evt$key
-      if (is.null(keys)) return(NULL)
-      keys <- as.character(keys)
+      keys <- selected_features_scatter_keys()
+      if (is.null(keys) || length(keys) == 0) return(NULL)
 
       fts <- data.table::copy(features_scatter_data())
       if (!nrow(fts)) return(NULL)
@@ -2209,14 +2234,7 @@
     })
 
     istd_selection_cols <- shiny::reactive({
-      sel <- input$istd_select_by
-      if (is.null(sel) || !nzchar(sel)) sel <- "feature"
-      switch(
-        sel,
-        feature = c("analysis", "feature"),
-        name = "name",
-        c("analysis", "feature")
-      )
+      "name"
     })
 
     istd_details_group_by <- shiny::reactive({
@@ -2226,6 +2244,8 @@
       }
       unique(c(color_col, "feature"))
     })
+
+    internal_standards_scatter_events_ready <- shiny::reactiveVal(FALSE)
 
     output$internal_standards_scatter_plot <- plotly::renderPlotly({
       istd <- data.table::copy(internal_standards_scatter_data())
@@ -2255,8 +2275,10 @@
       pal <- .get_colors(unique(istd$color_var), darkMode = dark_mode())
       hide_legend <- length(unique(istd$color_var)) > 50
 
+      istd_highlight <- plotly::highlight_key(istd, ~scatter_key)
+
       p <- plotly::plot_ly(
-        data = istd,
+        data = istd_highlight,
         source = "internal_standards_scatter",
         x = ~exp_rt,
         y = ~exp_mass,
@@ -2268,9 +2290,9 @@
           sizemode = "diameter",
           size = ~dot_size,
           sizemin = 3,
+          opacity = 0.95,
           line = list(width = 0)
         ),
-        key = ~scatter_key,
         hoverinfo = "text",
         text = ~paste0(
           "<b>", name, "</b><br>",
@@ -2306,24 +2328,59 @@
           y = -0.16,
           yanchor = "top"
         ),
+        dragmode = "zoom",
         showlegend = !hide_legend
       )
 
-      p <- plotly::config(p, displayModeBar = TRUE, displaylogo = FALSE, responsive = FALSE)
-      p <- plotly::event_register(p, "plotly_selected")
+      p <- plotly::config(
+        p,
+        displayModeBar = TRUE,
+        displaylogo = FALSE,
+        responsive = FALSE,
+        modeBarButtonsToRemove = c("select2d", "lasso2d")
+      )
+
+      p <- plotly::highlight(
+        p,
+        on = "plotly_click",
+        off = "plotly_doubleclick",
+        persistent = FALSE,
+        dynamic = FALSE,
+        opacityDim = 0.22,
+        selected = plotly::attrs_selected(
+          marker = list(
+            opacity = 1
+          )
+        )
+      )
+
       p <- plotly::event_register(p, "plotly_click")
+      p <- plotly::event_register(p, "plotly_doubleclick")
+      internal_standards_scatter_events_ready(TRUE)
       p
     })
 
+    selected_internal_standards_keys <- shiny::reactiveVal(NULL)
+
+    shiny::observeEvent({
+      shiny::req(internal_standards_scatter_events_ready())
+      plotly::event_data("plotly_click", source = "internal_standards_scatter")
+    }, {
+      evt <- plotly::event_data("plotly_click", source = "internal_standards_scatter")
+      if (is.null(evt) || nrow(evt) == 0 || is.null(evt$key)) return()
+      selected_internal_standards_keys(as.character(evt$key))
+    }, ignoreNULL = TRUE)
+
+    shiny::observeEvent({
+      shiny::req(internal_standards_scatter_events_ready())
+      plotly::event_data("plotly_doubleclick", source = "internal_standards_scatter")
+    }, {
+      selected_internal_standards_keys(NULL)
+    }, ignoreInit = TRUE)
+
     selected_internal_standards_rows <- shiny::reactive({
-      evt <- plotly::event_data("plotly_selected", source = "internal_standards_scatter")
-      if (is.null(evt) || nrow(evt) == 0) {
-        evt <- plotly::event_data("plotly_click", source = "internal_standards_scatter")
-      }
-      if (is.null(evt) || nrow(evt) == 0) return(NULL)
-      keys <- evt$key
-      if (is.null(keys)) return(NULL)
-      keys <- as.character(keys)
+      keys <- selected_internal_standards_keys()
+      if (is.null(keys) || length(keys) == 0) return(NULL)
 
       istd <- data.table::copy(internal_standards_scatter_data())
       if (!nrow(istd)) return(NULL)

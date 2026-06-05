@@ -679,6 +679,8 @@ body[data-sf-theme][data-sf-palette] {
 .sf-settings-dropdown {
   position: absolute;
   max-height: calc(100vh - var(--sf-topbar-height) - 8px);
+  padding: var(--sf-space);
+  color: var(--sf-content-color);
 }
 
 .sf-settings-dropdown.open {
@@ -698,7 +700,7 @@ body[data-sf-theme][data-sf-palette] {
 }
 
 .sf-settings-dropdown .radio {
-  margin-top: 0;
+  margin-top: var(--sf-space);
   margin-bottom: 0;
 }
 
@@ -712,11 +714,15 @@ body[data-sf-theme][data-sf-palette] {
 
 .sf-settings-dropdown .sf-panel-title {
   font-size: 14px;
+  margin: 0 0 var(--sf-space) 0;
 }
 
 .sf-settings-dropdown,
 .sf-settings-dropdown .radio,
 .sf-settings-dropdown .radio label,
+.sf-settings-dropdown .sf-settings-section,
+.sf-settings-dropdown .sf-panel-title,
+.sf-settings-dropdown .shiny-input-container,
 .sf-settings-dropdown .form-control,
 .sf-settings-dropdown .selectize-input,
 .sf-settings-dropdown .selectize-dropdown,
@@ -724,6 +730,7 @@ body[data-sf-theme][data-sf-palette] {
 .sf-settings-dropdown .option,
 .sf-settings-dropdown .sf-settings-note {
   font-size: 12px;
+  color: var(--sf-content-color);
 }
 
 .sf-settings-dropdown .selectize-input,
@@ -1510,6 +1517,29 @@ ul.sf-info-list {
    Rank-list (sortable)
    ============================================================ */
 /* Light mode defaults come from sortable's own stylesheet. */
+
+#sf-app .workflow-list-scroll .rank-list-container,
+#sf-app .workflow-list-scroll .default-sortable.rank-list-container {
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#sf-app .workflow-list-scroll .rank-list,
+#sf-app .workflow-list-scroll .default-sortable.rank-list {
+  border: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+#sf-app .workflow-list-scroll .rank-list-title {
+  margin: 0 0 5px 0 !important;
+  padding: 0 !important;
+}
 
 /* Dark mode overrides */
 #sf-app.sf-dark .rank-list-container { color: var(--sf-content-color); }

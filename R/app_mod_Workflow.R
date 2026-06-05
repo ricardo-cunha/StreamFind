@@ -3,17 +3,17 @@
 .mod_Workflow_UI.Project <- function(x, id, ns) {
   ns2 <- shiny::NS(id)
   htmltools::div(
-    style = "height: calc(100vh - 35px); overflow: hidden; padding: 0px;",
+    style = "height: calc(100vh - 35px); overflow: hidden; padding: 0px; min-height: 0;",
     htmltools::div(
-      style = "display: flex; flex-direction: row; height: 100%; overflow: hidden; gap: 5px;",
+      style = "display: flex; flex-direction: row; height: 100%; overflow: hidden; gap: 5px; min-height: 0;",
       htmltools::div(
         class = "workflow-column",
-        style = "flex: 0 0 50%; width: 50%; min-width: 0; overflow: hidden;",
+        style = "flex: 0 0 50%; width: 50%; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto;",
         shiny::uiOutput(ns(ns2("workflow_settings")))
       ),
       htmltools::div(
         class = "method-column",
-        style = "flex: 0 0 50%; width: 50%; min-width: 0; overflow: hidden;",
+        style = "flex: 0 0 50%; width: 50%; min-width: 0; min-height: 0; overflow-x: hidden; overflow-y: auto;",
         shiny::uiOutput(ns(ns2("selected_method_details")))
       )
     ),
@@ -22,10 +22,12 @@
       .workflow-column {
         padding-right: 0px;
         margin-right: 0px;
+        min-height: 0;
       }
       .method-column {
         padding-left: 0px;
         margin-left: 0px;
+        min-height: 0;
       }
       .custom-button {
         background-color: #1e2129;
@@ -109,6 +111,71 @@
         width: auto;
         max-width: 80%;
         min-width: 500px;
+      }
+      .workflow-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex-wrap: wrap;
+        align-content: flex-start;
+      }
+      .workflow-actions > div {
+        flex: 0 0 auto;
+        display: flex;
+      }
+      .workflow-actions .btn,
+      .workflow-actions .shinyFiles,
+      .workflow-actions .shinySave {
+        min-width: 150px;
+        width: 150px !important;
+      }
+      .workflow-list-shell {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+      }
+      .workflow-list-scroll {
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow-y: auto;
+        overflow-x: hidden;
+        padding: 0 10px 0 0;
+        margin: 0;
+      }
+      .workflow-list-scroll .rank-list-container {
+        border: none !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        background: transparent !important;
+        box-shadow: none !important;
+      }
+      .workflow-list-scroll .rank-list-title {
+        margin: 0 0 5px 0 !important;
+      }
+      .workflow-method-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+        padding-right: 10px;
+        box-sizing: border-box;
+      }
+      .workflow-method-add {
+        flex: 0 0 auto;
+        display: flex;
+        align-items: center;
+      }
+      .workflow-method-select {
+        flex: 1 1 auto;
+        min-width: 0;
+        display: flex;
+        align-items: center;
+      }
+      .workflow-method-select .shiny-input-container {
+        width: 100%;
+        margin-bottom: 0;
       }
     "
     ))
@@ -250,7 +317,8 @@
 
     output$run_workflow_ui <- shiny::renderUI({
       rw <- reactive_workflow()
-      if (length(rw) > 0) {
+      saved_rw <- reactive_saved_workflow()
+      if (length(rw) > 0 && identical(rw, saved_rw)) {
         shiny::actionButton(
           ns(ns2("run_workflow")),
           "Run Workflow",
@@ -307,56 +375,60 @@
         style = "height: calc(100vh - 35px - 10px); overflow: hidden;",
         class = "workflow-box",
       htmltools::div(
-        style = "display: flex; flex-direction: column; height: 100%; gap: 5px;",
+        style = "display: flex; flex-direction: column; height: 100%; gap: 5px; min-height: 0;",
         shiny::column(
           width = 12,
           htmltools::div(
-            style = "display: flex; align-items: center; gap: 10px; flex-wrap: wrap;",
+            class = "workflow-actions",
             shiny::uiOutput(ns(ns2("load_workflow_ui"))),
             shiny::uiOutput(ns(ns2("save_workflow_ui"))),
             shiny::uiOutput(ns(ns2("clear_workflow_ui"))),
             shiny::uiOutput(ns(ns2("persist_workflow_ui"))),
-            shiny::uiOutput(ns(ns2("discard_changes_ui")))
-          )
-        ),
-        shiny::column(
-          width = 12,
-          htmltools::div(
-            style = "display: flex; align-items: center; gap: 10px;",
+            shiny::uiOutput(ns(ns2("discard_changes_ui"))),
             shiny::uiOutput(ns(ns2("run_workflow_ui")))
           )
-        ),
-          shiny::column(width = 12, htmltools::p("Select Processing Method", style = "margin-bottom: 5px; margin-top: 5px;")),
+          ),
           shiny::column(
             width = 12,
-            style = "margin-bottom: 12px;",
-            shiny::selectInput(
-              ns(ns2("settings_selector")),
-              label = NULL,
-              choices = processing_methods_short,
-              multiple = FALSE
+            htmltools::p(
+              "Select Processing Method",
+              style = "margin-bottom: 5px; margin-top: 5px;"
             )
           ),
           shiny::column(
             width = 12,
+            style = "margin-bottom: 0px;",
             htmltools::div(
-              style = "display: flex; align-items: center; margin-bottom: 12px;",
-              shiny::actionButton(
-                ns(ns2("add_workflow_step")),
-                "Add Workflow Step"
+              class = "workflow-method-row",
+              htmltools::div(
+                class = "workflow-method-select",
+                shiny::selectInput(
+                  ns(ns2("settings_selector")),
+                  label = NULL,
+                  choices = processing_methods_short,
+                  multiple = FALSE,
+                  width = "100%"
+                )
+              ),
+              htmltools::div(
+                class = "workflow-method-add",
+                shiny::actionButton(
+                  ns(ns2("add_workflow_step")),
+                  "Add Method"
+                )
               )
             )
           ),
-          shiny::column(width = 12, htmltools::h3("Workflow", style = "margin-bottom: 5px; margin-top: 5px;")),
           shiny::column(
-          width = 12,
-          htmltools::div(
-            style = "flex: 1; overflow-y: auto; padding: 0 10px 0 0; margin: 0;",
-            sortable::rank_list(
-              text = "Drag to order",
-              labels = labels,
-              input_id = ns(ns2("rank_workflow_names"))
-            )
+            width = 12,
+            class = "workflow-list-shell",
+            htmltools::div(
+              class = "workflow-list-scroll",
+              sortable::rank_list(
+                text = "Drag to order",
+                labels = labels,
+                input_id = ns(ns2("rank_workflow_names"))
+              )
             )
           )
         )
@@ -703,7 +775,7 @@
           style = "height: calc(100vh - 35px - 20px); overflow-y: auto; padding: 5px;",
           shiny::tags$div(
             class = "method-details",
-            shiny::h3(method_editor_title, style = "margin-bottom: 10px;"),
+            shiny::h3(method_editor_title, style = "margin-top: 0px; margin-bottom: 10px;"),
             shiny::tags$div(
               shiny::tags$b("Owner Class: "),
               shiny::tags$span(settings$owner_class),
