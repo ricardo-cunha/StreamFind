@@ -246,6 +246,17 @@ namespace nta
       int ms2_size = 0;
       std::string ms2_mz;
       std::string ms2_intensity;
+      std::string annotation_category;
+      std::string annotation_type;
+      std::string annotation_parent_feature;
+      std::string annotation_element;
+      double annotation_mass_error_da = 0.0;
+      double annotation_mass_error_ppm = 0.0;
+      double annotation_rt_error = 0.0;
+      double annotation_rel_intensity = 0.0;
+      double annotation_expected_rel_intensity_min = 0.0;
+      double annotation_expected_rel_intensity_max = 0.0;
+      double annotation_score = 0.0;
     };
 
     struct NTA_FEATURES_COUNT_ROW
@@ -306,6 +317,17 @@ namespace nta
       std::vector<int> ms2_size;
       std::vector<std::string> ms2_mz;
       std::vector<std::string> ms2_intensity;
+      std::vector<std::string> annotation_category;
+      std::vector<std::string> annotation_type;
+      std::vector<std::string> annotation_parent_feature;
+      std::vector<std::string> annotation_element;
+      std::vector<float> annotation_mass_error_da;
+      std::vector<float> annotation_mass_error_ppm;
+      std::vector<float> annotation_rt_error;
+      std::vector<float> annotation_rel_intensity;
+      std::vector<float> annotation_expected_rel_intensity_min;
+      std::vector<float> annotation_expected_rel_intensity_max;
+      std::vector<float> annotation_score;
 
       int size() const
       {
@@ -365,6 +387,17 @@ namespace nta
         feature_i.ms2_size = ms2_size[i];
         feature_i.ms2_mz = ms2_mz[i];
         feature_i.ms2_intensity = ms2_intensity[i];
+        feature_i.annotation_category = annotation_category[i];
+        feature_i.annotation_type = annotation_type[i];
+        feature_i.annotation_parent_feature = annotation_parent_feature[i];
+        feature_i.annotation_element = annotation_element[i];
+        feature_i.annotation_mass_error_da = annotation_mass_error_da[i];
+        feature_i.annotation_mass_error_ppm = annotation_mass_error_ppm[i];
+        feature_i.annotation_rt_error = annotation_rt_error[i];
+        feature_i.annotation_rel_intensity = annotation_rel_intensity[i];
+        feature_i.annotation_expected_rel_intensity_min = annotation_expected_rel_intensity_min[i];
+        feature_i.annotation_expected_rel_intensity_max = annotation_expected_rel_intensity_max[i];
+        feature_i.annotation_score = annotation_score[i];
         return feature_i;
       };
 
@@ -415,6 +448,17 @@ namespace nta
         ms2_size[i] = feature_i.ms2_size;
         ms2_mz[i] = feature_i.ms2_mz;
         ms2_intensity[i] = feature_i.ms2_intensity;
+        annotation_category[i] = feature_i.annotation_category;
+        annotation_type[i] = feature_i.annotation_type;
+        annotation_parent_feature[i] = feature_i.annotation_parent_feature;
+        annotation_element[i] = feature_i.annotation_element;
+        annotation_mass_error_da[i] = feature_i.annotation_mass_error_da;
+        annotation_mass_error_ppm[i] = feature_i.annotation_mass_error_ppm;
+        annotation_rt_error[i] = feature_i.annotation_rt_error;
+        annotation_rel_intensity[i] = feature_i.annotation_rel_intensity;
+        annotation_expected_rel_intensity_min[i] = feature_i.annotation_expected_rel_intensity_min;
+        annotation_expected_rel_intensity_max[i] = feature_i.annotation_expected_rel_intensity_max;
+        annotation_score[i] = feature_i.annotation_score;
       };
 
       void append_feature(const NTA_FEATURE_ROW &feature_i)
@@ -464,6 +508,17 @@ namespace nta
         ms2_size.push_back(feature_i.ms2_size);
         ms2_mz.push_back(feature_i.ms2_mz);
         ms2_intensity.push_back(feature_i.ms2_intensity);
+        annotation_category.push_back(feature_i.annotation_category);
+        annotation_type.push_back(feature_i.annotation_type);
+        annotation_parent_feature.push_back(feature_i.annotation_parent_feature);
+        annotation_element.push_back(feature_i.annotation_element);
+        annotation_mass_error_da.push_back(feature_i.annotation_mass_error_da);
+        annotation_mass_error_ppm.push_back(feature_i.annotation_mass_error_ppm);
+        annotation_rt_error.push_back(feature_i.annotation_rt_error);
+        annotation_rel_intensity.push_back(feature_i.annotation_rel_intensity);
+        annotation_expected_rel_intensity_min.push_back(feature_i.annotation_expected_rel_intensity_min);
+        annotation_expected_rel_intensity_max.push_back(feature_i.annotation_expected_rel_intensity_max);
+        annotation_score.push_back(feature_i.annotation_score);
       };
 
       void set_analysis(const std::string &a)
@@ -528,6 +583,17 @@ namespace nta
         std::vector<int> ms2_size_sorted(feature.size());
         std::vector<std::string> ms2_mz_sorted(feature.size());
         std::vector<std::string> ms2_intensity_sorted(feature.size());
+        std::vector<std::string> annotation_category_sorted(feature.size());
+        std::vector<std::string> annotation_type_sorted(feature.size());
+        std::vector<std::string> annotation_parent_feature_sorted(feature.size());
+        std::vector<std::string> annotation_element_sorted(feature.size());
+        std::vector<float> annotation_mass_error_da_sorted(feature.size());
+        std::vector<float> annotation_mass_error_ppm_sorted(feature.size());
+        std::vector<float> annotation_rt_error_sorted(feature.size());
+        std::vector<float> annotation_rel_intensity_sorted(feature.size());
+        std::vector<float> annotation_expected_rel_intensity_min_sorted(feature.size());
+        std::vector<float> annotation_expected_rel_intensity_max_sorted(feature.size());
+        std::vector<float> annotation_score_sorted(feature.size());
 
         for (size_t i = 0; i < feature.size(); i++)
         {
@@ -577,6 +643,17 @@ namespace nta
           ms2_size_sorted[i] = ms2_size[idx];
           ms2_mz_sorted[i] = ms2_mz[idx];
           ms2_intensity_sorted[i] = ms2_intensity[idx];
+          annotation_category_sorted[i] = annotation_category[idx];
+          annotation_type_sorted[i] = annotation_type[idx];
+          annotation_parent_feature_sorted[i] = annotation_parent_feature[idx];
+          annotation_element_sorted[i] = annotation_element[idx];
+          annotation_mass_error_da_sorted[i] = annotation_mass_error_da[idx];
+          annotation_mass_error_ppm_sorted[i] = annotation_mass_error_ppm[idx];
+          annotation_rt_error_sorted[i] = annotation_rt_error[idx];
+          annotation_rel_intensity_sorted[i] = annotation_rel_intensity[idx];
+          annotation_expected_rel_intensity_min_sorted[i] = annotation_expected_rel_intensity_min[idx];
+          annotation_expected_rel_intensity_max_sorted[i] = annotation_expected_rel_intensity_max[idx];
+          annotation_score_sorted[i] = annotation_score[idx];
         }
 
         // Replace with sorted vectors
@@ -625,6 +702,17 @@ namespace nta
         ms2_size = ms2_size_sorted;
         ms2_mz = ms2_mz_sorted;
         ms2_intensity = ms2_intensity_sorted;
+        annotation_category = annotation_category_sorted;
+        annotation_type = annotation_type_sorted;
+        annotation_parent_feature = annotation_parent_feature_sorted;
+        annotation_element = annotation_element_sorted;
+        annotation_mass_error_da = annotation_mass_error_da_sorted;
+        annotation_mass_error_ppm = annotation_mass_error_ppm_sorted;
+        annotation_rt_error = annotation_rt_error_sorted;
+        annotation_rel_intensity = annotation_rel_intensity_sorted;
+        annotation_expected_rel_intensity_min = annotation_expected_rel_intensity_min_sorted;
+        annotation_expected_rel_intensity_max = annotation_expected_rel_intensity_max_sorted;
+        annotation_score = annotation_score_sorted;
       };
     };
 
@@ -677,6 +765,17 @@ namespace nta
       std::vector<int> ms2_size;
       std::vector<std::string> ms2_mz;
       std::vector<std::string> ms2_intensity;
+      std::vector<std::string> annotation_category;
+      std::vector<std::string> annotation_type;
+      std::vector<std::string> annotation_parent_feature;
+      std::vector<std::string> annotation_element;
+      std::vector<double> annotation_mass_error_da;
+      std::vector<double> annotation_mass_error_ppm;
+      std::vector<double> annotation_rt_error;
+      std::vector<double> annotation_rel_intensity;
+      std::vector<double> annotation_expected_rel_intensity_min;
+      std::vector<double> annotation_expected_rel_intensity_max;
+      std::vector<double> annotation_score;
       std::vector<std::string> created_at;
 
       int size() const { return static_cast<int>(feature.size()); }
@@ -730,6 +829,17 @@ namespace nta
         ms2_size.push_back(row.ms2_size);
         ms2_mz.push_back(row.ms2_mz);
         ms2_intensity.push_back(row.ms2_intensity);
+        annotation_category.push_back(row.annotation_category);
+        annotation_type.push_back(row.annotation_type);
+        annotation_parent_feature.push_back(row.annotation_parent_feature);
+        annotation_element.push_back(row.annotation_element);
+        annotation_mass_error_da.push_back(row.annotation_mass_error_da);
+        annotation_mass_error_ppm.push_back(row.annotation_mass_error_ppm);
+        annotation_rt_error.push_back(row.annotation_rt_error);
+        annotation_rel_intensity.push_back(row.annotation_rel_intensity);
+        annotation_expected_rel_intensity_min.push_back(row.annotation_expected_rel_intensity_min);
+        annotation_expected_rel_intensity_max.push_back(row.annotation_expected_rel_intensity_max);
+        annotation_score.push_back(row.annotation_score);
         created_at.push_back(row.created_at);
       }
     };
@@ -1669,6 +1779,7 @@ namespace nta
         int maxCharge = 1,
         int maxGaps = 1,
         float ppm = 10.0,
+        const std::vector<std::string> &isotopeElements = {"C:1-60", "N:0-10", "O:0-20", "S:0-4", "Cl:0-6", "Br:0-4"},
         const std::string &debugComponent = "",
         const std::string &debugAnalysis = "");
 

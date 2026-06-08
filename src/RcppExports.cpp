@@ -687,8 +687,8 @@ BEGIN_RCPP
 END_RCPP
 }
 // rcpp_project_nta_annotate_components
-bool rcpp_project_nta_annotate_components(SEXP nta_xptr, int maxIsotopes, int maxCharge, int maxGaps, float ppm, std::string debugComponent, std::string debugAnalysis);
-RcppExport SEXP _StreamFind_rcpp_project_nta_annotate_components(SEXP nta_xptrSEXP, SEXP maxIsotopesSEXP, SEXP maxChargeSEXP, SEXP maxGapsSEXP, SEXP ppmSEXP, SEXP debugComponentSEXP, SEXP debugAnalysisSEXP) {
+bool rcpp_project_nta_annotate_components(SEXP nta_xptr, int maxIsotopes, int maxCharge, int maxGaps, float ppm, Rcpp::CharacterVector isotopeElements, std::string debugComponent, std::string debugAnalysis);
+RcppExport SEXP _StreamFind_rcpp_project_nta_annotate_components(SEXP nta_xptrSEXP, SEXP maxIsotopesSEXP, SEXP maxChargeSEXP, SEXP maxGapsSEXP, SEXP ppmSEXP, SEXP isotopeElementsSEXP, SEXP debugComponentSEXP, SEXP debugAnalysisSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -697,9 +697,10 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< int >::type maxCharge(maxChargeSEXP);
     Rcpp::traits::input_parameter< int >::type maxGaps(maxGapsSEXP);
     Rcpp::traits::input_parameter< float >::type ppm(ppmSEXP);
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type isotopeElements(isotopeElementsSEXP);
     Rcpp::traits::input_parameter< std::string >::type debugComponent(debugComponentSEXP);
     Rcpp::traits::input_parameter< std::string >::type debugAnalysis(debugAnalysisSEXP);
-    rcpp_result_gen = Rcpp::wrap(rcpp_project_nta_annotate_components(nta_xptr, maxIsotopes, maxCharge, maxGaps, ppm, debugComponent, debugAnalysis));
+    rcpp_result_gen = Rcpp::wrap(rcpp_project_nta_annotate_components(nta_xptr, maxIsotopes, maxCharge, maxGaps, ppm, isotopeElements, debugComponent, debugAnalysis));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1186,7 +1187,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_StreamFind_rcpp_project_nta_load_features_ms1", (DL_FUNC) &_StreamFind_rcpp_project_nta_load_features_ms1, 7},
     {"_StreamFind_rcpp_project_nta_load_features_ms2", (DL_FUNC) &_StreamFind_rcpp_project_nta_load_features_ms2, 6},
     {"_StreamFind_rcpp_project_nta_create_components", (DL_FUNC) &_StreamFind_rcpp_project_nta_create_components, 5},
-    {"_StreamFind_rcpp_project_nta_annotate_components", (DL_FUNC) &_StreamFind_rcpp_project_nta_annotate_components, 7},
+    {"_StreamFind_rcpp_project_nta_annotate_components", (DL_FUNC) &_StreamFind_rcpp_project_nta_annotate_components, 8},
     {"_StreamFind_rcpp_project_nta_group_features", (DL_FUNC) &_StreamFind_rcpp_project_nta_group_features, 8},
     {"_StreamFind_rcpp_project_nta_fill_features", (DL_FUNC) &_StreamFind_rcpp_project_nta_fill_features, 13},
     {"_StreamFind_rcpp_project_nta_blank_subtraction", (DL_FUNC) &_StreamFind_rcpp_project_nta_blank_subtraction, 4},

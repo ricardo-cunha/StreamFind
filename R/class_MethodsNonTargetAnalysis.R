@@ -414,6 +414,52 @@ Method_NonTargetAnalysis_CreateComponents <- function(
 
 #' @export
 #' @noRd
+validate_nta_isotope_elements <- function(isotopeElements) {
+  supported <- c("C", "H", "B", "N", "O", "Mg", "Si", "S", "Cl", "Br", "K", "Ca", "Fe", "Cu", "Zn", "Se")
+  seen_elements <- character()
+  checkmate::assert_character(
+    isotopeElements,
+    min.len = 1,
+    any.missing = FALSE,
+    unique = TRUE
+  )
+
+  for (spec in isotopeElements) {
+    matches <- regexec("^([A-Z][a-z]?)(?::([0-9]+)-([0-9]+))?$", spec)
+    parts <- regmatches(spec, matches)[[1]]
+    checkmate::assert_true(
+      length(parts) > 0,
+      .var.name = sprintf("isotopeElements entry '%s'", spec),
+      add = "must be formatted as 'Element' or 'Element:min-max', e.g. 'Cl' or 'C:1-60'."
+    )
+    element <- parts[2]
+    checkmate::assert_true(
+      element %in% supported,
+      .var.name = sprintf("element '%s'", element),
+      add = sprintf("must be one of: %s.", paste(supported, collapse = ", "))
+    )
+    checkmate::assert_true(
+      !(element %in% seen_elements),
+      .var.name = sprintf("element '%s'", element),
+      add = "must not be specified more than once in `isotopeElements`."
+    )
+    seen_elements <- c(seen_elements, element)
+    if (length(parts) >= 4 && nzchar(parts[3]) && nzchar(parts[4])) {
+      min_n <- as.integer(parts[3])
+      max_n <- as.integer(parts[4])
+      checkmate::assert_true(
+        min_n <= max_n,
+        .var.name = sprintf("isotopeElements entry '%s'", spec),
+        add = "must have min <= max."
+      )
+    }
+  }
+
+  invisible(NULL)
+}
+
+#' @export
+#' @noRd
 validate_object.Method_NonTargetAnalysis_CreateComponents <- function(x, ...) {
   .validate_nta_method_base(x, "Method_NonTargetAnalysis_CreateComponents", "CreateComponents", 1)
   checkmate::assert_numeric(x$parameters$rtWindow, len = 2, any.missing = FALSE)
@@ -445,12 +491,34 @@ run.Method_NonTargetAnalysis_CreateComponents <- function(x, proj, ...) {
 #'   patterns inside previously created components. The native algorithm checks
 #'   expected isotope spacing, charge states, and mass differences consistent
 #'   with adducts and in-source fragments, helping translate raw NTA peak lists
-#'   into chemically meaningful ion annotations.
+#'   into chemically meaningful ion annotations. Isotope annotation is resolved
+#'   before adducts and neutral losses. Final isotope assignments must satisfy
+#'   the configured `ppm` tolerance, respect the allowed `maxGaps` in the
+#'   isotope chain, and match the expected relative-intensity window estimated
+#'   from the isotope composition. For isotope candidates, mass accuracy and
+#'   relative-intensity agreement are weighted more strongly than retention-time
+#'   apex agreement, because low-intensity isotope peaks can show modest apex
+#'   shifts. Simpler isotope explanations are ranked ahead of multi-isotope
+#'   combinations, which are penalized during scoring.
 #' @param maxIsotopes Integer(1) maximum number of isotopes to consider.
 #' @param maxCharge Integer(1) maximum charge state to consider.
 #' @param maxGaps Integer(1) maximum number of gaps allowed in isotope
-#'   patterns.
-#' @param ppm Numeric(1) minimum m/z tolerance in ppm.
+#'   patterns. For example, `maxGaps = 0` only allows consecutive isotope steps,
+#'   whereas larger values allow skipped intermediate steps before the chain is
+#'   rejected.
+#' @param ppm Numeric(1) maximum m/z tolerance in ppm used for the final
+#'   isotope, adduct, and loss assignment checks.
+#' @param isotopeElements Character vector describing which elements are
+#'   considered during isotope annotation and, optionally, their plausible atom
+#'   count range. Each entry must be either `"Element"` or
+#'   `"Element:min-max"`, for example `"Cl"` or `"C:1-60"`. The defaults are
+#'   tuned for common environmental organic compounds such as pharmaceuticals,
+#'   pesticides, PFAS, and personal care products:
+#'   `c("C:1-60", "N:0-10", "O:0-20", "S:0-4", "Cl:0-6", "Br:0-4")`.
+#'   Supported element symbols are `"C"`, `"H"`, `"B"`, `"N"`, `"O"`, `"Mg"`,
+#'   `"Si"`, `"S"`, `"Cl"`, `"Br"`, `"K"`, `"Ca"`, `"Fe"`, `"Cu"`, `"Zn"`,
+#'   and `"Se"`. Use explicit ranges when the expected chemistry is narrower or
+#'   broader than the defaults.
 #' @param debugComponent Character(1) component identifier to debug.
 #' @param debugAnalysis Character(1) analysis name to debug.
 #' @return A `Method` object of class `Method_NonTargetAnalysis_AnnotateComponents`.
@@ -460,6 +528,7 @@ Method_NonTargetAnalysis_AnnotateComponents <- function(
     maxCharge = 1L,
     maxGaps = 1L,
     ppm = 10,
+    isotopeElements = c("C:1-60", "N:0-10", "O:0-20", "S:0-4", "Cl:0-6", "Br:0-4"),
     debugComponent = "",
     debugAnalysis = "") {
   x <- do.call(
@@ -472,6 +541,7 @@ Method_NonTargetAnalysis_AnnotateComponents <- function(
           maxCharge = as.integer(maxCharge),
           maxGaps = as.integer(maxGaps),
           ppm = as.numeric(ppm),
+          isotopeElements = as.character(isotopeElements),
           debugComponent = as.character(debugComponent),
           debugAnalysis = as.character(debugAnalysis)
         )
@@ -491,6 +561,7 @@ validate_object.Method_NonTargetAnalysis_AnnotateComponents <- function(x, ...) 
   checkmate::assert_integerish(x$parameters$maxCharge, len = 1, lower = 1)
   checkmate::assert_integerish(x$parameters$maxGaps, len = 1, lower = 0)
   checkmate::assert_number(x$parameters$ppm, lower = 0, finite = TRUE)
+  validate_nta_isotope_elements(x$parameters$isotopeElements)
   checkmate::assert_string(x$parameters$debugComponent)
   checkmate::assert_string(x$parameters$debugAnalysis)
   invisible(NULL)
@@ -509,6 +580,7 @@ run.Method_NonTargetAnalysis_AnnotateComponents <- function(x, proj, ...) {
     maxCharge = as.integer(params$maxCharge),
     maxGaps = as.integer(params$maxGaps),
     ppm = as.numeric(params$ppm),
+    isotopeElements = as.character(params$isotopeElements),
     debugComponent = as.character(params$debugComponent),
     debugAnalysis = as.character(params$debugAnalysis)
   )
@@ -1606,7 +1678,7 @@ Method_NonTargetAnalysis_MetFragScreening <- function(
   database_type <- .normalize_metfrag_database_type(database_type)
   x <- Method(
     method = "MetFragScreening",
-    required = c("FindFeatures", "LoadFeaturesMS1", "LoadFeaturesMS2"),
+    required = c("FindFeatures", "LoadFeaturesMS2"),
     owner_class = "ProjectNonTargetAnalysis",
     number_permitted = Inf,
     developer = "Christoph Ruttkies and Emma L. Schymanski",

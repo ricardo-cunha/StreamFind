@@ -8,10 +8,10 @@ project_id <- "demo_nta"
 
 internal_standards <- fread(file.path("dev", "dev_duckdb", "internal_standards_v3.csv"))
 internal_standards <- internal_standards[!is.na(rt), ]
-internal_standards <- internal_standards[, c("name", "InChI", "rt", "ms2_positive")]
+#internal_standards <- internal_standards[, c("name", "InChI", "rt", "ms2_positive")]
 
 suspects <- fread(file.path("dev", "dev_duckdb", "suspects_with_ms2_template.csv"))
-suspects <- suspects[, c("name", "InChI", "rt", "ms2_positive")]
+#suspects <- suspects[, c("name", "InChI", "rt", "ms2_positive")]
 
 transformation_products <- fread(file.path("dev", "dev_duckdb", "transformation_products_template.csv"))
 
@@ -78,24 +78,9 @@ workflow <- Workflow(list(
     debugMZ = 0,
     debugSpecIdx = -1L
   ),
-  Method_NonTargetAnalysis_LoadFeaturesMS1(
-    filtered = FALSE,
-    rtWindow = c(-1, 1),
-    mzWindow = c(-1, 6),
-    minTracesIntensity = 250,
-    mzClust = 0.008,
-    presence = 0.5
-  ),
-  Method_NonTargetAnalysis_LoadFeaturesMS2(
-    filtered = FALSE,
-    minTracesIntensity = 10,
-    isolationWindow = 1.3,
-    mzClust = 0.008,
-    presence = 0.5
-  ),
   Method_NonTargetAnalysis_CreateComponents(
-    rtWindow = c(-5, 5),
-    minCorrelation = 0.8,
+    rtWindow = c(-2.5, 2.5),
+    minCorrelation = 0.85,
     debugRT = 0,
     debugAnalysis = ""
   ),
@@ -104,8 +89,16 @@ workflow <- Workflow(list(
     maxCharge = 1L,
     maxGaps = 1L,
     ppm = 10,
+    isotopeElements = c("C:1-60", "N:0-10", "O:0-20", "S:0-4", "Cl:0-6", "Br:0-4"),
     debugComponent = "",
     debugAnalysis = ""
+  ),
+  Method_NonTargetAnalysis_LoadFeaturesMS2(
+    filtered = FALSE,
+    minTracesIntensity = 10,
+    isolationWindow = 1.3,
+    mzClust = 0.008,
+    presence = 0.5
   ),
   Method_NonTargetAnalysis_FindInternalStandards(
     suspects = internal_standards,
@@ -197,7 +190,7 @@ workflow <- Workflow(list(
   # )
 ))
 
-set_workflow(nta, workflow)
+set_workflow(nta, workflow[1:3])
 
 show(nta$get_workflow())
 
@@ -258,11 +251,27 @@ nta$run_app()
 run_app()
 
 
-comp <- "FC38_RT1007_POS"
+comp1 <- "FC1_RT1120_POS"
+comp2 <- "FC1_RT1121_POS"
 fts <- get_features(nta, filtered = TRUE)
 fts_comp <- fts[feature_component == comp, ]
+fts_comp[, .(feature, adduct)]
 
-fts_comp[, .(feature, mass, adduct)]
+
+comp <- "FC38_RT1007_POS"
+comp <- "FC198_RT1007_POS"
+fts <- get_features(nta, filtered = TRUE)
+fts_comp <- fts[feature_component == comp, ]
+fts_comp[, .(feature, adduct)]
+
+diclo_fts <- get_features(nta, filtered = TRUE, mass = internal_standards[3, ])
+diclo_fts[, c("analysis", "feature", "feature_component", "mass", "adduct")]
+
+fts <- get_features(nta, filtered = TRUE)
+fts_comp <- fts[feature_component == diclo_fts$feature_component[11], ]
+fts_comp[, .(feature, mass, intensity, adduct)]
+
+
 
 # -----------------------------------------------------------------------------
 # 4. Inspect the results

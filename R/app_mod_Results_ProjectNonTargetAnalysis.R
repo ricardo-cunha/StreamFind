@@ -317,6 +317,8 @@
     .sf-nta-details-tabs > .tabbable > .nav-tabs > li {
       flex: 0 0 auto;
       margin: 0;
+      border: none !important;
+      box-shadow: none !important;
     }
     .sf-nta-details-tabs > .tabbable > .nav-tabs > li > a,
     .sf-nta-details-tabs > .tabbable > .nav-tabs > li > a.nav-link {
@@ -334,6 +336,8 @@
       font-weight: 600;
       letter-spacing: 0.01em;
       line-height: 1.2;
+      box-shadow: none !important;
+      outline: none !important;
       transition: background 0.15s, color 0.15s;
     }
     .sf-nta-details-tabs > .tabbable > .nav-tabs > li > a:hover,
@@ -352,6 +356,9 @@
       background: var(--sf-nav-active-bg) !important;
       color: var(--sf-nav-active-color) !important;
       border: none !important;
+      border-color: transparent !important;
+      box-shadow: none !important;
+      outline: none !important;
       font-weight: 600;
     }
     .sf-nta-details-tabs > .tabbable > .tab-content {
@@ -391,9 +398,39 @@
     .sf-nta-table-panel {
       height: 100%;
       min-height: 0;
-      overflow: auto;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
       padding: 12px;
       background: transparent;
+    }
+    .sf-nta-table-panel > .html-widget,
+    .sf-nta-table-panel .datatables,
+    .sf-nta-table-panel .dataTables_wrapper,
+    .sf-nta-table-panel .dataTables_scroll {
+      width: 100%;
+      height: 100%;
+      min-height: 0;
+    }
+    .sf-nta-table-panel .dataTables_scroll {
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .sf-nta-table-panel .dataTables_scrollHead,
+    .sf-nta-table-panel .dataTables_scrollFoot {
+      flex: 0 0 auto;
+    }
+    .sf-nta-table-panel .dataTables_scrollBody {
+      flex: 1 1 auto;
+      min-height: 0;
+      height: auto !important;
+      max-height: none !important;
+      overflow: auto !important;
+    }
+    .sf-nta-table-panel .dataTables_scrollBody table {
+      margin-top: 0 !important;
+      margin-bottom: 0 !important;
     }
     "
     )
@@ -689,7 +726,7 @@
                     style = "display: flex; align-items: center; gap: 10px; flex-wrap: wrap;",
                     shiny::div(
                       style = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;",
-                      shiny::span("Group by:", style = "font-weight: 500;"),
+                      shiny::span("Group by:", style = "font-weight: 700;"),
                       shiny::div(
                         style = "display: flex; align-items: center;",
                         shiny::radioButtons(
@@ -822,7 +859,7 @@
             ),
             shiny::div(
               style = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;",
-              shiny::span("Group by:", style = "font-weight: 500;"),
+              shiny::span("Group by:", style = "font-weight: 700;"),
               shiny::div(
                 style = "display: flex; align-items: center;",
                 shiny::radioButtons(
@@ -836,7 +873,7 @@
             ),
             shiny::div(
               style = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;",
-              shiny::span("Select by:", style = "font-weight: 500;"),
+              shiny::span("Select by:", style = "font-weight: 700;"),
               shiny::radioButtons(
                 ns_full("scatter_select_by"),
                 label = NULL,
@@ -1020,7 +1057,7 @@
             style = "display: flex; align-items: center; gap: 10px; flex-wrap: wrap;",
             shiny::div(
               style = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;",
-              shiny::span("Group by:", style = "font-weight: 500;"),
+              shiny::span("Group by:", style = "font-weight: 700;"),
               shiny::div(
                 style = "display: flex; align-items: center;",
                 shiny::radioButtons(
@@ -2110,6 +2147,8 @@
 
       keep_cols <- colnames(fts)
       keep_cols <- !keep_cols %in% c(
+        "id",
+        "created_at",
         "eic_rt",
         "eic_mz",
         "eic_intensity",
@@ -2146,8 +2185,15 @@
             ordering = FALSE,
             autoWidth = FALSE,
             scrollX = TRUE,
+            scrollY = "100%",
             scrollCollapse = TRUE,
             fixedColumns = list(leftColumns = 1)
+          ),
+          callback = DT::JS(
+            "table.on('init.dt', function() {",
+            "$(table.table().header()).hide();",
+            "$(table.table().container()).find('.dataTables_scrollHead').hide();",
+            "});"
           ),
           selection = "single",
           extensions = "FixedColumns",
@@ -2492,7 +2538,7 @@
       rows <- selected_internal_standards_rows()
       shiny::validate(shiny::need(!is.null(rows) && nrow(rows) > 0, "Select one or more points to view details."))
       rows <- data.table::copy(rows)
-      rows <- rows[, setdiff(colnames(rows), c("db_ms2_mz", "db_ms2_intensity", "db_ms2_formula", "exp_ms2_mz", "exp_ms2_intensity", "rel_intensity", "dot_size")), with = FALSE]
+      rows <- rows[, setdiff(colnames(rows), c("id", "created_at", "db_ms2_mz", "db_ms2_intensity", "db_ms2_formula", "exp_ms2_mz", "exp_ms2_intensity", "rel_intensity", "dot_size")), with = FALSE]
       n_sel <- nrow(rows)
       prop_names <- colnames(rows)
       details_rows <- lapply(prop_names, function(p) {
@@ -2517,8 +2563,15 @@
           ordering = FALSE,
           autoWidth = FALSE,
           scrollX = TRUE,
+          scrollY = "100%",
           scrollCollapse = TRUE,
           fixedColumns = list(leftColumns = 1)
+        ),
+        callback = DT::JS(
+          "table.on('init.dt', function() {",
+          "$(table.table().header()).hide();",
+          "$(table.table().container()).find('.dataTables_scrollHead').hide();",
+          "});"
         ),
         selection = "single",
         extensions = "FixedColumns",

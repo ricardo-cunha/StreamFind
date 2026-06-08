@@ -53,6 +53,31 @@
 #' @keywords internal
 #' @export
 
+.format_nta_adduct_hover <- function(adduct, label = "adduct") {
+  adduct_chr <- as.character(adduct)
+  adduct_chr[is.na(adduct_chr)] <- ""
+  vapply(adduct_chr, function(x) {
+    if (!nzchar(x)) {
+      return(paste0(label, ": "))
+    }
+    if (!startsWith(x, "cat=")) {
+      return(paste0(label, ": ", x))
+    }
+    parts <- strsplit(x, " \\| ", fixed = FALSE)[[1]]
+    parts <- paste0("&nbsp;&nbsp;", parts)
+    paste0(label, ":<br>", paste(parts, collapse = "<br>"))
+  }, character(1))
+}
+
+.format_nta_hover_field <- function(field, value) {
+  value_chr <- as.character(value)
+  value_chr[is.na(value_chr)] <- ""
+  if (identical(field, "adduct")) {
+    return(.format_nta_adduct_hover(value_chr))
+  }
+  paste0(field, ": ", value_chr)
+}
+
 ProjectNonTargetAnalysis <- R6::R6Class(
   classname = "ProjectNonTargetAnalysis",
   inherit = ProjectMassSpec,
@@ -1479,7 +1504,7 @@ plot_features.ProjectNonTargetAnalysis <- function(
       paste0("feature: ", pk_row$feature),
       paste0("feature_component: ", pk_row$feature_component),
       paste0("feature_group: ", pk_row$feature_group),
-      paste0("adduct: ", pk_row$adduct),
+      .format_nta_adduct_hover(pk_row$adduct),
       paste0("rt: ", round(pk_row$rt, 2)),
       paste0("m/z: ", round(pk_row$mz, 4)),
       paste0("mass: ", fmt_num(pk_row$mass, 4)),
@@ -1721,7 +1746,7 @@ map_features.ProjectNonTargetAnalysis <- function(
       "<br>feature: ", pts$feature,
       "<br>component: ", pts$feature_component,
       "<br>group: ", pts$feature_group,
-      "<br>adduct: ", pts$adduct,
+      "<br>", .format_nta_adduct_hover(pts$adduct),
       "<br>rt: ", round(pts$rt, 2),
       "<br>m/z: ", round(pts$mz, 4),
       "<br>intensity: ", round(pts$raw_intensity, 3)
@@ -2508,7 +2533,9 @@ plot_suspects_ms2.ProjectNonTargetAnalysis <- function(
         base_info <- paste0(base_info, "<br>formula: ", seg$formula_fragment[i])
       }
       if (length(hover_fields) > 0) {
-        detail_info <- paste(paste0(hover_fields, ": ", row_vals), collapse = "<br>")
+        detail_info <- paste(vapply(seq_along(hover_fields), function(j) {
+          .format_nta_hover_field(hover_fields[j], row_vals[j])
+        }, character(1)), collapse = "<br>")
         paste0(base_info, "<br>", detail_info)
       } else {
         base_info

@@ -474,21 +474,21 @@ namespace nta::filter_features
     if (params.removeIsotopes)
     {
       apply_filter("removeIsotopes", [&](const nta::api::NTA_FEATURES &fts, int i, const std::string &) {
-        return fts.adduct[i].find("isotope") != std::string::npos;
+        return fts.annotation_category[i] == "isotope";
       });
     }
 
     if (params.removeAdducts)
     {
       apply_filter("removeAdducts", [&](const nta::api::NTA_FEATURES &fts, int i, const std::string &) {
-        return fts.adduct[i].find("adduct") != std::string::npos;
+        return fts.annotation_category[i] == "adduct";
       });
     }
 
     if (params.removeLosses)
     {
       apply_filter("removeLosses", [&](const nta::api::NTA_FEATURES &fts, int i, const std::string &) {
-        return fts.adduct[i].find("loss") != std::string::npos;
+        return fts.annotation_category[i] == "loss";
       });
     }
   }

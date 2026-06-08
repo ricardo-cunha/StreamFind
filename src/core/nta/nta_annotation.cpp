@@ -3,11 +3,373 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include <limits>
+#include <cctype>
 
 namespace nta
 {
   namespace annotation
   {
+    namespace
+    {
+      std::string fmt_num(double value, int precision)
+      {
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(precision) << value;
+        std::string out = oss.str();
+        while (out.size() > 1 && out.find('.') != std::string::npos && out.back() == '0')
+          out.pop_back();
+        if (!out.empty() && out.back() == '.')
+          out.pop_back();
+        return out;
+      }
+
+      bool starts_with(const std::string &value, const std::string &prefix)
+      {
+        return value.rfind(prefix, 0) == 0;
+      }
+
+      int isotope_complexity(const std::string &element_label);
+      double isotope_priority_score(const std::string &element_label);
+
+      bool is_structured_cat(const std::string &value, const std::string &cat)
+      {
+        return starts_with(value, "cat=" + cat);
+      }
+
+      std::string make_annotation_label(const ANNOTATION_CANDIDATE &candidate)
+      {
+        std::ostringstream oss;
+        oss << "cat=" << candidate.cat
+            << " | type=" << candidate.type
+            << " | parent=" << candidate.parent_feature
+            << " | element=" << candidate.element_or_delta
+            << " | ppm=" << fmt_num(candidate.mass_error_ppm, 3)
+            << " | rt=" << fmt_num(candidate.rt_error, 3)
+            << " | rel=" << fmt_num(candidate.rel_intensity, 3);
+        return oss.str();
+      }
+
+      std::string make_annotation_summary(const ANNOTATION_CANDIDATE &candidate)
+      {
+        if (candidate.cat.empty() || candidate.type.empty())
+          return "";
+        return candidate.cat + " " + candidate.type;
+      }
+
+      double score_mass(double mass_error_ppm, double ppm)
+      {
+        const double denom = std::max(1.0, ppm * 2.0);
+        return std::max(0.0, 1.0 - (mass_error_ppm / denom));
+      }
+
+      double score_rt(double rt_error)
+      {
+        return 1.0 / (1.0 + rt_error);
+      }
+
+      double isotope_effective_rt_error(double rt_error)
+      {
+        const double grace_window = 3.0;
+        if (rt_error <= grace_window)
+          return 0.0;
+        return rt_error - grace_window;
+      }
+
+      double score_rel(double rel, double expected_min, double expected_max)
+      {
+        if (expected_min <= 0.0 && expected_max <= 0.0)
+        {
+          if (rel <= 0.0)
+            return 0.0;
+          return 1.0 / (1.0 + std::abs(rel - 1.0));
+        }
+        if (rel >= expected_min && rel <= expected_max)
+          return 1.0;
+        const double dist = (rel < expected_min) ? (expected_min - rel) : (rel - expected_max);
+        return 1.0 / (1.0 + dist * 5.0);
+      }
+
+      int candidate_priority(const std::string &cat, const std::string &type)
+      {
+        if (cat == "isotope")
+          return 4;
+        if (cat == "adduct")
+          return (type.find("[2M+") != std::string::npos || type.find("[2M-") != std::string::npos) ? 2 : 3;
+        if (cat == "loss")
+          return 1;
+        return 0;
+      }
+
+      double candidate_score(const ANNOTATION_CANDIDATE &candidate, double ppm)
+      {
+        if (candidate.cat == "isotope")
+        {
+          const int complexity = isotope_complexity(candidate.element_or_delta);
+          if (candidate.mass_error_ppm > ppm)
+            return -1.0;
+          double score = 0.68 * score_mass(candidate.mass_error_ppm, ppm) +
+                         0.05 * score_rt(isotope_effective_rt_error(candidate.rt_error)) +
+                         0.17 * score_rel(candidate.rel_intensity, candidate.expected_rel_intensity_min, candidate.expected_rel_intensity_max) +
+                         0.10 * (candidate.priority / 4.0);
+          score += 0.08 * isotope_priority_score(candidate.element_or_delta);
+          if (complexity > 1)
+          {
+            score -= 0.08 * static_cast<double>(complexity - 1);
+            if (complexity >= 3)
+              score -= 0.06;
+          }
+          return score;
+        }
+        double score = 0.55 * score_mass(candidate.mass_error_ppm, ppm) +
+                       0.20 * score_rt(candidate.rt_error) +
+                       0.15 * score_rel(candidate.rel_intensity, candidate.expected_rel_intensity_min, candidate.expected_rel_intensity_max) +
+                       0.10 * (candidate.priority / 4.0);
+        if (candidate.type.find("[2M+") != std::string::npos || candidate.type.find("[2M-") != std::string::npos)
+          score -= 0.03;
+        return score;
+      }
+
+      bool candidate_better(const ANNOTATION_CANDIDATE &lhs, const ANNOTATION_CANDIDATE &rhs)
+      {
+        if (lhs.score != rhs.score)
+          return lhs.score > rhs.score;
+        if (lhs.mass_error_ppm != rhs.mass_error_ppm)
+          return lhs.mass_error_ppm < rhs.mass_error_ppm;
+        const double lhs_rt_error = (lhs.cat == "isotope") ? isotope_effective_rt_error(lhs.rt_error) : lhs.rt_error;
+        const double rhs_rt_error = (rhs.cat == "isotope") ? isotope_effective_rt_error(rhs.rt_error) : rhs.rt_error;
+        if (lhs_rt_error != rhs_rt_error)
+          return lhs_rt_error < rhs_rt_error;
+        if (lhs.priority != rhs.priority)
+          return lhs.priority > rhs.priority;
+        if (lhs.cat == "isotope" && rhs.cat == "isotope")
+        {
+          const double lhs_priority = isotope_priority_score(lhs.element_or_delta);
+          const double rhs_priority = isotope_priority_score(rhs.element_or_delta);
+          if (lhs_priority != rhs_priority)
+            return lhs_priority > rhs_priority;
+          const int lhs_complexity = isotope_complexity(lhs.element_or_delta);
+          const int rhs_complexity = isotope_complexity(rhs.element_or_delta);
+          if (lhs_complexity != rhs_complexity)
+            return lhs_complexity < rhs_complexity;
+        }
+        return lhs.parent_index < rhs.parent_index;
+      }
+
+      std::string resolve_root_parent_feature(const ANNOTATION_CANDIDATE &candidate,
+                                              const std::unordered_map<int, ANNOTATION_CANDIDATE> &best_candidate)
+      {
+        if (candidate.cat != "isotope")
+          return candidate.parent_feature;
+
+        std::string resolved_parent = candidate.parent_feature;
+        int current_parent_index = candidate.parent_index;
+        std::unordered_set<int> visited;
+
+        while (current_parent_index >= 0 && visited.insert(current_parent_index).second)
+        {
+          const auto it = best_candidate.find(current_parent_index);
+          if (it == best_candidate.end())
+            break;
+
+          resolved_parent = it->second.parent_feature;
+          if (it->second.is_default || it->second.cat != "isotope")
+            break;
+
+          current_parent_index = it->second.parent_index;
+        }
+
+        return resolved_parent;
+      }
+
+      double neutral_mass_from_base_ion(const nta::api::NTA_FEATURE_ROW &ft)
+      {
+        constexpr double proton = 1.007276;
+        if (ft.polarity == 1)
+          return ft.mz - proton;
+        return ft.mz + proton;
+      }
+
+      double theoretical_mz_from_adduct(double neutral_mass, const ADDUCT &adduct)
+      {
+        return (neutral_mass * adduct.multiplicity) + adduct.mass_distance;
+      }
+
+      double ppm_error(double observed, double theoretical)
+      {
+        if (theoretical == 0.0)
+          return std::numeric_limits<double>::infinity();
+        return std::abs(observed - theoretical) / std::abs(theoretical) * 1e6;
+      }
+
+      std::vector<std::string> split_string(const std::string &value, char delim)
+      {
+        std::vector<std::string> out;
+        std::stringstream ss(value);
+        std::string item;
+        while (std::getline(ss, item, delim))
+        {
+          if (!item.empty())
+            out.push_back(item);
+        }
+        return out;
+      }
+
+      std::string trim_copy(const std::string &value)
+      {
+        size_t start = 0;
+        while (start < value.size() && std::isspace(static_cast<unsigned char>(value[start])))
+          ++start;
+
+        size_t end = value.size();
+        while (end > start && std::isspace(static_cast<unsigned char>(value[end - 1])))
+          --end;
+
+        return value.substr(start, end - start);
+      }
+
+      struct ISOTOPE_ELEMENT_SPEC
+      {
+        std::vector<std::string> elements;
+        std::unordered_map<std::string, std::pair<int, int>> ranges;
+      };
+
+      ISOTOPE_ELEMENT_SPEC parse_isotope_element_specs(const std::vector<std::string> &specs)
+      {
+        ISOTOPE_ELEMENT_SPEC parsed;
+        std::unordered_set<std::string> seen;
+
+        for (const auto &raw_spec : specs)
+        {
+          const std::string spec = trim_copy(raw_spec);
+          if (spec.empty())
+            continue;
+
+          const size_t colon_pos = spec.find(':');
+          const std::string element = (colon_pos == std::string::npos) ? spec : spec.substr(0, colon_pos);
+          if (seen.insert(element).second)
+            parsed.elements.push_back(element);
+
+          if (colon_pos == std::string::npos)
+            continue;
+
+          const std::string range = spec.substr(colon_pos + 1);
+          const size_t dash_pos = range.find('-');
+          if (dash_pos == std::string::npos)
+            continue;
+
+          const int min_n = std::stoi(range.substr(0, dash_pos));
+          const int max_n = std::stoi(range.substr(dash_pos + 1));
+          parsed.ranges[element] = {min_n, max_n};
+        }
+
+        return parsed;
+      }
+
+      int isotope_complexity(const std::string &element_label)
+      {
+        if (element_label.empty())
+          return 0;
+        return static_cast<int>(split_string(element_label, '/').size());
+      }
+
+      double isotope_priority_score(const std::string &element_label)
+      {
+        static const std::unordered_map<std::string, double> priorities{
+            {"13C", 1.00},
+            {"37Cl", 0.98},
+            {"81Br", 0.98},
+            {"34S", 0.92},
+            {"33S", 0.82},
+            {"15N", 0.78},
+            {"18O", 0.62},
+            {"17O", 0.40},
+            {"2H", 0.35},
+            {"29Si", 0.70},
+            {"30Si", 0.62},
+            {"25Mg", 0.45},
+            {"26Mg", 0.48},
+            {"41K", 0.40},
+            {"44Ca", 0.32},
+            {"54Fe", 0.30},
+            {"57Fe", 0.34},
+            {"65Cu", 0.28},
+            {"66Zn", 0.30},
+            {"68Zn", 0.26},
+            {"77Se", 0.36},
+            {"78Se", 0.42},
+            {"80Se", 0.44},
+            {"10B", 0.24},
+            {"36S", 0.18}};
+
+        const std::vector<std::string> tokens = split_string(element_label, '/');
+        if (tokens.empty())
+          return 0.0;
+
+        double score = 0.0;
+        for (const auto &token : tokens)
+        {
+          const auto it = priorities.find(token);
+          score += (it != priorities.end()) ? it->second : 0.2;
+        }
+        return score / static_cast<double>(tokens.size());
+      }
+
+      double isotope_mass_delta(const std::string &element_label)
+      {
+        static const std::unordered_map<std::string, double> deltas{
+            {"13C", 1.0033548378},
+            {"2H", 1.0062767},
+            {"10B", 0.996809},
+            {"15N", 0.9970349},
+            {"17O", 1.004217},
+            {"18O", 2.004246},
+            {"25Mg", 0.999711},
+            {"26Mg", 1.995796},
+            {"29Si", 0.999568},
+            {"30Si", 1.996844},
+            {"33S", 0.999388},
+            {"34S", 1.995796},
+            {"36S", 3.995010},
+            {"37Cl", 1.997050},
+            {"81Br", 1.997953},
+            {"41K", 1.998119},
+            {"44Ca", 3.998159},
+            {"54Fe", -1.004391},
+            {"57Fe", 2.995294},
+            {"65Cu", 1.998204},
+            {"66Zn", 1.999059},
+            {"68Zn", 3.995796},
+            {"77Se", 0.997953},
+            {"78Se", 1.996004},
+            {"80Se", 3.995010}};
+        double total = 0.0;
+        for (const auto &token : split_string(element_label, '/'))
+        {
+          const auto it = deltas.find(token);
+          if (it != deltas.end())
+            total += it->second;
+        }
+        return total;
+      }
+
+      std::string extract_isotope_element(const std::string &legacy_label)
+      {
+        const auto tokens = split_string(legacy_label, ' ');
+        if (tokens.size() >= 4)
+          return tokens[2];
+        return "";
+      }
+
+      std::string extract_isotope_type(const std::string &legacy_label)
+      {
+        const auto tokens = split_string(legacy_label, ' ');
+        if (!tokens.empty())
+          return tokens.back();
+        return "";
+      }
+    }
+
     // MARK: ISOTOPE_COMBINATIONS Implementation
     ISOTOPE_COMBINATIONS::ISOTOPE_COMBINATIONS(ISOTOPE_SET &isotopes, const int &max_number_elements)
     {
@@ -212,6 +574,9 @@ namespace nta
     {
       chain.clear();
       indices.clear();
+      isotope_theoretical_mass_distance.clear();
+      isotope_theoretical_abundance_min.clear();
+      isotope_theoretical_abundance_max.clear();
     }
 
     int CANDIDATE_CHAIN::size() const
@@ -330,7 +695,7 @@ namespace nta
       int max_step = *std::max_element(steps.begin(), steps.end());
 
       if (max_step == 0)
-        return false;
+        return (current_step - 1) > maxGaps;
 
       int gaps = current_step - max_step - 1;
 
@@ -681,6 +1046,9 @@ namespace nta
           {
             const int candidate_idx = sel_iso_chain.candidate_indices[i];
             nta::api::NTA_FEATURE_ROW &temp_candidate = chain[candidate_idx];
+            isotope_theoretical_mass_distance[candidate_idx] = sel_iso_chain.theoretical_mass_distance[i];
+            isotope_theoretical_abundance_min[candidate_idx] = sel_iso_chain.theoretical_abundance_min[i];
+            isotope_theoretical_abundance_max[candidate_idx] = sel_iso_chain.theoretical_abundance_max[i];
 
             // Format: isotope MZXXX EL [M+n] where XXX=monoisotopic mass, EL=element, n=step
             std::ostringstream oss;
@@ -776,22 +1144,22 @@ namespace nta
           {
             if (debug)
             {
-              DEBUG_LOG("      -> Assigning adduct " << adduct.cat << " to " << chain[c].feature
+              DEBUG_LOG("      -> Assigning adduct " << adduct.type << " to " << chain[c].feature
                         << " (mass_error=" << mass_error << ", mass_error_ppm=" << mass_error_ppm << ")" << std::endl);
             }
 
             // If we found the monoisotopic ion in the chain and this is not that ion,
             // format as adduct MZXXX [M+Element] to show the relationship
-            if (mh_index >= 0 && adduct.cat != base_adduct)
+            if (mh_index >= 0 && adduct.type != base_adduct)
             {
               std::ostringstream oss;
-              oss << "adduct MZ" << std::round(mh_mz) << " " << adduct.cat;
+              oss << "adduct MZ" << std::round(mh_mz) << " " << adduct.type;
               chain[c].adduct = oss.str();
             }
             else
             {
               // Use the proper adduct notation from the adduct catalog
-              chain[c].adduct = adduct.cat;
+              chain[c].adduct = adduct.type;
             }
             break;
           }
@@ -890,16 +1258,17 @@ namespace nta
         int maxCharge,
         int maxGaps,
         float ppm,
+        const std::vector<std::string> &isotopeElements,
         const std::string &debugComponent,
         const std::string &debugAnalysis)
     {
-      // Build isotope combinations
       ISOTOPE_SET isotopes;
-      std::vector<std::string> elements = {"C", "H", "N", "O", "S", "Cl", "Br"};
-      isotopes.filter(elements);
+      const std::vector<std::string> default_elements = {"C:1-60", "N:0-10", "O:0-20", "S:0-4", "Cl:0-6", "Br:0-4"};
+      const ISOTOPE_ELEMENT_SPEC parsed_specs = parse_isotope_element_specs(isotopeElements.empty() ? default_elements : isotopeElements);
+      isotopes.filter(parsed_specs.elements);
+      isotopes.set_ranges(parsed_specs.ranges);
 
       const int max_number_elements = 5;
-
       std::cout << "Building combinatorial isotopic chains with length " << max_number_elements << "...";
       ISOTOPE_COMBINATIONS combinations(isotopes, max_number_elements);
       std::cout << "Done!" << std::endl;
@@ -914,61 +1283,43 @@ namespace nta
         return;
       }
 
+      ADDUCT_SET all_adducts;
+      FRAGMENT_LOSS_SET all_losses;
+
       for (int a = 0; a < number_analyses; a++)
       {
         nta::api::NTA_FEATURES &fts = feature_buffers[a];
         const int number_features = fts.size();
-
         if (number_features == 0)
           continue;
 
-        bool should_debug = (!debugComponent.empty() && !debugAnalysis.empty() &&
-                            analysis_names[a] == debugAnalysis);
+        bool should_debug = (!debugComponent.empty() && !debugAnalysis.empty() && analysis_names[a] == debugAnalysis);
 
-        // Group features by component
-        std::unordered_map<std::string, std::vector<int>> component_groups;
-
-        for (int f = 0; f < number_features; f++)
-        {
-          nta::api::NTA_FEATURE_ROW ft = fts.get_feature(f);
-          if (ft.feature_component.empty())
-            continue;
-
-          component_groups[ft.feature_component].push_back(f);
-        }
-
-        // Sort features by mz first (required for annotation logic)
         fts.sort_by_mz();
 
-        // Now build component groups with correct post-sort indices
-        component_groups.clear();
+        std::unordered_map<std::string, std::vector<int>> component_groups;
         for (int f = 0; f < number_features; f++)
         {
           nta::api::NTA_FEATURE_ROW ft = fts.get_feature(f);
-          if (ft.feature_component.empty())
-            continue;
-
-          component_groups[ft.feature_component].push_back(f);
+          if (!ft.feature_component.empty())
+            component_groups[ft.feature_component].push_back(f);
         }
 
         std::cout << "Annotating " << component_groups.size() << " components in analysis " << analysis_names[a] << std::endl;
 
-        // MARK: Annotate Isotopes
-        // Annotate isotopes for each component
-        std::cout << "Annotating isotopes... ";
-
         int total_isotopes_found = 0;
+        int total_adducts_found = 0;
+        int total_fragments_found = 0;
+        int default_adducts_assigned = 0;
 
         for (const auto &comp_pair : component_groups)
         {
           const std::string &component_id = comp_pair.first;
           const std::vector<int> &component_indices = comp_pair.second;
-
-          if (component_indices.size() < 2)
+          if (component_indices.empty())
             continue;
 
           bool debug_this_component = (should_debug && component_id == debugComponent);
-
           if (debug_this_component)
           {
             std::ostringstream log_filename;
@@ -976,419 +1327,365 @@ namespace nta
             std::ostringstream header;
             header << "=== Component Annotation Debug Log ===" << std::endl
                    << "Analysis: " << debugAnalysis << std::endl
-                   << "Component: " << debugComponent << std::endl
-                   << "Features in component: " << component_indices.size() << std::endl;
+                   << "Component: " << debugComponent << std::endl;
             nta::utils::init_debug_log(log_filename.str(), header.str());
-
-            DEBUG_LOG("\n=== Component Features (unsorted, as grouped) ===" << std::endl);
-            for (size_t i = 0; i < component_indices.size(); i++)
-            {
-              const int idx = component_indices[i];
-                nta::api::NTA_FEATURE_ROW ft = fts.get_feature(idx);
-              DEBUG_LOG("  [" << i << "] idx=" << idx << " " << ft.feature
-                        << ": mz=" << ft.mz << ", rt=" << ft.rt
-                        << ", intensity=" << ft.intensity
-                        << ", component=\"" << ft.feature_component << "\""
-                        << ", adduct=\"" << ft.adduct << "\"" << std::endl);
-            }
           }
 
-          // Create a sorted copy of indices by m/z (ascending)
-          std::vector<int> sorted_indices = component_indices;
-          std::sort(sorted_indices.begin(), sorted_indices.end(),
-                    [&fts](int a, int b) { return fts.mz[a] < fts.mz[b]; });
-
-          if (debug_this_component)
-          {
-            DEBUG_LOG("\n=== Component Features (sorted by m/z) ===" << std::endl);
-            for (size_t i = 0; i < sorted_indices.size(); i++)
-            {
-              const int idx = sorted_indices[i];
-                nta::api::NTA_FEATURE_ROW ft = fts.get_feature(idx);
-              DEBUG_LOG("  [" << i << "] idx=" << idx << " " << ft.feature
-                        << ": mz=" << ft.mz << ", rt=" << ft.rt << std::endl);
-            }
-            DEBUG_LOG("\n=== RT range check ===" << std::endl);
-            float min_rt = fts.get_feature(sorted_indices[0]).rt;
-            float max_rt = fts.get_feature(sorted_indices[0]).rt;
-            for (size_t i = 1; i < sorted_indices.size(); i++)
-            {
-              float rt = fts.get_feature(sorted_indices[i]).rt;
-              if (rt < min_rt) min_rt = rt;
-              if (rt > max_rt) max_rt = rt;
-            }
-            DEBUG_LOG("  RT range: " << min_rt << " - " << max_rt << " (span: " << (max_rt - min_rt) << " seconds)" << std::endl);
-          }
-
-          // Track which features have been assigned to isotope chains
-          std::unordered_set<int> assigned_features;
-
-          // Clear previous annotations for this component to allow re-annotation
-          if (debug_this_component)
-          {
-            DEBUG_LOG("\n=== Clearing previous annotations ===" << std::endl);
-          }
           for (int idx : component_indices)
           {
-            nta::api::NTA_FEATURE_ROW ft = fts.get_feature(idx);
-            ft.adduct = "";
+            auto ft = fts.get_feature(idx);
+            ft.adduct.clear();
             fts.set_feature(idx, ft);
           }
 
-          // Process features in m/z order (lowest first)
-          for (size_t i = 0; i < sorted_indices.size(); i++)
+          std::vector<int> sorted_indices = component_indices;
+          std::sort(sorted_indices.begin(), sorted_indices.end(), [&fts](int lhs, int rhs) {
+            return fts.mz[lhs] < fts.mz[rhs];
+          });
+
+          struct ISOTOPE_CHAIN_ASSIGNMENT
           {
-            const int main_ft_idx = sorted_indices[i];
+            int anchor_idx = -1;
+            std::vector<ANNOTATION_CANDIDATE> children;
+            double total_ppm = 0.0;
+            double total_rt = 0.0;
+          };
 
-            // Skip if already assigned to an isotope chain in this run
-            if (assigned_features.count(main_ft_idx) > 0)
-            {
-              if (debug_this_component)
-              {
-                DEBUG_LOG("\n--- Skipping feature [" << i << "] (index " << main_ft_idx
-                          << ") - already assigned to a chain in this run" << std::endl);
-              }
-              continue;
-            }
-
-            nta::api::NTA_FEATURE_ROW main_ft = fts.get_feature(main_ft_idx);
-
-            CANDIDATE_CHAIN candidates_chain;
-            // Pass component_indices to restrict search to component features only
-            // Pass assigned_features to skip already-assigned features when building chains
-            candidates_chain.find_isotopic_candidates(main_ft, fts, main_ft_idx, maxIsotopes, &component_indices, &assigned_features);
-
-            const int number_candidates = candidates_chain.size();
-
-            if (debug_this_component)
-            {
-              DEBUG_LOG("\n--- Processing feature [" << i << "] " << main_ft.feature << " (mz=" << main_ft.mz << ") ---" << std::endl);
-              DEBUG_LOG("  Found " << number_candidates << " isotope candidates" << std::endl);
-              if (number_candidates > 1)
-              {
-                for (int c = 0; c < number_candidates; c++)
-                {
-                  DEBUG_LOG("    Candidate[" << c << "]: " << candidates_chain.chain[c].feature
-                            << " mz=" << candidates_chain.chain[c].mz << std::endl);
-                }
-              }
-            }
-
-            if (number_candidates > 1)
-            {
-              candidates_chain.annotate_isotopes(combinations, maxIsotopes, maxCharge, maxGaps, ppm, debug_this_component);
-
-              if (debug_this_component)
-              {
-                DEBUG_LOG("  After annotation:" << std::endl);
-                for (size_t c = 0; c < candidates_chain.chain.size(); c++)
-                {
-                  DEBUG_LOG("    Chain[" << c << "]: " << candidates_chain.chain[c].feature
-                            << " adduct=\"" << candidates_chain.chain[c].adduct << "\"" << std::endl);
-                }
-              }
-
-              // Update features and mark as assigned only if they received an annotation
-              int annotated_count = 0;
-              for (size_t c = 0; c < candidates_chain.chain.size(); c++)
-              {
-                const int idx = candidates_chain.indices[c];
-                fts.set_feature(idx, candidates_chain.chain[c]);
-
-                // Only mark as assigned if the feature has a non-empty adduct annotation
-                if (!candidates_chain.chain[c].adduct.empty())
-                {
-                  assigned_features.insert(idx);
-                  annotated_count++;
-                }
-              }
-
-              // Count isotopes (excluding the monoisotopic ion which always gets [M+H]+/[M-H]-)
-              total_isotopes_found += (annotated_count - 1);
-            }
-          }
-        }
-
-        std::cout << "Done! Found " << total_isotopes_found << " isotopes." << std::endl;
-
-        // MARK: Annotate Fragments
-        // Annotate in-source fragments for each component
-        std::cout << "Annotating fragments... ";
-
-        int total_fragments_found = 0;
-
-        for (const auto &comp_pair : component_groups)
-        {
-          const std::string &component_id = comp_pair.first;
-          const std::vector<int> &component_indices = comp_pair.second;
-
-          if (component_indices.size() < 1)
-            continue;
-
-          bool debug_this_component = (should_debug && component_id == debugComponent);
-
-          if (debug_this_component)
+          std::unordered_map<int, ANNOTATION_CANDIDATE> final_candidate;
+          for (int idx : sorted_indices)
           {
-            DEBUG_LOG("\n=== Fragment Annotation for Component " << component_id << " ===" << std::endl);
+            const auto ft = fts.get_feature(idx);
+            ANNOTATION_CANDIDATE fallback;
+            fallback.cat = "default";
+            fallback.type = (ft.polarity == 1) ? "[M+H]+" : "[M-H]-";
+            fallback.parent_feature = ft.feature;
+            fallback.element_or_delta = (ft.polarity == 1) ? "H" : "-H";
+            fallback.feature_index = idx;
+            fallback.parent_index = idx;
+            fallback.is_default = true;
+            fallback.score = 0.01;
+            fallback.priority = candidate_priority("default", fallback.type);
+            fallback.label = fallback.type;
+            final_candidate[idx] = fallback;
           }
 
-          // Process each feature in the component
-          for (size_t i = 0; i < component_indices.size(); i++)
+          std::vector<ISOTOPE_CHAIN_ASSIGNMENT> isotope_assignments;
+          for (int anchor_idx : sorted_indices)
           {
-            const int main_ft_idx = component_indices[i];
-            nta::api::NTA_FEATURE_ROW main_ft = fts.get_feature(main_ft_idx);
-
-            // Only annotate fragments for features with [M+H]+ or [M-H]- annotation
-            if (main_ft.adduct != "[M+H]+" && main_ft.adduct != "[M-H]-")
+            const auto anchor = fts.get_feature(anchor_idx);
+            CANDIDATE_CHAIN isotope_chain;
+            isotope_chain.find_isotopic_candidates(anchor, fts, anchor_idx, maxIsotopes, &component_indices, nullptr);
+            if (isotope_chain.size() > 1)
             {
-              continue;
-            }
-
-            CANDIDATE_CHAIN fragment_candidates_chain;
-            // Pass component_indices to restrict search to component features only
-            fragment_candidates_chain.find_fragment_candidates(main_ft, fts, main_ft_idx, &component_indices);
-
-            const int number_candidates = fragment_candidates_chain.size();
-
-            if (debug_this_component && number_candidates > 1)
-            {
-              DEBUG_LOG("\n--- Processing feature [" << i << "] " << main_ft.feature
-                        << " (mz=" << main_ft.mz << ", adduct=\"" << main_ft.adduct << "\") ---" << std::endl);
-              DEBUG_LOG("  Found " << number_candidates << " fragment candidates" << std::endl);
-            }
-
-            if (number_candidates > 1)
-            {
-              fragment_candidates_chain.annotate_fragments(ppm, debug_this_component);
-
-              if (debug_this_component)
+              isotope_chain.annotate_isotopes(combinations, maxIsotopes, maxCharge, maxGaps, ppm, debug_this_component);
+              ISOTOPE_CHAIN_ASSIGNMENT assignment;
+              assignment.anchor_idx = anchor_idx;
+              for (size_t i = 1; i < isotope_chain.chain.size(); ++i)
               {
-                DEBUG_LOG("  After fragment annotation:" << std::endl);
-                for (size_t c = 0; c < fragment_candidates_chain.chain.size(); c++)
-                {
-                  const auto &ft = fragment_candidates_chain.chain[c];
-                  DEBUG_LOG("    Chain[" << c << "]: " << ft.feature
-                            << " adduct=\"" << ft.adduct << "\"");
-                  DEBUG_LOG(std::endl);
-                }
+                const int child_idx = isotope_chain.indices[i];
+                const auto &child = isotope_chain.chain[i];
+                if (!starts_with(child.adduct, "isotope "))
+                  continue;
+
+                ANNOTATION_CANDIDATE candidate;
+                candidate.cat = "isotope";
+                candidate.type = extract_isotope_type(child.adduct);
+                candidate.parent_feature = anchor.feature;
+                candidate.element_or_delta = extract_isotope_element(child.adduct);
+                candidate.feature_index = child_idx;
+                candidate.parent_index = anchor_idx;
+                const double theoretical_mz = anchor.mz +
+                  (isotope_chain.isotope_theoretical_mass_distance.count(child_idx) > 0 ?
+                    isotope_chain.isotope_theoretical_mass_distance.at(child_idx) :
+                    isotope_mass_delta(candidate.element_or_delta));
+                candidate.mass_error_da = std::abs(child.mz - theoretical_mz);
+                candidate.mass_error_ppm = ppm_error(child.mz, theoretical_mz);
+                if (candidate.mass_error_ppm > ppm)
+                  continue;
+                candidate.rt_error = std::abs(child.rt - anchor.rt);
+                candidate.rel_intensity = (anchor.intensity > 0.0) ? (child.intensity / anchor.intensity) : 0.0;
+                candidate.expected_rel_intensity_min =
+                  isotope_chain.isotope_theoretical_abundance_min.count(child_idx) > 0 ?
+                  isotope_chain.isotope_theoretical_abundance_min.at(child_idx) : 0.0;
+                candidate.expected_rel_intensity_max =
+                  isotope_chain.isotope_theoretical_abundance_max.count(child_idx) > 0 ?
+                  isotope_chain.isotope_theoretical_abundance_max.at(child_idx) : 1.5;
+                candidate.priority = candidate_priority(candidate.cat, candidate.type);
+                candidate.score = candidate_score(candidate, ppm);
+                if (candidate.score < 0.0)
+                  continue;
+                candidate.label = make_annotation_label(candidate);
+                assignment.total_ppm += candidate.mass_error_ppm;
+                assignment.total_rt += candidate.rt_error;
+                assignment.children.push_back(candidate);
               }
 
-              // Update features with fragment annotations
-              for (size_t c = 1; c < fragment_candidates_chain.chain.size(); c++)
-              {
-                const int idx = fragment_candidates_chain.indices[c];
-                const std::string &old_adduct = fts.get_feature(idx).adduct;
-                fts.set_feature(idx, fragment_candidates_chain.chain[c]);
-                const std::string &new_adduct = fragment_candidates_chain.chain[c].adduct;
-
-                // Count fragment annotations (format: "loss MZXXX -Formula")
-                if (!new_adduct.empty() && new_adduct != old_adduct &&
-                    new_adduct.find("loss MZ") == 0)
-                {
-                  total_fragments_found++;
-                }
-              }
+              if (!assignment.children.empty())
+                isotope_assignments.push_back(std::move(assignment));
             }
           }
-        }
 
-        std::cout << "Done! Found " << total_fragments_found << " fragments." << std::endl;
+          std::sort(isotope_assignments.begin(), isotope_assignments.end(), [&fts](const ISOTOPE_CHAIN_ASSIGNMENT &lhs, const ISOTOPE_CHAIN_ASSIGNMENT &rhs) {
+            if (lhs.children.size() != rhs.children.size())
+              return lhs.children.size() > rhs.children.size();
+            if (lhs.total_ppm != rhs.total_ppm)
+              return lhs.total_ppm < rhs.total_ppm;
+            if (lhs.total_rt != rhs.total_rt)
+              return lhs.total_rt < rhs.total_rt;
+            return fts.mz[lhs.anchor_idx] < fts.mz[rhs.anchor_idx];
+          });
 
-        // MARK: Annotate Adducts
-        // Annotate adducts for each component
-        std::cout << "Annotating adducts... ";
-
-        int total_adducts_found = 0;
-
-        for (const auto &comp_pair : component_groups)
-        {
-          const std::string &component_id = comp_pair.first;
-          const std::vector<int> &component_indices = comp_pair.second;
-
-          if (component_indices.size() < 1)
-            continue;
-
-          bool debug_this_component = (should_debug && component_id == debugComponent);
-
-          if (debug_this_component)
+          std::unordered_set<int> isotope_children;
+          std::unordered_set<int> isotope_occupied;
+          for (const auto &assignment : isotope_assignments)
           {
-            DEBUG_LOG("\n=== Adduct Annotation for Component " << component_id << " ===" << std::endl);
+            if (isotope_occupied.count(assignment.anchor_idx) > 0)
+              continue;
+
+            bool conflict = false;
+            for (const auto &candidate : assignment.children)
+            {
+              if (isotope_occupied.count(candidate.feature_index) > 0)
+              {
+                conflict = true;
+                break;
+              }
+            }
+            if (conflict)
+              continue;
+
+            isotope_occupied.insert(assignment.anchor_idx);
+            for (const auto &candidate : assignment.children)
+            {
+              isotope_occupied.insert(candidate.feature_index);
+              isotope_children.insert(candidate.feature_index);
+              final_candidate[candidate.feature_index] = candidate;
+            }
           }
 
-          // Process each feature in the component
-          for (size_t i = 0; i < component_indices.size(); i++)
+          std::vector<int> non_isotope_indices;
+          non_isotope_indices.reserve(sorted_indices.size());
+          for (int idx : sorted_indices)
           {
-            const int main_ft_idx = component_indices[i];
-            nta::api::NTA_FEATURE_ROW main_ft = fts.get_feature(main_ft_idx);
+            if (isotope_children.count(idx) == 0)
+              non_isotope_indices.push_back(idx);
+          }
 
-            // Skip if annotated as isotope
-            if (main_ft.adduct.find("isotope") == 0)
+          std::unordered_map<int, std::vector<ANNOTATION_CANDIDATE>> relation_candidates;
+          for (int anchor_idx : non_isotope_indices)
+          {
+            const auto anchor = fts.get_feature(anchor_idx);
+            const auto adducts = all_adducts.adducts(anchor.polarity);
+            const auto losses = all_losses.losses(anchor.polarity);
+            const double neutral_mass = neutral_mass_from_base_ion(anchor);
+
+            for (int idx : non_isotope_indices)
             {
-              if (debug_this_component)
+              if (idx == anchor_idx)
+                continue;
+
+              const auto child = fts.get_feature(idx);
+              const double rt_error = std::abs(child.rt - anchor.rt);
+              const double rel_intensity = (anchor.intensity > 0.0) ? (child.intensity / anchor.intensity) : 0.0;
+
+              for (const auto &adduct : adducts)
               {
-                DEBUG_LOG("\n--- Skipping feature [" << i << "] " << main_ft.feature
-                          << " - already annotated as isotope: " << main_ft.adduct << std::endl);
-              }
-              continue;
-            }
+                if (adduct.type == ((anchor.polarity == 1) ? "[M+H]+" : "[M-H]-"))
+                  continue;
+                const double theoretical_mz = theoretical_mz_from_adduct(neutral_mass, adduct);
+                const double mass_error_ppm_value = ppm_error(child.mz, theoretical_mz);
+                if (mass_error_ppm_value > std::max(10.0, static_cast<double>(ppm) * 1.5))
+                  continue;
 
-            // Skip if already annotated as adduct
-            if (main_ft.adduct.find("adduct MZ") == 0)
-            {
-              if (debug_this_component)
-              {
-                DEBUG_LOG("\n--- Skipping feature [" << i << "] " << main_ft.feature
-                          << " - already annotated as adduct: " << main_ft.adduct << std::endl);
-              }
-              continue;
-            }
-
-            // Skip if already annotated as loss/fragment
-            if (main_ft.adduct.find("loss MZ") == 0)
-            {
-              if (debug_this_component)
-              {
-                DEBUG_LOG("\n--- Skipping feature [" << i << "] " << main_ft.feature
-                          << " - already annotated as loss: " << main_ft.adduct << std::endl);
-              }
-              continue;
-            }
-
-            // Skip if already annotated with complex adduct (contains " + ")
-            if (main_ft.adduct.find(" + ") != std::string::npos)
-            {
-              if (debug_this_component)
-              {
-                DEBUG_LOG("\n--- Skipping feature [" << i << "] " << main_ft.feature
-                          << " - already has complex adduct annotation: " << main_ft.adduct << std::endl);
-              }
-              continue;
-            }
-
-            CANDIDATE_CHAIN adduct_candidates_chain;
-            // Pass component_indices to restrict search to component features only
-            adduct_candidates_chain.find_adduct_candidates(main_ft, fts, main_ft_idx, &component_indices);
-
-            const int number_candidates = adduct_candidates_chain.size();
-
-            if (debug_this_component && number_candidates > 1)
-            {
-              DEBUG_LOG("\n--- Processing feature [" << i << "] " << main_ft.feature
-                        << " (mz=" << main_ft.mz << ", adduct=\"" << main_ft.adduct << "\") ---" << std::endl);
-              DEBUG_LOG("  Found " << number_candidates << " adduct candidates" << std::endl);
-            }
-
-            if (number_candidates > 1)
-            {
-              adduct_candidates_chain.annotate_adducts(ppm, debug_this_component);
-
-              if (debug_this_component)
-              {
-                DEBUG_LOG("  After adduct annotation:" << std::endl);
-                for (size_t c = 0; c < adduct_candidates_chain.chain.size(); c++)
-                {
-                  const auto &ft = adduct_candidates_chain.chain[c];
-                  DEBUG_LOG("    Chain[" << c << "]: " << ft.feature
-                            << " adduct=\"" << ft.adduct << "\"");
-                  DEBUG_LOG(std::endl);
-                }
+                ANNOTATION_CANDIDATE candidate;
+                candidate.cat = "adduct";
+                candidate.type = adduct.type;
+                candidate.parent_feature = anchor.feature;
+                candidate.element_or_delta = adduct.element;
+                candidate.feature_index = idx;
+                candidate.parent_index = anchor_idx;
+                candidate.mass_error_da = std::abs(child.mz - theoretical_mz);
+                candidate.mass_error_ppm = mass_error_ppm_value;
+                candidate.rt_error = rt_error;
+                candidate.rel_intensity = rel_intensity;
+                candidate.expected_rel_intensity_min = 0.0;
+                candidate.expected_rel_intensity_max = 2.0;
+                candidate.priority = candidate_priority(candidate.cat, candidate.type);
+                candidate.score = candidate_score(candidate, ppm);
+                candidate.label = make_annotation_label(candidate);
+                relation_candidates[idx].push_back(candidate);
               }
 
-              // Update features with adduct annotations
-              for (size_t c = 1; c < adduct_candidates_chain.chain.size(); c++)
+              for (const auto &loss : losses)
               {
-                const int idx = adduct_candidates_chain.indices[c];
-                const std::string &old_adduct = fts.get_feature(idx).adduct;
-                fts.set_feature(idx, adduct_candidates_chain.chain[c]);
-                const std::string &new_adduct = adduct_candidates_chain.chain[c].adduct;
+                if (child.mz >= anchor.mz)
+                  continue;
+                const double theoretical_mz = anchor.mz - loss.mass_loss;
+                const double mass_error_ppm_value = ppm_error(child.mz, theoretical_mz);
+                if (mass_error_ppm_value > std::max(10.0, static_cast<double>(ppm) * 1.5))
+                  continue;
 
-                // Count adduct annotations (format: "adduct MZXXX [M+Element]+")
-                if (!new_adduct.empty() && new_adduct != old_adduct &&
-                    new_adduct.find("adduct MZ") == 0)
-                {
-                  total_adducts_found++;
-                }
+                ANNOTATION_CANDIDATE candidate;
+                candidate.cat = "loss";
+                candidate.type = "M-" + loss.formula;
+                candidate.parent_feature = anchor.feature;
+                candidate.element_or_delta = "-" + loss.formula;
+                candidate.feature_index = idx;
+                candidate.parent_index = anchor_idx;
+                candidate.mass_error_da = std::abs(child.mz - theoretical_mz);
+                candidate.mass_error_ppm = mass_error_ppm_value;
+                candidate.rt_error = rt_error;
+                candidate.rel_intensity = rel_intensity;
+                candidate.expected_rel_intensity_min = 0.0;
+                candidate.expected_rel_intensity_max = 1.0;
+                candidate.priority = candidate_priority(candidate.cat, candidate.type);
+                candidate.score = candidate_score(candidate, ppm);
+                candidate.label = make_annotation_label(candidate);
+                relation_candidates[idx].push_back(candidate);
               }
             }
           }
 
-          // Show final annotations for this component
+          for (auto &[feature_idx, feature_candidates] : relation_candidates)
+          {
+            if (feature_candidates.empty())
+              continue;
+            ANNOTATION_CANDIDATE best = feature_candidates.front();
+            for (const auto &candidate : feature_candidates)
+            {
+              if (candidate_better(candidate, best))
+                best = candidate;
+            }
+            final_candidate[feature_idx] = best;
+          }
+
+          std::unordered_set<int> reserved_targets;
+          for (const auto &entry : final_candidate)
+          {
+            if (!entry.second.is_default)
+              reserved_targets.insert(entry.first);
+          }
+
+          std::vector<int> adduct_anchor_indices;
+          for (const auto &entry : final_candidate)
+          {
+            if (!entry.second.is_default && entry.second.cat == "adduct")
+              adduct_anchor_indices.push_back(entry.first);
+          }
+
+          for (int anchor_idx : adduct_anchor_indices)
+          {
+            const auto anchor = fts.get_feature(anchor_idx);
+            std::unordered_set<int> unavailable = reserved_targets;
+            unavailable.erase(anchor_idx);
+
+            CANDIDATE_CHAIN isotope_chain;
+            isotope_chain.find_isotopic_candidates(anchor, fts, anchor_idx, maxIsotopes, &component_indices, &unavailable);
+            if (isotope_chain.size() <= 1)
+              continue;
+
+            isotope_chain.annotate_isotopes(combinations, maxIsotopes, maxCharge, maxGaps, ppm, debug_this_component);
+            for (size_t i = 1; i < isotope_chain.chain.size(); ++i)
+            {
+              const int child_idx = isotope_chain.indices[i];
+              const auto &child = isotope_chain.chain[i];
+              if (!starts_with(child.adduct, "isotope "))
+                continue;
+              if (reserved_targets.count(child_idx) > 0)
+                continue;
+
+              ANNOTATION_CANDIDATE candidate;
+              candidate.cat = "isotope";
+              candidate.type = extract_isotope_type(child.adduct);
+              candidate.parent_feature = final_candidate[anchor_idx].parent_feature;
+              candidate.element_or_delta = extract_isotope_element(child.adduct);
+              candidate.feature_index = child_idx;
+              candidate.parent_index = anchor_idx;
+              const double theoretical_mz = anchor.mz +
+                (isotope_chain.isotope_theoretical_mass_distance.count(child_idx) > 0 ?
+                  isotope_chain.isotope_theoretical_mass_distance.at(child_idx) :
+                  isotope_mass_delta(candidate.element_or_delta));
+              candidate.mass_error_da = std::abs(child.mz - theoretical_mz);
+              candidate.mass_error_ppm = ppm_error(child.mz, theoretical_mz);
+              if (candidate.mass_error_ppm > ppm)
+                continue;
+              candidate.rt_error = std::abs(child.rt - anchor.rt);
+              candidate.rel_intensity = (anchor.intensity > 0.0) ? (child.intensity / anchor.intensity) : 0.0;
+              candidate.expected_rel_intensity_min =
+                isotope_chain.isotope_theoretical_abundance_min.count(child_idx) > 0 ?
+                isotope_chain.isotope_theoretical_abundance_min.at(child_idx) : 0.0;
+              candidate.expected_rel_intensity_max =
+                isotope_chain.isotope_theoretical_abundance_max.count(child_idx) > 0 ?
+                isotope_chain.isotope_theoretical_abundance_max.at(child_idx) : 1.5;
+              candidate.priority = candidate_priority(candidate.cat, candidate.type);
+              candidate.score = candidate_score(candidate, ppm);
+              if (candidate.score < 0.0)
+                continue;
+              candidate.label = make_annotation_label(candidate);
+              final_candidate[child_idx] = candidate;
+              reserved_targets.insert(child_idx);
+            }
+          }
+
+          for (int idx : sorted_indices)
+          {
+            auto ft = fts.get_feature(idx);
+            const auto it = final_candidate.find(idx);
+            if (it == final_candidate.end() || it->second.is_default)
+            {
+              ft.adduct = (ft.polarity == 1) ? "[M+H]+" : "[M-H]-";
+              ft.annotation_category.clear();
+              ft.annotation_type.clear();
+              ft.annotation_parent_feature.clear();
+              ft.annotation_element.clear();
+              ft.annotation_mass_error_da = 0.0;
+              ft.annotation_mass_error_ppm = 0.0;
+              ft.annotation_rt_error = 0.0;
+              ft.annotation_rel_intensity = 0.0;
+              ft.annotation_expected_rel_intensity_min = 0.0;
+              ft.annotation_expected_rel_intensity_max = 0.0;
+              ft.annotation_score = 0.0;
+              default_adducts_assigned++;
+            }
+            else
+            {
+              ft.adduct = make_annotation_summary(it->second);
+              ft.annotation_category = it->second.cat;
+              ft.annotation_type = it->second.type;
+              ft.annotation_parent_feature = it->second.parent_feature;
+              ft.annotation_element = it->second.element_or_delta;
+              ft.annotation_mass_error_da = it->second.mass_error_da;
+              ft.annotation_mass_error_ppm = it->second.mass_error_ppm;
+              ft.annotation_rt_error = it->second.rt_error;
+              ft.annotation_rel_intensity = it->second.rel_intensity;
+              ft.annotation_expected_rel_intensity_min = it->second.expected_rel_intensity_min;
+              ft.annotation_expected_rel_intensity_max = it->second.expected_rel_intensity_max;
+              ft.annotation_score = it->second.score;
+              if (it->second.cat == "isotope")
+                total_isotopes_found++;
+              else if (it->second.cat == "adduct")
+                total_adducts_found++;
+              else if (it->second.cat == "loss")
+                total_fragments_found++;
+            }
+            fts.set_feature(idx, ft);
+          }
+
           if (debug_this_component)
           {
             DEBUG_LOG("\n=== Final Annotations for Component " << component_id << " ===" << std::endl);
-            for (size_t i = 0; i < component_indices.size(); i++)
+            for (const int idx : sorted_indices)
             {
-              const int idx = component_indices[i];
-              nta::api::NTA_FEATURE_ROW ft = fts.get_feature(idx);
-              DEBUG_LOG("  [" << i << "] idx=" << idx << " " << ft.feature
-                        << ": mz=" << ft.mz << ", rt=" << ft.rt
-                        << ", intensity=" << ft.intensity
-                        << ", component=\"" << ft.feature_component << "\""
-                        << ", adduct=\"" << ft.adduct << "\"" << std::endl);
+              const auto ft = fts.get_feature(idx);
+              DEBUG_LOG("  " << ft.feature << " mz=" << ft.mz << " rt=" << ft.rt << " adduct=\"" << ft.adduct << "\"" << std::endl);
             }
           }
         }
 
-        std::cout << "Done! Found " << total_adducts_found << " adducts." << std::endl;
-
-        // MARK: Annotate Default Adducts
-        // Assign default adducts to features with empty adduct strings
-        std::cout << "Assigning default adducts to remaining features... ";
-
-        int default_adducts_assigned = 0;
-
-        for (const auto &comp_pair : component_groups)
-        {
-          const std::string &component_id = comp_pair.first;
-          const std::vector<int> &component_indices = comp_pair.second;
-
-          if (component_indices.size() < 1)
-            continue;
-
-          bool debug_this_component = (should_debug && component_id == debugComponent);
-
-          // Get polarity from the first feature in the component
-          const int polarity = fts.get_feature(component_indices[0]).polarity;
-          const std::string default_adduct = (polarity == 1) ? "[M+H]+" : "[M-H]-";
-
-          if (debug_this_component)
-          {
-            DEBUG_LOG("\n=== Assigning Default Adducts for Component " << component_id << " ===" << std::endl);
-          }
-
-          for (const int idx : component_indices)
-          {
-            nta::api::NTA_FEATURE_ROW ft = fts.get_feature(idx);
-            if (ft.adduct.empty())
-            {
-              if (debug_this_component)
-              {
-                DEBUG_LOG("  Assigning " << default_adduct << " to " << ft.feature << std::endl);
-              }
-              ft.adduct = default_adduct;
-              fts.set_feature(idx, ft);
-              default_adducts_assigned++;
-            }
-          }
-
-          // Show final annotations after default adducts
-          if (debug_this_component)
-          {
-            DEBUG_LOG("\n=== Final Annotations for Component " << component_id << " (after default adducts) ===" << std::endl);
-            for (size_t i = 0; i < component_indices.size(); i++)
-            {
-              const int idx = component_indices[i];
-              nta::api::NTA_FEATURE_ROW ft = fts.get_feature(idx);
-              DEBUG_LOG("  [" << i << "] idx=" << idx << " " << ft.feature
-                        << ": mz=" << ft.mz << ", rt=" << ft.rt
-                        << ", intensity=" << ft.intensity
-                        << ", component=\"" << ft.feature_component << "\""
-                        << ", adduct=\"" << ft.adduct << "\"" << std::endl);
-            }
-          }
-        }
-
-        std::cout << "Done! Assigned " << default_adducts_assigned << " default adducts." << std::endl;
+        std::cout << "Annotating isotopes... Done! Found " << total_isotopes_found << " isotopes." << std::endl;
+        std::cout << "Annotating fragments... Done! Found " << total_fragments_found << " fragments." << std::endl;
+        std::cout << "Annotating adducts... Done! Found " << total_adducts_found << " adducts." << std::endl;
+        std::cout << "Assigning default adducts to remaining features... Done! Assigned " << default_adducts_assigned << " default adducts." << std::endl;
       }
     }
 

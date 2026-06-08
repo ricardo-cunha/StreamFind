@@ -197,8 +197,8 @@ rcpp_project_nta_create_components <- function(nta_xptr, rtWindow, minCorrelatio
     .Call(`_StreamFind_rcpp_project_nta_create_components`, nta_xptr, rtWindow, minCorrelation, debugRT, debugAnalysis)
 }
 
-rcpp_project_nta_annotate_components <- function(nta_xptr, maxIsotopes = 5L, maxCharge = 1L, maxGaps = 1L, ppm = 10.0, debugComponent = "", debugAnalysis = "") {
-    .Call(`_StreamFind_rcpp_project_nta_annotate_components`, nta_xptr, maxIsotopes, maxCharge, maxGaps, ppm, debugComponent, debugAnalysis)
+rcpp_project_nta_annotate_components <- function(nta_xptr, maxIsotopes = 5L, maxCharge = 1L, maxGaps = 1L, ppm = 10.0, isotopeElements = as.character( c("C:1-60", "N:0-10", "O:0-20", "S:0-4", "Cl:0-6", "Br:0-4")), debugComponent = "", debugAnalysis = "") {
+    .Call(`_StreamFind_rcpp_project_nta_annotate_components`, nta_xptr, maxIsotopes, maxCharge, maxGaps, ppm, isotopeElements, debugComponent, debugAnalysis)
 }
 
 rcpp_project_nta_group_features <- function(nta_xptr, method = "obi_warp", rtDeviation = 5.0, ppm = 5.0, minSamples = 1L, binSize = 5.0, debug = FALSE, debugRT = 0.0) {

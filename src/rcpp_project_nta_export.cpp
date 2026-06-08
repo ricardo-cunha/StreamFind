@@ -476,6 +476,17 @@ namespace nta_rcpp
     Rcpp::IntegerVector ms2_size(n);
     Rcpp::CharacterVector ms2_mz(n);
     Rcpp::CharacterVector ms2_intensity(n);
+    Rcpp::CharacterVector annotation_category(n);
+    Rcpp::CharacterVector annotation_type(n);
+    Rcpp::CharacterVector annotation_parent_feature(n);
+    Rcpp::CharacterVector annotation_element(n);
+    Rcpp::NumericVector annotation_mass_error_da(n);
+    Rcpp::NumericVector annotation_mass_error_ppm(n);
+    Rcpp::NumericVector annotation_rt_error(n);
+    Rcpp::NumericVector annotation_rel_intensity(n);
+    Rcpp::NumericVector annotation_expected_rel_intensity_min(n);
+    Rcpp::NumericVector annotation_expected_rel_intensity_max(n);
+    Rcpp::NumericVector annotation_score(n);
     Rcpp::CharacterVector created_at(n);
 
     for (std::size_t i = 0; i < n; ++i)
@@ -529,6 +540,17 @@ namespace nta_rcpp
       ms2_size[i] = row.ms2_size;
       ms2_mz[i] = row.ms2_mz.empty() ? NA_STRING : Rcpp::String(row.ms2_mz);
       ms2_intensity[i] = row.ms2_intensity.empty() ? NA_STRING : Rcpp::String(row.ms2_intensity);
+      annotation_category[i] = row.annotation_category.empty() ? NA_STRING : Rcpp::String(row.annotation_category);
+      annotation_type[i] = row.annotation_type.empty() ? NA_STRING : Rcpp::String(row.annotation_type);
+      annotation_parent_feature[i] = row.annotation_parent_feature.empty() ? NA_STRING : Rcpp::String(row.annotation_parent_feature);
+      annotation_element[i] = row.annotation_element.empty() ? NA_STRING : Rcpp::String(row.annotation_element);
+      annotation_mass_error_da[i] = row.annotation_mass_error_da;
+      annotation_mass_error_ppm[i] = row.annotation_mass_error_ppm;
+      annotation_rt_error[i] = row.annotation_rt_error;
+      annotation_rel_intensity[i] = row.annotation_rel_intensity;
+      annotation_expected_rel_intensity_min[i] = row.annotation_expected_rel_intensity_min;
+      annotation_expected_rel_intensity_max[i] = row.annotation_expected_rel_intensity_max;
+      annotation_score[i] = row.annotation_score;
       created_at[i] = row.created_at.empty() ? NA_STRING : Rcpp::String(row.created_at);
     }
 
@@ -581,6 +603,17 @@ namespace nta_rcpp
         Rcpp::Named("ms2_size") = ms2_size,
         Rcpp::Named("ms2_mz") = ms2_mz,
         Rcpp::Named("ms2_intensity") = ms2_intensity,
+        Rcpp::Named("annotation_category") = annotation_category,
+        Rcpp::Named("annotation_type") = annotation_type,
+        Rcpp::Named("annotation_parent_feature") = annotation_parent_feature,
+        Rcpp::Named("annotation_element") = annotation_element,
+        Rcpp::Named("annotation_mass_error_da") = annotation_mass_error_da,
+        Rcpp::Named("annotation_mass_error_ppm") = annotation_mass_error_ppm,
+        Rcpp::Named("annotation_rt_error") = annotation_rt_error,
+        Rcpp::Named("annotation_rel_intensity") = annotation_rel_intensity,
+        Rcpp::Named("annotation_expected_rel_intensity_min") = annotation_expected_rel_intensity_min,
+        Rcpp::Named("annotation_expected_rel_intensity_max") = annotation_expected_rel_intensity_max,
+        Rcpp::Named("annotation_score") = annotation_score,
         Rcpp::Named("created_at") = created_at);
     out.attr("class") = Rcpp::CharacterVector::create("data.table", "data.frame");
     return out;
@@ -1662,12 +1695,21 @@ bool rcpp_project_nta_annotate_components(SEXP nta_xptr,
                                   int maxCharge = 1,
                                   int maxGaps = 1,
                                   float ppm = 10.0,
+                                  Rcpp::CharacterVector isotopeElements = Rcpp::CharacterVector::create("C:1-60", "N:0-10", "O:0-20", "S:0-4", "Cl:0-6", "Br:0-4"),
                                   std::string debugComponent = "",
                                   std::string debugAnalysis = "")
 {
   return nta_rcpp::project_call([&]() {
     auto &nta_data = nta_rcpp::project_non_target_analysis_from_xptr(nta_xptr);
-    return nta_data.annotate_components(maxIsotopes, maxCharge, maxGaps, ppm, debugComponent, debugAnalysis);
+    return nta_data.annotate_components(
+      maxIsotopes,
+      maxCharge,
+      maxGaps,
+      ppm,
+      Rcpp::as<std::vector<std::string>>(isotopeElements),
+      debugComponent,
+      debugAnalysis
+    );
   });
 }
 

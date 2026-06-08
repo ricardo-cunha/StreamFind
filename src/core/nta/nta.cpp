@@ -116,6 +116,17 @@ namespace nta
         check_append_state(duckdb_append_int32(appender, features.ms2_size[i]), appender, "append NTA_FEATURES ms2_size");
         append_optional_varchar(appender, features.ms2_mz[i], "append NTA_FEATURES ms2_mz");
         append_optional_varchar(appender, features.ms2_intensity[i], "append NTA_FEATURES ms2_intensity");
+        check_append_state(duckdb_append_varchar(appender, features.annotation_category[i].c_str()), appender, "append NTA_FEATURES annotation_category");
+        check_append_state(duckdb_append_varchar(appender, features.annotation_type[i].c_str()), appender, "append NTA_FEATURES annotation_type");
+        check_append_state(duckdb_append_varchar(appender, features.annotation_parent_feature[i].c_str()), appender, "append NTA_FEATURES annotation_parent_feature");
+        check_append_state(duckdb_append_varchar(appender, features.annotation_element[i].c_str()), appender, "append NTA_FEATURES annotation_element");
+        check_append_state(duckdb_append_double(appender, features.annotation_mass_error_da[i]), appender, "append NTA_FEATURES annotation_mass_error_da");
+        check_append_state(duckdb_append_double(appender, features.annotation_mass_error_ppm[i]), appender, "append NTA_FEATURES annotation_mass_error_ppm");
+        check_append_state(duckdb_append_double(appender, features.annotation_rt_error[i]), appender, "append NTA_FEATURES annotation_rt_error");
+        check_append_state(duckdb_append_double(appender, features.annotation_rel_intensity[i]), appender, "append NTA_FEATURES annotation_rel_intensity");
+        check_append_state(duckdb_append_double(appender, features.annotation_expected_rel_intensity_min[i]), appender, "append NTA_FEATURES annotation_expected_rel_intensity_min");
+        check_append_state(duckdb_append_double(appender, features.annotation_expected_rel_intensity_max[i]), appender, "append NTA_FEATURES annotation_expected_rel_intensity_max");
+        check_append_state(duckdb_append_double(appender, features.annotation_score[i]), appender, "append NTA_FEATURES annotation_score");
         check_append_state(duckdb_append_null(appender), appender, "append NTA_FEATURES created_at");
         check_append_state(duckdb_appender_end_row(appender), appender, "end NTA_FEATURES row");
       }
@@ -1093,6 +1104,17 @@ namespace nta
       project::cache::write_vector(out, feature_group);
       project::cache::write_vector(out, feature_component);
       project::cache::write_vector(out, adduct);
+      project::cache::write_vector(out, annotation_category);
+      project::cache::write_vector(out, annotation_type);
+      project::cache::write_vector(out, annotation_parent_feature);
+      project::cache::write_vector(out, annotation_element);
+      project::cache::write_vector(out, annotation_mass_error_da);
+      project::cache::write_vector(out, annotation_mass_error_ppm);
+      project::cache::write_vector(out, annotation_rt_error);
+      project::cache::write_vector(out, annotation_rel_intensity);
+      project::cache::write_vector(out, annotation_expected_rel_intensity_min);
+      project::cache::write_vector(out, annotation_expected_rel_intensity_max);
+      project::cache::write_vector(out, annotation_score);
       project::cache::write_vector(out, rt);
       project::cache::write_vector(out, mz);
       project::cache::write_vector(out, mass);
@@ -1146,6 +1168,17 @@ namespace nta
       project::cache::read_vector(reader, value.feature_group);
       project::cache::read_vector(reader, value.feature_component);
       project::cache::read_vector(reader, value.adduct);
+      project::cache::read_vector(reader, value.annotation_category);
+      project::cache::read_vector(reader, value.annotation_type);
+      project::cache::read_vector(reader, value.annotation_parent_feature);
+      project::cache::read_vector(reader, value.annotation_element);
+      project::cache::read_vector(reader, value.annotation_mass_error_da);
+      project::cache::read_vector(reader, value.annotation_mass_error_ppm);
+      project::cache::read_vector(reader, value.annotation_rt_error);
+      project::cache::read_vector(reader, value.annotation_rel_intensity);
+      project::cache::read_vector(reader, value.annotation_expected_rel_intensity_min);
+      project::cache::read_vector(reader, value.annotation_expected_rel_intensity_max);
+      project::cache::read_vector(reader, value.annotation_score);
       project::cache::read_vector(reader, value.rt);
       project::cache::read_vector(reader, value.mz);
       project::cache::read_vector(reader, value.mass);
@@ -1590,7 +1623,18 @@ namespace nta
       value.ms2_size = project::db::nullable_int(duckdb_value_int32(&result, 44, row));
       value.ms2_mz = project::db::result_varchar(&result, 45, row);
       value.ms2_intensity = project::db::result_varchar(&result, 46, row);
-      value.created_at = project::db::result_varchar(&result, 47, row);
+      value.annotation_category = project::db::result_varchar(&result, 47, row);
+      value.annotation_type = project::db::result_varchar(&result, 48, row);
+      value.annotation_parent_feature = project::db::result_varchar(&result, 49, row);
+      value.annotation_element = project::db::result_varchar(&result, 50, row);
+      value.annotation_mass_error_da = project::db::nullable_double(duckdb_value_double(&result, 51, row));
+      value.annotation_mass_error_ppm = project::db::nullable_double(duckdb_value_double(&result, 52, row));
+      value.annotation_rt_error = project::db::nullable_double(duckdb_value_double(&result, 53, row));
+      value.annotation_rel_intensity = project::db::nullable_double(duckdb_value_double(&result, 54, row));
+      value.annotation_expected_rel_intensity_min = project::db::nullable_double(duckdb_value_double(&result, 55, row));
+      value.annotation_expected_rel_intensity_max = project::db::nullable_double(duckdb_value_double(&result, 56, row));
+      value.annotation_score = project::db::nullable_double(duckdb_value_double(&result, 57, row));
+      value.created_at = project::db::result_varchar(&result, 58, row);
       return value;
     }
 
@@ -1720,6 +1764,17 @@ namespace nta
       value.ms2_size = table.ms2_size[row];
       value.ms2_mz = table.ms2_mz[row];
       value.ms2_intensity = table.ms2_intensity[row];
+      value.annotation_category = table.annotation_category[row];
+      value.annotation_type = table.annotation_type[row];
+      value.annotation_parent_feature = table.annotation_parent_feature[row];
+      value.annotation_element = table.annotation_element[row];
+      value.annotation_mass_error_da = table.annotation_mass_error_da[row];
+      value.annotation_mass_error_ppm = table.annotation_mass_error_ppm[row];
+      value.annotation_rt_error = table.annotation_rt_error[row];
+      value.annotation_rel_intensity = table.annotation_rel_intensity[row];
+      value.annotation_expected_rel_intensity_min = table.annotation_expected_rel_intensity_min[row];
+      value.annotation_expected_rel_intensity_max = table.annotation_expected_rel_intensity_max[row];
+      value.annotation_score = table.annotation_score[row];
       value.created_at = table.created_at[row];
       return value;
     }
@@ -2907,7 +2962,7 @@ namespace nta
           "feature VARCHAR NOT NULL, "
           "feature_component VARCHAR, "
           "feature_group VARCHAR, "
-          "adduct VARCHAR, "
+          "adduct VARCHAR DEFAULT '', "
           "rt DOUBLE, "
           "mz DOUBLE, "
           "mass DOUBLE, "
@@ -2949,6 +3004,17 @@ namespace nta
           "ms2_size INTEGER, "
           "ms2_mz VARCHAR, "
           "ms2_intensity VARCHAR, "
+          "annotation_category VARCHAR DEFAULT '', "
+          "annotation_type VARCHAR DEFAULT '', "
+          "annotation_parent_feature VARCHAR DEFAULT '', "
+          "annotation_element VARCHAR DEFAULT '', "
+          "annotation_mass_error_da DOUBLE DEFAULT 0, "
+          "annotation_mass_error_ppm DOUBLE DEFAULT 0, "
+          "annotation_rt_error DOUBLE DEFAULT 0, "
+          "annotation_rel_intensity DOUBLE DEFAULT 0, "
+          "annotation_expected_rel_intensity_min DOUBLE DEFAULT 0, "
+          "annotation_expected_rel_intensity_max DOUBLE DEFAULT 0, "
+          "annotation_score DOUBLE DEFAULT 0, "
           "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
           "PRIMARY KEY(project_id, analysis, feature)"
           ")",
@@ -3120,6 +3186,17 @@ namespace nta
            {"ms2_size", "INTEGER", false},
            {"ms2_mz", "VARCHAR", false},
            {"ms2_intensity", "VARCHAR", false},
+           {"annotation_category", "VARCHAR", false},
+           {"annotation_type", "VARCHAR", false},
+           {"annotation_parent_feature", "VARCHAR", false},
+           {"annotation_element", "VARCHAR", false},
+           {"annotation_mass_error_da", "DOUBLE", false},
+           {"annotation_mass_error_ppm", "DOUBLE", false},
+           {"annotation_rt_error", "DOUBLE", false},
+           {"annotation_rel_intensity", "DOUBLE", false},
+           {"annotation_expected_rel_intensity_min", "DOUBLE", false},
+           {"annotation_expected_rel_intensity_max", "DOUBLE", false},
+           {"annotation_score", "DOUBLE", false},
            {"created_at", "TIMESTAMP", false}});
       project::db::validate_columns_present(
           guard.get(),
@@ -3798,17 +3875,17 @@ bool nta::api::PROJECT_NON_TARGET_ANALYSIS::create_components(const std::vector<
       { componentization::create_components_impl(*this, rtWindow, minCorrelation, debugRT, debugAnalysis); });
 };
 
-bool nta::api::PROJECT_NON_TARGET_ANALYSIS::annotate_components(int maxIsotopes, int maxCharge, int maxGaps, float ppm, const std::string &debugComponent, const std::string &debugAnalysis)
+bool nta::api::PROJECT_NON_TARGET_ANALYSIS::annotate_components(int maxIsotopes, int maxCharge, int maxGaps, float ppm, const std::vector<std::string> &isotopeElements, const std::string &debugComponent, const std::string &debugAnalysis)
 {
   load_processing_metadata();
   load_processing_features(true);
   return run_cached_features_algorithm(
       "annotate_components",
-      cache_join_key({cache_scalar_key(maxIsotopes), cache_scalar_key(maxCharge), cache_scalar_key(maxGaps), cache_scalar_key(ppm), debugComponent, debugAnalysis}),
+      cache_join_key({cache_scalar_key(maxIsotopes), cache_scalar_key(maxCharge), cache_scalar_key(maxGaps), cache_scalar_key(ppm), cache_vector_key(isotopeElements), debugComponent, debugAnalysis}),
       {feature_state_cache_key()},
       "Cached NTS features for annotate_components",
       [&]()
-      { annotation::annotate_components_impl(*this, maxIsotopes, maxCharge, maxGaps, ppm, debugComponent, debugAnalysis); });
+      { annotation::annotate_components_impl(*this, maxIsotopes, maxCharge, maxGaps, ppm, isotopeElements, debugComponent, debugAnalysis); });
 };
 
 bool nta::api::PROJECT_NON_TARGET_ANALYSIS::group_features(const std::string &method, float rtDeviation, float ppm, int minSamples, float binSize, bool debug, float debugRT)
