@@ -27,7 +27,22 @@ SOURCES := $(filter-out core/external/simdutf/simdutf.cpp core/external/simdutf/
 
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 
-all: $(SHLIB)
+# Vendored runtime DLLs copied alongside StreamFind.dll so they are found at
+# load time (LoadLibrary / implicit import resolution) after installation.
+.PHONY: copy_vendor_dlls
+copy_vendor_dlls: $(SHLIB)
+	@if [ -n "$(R_PACKAGE_DIR)" ]; then \
+		dest="$(R_PACKAGE_DIR)/libs$(R_ARCH)"; \
+		mkdir -p "$$dest"; \
+		if [ -f "$(OPENBABEL_BUILD_ROOT)/bin/openbabel_streamfind.dll" ]; then \
+			cp "$(OPENBABEL_BUILD_ROOT)/bin/openbabel_streamfind.dll" "$$dest/"; \
+		fi; \
+		if [ -f "core/external/duckdb/windows/duckdb.dll" ]; then \
+			cp "core/external/duckdb/windows/duckdb.dll" "$$dest/"; \
+		fi; \
+	fi
+
+all: $(SHLIB) copy_vendor_dlls
 
 $(OBJECTS): $(OPENBABEL_STAMP)
 
