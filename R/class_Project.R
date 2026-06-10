@@ -154,7 +154,16 @@ Project <- R6::R6Class(
 #' @title Project S3 Methods
 #' @description S3 wrappers for `Project` R6 methods providing a thin functional interface.
 #' @param x A `Project` object.
-#' @template args-Project
+#' @template arg-Project-db
+#' @template arg-Project-project-id
+#' @template arg-Project-value
+#' @template arg-Project-cache-name
+#' @template arg-Project-step
+#' @template arg-Project-workflow
+#' @template arg-Project-template
+#' @template arg-Project-output-file
+#' @template arg-Project-execute-dir
+#' @template arg-Project-ellipsis
 NULL
 
 #' @describeIn ProjectS3 Return the native project pointer.
@@ -188,6 +197,7 @@ validate.Project <- function(x) {
 }
 
 #' @describeIn ProjectS3 Close the shared DuckDB handle for this project object.
+#' @template arg-Project-con
 #' @method close Project
 #' @export
 close.Project <- function(con, ...) {

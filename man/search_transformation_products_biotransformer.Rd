@@ -46,9 +46,12 @@ directory and prints the path.}
 }
 \value{
 A data.table with columns:
-\code{name}, \code{formula}, \code{mass}, \code{rt}, \code{SMILES}, \code{InChI}, \code{InChIKey}, \code{ms2_positive}, \code{ms2_negative},
-\code{xLogP}, \code{transformation}, \code{precursor_name}, \code{precursor_formula}, \code{precursor_mass},
-\code{precursor_SMILES}, \code{precursor_InChI}, \code{precursor_InChIKey}, \code{precursor_xLogP}.
+\code{name}, \code{formula}, \code{mass}, \code{rt}, \code{SMILES}, \code{InChI}, \code{InChIKey},
+\code{ms2_positive}, \code{ms2_negative}, \code{xLogP},
+\code{transformation}, \code{precursor_name}, \code{precursor_formula}, \code{precursor_mass},
+\code{precursor_SMILES}, \code{precursor_InChI}, \code{precursor_InChIKey},
+\code{precursor_xLogP}, \verb{main_precursor_*}, \code{bt_precursor_title}, \code{bt_reaction_type},
+\code{bt_biosystem}, and \code{transformation_detail}.
 The first row(s) correspond to the parent compounds (transformation = "main_precursor").
 }
 \description{

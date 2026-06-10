@@ -4,6 +4,7 @@ library(data.table)
 project_db <- file.path("dev", "dev_duckdb", "data_nta.duckdb")
 project_id <- "demo_nta"
 
+
 # if (file.exists(project_db)) file.remove(project_db)
 
 internal_standards <- fread(file.path("dev", "dev_duckdb", "internal_standards_v3.csv"))
@@ -31,11 +32,22 @@ ms_files <- ms_files[grepl("ww_", ms_files)]
 # 1. Open the NTA project
 # -----------------------------------------------------------------------------
 
+?Project
+?ProjectMassSpec
+?ProjectMassSpecS3
+
+?ProjectNonTargetAnalysis
+?ProjectNonTargetAnalysisS3
+
 nta <- open_ProjectNonTargetAnalysis(
   db = project_db,
   project_id = project_id,
   file_paths = ms_files
 )
+
+nta$list_tables() #Project
+
+nta$get_analysis_names() #ProjectMassSpec
 
 nta$set_replicate_names(c(
   rep("neg_blank", 3),
@@ -65,6 +77,7 @@ info(nta)
 # -----------------------------------------------------------------------------
 
 registry <- nta$available_processing_methods()
+
 names(registry)
 
 projects_overview()$ProjectNonTargetAnalysis$processing_methods
@@ -299,6 +312,8 @@ print(nta)
 
 
 features_all <- get_features(nta)
+
+str(features_all)
 
 features_subset <- get_features(
   nta,

@@ -498,12 +498,6 @@ spectra) to 1 (i.e., must be present in all spectra) for traces during clusterin
 
 \item{chromatograms}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
 
-\item{db}{Path to DuckDB file.}
-
-\item{project_id}{Active project identifier.}
-
-\item{file}{A \emph{json} or \emph{rds} file to be imported.}
-
 \item{analysis}{Character scalar with the analysis name.}
 }
 \description{

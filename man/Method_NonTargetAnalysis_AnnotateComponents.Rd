@@ -30,14 +30,13 @@ isotope, adduct, and loss assignment checks.}
 \item{isotopeElements}{Character vector describing which elements are
 considered during isotope annotation and, optionally, their plausible atom
 count range. Each entry must be either \code{"Element"} or
-\code{"Element:min-max"}, for example \code{"Cl"} or \code{"C:1-60"}. The
-defaults are tuned for common environmental organic compounds such as
-pharmaceuticals, pesticides, PFAS, and personal care products:
+\code{"Element:min-max"}, for example \code{"Cl"} or \code{"C:1-60"}. The defaults are
+tuned for common environmental organic compounds such as pharmaceuticals,
+pesticides, PFAS, and personal care products:
 \code{c("C:1-60", "N:0-10", "O:0-20", "S:0-4", "Cl:0-6", "Br:0-4")}.
-Supported element symbols are \code{"C"}, \code{"H"}, \code{"B"}, \code{"N"},
-\code{"O"}, \code{"Mg"}, \code{"Si"}, \code{"S"}, \code{"Cl"}, \code{"Br"},
-\code{"K"}, \code{"Ca"}, \code{"Fe"}, \code{"Cu"}, \code{"Zn"}, and
-\code{"Se"}. Use explicit ranges when the expected chemistry is narrower or
+Supported element symbols are \code{"C"}, \code{"H"}, \code{"B"}, \code{"N"}, \code{"O"}, \code{"Mg"},
+\code{"Si"}, \code{"S"}, \code{"Cl"}, \code{"Br"}, \code{"K"}, \code{"Ca"}, \code{"Fe"}, \code{"Cu"}, \code{"Zn"},
+and \code{"Se"}. Use explicit ranges when the expected chemistry is narrower or
 broader than the defaults.}
 
 \item{debugComponent}{Character(1) component identifier to debug.}
@@ -56,6 +55,9 @@ into chemically meaningful ion annotations. Isotope annotation is resolved
 before adducts and neutral losses. Final isotope assignments must satisfy
 the configured \code{ppm} tolerance, respect the allowed \code{maxGaps} in the
 isotope chain, and match the expected relative-intensity window estimated
-from the isotope composition. Simpler isotope explanations are ranked ahead
-of multi-isotope combinations, which are penalized during scoring.
+from the isotope composition. For isotope candidates, mass accuracy and
+relative-intensity agreement are weighted more strongly than retention-time
+apex agreement, because low-intensity isotope peaks can show modest apex
+shifts. Simpler isotope explanations are ranked ahead of multi-isotope
+combinations, which are penalized during scoring.
 }

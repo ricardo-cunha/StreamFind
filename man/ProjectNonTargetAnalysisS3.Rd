@@ -420,6 +420,7 @@
   showLegend = TRUE,
   showMS2 = FALSE,
   showIntensityProfile = FALSE,
+  darkMode = FALSE,
   ...
 )
 }
@@ -540,14 +541,6 @@ include every modality. When \code{NULL}, no modality filtering is applied.}
 \item{showMS2}{Logical; include MS2 annotations in transformation product plots.}
 
 \item{showIntensityProfile}{Logical; include intensity profile in transformation product plots.}
-
-\item{db}{Path to DuckDB file.}
-
-\item{project_id}{Active project identifier.}
-
-\item{.ptr}{Existing native project pointer for internal use.}
-
-\item{.mass_spec_ptr}{Existing native Mass Spec pointer for internal use.}
 }
 \description{
 S3 interface methods for \code{ProjectNonTargetAnalysis}.

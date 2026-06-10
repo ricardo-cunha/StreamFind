@@ -503,10 +503,6 @@ ProjectNonTargetAnalysis <- R6::R6Class(
 #' @title ProjectNonTargetAnalysis S3 Methods
 #' @description S3 interface methods for `ProjectNonTargetAnalysis`.
 #' @param x A `ProjectNonTargetAnalysis` object.
-#' @template arg-Project-db
-#' @template arg-Project-project-id
-#' @template arg-ProjectNonTargetAnalysis-ptr
-#' @template arg-ProjectNonTargetAnalysis-mass-spec-ptr
 #' @template arg-ProjectMassSpec-analyses
 #' @template arg-ProjectNonTargetAnalysis-features
 #' @template arg-ProjectNonTargetAnalysis-groups

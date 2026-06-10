@@ -20,28 +20,6 @@
 object.}
 
 \item{...}{Additional arguments passed to the method or ignored by the implementation.}
-
-\item{chromatograms}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
-
-\item{rtmin}{Numeric (length 1) with the minimum retention time.}
-
-\item{rtmax}{Numeric (length 1) with the maximum retention time.}
-
-\item{minIntensity}{Numeric (length 1) with the minimum intensity.}
-
-\item{downsize}{An integer of length one to downsize the TIC plot. The default is 1.}
-
-\item{xLab}{X axis label for the plot.}
-
-\item{yLab}{Y axis label for the plot.}
-
-\item{title}{Plot title.}
-
-\item{groupBy}{Column to use for color grouping (default: "analysis").}
-
-\item{interactive}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
-
-\item{colorPalette}{Optional vector of colors for the plot; if not provided, an internal function is used.}
 }
 \description{
 S3 interface methods for \code{ProjectMassSpecChromatograms}.

@@ -12,7 +12,16 @@ Method_NonTargetAnalysis_AssignTransformationProducts(
 }
 \arguments{
 \item{transformation_products}{A data.frame/data.table describing
-transformation products and their precursors.}
+transformation products and their precursors. Required columns are
+\code{name}, \code{transformation}, \code{precursor_name}, \code{precursor_formula},
+\code{precursor_mass}, \code{precursor_SMILES}, \code{precursor_InChI},
+\code{precursor_InChIKey}, \code{precursor_xLogP}, \code{main_precursor_name},
+\code{main_precursor_formula}, \code{main_precursor_mass}, \code{main_precursor_SMILES},
+\code{main_precursor_InChI}, \code{main_precursor_InChIKey}, and
+\code{main_precursor_xLogP}. Product-level structure columns should include at
+least one of \code{SMILES}, \code{InChI}, or \code{InChIKey}. Matching is normalized
+internally with precedence \verb{InChIKey > InChI > SMILES}, so no additional
+\code{structure_key} columns are required in the input table.}
 
 \item{chromatographic_phase}{Character(1) chromatographic phase used for RT
 plausibility checks.}
@@ -28,5 +37,11 @@ Create a \code{Method} child object for assigning expected
 transformation products to detected features or suspect hits. This workflow
 uses a supplied precursor-product table together with chromatographic
 plausibility and optional MS2 fragment support to propose environmentally
-relevant parent-product relationships in NTA studies.
+relevant parent-product relationships in NTA studies. Structure matching is
+normalized internally with precedence \verb{InChIKey > InChI > SMILES}, and the
+resulting assignments resolve one direct precursor and one main precursor
+feature group per detected product feature group. When the input table was
+generated with \code{search_transformation_products_biotransformer()}, the
+helper already harmonizes structure fields and direct-precursor metadata
+before this method runs.
 }

@@ -646,15 +646,12 @@ ProjectMassSpec <- R6::R6Class(
 #' @template arg-ProjectMassSpec-normalized
 #' @template arg-ProjectMassSpec-showText
 #' @template arg-ProjectMassSpec-showLabels
-#' @template arg-Project-db
-#' @template arg-Project-project-id
 #' @template arg-ProjectMassSpec-mzClust
 #' @template arg-ProjectMassSpec-presence
 #' @template arg-ProjectMassSpec-reduction
 #' @template arg-ProjectMassSpec-minIntensity
 #' @template arg-ProjectMassSpec-useMobility
 #' @template arg-Project-ellipsis
-#' @template arg-ProjectMassSpec-import-file
 #' @template arg-ProjectMassSpec-analysis
 #' @template arg-Project-value
 NULL

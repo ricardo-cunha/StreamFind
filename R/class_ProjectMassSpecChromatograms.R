@@ -108,17 +108,6 @@ ProjectMassSpecChromatograms <- R6::R6Class(
 #' methods and expose the chromatogram-specific package generics.
 #' @param x A `ProjectMassSpecChromatograms` object.
 #' @template arg-ProjectMassSpec-analyses
-#' @template arg-ProjectMassSpec-chromatograms
-#' @template arg-ProjectMassSpec-rtmin
-#' @template arg-ProjectMassSpec-rtmax
-#' @template arg-ProjectMassSpec-minIntensity
-#' @template arg-ProjectMassSpec-plot-downsize
-#' @template arg-ProjectMassSpec-plot-xLab
-#' @template arg-ProjectMassSpec-plot-yLab
-#' @template arg-ProjectMassSpec-plot-title
-#' @template arg-ProjectMassSpec-plot-groupBy
-#' @template arg-ProjectMassSpec-plot-interactive
-#' @template arg-ProjectMassSpec-plot-colorPalette
 #' @template arg-Project-ellipsis
 NULL
 

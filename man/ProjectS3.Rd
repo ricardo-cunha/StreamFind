@@ -81,6 +81,28 @@
 }
 \arguments{
 \item{x}{A \code{Project} object.}
+
+\item{con}{A \code{Project} object (used for S3 generic compatibility with \code{close()}).}
+
+\item{...}{Additional arguments passed to the method or ignored by the implementation.}
+
+\item{value}{An object that highly depends on the method. Check the specific method documentation for details.}
+
+\item{name}{Optional cache name to delete. Use \code{NULL} to delete all cache rows.}
+
+\item{step}{A \code{ProcessingStep} object or a compatible list describing a workflow step.}
+
+\item{workflow}{A \code{Workflow} object or a compatible list of processing steps.}
+
+\item{template}{Full path to a template file (e.g. a Quarto \code{.qmd} file).}
+
+\item{output_file}{Output file name or path; file extension is handled by the caller.}
+
+\item{execute_dir}{Directory in which to execute rendering or related operations.}
+
+\item{db}{Path to DuckDB file.}
+
+\item{project_id}{Active project identifier.}
 }
 \description{
 S3 wrappers for \code{Project} R6 methods providing a thin functional interface.
