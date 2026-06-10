@@ -182,6 +182,15 @@ def sync_runtime_artifact(source: Path, destinations: list[Path]) -> None:
       shutil.copy2(source, destination)
 
 
+def read_stamp_metadata(stamp: Path) -> dict[str, object]:
+    if not stamp.exists():
+        return {}
+    try:
+        return json.loads(stamp.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
 def main() -> int:
     args = parse_args()
     repo_root = Path(args.repo_root).resolve()
@@ -204,6 +213,7 @@ def main() -> int:
     c_sources = read_manifest(repo_root, manifests_root / "inchi_c.txt")
     cpp_sources.append(repo_root / "src" / "core" / "external" / "openbabel" / "openbabel_c_api.cpp")
     dependency_mtime = latest_mtime(iter_dependency_files(repo_root))
+    stamp = build_root / ".stamp"
 
     cxx_flags = expand_flags(args.cxxflag)
     c_flags = expand_flags(args.cflag)
@@ -213,6 +223,27 @@ def main() -> int:
     cxx_compiler = split_command(args.cxx)
     c_compiler = split_command(args.cc)
     archiver = split_command(args.ar)
+
+    if not args.force and args.platform == "windows":
+        runtime_dll = build_root / "bin" / "openbabel_streamfind.dll"
+        stamp_meta = read_stamp_metadata(stamp)
+        stamp_mtime = stamp.stat().st_mtime if stamp.exists() else 0.0
+        if (
+            runtime_dll.exists()
+            and stamp.exists()
+            and dependency_mtime <= stamp_mtime
+            and stamp_meta.get("platform") == args.platform
+            and bool(stamp_meta.get("release_artifact_only")) == bool(args.release_artifact_only)
+        ):
+            sync_runtime_artifact(
+                runtime_dll,
+                [
+                    repo_root / "inst" / "libs" / "x64" / "openbabel_streamfind.dll",
+                    repo_root / "python" / "cf_streamfind" / "bin" / "openbabel_streamfind.dll",
+                ],
+            )
+            print(f"[openbabel] reusing: {runtime_dll.relative_to(repo_root)}")
+            return 0
 
     openbabel_objects: list[Path] = []
     inchi_objects: list[Path] = []
@@ -285,7 +316,6 @@ def main() -> int:
         metadata["openbabel_archive"] = str(openbabel_archive.relative_to(repo_root))
         metadata["inchi_archive"] = str(inchi_archive.relative_to(repo_root))
 
-    stamp = build_root / ".stamp"
     ensure_parent(stamp)
     stamp.write_text(
         json.dumps(metadata, indent=2)

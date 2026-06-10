@@ -2,6 +2,11 @@
 #include <cctype>
 #include <cstdlib>
 #include <cmath>
+#include <chrono>
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <sstream>
 #include <Rcpp.h>
 
 #include "project/project.h"
@@ -320,6 +325,100 @@ namespace nta_rcpp
     return out;
   }
 
+  void append_metfrag_debug_line(const std::string &run_dir, const std::string &message)
+  {
+    if (run_dir.empty())
+      return;
+    try
+    {
+      std::filesystem::create_directories(run_dir);
+      const auto now = std::chrono::system_clock::now();
+      const auto now_time = std::chrono::system_clock::to_time_t(now);
+      const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+      std::tm time_info{};
+#ifdef _WIN32
+      localtime_s(&time_info, &now_time);
+#else
+      localtime_r(&now_time, &time_info);
+#endif
+      std::ostringstream stamp;
+      stamp << std::put_time(&time_info, "%Y-%m-%d %H:%M:%S")
+            << '.'
+            << std::setw(3) << std::setfill('0') << ms.count();
+      std::ofstream out(std::filesystem::path(run_dir) / "streamfind_metfrag_debug.log", std::ios::app);
+      if (!out.is_open())
+        return;
+      out << "[" << stamp.str() << "] [RCPP] " << message << "\n";
+      out.flush();
+    }
+    catch (...)
+    {
+    }
+  }
+
+  void append_simple_debug_line(const std::string &path, const std::string &tag, const std::string &message)
+  {
+    if (path.empty())
+      return;
+    try
+    {
+      std::filesystem::create_directories(std::filesystem::path(path).parent_path());
+      const auto now = std::chrono::system_clock::now();
+      const auto now_time = std::chrono::system_clock::to_time_t(now);
+      const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+      std::tm time_info{};
+#ifdef _WIN32
+      localtime_s(&time_info, &now_time);
+#else
+      localtime_r(&time_info, &now_time);
+#endif
+      std::ostringstream stamp;
+      stamp << std::put_time(&time_info, "%Y-%m-%d %H:%M:%S")
+            << '.'
+            << std::setw(3) << std::setfill('0') << ms.count();
+      std::ofstream out(path, std::ios::app);
+      if (!out.is_open())
+        return;
+      out << "[" << stamp.str() << "] [" << tag << "] " << message << "\n";
+      out.flush();
+    }
+    catch (...)
+    {
+    }
+  }
+
+  std::string sexptype_name(SEXP value)
+  {
+    switch (TYPEOF(value))
+    {
+      case NILSXP: return "NULL";
+      case SYMSXP: return "SYMSXP";
+      case LISTSXP: return "LISTSXP";
+      case CLOSXP: return "CLOSXP";
+      case ENVSXP: return "ENVSXP";
+      case PROMSXP: return "PROMSXP";
+      case LANGSXP: return "LANGSXP";
+      case SPECIALSXP: return "SPECIALSXP";
+      case BUILTINSXP: return "BUILTINSXP";
+      case CHARSXP: return "CHARSXP";
+      case LGLSXP: return "LGLSXP";
+      case INTSXP: return "INTSXP";
+      case REALSXP: return "REALSXP";
+      case CPLXSXP: return "CPLXSXP";
+      case STRSXP: return "STRSXP";
+      case DOTSXP: return "DOTSXP";
+      case ANYSXP: return "ANYSXP";
+      case VECSXP: return "VECSXP";
+      case EXPRSXP: return "EXPRSXP";
+      case BCODESXP: return "BCODESXP";
+      case EXTPTRSXP: return "EXTPTRSXP";
+      case WEAKREFSXP: return "WEAKREFSXP";
+      case RAWSXP: return "RAWSXP";
+      case S4SXP: return "S4SXP";
+      default: return "UNKNOWN";
+    }
+  }
+
   Rcpp::List get_empty_dt()
   {
     Rcpp::List out = Rcpp::List::create();
@@ -487,6 +586,17 @@ namespace nta_rcpp
     Rcpp::NumericVector annotation_expected_rel_intensity_min(n);
     Rcpp::NumericVector annotation_expected_rel_intensity_max(n);
     Rcpp::NumericVector annotation_score(n);
+    Rcpp::IntegerVector component_size(n);
+    Rcpp::NumericVector component_rt_center(n);
+    Rcpp::NumericVector component_rt_spread(n);
+    Rcpp::NumericVector component_density(n);
+    Rcpp::NumericVector component_mean_correlation(n);
+    Rcpp::CharacterVector component_best_partner(n);
+    Rcpp::NumericVector component_max_correlation(n);
+    Rcpp::NumericVector component_mean_correlation_to_component(n);
+    Rcpp::NumericVector component_membership_score(n);
+    Rcpp::LogicalVector component_is_core(n);
+    Rcpp::LogicalVector component_bridge_flag(n);
     Rcpp::CharacterVector created_at(n);
 
     for (std::size_t i = 0; i < n; ++i)
@@ -551,6 +661,17 @@ namespace nta_rcpp
       annotation_expected_rel_intensity_min[i] = row.annotation_expected_rel_intensity_min;
       annotation_expected_rel_intensity_max[i] = row.annotation_expected_rel_intensity_max;
       annotation_score[i] = row.annotation_score;
+      component_size[i] = row.component_size;
+      component_rt_center[i] = row.component_rt_center;
+      component_rt_spread[i] = row.component_rt_spread;
+      component_density[i] = row.component_density;
+      component_mean_correlation[i] = row.component_mean_correlation;
+      component_best_partner[i] = row.component_best_partner.empty() ? NA_STRING : Rcpp::String(row.component_best_partner);
+      component_max_correlation[i] = row.component_max_correlation;
+      component_mean_correlation_to_component[i] = row.component_mean_correlation_to_component;
+      component_membership_score[i] = row.component_membership_score;
+      component_is_core[i] = row.component_is_core;
+      component_bridge_flag[i] = row.component_bridge_flag;
       created_at[i] = row.created_at.empty() ? NA_STRING : Rcpp::String(row.created_at);
     }
 
@@ -614,6 +735,17 @@ namespace nta_rcpp
         Rcpp::Named("annotation_expected_rel_intensity_min") = annotation_expected_rel_intensity_min,
         Rcpp::Named("annotation_expected_rel_intensity_max") = annotation_expected_rel_intensity_max,
         Rcpp::Named("annotation_score") = annotation_score,
+        Rcpp::Named("component_size") = component_size,
+        Rcpp::Named("component_rt_center") = component_rt_center,
+        Rcpp::Named("component_rt_spread") = component_rt_spread,
+        Rcpp::Named("component_density") = component_density,
+        Rcpp::Named("component_mean_correlation") = component_mean_correlation,
+        Rcpp::Named("component_best_partner") = component_best_partner,
+        Rcpp::Named("component_max_correlation") = component_max_correlation,
+        Rcpp::Named("component_mean_correlation_to_component") = component_mean_correlation_to_component,
+        Rcpp::Named("component_membership_score") = component_membership_score,
+        Rcpp::Named("component_is_core") = component_is_core,
+        Rcpp::Named("component_bridge_flag") = component_bridge_flag,
         Rcpp::Named("created_at") = created_at);
     out.attr("class") = Rcpp::CharacterVector::create("data.table", "data.frame");
     return out;
@@ -1327,7 +1459,22 @@ namespace nta_rcpp
         Rcpp::Named("cosine_similarity")                 = as_numeric_vector(tp.cosine_similarity),
         Rcpp::Named("main_precursor_cosine_similarity")  = as_numeric_vector(tp.main_precursor_cosine_similarity),
         Rcpp::Named("rt_plausibility")                   = as_numeric_vector(tp.rt_plausibility),
-        Rcpp::Named("main_precursor_rt_plausibility")    = as_numeric_vector(tp.main_precursor_rt_plausibility));
+        Rcpp::Named("main_precursor_rt_plausibility")    = as_numeric_vector(tp.main_precursor_rt_plausibility),
+        Rcpp::Named("product_structure_key")             = as_char_vector(tp.product_structure_key),
+        Rcpp::Named("precursor_structure_key")           = as_char_vector(tp.precursor_structure_key),
+        Rcpp::Named("main_precursor_structure_key")      = as_char_vector(tp.main_precursor_structure_key),
+        Rcpp::Named("resolved_direct_parent_feature_group") = as_char_vector(tp.resolved_direct_parent_feature_group),
+        Rcpp::Named("resolved_main_parent_feature_group") = as_char_vector(tp.resolved_main_parent_feature_group),
+        Rcpp::Named("assignment_status")                 = as_char_vector(tp.assignment_status),
+        Rcpp::Named("is_direct_assignment")              = tp.is_direct_assignment,
+        Rcpp::Named("is_main_parent_consistent")         = tp.is_main_parent_consistent,
+        Rcpp::Named("transformation_valid")              = tp.transformation_valid,
+        Rcpp::Named("assignment_rank")                   = tp.assignment_rank,
+        Rcpp::Named("network_level")                     = tp.network_level,
+        Rcpp::Named("assignment_score")                  = as_numeric_vector(tp.assignment_score),
+        Rcpp::Named("transformation_mass_delta_expected") = as_numeric_vector(tp.transformation_mass_delta_expected),
+        Rcpp::Named("transformation_mass_delta_observed") = as_numeric_vector(tp.transformation_mass_delta_observed),
+        Rcpp::Named("transformation_mass_delta_error")   = as_numeric_vector(tp.transformation_mass_delta_error));
 
     out.attr("class") = Rcpp::CharacterVector::create("data.table", "data.frame");
     return out;
@@ -1532,81 +1679,211 @@ bool rcpp_project_non_target_analysis_assign_transformation_products(
   std::string chromatographic_phase = "reverse_phase",
   double mzrMS2 = 0.008)
 {
-  return nta_rcpp::project_call([&]() {
-    std::vector<nta::api::NTA_TRANSFORMATION_PRODUCT_ROW> tp_rows;
-    if (transformation_products.size() > 0)
-    {
-      auto get_str = [&](const char *col) {
-        Rcpp::CharacterVector v = transformation_products[col];
-        std::vector<std::string> out;
-        out.reserve(v.size());
-        for (int i = 0; i < v.size(); ++i)
-          out.push_back((v[i] == NA_STRING) ? "" : Rcpp::as<std::string>(v[i]));
-        return out;
-      };
-      auto get_dbl = [&](const char *col) {
-        Rcpp::NumericVector v = transformation_products[col];
-        std::vector<double> out;
-        out.reserve(v.size());
-        for (int i = 0; i < v.size(); ++i)
-          out.push_back(Rcpp::NumericVector::is_na(v[i]) ? std::numeric_limits<double>::quiet_NaN() : static_cast<double>(v[i]));
-        return out;
-      };
-
-      auto name = get_str("name");
-      auto formula = get_str("formula");
-      auto mass = get_dbl("mass");
-      auto SMILES = get_str("SMILES");
-      auto InChI = get_str("InChI");
-      auto InChIKey = get_str("InChIKey");
-      auto xLogP = get_dbl("xLogP");
-      auto transformation = get_str("transformation");
-      auto precursor_name = get_str("precursor_name");
-      auto precursor_formula = get_str("precursor_formula");
-      auto precursor_mass = get_dbl("precursor_mass");
-      auto precursor_SMILES = get_str("precursor_SMILES");
-      auto precursor_InChI = get_str("precursor_InChI");
-      auto precursor_InChIKey = get_str("precursor_InChIKey");
-      auto precursor_xLogP = get_dbl("precursor_xLogP");
-      auto main_precursor_name = get_str("main_precursor_name");
-      auto main_precursor_formula = get_str("main_precursor_formula");
-      auto main_precursor_mass = get_dbl("main_precursor_mass");
-      auto main_precursor_SMILES = get_str("main_precursor_SMILES");
-      auto main_precursor_InChI = get_str("main_precursor_InChI");
-      auto main_precursor_InChIKey = get_str("main_precursor_InChIKey");
-      auto main_precursor_xLogP = get_dbl("main_precursor_xLogP");
-
-      for (int i = 0; i < static_cast<int>(name.size()); ++i)
+  const std::string debug_path = (std::filesystem::path(".") / "log" / "assign_transformation_products_debug.log").string();
+  nta_rcpp::append_simple_debug_line(debug_path, "RCPP", "rcpp_project_non_target_analysis_assign_transformation_products:start");
+  nta_rcpp::append_simple_debug_line(
+      debug_path,
+      "RCPP",
+      "inputs transformation_products_cols=" + std::to_string(transformation_products.size()) +
+      " chromatographic_phase=" + chromatographic_phase +
+      " mzrMS2=" + std::to_string(mzrMS2));
+  try
+  {
+    const bool success = nta_rcpp::project_call([&]() {
+      nta_rcpp::append_simple_debug_line(debug_path, "RCPP", "project_call:enter");
+      std::vector<nta::api::NTA_TRANSFORMATION_PRODUCT_ROW> tp_rows;
+      if (transformation_products.size() > 0)
       {
-        nta::api::NTA_TRANSFORMATION_PRODUCT_ROW row;
-        row.name = name[i];
-        row.formula = formula[i];
-        row.mass = mass[i];
-        row.SMILES = SMILES[i];
-        row.InChI = InChI[i];
-        row.InChIKey = InChIKey[i];
-        row.xLogP = xLogP[i];
-        row.transformation = transformation[i];
-        row.precursor_name = precursor_name[i];
-        row.precursor_formula = precursor_formula[i];
-        row.precursor_mass = precursor_mass[i];
-        row.precursor_SMILES = precursor_SMILES[i];
-        row.precursor_InChI = precursor_InChI[i];
-        row.precursor_InChIKey = precursor_InChIKey[i];
-        row.precursor_xLogP = precursor_xLogP[i];
-        row.main_precursor_name = main_precursor_name[i];
-        row.main_precursor_formula = main_precursor_formula[i];
-        row.main_precursor_mass = main_precursor_mass[i];
-        row.main_precursor_SMILES = main_precursor_SMILES[i];
-        row.main_precursor_InChI = main_precursor_InChI[i];
-        row.main_precursor_InChIKey = main_precursor_InChIKey[i];
-        row.main_precursor_xLogP = main_precursor_xLogP[i];
-        tp_rows.push_back(std::move(row));
-      }
-    }
+        auto require_col = [&](const char *col) {
+          if (!transformation_products.containsElementNamed(col))
+          {
+            nta_rcpp::append_simple_debug_line(debug_path, "RCPP", std::string("missing_required_column=") + col);
+            Rcpp::stop("transformation_products must include '%s' column.", col);
+          }
+        };
+        auto get_col_obj = [&](const char *col) -> Rcpp::RObject {
+          require_col(col);
+          Rcpp::RObject obj = transformation_products[col];
+          nta_rcpp::append_simple_debug_line(
+              debug_path,
+              "RCPP",
+              std::string("column=") + col +
+              " type=" + nta_rcpp::sexptype_name(obj) +
+              " length=" + std::to_string(Rf_length(obj)) +
+              " class=" + Rcpp::as<std::string>(Rcpp::Function("paste")(Rcpp::as<Rcpp::CharacterVector>(Rcpp::Function("class")(obj)), ",")));
+          return obj;
+        };
+        auto coerce_chr = [&](const char *col) -> Rcpp::CharacterVector {
+          Rcpp::RObject obj = get_col_obj(col);
+          if (TYPEOF(obj) == STRSXP && !Rf_isObject(obj))
+            return Rcpp::as<Rcpp::CharacterVector>(obj);
+          if (TYPEOF(obj) == VECSXP) {
+            Rcpp::List lst = Rcpp::as<Rcpp::List>(obj);
+            R_xlen_t sz = lst.size();
+            Rcpp::CharacterVector out = Rcpp::no_init(sz);
+            for (R_xlen_t i = 0; i < sz; ++i) {
+              if (lst[i] == R_NilValue) {
+                out[i] = NA_STRING;
+              } else {
+                Rcpp::RObject elem = lst[i];
+                if (TYPEOF(elem) == STRSXP) {
+                  Rcpp::CharacterVector tmp(elem);
+                  out[i] = tmp[0];
+                } else {
+                  out[i] = Rcpp::as<std::string>(Rcpp::Function("as.character")(elem));
+                }
+              }
+            }
+            return out;
+          }
+          Rcpp::Function as_character("as.character");
+          return Rcpp::as<Rcpp::CharacterVector>(as_character(obj));
+        };
+        auto coerce_num = [&](const char *col) -> Rcpp::NumericVector {
+          Rcpp::RObject obj = get_col_obj(col);
+          if (TYPEOF(obj) == VECSXP) {
+            Rcpp::List lst = Rcpp::as<Rcpp::List>(obj);
+            R_xlen_t sz = lst.size();
+            Rcpp::NumericVector out = Rcpp::no_init(sz);
+            Rcpp::Function as_numeric("as.numeric");
+            for (R_xlen_t i = 0; i < sz; ++i) {
+              if (lst[i] == R_NilValue) {
+                out[i] = NA_REAL;
+              } else {
+                Rcpp::RObject elem = lst[i];
+                if (TYPEOF(elem) == REALSXP) {
+                  Rcpp::NumericVector tmp(elem);
+                  out[i] = tmp[0];
+                } else if (TYPEOF(elem) == INTSXP || TYPEOF(elem) == LGLSXP) {
+                  Rcpp::IntegerVector tmp(elem);
+                  out[i] = (tmp[0] == NA_INTEGER) ? NA_REAL : static_cast<double>(tmp[0]);
+                } else {
+                  out[i] = Rcpp::as<Rcpp::NumericVector>(as_numeric(elem))[0];
+                }
+              }
+            }
+            return out;
+          }
+          if ((TYPEOF(obj) == REALSXP || TYPEOF(obj) == INTSXP || TYPEOF(obj) == LGLSXP) && !Rf_isObject(obj))
+            return Rcpp::as<Rcpp::NumericVector>(obj);
+          Rcpp::Function as_numeric("as.numeric");
+          return Rcpp::as<Rcpp::NumericVector>(as_numeric(obj));
+        };
 
-    return nta_rcpp::project_non_target_analysis_from_xptr(nta_xptr).assign_transformation_products(tp_rows, chromatographic_phase, mzrMS2);
-  });
+        require_col("name");
+        require_col("transformation");
+        require_col("precursor_name");
+        require_col("precursor_formula");
+        require_col("precursor_mass");
+        require_col("precursor_SMILES");
+        require_col("precursor_InChI");
+        require_col("precursor_InChIKey");
+        require_col("precursor_xLogP");
+        require_col("main_precursor_name");
+        require_col("main_precursor_formula");
+        require_col("main_precursor_mass");
+        require_col("main_precursor_SMILES");
+        require_col("main_precursor_InChI");
+        require_col("main_precursor_InChIKey");
+        require_col("main_precursor_xLogP");
+
+        const Rcpp::CharacterVector name_vec = coerce_chr("name");
+        const int n = name_vec.size();
+        nta_rcpp::append_simple_debug_line(debug_path, "RCPP", "row_count=" + std::to_string(n));
+
+        auto get_str = [&](const char *col) {
+          Rcpp::CharacterVector v = coerce_chr(col);
+          if (v.size() != n)
+            Rcpp::stop("transformation_products column '%s' has length %d, expected %d.", col, v.size(), n);
+          std::vector<std::string> out;
+          out.reserve(v.size());
+          for (int i = 0; i < v.size(); ++i)
+            out.push_back((v[i] == NA_STRING) ? "" : Rcpp::as<std::string>(v[i]));
+          return out;
+        };
+        auto get_dbl = [&](const char *col) {
+          Rcpp::NumericVector v = coerce_num(col);
+          if (v.size() != n)
+            Rcpp::stop("transformation_products column '%s' has length %d, expected %d.", col, v.size(), n);
+          std::vector<double> out;
+          out.reserve(v.size());
+          for (int i = 0; i < v.size(); ++i)
+            out.push_back(Rcpp::NumericVector::is_na(v[i]) ? std::numeric_limits<double>::quiet_NaN() : static_cast<double>(v[i]));
+          return out;
+        };
+
+        auto name = get_str("name");
+        auto formula = get_str("formula");
+        auto mass = get_dbl("mass");
+        auto SMILES = get_str("SMILES");
+        auto InChI = get_str("InChI");
+        auto InChIKey = get_str("InChIKey");
+        auto xLogP = get_dbl("xLogP");
+        auto transformation = get_str("transformation");
+        auto precursor_name = get_str("precursor_name");
+        auto precursor_formula = get_str("precursor_formula");
+        auto precursor_mass = get_dbl("precursor_mass");
+        auto precursor_SMILES = get_str("precursor_SMILES");
+        auto precursor_InChI = get_str("precursor_InChI");
+        auto precursor_InChIKey = get_str("precursor_InChIKey");
+        auto precursor_xLogP = get_dbl("precursor_xLogP");
+        auto main_precursor_name = get_str("main_precursor_name");
+        auto main_precursor_formula = get_str("main_precursor_formula");
+        auto main_precursor_mass = get_dbl("main_precursor_mass");
+        auto main_precursor_SMILES = get_str("main_precursor_SMILES");
+        auto main_precursor_InChI = get_str("main_precursor_InChI");
+        auto main_precursor_InChIKey = get_str("main_precursor_InChIKey");
+        auto main_precursor_xLogP = get_dbl("main_precursor_xLogP");
+
+        for (int i = 0; i < n; ++i)
+        {
+          nta::api::NTA_TRANSFORMATION_PRODUCT_ROW row;
+          row.name = name[i];
+          row.formula = formula[i];
+          row.mass = mass[i];
+          row.SMILES = SMILES[i];
+          row.InChI = InChI[i];
+          row.InChIKey = InChIKey[i];
+          row.xLogP = xLogP[i];
+          row.transformation = transformation[i];
+          row.precursor_name = precursor_name[i];
+          row.precursor_formula = precursor_formula[i];
+          row.precursor_mass = precursor_mass[i];
+          row.precursor_SMILES = precursor_SMILES[i];
+          row.precursor_InChI = precursor_InChI[i];
+          row.precursor_InChIKey = precursor_InChIKey[i];
+          row.precursor_xLogP = precursor_xLogP[i];
+          row.main_precursor_name = main_precursor_name[i];
+          row.main_precursor_formula = main_precursor_formula[i];
+          row.main_precursor_mass = main_precursor_mass[i];
+          row.main_precursor_SMILES = main_precursor_SMILES[i];
+          row.main_precursor_InChI = main_precursor_InChI[i];
+          row.main_precursor_InChIKey = main_precursor_InChIKey[i];
+          row.main_precursor_xLogP = main_precursor_xLogP[i];
+          tp_rows.push_back(std::move(row));
+        }
+      }
+
+      nta_rcpp::append_simple_debug_line(debug_path, "RCPP", "project_call:rows_parsed count=" + std::to_string(tp_rows.size()));
+      auto &nta_data = nta_rcpp::project_non_target_analysis_from_xptr(nta_xptr);
+      nta_rcpp::append_simple_debug_line(debug_path, "RCPP", "project_call:nta_ptr_ok");
+      const bool result = nta_data.assign_transformation_products(tp_rows, chromatographic_phase, mzrMS2);
+      nta_rcpp::append_simple_debug_line(debug_path, "RCPP", std::string("project_call:assign_transformation_products_returned result=") + (result ? "true" : "false"));
+      return result;
+    });
+    nta_rcpp::append_simple_debug_line(debug_path, "RCPP", std::string("rcpp_project_non_target_analysis_assign_transformation_products:return success=") + (success ? "true" : "false"));
+    return success;
+  }
+  catch (const std::exception &e)
+  {
+    nta_rcpp::append_simple_debug_line(debug_path, "RCPP", std::string("rcpp_project_non_target_analysis_assign_transformation_products:exception ") + e.what());
+    throw;
+  }
+  catch (...)
+  {
+    nta_rcpp::append_simple_debug_line(debug_path, "RCPP", "rcpp_project_non_target_analysis_assign_transformation_products:unknown_exception");
+    throw;
+  }
 }
 
 // MARK: rcpp_project_nta_find_features
@@ -2068,11 +2345,43 @@ bool rcpp_project_nta_metfrag_screening(
   p.run_dir        = run_dir;
   p.debug          = debug;
   p.extra_params   = extra_params_cpp;
+  p.run_dir        = nta::metfrag_runner::resolve_run_dir(p);
 
-  return nta_rcpp::project_call([&]() {
-    auto &nta_data = nta_rcpp::project_non_target_analysis_from_xptr(nta_xptr);
-    return nta_data.metfrag_screening(analyses_sel, p);
-  });
+  if (p.debug)
+  {
+    nta_rcpp::append_metfrag_debug_line(p.run_dir, "rcpp_project_nta_metfrag_screening:start");
+    nta_rcpp::append_metfrag_debug_line(
+        p.run_dir,
+        "resolved_run_dir=" + p.run_dir +
+        " analyses=" + std::to_string(analyses_sel.size()) +
+        " score_types=" + std::to_string(p.score_types.size()) +
+        " extra_params=" + std::to_string(p.extra_params.size()));
+  }
+
+  try
+  {
+    const bool success = nta_rcpp::project_call([&]() {
+      nta_rcpp::append_metfrag_debug_line(p.run_dir, "project_call:enter");
+      auto &nta_data = nta_rcpp::project_non_target_analysis_from_xptr(nta_xptr);
+      nta_rcpp::append_metfrag_debug_line(p.run_dir, "project_call:nta_ptr_ok");
+      const bool result = nta_data.metfrag_screening(analyses_sel, p);
+      nta_rcpp::append_metfrag_debug_line(p.run_dir, std::string("project_call:metfrag_screening_returned result=") + (result ? "true" : "false"));
+      return result;
+    });
+    nta_rcpp::append_metfrag_debug_line(p.run_dir, std::string("rcpp_project_nta_metfrag_screening:after_project_call success=") + (success ? "true" : "false"));
+    nta_rcpp::append_metfrag_debug_line(p.run_dir, "rcpp_project_nta_metfrag_screening:return");
+    return success;
+  }
+  catch (const std::exception &e)
+  {
+    nta_rcpp::append_metfrag_debug_line(p.run_dir, std::string("rcpp_project_nta_metfrag_screening:exception ") + e.what());
+    throw;
+  }
+  catch (...)
+  {
+    nta_rcpp::append_metfrag_debug_line(p.run_dir, "rcpp_project_nta_metfrag_screening:unknown_exception");
+    throw;
+  }
 };
 
 // MARK: rcpp_project_nta_assign_transformation_products
@@ -2114,7 +2423,32 @@ Rcpp::List rcpp_project_nta_assign_transformation_products(
   std::vector<nta::api::NTA_TRANSFORMATION_PRODUCT_ROW> tp_rows;
   if (transformation_products.size() > 0)
   {
+    Rcpp::CharacterVector name_r = transformation_products["name"];
+    const int n = name_r.size();
+    auto require_col = [&](const char *col) {
+      if (!transformation_products.containsElementNamed(col))
+      {
+        Rcpp::stop("transformation_products must include '%s' column.", col);
+      }
+    };
+    require_col("name");
+    require_col("transformation");
+    require_col("precursor_name");
+    require_col("precursor_formula");
+    require_col("precursor_mass");
+    require_col("precursor_SMILES");
+    require_col("precursor_InChI");
+    require_col("precursor_InChIKey");
+    require_col("precursor_xLogP");
+    require_col("main_precursor_name");
+    require_col("main_precursor_formula");
+    require_col("main_precursor_mass");
+    require_col("main_precursor_SMILES");
+    require_col("main_precursor_InChI");
+    require_col("main_precursor_InChIKey");
+    require_col("main_precursor_xLogP");
     auto get_str = [&](const char *col) {
+      require_col(col);
       Rcpp::CharacterVector v = transformation_products[col];
       std::vector<std::string> out;
       out.reserve(v.size());
@@ -2123,6 +2457,7 @@ Rcpp::List rcpp_project_nta_assign_transformation_products(
       return out;
     };
     auto get_dbl = [&](const char *col) {
+      require_col(col);
       Rcpp::NumericVector v = transformation_products[col];
       std::vector<double> out;
       out.reserve(v.size());
@@ -2155,7 +2490,6 @@ Rcpp::List rcpp_project_nta_assign_transformation_products(
     auto main_InChIKey     = get_str("main_precursor_InChIKey");
     auto main_xLogP        = get_dbl("main_precursor_xLogP");
 
-    int n = static_cast<int>(name.size());
     tp_rows.reserve(n);
     for (int i = 0; i < n; ++i)
     {

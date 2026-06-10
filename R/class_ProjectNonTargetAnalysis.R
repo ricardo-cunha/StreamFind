@@ -1824,7 +1824,6 @@ plot_features_ms1.ProjectNonTargetAnalysis <- function(
   )
 
   if (nrow(ms1) == 0) {
-    message("\u2717 MS1 traces not found for the targets!")
     return(NULL)
   }
 
@@ -1934,7 +1933,6 @@ plot_features_ms2.ProjectNonTargetAnalysis <- function(
   )
 
   if (nrow(ms2) == 0) {
-    message("\u2717 MS2 traces not found for the targets!")
     return(NULL)
   }
   ms2[, is_pre := FALSE]
@@ -2386,7 +2384,6 @@ plot_suspects_ms2.ProjectNonTargetAnalysis <- function(
   )
 
   if (nrow(suspects) == 0) {
-    message("\u2717 Suspect MS2 traces not found for the targets!")
     return(NULL)
   }
 
@@ -2424,12 +2421,10 @@ plot_suspects_ms2.ProjectNonTargetAnalysis <- function(
   spec_list <- Filter(Negate(is.null), spec_list)
   suspects_ms2 <- data.table::rbindlist(spec_list, fill = TRUE)
   if (nrow(suspects_ms2) == 0) {
-    message("\u2717 Suspect MS2 traces not found for the targets!")
     return(NULL)
   }
   suspects_ms2 <- suspects_ms2[is.finite(mz) & is.finite(intensity)]
   if (nrow(suspects_ms2) == 0) {
-    message("\u2717 Suspect MS2 traces not found for the targets!")
     return(NULL)
   }
 
@@ -2960,6 +2955,7 @@ plot_transformation_products.ProjectNonTargetAnalysis <- function(
   showLegend = TRUE,
   showMS2 = FALSE,
   showIntensityProfile = FALSE,
+  darkMode = FALSE,
   ...
 ) {
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
@@ -3087,47 +3083,41 @@ plot_transformation_products.ProjectNonTargetAnalysis <- function(
     paste(unique(x), collapse = "; ")
   }
 
-  create_structure_image <- function(smiles, width_px = 2400, height_px = 1600, dpi = 400) {
-    if (is.null(smiles) || is.na(smiles) || !nzchar(smiles)) {
-      return("")
-    }
-    if (!requireNamespace("rcdk", quietly = TRUE)) {
-      return("")
-    }
-    if (!requireNamespace("rJava", quietly = TRUE)) {
-      return("")
-    }
-    if (!requireNamespace("base64enc", quietly = TRUE)) {
-      return("")
-    }
-    if (!requireNamespace("magick", quietly = TRUE)) {
-      return("")
-    }
+  normalize_inline_svg <- function(svg) {
+    if (is.null(svg) || !nzchar(svg)) return("")
+    svg <- sub("^\\s*<\\?xml[^>]*>\\s*", "", svg)
+    svg <- sub("^\\s*<!DOCTYPE[^>]*>\\s*", "", svg, ignore.case = TRUE)
+    svg
+  }
+
+  svg_data_uri <- function(svg) {
+    if (is.null(svg) || !nzchar(svg)) return("")
+    paste0(
+      "data:image/svg+xml;base64,",
+      base64enc::base64encode(charToRaw(enc2utf8(svg)))
+    )
+  }
+
+  create_structure_image <- function(smiles, darkMode = FALSE, width = 200, height = 150) {
+    if (is.null(smiles) || is.na(smiles) || !nzchar(smiles)) return("")
+    if (!requireNamespace("base64enc", quietly = TRUE)) return("")
     tryCatch(
       {
-        mol <- rcdk::parse.smiles(smiles)[[1]]
-        depictor <- rcdk::get.depictor(width = as.integer(width_px), height = as.integer(height_px), fillToFit = TRUE)
-        img <- rcdk::view.image.2d(mol, depictor = depictor)
-        temp_file <- tempfile(fileext = ".png")
-        grDevices::png(filename = temp_file, width = width_px, height = height_px, units = "px", res = dpi, bg = "transparent")
-        graphics::par(mar = c(0, 0, 0, 0))
-        graphics::plot.new()
-        graphics::rasterImage(img, 0, 0, 1, 1, interpolate = FALSE)
-        grDevices::dev.off()
-        magick_img <- magick::image_read(temp_file)
-        magick_img <- magick::image_transparent(magick_img, "white", fuzz = 1)
-        magick_img <- magick::image_trim(magick_img, fuzz = 1)
-        magick::image_write(magick_img, path = temp_file, format = "png")
-        img_base64 <- base64enc::base64encode(temp_file)
-        unlink(temp_file)
-        paste0("data:image/png;base64,", img_base64)
+        svg <- rcpp_openbabel_structure_svg(
+          SMILES = smiles,
+          width = as.integer(width),
+          height = as.integer(height),
+          darkMode = isTRUE(darkMode)
+        )
+        if (is.null(svg) || !nzchar(svg)) return("")
+        svg_data_uri(normalize_inline_svg(svg))
       },
       error = function(e) ""
     )
   }
 
-  message("\u2699 Pre-rendering ", length(node_ids), " unique structures...", appendLF = FALSE)
-  structure_cache <- setNames(lapply(node_ids, function(smiles) create_structure_image(smiles)), node_ids)
+  message("\u2699 Pre-rendering ", length(node_ids), " unique structures with OpenBabel...", appendLF = FALSE)
+  structure_cache <- setNames(lapply(node_ids, function(smiles) create_structure_image(smiles, darkMode = darkMode)), node_ids)
   message(" Done.")
 
   create_ms2_mirror_plot <- function(precursor_spectra_list, product_spectra_list, width = 700, height = 400) {

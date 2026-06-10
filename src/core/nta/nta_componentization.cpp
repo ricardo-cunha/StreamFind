@@ -6,6 +6,8 @@
 #include <fstream>
 #include <sstream>
 #include <cmath>
+#include <numeric>
+#include <limits>
 
 namespace nta
 {
@@ -189,6 +191,14 @@ namespace nta
             float intensity;
           };
 
+          struct FeatureEIC {
+            int idx;
+            float rt;
+            float intensity;
+            std::vector<float> eic_rt;
+            std::vector<float> eic_int;
+          };
+
           std::vector<FeatureIntensity> sorted_features;
           sorted_features.reserve(feature_indices.size());
 
@@ -207,294 +217,278 @@ namespace nta
                       return a.intensity > b.intensity;
                     });
 
-          // Intensity-based prioritization: each unassigned feature (by intensity) seeds a cluster within its RT window
-          std::vector<bool> assigned(sorted_features.size(), false);
+          std::vector<FeatureEIC> feature_eics;
+          feature_eics.reserve(sorted_features.size());
 
-          for (size_t cluster_idx = 0; cluster_idx < sorted_features.size(); ++cluster_idx) {
-            if (assigned[cluster_idx]) continue;
+          for (const auto &sf : sorted_features) {
+            const nta::api::NTA_FEATURE_ROW &ft = fts.get_feature(sf.idx);
+            FeatureEIC feic;
+            feic.idx = sf.idx;
+            feic.rt = static_cast<float>(ft.rt);
+            feic.intensity = static_cast<float>(ft.intensity);
+            feic.eic_rt = decode_eic_base64(ft.eic_rt);
+            feic.eic_int = decode_eic_base64(ft.eic_intensity);
+            feature_eics.push_back(std::move(feic));
+          }
 
-            const float seed_rt = sorted_features[cluster_idx].rt;
-            const float seed_intensity = sorted_features[cluster_idx].intensity;
-            const float window_start = seed_rt + left_offset;
-            const float window_end = seed_rt + right_offset;
+          std::sort(feature_eics.begin(), feature_eics.end(),
+                    [](const FeatureEIC &a, const FeatureEIC &b) {
+                      if (a.rt != b.rt) return a.rt < b.rt;
+                      if (a.intensity != b.intensity) return a.intensity > b.intensity;
+                      return a.idx < b.idx;
+                    });
 
-            std::vector<int> cluster;
+          const size_t feature_count = feature_eics.size();
+          const float max_rt_gap = std::max(std::abs(left_offset), std::abs(right_offset));
+          auto rt_compatible = [&](float rt_a, float rt_b) {
+            return (rt_b >= rt_a + left_offset && rt_b <= rt_a + right_offset) ||
+                   (rt_a >= rt_b + left_offset && rt_a <= rt_b + right_offset);
+          };
+
+          std::vector<std::vector<int>> adjacency(feature_count);
+          std::vector<std::vector<float>> correlation_matrix(feature_count, std::vector<float>(feature_count, std::numeric_limits<float>::quiet_NaN()));
+          for (size_t a = 0; a < feature_count; ++a) {
+            correlation_matrix[a][a] = 1.0f;
+          }
+          for (size_t a = 0; a < feature_count; ++a) {
+            for (size_t b = a + 1; b < feature_count; ++b) {
+              const float rt_delta = feature_eics[b].rt - feature_eics[a].rt;
+              if (rt_delta > max_rt_gap) break;
+              if (!rt_compatible(feature_eics[a].rt, feature_eics[b].rt)) continue;
+              if (minCorrelation <= 0.0f) {
+                adjacency[a].push_back(static_cast<int>(b));
+                adjacency[b].push_back(static_cast<int>(a));
+                continue;
+              }
+              if (feature_eics[a].eic_rt.empty() || feature_eics[a].eic_int.empty() ||
+                  feature_eics[b].eic_rt.empty() || feature_eics[b].eic_int.empty()) {
+                continue;
+              }
+
+              auto [aligned1, aligned2] = align_eics_by_rt(
+                feature_eics[a].eic_rt, feature_eics[a].eic_int,
+                feature_eics[b].eic_rt, feature_eics[b].eic_int
+              );
+
+              if (aligned1.size() < 3) continue;
+
+              const float corr = calculate_pearson_correlation(aligned1, aligned2);
+              correlation_matrix[a][b] = corr;
+              correlation_matrix[b][a] = corr;
+              if (corr >= minCorrelation) {
+                adjacency[a].push_back(static_cast<int>(b));
+                adjacency[b].push_back(static_cast<int>(a));
+              }
+            }
+          }
+
+          std::vector<bool> visited(feature_count, false);
+          struct ComponentMembers {
+            std::vector<int> members;
+            float mean_rt = 0.0f;
+            float max_intensity = 0.0f;
+          };
+          std::vector<ComponentMembers> components;
+
+          for (size_t start = 0; start < feature_count; ++start) {
+            if (visited[start]) continue;
+
+            std::vector<int> stack{static_cast<int>(start)};
+            visited[start] = true;
+            ComponentMembers component;
             float rt_sum = 0.0f;
 
-            // Collect unassigned features within RT window
-            for (size_t j = 0; j < sorted_features.size(); ++j) {
-              if (assigned[j]) continue;
+            while (!stack.empty()) {
+              const int node = stack.back();
+              stack.pop_back();
+              component.members.push_back(node);
+              rt_sum += feature_eics[node].rt;
+              component.max_intensity = std::max(component.max_intensity, feature_eics[node].intensity);
 
-              const float ft_rt = sorted_features[j].rt;
-
-              // Include if within window
-              if (ft_rt >= window_start && ft_rt <= window_end) {
-                cluster.push_back(sorted_features[j].idx);
-                rt_sum += ft_rt;
+              for (const int neighbor : adjacency[node]) {
+                if (!visited[neighbor]) {
+                  visited[neighbor] = true;
+                  stack.push_back(neighbor);
+                }
               }
             }
 
-            if (cluster.empty()) continue;
+            component.mean_rt = rt_sum / static_cast<float>(component.members.size());
+            std::sort(component.members.begin(), component.members.end(),
+                      [&](int lhs, int rhs) {
+                        const auto &ft_lhs = fts.get_feature(feature_eics[lhs].idx);
+                        const auto &ft_rhs = fts.get_feature(feature_eics[rhs].idx);
+                        if (ft_lhs.mz != ft_rhs.mz) return ft_lhs.mz < ft_rhs.mz;
+                        if (ft_lhs.rt != ft_rhs.rt) return ft_lhs.rt < ft_rhs.rt;
+                        return feature_eics[lhs].idx < feature_eics[rhs].idx;
+                      });
+            components.push_back(std::move(component));
+          }
 
-            const int cluster_count = static_cast<int>(cluster.size());
-            const float cluster_rt_mean = rt_sum / static_cast<float>(cluster_count);
+          std::sort(components.begin(), components.end(),
+                    [](const ComponentMembers &a, const ComponentMembers &b) {
+                      if (a.max_intensity != b.max_intensity) return a.max_intensity > b.max_intensity;
+                      if (a.mean_rt != b.mean_rt) return a.mean_rt < b.mean_rt;
+                      return a.members.front() < b.members.front();
+                    });
 
-            // Debug if any feature falls within the debug RT window
-            bool debug_this_cluster = false;
+          const std::string analysis_name = i < analysis_names.size() ? analysis_names[i] : std::to_string(i);
+          for (const auto &component : components) {
+            bool debug_this_component = false;
             if (should_debug) {
-              for (const int idx : cluster) {
-                nta::api::NTA_FEATURE_ROW ft = fts.get_feature(idx);
-                if (ft.rt >= (debugRT + left_offset) && ft.rt <= (debugRT + right_offset)) {
-                  debug_this_cluster = true;
+              for (const int member : component.members) {
+                const float rt = feature_eics[member].rt;
+                if (rt >= (debugRT + left_offset) && rt <= (debugRT + right_offset)) {
+                  debug_this_component = true;
                   break;
                 }
               }
-              if (debug_this_cluster) {
-                DEBUG_LOG("\n--- Analysis " << (i < analysis_names.size() ? analysis_names[i] : std::to_string(i))
-                          << " [Polarity=" << polarity << "]: Processing Cluster starting from highest intensity feature ---\n");
-                DEBUG_LOG("  Seed feature: RT=" << seed_rt << ", intensity=" << seed_intensity
-                          << " with RT window [" << window_start << ", "
-                          << window_end << "]\n");
-                for (const int idx : cluster) {
-                  nta::api::NTA_FEATURE_ROW ft = fts.get_feature(idx);
-                  const bool in_debug_window = ft.rt >= (debugRT + left_offset) && ft.rt <= (debugRT + right_offset);
-                  DEBUG_LOG("  Feature " << ft.feature << ": RT=" << ft.rt
-                            << ", mz=" << ft.mz << ", intensity=" << ft.intensity
-                            << (in_debug_window ? " [IN DEBUG WINDOW]" : "") << "\n");
+            }
+
+            std::ostringstream oss;
+            oss << "FC" << component_counter++ << "_RT" << std::fixed << std::setprecision(0) << component.mean_rt << polarity_suffix;
+            const std::string component_id = oss.str();
+
+            if (debug_this_component && should_debug) {
+              DEBUG_LOG("\n--- Analysis " << analysis_name
+                        << " [Polarity=" << polarity << "]: Graph Component " << component_id
+                        << " ---\n");
+              DEBUG_LOG("  Members: " << component.members.size()
+                        << ", mean RT=" << component.mean_rt
+                        << ", max intensity=" << component.max_intensity << "\n");
+
+              for (const int member : component.members) {
+                const auto &feic = feature_eics[member];
+                const nta::api::NTA_FEATURE_ROW &ft = fts.get_feature(feic.idx);
+                DEBUG_LOG("  " << ft.feature
+                          << ": RT=" << ft.rt
+                          << ", mz=" << ft.mz
+                          << ", intensity=" << ft.intensity
+                          << ", neighbors=" << adjacency[member].size() << "\n");
+              }
+            }
+
+            const int member_count = static_cast<int>(component.members.size());
+            const float component_rt_center = component.mean_rt;
+            float rt_min = std::numeric_limits<float>::max();
+            float rt_max = std::numeric_limits<float>::lowest();
+            for (const int member : component.members) {
+              rt_min = std::min(rt_min, feature_eics[member].rt);
+              rt_max = std::max(rt_max, feature_eics[member].rt);
+            }
+            const float component_rt_spread = member_count > 0 ? (rt_max - rt_min) : 0.0f;
+
+            int possible_pairs = member_count > 1 ? (member_count * (member_count - 1)) / 2 : 0;
+            int edge_count = 0;
+            int valid_corr_pairs = 0;
+            float corr_sum = 0.0f;
+            std::unordered_map<int, int> local_index;
+            local_index.reserve(component.members.size());
+            for (int mi = 0; mi < member_count; ++mi) {
+              local_index[component.members[mi]] = mi;
+            }
+
+            for (int mi = 0; mi < member_count; ++mi) {
+              const int member_a = component.members[mi];
+              for (int mj = mi + 1; mj < member_count; ++mj) {
+                const int member_b = component.members[mj];
+                const float corr = correlation_matrix[member_a][member_b];
+                if (!std::isnan(corr)) {
+                  corr_sum += corr;
+                  ++valid_corr_pairs;
+                }
+                if (std::find(adjacency[member_a].begin(), adjacency[member_a].end(), member_b) != adjacency[member_a].end()) {
+                  ++edge_count;
                 }
               }
             }
 
-            if (cluster.size() == 1 || minCorrelation <= 0.0f) {
-              std::ostringstream oss;
-              oss << "FC" << component_counter++ << "_RT" << std::fixed << std::setprecision(0) << cluster_rt_mean << polarity_suffix;
-              const std::string component_id = oss.str();
+            const float component_density = possible_pairs > 0 ? static_cast<float>(edge_count) / static_cast<float>(possible_pairs) : 0.0f;
+            const float component_mean_corr = valid_corr_pairs > 0 ? corr_sum / static_cast<float>(valid_corr_pairs) : 0.0f;
 
-              for (const int idx : cluster) {
-                nta::api::NTA_FEATURE_ROW ft = fts.get_feature(idx);
-                ft.feature_component = component_id;
-                fts.set_feature(idx, ft);
-
-                // Mark as assigned
-                for (size_t k = 0; k < sorted_features.size(); ++k) {
-                  if (sorted_features[k].idx == idx) {
-                    assigned[k] = true;
-                    break;
-                  }
+            std::vector<int> component_degrees(member_count, 0);
+            std::vector<bool> articulation_flags(member_count, false);
+            for (int mi = 0; mi < member_count; ++mi) {
+              const int member = component.members[mi];
+              for (const int neighbor : adjacency[member]) {
+                if (local_index.find(neighbor) != local_index.end()) {
+                  ++component_degrees[mi];
                 }
               }
-              continue;
             }
 
-            // Decode EICs for correlation analysis
-            struct FeatureEIC {
-              int idx;
-              float rt;
-              std::vector<float> eic_rt;
-              std::vector<float> eic_int;
-            };
-
-            std::vector<FeatureEIC> feature_eics;
-            feature_eics.reserve(cluster.size());
-
-            for (const int idx : cluster) {
-              const nta::api::NTA_FEATURE_ROW &ft = fts.get_feature(idx);
-              FeatureEIC feic;
-              feic.idx = idx;
-              feic.rt = ft.rt;
-              feic.eic_rt = decode_eic_base64(ft.eic_rt);
-              feic.eic_int = decode_eic_base64(ft.eic_intensity);
-              if (!feic.eic_rt.empty() && !feic.eic_int.empty()) {
-                feature_eics.push_back(feic);
-              }
-            }
-
-            if (feature_eics.size() <= 1) {
-              std::ostringstream oss;
-              oss << "FC" << component_counter++ << "_RT" << std::fixed << std::setprecision(0) << cluster_rt_mean << polarity_suffix;
-              const std::string component_id = oss.str();
-
-              for (const int idx : cluster) {
-                nta::api::NTA_FEATURE_ROW ft = fts.get_feature(idx);
-                ft.feature_component = component_id;
-                fts.set_feature(idx, ft);
-
-                // Mark as assigned
-                for (size_t k = 0; k < sorted_features.size(); ++k) {
-                  if (sorted_features[k].idx == idx) {
-                    assigned[k] = true;
-                    break;
-                  }
-                }
-              }
-              continue;
-            }
-
-            // Hierarchical clustering based on correlation
-            std::vector<std::vector<int>> sub_clusters;
-            std::vector<bool> eic_assigned(feature_eics.size(), false);
-
-            for (size_t seed = 0; seed < feature_eics.size(); ++seed) {
-              if (eic_assigned[seed]) continue;
-
-              std::vector<int> sub_cluster;
-              sub_cluster.push_back(seed);
-              eic_assigned[seed] = true;
-
-              if (debug_this_cluster && should_debug) {
-                DEBUG_LOG("\n  Sub-cluster with seed feature "
-                          << fts.get_feature(feature_eics[seed].idx).feature
-                          << " (RT=" << feature_eics[seed].rt << "):\n");
-              }
-
-              const float sub_seed_rt = feature_eics[seed].rt;
-              const float sub_window_start = sub_seed_rt + left_offset;
-              const float sub_window_end = sub_seed_rt + right_offset;
-
-              // Check correlation with features in cluster
-              for (size_t candidate = seed + 1; candidate < feature_eics.size(); ++candidate) {
-                if (eic_assigned[candidate]) continue;
-
-                // Check correlation with seed
-                const auto &eic_seed = feature_eics[seed];
-                const auto &eic_cand = feature_eics[candidate];
-
-                auto [aligned1, aligned2] = align_eics_by_rt(
-                  eic_seed.eic_rt, eic_seed.eic_int,
-                  eic_cand.eic_rt, eic_cand.eic_int
-                );
-
-                if (aligned1.size() >= 3) {
-                  const float corr = calculate_pearson_correlation(aligned1, aligned2);
-
-                  if (debug_this_cluster && should_debug) {
-                    DEBUG_LOG("    Feature " << fts.get_feature(feature_eics[candidate].idx).feature
-                              << " (RT=" << feature_eics[candidate].rt << "): correlation="
-                              << corr << " (aligned points: " << aligned1.size() << ")");
-                  }
-
-                  if (corr >= minCorrelation) {
-                    sub_cluster.push_back(candidate);
-                    eic_assigned[candidate] = true;
-                    if (debug_this_cluster && should_debug) {
-                      DEBUG_LOG(" -> GROUPED\n");
+            if (member_count > 2) {
+              std::vector<int> disc(member_count, -1), low(member_count, -1), parent(member_count, -1);
+              int time_counter = 0;
+              std::function<void(int)> dfs = [&](int u) {
+                disc[u] = low[u] = time_counter++;
+                int children = 0;
+                const int member = component.members[u];
+                for (const int neighbor_member : adjacency[member]) {
+                  const auto it = local_index.find(neighbor_member);
+                  if (it == local_index.end()) continue;
+                  const int v = it->second;
+                  if (disc[v] == -1) {
+                    parent[v] = u;
+                    ++children;
+                    dfs(v);
+                    low[u] = std::min(low[u], low[v]);
+                    if ((parent[u] == -1 && children > 1) ||
+                        (parent[u] != -1 && low[v] >= disc[u])) {
+                      articulation_flags[u] = true;
                     }
-                  } else {
-                    if (debug_this_cluster && should_debug) {
-                      DEBUG_LOG(" -> SEPARATED\n");
-                    }
-                  }
-                } else {
-                  if (debug_this_cluster && should_debug) {
-                    DEBUG_LOG("    Feature " << fts.get_feature(feature_eics[candidate].idx).feature
-                              << " (RT=" << feature_eics[candidate].rt << "): insufficient overlap ("
-                              << aligned1.size() << " points)\n");
+                  } else if (v != parent[u]) {
+                    low[u] = std::min(low[u], disc[v]);
                   }
                 }
+              };
+              for (int mi = 0; mi < member_count; ++mi) {
+                if (disc[mi] == -1) dfs(mi);
               }
-
-              // Expansion: search for additional features within sub-seed's RT window
-              for (size_t k = 0; k < sorted_features.size(); ++k) {
-                if (assigned[k]) continue;
-
-                const int feat_idx = sorted_features[k].idx;
-
-                // Check if feature already in current cluster
-                bool already_in_cluster = false;
-                for (const auto &feic : feature_eics) {
-                  if (feic.idx == feat_idx) {
-                    already_in_cluster = true;
-                    break;
-                  }
-                }
-                if (already_in_cluster) continue;
-
-                const nta::api::NTA_FEATURE_ROW &ft = fts.get_feature(feat_idx);
-
-                // Check if within sub-seed's RT window
-                if (ft.rt >= sub_window_start && ft.rt <= sub_window_end) {
-                  // Decode EIC for this additional feature
-                  FeatureEIC additional_feic;
-                  additional_feic.idx = feat_idx;
-                  additional_feic.rt = ft.rt;
-                  additional_feic.eic_rt = decode_eic_base64(ft.eic_rt);
-                  additional_feic.eic_int = decode_eic_base64(ft.eic_intensity);
-
-                  if (!additional_feic.eic_rt.empty() && !additional_feic.eic_int.empty()) {
-                    const auto &eic_seed = feature_eics[seed];
-
-                    auto [aligned1, aligned2] = align_eics_by_rt(
-                      eic_seed.eic_rt, eic_seed.eic_int,
-                      additional_feic.eic_rt, additional_feic.eic_int
-                    );
-
-                    if (aligned1.size() >= 3) {
-                      const float corr = calculate_pearson_correlation(aligned1, aligned2);
-
-                      if (debug_this_cluster && should_debug) {
-                        DEBUG_LOG("    [EXPANDED] Feature " << ft.feature
-                                  << " (RT=" << additional_feic.rt << "): correlation="
-                                  << corr << " (aligned points: " << aligned1.size() << ")");
-                      }
-
-                      if (corr >= minCorrelation) {
-                        const int new_idx = static_cast<int>(feature_eics.size());
-                        feature_eics.push_back(additional_feic);
-                        eic_assigned.push_back(true);
-                        sub_cluster.push_back(new_idx);
-                        assigned[k] = true;
-
-                        if (debug_this_cluster && should_debug) {
-                          DEBUG_LOG(" -> GROUPED (EXPANDED)\n");
-                        }
-                      } else {
-                        if (debug_this_cluster && should_debug) {
-                          DEBUG_LOG(" -> SEPARATED\n");
-                        }
-                      }
-                    }
-                  }
-                }
-              }
-
-              sub_clusters.push_back(sub_cluster);
             }
 
-            // Assign component IDs to sub-clusters and mark features as assigned
-            for (size_t sc = 0; sc < sub_clusters.size(); ++sc) {
-              const auto &sub_cluster = sub_clusters[sc];
-              float sub_rt_sum = 0.0f;
-              for (int sub_idx : sub_cluster) {
-                sub_rt_sum += feature_eics[sub_idx].rt;
-              }
-              const float mean_rt = sub_rt_sum / static_cast<float>(sub_cluster.size());
+            std::vector<int> degree_sorted = component_degrees;
+            std::sort(degree_sorted.begin(), degree_sorted.end());
+            const int median_degree = degree_sorted.empty() ? 0 : degree_sorted[degree_sorted.size() / 2];
 
-              std::ostringstream oss;
-              oss << "FC" << component_counter++ << "_RT" << std::fixed << std::setprecision(0) << mean_rt << polarity_suffix;
-              const std::string component_id = oss.str();
+            for (int mi = 0; mi < member_count; ++mi) {
+              const int member = component.members[mi];
+              const int feature_idx = feature_eics[member].idx;
+              nta::api::NTA_FEATURE_ROW ft = fts.get_feature(feature_idx);
+              float feature_corr_sum = 0.0f;
+              int feature_corr_count = 0;
+              float feature_max_corr = 0.0f;
+              std::string best_partner;
 
-              if (debug_this_cluster && should_debug) {
-                DEBUG_LOG("\n  Final Component " << component_id << " ("
-                          << sub_cluster.size() << " features):\n");
-              }
-
-              for (int sub_idx : sub_cluster) {
-                const int feature_idx = feature_eics[sub_idx].idx;
-                nta::api::NTA_FEATURE_ROW ft = fts.get_feature(feature_idx);
-                ft.feature_component = component_id;
-                fts.set_feature(feature_idx, ft);
-
-                for (size_t k = 0; k < sorted_features.size(); ++k) {
-                  if (sorted_features[k].idx == feature_idx) {
-                    assigned[k] = true;
-                    break;
-                  }
-                }
-
-                if (debug_this_cluster && should_debug) {
-                  DEBUG_LOG("    " << ft.feature << " (RT=" << ft.rt << ")\n");
+              for (int mj = 0; mj < member_count; ++mj) {
+                if (mi == mj) continue;
+                const int other_member = component.members[mj];
+                const float corr = correlation_matrix[member][other_member];
+                if (std::isnan(corr)) continue;
+                feature_corr_sum += corr;
+                ++feature_corr_count;
+                if (best_partner.empty() || corr > feature_max_corr) {
+                  feature_max_corr = corr;
+                  best_partner = fts.get_feature(feature_eics[other_member].idx).feature;
                 }
               }
+
+              const float feature_mean_corr = feature_corr_count > 0 ? feature_corr_sum / static_cast<float>(feature_corr_count) : 0.0f;
+              const float membership_score = std::max(0.0f, feature_mean_corr) * component_density;
+
+              ft.feature_component = component_id;
+              ft.component_size = member_count;
+              ft.component_rt_center = component_rt_center;
+              ft.component_rt_spread = component_rt_spread;
+              ft.component_density = component_density;
+              ft.component_mean_correlation = component_mean_corr;
+              ft.component_best_partner = best_partner;
+              ft.component_max_correlation = feature_max_corr;
+              ft.component_mean_correlation_to_component = feature_mean_corr;
+              ft.component_membership_score = membership_score;
+              ft.component_is_core = (component_degrees[mi] >= median_degree) && (feature_mean_corr >= component_mean_corr);
+              ft.component_bridge_flag = articulation_flags[mi];
+              fts.set_feature(feature_idx, ft);
             }
           }
         }

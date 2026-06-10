@@ -257,6 +257,17 @@ namespace nta
       double annotation_expected_rel_intensity_min = 0.0;
       double annotation_expected_rel_intensity_max = 0.0;
       double annotation_score = 0.0;
+      int component_size = 0;
+      double component_rt_center = 0.0;
+      double component_rt_spread = 0.0;
+      double component_density = 0.0;
+      double component_mean_correlation = 0.0;
+      std::string component_best_partner;
+      double component_max_correlation = 0.0;
+      double component_mean_correlation_to_component = 0.0;
+      double component_membership_score = 0.0;
+      bool component_is_core = false;
+      bool component_bridge_flag = false;
     };
 
     struct NTA_FEATURES_COUNT_ROW
@@ -328,6 +339,17 @@ namespace nta
       std::vector<float> annotation_expected_rel_intensity_min;
       std::vector<float> annotation_expected_rel_intensity_max;
       std::vector<float> annotation_score;
+      std::vector<int> component_size;
+      std::vector<float> component_rt_center;
+      std::vector<float> component_rt_spread;
+      std::vector<float> component_density;
+      std::vector<float> component_mean_correlation;
+      std::vector<std::string> component_best_partner;
+      std::vector<float> component_max_correlation;
+      std::vector<float> component_mean_correlation_to_component;
+      std::vector<float> component_membership_score;
+      std::vector<bool> component_is_core;
+      std::vector<bool> component_bridge_flag;
 
       int size() const
       {
@@ -398,6 +420,17 @@ namespace nta
         feature_i.annotation_expected_rel_intensity_min = annotation_expected_rel_intensity_min[i];
         feature_i.annotation_expected_rel_intensity_max = annotation_expected_rel_intensity_max[i];
         feature_i.annotation_score = annotation_score[i];
+        feature_i.component_size = component_size[i];
+        feature_i.component_rt_center = component_rt_center[i];
+        feature_i.component_rt_spread = component_rt_spread[i];
+        feature_i.component_density = component_density[i];
+        feature_i.component_mean_correlation = component_mean_correlation[i];
+        feature_i.component_best_partner = component_best_partner[i];
+        feature_i.component_max_correlation = component_max_correlation[i];
+        feature_i.component_mean_correlation_to_component = component_mean_correlation_to_component[i];
+        feature_i.component_membership_score = component_membership_score[i];
+        feature_i.component_is_core = component_is_core[i];
+        feature_i.component_bridge_flag = component_bridge_flag[i];
         return feature_i;
       };
 
@@ -459,6 +492,17 @@ namespace nta
         annotation_expected_rel_intensity_min[i] = feature_i.annotation_expected_rel_intensity_min;
         annotation_expected_rel_intensity_max[i] = feature_i.annotation_expected_rel_intensity_max;
         annotation_score[i] = feature_i.annotation_score;
+        component_size[i] = feature_i.component_size;
+        component_rt_center[i] = feature_i.component_rt_center;
+        component_rt_spread[i] = feature_i.component_rt_spread;
+        component_density[i] = feature_i.component_density;
+        component_mean_correlation[i] = feature_i.component_mean_correlation;
+        component_best_partner[i] = feature_i.component_best_partner;
+        component_max_correlation[i] = feature_i.component_max_correlation;
+        component_mean_correlation_to_component[i] = feature_i.component_mean_correlation_to_component;
+        component_membership_score[i] = feature_i.component_membership_score;
+        component_is_core[i] = feature_i.component_is_core;
+        component_bridge_flag[i] = feature_i.component_bridge_flag;
       };
 
       void append_feature(const NTA_FEATURE_ROW &feature_i)
@@ -519,6 +563,17 @@ namespace nta
         annotation_expected_rel_intensity_min.push_back(feature_i.annotation_expected_rel_intensity_min);
         annotation_expected_rel_intensity_max.push_back(feature_i.annotation_expected_rel_intensity_max);
         annotation_score.push_back(feature_i.annotation_score);
+        component_size.push_back(feature_i.component_size);
+        component_rt_center.push_back(feature_i.component_rt_center);
+        component_rt_spread.push_back(feature_i.component_rt_spread);
+        component_density.push_back(feature_i.component_density);
+        component_mean_correlation.push_back(feature_i.component_mean_correlation);
+        component_best_partner.push_back(feature_i.component_best_partner);
+        component_max_correlation.push_back(feature_i.component_max_correlation);
+        component_mean_correlation_to_component.push_back(feature_i.component_mean_correlation_to_component);
+        component_membership_score.push_back(feature_i.component_membership_score);
+        component_is_core.push_back(feature_i.component_is_core);
+        component_bridge_flag.push_back(feature_i.component_bridge_flag);
       };
 
       void set_analysis(const std::string &a)
@@ -594,6 +649,17 @@ namespace nta
         std::vector<float> annotation_expected_rel_intensity_min_sorted(feature.size());
         std::vector<float> annotation_expected_rel_intensity_max_sorted(feature.size());
         std::vector<float> annotation_score_sorted(feature.size());
+        std::vector<int> component_size_sorted(feature.size());
+        std::vector<float> component_rt_center_sorted(feature.size());
+        std::vector<float> component_rt_spread_sorted(feature.size());
+        std::vector<float> component_density_sorted(feature.size());
+        std::vector<float> component_mean_correlation_sorted(feature.size());
+        std::vector<std::string> component_best_partner_sorted(feature.size());
+        std::vector<float> component_max_correlation_sorted(feature.size());
+        std::vector<float> component_mean_correlation_to_component_sorted(feature.size());
+        std::vector<float> component_membership_score_sorted(feature.size());
+        std::vector<bool> component_is_core_sorted(feature.size());
+        std::vector<bool> component_bridge_flag_sorted(feature.size());
 
         for (size_t i = 0; i < feature.size(); i++)
         {
@@ -654,6 +720,17 @@ namespace nta
           annotation_expected_rel_intensity_min_sorted[i] = annotation_expected_rel_intensity_min[idx];
           annotation_expected_rel_intensity_max_sorted[i] = annotation_expected_rel_intensity_max[idx];
           annotation_score_sorted[i] = annotation_score[idx];
+          component_size_sorted[i] = component_size[idx];
+          component_rt_center_sorted[i] = component_rt_center[idx];
+          component_rt_spread_sorted[i] = component_rt_spread[idx];
+          component_density_sorted[i] = component_density[idx];
+          component_mean_correlation_sorted[i] = component_mean_correlation[idx];
+          component_best_partner_sorted[i] = component_best_partner[idx];
+          component_max_correlation_sorted[i] = component_max_correlation[idx];
+          component_mean_correlation_to_component_sorted[i] = component_mean_correlation_to_component[idx];
+          component_membership_score_sorted[i] = component_membership_score[idx];
+          component_is_core_sorted[i] = component_is_core[idx];
+          component_bridge_flag_sorted[i] = component_bridge_flag[idx];
         }
 
         // Replace with sorted vectors
@@ -713,6 +790,17 @@ namespace nta
         annotation_expected_rel_intensity_min = annotation_expected_rel_intensity_min_sorted;
         annotation_expected_rel_intensity_max = annotation_expected_rel_intensity_max_sorted;
         annotation_score = annotation_score_sorted;
+        component_size = component_size_sorted;
+        component_rt_center = component_rt_center_sorted;
+        component_rt_spread = component_rt_spread_sorted;
+        component_density = component_density_sorted;
+        component_mean_correlation = component_mean_correlation_sorted;
+        component_best_partner = component_best_partner_sorted;
+        component_max_correlation = component_max_correlation_sorted;
+        component_mean_correlation_to_component = component_mean_correlation_to_component_sorted;
+        component_membership_score = component_membership_score_sorted;
+        component_is_core = component_is_core_sorted;
+        component_bridge_flag = component_bridge_flag_sorted;
       };
     };
 
@@ -776,6 +864,17 @@ namespace nta
       std::vector<double> annotation_expected_rel_intensity_min;
       std::vector<double> annotation_expected_rel_intensity_max;
       std::vector<double> annotation_score;
+      std::vector<int> component_size;
+      std::vector<double> component_rt_center;
+      std::vector<double> component_rt_spread;
+      std::vector<double> component_density;
+      std::vector<double> component_mean_correlation;
+      std::vector<std::string> component_best_partner;
+      std::vector<double> component_max_correlation;
+      std::vector<double> component_mean_correlation_to_component;
+      std::vector<double> component_membership_score;
+      std::vector<bool> component_is_core;
+      std::vector<bool> component_bridge_flag;
       std::vector<std::string> created_at;
 
       int size() const { return static_cast<int>(feature.size()); }
@@ -840,6 +939,17 @@ namespace nta
         annotation_expected_rel_intensity_min.push_back(row.annotation_expected_rel_intensity_min);
         annotation_expected_rel_intensity_max.push_back(row.annotation_expected_rel_intensity_max);
         annotation_score.push_back(row.annotation_score);
+        component_size.push_back(row.component_size);
+        component_rt_center.push_back(row.component_rt_center);
+        component_rt_spread.push_back(row.component_rt_spread);
+        component_density.push_back(row.component_density);
+        component_mean_correlation.push_back(row.component_mean_correlation);
+        component_best_partner.push_back(row.component_best_partner);
+        component_max_correlation.push_back(row.component_max_correlation);
+        component_mean_correlation_to_component.push_back(row.component_mean_correlation_to_component);
+        component_membership_score.push_back(row.component_membership_score);
+        component_is_core.push_back(row.component_is_core);
+        component_bridge_flag.push_back(row.component_bridge_flag);
         created_at.push_back(row.created_at);
       }
     };
@@ -1368,6 +1478,21 @@ namespace nta
       double main_precursor_cosine_similarity = 0.0;
       double rt_plausibility = 0.0;
       double main_precursor_rt_plausibility = 0.0;
+      std::string product_structure_key;
+      std::string precursor_structure_key;
+      std::string main_precursor_structure_key;
+      std::string resolved_direct_parent_feature_group;
+      std::string resolved_main_parent_feature_group;
+      std::string assignment_status;
+      bool is_direct_assignment = false;
+      bool is_main_parent_consistent = false;
+      bool transformation_valid = false;
+      int assignment_rank = 0;
+      int network_level = 0;
+      double assignment_score = 0.0;
+      double transformation_mass_delta_expected = 0.0;
+      double transformation_mass_delta_observed = 0.0;
+      double transformation_mass_delta_error = 0.0;
     };
 
     struct NTA_TRANSFORMATION_PRODUCTS
@@ -1401,6 +1526,21 @@ namespace nta
       std::vector<double> main_precursor_cosine_similarity;
       std::vector<double> rt_plausibility;
       std::vector<double> main_precursor_rt_plausibility;
+      std::vector<std::string> product_structure_key;
+      std::vector<std::string> precursor_structure_key;
+      std::vector<std::string> main_precursor_structure_key;
+      std::vector<std::string> resolved_direct_parent_feature_group;
+      std::vector<std::string> resolved_main_parent_feature_group;
+      std::vector<std::string> assignment_status;
+      std::vector<bool> is_direct_assignment;
+      std::vector<bool> is_main_parent_consistent;
+      std::vector<bool> transformation_valid;
+      std::vector<int> assignment_rank;
+      std::vector<int> network_level;
+      std::vector<double> assignment_score;
+      std::vector<double> transformation_mass_delta_expected;
+      std::vector<double> transformation_mass_delta_observed;
+      std::vector<double> transformation_mass_delta_error;
 
       int size() const
       {
@@ -1443,6 +1583,21 @@ namespace nta
         row.main_precursor_cosine_similarity = main_precursor_cosine_similarity[i];
         row.rt_plausibility = rt_plausibility[i];
         row.main_precursor_rt_plausibility = main_precursor_rt_plausibility[i];
+        row.product_structure_key = product_structure_key[i];
+        row.precursor_structure_key = precursor_structure_key[i];
+        row.main_precursor_structure_key = main_precursor_structure_key[i];
+        row.resolved_direct_parent_feature_group = resolved_direct_parent_feature_group[i];
+        row.resolved_main_parent_feature_group = resolved_main_parent_feature_group[i];
+        row.assignment_status = assignment_status[i];
+        row.is_direct_assignment = is_direct_assignment[i];
+        row.is_main_parent_consistent = is_main_parent_consistent[i];
+        row.transformation_valid = transformation_valid[i];
+        row.assignment_rank = assignment_rank[i];
+        row.network_level = network_level[i];
+        row.assignment_score = assignment_score[i];
+        row.transformation_mass_delta_expected = transformation_mass_delta_expected[i];
+        row.transformation_mass_delta_observed = transformation_mass_delta_observed[i];
+        row.transformation_mass_delta_error = transformation_mass_delta_error[i];
         return row;
       }
 
@@ -1477,6 +1632,21 @@ namespace nta
         main_precursor_cosine_similarity.push_back(row.main_precursor_cosine_similarity);
         rt_plausibility.push_back(row.rt_plausibility);
         main_precursor_rt_plausibility.push_back(row.main_precursor_rt_plausibility);
+        product_structure_key.push_back(row.product_structure_key);
+        precursor_structure_key.push_back(row.precursor_structure_key);
+        main_precursor_structure_key.push_back(row.main_precursor_structure_key);
+        resolved_direct_parent_feature_group.push_back(row.resolved_direct_parent_feature_group);
+        resolved_main_parent_feature_group.push_back(row.resolved_main_parent_feature_group);
+        assignment_status.push_back(row.assignment_status);
+        is_direct_assignment.push_back(row.is_direct_assignment);
+        is_main_parent_consistent.push_back(row.is_main_parent_consistent);
+        transformation_valid.push_back(row.transformation_valid);
+        assignment_rank.push_back(row.assignment_rank);
+        network_level.push_back(row.network_level);
+        assignment_score.push_back(row.assignment_score);
+        transformation_mass_delta_expected.push_back(row.transformation_mass_delta_expected);
+        transformation_mass_delta_observed.push_back(row.transformation_mass_delta_observed);
+        transformation_mass_delta_error.push_back(row.transformation_mass_delta_error);
       }
     };
 
@@ -1512,6 +1682,21 @@ namespace nta
       std::vector<double> main_precursor_cosine_similarity;
       std::vector<double> rt_plausibility;
       std::vector<double> main_precursor_rt_plausibility;
+      std::vector<std::string> product_structure_key;
+      std::vector<std::string> precursor_structure_key;
+      std::vector<std::string> main_precursor_structure_key;
+      std::vector<std::string> resolved_direct_parent_feature_group;
+      std::vector<std::string> resolved_main_parent_feature_group;
+      std::vector<std::string> assignment_status;
+      std::vector<bool> is_direct_assignment;
+      std::vector<bool> is_main_parent_consistent;
+      std::vector<bool> transformation_valid;
+      std::vector<int> assignment_rank;
+      std::vector<int> network_level;
+      std::vector<double> assignment_score;
+      std::vector<double> transformation_mass_delta_expected;
+      std::vector<double> transformation_mass_delta_observed;
+      std::vector<double> transformation_mass_delta_error;
       std::vector<std::string> created_at;
 
       int size() const
@@ -1551,6 +1736,21 @@ namespace nta
         main_precursor_cosine_similarity.push_back(row.main_precursor_cosine_similarity);
         rt_plausibility.push_back(row.rt_plausibility);
         main_precursor_rt_plausibility.push_back(row.main_precursor_rt_plausibility);
+        product_structure_key.push_back(row.product_structure_key);
+        precursor_structure_key.push_back(row.precursor_structure_key);
+        main_precursor_structure_key.push_back(row.main_precursor_structure_key);
+        resolved_direct_parent_feature_group.push_back(row.resolved_direct_parent_feature_group);
+        resolved_main_parent_feature_group.push_back(row.resolved_main_parent_feature_group);
+        assignment_status.push_back(row.assignment_status);
+        is_direct_assignment.push_back(row.is_direct_assignment);
+        is_main_parent_consistent.push_back(row.is_main_parent_consistent);
+        transformation_valid.push_back(row.transformation_valid);
+        assignment_rank.push_back(row.assignment_rank);
+        network_level.push_back(row.network_level);
+        assignment_score.push_back(row.assignment_score);
+        transformation_mass_delta_expected.push_back(row.transformation_mass_delta_expected);
+        transformation_mass_delta_observed.push_back(row.transformation_mass_delta_observed);
+        transformation_mass_delta_error.push_back(row.transformation_mass_delta_error);
         created_at.push_back(row.created_at);
       }
     };

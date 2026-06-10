@@ -127,6 +127,17 @@ namespace nta
         check_append_state(duckdb_append_double(appender, features.annotation_expected_rel_intensity_min[i]), appender, "append NTA_FEATURES annotation_expected_rel_intensity_min");
         check_append_state(duckdb_append_double(appender, features.annotation_expected_rel_intensity_max[i]), appender, "append NTA_FEATURES annotation_expected_rel_intensity_max");
         check_append_state(duckdb_append_double(appender, features.annotation_score[i]), appender, "append NTA_FEATURES annotation_score");
+        check_append_state(duckdb_append_int32(appender, features.component_size[i]), appender, "append NTA_FEATURES component_size");
+        check_append_state(duckdb_append_double(appender, features.component_rt_center[i]), appender, "append NTA_FEATURES component_rt_center");
+        check_append_state(duckdb_append_double(appender, features.component_rt_spread[i]), appender, "append NTA_FEATURES component_rt_spread");
+        check_append_state(duckdb_append_double(appender, features.component_density[i]), appender, "append NTA_FEATURES component_density");
+        check_append_state(duckdb_append_double(appender, features.component_mean_correlation[i]), appender, "append NTA_FEATURES component_mean_correlation");
+        check_append_state(duckdb_append_varchar(appender, features.component_best_partner[i].c_str()), appender, "append NTA_FEATURES component_best_partner");
+        check_append_state(duckdb_append_double(appender, features.component_max_correlation[i]), appender, "append NTA_FEATURES component_max_correlation");
+        check_append_state(duckdb_append_double(appender, features.component_mean_correlation_to_component[i]), appender, "append NTA_FEATURES component_mean_correlation_to_component");
+        check_append_state(duckdb_append_double(appender, features.component_membership_score[i]), appender, "append NTA_FEATURES component_membership_score");
+        check_append_state(duckdb_append_bool(appender, features.component_is_core[i]), appender, "append NTA_FEATURES component_is_core");
+        check_append_state(duckdb_append_bool(appender, features.component_bridge_flag[i]), appender, "append NTA_FEATURES component_bridge_flag");
         check_append_state(duckdb_append_null(appender), appender, "append NTA_FEATURES created_at");
         check_append_state(duckdb_appender_end_row(appender), appender, "end NTA_FEATURES row");
       }
@@ -276,6 +287,21 @@ namespace nta
         check_append_state(duckdb_append_double(appender, products.main_precursor_cosine_similarity[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS main_precursor_cosine_similarity");
         check_append_state(duckdb_append_double(appender, products.rt_plausibility[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS rt_plausibility");
         check_append_state(duckdb_append_double(appender, products.main_precursor_rt_plausibility[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS main_precursor_rt_plausibility");
+        append_optional_varchar(appender, products.product_structure_key[i], "append NTA_TRANSFORMATION_PRODUCTS product_structure_key");
+        append_optional_varchar(appender, products.precursor_structure_key[i], "append NTA_TRANSFORMATION_PRODUCTS precursor_structure_key");
+        append_optional_varchar(appender, products.main_precursor_structure_key[i], "append NTA_TRANSFORMATION_PRODUCTS main_precursor_structure_key");
+        append_optional_varchar(appender, products.resolved_direct_parent_feature_group[i], "append NTA_TRANSFORMATION_PRODUCTS resolved_direct_parent_feature_group");
+        append_optional_varchar(appender, products.resolved_main_parent_feature_group[i], "append NTA_TRANSFORMATION_PRODUCTS resolved_main_parent_feature_group");
+        append_optional_varchar(appender, products.assignment_status[i], "append NTA_TRANSFORMATION_PRODUCTS assignment_status");
+        check_append_state(duckdb_append_bool(appender, products.is_direct_assignment[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS is_direct_assignment");
+        check_append_state(duckdb_append_bool(appender, products.is_main_parent_consistent[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS is_main_parent_consistent");
+        check_append_state(duckdb_append_bool(appender, products.transformation_valid[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS transformation_valid");
+        check_append_state(duckdb_append_int32(appender, products.assignment_rank[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS assignment_rank");
+        check_append_state(duckdb_append_int32(appender, products.network_level[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS network_level");
+        check_append_state(duckdb_append_double(appender, products.assignment_score[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS assignment_score");
+        check_append_state(duckdb_append_double(appender, products.transformation_mass_delta_expected[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS transformation_mass_delta_expected");
+        check_append_state(duckdb_append_double(appender, products.transformation_mass_delta_observed[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS transformation_mass_delta_observed");
+        check_append_state(duckdb_append_double(appender, products.transformation_mass_delta_error[i]), appender, "append NTA_TRANSFORMATION_PRODUCTS transformation_mass_delta_error");
         check_append_state(duckdb_append_null(appender), appender, "append NTA_TRANSFORMATION_PRODUCTS created_at");
         check_append_state(duckdb_appender_end_row(appender), appender, "end NTA_TRANSFORMATION_PRODUCTS row");
       }
@@ -1115,6 +1141,17 @@ namespace nta
       project::cache::write_vector(out, annotation_expected_rel_intensity_min);
       project::cache::write_vector(out, annotation_expected_rel_intensity_max);
       project::cache::write_vector(out, annotation_score);
+      project::cache::write_vector(out, component_size);
+      project::cache::write_vector(out, component_rt_center);
+      project::cache::write_vector(out, component_rt_spread);
+      project::cache::write_vector(out, component_density);
+      project::cache::write_vector(out, component_mean_correlation);
+      project::cache::write_vector(out, component_best_partner);
+      project::cache::write_vector(out, component_max_correlation);
+      project::cache::write_vector(out, component_mean_correlation_to_component);
+      project::cache::write_vector(out, component_membership_score);
+      project::cache::write_vector(out, component_is_core);
+      project::cache::write_vector(out, component_bridge_flag);
       project::cache::write_vector(out, rt);
       project::cache::write_vector(out, mz);
       project::cache::write_vector(out, mass);
@@ -1179,6 +1216,17 @@ namespace nta
       project::cache::read_vector(reader, value.annotation_expected_rel_intensity_min);
       project::cache::read_vector(reader, value.annotation_expected_rel_intensity_max);
       project::cache::read_vector(reader, value.annotation_score);
+      project::cache::read_vector(reader, value.component_size);
+      project::cache::read_vector(reader, value.component_rt_center);
+      project::cache::read_vector(reader, value.component_rt_spread);
+      project::cache::read_vector(reader, value.component_density);
+      project::cache::read_vector(reader, value.component_mean_correlation);
+      project::cache::read_vector(reader, value.component_best_partner);
+      project::cache::read_vector(reader, value.component_max_correlation);
+      project::cache::read_vector(reader, value.component_mean_correlation_to_component);
+      project::cache::read_vector(reader, value.component_membership_score);
+      project::cache::read_vector(reader, value.component_is_core);
+      project::cache::read_vector(reader, value.component_bridge_flag);
       project::cache::read_vector(reader, value.rt);
       project::cache::read_vector(reader, value.mz);
       project::cache::read_vector(reader, value.mass);
@@ -1530,6 +1578,21 @@ namespace nta
       project::cache::write_vector(out, main_precursor_cosine_similarity);
       project::cache::write_vector(out, rt_plausibility);
       project::cache::write_vector(out, main_precursor_rt_plausibility);
+      project::cache::write_vector(out, product_structure_key);
+      project::cache::write_vector(out, precursor_structure_key);
+      project::cache::write_vector(out, main_precursor_structure_key);
+      project::cache::write_vector(out, resolved_direct_parent_feature_group);
+      project::cache::write_vector(out, resolved_main_parent_feature_group);
+      project::cache::write_vector(out, assignment_status);
+      project::cache::write_vector(out, is_direct_assignment);
+      project::cache::write_vector(out, is_main_parent_consistent);
+      project::cache::write_vector(out, transformation_valid);
+      project::cache::write_vector(out, assignment_rank);
+      project::cache::write_vector(out, network_level);
+      project::cache::write_vector(out, assignment_score);
+      project::cache::write_vector(out, transformation_mass_delta_expected);
+      project::cache::write_vector(out, transformation_mass_delta_observed);
+      project::cache::write_vector(out, transformation_mass_delta_error);
       return out;
     }
 
@@ -1566,6 +1629,21 @@ namespace nta
       project::cache::read_vector(reader, value.main_precursor_cosine_similarity);
       project::cache::read_vector(reader, value.rt_plausibility);
       project::cache::read_vector(reader, value.main_precursor_rt_plausibility);
+      project::cache::read_vector(reader, value.product_structure_key);
+      project::cache::read_vector(reader, value.precursor_structure_key);
+      project::cache::read_vector(reader, value.main_precursor_structure_key);
+      project::cache::read_vector(reader, value.resolved_direct_parent_feature_group);
+      project::cache::read_vector(reader, value.resolved_main_parent_feature_group);
+      project::cache::read_vector(reader, value.assignment_status);
+      project::cache::read_vector(reader, value.is_direct_assignment);
+      project::cache::read_vector(reader, value.is_main_parent_consistent);
+      project::cache::read_vector(reader, value.transformation_valid);
+      project::cache::read_vector(reader, value.assignment_rank);
+      project::cache::read_vector(reader, value.network_level);
+      project::cache::read_vector(reader, value.assignment_score);
+      project::cache::read_vector(reader, value.transformation_mass_delta_expected);
+      project::cache::read_vector(reader, value.transformation_mass_delta_observed);
+      project::cache::read_vector(reader, value.transformation_mass_delta_error);
       if (!reader.empty())
       {
         throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTA_TRANSFORMATION_PRODUCTS: trailing bytes remain");
@@ -1634,7 +1712,18 @@ namespace nta
       value.annotation_expected_rel_intensity_min = project::db::nullable_double(duckdb_value_double(&result, 55, row));
       value.annotation_expected_rel_intensity_max = project::db::nullable_double(duckdb_value_double(&result, 56, row));
       value.annotation_score = project::db::nullable_double(duckdb_value_double(&result, 57, row));
-      value.created_at = project::db::result_varchar(&result, 58, row);
+      value.component_size = project::db::nullable_int(duckdb_value_int32(&result, 58, row));
+      value.component_rt_center = project::db::nullable_double(duckdb_value_double(&result, 59, row));
+      value.component_rt_spread = project::db::nullable_double(duckdb_value_double(&result, 60, row));
+      value.component_density = project::db::nullable_double(duckdb_value_double(&result, 61, row));
+      value.component_mean_correlation = project::db::nullable_double(duckdb_value_double(&result, 62, row));
+      value.component_best_partner = project::db::result_varchar(&result, 63, row);
+      value.component_max_correlation = project::db::nullable_double(duckdb_value_double(&result, 64, row));
+      value.component_mean_correlation_to_component = project::db::nullable_double(duckdb_value_double(&result, 65, row));
+      value.component_membership_score = project::db::nullable_double(duckdb_value_double(&result, 66, row));
+      value.component_is_core = duckdb_value_boolean(&result, 67, row) != 0;
+      value.component_bridge_flag = duckdb_value_boolean(&result, 68, row) != 0;
+      value.created_at = project::db::result_varchar(&result, 69, row);
       return value;
     }
 
@@ -1775,6 +1864,17 @@ namespace nta
       value.annotation_expected_rel_intensity_min = table.annotation_expected_rel_intensity_min[row];
       value.annotation_expected_rel_intensity_max = table.annotation_expected_rel_intensity_max[row];
       value.annotation_score = table.annotation_score[row];
+      value.component_size = table.component_size[row];
+      value.component_rt_center = table.component_rt_center[row];
+      value.component_rt_spread = table.component_rt_spread[row];
+      value.component_density = table.component_density[row];
+      value.component_mean_correlation = table.component_mean_correlation[row];
+      value.component_best_partner = table.component_best_partner[row];
+      value.component_max_correlation = table.component_max_correlation[row];
+      value.component_mean_correlation_to_component = table.component_mean_correlation_to_component[row];
+      value.component_membership_score = table.component_membership_score[row];
+      value.component_is_core = table.component_is_core[row];
+      value.component_bridge_flag = table.component_bridge_flag[row];
       value.created_at = table.created_at[row];
       return value;
     }
@@ -1888,6 +1988,21 @@ namespace nta
       value.main_precursor_cosine_similarity = table.main_precursor_cosine_similarity[row];
       value.rt_plausibility = table.rt_plausibility[row];
       value.main_precursor_rt_plausibility = table.main_precursor_rt_plausibility[row];
+      value.product_structure_key = table.product_structure_key[row];
+      value.precursor_structure_key = table.precursor_structure_key[row];
+      value.main_precursor_structure_key = table.main_precursor_structure_key[row];
+      value.resolved_direct_parent_feature_group = table.resolved_direct_parent_feature_group[row];
+      value.resolved_main_parent_feature_group = table.resolved_main_parent_feature_group[row];
+      value.assignment_status = table.assignment_status[row];
+      value.is_direct_assignment = table.is_direct_assignment[row];
+      value.is_main_parent_consistent = table.is_main_parent_consistent[row];
+      value.transformation_valid = table.transformation_valid[row];
+      value.assignment_rank = table.assignment_rank[row];
+      value.network_level = table.network_level[row];
+      value.assignment_score = table.assignment_score[row];
+      value.transformation_mass_delta_expected = table.transformation_mass_delta_expected[row];
+      value.transformation_mass_delta_observed = table.transformation_mass_delta_observed[row];
+      value.transformation_mass_delta_error = table.transformation_mass_delta_error[row];
       value.created_at = table.created_at[row];
       return value;
     }
@@ -1925,7 +2040,22 @@ namespace nta
       value.main_precursor_cosine_similarity = duckdb_value_double(&result, 27, row);
       value.rt_plausibility = duckdb_value_double(&result, 28, row);
       value.main_precursor_rt_plausibility = duckdb_value_double(&result, 29, row);
-      value.created_at = project::db::result_varchar(&result, 30, row);
+      value.product_structure_key = project::db::result_varchar(&result, 30, row);
+      value.precursor_structure_key = project::db::result_varchar(&result, 31, row);
+      value.main_precursor_structure_key = project::db::result_varchar(&result, 32, row);
+      value.resolved_direct_parent_feature_group = project::db::result_varchar(&result, 33, row);
+      value.resolved_main_parent_feature_group = project::db::result_varchar(&result, 34, row);
+      value.assignment_status = project::db::result_varchar(&result, 35, row);
+      value.is_direct_assignment = duckdb_value_boolean(&result, 36, row);
+      value.is_main_parent_consistent = duckdb_value_boolean(&result, 37, row);
+      value.transformation_valid = duckdb_value_boolean(&result, 38, row);
+      value.assignment_rank = duckdb_value_int32(&result, 39, row);
+      value.network_level = duckdb_value_int32(&result, 40, row);
+      value.assignment_score = duckdb_value_double(&result, 41, row);
+      value.transformation_mass_delta_expected = duckdb_value_double(&result, 42, row);
+      value.transformation_mass_delta_observed = duckdb_value_double(&result, 43, row);
+      value.transformation_mass_delta_error = duckdb_value_double(&result, 44, row);
+      value.created_at = project::db::result_varchar(&result, 45, row);
       return value;
     }
 
@@ -2771,7 +2901,7 @@ namespace nta
         const NTA_TRANSFORMATION_PRODUCTS &products)
     {
       std::cout << "Caching transformation products... ";
-      project::cache::CACHE(ctx_).put_object("NTA_TRANSFORMATION_PRODUCTS", hash, description, products);
+      project::cache::CACHE(ctx_).put_object("NTA_TRANSFORMATION_PRODUCTS_CACHE", hash, description, products);
       std::cout << "Done!" << std::endl;
     }
 
@@ -3015,6 +3145,17 @@ namespace nta
           "annotation_expected_rel_intensity_min DOUBLE DEFAULT 0, "
           "annotation_expected_rel_intensity_max DOUBLE DEFAULT 0, "
           "annotation_score DOUBLE DEFAULT 0, "
+          "component_size INTEGER DEFAULT 0, "
+          "component_rt_center DOUBLE DEFAULT 0, "
+          "component_rt_spread DOUBLE DEFAULT 0, "
+          "component_density DOUBLE DEFAULT 0, "
+          "component_mean_correlation DOUBLE DEFAULT 0, "
+          "component_best_partner VARCHAR DEFAULT '', "
+          "component_max_correlation DOUBLE DEFAULT 0, "
+          "component_mean_correlation_to_component DOUBLE DEFAULT 0, "
+          "component_membership_score DOUBLE DEFAULT 0, "
+          "component_is_core BOOLEAN DEFAULT FALSE, "
+          "component_bridge_flag BOOLEAN DEFAULT FALSE, "
           "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, "
           "PRIMARY KEY(project_id, analysis, feature)"
           ")",
@@ -3128,6 +3269,21 @@ namespace nta
           "main_precursor_cosine_similarity DOUBLE, "
           "rt_plausibility DOUBLE, "
           "main_precursor_rt_plausibility DOUBLE, "
+          "product_structure_key VARCHAR, "
+          "precursor_structure_key VARCHAR, "
+          "main_precursor_structure_key VARCHAR, "
+          "resolved_direct_parent_feature_group VARCHAR, "
+          "resolved_main_parent_feature_group VARCHAR, "
+          "assignment_status VARCHAR, "
+          "is_direct_assignment BOOLEAN DEFAULT FALSE, "
+          "is_main_parent_consistent BOOLEAN DEFAULT FALSE, "
+          "transformation_valid BOOLEAN DEFAULT FALSE, "
+          "assignment_rank INTEGER DEFAULT 0, "
+          "network_level INTEGER DEFAULT 0, "
+          "assignment_score DOUBLE DEFAULT 0, "
+          "transformation_mass_delta_expected DOUBLE DEFAULT 0, "
+          "transformation_mass_delta_observed DOUBLE DEFAULT 0, "
+          "transformation_mass_delta_error DOUBLE DEFAULT 0, "
           "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP"
           ")",
           "create NTA_TRANSFORMATION_PRODUCTS table");
@@ -3197,6 +3353,17 @@ namespace nta
            {"annotation_expected_rel_intensity_min", "DOUBLE", false},
            {"annotation_expected_rel_intensity_max", "DOUBLE", false},
            {"annotation_score", "DOUBLE", false},
+           {"component_size", "INTEGER", false},
+           {"component_rt_center", "DOUBLE", false},
+           {"component_rt_spread", "DOUBLE", false},
+           {"component_density", "DOUBLE", false},
+           {"component_mean_correlation", "DOUBLE", false},
+           {"component_best_partner", "VARCHAR", false},
+           {"component_max_correlation", "DOUBLE", false},
+           {"component_mean_correlation_to_component", "DOUBLE", false},
+           {"component_membership_score", "DOUBLE", false},
+           {"component_is_core", "BOOLEAN", false},
+           {"component_bridge_flag", "BOOLEAN", false},
            {"created_at", "TIMESTAMP", false}});
       project::db::validate_columns_present(
           guard.get(),
@@ -3301,6 +3468,21 @@ namespace nta
            {"main_precursor_cosine_similarity", "DOUBLE", false},
            {"rt_plausibility", "DOUBLE", false},
            {"main_precursor_rt_plausibility", "DOUBLE", false},
+           {"product_structure_key", "VARCHAR", false},
+           {"precursor_structure_key", "VARCHAR", false},
+           {"main_precursor_structure_key", "VARCHAR", false},
+           {"resolved_direct_parent_feature_group", "VARCHAR", false},
+           {"resolved_main_parent_feature_group", "VARCHAR", false},
+           {"assignment_status", "VARCHAR", false},
+           {"is_direct_assignment", "BOOLEAN", false},
+           {"is_main_parent_consistent", "BOOLEAN", false},
+           {"transformation_valid", "BOOLEAN", false},
+           {"assignment_rank", "INTEGER", false},
+           {"network_level", "INTEGER", false},
+           {"assignment_score", "DOUBLE", false},
+           {"transformation_mass_delta_expected", "DOUBLE", false},
+           {"transformation_mass_delta_observed", "DOUBLE", false},
+           {"transformation_mass_delta_error", "DOUBLE", false},
            {"created_at", "TIMESTAMP", false}});
     };
 
@@ -3397,7 +3579,13 @@ namespace nta
           "noise, sn, area, rtmin, rtmax, width, mzmin, mzmax, ppm, fwhm_rt, fwhm_mz, gaussian_A, gaussian_mu, "
           "gaussian_sigma, gaussian_r2, jaggedness, sharpness, asymmetry, modality, plates, polarity, filtered, "
           "filter, filled, correction, eic_size, eic_rt, eic_mz, eic_intensity, eic_baseline, eic_smoothed, "
-          "ms1_size, ms1_mz, ms1_intensity, ms2_size, ms2_mz, ms2_intensity, created_at "
+          "ms1_size, ms1_mz, ms1_intensity, ms2_size, ms2_mz, ms2_intensity, "
+          "annotation_category, annotation_type, annotation_parent_feature, annotation_element, "
+          "annotation_mass_error_da, annotation_mass_error_ppm, annotation_rt_error, annotation_rel_intensity, "
+          "annotation_expected_rel_intensity_min, annotation_expected_rel_intensity_max, annotation_score, "
+          "component_size, component_rt_center, component_rt_spread, component_density, component_mean_correlation, "
+          "component_best_partner, component_max_correlation, component_mean_correlation_to_component, "
+          "component_membership_score, component_is_core, component_bridge_flag, created_at "
           "FROM NTA_FEATURES WHERE project_id = ?";
       if (!query.include_filtered)
       {
@@ -3609,7 +3797,7 @@ namespace nta
       auto guard = mass_spec::api::connect_checked(ctx_);
       std::vector<NTA_TRANSFORMATION_PRODUCT_ROW> out;
       const std::string sql =
-          "SELECT project_id, name, formula, mass, SMILES, InChI, InChIKey, xLogP, transformation, precursor_name, precursor_formula, precursor_mass, precursor_SMILES, precursor_InChI, precursor_InChIKey, precursor_xLogP, main_precursor_name, main_precursor_formula, main_precursor_mass, main_precursor_SMILES, main_precursor_InChI, main_precursor_InChIKey, main_precursor_xLogP, feature_group, precursor_feature_group, main_precursor_feature_group, cosine_similarity, main_precursor_cosine_similarity, rt_plausibility, main_precursor_rt_plausibility, created_at "
+          "SELECT project_id, name, formula, mass, SMILES, InChI, InChIKey, xLogP, transformation, precursor_name, precursor_formula, precursor_mass, precursor_SMILES, precursor_InChI, precursor_InChIKey, precursor_xLogP, main_precursor_name, main_precursor_formula, main_precursor_mass, main_precursor_SMILES, main_precursor_InChI, main_precursor_InChIKey, main_precursor_xLogP, feature_group, precursor_feature_group, main_precursor_feature_group, cosine_similarity, main_precursor_cosine_similarity, rt_plausibility, main_precursor_rt_plausibility, product_structure_key, precursor_structure_key, main_precursor_structure_key, resolved_direct_parent_feature_group, resolved_main_parent_feature_group, assignment_status, is_direct_assignment, is_main_parent_consistent, transformation_valid, assignment_rank, network_level, assignment_score, transformation_mass_delta_expected, transformation_mass_delta_observed, transformation_mass_delta_error, created_at "
           "FROM NTA_TRANSFORMATION_PRODUCTS WHERE project_id = ? "
           "ORDER BY lower(name), name, lower(transformation), transformation";
 
@@ -4066,65 +4254,140 @@ bool nta::api::PROJECT_NON_TARGET_ANALYSIS::metfrag_screening(const std::vector<
   load_processing_metadata();
   load_processing_features(true);
   load_processing_suspects();
-  std::vector<std::string> extra_params;
-  extra_params.reserve(normalized_params.extra_params.size());
-  for (const auto &entry : normalized_params.extra_params)
+  const std::string run_dir = metfrag_runner::resolve_run_dir(normalized_params);
+  const std::string debug_trace_path = (std::filesystem::path(run_dir) / "streamfind_metfrag_debug.log").string();
+  auto log_debug = [&](const std::string &message)
   {
-    extra_params.push_back(cache_join_key({entry.first, entry.second}));
+    if (!normalized_params.debug)
+      return;
+    std::ofstream out(debug_trace_path, std::ios::app);
+    if (!out.is_open())
+      return;
+    out << "[metfrag_screening] " << message << "\n";
+    out.flush();
+  };
+  try
+  {
+    log_debug("PROJECT_NON_TARGET_ANALYSIS::metfrag_screening:start");
+    log_debug("load_processing_suspects:done");
+    std::vector<std::string> score_types;
+    score_types.reserve(normalized_params.score_types.size());
+    for (const auto &entry : normalized_params.score_types)
+      score_types.push_back(entry);
+    std::vector<std::string> score_weights;
+    score_weights.reserve(normalized_params.score_weights.size());
+    for (const auto &entry : normalized_params.score_weights)
+      score_weights.push_back(cache_scalar_key(entry));
+    std::vector<std::string> pre_filters;
+    pre_filters.reserve(normalized_params.pre_processing_candidate_filter.size());
+    for (const auto &entry : normalized_params.pre_processing_candidate_filter)
+      pre_filters.push_back(entry);
+    std::vector<std::string> post_filters;
+    post_filters.reserve(normalized_params.post_processing_candidate_filter.size());
+    for (const auto &entry : normalized_params.post_processing_candidate_filter)
+      post_filters.push_back(entry);
+    std::vector<std::string> candidate_writers;
+    candidate_writers.reserve(normalized_params.candidate_writer.size());
+    for (const auto &entry : normalized_params.candidate_writer)
+      candidate_writers.push_back(entry);
+    std::vector<std::string> extra_params;
+    extra_params.reserve(normalized_params.extra_params.size());
+    for (const auto &entry : normalized_params.extra_params)
+      extra_params.push_back(cache_join_key({entry.first, entry.second}));
+
+    const bool success = run_cached_suspects_algorithm(
+        "metfrag_screening",
+        cache_join_key({
+            cache_vector_key(analyses),
+            normalized_params.metfrag_path,
+            normalized_params.database_type,
+            normalized_params.database_path,
+            cache_scalar_key(normalized_params.ppm),
+            cache_scalar_key(normalized_params.sec),
+            cache_scalar_key(normalized_params.ppmMS2),
+            cache_scalar_key(normalized_params.mzrMS2),
+            cache_scalar_key(normalized_params.top_n),
+            cache_join_key(score_types),
+            cache_join_key(score_weights),
+            cache_join_key(pre_filters),
+            cache_join_key(post_filters),
+            cache_join_key(candidate_writers),
+            cache_scalar_key(normalized_params.maximum_tree_depth),
+            cache_scalar_key(normalized_params.number_threads),
+            cache_bool_key(normalized_params.use_smiles),
+            cache_bool_key(normalized_params.filtered),
+            normalized_params.java_path,
+            normalized_params.run_dir,
+            cache_bool_key(normalized_params.debug),
+            cache_join_key(extra_params)}),
+        {feature_state_cache_key(), suspect_state_cache_key()},
+        "Cached NTS suspects for metfrag_screening",
+        [&]()
+        {
+          log_debug("run_cached_suspects_algorithm:lambda_enter");
+          metfrag_runner::metfrag_screening_impl(*this, analyses, normalized_params);
+          log_debug("metfrag_runner::metfrag_screening_impl:done");
+        });
+    log_debug(std::string("PROJECT_NON_TARGET_ANALYSIS::metfrag_screening:return success=") + (success ? "true" : "false"));
+    return success;
   }
-  std::vector<std::string> score_types;
-  score_types.reserve(normalized_params.score_types.size());
-  for (const auto &entry : normalized_params.score_types)
-    score_types.push_back(entry);
-  std::vector<std::string> score_weights;
-  score_weights.reserve(normalized_params.score_weights.size());
-  for (const auto &entry : normalized_params.score_weights)
-    score_weights.push_back(cache_scalar_key(entry));
-  std::vector<std::string> pre_filters;
-  pre_filters.reserve(normalized_params.pre_processing_candidate_filter.size());
-  for (const auto &entry : normalized_params.pre_processing_candidate_filter)
-    pre_filters.push_back(entry);
-  std::vector<std::string> post_filters;
-  post_filters.reserve(normalized_params.post_processing_candidate_filter.size());
-  for (const auto &entry : normalized_params.post_processing_candidate_filter)
-    post_filters.push_back(entry);
-  std::vector<std::string> candidate_writers;
-  candidate_writers.reserve(normalized_params.candidate_writer.size());
-  for (const auto &entry : normalized_params.candidate_writer)
-    candidate_writers.push_back(entry);
-  return run_cached_suspects_algorithm(
-      "metfrag_screening",
-      cache_join_key({cache_vector_key(analyses), normalized_params.metfrag_path, normalized_params.database_type, normalized_params.database_path, cache_scalar_key(normalized_params.ppm), cache_scalar_key(normalized_params.sec), cache_scalar_key(normalized_params.ppmMS2), cache_scalar_key(normalized_params.mzrMS2), cache_scalar_key(normalized_params.top_n), cache_join_key(score_types), cache_join_key(score_weights), cache_join_key(pre_filters), cache_join_key(post_filters), cache_join_key(candidate_writers), cache_scalar_key(normalized_params.maximum_tree_depth), cache_scalar_key(normalized_params.number_threads), cache_bool_key(normalized_params.use_smiles), cache_bool_key(normalized_params.filtered), normalized_params.java_path, normalized_params.run_dir, cache_bool_key(normalized_params.debug), cache_join_key(extra_params)}),
-      {feature_state_cache_key(), suspect_state_cache_key()},
-      "Cached NTS suspects for metfrag_screening",
-      [&]()
-      { metfrag_runner::metfrag_screening_impl(*this, analyses, normalized_params); });
+  catch (const std::exception &e)
+  {
+    throw project::error::ERROR(
+        project::error::ERROR_CODE::Unknown,
+        "NTA step 'metfrag_screening' failed: " + std::string(e.what()));
+  }
+  catch (...)
+  {
+    throw project::error::ERROR(
+        project::error::ERROR_CODE::Unknown,
+        "NTA step 'metfrag_screening' failed with an unknown native error.");
+  }
 };
 
 bool nta::api::PROJECT_NON_TARGET_ANALYSIS::assign_transformation_products(const std::vector<NTA_TRANSFORMATION_PRODUCT_ROW> &transformation_products, const std::string &chromatographic_phase, double mzrMS2)
 {
+  const std::string debug_path = (std::filesystem::path(".") / "log" / "assign_transformation_products_debug.log").string();
+  auto log_debug = [&](const std::string &message)
+  {
+    std::ofstream out(debug_path, std::ios::app);
+    if (!out.is_open())
+      return;
+    out << "[assign_transformation_products] " << message << "\n";
+    out.flush();
+  };
+  log_debug("PROJECT_NON_TARGET_ANALYSIS::assign_transformation_products:start");
   load_processing_metadata();
+  log_debug("load_processing_metadata:done");
   load_processing_features(true);
+  log_debug("load_processing_features:done");
   load_processing_suspects();
+  log_debug("load_processing_suspects:done");
   std::vector<std::string> input_rows;
   input_rows.reserve(transformation_products.size());
   for (const auto &row : transformation_products)
   {
     input_rows.push_back(cache_join_key({row.name, row.formula, cache_scalar_key(row.mass), row.SMILES, row.InChI, row.InChIKey, cache_scalar_key(row.xLogP), row.transformation, row.precursor_name, row.precursor_formula, cache_scalar_key(row.precursor_mass), row.precursor_SMILES, row.precursor_InChI, row.precursor_InChIKey, cache_scalar_key(row.precursor_xLogP), row.main_precursor_name, row.main_precursor_formula, cache_scalar_key(row.main_precursor_mass), row.main_precursor_SMILES, row.main_precursor_InChI, row.main_precursor_InChIKey, cache_scalar_key(row.main_precursor_xLogP)}));
   }
-  return run_cached_transformation_products_algorithm(
+  log_debug("input_rows_built count=" + std::to_string(input_rows.size()));
+  const bool success = run_cached_transformation_products_algorithm(
       "assign_transformation_products",
       cache_join_key({chromatographic_phase, cache_scalar_key(mzrMS2), cache_join_key(input_rows)}),
       {feature_state_cache_key(), suspect_state_cache_key()},
       "Cached NTS transformation products for assign_transformation_products",
       [&]()
       {
+        log_debug("run_cached_transformation_products_algorithm:lambda_enter");
         NTA_QUERY_REQUEST query;
         query.analyses = analysis_names();
-        return assign_transformation_products::assign_transformation_products_impl(
+        const auto result = assign_transformation_products::assign_transformation_products_impl(
             get_suspects(query),
             transformation_products,
             chromatographic_phase,
             mzrMS2);
+        log_debug("assign_transformation_products_impl:done rows=" + std::to_string(result.size()));
+        return result;
       });
+  log_debug(std::string("PROJECT_NON_TARGET_ANALYSIS::assign_transformation_products:return success=") + (success ? "true" : "false"));
+  return success;
 };

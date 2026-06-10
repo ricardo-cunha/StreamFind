@@ -79,7 +79,7 @@ sus <- data.table::fread(
   file.path(
     "dev",
     "dev_duckdb",
-    "suspects_template.csv"
+    "suspects_template_V2.csv"
   )
 )
 
@@ -92,7 +92,7 @@ sus <- data.table::fread(
 # )
 
 tps <- search_transformation_products_biotransformer(
-  parents = sus[c(2, 9), ],
+  parents = sus[c(2, 9, 15), ],
   biotransformerOption = c(
     "ABIOTICBIO"
   ),
@@ -110,7 +110,7 @@ data.table::fwrite(
   file.path(
     "dev",
     "dev_duckdb",
-    "transformation_products_template.csv"
+    "transformation_products_template_v2.csv"
   )
 )
 

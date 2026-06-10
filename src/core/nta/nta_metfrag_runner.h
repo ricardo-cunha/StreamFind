@@ -49,6 +49,8 @@ namespace nta
 
     MetFragParams canonicalize_and_validate_params(const MetFragParams &params);
 
+    std::string resolve_run_dir(const MetFragParams &params);
+
     /**
      * Run MetFragCL screening for all (or selected) analyses in nta_data.
      * Results are written to nta_data.suspects[i] for each analysis index i.

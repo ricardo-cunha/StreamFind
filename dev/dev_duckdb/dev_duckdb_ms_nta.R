@@ -13,7 +13,16 @@ internal_standards <- internal_standards[!is.na(rt), ]
 suspects <- fread(file.path("dev", "dev_duckdb", "suspects_with_ms2_template.csv"))
 #suspects <- suspects[, c("name", "InChI", "rt", "ms2_positive")]
 
-transformation_products <- fread(file.path("dev", "dev_duckdb", "transformation_products_template.csv"))
+transformation_products <- fread(file.path("dev", "dev_duckdb", "transformation_products_template_v2.csv"))
+na_cols <- c("precursor_mass", "precursor_xLogP", "precursor_formula",
+             "precursor_SMILES", "precursor_InChI", "precursor_InChIKey",
+             "precursor_name")
+for (col in na_cols) {
+  if (is.list(transformation_products[[col]])) {
+    transformation_products[[col]] <- sapply(transformation_products[[col]],
+      function(x) if (is.null(x)) NA else x)
+  }
+}
 
 ms_files <- StreamFindData::get_ms_file_paths()
 ms_files <- ms_files[grepl("ww_", ms_files)]
@@ -89,7 +98,7 @@ workflow <- Workflow(list(
     maxCharge = 1L,
     maxGaps = 1L,
     ppm = 10,
-    isotopeElements = c("C:1-60", "N:0-10", "O:0-20", "S:0-4", "Cl:0-6", "Br:0-4"),
+    isotopeElements = c("C:1-80", "N:0-10", "O:0-20", "S:0-4", "Cl:0-6", "Br:0-4"),
     debugComponent = "",
     debugAnalysis = ""
   ),
@@ -122,20 +131,20 @@ workflow <- Workflow(list(
     debug = FALSE,
     debugRT = 0
   ),
-  Method_NonTargetAnalysis_FillFeatures(
-    withinReplicate = FALSE,
-    filtered = FALSE,
-    rtExpand = 10,
-    mzExpand = 0.01,
-    maxPeakWidth = 30,
-    minTracesIntensity = 1000,
-    minNumberTraces = 5L,
-    minIntensity = 5000,
-    rtApexDeviation = 5,
-    minSignalToNoiseRatio = 3,
-    minGaussianFit = 0.2,
-    debugFG = ""
-  ),
+  # Method_NonTargetAnalysis_FillFeatures(
+  #   withinReplicate = FALSE,
+  #   filtered = FALSE,
+  #   rtExpand = 10,
+  #   mzExpand = 0.01,
+  #   maxPeakWidth = 30,
+  #   minTracesIntensity = 1000,
+  #   minNumberTraces = 5L,
+  #   minIntensity = 5000,
+  #   rtApexDeviation = 5,
+  #   minSignalToNoiseRatio = 3,
+  #   minGaussianFit = 0.2,
+  #   debugFG = ""
+  # ),
   # Method_NonTargetAnalysis_CorrectMatrixSuppression(
   #   refBlankReplicate = NA_character_,
   #   mpRtWindow = 10
@@ -164,7 +173,8 @@ workflow <- Workflow(list(
   Method_NonTargetAnalysis_MetFragScreening(
     metfrag_path = "C:\\Users\\cunha\\Documents\\patRoon_deps\\MetFragCommandLine-2.5.0.jar",
     database_type = "LocalCSV",
-    database_path = file.path("dev", "dev_duckdb", "suspects_template_V2.csv"),
+    #database_path = file.path("dev", "dev_duckdb", "suspects_template_V2.csv"),
+    database_path = file.path("dev", "dev_duckdb", "transformation_products_template_v2.csv"),
     ppm = 10,
     sec = 15,
     ppmMS2 = 10,
@@ -182,41 +192,42 @@ workflow <- Workflow(list(
     run_dir = "",
     debug = TRUE,
     extra_params = list()
+  ),
+  Method_NonTargetAnalysis_AssignTransformationProducts(
+    transformation_products = transformation_products,
+    chromatographic_phase = "reverse_phase",
+    mzrMS2 = 0.008
   )
-  # Method_NonTargetAnalysis_AssignTransformationProducts(
-  #   transformation_products = transformation_products,
-  #   chromatographic_phase = "reverse_phase",
-  #   mzrMS2 = 0.008
-  # )
 ))
 
-set_workflow(nta, workflow[1:3])
+set_workflow(nta, workflow)
 
 show(nta$get_workflow())
 
-
-
-
-# get_suspects_screening_csv(
-#   suspects = data.table::fread(
-#     file.path(
-#       getwd(),
-#       "dev",
-#       "dev_duckdb",
-#       "internal_standards_fants.csv"
-#     )
-#   ),
-#   file = file.path(
-#     getwd(),
-#     "dev",
-#     "dev_duckdb",
-#     "internal_standards_fants_V2.csv"
-#   )
-# )
-
-
-
 nta$run_workflow()
+
+
+
+get_transformation_products(nta)
+
+htmlwidgets::saveWidget(
+  plot_transformation_products(
+    nta,
+    groups = unique(get_transformation_products(nta)$feature_group)[4],
+    showMS2 = TRUE,
+    interactive = TRUE
+  ),
+  file = file.path("dev", "dev_duckdb", "transformation_products_plot.html"),
+  selfcontained = TRUE
+)
+
+
+
+
+con <- DBI::dbConnect(duckdb::duckdb(), nta$get_db())
+DBI::dbGetQuery(con, "SELECT COUNT(*) as n FROM NTA_TRANSFORMATION_PRODUCTS WHERE project_id = 'demo_nta'")
+DBI::dbDisconnect(con)
+
 
 
 
@@ -282,6 +293,7 @@ get_cache(nta)
 delete_cache(nta, name = "NTA_FEATURES_CACHE")
 delete_cache(nta, name = "NTA_INTERNAL_STANDARDS_CACHE")
 delete_cache(nta, name = "NTA_SUSPECTS_CACHE")
+delete_cache(nta, name = "NTA_TRANSFORMATION_PRODUCTS_CACHE")
 
 print(nta)
 

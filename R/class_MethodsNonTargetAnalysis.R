@@ -80,9 +80,12 @@
     name = character(),
     formula = character(),
     mass = numeric(),
+    rt = numeric(),
     SMILES = character(),
     InChI = character(),
     InChIKey = character(),
+    ms2_positive = character(),
+    ms2_negative = character(),
     xLogP = numeric(),
     transformation = character(),
     precursor_name = character(),
@@ -98,7 +101,12 @@
     main_precursor_SMILES = character(),
     main_precursor_InChI = character(),
     main_precursor_InChIKey = character(),
-    main_precursor_xLogP = numeric()
+    main_precursor_xLogP = numeric(),
+    bt_product_title = character(),
+    bt_precursor_title = character(),
+    bt_reaction_type = character(),
+    bt_biosystem = character(),
+    transformation_detail = character()
   )
 }
 
@@ -1780,6 +1788,33 @@ run.Method_NonTargetAnalysis_MetFragScreening <- function(x, proj, ...) {
   validate_object(x)
   checkmate::assert_class(proj, "ProjectNonTargetAnalysis")
   p <- x$parameters
+  if (isTRUE(p$debug) && (!length(p$run_dir) || is.na(p$run_dir) || !nzchar(p$run_dir))) {
+    p$run_dir <- file.path(
+      ".",
+      "log",
+      "metfrag",
+      paste0("run_", format(Sys.time(), "%Y%m%d_%H%M%S"))
+    )
+  }
+  if (isTRUE(p$debug) && nzchar(p$run_dir)) {
+    dir.create(p$run_dir, recursive = TRUE, showWarnings = FALSE)
+  }
+  log_debug <- function(message) {
+    if (!isTRUE(p$debug) || !nzchar(p$run_dir)) {
+      return(invisible(NULL))
+    }
+    cat(
+      sprintf(
+        "[R %s] %s\n",
+        format(Sys.time(), "%Y-%m-%d %H:%M:%OS3"),
+        message
+      ),
+      file = file.path(p$run_dir, "streamfind_metfrag_debug.log"),
+      append = TRUE
+    )
+    invisible(NULL)
+  }
+  log_debug("run.Method_NonTargetAnalysis_MetFragScreening:start")
   success <- rcpp_project_nta_metfrag_screening(
     nta_xptr = proj$get_nts_ptr(),
     metfrag_path = as.character(p$metfrag_path),
@@ -1804,7 +1839,10 @@ run.Method_NonTargetAnalysis_MetFragScreening <- function(x, proj, ...) {
     debug = isTRUE(p$debug),
     extra_params = p$extra_params
   )
+  log_debug(sprintf("run.Method_NonTargetAnalysis_MetFragScreening:after_call success=%s", success))
+  log_debug("run.Method_NonTargetAnalysis_MetFragScreening:before_.run_nta_method")
   .run_nta_method(success, proj, "MetFrag screening did not complete successfully.")
+  log_debug("run.Method_NonTargetAnalysis_MetFragScreening:done")
 }
 
 #' @title Method_NonTargetAnalysis_AssignTransformationProducts
@@ -1812,9 +1850,24 @@ run.Method_NonTargetAnalysis_MetFragScreening <- function(x, proj, ...) {
 #'   transformation products to detected features or suspect hits. This workflow
 #'   uses a supplied precursor-product table together with chromatographic
 #'   plausibility and optional MS2 fragment support to propose environmentally
-#'   relevant parent-product relationships in NTA studies.
+#'   relevant parent-product relationships in NTA studies. Structure matching is
+#'   normalized internally with precedence `InChIKey > InChI > SMILES`, and the
+#'   resulting assignments resolve one direct precursor and one main precursor
+#'   feature group per detected product feature group. When the input table was
+#'   generated with `search_transformation_products_biotransformer()`, the
+#'   helper already harmonizes structure fields and direct-precursor metadata
+#'   before this method runs.
 #' @param transformation_products A data.frame/data.table describing
-#'   transformation products and their precursors.
+#'   transformation products and their precursors. Required columns are
+#'   `name`, `transformation`, `precursor_name`, `precursor_formula`,
+#'   `precursor_mass`, `precursor_SMILES`, `precursor_InChI`,
+#'   `precursor_InChIKey`, `precursor_xLogP`, `main_precursor_name`,
+#'   `main_precursor_formula`, `main_precursor_mass`, `main_precursor_SMILES`,
+#'   `main_precursor_InChI`, `main_precursor_InChIKey`, and
+#'   `main_precursor_xLogP`. Product-level structure columns should include at
+#'   least one of `SMILES`, `InChI`, or `InChIKey`. Matching is normalized
+#'   internally with precedence `InChIKey > InChI > SMILES`, so no additional
+#'   `structure_key` columns are required in the input table.
 #' @param chromatographic_phase Character(1) chromatographic phase used for RT
 #'   plausibility checks.
 #' @param mzrMS2 Numeric(1) absolute m/z tolerance for MS2 fragment matching.
@@ -1857,8 +1910,15 @@ validate_object.Method_NonTargetAnalysis_AssignTransformationProducts <- functio
   checkmate::assert_choice(x$parameters$chromatographic_phase, c("reverse_phase", "hilic"))
   checkmate::assert_number(x$parameters$mzrMS2, lower = 0, finite = TRUE)
   if (nrow(tp) > 0) {
-    checkmate::assert_true("name" %in% names(tp))
-    checkmate::assert_true("SMILES" %in% names(tp))
+    required_cols <- c(
+      "name", "transformation",
+      "precursor_name", "precursor_formula", "precursor_mass",
+      "precursor_SMILES", "precursor_InChI", "precursor_InChIKey", "precursor_xLogP",
+      "main_precursor_name", "main_precursor_formula", "main_precursor_mass",
+      "main_precursor_SMILES", "main_precursor_InChI", "main_precursor_InChIKey", "main_precursor_xLogP"
+    )
+    checkmate::assert_true(all(required_cols %in% names(tp)))
+    checkmate::assert_true(any(c("SMILES", "InChI", "InChIKey") %in% names(tp)))
   }
   invisible(NULL)
 }
@@ -1870,11 +1930,29 @@ run.Method_NonTargetAnalysis_AssignTransformationProducts <- function(x, proj, .
   validate_object(x)
   checkmate::assert_class(proj, "ProjectNonTargetAnalysis")
   p <- x$parameters
+  debug_path <- file.path(".", "log", "assign_transformation_products_debug.log")
+  dir.create(dirname(debug_path), recursive = TRUE, showWarnings = FALSE)
+  log_debug <- function(message) {
+    cat(
+      sprintf(
+        "[R %s] %s\n",
+        format(Sys.time(), "%Y-%m-%d %H:%M:%OS3"),
+        message
+      ),
+      file = debug_path,
+      append = TRUE
+    )
+    invisible(NULL)
+  }
+  log_debug("run.Method_NonTargetAnalysis_AssignTransformationProducts:start")
   success <- rcpp_project_non_target_analysis_assign_transformation_products(
     nta_xptr = proj$get_nts_ptr(),
     transformation_products = as.data.frame(data.table::as.data.table(p$transformation_products)),
     chromatographic_phase = as.character(p$chromatographic_phase),
     mzrMS2 = as.numeric(p$mzrMS2)
   )
+  log_debug(sprintf("run.Method_NonTargetAnalysis_AssignTransformationProducts:after_call success=%s", success))
+  log_debug("run.Method_NonTargetAnalysis_AssignTransformationProducts:before_.run_nta_method")
   .run_nta_method(success, proj, "Assigning transformation products did not complete successfully.")
+  log_debug("run.Method_NonTargetAnalysis_AssignTransformationProducts:done")
 }

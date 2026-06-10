@@ -1841,7 +1841,6 @@ plot_raw_spectra_ms1.ProjectMassSpec <- function(
     minIntensity = minIntensity
   )
   if (nrow(ms1) == 0) {
-    message("\U2717 MS1 traces not found for the targets!")
     return(NULL)
   }
   .plot_raw_spectra_tabular_data(
@@ -1900,7 +1899,6 @@ plot_raw_spectra_ms2.ProjectMassSpec <- function(
     minIntensity = minIntensity
   )
   if (nrow(ms2) == 0) {
-    message("\U2717 MS2 traces not found for the targets!")
     return(NULL)
   }
   .plot_raw_spectra_tabular_data(

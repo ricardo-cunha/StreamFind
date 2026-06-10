@@ -182,6 +182,110 @@ namespace nta
         return resolved_parent;
       }
 
+      bool candidate_equals(const ANNOTATION_CANDIDATE &lhs, const ANNOTATION_CANDIDATE &rhs)
+      {
+        return lhs.cat == rhs.cat &&
+               lhs.type == rhs.type &&
+               lhs.parent_feature == rhs.parent_feature &&
+               lhs.element_or_delta == rhs.element_or_delta &&
+               lhs.parent_index == rhs.parent_index &&
+               lhs.feature_index == rhs.feature_index &&
+               lhs.is_default == rhs.is_default;
+      }
+
+      bool relation_candidate_creates_cycle(const ANNOTATION_CANDIDATE &candidate,
+                                            const std::unordered_map<int, ANNOTATION_CANDIDATE> &state)
+      {
+        if (candidate.is_default || candidate.parent_index < 0)
+          return false;
+
+        const int origin = candidate.feature_index;
+        int current = candidate.parent_index;
+        std::unordered_set<int> visited;
+
+        while (current >= 0 && visited.insert(current).second)
+        {
+          if (current == origin)
+            return true;
+
+          const auto it = state.find(current);
+          if (it == state.end())
+            return false;
+
+          if (it->second.is_default || it->second.parent_index < 0 || it->second.parent_index == current)
+            return false;
+
+          current = it->second.parent_index;
+        }
+
+        return false;
+      }
+
+      bool relation_chain_reaches_root(int feature_idx,
+                                       const std::unordered_map<int, ANNOTATION_CANDIDATE> &state,
+                                       std::unordered_set<int> &visited)
+      {
+        if (!visited.insert(feature_idx).second)
+          return false;
+
+        const auto it = state.find(feature_idx);
+        if (it == state.end())
+          return false;
+
+        const auto &candidate = it->second;
+        if (candidate.is_default)
+          return true;
+
+        if (candidate.parent_index < 0 || candidate.parent_index == feature_idx)
+          return false;
+
+        const auto parent_it = state.find(candidate.parent_index);
+        if (parent_it == state.end())
+          return false;
+
+        const auto &parent = parent_it->second;
+        if (candidate.cat == "adduct")
+          return parent.is_default;
+        if (candidate.cat == "loss")
+        {
+          if (parent.is_default)
+            return true;
+          if (parent.cat != "loss")
+            return false;
+          return relation_chain_reaches_root(candidate.parent_index, state, visited);
+        }
+        return false;
+      }
+
+      bool relation_candidate_is_valid(const ANNOTATION_CANDIDATE &candidate,
+                                       const std::unordered_map<int, ANNOTATION_CANDIDATE> &state)
+      {
+        if (candidate.is_default)
+          return true;
+        if (candidate.parent_index < 0 || candidate.parent_index == candidate.feature_index)
+          return false;
+        if (relation_candidate_creates_cycle(candidate, state))
+          return false;
+
+        const auto parent_it = state.find(candidate.parent_index);
+        if (parent_it == state.end())
+          return false;
+
+        const auto &parent = parent_it->second;
+        if (candidate.cat == "adduct")
+          return parent.is_default;
+        if (candidate.cat == "loss")
+        {
+          if (parent.is_default)
+            return true;
+          if (parent.cat != "loss")
+            return false;
+          std::unordered_set<int> visited;
+          return relation_chain_reaches_root(candidate.parent_index, state, visited);
+        }
+        return false;
+      }
+
       double neutral_mass_from_base_ion(const nta::api::NTA_FEATURE_ROW &ft)
       {
         constexpr double proton = 1.007276;
@@ -1435,10 +1539,19 @@ namespace nta
             return fts.mz[lhs.anchor_idx] < fts.mz[rhs.anchor_idx];
           });
 
+          std::unordered_set<int> isotope_anchor_children;
+          for (const auto &assignment : isotope_assignments)
+          {
+            for (const auto &candidate : assignment.children)
+              isotope_anchor_children.insert(candidate.feature_index);
+          }
+
           std::unordered_set<int> isotope_children;
           std::unordered_set<int> isotope_occupied;
           for (const auto &assignment : isotope_assignments)
           {
+            if (isotope_anchor_children.count(assignment.anchor_idx) > 0)
+              continue;
             if (isotope_occupied.count(assignment.anchor_idx) > 0)
               continue;
 
@@ -1546,18 +1659,54 @@ namespace nta
             }
           }
 
-          for (auto &[feature_idx, feature_candidates] : relation_candidates)
+          std::unordered_map<int, ANNOTATION_CANDIDATE> relation_state;
+          for (int idx : non_isotope_indices)
+            relation_state[idx] = final_candidate[idx];
+
+          std::vector<int> relation_update_order = non_isotope_indices;
+          std::sort(relation_update_order.begin(), relation_update_order.end(), [&fts](int lhs, int rhs) {
+            if (fts.mz[lhs] != fts.mz[rhs])
+              return fts.mz[lhs] > fts.mz[rhs];
+            return lhs < rhs;
+          });
+
+          bool relation_changed = true;
+          const int max_relation_iterations = std::max(1, static_cast<int>(non_isotope_indices.size()));
+          for (int iter = 0; iter < max_relation_iterations && relation_changed; ++iter)
           {
-            if (feature_candidates.empty())
-              continue;
-            ANNOTATION_CANDIDATE best = feature_candidates.front();
-            for (const auto &candidate : feature_candidates)
+            relation_changed = false;
+            std::unordered_map<int, ANNOTATION_CANDIDATE> next_state = relation_state;
+
+            for (int feature_idx : relation_update_order)
             {
-              if (candidate_better(candidate, best))
-                best = candidate;
+              auto cand_it = relation_candidates.find(feature_idx);
+              if (cand_it == relation_candidates.end())
+                continue;
+              auto &feature_candidates = cand_it->second;
+
+              auto current_it = relation_state.find(feature_idx);
+              ANNOTATION_CANDIDATE best = final_candidate[feature_idx];
+              if (current_it != relation_state.end() && relation_candidate_is_valid(current_it->second, next_state))
+                best = current_it->second;
+
+              for (const auto &candidate : feature_candidates)
+              {
+                if (!relation_candidate_is_valid(candidate, next_state))
+                  continue;
+                if (best.is_default || candidate_better(candidate, best))
+                  best = candidate;
+              }
+
+              next_state[feature_idx] = best;
+              if (!candidate_equals(best, relation_state[feature_idx]))
+                relation_changed = true;
             }
-            final_candidate[feature_idx] = best;
+
+            relation_state.swap(next_state);
           }
+
+          for (const auto &[feature_idx, candidate] : relation_state)
+            final_candidate[feature_idx] = candidate;
 
           std::unordered_set<int> reserved_targets;
           for (const auto &entry : final_candidate)
@@ -1566,14 +1715,18 @@ namespace nta
               reserved_targets.insert(entry.first);
           }
 
-          std::vector<int> adduct_anchor_indices;
+          std::vector<int> derived_anchor_indices;
           for (const auto &entry : final_candidate)
           {
-            if (!entry.second.is_default && entry.second.cat == "adduct")
-              adduct_anchor_indices.push_back(entry.first);
+            if (!entry.second.is_default && (entry.second.cat == "adduct" || entry.second.cat == "loss"))
+            {
+              std::unordered_set<int> visited;
+              if (relation_chain_reaches_root(entry.first, final_candidate, visited))
+                derived_anchor_indices.push_back(entry.first);
+            }
           }
 
-          for (int anchor_idx : adduct_anchor_indices)
+          for (int anchor_idx : derived_anchor_indices)
           {
             const auto anchor = fts.get_feature(anchor_idx);
             std::unordered_set<int> unavailable = reserved_targets;
@@ -1597,7 +1750,7 @@ namespace nta
               ANNOTATION_CANDIDATE candidate;
               candidate.cat = "isotope";
               candidate.type = extract_isotope_type(child.adduct);
-              candidate.parent_feature = final_candidate[anchor_idx].parent_feature;
+              candidate.parent_feature = anchor.feature;
               candidate.element_or_delta = extract_isotope_element(child.adduct);
               candidate.feature_index = child_idx;
               candidate.parent_index = anchor_idx;

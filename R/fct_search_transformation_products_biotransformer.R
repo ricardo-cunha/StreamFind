@@ -21,9 +21,12 @@
 #' @param debug Logical. If TRUE, saves the raw BioTransformer JSON response in the temp
 #' directory and prints the path.
 #' @return A data.table with columns:
-#' `name`, `formula`, `mass`, `rt`, `SMILES`, `InChI`, `InChIKey`, `ms2_positive`, `ms2_negative`,
-#' `xLogP`, `transformation`, `precursor_name`, `precursor_formula`, `precursor_mass`,
-#' `precursor_SMILES`, `precursor_InChI`, `precursor_InChIKey`, `precursor_xLogP`.
+#' `name`, `formula`, `mass`, `rt`, `SMILES`, `InChI`, `InChIKey`,
+#' `ms2_positive`, `ms2_negative`, `xLogP`,
+#' `transformation`, `precursor_name`, `precursor_formula`, `precursor_mass`,
+#' `precursor_SMILES`, `precursor_InChI`, `precursor_InChIKey`,
+#' `precursor_xLogP`, `main_precursor_*`, `bt_precursor_title`, `bt_reaction_type`,
+#' `bt_biosystem`, and `transformation_detail`.
 #' The first row(s) correspond to the parent compounds (transformation = "main_precursor").
 #' @export
 search_transformation_products_biotransformer <- function(
@@ -77,11 +80,13 @@ search_transformation_products_biotransformer <- function(
   }
 
   tps_cols <- c(
-    "name", "formula", "mass", "rt", "SMILES", "InChI", "InChIKey", "ms2_positive", "ms2_negative", "xLogP",
+    "name", "formula", "mass", "rt", "SMILES", "InChI", "InChIKey",
+    "ms2_positive", "ms2_negative", "xLogP",
     "transformation", "precursor_name", "precursor_formula", "precursor_mass",
     "precursor_SMILES", "precursor_InChI", "precursor_InChIKey", "precursor_xLogP",
     "main_precursor_name", "main_precursor_formula", "main_precursor_mass",
-    "main_precursor_SMILES", "main_precursor_InChI", "main_precursor_InChIKey", "main_precursor_xLogP"
+    "main_precursor_SMILES", "main_precursor_InChI", "main_precursor_InChIKey", "main_precursor_xLogP",
+    "bt_product_title", "bt_precursor_title", "bt_reaction_type", "bt_biosystem", "transformation_detail"
   )
   extra_parent_cols <- setdiff(names(parents), tps_cols)
   output_cols <- c(tps_cols, extra_parent_cols)
@@ -99,58 +104,57 @@ search_transformation_products_biotransformer <- function(
     as.character(x[1])
   }
 
-  calc_formula_from_mol <- function(mol) {
-    fobj <- rcdk::get.mol2formula(mol, charge = 0)
-    fobj@string
+  normalize_text <- function(x) {
+    x <- trimws(as.character(x))
+    x[nzchar(x) == FALSE] <- NA_character_
+    x
   }
 
-  calc_props_from_smiles <- function(smiles) {
-    if (length(smiles) == 0) {
+  normalize_inchikey <- function(x) {
+    x <- normalize_text(x)
+    ifelse(is.na(x), NA_character_, toupper(x))
+  }
+
+  normalize_transformation_tag <- function(x) {
+    x <- normalize_text(x)
+    x <- sub("^[^:]+:\\s*", "", x)
+    x <- sub("\\s+transformation$", "", x, ignore.case = TRUE)
+    x
+  }
+
+  first_non_empty <- function(...) {
+    values <- list(...)
+    for (value in values) {
+      if (length(value) == 0 || is.null(value)) next
+      value <- as.character(value[1])
+      if (!is.na(value) && nzchar(trimws(value))) return(trimws(value))
+    }
+    NA_character_
+  }
+
+  normalize_structure_fields <- function(smiles = NA_character_, inchi = NA_character_, name = "structure") {
+    smiles <- normalize_text(smiles)
+    inchi <- normalize_text(inchi)
+    if ((is.na(smiles) || !nzchar(smiles)) && (is.na(inchi) || !nzchar(inchi))) {
       return(list(
         formula = NA_character_, mass = NA_real_, inchi = NA_character_,
         inchikey = NA_character_, logp = NA_real_, smiles = NA_character_
       ))
     }
-    smiles <- as.character(smiles[1])
-    if (is.na(smiles) || !nzchar(smiles)) {
-      return(list(
-        formula = NA_character_, mass = NA_real_, inchi = NA_character_,
-        inchikey = NA_character_, logp = NA_real_, smiles = NA_character_
-      ))
-    }
-    if (!requireNamespace("rcdk", quietly = TRUE)) {
-      return(list(
-        formula = NA_character_, mass = NA_real_, inchi = NA_character_,
-        inchikey = NA_character_, logp = NA_real_, smiles = smiles
-      ))
-    }
-    mol <- tryCatch(rcdk::parse.smiles(smiles)[[1]], error = function(e) NULL)
-    if (is.null(mol)) {
-      return(list(
-        formula = NA_character_, mass = NA_real_, inchi = NA_character_,
-        inchikey = NA_character_, logp = NA_real_, smiles = smiles
-      ))
-    }
-    canonical_smiles <- tryCatch(
-      rcdk::get.smiles(mol, smilesFlavor = "Canonical"),
-      error = function(e) tryCatch(rcdk::get.smiles(mol), error = function(e2) NA_character_)
+    normalized <- rcpp_get_suspects_screening_csv(data.frame(
+      name = as.character(name),
+      SMILES = if (is.na(smiles)) NA_character_ else as.character(smiles),
+      InChI = if (is.na(inchi)) NA_character_ else as.character(inchi),
+      stringsAsFactors = FALSE
+    ))
+    list(
+      formula = normalize_text(normalized$formula[[1]]),
+      mass = as.numeric(normalized$mass[[1]]),
+      inchi = normalize_text(normalized$InChI[[1]]),
+      inchikey = normalize_inchikey(normalized$InChIKey[[1]]),
+      logp = as.numeric(normalized$xLogP[[1]]),
+      smiles = normalize_text(normalized$SMILES[[1]])
     )
-    mass <- tryCatch(as.numeric(rcdk::get.exact.mass(mol)), error = function(e) NA_real_)
-    logp <- tryCatch(as.numeric(rcdk::get.xlogp(mol)), error = function(e) NA_real_)
-    inchi <- NA_character_
-    inchikey <- NA_character_
-    if (requireNamespace("rJava", quietly = TRUE)) {
-      inchi <- tryCatch(rJava::.jcall("org/guha/rcdk/util/Misc", "S", "getInChi", mol, check = FALSE), error = function(e) NA_character_)
-      inchikey <- tryCatch(rJava::.jcall("org/guha/rcdk/util/Misc", "S", "getInChiKey", mol, check = FALSE), error = function(e) NA_character_)
-    }
-    if (requireNamespace("rcdk", quietly = TRUE)) {
-      conv_fn <- tryCatch(getFromNamespace("convert.implicit.to.explicit", "rcdk"), error = function(e) NULL)
-      if (is.function(conv_fn)) {
-        tryCatch(conv_fn(mol), error = function(e) NULL)
-      }
-    }
-    formula <- tryCatch(calc_formula_from_mol(mol), error = function(e) NA_character_)
-    list(formula = formula, mass = mass, inchi = inchi, inchikey = inchikey, logp = logp, smiles = canonical_smiles)
   }
 
   harmonize_compound_columns <- function(dt, prefix = "") {
@@ -159,17 +163,28 @@ search_transformation_products_biotransformer <- function(
     inchikey_col <- paste0(prefix, "InChIKey")
     formula_col <- paste0(prefix, "formula")
     mass_col <- paste0(prefix, "mass")
-    logp_col <- if (prefix == "") "xLogP" else "precursor_xLogP"
+    logp_col <- paste0(prefix, "xLogP")
     needed <- c(smiles_col, inchi_col, inchikey_col, formula_col, mass_col)
     if (!all(needed %in% names(dt))) return(dt)
-    for (i in seq_len(nrow(dt))) {
-      props <- calc_props_from_smiles(dt[[smiles_col]][i])
-      if (!is.na(props$smiles) && nzchar(props$smiles)) dt[[smiles_col]][i] <- props$smiles
-      if (!is.na(props$inchi) && nzchar(props$inchi)) dt[[inchi_col]][i] <- props$inchi
-      if (!is.na(props$inchikey) && nzchar(props$inchikey)) dt[[inchikey_col]][i] <- props$inchikey
-      if (!is.na(props$formula) && nzchar(props$formula)) dt[[formula_col]][i] <- props$formula
-      if (!is.na(props$mass)) dt[[mass_col]][i] <- as.numeric(props$mass)
-      if (logp_col %in% names(dt) && !is.na(props$logp)) dt[[logp_col]][i] <- as.numeric(props$logp)
+    idx <- which(
+      (!is.na(dt[[smiles_col]]) & nzchar(dt[[smiles_col]])) |
+        (!is.na(dt[[inchi_col]]) & nzchar(dt[[inchi_col]]))
+    )
+    if (!length(idx)) return(dt)
+    tmp <- data.frame(
+      name = if ("name" %in% names(dt)) as.character(dt$name[idx]) else paste0(prefix, seq_along(idx)),
+      SMILES = as.character(dt[[smiles_col]][idx]),
+      InChI = as.character(dt[[inchi_col]][idx]),
+      stringsAsFactors = FALSE
+    )
+    normalized <- data.table::as.data.table(rcpp_get_suspects_screening_csv(tmp))
+    dt[[smiles_col]][idx] <- normalize_text(normalized$SMILES)
+    dt[[inchi_col]][idx] <- normalize_text(normalized$InChI)
+    dt[[inchikey_col]][idx] <- normalize_inchikey(normalized$InChIKey)
+    dt[[formula_col]][idx] <- normalize_text(normalized$formula)
+    dt[[mass_col]][idx] <- as.numeric(normalized$mass)
+    if (logp_col %in% names(dt)) {
+      dt[[logp_col]][idx] <- as.numeric(normalized$xLogP)
     }
     dt
   }
@@ -307,24 +322,29 @@ search_transformation_products_biotransformer <- function(
     SMILES = get("SMILES"),
     InChI = get("InChI"),
     InChIKey = get("InChIKey"),
+    bt_product_title = get("name"),
     ms2_positive = if ("ms2_positive" %in% names(parents)) get("ms2_positive") else NA_character_,
     ms2_negative = if ("ms2_negative" %in% names(parents)) get("ms2_negative") else NA_character_,
     xLogP = if ("LogP" %in% names(parents)) get("LogP") else get("xLogP"),
     transformation = "main_precursor",
-    precursor_name = NA_character_,
-    precursor_formula = NA_character_,
-    precursor_mass = NA_real_,
-    precursor_SMILES = NA_character_,
-    precursor_InChI = NA_character_,
-    precursor_InChIKey = NA_character_,
-    precursor_xLogP = NA_real_,
+    precursor_name = get("name"),
+    precursor_formula = get("formula"),
+    precursor_mass = get("mass"),
+    precursor_SMILES = get("SMILES"),
+    precursor_InChI = get("InChI"),
+    precursor_InChIKey = get("InChIKey"),
+    precursor_xLogP = if ("LogP" %in% names(parents)) get("LogP") else get("xLogP"),
     main_precursor_name = get("name"),
     main_precursor_formula = get("formula"),
     main_precursor_mass = get("mass"),
     main_precursor_SMILES = get("SMILES"),
     main_precursor_InChI = get("InChI"),
     main_precursor_InChIKey = get("InChIKey"),
-    main_precursor_xLogP = if ("LogP" %in% names(parents)) get("LogP") else get("xLogP")
+    main_precursor_xLogP = if ("LogP" %in% names(parents)) get("LogP") else get("xLogP"),
+    bt_precursor_title = NA_character_,
+    bt_reaction_type = "main_precursor",
+    bt_biosystem = NA_character_,
+    transformation_detail = "main_precursor"
   )]
   if (length(extra_parent_cols) > 0) {
     parents_rows <- cbind(parents_rows, parents[, ..extra_parent_cols])
@@ -340,6 +360,10 @@ search_transformation_products_biotransformer <- function(
 
   lookup_parent_name <- function(smiles, inchikey) {
     if (nrow(parent_name_map) == 0) return(NA_character_)
+    if (!is.na(inchikey) && nzchar(inchikey)) {
+      nm <- parent_name_map$name[match(toupper(inchikey), toupper(parent_name_map$InChIKey))]
+      if (!is.na(nm) && nzchar(nm)) return(nm)
+    }
     if (!is.na(smiles) && nzchar(smiles)) {
       nm <- parent_name_map$name[match(smiles, parent_name_map$SMILES)]
       if (!is.na(nm) && nzchar(nm)) return(nm)
@@ -426,6 +450,10 @@ search_transformation_products_biotransformer <- function(
           if (is.null(bt$products) || length(bt$products) == 0) next
           reaction_val <- safe_scalar(bt$reaction_type)
           biosystem_val <- safe_scalar(bt$biosystem)
+          reaction_detail <- first_non_empty(
+            if (!is.na(biosystem_val) && nzchar(biosystem_val)) paste0(biosystem_val, ": ", reaction_val) else NA_character_,
+            reaction_val
+          )
           transform_label <- reaction_val
           if (!is.na(biosystem_val) && nzchar(biosystem_val)) {
             if (!is.na(reaction_val) && nzchar(reaction_val)) {
@@ -434,7 +462,7 @@ search_transformation_products_biotransformer <- function(
               transform_label <- biosystem_val
             }
           }
-          transform_label <- gsub(" transformation", "", transform_label, fixed = TRUE)
+          transform_label <- normalize_transformation_tag(transform_label)
           # Direct precursor from BioTransformer substrates
           precursor_row <- NULL
           if (!is.null(bt$substrates) && length(bt$substrates) > 0) {
@@ -442,22 +470,23 @@ search_transformation_products_biotransformer <- function(
           }
           precursor_smiles <- if (!is.null(precursor_row)) safe_scalar(precursor_row$smiles) else as.character(parent$SMILES)
           precursor_inchikey <- if (!is.null(precursor_row)) safe_scalar(precursor_row$inchikey) else as.character(parent$InChIKey)
+          precursor_title <- if (!is.null(precursor_row)) safe_scalar(precursor_row$title) else as.character(parent$name)
           precursor_name <- if (!is.null(precursor_row)) {
             prec_title <- safe_scalar(precursor_row$title)
             if (!is.na(prec_title) && nzchar(prec_title)) prec_title else precursor_inchikey
           } else {
             as.character(parent$name)
           }
-          precursor_props <- if (!is.na(precursor_smiles) && nzchar(precursor_smiles)) {
-            calc_props_from_smiles(precursor_smiles)
-          } else {
-            list(formula = NA_character_, mass = NA_real_, inchi = NA_character_, inchikey = NA_character_, logp = NA_real_, smiles = NA_character_)
-          }
+          precursor_props <- normalize_structure_fields(
+            smiles = precursor_smiles,
+            inchi = if (!is.null(precursor_row)) safe_scalar(precursor_row$inchi) else NA_character_,
+            name = precursor_name
+          )
           if (!is.na(precursor_props$smiles) && nzchar(precursor_props$smiles)) {
             precursor_smiles <- precursor_props$smiles
           }
-          if (!is.na(precursor_props$inchi) && nzchar(precursor_props$inchi)) {
-            precursor_inchikey <- if (!is.na(precursor_inchikey) && nzchar(precursor_inchikey)) precursor_inchikey else precursor_props$inchikey
+          if (!is.na(precursor_props$inchikey) && nzchar(precursor_props$inchikey)) {
+            precursor_inchikey <- precursor_props$inchikey
           }
           matched_parent_name <- lookup_parent_name(precursor_smiles, precursor_inchikey)
           if (!is.na(matched_parent_name) && nzchar(matched_parent_name)) {
@@ -466,20 +495,19 @@ search_transformation_products_biotransformer <- function(
 
           for (prod in bt$products) {
             smiles <- safe_scalar(prod$smiles)
-            props <- calc_props_from_smiles(smiles)
+            props <- normalize_structure_fields(
+              smiles = smiles,
+              inchi = safe_scalar(prod$inchi),
+              name = safe_scalar(prod$title)
+            )
             formula_val <- props$formula
-            if (is.na(formula_val) && requireNamespace("rcdk", quietly = TRUE) && !is.na(smiles) && nzchar(smiles)) {
-              formula_val <- tryCatch({
-                mol2 <- rcdk::parse.smiles(smiles)[[1]]
-                calc_formula_from_mol(mol2)
-              }, error = function(e) NA_character_)
-            }
             prod_title <- safe_scalar(prod$title)
             prod_inchikey <- safe_scalar(prod$inchikey)
-            prod_name <- if (!is.na(prod_title) && nzchar(prod_title)) prod_title else if (!is.na(prod_inchikey) && nzchar(prod_inchikey)) prod_inchikey else smiles
+            product_label_fallback <- first_non_empty(prod_inchikey, smiles)
+            prod_name <- first_non_empty(prod_title, product_label_fallback)
             smiles_out <- if (!is.na(props$smiles) && nzchar(props$smiles)) props$smiles else smiles
-            inchi_out <- if (!is.na(props$inchi) && nzchar(props$inchi)) props$inchi else NA_character_
-            inchikey_out <- if (!is.na(prod_inchikey) && nzchar(prod_inchikey)) prod_inchikey else props$inchikey
+            inchi_out <- if (!is.na(props$inchi) && nzchar(props$inchi)) props$inchi else safe_scalar(prod$inchi)
+            inchikey_out <- if (!is.na(props$inchikey) && nzchar(props$inchikey)) props$inchikey else prod_inchikey
             matched_parent_name <- lookup_parent_name(smiles_out, inchikey_out)
             if (!is.na(matched_parent_name) && nzchar(matched_parent_name)) {
               prod_name <- matched_parent_name
@@ -489,11 +517,12 @@ search_transformation_products_biotransformer <- function(
               formula = as.character(formula_val),
               mass = as.numeric(props$mass),
               rt = NA_real_,
-              SMILES = as.character(smiles_out),
-              InChI = as.character(inchi_out),
-              InChIKey = as.character(inchikey_out),
-              ms2_positive = as.character(if ("ms2_positive" %in% names(parent)) parent$ms2_positive else NA_character_),
-              ms2_negative = as.character(if ("ms2_negative" %in% names(parent)) parent$ms2_negative else NA_character_),
+                      SMILES = as.character(smiles_out),
+                      InChI = as.character(inchi_out),
+                      InChIKey = as.character(inchikey_out),
+                      bt_product_title = as.character(prod_title),
+                      ms2_positive = as.character(if ("ms2_positive" %in% names(parent)) parent$ms2_positive else NA_character_),
+                      ms2_negative = as.character(if ("ms2_negative" %in% names(parent)) parent$ms2_negative else NA_character_),
               xLogP = as.numeric(props$logp),
               transformation = as.character(transform_label),
               precursor_name = as.character(precursor_name),
@@ -509,7 +538,11 @@ search_transformation_products_biotransformer <- function(
               main_precursor_SMILES = as.character(parent$SMILES),
               main_precursor_InChI = as.character(parent$InChI),
               main_precursor_InChIKey = as.character(parent$InChIKey),
-              main_precursor_xLogP = if ("LogP" %in% names(parent)) as.numeric(parent$LogP) else as.numeric(parent$xLogP)
+              main_precursor_xLogP = if ("LogP" %in% names(parent)) as.numeric(parent$LogP) else as.numeric(parent$xLogP),
+              bt_precursor_title = as.character(precursor_title),
+              bt_reaction_type = as.character(reaction_val),
+              bt_biosystem = as.character(biosystem_val),
+              transformation_detail = as.character(reaction_detail)
             ), extra_na))
           }
         }
@@ -524,13 +557,49 @@ search_transformation_products_biotransformer <- function(
   }
 
   # Harmonize all compound columns for both products and precursors
+  tps_out[, `:=`(
+    name = normalize_text(name),
+    formula = normalize_text(formula),
+    SMILES = normalize_text(SMILES),
+    InChI = normalize_text(InChI),
+    InChIKey = normalize_inchikey(InChIKey),
+    bt_product_title = normalize_text(bt_product_title),
+    transformation = normalize_transformation_tag(transformation),
+    precursor_name = normalize_text(precursor_name),
+    precursor_formula = normalize_text(precursor_formula),
+    precursor_SMILES = normalize_text(precursor_SMILES),
+    precursor_InChI = normalize_text(precursor_InChI),
+    precursor_InChIKey = normalize_inchikey(precursor_InChIKey),
+    main_precursor_name = normalize_text(main_precursor_name),
+    main_precursor_formula = normalize_text(main_precursor_formula),
+    main_precursor_SMILES = normalize_text(main_precursor_SMILES),
+    main_precursor_InChI = normalize_text(main_precursor_InChI),
+    main_precursor_InChIKey = normalize_inchikey(main_precursor_InChIKey),
+    bt_precursor_title = normalize_text(bt_precursor_title),
+    bt_reaction_type = normalize_text(bt_reaction_type),
+    bt_biosystem = normalize_text(bt_biosystem),
+    transformation_detail = normalize_text(transformation_detail)
+  )]
+
   tps_out <- harmonize_compound_columns(tps_out, "")
   tps_out <- harmonize_compound_columns(tps_out, "precursor_")
+  tps_out <- harmonize_compound_columns(tps_out, "main_precursor_")
   tps_out <- harmonize_smiles_by_inchikey(tps_out, "SMILES", "InChIKey")
   tps_out <- harmonize_smiles_by_inchikey(tps_out, "precursor_SMILES", "precursor_InChIKey")
   tps_out <- harmonize_precursor_from_primary(tps_out)
   tps_out <- harmonize_names_by_smiles(tps_out, "name", "SMILES", "InChIKey", parent_name_map)
   tps_out <- harmonize_names_by_smiles(tps_out, "precursor_name", "precursor_SMILES", "precursor_InChIKey", parent_name_map)
+  tps_out[
+    transformation != "main_precursor",
+    `:=`(
+      name = sprintf(
+        "%s_TP%d",
+        fifelse(!is.na(main_precursor_name) & nzchar(main_precursor_name), main_precursor_name, "unknown_parent"),
+        seq_len(.N)
+      )
+    ),
+    by = .(main_precursor_name)
+  ]
 
   # Exclude transformation products with same mass as parents if requested
   if (excludeWithSameMass && nrow(tps_out) > 0) {

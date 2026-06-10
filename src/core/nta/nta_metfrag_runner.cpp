@@ -2,6 +2,7 @@
 
 #include "nta_metfrag_runner.h"
 #include "nta.h"
+#include "external/openbabel_adapter.h"
 #include "mass_spec/mass_spec.h"
 
 #include <algorithm>
@@ -142,6 +143,33 @@ namespace
   std::string default_metfrag_run_dir()
   {
     return (fs::path(".") / "log" / "metfrag" / ("run_" + make_run_timestamp())).string();
+  }
+
+  std::string make_stage_timestamp()
+  {
+    const auto now = std::chrono::system_clock::now();
+    const auto now_time = std::chrono::system_clock::to_time_t(now);
+    const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
+    std::tm time_info{};
+#ifdef _WIN32
+    localtime_s(&time_info, &now_time);
+#else
+    localtime_r(&now_time, &time_info);
+#endif
+    std::ostringstream oss;
+    oss << std::put_time(&time_info, "%Y-%m-%d %H:%M:%S")
+        << '.'
+        << std::setw(3) << std::setfill('0') << ms.count();
+    return oss.str();
+  }
+
+  void append_debug_line(const std::string &path, const std::string &message)
+  {
+    std::ofstream out(path, std::ios::app);
+    if (!out.is_open())
+      return;
+    out << "[" << make_stage_timestamp() << "] " << message << "\n";
+    out.flush();
   }
 
   std::string default_empty_peak_list_path(const std::string &run_dir)
@@ -336,6 +364,25 @@ namespace
     return fields;
   }
 
+  std::string csv_escape(const std::string &value)
+  {
+    if (value.find_first_of(",\"\r\n") == std::string::npos)
+      return value;
+
+    std::string out;
+    out.reserve(value.size() + 2);
+    out.push_back('"');
+    for (char c : value)
+    {
+      if (c == '"')
+        out += "\"\"";
+      else
+        out.push_back(c);
+    }
+    out.push_back('"');
+    return out;
+  }
+
   // Case-insensitive column-index lookup.
   int find_col(
       const std::vector<std::string> &headers,
@@ -370,6 +417,59 @@ namespace
     std::string expl_peaks;
     std::string expl_formulas;
   };
+
+  bool normalize_structure_fields(
+      std::string &smiles,
+      std::string &inchi,
+      std::string &inchikey,
+      std::string &formula,
+      double &mass,
+      double &xlogp)
+  {
+    if (smiles.empty() && inchi.empty())
+      return false;
+    if (!sf::obabel::openbabel_available())
+      return false;
+
+    const sf::obabel::NormalizedStructure normalized =
+        sf::obabel::normalize_structure(smiles, inchi);
+    if (!normalized.ok)
+      return false;
+
+    if (!normalized.canonical_smiles.empty())
+      smiles = normalized.canonical_smiles;
+    if (!normalized.inchi.empty())
+      inchi = normalized.inchi;
+    if (!normalized.inchikey.empty())
+      inchikey = normalized.inchikey;
+    if (!normalized.formula.empty())
+      formula = normalized.formula;
+    mass = normalized.exact_mass;
+    if (normalized.has_xlogp)
+      xlogp = normalized.xlogp;
+    return true;
+  }
+
+  std::string resolve_structure_identifier(
+      const std::string &preferred_identifier,
+      const std::string &inchikey,
+      const std::string &inchi,
+      const std::string &smiles,
+      const std::string &name,
+      std::size_t generated_index)
+  {
+    if (!preferred_identifier.empty())
+      return preferred_identifier;
+    if (!inchikey.empty())
+      return inchikey;
+    if (!inchi.empty())
+      return inchi;
+    if (!smiles.empty())
+      return smiles;
+    if (!name.empty())
+      return name;
+    return "row_" + std::to_string(generated_index);
+  }
 
   // Locate and parse the MetFrag output CSV for a given sample_name.
   std::vector<MetFragRow> parse_metfrag_csv(
@@ -428,6 +528,20 @@ namespace
       if (!ms.empty()) r.neutral_mass = std::atof(ms.c_str());
       r.expl_peaks    = gf(row, ci_expl);
       r.expl_formulas = gf(row, ci_exform);
+      normalize_structure_fields(
+          r.SMILES,
+          r.InChI,
+          r.InChIKey,
+          r.formula,
+          r.neutral_mass,
+          r.xLogP);
+      r.database_id = resolve_structure_identifier(
+          r.database_id,
+          r.InChIKey,
+          r.InChI,
+          r.SMILES,
+          r.name,
+          out.size() + 1);
       out.push_back(std::move(r));
     }
 
@@ -580,38 +694,37 @@ namespace
 
     // Rename map: MetFrag target → accepted user column names (first match wins).
     struct RenameRule { std::string target; std::vector<std::string> aliases; };
-    std::vector<RenameRule> rules = {
-      { "Name",             { "Name", "name" } },
-      { "MolecularFormula", { "MolecularFormula", "formula" } },
+    const std::vector<RenameRule> rules = {
+      { "Identifier",       { "Identifier", "identifier", "id", "database_id", "databaseid" } },
       { "MonoisotopicMass", { "MonoisotopicMass", "mass" } },
+      { "MolecularFormula", { "MolecularFormula", "formula" } },
       { "SMILES",           { "SMILES", "smiles", "Smiles" } },
       { "InChI",            { "InChI", "inchi", "Inchi" } },
       { "InChIKey",         { "InChIKey", "inchikey", "Inchikey" } },
-      { "Identifier",       { "Identifier", "identifier", "id", "database_id", "databaseid" } },
+      { "Name",             { "Name", "name" } }
     };
 
-    bool renamed_any = false;
+    struct OutputColumn
+    {
+      std::string target;
+      int source_index = -1;
+    };
+    std::vector<OutputColumn> output_columns;
+    output_columns.reserve(rules.size());
     for (const auto &rule : rules)
     {
       int idx = find_col(rule.aliases);
-      if (idx < 0) continue;
-      if (cols[idx] != rule.target)
-      {
-        cols[idx] = rule.target;
-        renamed_any = true;
-      }
+      output_columns.push_back({rule.target, idx});
     }
 
-    // If still no Identifier column, derive from Name column.
-    int id_idx   = find_col({ "Identifier" });
-    int name_idx = find_col({ "Name" });
-    bool add_identifier = (id_idx < 0 && name_idx >= 0);
-    if (add_identifier) renamed_any = true;
-
-    if (!renamed_any && !add_identifier)
-      return db_path;  // Already correct — use as-is.
-
-    // Write normalised copy.
+    int id_idx   = find_col({ "Identifier", "identifier", "id", "database_id", "databaseid" });
+    int name_idx = find_col({ "Name", "name" });
+    int ikey_idx = find_col({ "InChIKey", "inchikey", "Inchikey" });
+    int inchi_idx = find_col({ "InChI", "inchi", "Inchi" });
+    int smiles_idx = find_col({ "SMILES", "smiles", "Smiles" });
+    int formula_idx = find_col({ "MolecularFormula", "formula" });
+    int mass_idx = find_col({ "MonoisotopicMass", "mass" });
+    int xlogp_idx = find_col({ "XLogP", "xLogP", "xlogp", "XLogP3", "LogP", "XLogP-3" });
     std::string out_path = run_dir_path + "/metfrag_localcsv_normalized.csv";
     std::ofstream out(out_path);
     if (!out.is_open())
@@ -620,32 +733,103 @@ namespace
       return db_path;
     }
 
-    // Write new header (append Identifier at end if derived from Name).
-    for (size_t i = 0; i < cols.size(); ++i)
+    // Write reduced header used by MetFrag plus optional XLogP passthrough.
+    for (size_t i = 0; i < output_columns.size(); ++i)
     {
       if (i > 0) out << ',';
-      out << cols[i];
+      out << output_columns[i].target;
     }
-    if (add_identifier) out << ",Identifier";
+    if (xlogp_idx >= 0) out << ",XLogP";
     out << '\n';
 
-    // Stream data rows, appending Identifier value when needed.
+    // Stream data rows into the reduced schema.
     std::string row;
+    std::size_t generated_identifier_index = 0;
     while (std::getline(in, row))
     {
-      out << row;
-      if (add_identifier)
+      std::vector<std::string> fields = split_csv_line(row);
+      if (fields.empty()) continue;
+
+      auto field_at = [&](int idx) -> std::string
       {
-        // Append value of Name column as Identifier.
-        std::vector<std::string> fields = split_csv_line(row);
-        std::string id_val = (name_idx < static_cast<int>(fields.size())) ? fields[name_idx] : "";
-        out << ',' << id_val;
+        if (idx < 0 || static_cast<int>(fields.size()) <= idx) return "";
+        return fields[static_cast<std::size_t>(idx)];
+      };
+
+      ++generated_identifier_index;
+
+      std::string name = field_at(name_idx);
+      std::string smiles = field_at(smiles_idx);
+      std::string inchi = field_at(inchi_idx);
+      std::string inchikey = field_at(ikey_idx);
+      std::string formula = field_at(formula_idx);
+      std::string identifier = field_at(id_idx);
+
+      double mass = std::numeric_limits<double>::quiet_NaN();
+      const std::string mass_raw = field_at(mass_idx);
+      if (!mass_raw.empty() && mass_raw != "NA")
+        mass = std::atof(mass_raw.c_str());
+
+      double xlogp = std::numeric_limits<double>::quiet_NaN();
+      const std::string xlogp_raw = field_at(xlogp_idx);
+      if (!xlogp_raw.empty() && xlogp_raw != "NA")
+        xlogp = std::atof(xlogp_raw.c_str());
+
+      normalize_structure_fields(smiles, inchi, inchikey, formula, mass, xlogp);
+      identifier = resolve_structure_identifier(
+          identifier,
+          inchikey,
+          inchi,
+          smiles,
+          name,
+          generated_identifier_index);
+
+      auto normalized_value = [&](const std::string &target) -> std::string
+      {
+        if (target == "Identifier")
+          return identifier;
+        if (target == "MonoisotopicMass")
+        {
+          if (std::isnan(mass))
+            return "";
+          std::ostringstream oss;
+          oss << std::fixed << std::setprecision(10) << mass;
+          return oss.str();
+        }
+        if (target == "MolecularFormula")
+          return formula;
+        if (target == "SMILES")
+          return smiles;
+        if (target == "InChI")
+          return inchi;
+        if (target == "InChIKey")
+          return inchikey;
+        if (target == "Name")
+          return name;
+        return "";
+      };
+
+      for (size_t i = 0; i < output_columns.size(); ++i)
+      {
+        if (i > 0) out << ',';
+        std::string value = normalized_value(output_columns[i].target);
+        out << csv_escape(value);
+      }
+      if (xlogp_idx >= 0)
+      {
+        out << ',';
+        if (!std::isnan(xlogp))
+        {
+          std::ostringstream oss;
+          oss << std::fixed << std::setprecision(6) << xlogp;
+          out << csv_escape(oss.str());
+        }
       }
       out << '\n';
     }
 
     if (debug)
-      std::cerr << "[metfrag] LocalCSV normalised: " << out_path << "\n";
+      std::cerr << "[metfrag] LocalCSV normalised (reduced schema): " << out_path << "\n";
 
     return out_path;
   }
@@ -740,6 +924,11 @@ MetFragParams canonicalize_and_validate_params(const MetFragParams &params)
   return out;
 }
 
+std::string resolve_run_dir(const MetFragParams &params)
+{
+  return params.run_dir.empty() ? default_metfrag_run_dir() : params.run_dir;
+}
+
 void metfrag_screening_impl(
   PROJECT_NON_TARGET_ANALYSIS &nta_data,
     const std::vector<std::string> &analyses_sel,
@@ -752,20 +941,31 @@ void metfrag_screening_impl(
   const size_t n_ana = analysis_names.size();
 
   // Ensure run directory exists.
-  std::string run_dir = params.run_dir.empty() ? default_metfrag_run_dir() : params.run_dir;
+  std::string run_dir = resolve_run_dir(params);
   try { fs::create_directories(run_dir); }
   catch (const std::exception &e)
   {
     std::cerr << "[metfrag_runner] Failed to create run_dir '" << run_dir << "': " << e.what() << "\n";
   }
   std::cout << "[metfrag_runner] run_dir: " << run_dir << std::endl;
+  const std::string debug_trace_path = (fs::path(run_dir) / "streamfind_metfrag_debug.log").string();
+  if (params.debug)
+  {
+    append_debug_line(debug_trace_path, "metfrag_screening_impl:start");
+    append_debug_line(debug_trace_path, "run_dir=" + run_dir);
+    append_debug_line(debug_trace_path, "database_type=" + params.database_type + " database_path=" + params.database_path);
+  }
 
   // Normalise LocalCSV column names once before the feature loop.
   std::string effective_db_path = params.database_path;
   if (!effective_db_path.empty())
   {
     if (params.database_type == "LocalCSV")
+    {
+      if (params.debug) append_debug_line(debug_trace_path, "normalize_localcsv_database:start");
       effective_db_path = normalize_localcsv_database(effective_db_path, run_dir, params.debug);
+      if (params.debug) append_debug_line(debug_trace_path, "normalize_localcsv_database:done effective_db_path=" + effective_db_path);
+    }
   }
 
   const std::string common_params_template =
@@ -787,6 +987,8 @@ void metfrag_screening_impl(
 
     nta::api::NTA_FEATURES &feats = feature_buffers[ai];
     const int n_feat = feats.size();
+    if (params.debug)
+      append_debug_line(debug_trace_path, "analysis:start index=" + std::to_string(ai) + " analysis=" + ana + " features=" + std::to_string(n_feat));
 
     std::cout << ai + 1 << "/" << n_ana
               << " MetFrag screening: " << ana
@@ -795,9 +997,15 @@ void metfrag_screening_impl(
 
     for (int fi = 0; fi < n_feat; ++fi)
     {
+      if (params.debug && (fi < 5 || fi % 100 == 0))
+        append_debug_line(debug_trace_path, "feature:begin analysis=" + ana + " index=" + std::to_string(fi) + " feature=" + feats.feature[fi]);
       // Skip filtered features unless explicitly requested.
       if (!params.filtered && feats.filtered[fi])
+      {
+        if (params.debug && fi < 5)
+          append_debug_line(debug_trace_path, "feature:skip_filtered feature=" + feats.feature[fi]);
         continue;
+      }
 
       // Decode MS2 peak list.
       std::vector<double> ms2_mz  = decode_encoded(feats.ms2_mz[fi]);
@@ -811,7 +1019,11 @@ void metfrag_screening_impl(
         precursor_mass = static_cast<double>(feats.mz[fi]) -
                          feats.polarity[fi] * 1.007276;
       if (std::isnan(precursor_mass))
+      {
+        if (params.debug && fi < 5)
+          append_debug_line(debug_trace_path, "feature:skip_no_precursor_mass feature=" + feats.feature[fi]);
         continue;
+      }
 
       // Build safe file-name stem.
       std::string sid         = safe_id(ana, feats.feature[fi]);
@@ -849,6 +1061,15 @@ void metfrag_screening_impl(
       // -- Parse output CSV --------------------------------------------------
       std::vector<MetFragRow> rows = parse_metfrag_csv(run_dir, sample_name);
       std::vector<std::string> csv_paths = collect_metfrag_result_files(run_dir, sample_name);
+      if (params.debug)
+      {
+        append_debug_line(
+            debug_trace_path,
+            "feature:metfrag_done feature=" + feats.feature[fi] +
+            " status=" + std::to_string(status) +
+            " rows=" + std::to_string(rows.size()) +
+            " csv_files=" + std::to_string(csv_paths.size()));
+      }
 
       if (params.debug)
       {
@@ -973,6 +1194,16 @@ void metfrag_screening_impl(
         s.exp_ms2_intensity  = feats.ms2_intensity[fi];
 
         suspect_buffers[ai].append(s);
+        if (params.debug)
+        {
+          append_debug_line(
+              debug_trace_path,
+              "feature:append_suspect feature=" + feats.feature[fi] +
+              " rank=" + std::to_string(rank) +
+              " name=" + s.name +
+              " shared=" + std::to_string(shared) +
+              " cosine=" + std::to_string(cosine));
+        }
         ++rank;
         ++n_suspects_found;
       }
@@ -989,8 +1220,12 @@ void metfrag_screening_impl(
       }
     } // features
 
+    if (params.debug)
+      append_debug_line(debug_trace_path, "analysis:done analysis=" + ana + " suspects_found=" + std::to_string(n_suspects_found));
     std::cout << "  Found " << n_suspects_found << " suspect(s) in " << ana << std::endl;
   } // analyses
+  if (params.debug)
+    append_debug_line(debug_trace_path, "metfrag_screening_impl:done");
 }
 
 } // namespace nta::metfrag_runner
