@@ -1,7 +1,8 @@
 # Development ------------------------------------------------------------------
 
 # Packages to install ----
-install.packages(c("devtools", "BiocManager", "remotes"))
+install.packages(c("devtools", "BiocManager", "remotes", "pak"))
+install.packages(c("pak"))
 BiocManager::install(c("Rhdf5lib"))
 remotes::install_github("ricardo-cunha/zlibbioc")
 
@@ -11,6 +12,11 @@ devtools::document()
 
 # Installs the package
 devtools::install(upgrade = FALSE, dependencies = TRUE, build_vignettes = FALSE)
+devtools::install_github("odea-project/StreamFind", upgrade = FALSE, dependencies = TRUE, build_vignettes = FALSE)
+
+pak::pkg_install("odea-project/StreamFind@dev_filesystem", upgrade = FALSE, dependencies = TRUE)
+
+
 
 # Builds/Updates the GitHub page
 pkgdown::clean_cache()

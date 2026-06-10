@@ -25,6 +25,8 @@
 *.so
 *.dll
 *.dylib
+!src/core/external/duckdb/windows/duckdb.dll
+!inst/libs/x64/duckdb.dll
 *.pyd
 *.obj
 *.a
