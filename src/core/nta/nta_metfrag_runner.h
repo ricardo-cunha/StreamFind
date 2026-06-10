@@ -39,7 +39,6 @@ namespace nta
       bool        filtered       = false;///< Include filtered features when true.
       std::string java_path      = "java";///< Path to Java executable (used in JAR mode only).
       std::string run_dir;               ///< Directory for temp files and logs; created if absent.
-      bool        debug          = false;///< Write per-feature debug metadata when true.
       std::vector<std::pair<std::string, std::string>> extra_params; ///< Additional MetFrag parameters (override-last).
     };
 

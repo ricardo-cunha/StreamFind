@@ -598,4 +598,7 @@ S3 interface methods for \code{ProjectNonTargetAnalysis}.
 \item \code{plot_transformation_products(ProjectNonTargetAnalysis)}: Plot transformation products for groups.
 
 }}
+\seealso{
+\link{ProjectMassSpecS3}, \link{ProjectS3}
+}
 \keyword{internal}

@@ -32,13 +32,6 @@ ms_files <- ms_files[grepl("ww_", ms_files)]
 # 1. Open the NTA project
 # -----------------------------------------------------------------------------
 
-?Project
-?ProjectMassSpec
-?ProjectMassSpecS3
-
-?ProjectNonTargetAnalysis
-?ProjectNonTargetAnalysisS3
-
 nta <- open_ProjectNonTargetAnalysis(
   db = project_db,
   project_id = project_id,

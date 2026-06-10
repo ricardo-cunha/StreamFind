@@ -145,33 +145,6 @@ namespace
     return (fs::path(".") / "log" / "metfrag" / ("run_" + make_run_timestamp())).string();
   }
 
-  std::string make_stage_timestamp()
-  {
-    const auto now = std::chrono::system_clock::now();
-    const auto now_time = std::chrono::system_clock::to_time_t(now);
-    const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
-    std::tm time_info{};
-#ifdef _WIN32
-    localtime_s(&time_info, &now_time);
-#else
-    localtime_r(&now_time, &time_info);
-#endif
-    std::ostringstream oss;
-    oss << std::put_time(&time_info, "%Y-%m-%d %H:%M:%S")
-        << '.'
-        << std::setw(3) << std::setfill('0') << ms.count();
-    return oss.str();
-  }
-
-  void append_debug_line(const std::string &path, const std::string &message)
-  {
-    std::ofstream out(path, std::ios::app);
-    if (!out.is_open())
-      return;
-    out << "[" << make_stage_timestamp() << "] " << message << "\n";
-    out.flush();
-  }
-
   std::string default_empty_peak_list_path(const std::string &run_dir)
   {
     return (fs::path(run_dir) / "_metfrag_empty_peaklist.txt").string();
@@ -655,8 +628,7 @@ namespace
   // and returns the path to use (original if already correct, new copy otherwise).
   std::string normalize_localcsv_database(
       const std::string &db_path,
-      const std::string &run_dir_path,
-      bool debug)
+      const std::string &run_dir_path)
   {
     if (db_path.empty()) return db_path;
 
@@ -828,9 +800,6 @@ namespace
       out << '\n';
     }
 
-    if (debug)
-      std::cerr << "[metfrag] LocalCSV normalised (reduced schema): " << out_path << "\n";
-
     return out_path;
   }
 
@@ -948,24 +917,13 @@ void metfrag_screening_impl(
     std::cerr << "[metfrag_runner] Failed to create run_dir '" << run_dir << "': " << e.what() << "\n";
   }
   std::cout << "[metfrag_runner] run_dir: " << run_dir << std::endl;
-  const std::string debug_trace_path = (fs::path(run_dir) / "streamfind_metfrag_debug.log").string();
-  if (params.debug)
-  {
-    append_debug_line(debug_trace_path, "metfrag_screening_impl:start");
-    append_debug_line(debug_trace_path, "run_dir=" + run_dir);
-    append_debug_line(debug_trace_path, "database_type=" + params.database_type + " database_path=" + params.database_path);
-  }
 
   // Normalise LocalCSV column names once before the feature loop.
   std::string effective_db_path = params.database_path;
   if (!effective_db_path.empty())
   {
     if (params.database_type == "LocalCSV")
-    {
-      if (params.debug) append_debug_line(debug_trace_path, "normalize_localcsv_database:start");
-      effective_db_path = normalize_localcsv_database(effective_db_path, run_dir, params.debug);
-      if (params.debug) append_debug_line(debug_trace_path, "normalize_localcsv_database:done effective_db_path=" + effective_db_path);
-    }
+      effective_db_path = normalize_localcsv_database(effective_db_path, run_dir);
   }
 
   const std::string common_params_template =
@@ -987,8 +945,6 @@ void metfrag_screening_impl(
 
     nta::api::NTA_FEATURES &feats = feature_buffers[ai];
     const int n_feat = feats.size();
-    if (params.debug)
-      append_debug_line(debug_trace_path, "analysis:start index=" + std::to_string(ai) + " analysis=" + ana + " features=" + std::to_string(n_feat));
 
     std::cout << ai + 1 << "/" << n_ana
               << " MetFrag screening: " << ana
@@ -997,15 +953,9 @@ void metfrag_screening_impl(
 
     for (int fi = 0; fi < n_feat; ++fi)
     {
-      if (params.debug && (fi < 5 || fi % 100 == 0))
-        append_debug_line(debug_trace_path, "feature:begin analysis=" + ana + " index=" + std::to_string(fi) + " feature=" + feats.feature[fi]);
       // Skip filtered features unless explicitly requested.
       if (!params.filtered && feats.filtered[fi])
-      {
-        if (params.debug && fi < 5)
-          append_debug_line(debug_trace_path, "feature:skip_filtered feature=" + feats.feature[fi]);
         continue;
-      }
 
       // Decode MS2 peak list.
       std::vector<double> ms2_mz  = decode_encoded(feats.ms2_mz[fi]);
@@ -1019,11 +969,7 @@ void metfrag_screening_impl(
         precursor_mass = static_cast<double>(feats.mz[fi]) -
                          feats.polarity[fi] * 1.007276;
       if (std::isnan(precursor_mass))
-      {
-        if (params.debug && fi < 5)
-          append_debug_line(debug_trace_path, "feature:skip_no_precursor_mass feature=" + feats.feature[fi]);
         continue;
-      }
 
       // Build safe file-name stem.
       std::string sid         = safe_id(ana, feats.feature[fi]);
@@ -1031,7 +977,6 @@ void metfrag_screening_impl(
       std::string ms2_path    = has_ms2 ? (run_dir + "/ms2_" + sid + ".txt") : shared_empty_peak_list;
       std::string params_path = run_dir + "/metfrag_" + sid + ".params";
       std::string log_path    = run_dir + "/metfrag_" + sid + ".log";
-      std::string debug_path  = run_dir + "/metfrag_" + sid + ".debug.txt";
       std::string sample_name = "metfrag_" + sid;
 
       if (has_ms2)
@@ -1041,71 +986,20 @@ void metfrag_screening_impl(
       write_params_file(params_path, common_params_template, precursor_mass,
                         feats.polarity[fi], ms2_path, sample_name);
 
-      // Optional debug metadata file.
-      if (params.debug)
-      {
-        std::ofstream dbg(debug_path);
-        dbg << "analysis="     << ana                << "\n"
-            << "feature="      << feats.feature[fi]  << "\n"
-            << "polarity="     << feats.polarity[fi]  << "\n"
-            << "precursor_mass=" << precursor_mass    << "\n"
-            << "ms2_points="   << ms2_mz.size()       << "\n"
-            << "ms2_file="     << ms2_path            << "\n"
-            << "params_file="  << params_path         << "\n"
-            << "results_path=" << run_dir             << "\n";
-      }
-
       // -- Invoke MetFragCL --------------------------------------------------
       int status = run_metfrag(params.metfrag_path, params.java_path, params_path, log_path);
 
       // -- Parse output CSV --------------------------------------------------
       std::vector<MetFragRow> rows = parse_metfrag_csv(run_dir, sample_name);
       std::vector<std::string> csv_paths = collect_metfrag_result_files(run_dir, sample_name);
-      if (params.debug)
-      {
-        append_debug_line(
-            debug_trace_path,
-            "feature:metfrag_done feature=" + feats.feature[fi] +
-            " status=" + std::to_string(status) +
-            " rows=" + std::to_string(rows.size()) +
-            " csv_files=" + std::to_string(csv_paths.size()));
-      }
-
-      if (params.debug)
-      {
-        std::ofstream dbg(debug_path, std::ios::app);
-        dbg << "metfrag_exit_status=" << status << "\n"
-            << "csv_rows_found=" << rows.size() << "\n";
-        if (rows.empty())
-        {
-          // Append last 20 lines of the MetFrag log to the debug file.
-          std::ifstream log_in(log_path);
-          std::vector<std::string> log_lines;
-          std::string ln;
-          while (std::getline(log_in, ln)) log_lines.push_back(ln);
-          dbg << "--- log tail ---\n";
-          int start = std::max(0, static_cast<int>(log_lines.size()) - 20);
-          for (int li = start; li < static_cast<int>(log_lines.size()); ++li)
-            dbg << log_lines[li] << "\n";
-        }
-      }
 
       if (rows.empty())
       {
-        if (params.debug)
-        {
-          std::cerr << "[metfrag] No results for feature " << feats.feature[fi]
-                    << " (mass=" << precursor_mass
-                    << ", status=" << status << ")\n";
-        }
-        if (!params.debug)
-        {
-          if (has_ms2)
-            fs::remove(ms2_path);
-          fs::remove(params_path);
-          for (const auto &csv_path : csv_paths)
-            fs::remove(csv_path);
-        }
+        if (has_ms2)
+          fs::remove(ms2_path);
+        fs::remove(params_path);
+        for (const auto &csv_path : csv_paths)
+          fs::remove(csv_path);
         continue;
       }
 
@@ -1194,38 +1088,21 @@ void metfrag_screening_impl(
         s.exp_ms2_intensity  = feats.ms2_intensity[fi];
 
         suspect_buffers[ai].append(s);
-        if (params.debug)
-        {
-          append_debug_line(
-              debug_trace_path,
-              "feature:append_suspect feature=" + feats.feature[fi] +
-              " rank=" + std::to_string(rank) +
-              " name=" + s.name +
-              " shared=" + std::to_string(shared) +
-              " cosine=" + std::to_string(cosine));
-        }
         ++rank;
         ++n_suspects_found;
       }
 
-      if (!params.debug)
-      {
-        if (has_ms2)
-          fs::remove(ms2_path);
-        fs::remove(params_path);
-        for (const auto &csv_path : csv_paths)
-          fs::remove(csv_path);
-        if (status == 0)
-          fs::remove(log_path);
-      }
+      if (has_ms2)
+        fs::remove(ms2_path);
+      fs::remove(params_path);
+      for (const auto &csv_path : csv_paths)
+        fs::remove(csv_path);
+      if (status == 0)
+        fs::remove(log_path);
     } // features
 
-    if (params.debug)
-      append_debug_line(debug_trace_path, "analysis:done analysis=" + ana + " suspects_found=" + std::to_string(n_suspects_found));
     std::cout << "  Found " << n_suspects_found << " suspect(s) in " << ana << std::endl;
   } // analyses
-  if (params.debug)
-    append_debug_line(debug_trace_path, "metfrag_screening_impl:done");
 }
 
 } // namespace nta::metfrag_runner

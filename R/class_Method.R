@@ -1,9 +1,6 @@
 #' @title Method Metadata Object
-#' @description Method metadata used by project-owned workflow registries and
-#'   workflow execution.
-#'   `Method` is the metadata container for project methods.
-#' @param method Processing method name. This should match the owning project
-#'   child-class method name.
+#' @description Method metadata used by project-owned workflow registries and workflow execution. `Method` is the metadata container for project methods.
+#' @param method Processing method name. This should match the owning project child-class method name.
 #' @param required Character vector of required preceding methods.
 #' @param owner_class Owning project class.
 #' @param number_permitted Maximum permitted occurrences in one workflow.
@@ -146,8 +143,7 @@ as.Method <- function(value) {
   value$link <- .method_scalar_or_default(value$link, NA_character_, "character")
   value$doi <- .method_scalar_or_default(value$doi, NA_character_, "character")
   value$parameters <- .normalize_method_parameter(value$parameters)
-  if (!is.na(value$method) && nzchar(value$method) &&
-    !is.na(value$owner_class) && nzchar(value$owner_class)) {
+  if (!is.na(value$method) && nzchar(value$method) && !is.na(value$owner_class) && nzchar(value$owner_class)) {
     constructor_name <- paste0(sub("^Project", "Method_", value$owner_class), "_", value$method)
     constructor_envs <- Filter(Negate(is.null), list(
       tryCatch(asNamespace("StreamFind"), error = function(...) NULL),

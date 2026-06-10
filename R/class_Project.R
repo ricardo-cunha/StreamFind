@@ -11,6 +11,7 @@
 #' @template arg-Project-execute-dir
 #' @template arg-Project-ellipsis
 #' @keywords internal
+#' @export
 #'
 Project <- R6::R6Class(
   classname = "Project",

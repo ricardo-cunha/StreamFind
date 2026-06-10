@@ -325,68 +325,6 @@ namespace nta_rcpp
     return out;
   }
 
-  void append_metfrag_debug_line(const std::string &run_dir, const std::string &message)
-  {
-    if (run_dir.empty())
-      return;
-    try
-    {
-      std::filesystem::create_directories(run_dir);
-      const auto now = std::chrono::system_clock::now();
-      const auto now_time = std::chrono::system_clock::to_time_t(now);
-      const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
-      std::tm time_info{};
-#ifdef _WIN32
-      localtime_s(&time_info, &now_time);
-#else
-      localtime_r(&now_time, &time_info);
-#endif
-      std::ostringstream stamp;
-      stamp << std::put_time(&time_info, "%Y-%m-%d %H:%M:%S")
-            << '.'
-            << std::setw(3) << std::setfill('0') << ms.count();
-      std::ofstream out(std::filesystem::path(run_dir) / "streamfind_metfrag_debug.log", std::ios::app);
-      if (!out.is_open())
-        return;
-      out << "[" << stamp.str() << "] [RCPP] " << message << "\n";
-      out.flush();
-    }
-    catch (...)
-    {
-    }
-  }
-
-  void append_simple_debug_line(const std::string &path, const std::string &tag, const std::string &message)
-  {
-    if (path.empty())
-      return;
-    try
-    {
-      std::filesystem::create_directories(std::filesystem::path(path).parent_path());
-      const auto now = std::chrono::system_clock::now();
-      const auto now_time = std::chrono::system_clock::to_time_t(now);
-      const auto ms = std::chrono::duration_cast<std::chrono::milliseconds>(now.time_since_epoch()) % 1000;
-      std::tm time_info{};
-#ifdef _WIN32
-      localtime_s(&time_info, &now_time);
-#else
-      localtime_r(&time_info, &now_time);
-#endif
-      std::ostringstream stamp;
-      stamp << std::put_time(&time_info, "%Y-%m-%d %H:%M:%S")
-            << '.'
-            << std::setw(3) << std::setfill('0') << ms.count();
-      std::ofstream out(path, std::ios::app);
-      if (!out.is_open())
-        return;
-      out << "[" << stamp.str() << "] [" << tag << "] " << message << "\n";
-      out.flush();
-    }
-    catch (...)
-    {
-    }
-  }
-
   std::string sexptype_name(SEXP value)
   {
     switch (TYPEOF(value))
@@ -1679,39 +1617,17 @@ bool rcpp_project_non_target_analysis_assign_transformation_products(
   std::string chromatographic_phase = "reverse_phase",
   double mzrMS2 = 0.008)
 {
-  const std::string debug_path = (std::filesystem::path(".") / "log" / "assign_transformation_products_debug.log").string();
-  nta_rcpp::append_simple_debug_line(debug_path, "RCPP", "rcpp_project_non_target_analysis_assign_transformation_products:start");
-  nta_rcpp::append_simple_debug_line(
-      debug_path,
-      "RCPP",
-      "inputs transformation_products_cols=" + std::to_string(transformation_products.size()) +
-      " chromatographic_phase=" + chromatographic_phase +
-      " mzrMS2=" + std::to_string(mzrMS2));
-  try
-  {
-    const bool success = nta_rcpp::project_call([&]() {
-      nta_rcpp::append_simple_debug_line(debug_path, "RCPP", "project_call:enter");
-      std::vector<nta::api::NTA_TRANSFORMATION_PRODUCT_ROW> tp_rows;
+  return nta_rcpp::project_call([&]() {
+    std::vector<nta::api::NTA_TRANSFORMATION_PRODUCT_ROW> tp_rows;
       if (transformation_products.size() > 0)
       {
         auto require_col = [&](const char *col) {
           if (!transformation_products.containsElementNamed(col))
-          {
-            nta_rcpp::append_simple_debug_line(debug_path, "RCPP", std::string("missing_required_column=") + col);
             Rcpp::stop("transformation_products must include '%s' column.", col);
-          }
         };
         auto get_col_obj = [&](const char *col) -> Rcpp::RObject {
           require_col(col);
-          Rcpp::RObject obj = transformation_products[col];
-          nta_rcpp::append_simple_debug_line(
-              debug_path,
-              "RCPP",
-              std::string("column=") + col +
-              " type=" + nta_rcpp::sexptype_name(obj) +
-              " length=" + std::to_string(Rf_length(obj)) +
-              " class=" + Rcpp::as<std::string>(Rcpp::Function("paste")(Rcpp::as<Rcpp::CharacterVector>(Rcpp::Function("class")(obj)), ",")));
-          return obj;
+          return transformation_products[col];
         };
         auto coerce_chr = [&](const char *col) -> Rcpp::CharacterVector {
           Rcpp::RObject obj = get_col_obj(col);
@@ -1789,7 +1705,6 @@ bool rcpp_project_non_target_analysis_assign_transformation_products(
 
         const Rcpp::CharacterVector name_vec = coerce_chr("name");
         const int n = name_vec.size();
-        nta_rcpp::append_simple_debug_line(debug_path, "RCPP", "row_count=" + std::to_string(n));
 
         auto get_str = [&](const char *col) {
           Rcpp::CharacterVector v = coerce_chr(col);
@@ -1864,26 +1779,9 @@ bool rcpp_project_non_target_analysis_assign_transformation_products(
         }
       }
 
-      nta_rcpp::append_simple_debug_line(debug_path, "RCPP", "project_call:rows_parsed count=" + std::to_string(tp_rows.size()));
       auto &nta_data = nta_rcpp::project_non_target_analysis_from_xptr(nta_xptr);
-      nta_rcpp::append_simple_debug_line(debug_path, "RCPP", "project_call:nta_ptr_ok");
-      const bool result = nta_data.assign_transformation_products(tp_rows, chromatographic_phase, mzrMS2);
-      nta_rcpp::append_simple_debug_line(debug_path, "RCPP", std::string("project_call:assign_transformation_products_returned result=") + (result ? "true" : "false"));
-      return result;
-    });
-    nta_rcpp::append_simple_debug_line(debug_path, "RCPP", std::string("rcpp_project_non_target_analysis_assign_transformation_products:return success=") + (success ? "true" : "false"));
-    return success;
-  }
-  catch (const std::exception &e)
-  {
-    nta_rcpp::append_simple_debug_line(debug_path, "RCPP", std::string("rcpp_project_non_target_analysis_assign_transformation_products:exception ") + e.what());
-    throw;
-  }
-  catch (...)
-  {
-    nta_rcpp::append_simple_debug_line(debug_path, "RCPP", "rcpp_project_non_target_analysis_assign_transformation_products:unknown_exception");
-    throw;
-  }
+      return nta_data.assign_transformation_products(tp_rows, chromatographic_phase, mzrMS2);
+  });
 }
 
 // MARK: rcpp_project_nta_find_features
@@ -2303,7 +2201,6 @@ bool rcpp_project_nta_metfrag_screening(
     bool filtered = false,
     std::string java_path = "java",
     std::string run_dir = "",
-    bool debug = false,
     Rcpp::List extra_params = R_NilValue)
 {
   std::vector<std::string> analyses_sel;
@@ -2343,45 +2240,13 @@ bool rcpp_project_nta_metfrag_screening(
   p.filtered       = filtered;
   p.java_path      = java_path;
   p.run_dir        = run_dir;
-  p.debug          = debug;
   p.extra_params   = extra_params_cpp;
   p.run_dir        = nta::metfrag_runner::resolve_run_dir(p);
 
-  if (p.debug)
-  {
-    nta_rcpp::append_metfrag_debug_line(p.run_dir, "rcpp_project_nta_metfrag_screening:start");
-    nta_rcpp::append_metfrag_debug_line(
-        p.run_dir,
-        "resolved_run_dir=" + p.run_dir +
-        " analyses=" + std::to_string(analyses_sel.size()) +
-        " score_types=" + std::to_string(p.score_types.size()) +
-        " extra_params=" + std::to_string(p.extra_params.size()));
-  }
-
-  try
-  {
-    const bool success = nta_rcpp::project_call([&]() {
-      nta_rcpp::append_metfrag_debug_line(p.run_dir, "project_call:enter");
+  return nta_rcpp::project_call([&]() {
       auto &nta_data = nta_rcpp::project_non_target_analysis_from_xptr(nta_xptr);
-      nta_rcpp::append_metfrag_debug_line(p.run_dir, "project_call:nta_ptr_ok");
-      const bool result = nta_data.metfrag_screening(analyses_sel, p);
-      nta_rcpp::append_metfrag_debug_line(p.run_dir, std::string("project_call:metfrag_screening_returned result=") + (result ? "true" : "false"));
-      return result;
-    });
-    nta_rcpp::append_metfrag_debug_line(p.run_dir, std::string("rcpp_project_nta_metfrag_screening:after_project_call success=") + (success ? "true" : "false"));
-    nta_rcpp::append_metfrag_debug_line(p.run_dir, "rcpp_project_nta_metfrag_screening:return");
-    return success;
-  }
-  catch (const std::exception &e)
-  {
-    nta_rcpp::append_metfrag_debug_line(p.run_dir, std::string("rcpp_project_nta_metfrag_screening:exception ") + e.what());
-    throw;
-  }
-  catch (...)
-  {
-    nta_rcpp::append_metfrag_debug_line(p.run_dir, "rcpp_project_nta_metfrag_screening:unknown_exception");
-    throw;
-  }
+      return nta_data.metfrag_screening(analyses_sel, p);
+  });
 };
 
 // MARK: rcpp_project_nta_assign_transformation_products

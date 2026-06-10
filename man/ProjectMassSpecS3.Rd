@@ -572,3 +572,6 @@ S3 interface methods for \code{ProjectMassSpec}.
 \item \code{plot_raw_chromatograms(ProjectMassSpec)}: Plot raw chromatograms for selected analyses.
 
 }}
+\seealso{
+\link{ProjectS3}
+}

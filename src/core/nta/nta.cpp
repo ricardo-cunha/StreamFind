@@ -4254,22 +4254,8 @@ bool nta::api::PROJECT_NON_TARGET_ANALYSIS::metfrag_screening(const std::vector<
   load_processing_metadata();
   load_processing_features(true);
   load_processing_suspects();
-  const std::string run_dir = metfrag_runner::resolve_run_dir(normalized_params);
-  const std::string debug_trace_path = (std::filesystem::path(run_dir) / "streamfind_metfrag_debug.log").string();
-  auto log_debug = [&](const std::string &message)
-  {
-    if (!normalized_params.debug)
-      return;
-    std::ofstream out(debug_trace_path, std::ios::app);
-    if (!out.is_open())
-      return;
-    out << "[metfrag_screening] " << message << "\n";
-    out.flush();
-  };
   try
   {
-    log_debug("PROJECT_NON_TARGET_ANALYSIS::metfrag_screening:start");
-    log_debug("load_processing_suspects:done");
     std::vector<std::string> score_types;
     score_types.reserve(normalized_params.score_types.size());
     for (const auto &entry : normalized_params.score_types)
@@ -4318,17 +4304,13 @@ bool nta::api::PROJECT_NON_TARGET_ANALYSIS::metfrag_screening(const std::vector<
             cache_bool_key(normalized_params.filtered),
             normalized_params.java_path,
             normalized_params.run_dir,
-            cache_bool_key(normalized_params.debug),
             cache_join_key(extra_params)}),
         {feature_state_cache_key(), suspect_state_cache_key()},
         "Cached NTS suspects for metfrag_screening",
         [&]()
         {
-          log_debug("run_cached_suspects_algorithm:lambda_enter");
           metfrag_runner::metfrag_screening_impl(*this, analyses, normalized_params);
-          log_debug("metfrag_runner::metfrag_screening_impl:done");
         });
-    log_debug(std::string("PROJECT_NON_TARGET_ANALYSIS::metfrag_screening:return success=") + (success ? "true" : "false"));
     return success;
   }
   catch (const std::exception &e)
@@ -4347,29 +4329,15 @@ bool nta::api::PROJECT_NON_TARGET_ANALYSIS::metfrag_screening(const std::vector<
 
 bool nta::api::PROJECT_NON_TARGET_ANALYSIS::assign_transformation_products(const std::vector<NTA_TRANSFORMATION_PRODUCT_ROW> &transformation_products, const std::string &chromatographic_phase, double mzrMS2)
 {
-  const std::string debug_path = (std::filesystem::path(".") / "log" / "assign_transformation_products_debug.log").string();
-  auto log_debug = [&](const std::string &message)
-  {
-    std::ofstream out(debug_path, std::ios::app);
-    if (!out.is_open())
-      return;
-    out << "[assign_transformation_products] " << message << "\n";
-    out.flush();
-  };
-  log_debug("PROJECT_NON_TARGET_ANALYSIS::assign_transformation_products:start");
   load_processing_metadata();
-  log_debug("load_processing_metadata:done");
   load_processing_features(true);
-  log_debug("load_processing_features:done");
   load_processing_suspects();
-  log_debug("load_processing_suspects:done");
   std::vector<std::string> input_rows;
   input_rows.reserve(transformation_products.size());
   for (const auto &row : transformation_products)
   {
     input_rows.push_back(cache_join_key({row.name, row.formula, cache_scalar_key(row.mass), row.SMILES, row.InChI, row.InChIKey, cache_scalar_key(row.xLogP), row.transformation, row.precursor_name, row.precursor_formula, cache_scalar_key(row.precursor_mass), row.precursor_SMILES, row.precursor_InChI, row.precursor_InChIKey, cache_scalar_key(row.precursor_xLogP), row.main_precursor_name, row.main_precursor_formula, cache_scalar_key(row.main_precursor_mass), row.main_precursor_SMILES, row.main_precursor_InChI, row.main_precursor_InChIKey, cache_scalar_key(row.main_precursor_xLogP)}));
   }
-  log_debug("input_rows_built count=" + std::to_string(input_rows.size()));
   const bool success = run_cached_transformation_products_algorithm(
       "assign_transformation_products",
       cache_join_key({chromatographic_phase, cache_scalar_key(mzrMS2), cache_join_key(input_rows)}),
@@ -4377,17 +4345,13 @@ bool nta::api::PROJECT_NON_TARGET_ANALYSIS::assign_transformation_products(const
       "Cached NTS transformation products for assign_transformation_products",
       [&]()
       {
-        log_debug("run_cached_transformation_products_algorithm:lambda_enter");
         NTA_QUERY_REQUEST query;
         query.analyses = analysis_names();
-        const auto result = assign_transformation_products::assign_transformation_products_impl(
+        return assign_transformation_products::assign_transformation_products_impl(
             get_suspects(query),
             transformation_products,
             chromatographic_phase,
             mzrMS2);
-        log_debug("assign_transformation_products_impl:done rows=" + std::to_string(result.size()));
-        return result;
       });
-  log_debug(std::string("PROJECT_NON_TARGET_ANALYSIS::assign_transformation_products:return success=") + (success ? "true" : "false"));
   return success;
 };

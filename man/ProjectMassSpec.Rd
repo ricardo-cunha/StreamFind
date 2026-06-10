@@ -6,6 +6,9 @@
 \description{
 Internal R6 child of \code{Project} exposing shared Mass Spec tables and native helpers.
 }
+\seealso{
+\link{Project}
+}
 \keyword{internal}
 \section{Super class}{
 \code{\link[StreamFind:Project]{StreamFind::Project}} -> \code{ProjectMassSpec}

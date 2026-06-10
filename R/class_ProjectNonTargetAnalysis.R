@@ -1,3 +1,28 @@
+.format_nta_adduct_hover <- function(adduct, label = "adduct") {
+  adduct_chr <- as.character(adduct)
+  adduct_chr[is.na(adduct_chr)] <- ""
+  vapply(adduct_chr, function(x) {
+    if (!nzchar(x)) {
+      return(paste0(label, ": "))
+    }
+    if (!startsWith(x, "cat=")) {
+      return(paste0(label, ": ", x))
+    }
+    parts <- strsplit(x, " \\| ", fixed = FALSE)[[1]]
+    parts <- paste0("&nbsp;&nbsp;", parts)
+    paste0(label, ":<br>", paste(parts, collapse = "<br>"))
+  }, character(1))
+}
+
+.format_nta_hover_field <- function(field, value) {
+  value_chr <- as.character(value)
+  value_chr[is.na(value_chr)] <- ""
+  if (identical(field, "adduct")) {
+    return(.format_nta_adduct_hover(value_chr))
+  }
+  paste0(field, ": ", value_chr)
+}
+
 #' @title Project Non-Target Analysis R6 Class
 #' @description R6 child of `ProjectMassSpec` exposing the non-target analysis-focused NTS interface.
 #' @template arg-Project-db
@@ -51,33 +76,9 @@
 #' @template arg-ProjectMassSpec-replicates
 #' @template arg-ProjectMassSpec-blanks
 #' @keywords internal
+#' @seealso \link{ProjectMassSpec}, \link{Project}
 #' @export
-
-.format_nta_adduct_hover <- function(adduct, label = "adduct") {
-  adduct_chr <- as.character(adduct)
-  adduct_chr[is.na(adduct_chr)] <- ""
-  vapply(adduct_chr, function(x) {
-    if (!nzchar(x)) {
-      return(paste0(label, ": "))
-    }
-    if (!startsWith(x, "cat=")) {
-      return(paste0(label, ": ", x))
-    }
-    parts <- strsplit(x, " \\| ", fixed = FALSE)[[1]]
-    parts <- paste0("&nbsp;&nbsp;", parts)
-    paste0(label, ":<br>", paste(parts, collapse = "<br>"))
-  }, character(1))
-}
-
-.format_nta_hover_field <- function(field, value) {
-  value_chr <- as.character(value)
-  value_chr[is.na(value_chr)] <- ""
-  if (identical(field, "adduct")) {
-    return(.format_nta_adduct_hover(value_chr))
-  }
-  paste0(field, ": ", value_chr)
-}
-
+#'
 ProjectNonTargetAnalysis <- R6::R6Class(
   classname = "ProjectNonTargetAnalysis",
   inherit = ProjectMassSpec,
@@ -546,6 +547,7 @@ ProjectNonTargetAnalysis <- R6::R6Class(
 #' @template arg-ProjectNonTargetAnalysis-modal
 #' @template arg-renderEngine
 #' @template arg-Project-ellipsis
+#' @seealso \link{ProjectMassSpecS3}, \link{ProjectS3}
 NULL
 
 #' @describeIn ProjectNonTargetAnalysisS3 Return project information summary.

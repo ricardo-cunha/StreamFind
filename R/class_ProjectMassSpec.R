@@ -45,6 +45,8 @@
 #' @template arg-ProjectMassSpec-analysis
 #' @template arg-Project-value
 #' @keywords internal
+#' @seealso \link{Project}
+#' @export
 #'
 ProjectMassSpec <- R6::R6Class(
   classname = "ProjectMassSpec",
@@ -654,6 +656,7 @@ ProjectMassSpec <- R6::R6Class(
 #' @template arg-Project-ellipsis
 #' @template arg-ProjectMassSpec-analysis
 #' @template arg-Project-value
+#' @seealso \link{ProjectS3}
 NULL
 
 #' @describeIn ProjectMassSpecS3 Print a short information table for the project analyses.

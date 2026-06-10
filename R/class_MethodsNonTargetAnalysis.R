@@ -1788,33 +1788,6 @@ run.Method_NonTargetAnalysis_MetFragScreening <- function(x, proj, ...) {
   validate_object(x)
   checkmate::assert_class(proj, "ProjectNonTargetAnalysis")
   p <- x$parameters
-  if (isTRUE(p$debug) && (!length(p$run_dir) || is.na(p$run_dir) || !nzchar(p$run_dir))) {
-    p$run_dir <- file.path(
-      ".",
-      "log",
-      "metfrag",
-      paste0("run_", format(Sys.time(), "%Y%m%d_%H%M%S"))
-    )
-  }
-  if (isTRUE(p$debug) && nzchar(p$run_dir)) {
-    dir.create(p$run_dir, recursive = TRUE, showWarnings = FALSE)
-  }
-  log_debug <- function(message) {
-    if (!isTRUE(p$debug) || !nzchar(p$run_dir)) {
-      return(invisible(NULL))
-    }
-    cat(
-      sprintf(
-        "[R %s] %s\n",
-        format(Sys.time(), "%Y-%m-%d %H:%M:%OS3"),
-        message
-      ),
-      file = file.path(p$run_dir, "streamfind_metfrag_debug.log"),
-      append = TRUE
-    )
-    invisible(NULL)
-  }
-  log_debug("run.Method_NonTargetAnalysis_MetFragScreening:start")
   success <- rcpp_project_nta_metfrag_screening(
     nta_xptr = proj$get_nts_ptr(),
     metfrag_path = as.character(p$metfrag_path),
@@ -1836,13 +1809,9 @@ run.Method_NonTargetAnalysis_MetFragScreening <- function(x, proj, ...) {
     filtered = isTRUE(p$filtered),
     java_path = as.character(p$java_path),
     run_dir = as.character(p$run_dir),
-    debug = isTRUE(p$debug),
     extra_params = p$extra_params
   )
-  log_debug(sprintf("run.Method_NonTargetAnalysis_MetFragScreening:after_call success=%s", success))
-  log_debug("run.Method_NonTargetAnalysis_MetFragScreening:before_.run_nta_method")
   .run_nta_method(success, proj, "MetFrag screening did not complete successfully.")
-  log_debug("run.Method_NonTargetAnalysis_MetFragScreening:done")
 }
 
 #' @title Method_NonTargetAnalysis_AssignTransformationProducts
@@ -1930,29 +1899,11 @@ run.Method_NonTargetAnalysis_AssignTransformationProducts <- function(x, proj, .
   validate_object(x)
   checkmate::assert_class(proj, "ProjectNonTargetAnalysis")
   p <- x$parameters
-  debug_path <- file.path(".", "log", "assign_transformation_products_debug.log")
-  dir.create(dirname(debug_path), recursive = TRUE, showWarnings = FALSE)
-  log_debug <- function(message) {
-    cat(
-      sprintf(
-        "[R %s] %s\n",
-        format(Sys.time(), "%Y-%m-%d %H:%M:%OS3"),
-        message
-      ),
-      file = debug_path,
-      append = TRUE
-    )
-    invisible(NULL)
-  }
-  log_debug("run.Method_NonTargetAnalysis_AssignTransformationProducts:start")
   success <- rcpp_project_non_target_analysis_assign_transformation_products(
     nta_xptr = proj$get_nts_ptr(),
     transformation_products = as.data.frame(data.table::as.data.table(p$transformation_products)),
     chromatographic_phase = as.character(p$chromatographic_phase),
     mzrMS2 = as.numeric(p$mzrMS2)
   )
-  log_debug(sprintf("run.Method_NonTargetAnalysis_AssignTransformationProducts:after_call success=%s", success))
-  log_debug("run.Method_NonTargetAnalysis_AssignTransformationProducts:before_.run_nta_method")
   .run_nta_method(success, proj, "Assigning transformation products did not complete successfully.")
-  log_debug("run.Method_NonTargetAnalysis_AssignTransformationProducts:done")
 }
