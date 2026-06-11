@@ -20,8 +20,7 @@ Method(
 as.Method(value)
 }
 \arguments{
-\item{method}{Processing method name. This should match the owning project
-child-class method name.}
+\item{method}{Processing method name. This should match the owning project child-class method name.}
 
 \item{required}{Character vector of required preceding methods.}
 
@@ -47,9 +46,7 @@ A \code{Method} object.
 A \code{Method} object.
 }
 \description{
-Method metadata used by project-owned workflow registries and
-workflow execution.
-\code{Method} is the metadata container for project methods.
+Method metadata used by project-owned workflow registries and workflow execution. \code{Method} is the metadata container for project methods.
 
 Convert a list to a \code{Method} object.
 }

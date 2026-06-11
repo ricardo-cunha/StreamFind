@@ -16,10 +16,6 @@ internal_standards <- StreamFindData::get_mass_spec_wastewater_internal_standard
 internal_standards <- data.table::fread(internal_standards)
 internal_standards <- internal_standards[!is.na(rt), ]
 
-# -----------------------------------------------------------------------------
-# 1. Open the NTA project
-# -----------------------------------------------------------------------------
-
 nta <- open_ProjectNonTargetAnalysis(
   db = project_db,
   project_id = project_id,
@@ -263,6 +259,14 @@ nta$run_app()
 
 
 run_app()
+
+map_components(
+  nta,
+  analyses = 11:12,
+  mass = suspects[15, ],
+  filtered = FALSE
+)
+
 
 
 comp1 <- "FC1_RT1120_POS"

@@ -27,6 +27,7 @@
 \alias{plot_fold_change.ProjectNonTargetAnalysis}
 \alias{get_transformation_products.ProjectNonTargetAnalysis}
 \alias{plot_transformation_products.ProjectNonTargetAnalysis}
+\alias{map_components.ProjectNonTargetAnalysis}
 \title{ProjectNonTargetAnalysis S3 Methods}
 \usage{
 \method{info}{ProjectNonTargetAnalysis}(x, ...)
@@ -423,6 +424,27 @@
   darkMode = FALSE,
   ...
 )
+
+\method{map_components}{ProjectNonTargetAnalysis}(
+  x,
+  analyses = NULL,
+  features = NULL,
+  groups = NULL,
+  components = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  filtered = FALSE,
+  showLegend = TRUE,
+  showDetails = TRUE,
+  interactive = TRUE,
+  darkMode = FALSE,
+  ...
+)
 }
 \arguments{
 \item{x}{A \code{ProjectNonTargetAnalysis} object.}
@@ -596,6 +618,8 @@ S3 interface methods for \code{ProjectNonTargetAnalysis}.
 \item \code{get_transformation_products(ProjectNonTargetAnalysis)}: Return transformation products for groups/parents.
 
 \item \code{plot_transformation_products(ProjectNonTargetAnalysis)}: Plot transformation products for groups.
+
+\item \code{map_components(ProjectNonTargetAnalysis)}: Plot a feature-network view for selected features or internal standards.
 
 }}
 \seealso{

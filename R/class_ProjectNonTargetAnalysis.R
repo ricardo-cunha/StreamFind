@@ -309,6 +309,43 @@ ProjectNonTargetAnalysis <- R6::R6Class(
                             darkMode = FALSE) {
       map_features.ProjectNonTargetAnalysis(self, analyses = analyses, features = features, groups = groups, components = components, mass = mass, mz = mz, rt = rt, mobility = mobility, ppm = ppm, sec = sec, millisec = millisec, filtered = filtered, xLab = xLab, yLab = yLab, title = title, groupBy = groupBy, globalNormalization = globalNormalization, interactive = interactive, showDetails = showDetails, darkMode = darkMode)
     },
+    #' @description Plot a feature-network view for selected features or internal standards.
+    map_components = function(analyses = NULL,
+                              features = NULL,
+                              groups = NULL,
+                              components = NULL,
+                              mass = NULL,
+                              mz = NULL,
+                              rt = NULL,
+                              mobility = NULL,
+                              ppm = 20,
+                              sec = 60,
+                              millisec = 5,
+                              filtered = FALSE,
+                              showLegend = TRUE,
+                              showDetails = TRUE,
+                              interactive = TRUE,
+                              darkMode = FALSE) {
+      map_components.ProjectNonTargetAnalysis(
+        self,
+        analyses = analyses,
+        features = features,
+        groups = groups,
+        components = components,
+        mass = mass,
+        mz = mz,
+        rt = rt,
+        mobility = mobility,
+        ppm = ppm,
+        sec = sec,
+        millisec = millisec,
+        filtered = filtered,
+        showLegend = showLegend,
+        showDetails = showDetails,
+        interactive = interactive,
+        darkMode = darkMode
+      )
+    },
     #' @description Plot MS1 spectra for selected features.
     plot_features_ms1 = function(analyses = NULL,
                                  features = NULL,
@@ -3809,4 +3846,784 @@ plot_transformation_products.ProjectNonTargetAnalysis <- function(
   }
 
   p
+}
+
+#' @describeIn ProjectNonTargetAnalysisS3 Plot a feature-network view for selected features or internal standards.
+#' @method map_components ProjectNonTargetAnalysis
+#' @export
+map_components.ProjectNonTargetAnalysis <- function(
+  x,
+  analyses = NULL,
+  features = NULL,
+  groups = NULL,
+  components = NULL,
+  mass = NULL,
+  mz = NULL,
+  rt = NULL,
+  mobility = NULL,
+  ppm = 20,
+  sec = 60,
+  millisec = 5,
+  filtered = FALSE,
+  showLegend = TRUE,
+  showDetails = TRUE,
+  interactive = TRUE,
+  darkMode = FALSE,
+  ...
+) {
+  checkmate::assert_class(x, "ProjectNonTargetAnalysis")
+  if (!requireNamespace("visNetwork", quietly = TRUE)) {
+    stop("visNetwork package is required for this function.")
+  }
+
+  if (isTRUE(filtered)) {
+    all_dt <- data.table::as.data.table(
+      get_features(
+        x,
+        analyses = analyses,
+        filtered = TRUE
+      )
+    )
+  } else {
+    all_dt_false <- data.table::as.data.table(
+      get_features(
+        x,
+        analyses = analyses,
+        filtered = FALSE
+      )
+    )
+    all_dt_true <- data.table::as.data.table(
+      get_features(
+        x,
+        analyses = analyses,
+        filtered = TRUE
+      )
+    )
+    all_dt_false[, .filtered_source_priority := 0L]
+    all_dt_true[, .filtered_source_priority := 1L]
+    all_dt <- data.table::rbindlist(list(all_dt_true, all_dt_false), fill = TRUE, use.names = TRUE)
+  }
+  if (nrow(all_dt) == 0) {
+    message("\u2717 No network data available for the current selection.")
+    return(invisible(NULL))
+  }
+  if (!all(c("analysis", "feature") %in% colnames(all_dt))) {
+    message("\u2717 Network data is missing required analysis/feature columns.")
+    return(invisible(NULL))
+  }
+
+  feature_network_key <- function(analysis, feature) {
+    paste(as.character(analysis), as.character(feature), sep = "||")
+  }
+
+  seed_raw <- data.table::as.data.table(
+    get_features(
+      x,
+      analyses = analyses,
+      features = features,
+      groups = groups,
+      components = components,
+      mass = mass,
+      mz = mz,
+      rt = rt,
+      mobility = mobility,
+      ppm = ppm,
+      sec = sec,
+      millisec = millisec,
+      filtered = filtered
+    )
+  )
+  if (nrow(seed_raw) == 0) {
+    message("\u2717 No network seed rows found for the current selection.")
+    return(invisible(NULL))
+  }
+
+  normalize_cols <- c(
+    "feature_component", "feature_group", "annotation_category", "annotation_type",
+    "annotation_parent_feature", "annotation_element", "annotation_score",
+    "annotation_mass_error_ppm", "annotation_rt_error", "annotation_rel_intensity",
+    "adduct", "name", "formula", "SMILES", "InChIKey", "polarity", "score",
+    "candidate_rank", "id_level", "cosine_similarity", "shared_fragments",
+    "error_mass", "error_rt", "mass", "mz", "rt", "intensity", "area"
+  )
+  all_dt <- data.table::copy(all_dt)
+  for (col in intersect(normalize_cols, colnames(all_dt))) {
+    data.table::set(all_dt, j = col, value = unname(all_dt[[col]]))
+  }
+  for (col in setdiff(c("feature_component", "feature_group", "annotation_category", "annotation_type", "annotation_parent_feature", "annotation_element", "adduct", "name", "formula", "SMILES", "InChIKey", "polarity"), colnames(all_dt))) {
+    data.table::set(all_dt, j = col, value = "")
+  }
+  if (!"intensity" %in% colnames(all_dt)) data.table::set(all_dt, j = "intensity", value = NA_real_)
+  if (!"annotation_score" %in% colnames(all_dt)) data.table::set(all_dt, j = "annotation_score", value = NA_real_)
+
+  all_dt[, analysis := as.character(analysis)]
+  all_dt[, feature := as.character(feature)]
+  all_dt[, feature_component := as.character(feature_component)]
+  all_dt[, feature_group := as.character(feature_group)]
+  all_dt[, annotation_category := as.character(annotation_category)]
+  all_dt[, annotation_type := as.character(annotation_type)]
+  all_dt[, annotation_parent_feature := as.character(annotation_parent_feature)]
+  all_dt[, annotation_element := as.character(annotation_element)]
+  all_dt[, adduct := as.character(adduct)]
+  all_dt[, name := as.character(name)]
+  all_dt[, formula := as.character(formula)]
+  all_dt[, SMILES := as.character(SMILES)]
+  all_dt[, InChIKey := as.character(InChIKey)]
+  all_dt[, polarity := as.character(polarity)]
+  all_dt[, node_id := feature_network_key(analysis, feature)]
+  if (".filtered_source_priority" %in% colnames(all_dt)) {
+    data.table::setorderv(all_dt, c("analysis", "feature", ".filtered_source_priority"), c(1L, 1L, -1L))
+    all_dt <- unique(all_dt, by = c("analysis", "feature"))
+    all_dt[, .filtered_source_priority := NULL]
+  }
+
+  seed_ids <- unique(feature_network_key(seed_raw$analysis, seed_raw$feature))
+  seed_dt <- all_dt[node_id %in% seed_ids]
+  if (nrow(seed_dt) == 0) {
+    message("\u2717 No valid seed nodes found.")
+    return(invisible(NULL))
+  }
+
+  feature_network_format_num <- function(x, digits = 3) {
+    x <- suppressWarnings(as.numeric(x))
+    ifelse(is.finite(x), formatC(x, format = "f", digits = digits), "")
+  }
+  feature_network_node_role <- function(annotation_category, adduct) {
+    annotation_category <- if (length(annotation_category) == 0 || is.na(annotation_category)) "" else trimws(as.character(annotation_category))
+    adduct <- if (length(adduct) == 0 || is.na(adduct)) "" else trimws(as.character(adduct))
+    if (identical(annotation_category, "isotope")) return("isotope")
+    if (identical(annotation_category, "adduct")) return("adduct")
+    if (identical(annotation_category, "loss")) return("loss")
+    if (adduct %in% c("[M+H]+", "[M-H]-")) return("precursor")
+    "feature"
+  }
+  feature_network_node_text <- function(role, adduct = "", annotation_type = "", annotation_element = "") {
+    role <- if (length(role) == 0 || is.na(role)) "" else trimws(as.character(role))
+    adduct <- if (length(adduct) == 0 || is.na(adduct)) "" else trimws(as.character(adduct))
+    annotation_type <- if (length(annotation_type) == 0 || is.na(annotation_type)) "" else trimws(as.character(annotation_type))
+    annotation_element <- if (length(annotation_element) == 0 || is.na(annotation_element)) "" else trimws(as.character(annotation_element))
+    if (identical(role, "isotope")) {
+      if (nzchar(annotation_element)) return(annotation_element)
+      if (nzchar(annotation_type)) return(annotation_type)
+      return("i")
+    }
+    if (identical(role, "adduct")) {
+      if (nzchar(annotation_type)) return(annotation_type)
+      if (nzchar(adduct)) return(adduct)
+      return("A")
+    }
+    if (identical(role, "loss")) {
+      if (nzchar(annotation_element)) return(annotation_element)
+      if (nzchar(annotation_type)) return(annotation_type)
+      return("L")
+    }
+    if (nzchar(adduct)) return(adduct)
+    "[M]"
+  }
+  row_chr <- function(row, col) {
+    if (!col %in% colnames(row)) return("")
+    val <- as.character(row[[col]][1])
+    if (length(val) == 0 || is.na(val)) "" else trimws(val)
+  }
+  row_num <- function(row, col, digits = 3) {
+    if (!col %in% colnames(row)) return("")
+    feature_network_format_num(row[[col]][1], digits = digits)
+  }
+  html_table <- function(entries) {
+    entries <- Filter(function(x) {
+      val <- as.character(x$value)
+      !is.na(val) && nzchar(val)
+    }, entries)
+    if (length(entries) == 0) {
+      return("<div style='color:#666;'>No metadata available.</div>")
+    }
+    rows <- vapply(
+      entries,
+      function(item) {
+        paste0(
+          "<tr style='border-bottom:1px solid #ececec;'>",
+          "<td style='padding:4px 8px;font-weight:600;vertical-align:top;white-space:nowrap;'>",
+          htmltools::htmlEscape(item$label),
+          "</td>",
+          "<td style='padding:4px 8px;vertical-align:top;'>",
+          htmltools::htmlEscape(as.character(item$value)),
+          "</td></tr>"
+        )
+      },
+      character(1)
+    )
+    paste0(
+      "<table style='width:100%;border-collapse:collapse;font-size:12px;'>",
+      paste(rows, collapse = ""),
+      "</table>"
+    )
+  }
+  build_overview_html <- function(row) {
+    entries <- list(
+      list(label = "Feature", value = row_chr(row, "feature")),
+      list(label = "Analysis", value = row_chr(row, "analysis")),
+      list(label = "Component", value = row_chr(row, "feature_component")),
+      list(label = "Group", value = row_chr(row, "feature_group")),
+      list(label = "Role", value = row_chr(row, "role")),
+      list(label = "Name", value = row_chr(row, "name")),
+      list(label = "Formula", value = row_chr(row, "formula")),
+      list(label = "InChIKey", value = row_chr(row, "InChIKey")),
+      list(label = "SMILES", value = row_chr(row, "SMILES")),
+      list(label = "Adduct", value = row_chr(row, "adduct")),
+      list(label = "Polarity", value = row_chr(row, "polarity")),
+      list(label = "Mass", value = row_num(row, "mass", 4)),
+      list(label = "m/z", value = row_num(row, "mz", 4)),
+      list(label = "RT", value = row_num(row, "rt", 2)),
+      list(label = "Intensity", value = row_num(row, "intensity", 0)),
+      list(label = "Area", value = row_num(row, "area", 0))
+    )
+    if (isTRUE(showDetails)) {
+      entries <- c(entries, list(
+        list(label = "Annotation Category", value = row_chr(row, "annotation_category")),
+        list(label = "Annotation Type", value = row_chr(row, "annotation_type")),
+        list(label = "Parent Feature", value = row_chr(row, "annotation_parent_feature")),
+        list(label = "Annotation Element", value = row_chr(row, "annotation_element")),
+        list(label = "Annotation Score", value = row_num(row, "annotation_score", 3)),
+        list(label = "Annotation Mass Error", value = row_num(row, "annotation_mass_error_ppm", 3)),
+        list(label = "Annotation RT Error", value = row_num(row, "annotation_rt_error", 3)),
+        list(label = "Annotation Rel Intensity", value = row_num(row, "annotation_rel_intensity", 3)),
+        list(label = "Score", value = row_num(row, "score", 3)),
+        list(label = "Candidate Rank", value = row_num(row, "candidate_rank", 0)),
+        list(label = "ID Level", value = row_num(row, "id_level", 0)),
+        list(label = "Cosine Similarity", value = row_num(row, "cosine_similarity", 3)),
+        list(label = "Shared Fragments", value = row_num(row, "shared_fragments", 0)),
+        list(label = "Error Mass", value = row_num(row, "error_mass", 3)),
+        list(label = "Error RT", value = row_num(row, "error_rt", 3))
+      ))
+    }
+    html_table(entries)
+  }
+
+  all_dt[, is_seed := node_id %in% seed_dt$node_id]
+
+  for (col in setdiff(
+    c(
+      "annotation_category", "annotation_type", "annotation_parent_feature", "annotation_element",
+      "annotation_score", "annotation_mass_error_ppm", "annotation_rt_error", "annotation_rel_intensity",
+      "component_size", "component_rt_center", "component_rt_spread", "component_density",
+      "component_mean_correlation", "component_best_partner", "component_max_correlation",
+      "component_mean_correlation_to_component", "component_membership_score", "component_is_core",
+      "component_bridge_flag", "name", "formula", "score", "candidate_rank", "id_level",
+      "cosine_similarity", "shared_fragments", "error_mass", "error_rt", "adduct", "mass",
+      "rt", "intensity", "area", "SMILES", "InChIKey", "polarity"
+    ),
+    colnames(all_dt)
+  )) {
+    fill_value <- if (col %in% c("component_is_core", "component_bridge_flag")) FALSE else
+      if (col %in% c(
+        "annotation_score", "annotation_mass_error_ppm", "annotation_rt_error", "annotation_rel_intensity",
+        "component_size", "component_rt_center", "component_rt_spread", "component_density",
+        "component_mean_correlation", "component_max_correlation",
+        "component_mean_correlation_to_component", "component_membership_score",
+        "score", "candidate_rank", "id_level", "cosine_similarity", "shared_fragments",
+        "error_mass", "error_rt", "mass", "rt", "intensity", "area"
+      )) NA_real_ else ""
+    data.table::set(all_dt, j = col, value = fill_value)
+  }
+
+  all_dt[, annotation_category_chr := as.character(annotation_category)]
+  all_dt[, annotation_parent_feature_chr := as.character(annotation_parent_feature)]
+  all_dt[, role := mapply(
+    feature_network_node_role,
+    annotation_category_chr,
+    adduct,
+    USE.NAMES = FALSE
+  )]
+  all_dt[, is_precursor_like := role %in% c("precursor", "feature")]
+  all_dt[, is_main_ion := is_precursor_like & adduct %in% c("[M+H]+", "[M-H]-")]
+  all_dt[, node_group := fifelse(role == "isotope", "isotope",
+    fifelse(role == "adduct", "adduct",
+      fifelse(role == "loss", "loss", "feature")))]
+  all_dt[, label := mapply(
+    feature_network_node_text,
+    role,
+    adduct,
+    annotation_type,
+    annotation_element,
+    USE.NAMES = FALSE
+  )]
+  all_dt[, display_name := ifelse(!is.na(name) & nzchar(name), name, feature)]
+  all_dt[, value := pmax(14, pmin(26, 12 + log10(pmax(1, suppressWarnings(as.numeric(intensity)))) * 2.2))]
+  all_dt[!is.finite(value), value := 14]
+
+  node_colors <- c(
+    feature = "#166534",
+    isotope = "#6b7280",
+    adduct = "#1e3a8a",
+    loss = "#991b1b"
+  )
+  node_borders <- c(
+    feature = "#14532d",
+    isotope = "#4b5563",
+    adduct = "#1e40af",
+    loss = "#7f1d1d"
+  )
+
+  edge_rows <- list()
+  push_edge <- function(from_id, to_id, category, score, label) {
+    if (!nzchar(from_id) || !nzchar(to_id) || identical(from_id, to_id)) return()
+    edge_rows[[length(edge_rows) + 1]] <<- data.table::data.table(
+      from = from_id,
+      to = to_id,
+      edge_category = category,
+      score = score,
+      edge_label = label
+    )
+  }
+
+  resolve_annotation_parent <- function(row) {
+    parent_feature <- as.character(row$annotation_parent_feature_chr)
+    if (!nzchar(parent_feature)) return(NULL)
+    parent <- all_dt[analysis == row$analysis & feature == parent_feature]
+    if (nrow(parent) == 0) return(NULL)
+    parent[1]
+  }
+
+  for (i in seq_len(nrow(all_dt))) {
+    child <- all_dt[i]
+    child_cat <- as.character(child$annotation_category_chr)
+    if (!child_cat %in% c("isotope", "adduct", "loss")) next
+    parent <- resolve_annotation_parent(child)
+    if (is.null(parent) || nrow(parent) == 0) next
+    child_score <- suppressWarnings(as.numeric(child$annotation_score[[1]]))
+    if (!is.finite(child_score)) child_score <- 0
+    push_edge(
+      as.character(parent$node_id),
+      as.character(child$node_id),
+      child_cat,
+      child_score,
+      paste0(child_cat, if (nzchar(as.character(child$annotation_type[[1]]))) paste0(" ", as.character(child$annotation_type[[1]])) else "")
+    )
+  }
+
+  if ("feature_group" %in% colnames(all_dt)) {
+    valid_group_dt <- all_dt[!is.na(feature_group) & nzchar(feature_group) & is_main_ion %in% TRUE]
+    group_groups <- split(valid_group_dt, valid_group_dt$feature_group)
+    for (grp in group_groups) {
+      if (nrow(grp) < 2) next
+      idx <- utils::combn(seq_len(nrow(grp)), 2)
+      for (j in seq_len(ncol(idx))) {
+        a <- grp[idx[1, j]]
+        b <- grp[idx[2, j]]
+        push_edge(a$node_id, b$node_id, "group", 0.55, "same annotated group")
+      }
+    }
+  }
+
+  neighbor_map <- list()
+  add_neighbor <- function(a, b) {
+    if (!nzchar(a) || !nzchar(b) || identical(a, b)) return()
+    neighbor_map[[a]] <<- unique(c(neighbor_map[[a]], b))
+    neighbor_map[[b]] <<- unique(c(neighbor_map[[b]], a))
+  }
+  if (length(edge_rows) > 0) {
+    edge_dt_for_reach <- data.table::rbindlist(edge_rows, fill = TRUE)
+    for (i in seq_len(nrow(edge_dt_for_reach))) {
+      add_neighbor(as.character(edge_dt_for_reach$from[i]), as.character(edge_dt_for_reach$to[i]))
+    }
+  }
+  reachable <- unique(seed_dt$node_id)
+  queue <- reachable
+  while (length(queue) > 0) {
+    cur <- queue[[1]]
+    queue <- queue[-1]
+    nxt <- neighbor_map[[cur]]
+    if (length(nxt) == 0) next
+    new_nodes <- setdiff(nxt, reachable)
+    if (length(new_nodes) == 0) next
+    reachable <- c(reachable, new_nodes)
+    queue <- c(queue, new_nodes)
+  }
+
+  if (isTRUE(filtered)) {
+    seed_component_keys <- unique(paste(seed_dt$analysis, seed_dt$feature_component, sep = "||"))
+    valid_component_keys <- seed_component_keys[!grepl("\\|\\|$", seed_component_keys)]
+    if (length(valid_component_keys) > 0) {
+      all_dt[, component_key := paste(analysis, feature_component, sep = "||")]
+      display_dt <- all_dt[component_key %in% valid_component_keys]
+      all_dt[, component_key := NULL]
+    } else {
+      display_dt <- seed_dt
+    }
+    display_ids <- unique(display_dt$node_id)
+  } else {
+    display_ids <- unique(reachable)
+    display_dt <- all_dt[node_id %in% display_ids]
+  }
+  if (nrow(display_dt) == 0) {
+    message("\u2717 No valid network nodes found.")
+    return(invisible(NULL))
+  }
+
+  edges <- if (length(edge_rows) == 0) {
+    data.table::data.table(from = character(0), to = character(0), edge_category = character(0), score = numeric(0), edge_label = character(0))
+  } else {
+    data.table::rbindlist(edge_rows, fill = TRUE)
+  }
+  if (nrow(edges) > 0) {
+    edges <- edges[from %in% display_ids & to %in% display_ids]
+  }
+
+  if (nrow(edges) > 0) {
+    pair_sep <- "<<<PAIR>>>"
+    edges[, pair_id := ifelse(from < to, paste(from, to, sep = pair_sep), paste(to, from, sep = pair_sep))]
+    edges <- edges[, .(
+      categories = paste(unique(edge_category), collapse = "|"),
+      score = max(score, na.rm = TRUE),
+      edge_label = paste(unique(edge_label), collapse = " | ")
+    ), by = pair_id]
+    edges[!is.finite(score), score := 0]
+    edges[, c("from", "to") := tstrsplit(pair_id, pair_sep, fixed = TRUE)]
+    edges[, primary_category := fifelse(grepl("isotope", categories, fixed = TRUE), "isotope",
+      fifelse(grepl("adduct", categories, fixed = TRUE), "adduct",
+        fifelse(grepl("loss", categories, fixed = TRUE), "loss", "group")))]
+    edges[, score_clamped := pmin(pmax(score, 0), 1)]
+    edges[, length := fifelse(
+      primary_category == "group",
+      220,
+      fifelse(
+        primary_category == "isotope",
+        70 + (1 - score_clamped) * 90,
+        fifelse(
+          primary_category == "adduct",
+          85 + (1 - score_clamped) * 95,
+          95 + (1 - score_clamped) * 105
+        )
+      )
+    )]
+    edges[, width := fifelse(primary_category == "isotope", 2.6,
+      fifelse(primary_category == "adduct", 2.3,
+        fifelse(primary_category == "loss", 2.1, 1.6)))]
+    edges[, dashes := primary_category %in% c("group", "loss")]
+    edges[, color := fifelse(primary_category == "isotope", "#6b7280",
+      fifelse(primary_category == "adduct", "#1e3a8a",
+        fifelse(primary_category == "loss", "#991b1b", "#228b22")))]
+    edges[, title := paste0(edge_label, " | score=", feature_network_format_num(score, 3))]
+    edges[, label := ""]
+    edges[, base_width := width]
+    edges[, base_color := color]
+    edges <- edges[, .(from, to, label, title, width, length, dashes, base_width, base_color, color = lapply(color, function(x) list(color = x, highlight = x, hover = x)))]
+  }
+
+  connected_ids <- if (nrow(edges) > 0) unique(c(edges$from, edges$to)) else character(0)
+  display_dt[, has_graph_edge := node_id %in% connected_ids]
+  display_dt[, overview_html := vapply(seq_len(nrow(display_dt)), function(i) build_overview_html(display_dt[i]), character(1))]
+  display_dt[, title := paste0(
+    "<b>", htmltools::htmlEscape(feature), "</b><br>",
+    "analysis: ", htmltools::htmlEscape(analysis), "<br>",
+    "role: ", htmltools::htmlEscape(role), "<br>",
+    "component: ", htmltools::htmlEscape(feature_component), "<br>",
+    "group: ", htmltools::htmlEscape(feature_group), "<br>",
+    "mass: ", feature_network_format_num(mass, 4), "<br>",
+    "rt: ", feature_network_format_num(rt, 2), "<br>",
+    "intensity: ", feature_network_format_num(intensity, 0), "<br>",
+    "adduct: ", htmltools::htmlEscape(adduct), "<br>",
+    "element: ", htmltools::htmlEscape(annotation_element), "<br>",
+    "dev_ppm: ", feature_network_format_num(annotation_mass_error_ppm, 3), "<br>",
+    "dev_rt: ", feature_network_format_num(annotation_rt_error, 3), "<br>",
+    "connected: ", ifelse(has_graph_edge, "yes", "no")
+  )]
+  display_dt[, base_value := value]
+  display_dt[, base_background := unname(node_colors[node_group])]
+  display_dt[, base_border := unname(node_borders[node_group])]
+  display_dt[, shadow_color := ifelse(is_seed, "rgba(217,119,6,0.28)", "rgba(15,23,42,0.22)")]
+
+  nodes <- display_dt[, .(
+    id = node_id,
+    label,
+    group = node_group,
+    value = base_value,
+    title,
+    overview_html,
+    node_label = display_name,
+    base_value,
+    base_background,
+    base_border,
+    base_font_color = "#ffffff",
+    shadow_color,
+    borderWidth = ifelse(is_seed, 4, 2),
+    shape = "box",
+    shadow = Map(
+      function(flag) {
+        if (isTRUE(flag)) {
+          list(enabled = TRUE, color = "rgba(217,119,6,0.28)", size = 18, x = 0, y = 0)
+        } else {
+          FALSE
+        }
+      },
+      is_seed
+    )
+  )]
+  nodes[, color := mapply(function(bg, border) {
+    list(
+      background = bg,
+      border = border,
+      highlight = list(background = bg, border = border),
+      hover = list(background = bg, border = border)
+    )
+  }, base_background, base_border, SIMPLIFY = FALSE)]
+
+  widget <- visNetwork::visNetwork(nodes, edges, height = "100vh", width = "100%") %>%
+    visNetwork::visNodes(
+      font = list(size = 13, color = "#ffffff", face = "Arial", strokeWidth = 0, strokeColor = "rgba(0,0,0,0)"),
+      scaling = list(min = 10, max = 28),
+      shapeProperties = list(borderRadius = 2),
+      margin = 2,
+      chosen = FALSE
+    ) %>%
+    visNetwork::visGroups(groupname = "feature", color = unname(node_colors["feature"])) %>%
+    visNetwork::visGroups(groupname = "isotope", color = unname(node_colors["isotope"])) %>%
+    visNetwork::visGroups(groupname = "adduct", color = unname(node_colors["adduct"])) %>%
+    visNetwork::visGroups(groupname = "loss", color = unname(node_colors["loss"])) %>%
+    visNetwork::visEdges(
+      smooth = FALSE,
+      selectionWidth = 0,
+      hoverWidth = 0.6,
+      font = list(size = 1, color = "rgba(0,0,0,0)", face = "Arial", strokeWidth = 0, strokeColor = "rgba(0,0,0,0)"),
+      chosen = FALSE
+    ) %>%
+    visNetwork::visInteraction(hover = TRUE, hoverConnectedEdges = FALSE, navigationButtons = FALSE, tooltipDelay = 100) %>%
+    visNetwork::visPhysics(
+      enabled = TRUE,
+      stabilization = list(enabled = TRUE, iterations = 200),
+      solver = "forceAtlas2Based",
+      forceAtlas2Based = list(
+        gravitationalConstant = -55,
+        centralGravity = 0.01,
+        springLength = 120,
+        springConstant = 0.045,
+        damping = 0.8
+      )
+    ) %>%
+    visNetwork::visOptions(highlightNearest = FALSE) %>%
+    visNetwork::visLayout(randomSeed = 123)
+
+  safe_id <- paste0("sf_nta_map_", gsub("[^A-Za-z0-9]+", "_", format(Sys.time(), "%Y%m%d%H%M%OS3")), "_", sample.int(1e6, 1))
+
+  legend_markup <- if (isTRUE(showLegend)) {
+    htmltools::tags$div(
+      style = paste0(
+        "position:absolute;right:8px;top:8px;z-index:20;background:transparent;",
+        "border:none;border-radius:0;padding:0;font-size:11px;color:#1f2937;box-shadow:none;"
+      ),
+      htmltools::tags$div(style = "display:flex;align-items:center;gap:6px;white-space:nowrap;", htmltools::tags$span(style = "width:12px;height:12px;border-radius:2px;background:#166534;border:1px solid #14532d;display:inline-block;"), "feature"),
+      htmltools::tags$div(style = "display:flex;align-items:center;gap:6px;white-space:nowrap;margin-top:4px;", htmltools::tags$span(style = "width:12px;height:12px;border-radius:2px;background:#6b7280;border:1px solid #4b5563;display:inline-block;"), "isotope"),
+      htmltools::tags$div(style = "display:flex;align-items:center;gap:6px;white-space:nowrap;margin-top:4px;", htmltools::tags$span(style = "width:12px;height:12px;border-radius:2px;background:#1e3a8a;border:1px solid #1e40af;display:inline-block;"), "adduct"),
+      htmltools::tags$div(style = "display:flex;align-items:center;gap:6px;white-space:nowrap;margin-top:4px;", htmltools::tags$span(style = "width:12px;height:12px;border-radius:2px;background:#991b1b;border:1px solid #7f1d1d;display:inline-block;"), "loss")
+    )
+  } else {
+    NULL
+  }
+
+  tooltip_css <- htmltools::tags$style(htmltools::HTML(paste0(
+    "#", safe_id, " .vis-tooltip {",
+    "font-size:12px !important;",
+    "line-height:1.35 !important;",
+    "max-width:320px;",
+    "white-space:normal;",
+    if (isTRUE(darkMode)) {
+      "background:rgba(25,25,25,0.98) !important;color:#f3f4f6 !important;border:1px solid rgba(255,255,255,0.12) !important;"
+    } else {
+      "background:rgba(255,255,255,0.98) !important;color:#1f2937 !important;border:1px solid rgba(0,0,0,0.12) !important;"
+    },
+    "}"
+  )))
+
+  widget$elementId <- safe_id
+  widget <- htmlwidgets::prependContent(widget, htmltools::tagList(tooltip_css, legend_markup))
+
+  on_render_js <- paste0(
+    "function(el, x) {",
+    "  var network = this;",
+    "  if (document.documentElement) { document.documentElement.style.height = '100%'; document.documentElement.style.overflow = 'hidden'; }",
+    "  if (document.body) { document.body.style.margin = '0'; document.body.style.height = '100%'; document.body.style.overflow = 'hidden'; }",
+    "  if (el && el.parentElement) { el.parentElement.style.height = '100vh'; el.parentElement.style.overflow = 'hidden'; el.parentElement.style.position = 'relative'; }",
+    "  el.style.position = 'relative';",
+    "  var overlayId = '", safe_id, "_overlay';",
+    "  var overlay = document.getElementById(overlayId);",
+    "  if (!overlay) {",
+    "    overlay = document.createElement('div');",
+    "    overlay.id = overlayId;",
+    "    overlay.style.cssText = 'display:none;position:fixed;left:12px;top:12px;z-index:9998;width:min(420px, calc(100vw - 24px));max-height:min(70vh, calc(100vh - 24px));background:#fff;border-radius:8px;box-shadow:0 20px 50px rgba(0,0,0,0.28);overflow:hidden;';",
+    "    overlay.innerHTML = '<div style=\"display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #e3e3e3;background:#fafafa;\"><div class=\"sf-nta-map-title\" style=\"font-size:15px;font-weight:600;color:#1f2937;\">Node Details</div><button type=\"button\" class=\"sf-nta-map-close\" style=\"border:none;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:#666;\">\\u00d7</button></div><div class=\"sf-nta-map-content\" style=\"max-height:min(60vh, calc(100% - 48px));overflow:auto;padding:10px 14px;background:#fff;\"></div>';",
+    "    document.body.appendChild(overlay);",
+    "  }",
+    "  var titleEl = overlay.querySelector('.sf-nta-map-title');",
+    "  var contentEl = overlay.querySelector('.sf-nta-map-content');",
+    "  var closeEl = overlay.querySelector('.sf-nta-map-close');",
+    "  if (!overlay || !titleEl || !contentEl || !closeEl) return;",
+    "  var lastMouse = { x: Math.max(24, Math.round(window.innerWidth * 0.25)), y: Math.max(24, Math.round(window.innerHeight * 0.25)) };",
+    "  function hideOverlay() { overlay.style.display = 'none'; }",
+    "  function updateLastMouseFromEvent(ev) {",
+    "    if (!ev) return;",
+    "    if (typeof ev.clientX === 'number' && typeof ev.clientY === 'number') {",
+    "      lastMouse = { x: ev.clientX, y: ev.clientY };",
+    "      return;",
+    "    }",
+    "    if (typeof ev.pageX === 'number' && typeof ev.pageY === 'number') {",
+    "      lastMouse = { x: ev.pageX, y: ev.pageY };",
+    "      return;",
+    "    }",
+    "    if (typeof ev.x === 'number' && typeof ev.y === 'number') {",
+    "      lastMouse = { x: ev.x, y: ev.y };",
+    "    }",
+    "  }",
+    "  el.addEventListener('mousemove', function(ev) { updateLastMouseFromEvent(ev); }, true);",
+    "  el.addEventListener('mouseenter', function(ev) { updateLastMouseFromEvent(ev); }, true);",
+    "  function pointerPos(params) {",
+    "    var ev = params && params.event && params.event.srcEvent ? params.event.srcEvent : null;",
+    "    updateLastMouseFromEvent(ev);",
+    "    if (ev && typeof ev.clientX === 'number' && typeof ev.clientY === 'number') return { x: ev.clientX, y: ev.clientY };",
+    "    if (ev && typeof ev.pageX === 'number' && typeof ev.pageY === 'number') return { x: ev.pageX, y: ev.pageY };",
+    "    if (params && params.pointer && params.pointer.DOM) {",
+    "      var rect = el.getBoundingClientRect();",
+    "      lastMouse = { x: rect.left + params.pointer.DOM.x, y: rect.top + params.pointer.DOM.y };",
+    "      return lastMouse;",
+    "    }",
+    "    return lastMouse;",
+    "  }",
+    "  function placeFixedBox(boxEl, pos, dx, dy) {",
+    "    boxEl.style.display = 'block';",
+    "    var bw = boxEl.offsetWidth || 320;",
+    "    var bh = boxEl.offsetHeight || 180;",
+    "    var left = (pos.x || 24) + dx;",
+    "    var top = (pos.y || 24) + dy;",
+    "    left = Math.max(12, Math.min(left, window.innerWidth - bw - 12));",
+    "    top = Math.max(12, Math.min(top, window.innerHeight - bh - 12));",
+    "    boxEl.style.left = left + 'px';",
+    "    boxEl.style.top = top + 'px';",
+    "  }",
+    "  function resetNode(nodeId) {",
+    "    var node = null;",
+    "    try { node = network.body.data.nodes.get(nodeId); } catch(e) { node = null; }",
+    "    if (!node) return;",
+    "    network.body.data.nodes.update({",
+    "      id: nodeId,",
+    "      color: {",
+    "        background: node.base_background,",
+    "        border: node.base_border,",
+    "        highlight: { background: node.base_background, border: node.base_border },",
+    "        hover: { background: node.base_background, border: node.base_border }",
+    "      },",
+    "      font: { color: node.base_font_color || '#ffffff' }",
+    "    });",
+    "  }",
+    "  function dimNode(nodeId) {",
+    "    network.body.data.nodes.update({",
+    "      id: nodeId,",
+    "      color: {",
+    "        background: '#d1d5db',",
+    "        border: '#9ca3af',",
+    "        highlight: { background: '#d1d5db', border: '#9ca3af' },",
+    "        hover: { background: '#d1d5db', border: '#9ca3af' }",
+    "      },",
+    "      font: { color: '#374151' }",
+    "    });",
+    "  }",
+    "  function resetEdge(edgeId) {",
+    "    var edge = null;",
+    "    try { edge = network.body.data.edges.get(edgeId); } catch(e) { edge = null; }",
+    "    if (!edge) return;",
+    "    network.body.data.edges.update({",
+    "      id: edgeId,",
+    "      color: { color: edge.base_color, highlight: edge.base_color, hover: edge.base_color },",
+    "      width: edge.base_width",
+    "    });",
+    "  }",
+    "  function dimEdge(edgeId) {",
+    "    network.body.data.edges.update({",
+    "      id: edgeId,",
+    "      color: { color: '#d1d5db', highlight: '#d1d5db', hover: '#d1d5db' },",
+    "      width: 1",
+    "    });",
+    "  }",
+    "  function connectedSubgraph(startId) {",
+    "    var keepNodes = {};",
+    "    var keepEdges = {};",
+    "    var queue = [startId];",
+    "    keepNodes[startId] = true;",
+    "    while (queue.length) {",
+    "      var cur = queue.shift();",
+    "      var edgeIds = network.getConnectedEdges(cur) || [];",
+    "      for (var i = 0; i < edgeIds.length; i++) {",
+    "        var eid = edgeIds[i];",
+    "        keepEdges[eid] = true;",
+    "        var nodes = network.getConnectedNodes(eid) || [];",
+    "        for (var j = 0; j < nodes.length; j++) {",
+    "          var nid = nodes[j];",
+    "          if (!keepNodes[nid]) { keepNodes[nid] = true; queue.push(nid); }",
+    "        }",
+    "      }",
+    "    }",
+    "    return { nodes: keepNodes, edges: keepEdges };",
+    "  }",
+    "  function applySelection(nodeId) {",
+    "    var sub = connectedSubgraph(nodeId);",
+    "    var nodeIds = [];",
+    "    var edgeIds = [];",
+    "    try { nodeIds = network.body.data.nodes.getIds(); } catch(e) { nodeIds = []; }",
+    "    try { edgeIds = network.body.data.edges.getIds(); } catch(e) { edgeIds = []; }",
+    "    for (var i = 0; i < nodeIds.length; i++) {",
+    "      if (sub.nodes[nodeIds[i]]) resetNode(nodeIds[i]); else dimNode(nodeIds[i]);",
+    "    }",
+    "    for (var j = 0; j < edgeIds.length; j++) {",
+    "      if (sub.edges[edgeIds[j]]) resetEdge(edgeIds[j]); else dimEdge(edgeIds[j]);",
+    "    }",
+    "  }",
+    "  function clearSelectionStyles() {",
+    "    var nodeIds = [];",
+    "    var edgeIds = [];",
+    "    try { nodeIds = network.body.data.nodes.getIds(); } catch(e) { nodeIds = []; }",
+    "    try { edgeIds = network.body.data.edges.getIds(); } catch(e) { edgeIds = []; }",
+    "    for (var i = 0; i < nodeIds.length; i++) resetNode(nodeIds[i]);",
+    "    for (var j = 0; j < edgeIds.length; j++) resetEdge(edgeIds[j]);",
+    "  }",
+    "  function showNode(nodeId, pos) {",
+    "    if (!network.body || !network.body.data || !network.body.data.nodes) return;",
+    "    var node = null;",
+    "    try { node = network.body.data.nodes.get(nodeId); } catch(e) { node = null; }",
+    "    if (!node) return;",
+    "    titleEl.textContent = node.node_label || node.label || node.id || 'Node Details';",
+    "    contentEl.innerHTML = node.overview_html || '<div style=\"color:#666;\">No metadata available.</div>';",
+    "    placeFixedBox(overlay, pos, 18, 16);",
+    "  }",
+    "  closeEl.onclick = hideOverlay;",
+    "  network.off && network.off('deselectNode');",
+    "  network.on('deselectNode', function() { hideOverlay(); clearSelectionStyles(); });",
+    "  network.off && network.off('selectNode');",
+    "  network.on('selectNode', function(params) {",
+    "    if (!(params.nodes && params.nodes.length)) return;",
+    "    applySelection(params.nodes[0]);",
+    "    showNode(params.nodes[0], pointerPos(params));",
+    "  });",
+    "  network.off && network.off('doubleClick');",
+    "  network.on('doubleClick', function(params) {",
+    "    if (!(params.nodes && params.nodes.length)) return;",
+    "    applySelection(params.nodes[0]);",
+    "    showNode(params.nodes[0], pointerPos(params));",
+    "  });",
+    "}"
+  )
+  widget <- htmlwidgets::onRender(widget, on_render_js)
+  if (!is.null(widget$sizingPolicy)) {
+    if (!is.null(widget$sizingPolicy$browser)) {
+      widget$sizingPolicy$browser$padding <- 0
+      widget$sizingPolicy$browser$fill <- TRUE
+    }
+    if (!is.null(widget$sizingPolicy$viewer)) {
+      widget$sizingPolicy$viewer$padding <- 0
+      widget$sizingPolicy$viewer$fill <- TRUE
+    }
+  }
+
+  if (!isTRUE(interactive)) {
+    message("interactive = FALSE is currently ignored; returning the interactive network widget.")
+  }
+
+  widget
 }
