@@ -321,6 +321,17 @@ rcpp_openbabel_structure_svg <- function(SMILES = NULL, InChI = NULL, width = 14
     .Call(`_StreamFind_rcpp_openbabel_structure_svg`, SMILES, InChI, width, height, darkMode)
 }
 
+#' Inspect the native Open Babel runtime paths
+#'
+#' Returns diagnostic text describing the loaded Open Babel module path,
+#' `BABEL_DATADIR`, and candidate data directories considered at runtime.
+#'
+#' @return A length-one character string with runtime diagnostics.
+#' @export
+rcpp_openbabel_debug_runtime <- function() {
+    .Call(`_StreamFind_rcpp_openbabel_debug_runtime`)
+}
+
 #' Create a suspect screening table with the native Open Babel backend
 #'
 #' Normalizes suspect structures with the embedded Open Babel runtime and

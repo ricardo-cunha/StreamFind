@@ -2880,6 +2880,7 @@ plot_fold_change.ProjectNonTargetAnalysis <- function(
 #' @describeIn ProjectNonTargetAnalysisS3 Return transformation products for groups/parents.
 #' @method get_transformation_products ProjectNonTargetAnalysis
 #' @export
+#'
 get_transformation_products.ProjectNonTargetAnalysis <- function(x, parents = NULL, groups = NULL, ...) {
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
   tps <- data.table::as.data.table(
@@ -2892,8 +2893,8 @@ get_transformation_products.ProjectNonTargetAnalysis <- function(x, parents = NU
     tps[, project_id := NULL]
   }
   if (!is.null(groups)) {
-    groups <- trimws(groups)
-    groups <- groups[groups != ""]
+    groups <- trimws(as.character(groups))
+    groups <- unique(groups[!is.na(groups) & groups != ""])
     if (length(groups) > 0) {
       match_group <- function(x) {
         if (is.na(x) || !nzchar(x)) {
@@ -2927,6 +2928,8 @@ get_transformation_products.ProjectNonTargetAnalysis <- function(x, parents = NU
       } else {
         tps <- tps[0]
       }
+    } else {
+      tps <- tps[0]
     }
   }
   if (is.null(parents)) {
@@ -2959,6 +2962,14 @@ plot_transformation_products.ProjectNonTargetAnalysis <- function(
   checkmate::assert_class(x, "ProjectNonTargetAnalysis")
   if (!requireNamespace("visNetwork", quietly = TRUE)) {
     stop("visNetwork package is required for this function.")
+  }
+  if (!is.null(groups)) {
+    groups <- unique(trimws(as.character(groups)))
+    groups <- groups[!is.na(groups) & groups != ""]
+    if (length(groups) == 0) {
+      message("\u2717 No valid transformation-product groups selected.")
+      return(invisible(NULL))
+    }
   }
   tps <- get_transformation_products(x, parents = NULL, groups = groups)
   if (nrow(tps) == 0) {

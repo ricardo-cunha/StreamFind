@@ -212,7 +212,11 @@ namespace
       const std::string &params_path,
       const std::string &log_path)
   {
-    auto q = [](const std::string &p) { return "\"" + p + "\""; };
+    auto q = [](const std::string &p) {
+      if (p.find_first_of(" \t\"") == std::string::npos)
+        return p;
+      return "\"" + p + "\"";
+    };
 
     std::string cmd;
     // JAR mode: file ends with .jar (case-insensitive)

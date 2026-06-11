@@ -1123,6 +1123,16 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_openbabel_debug_runtime
+std::string rcpp_openbabel_debug_runtime();
+RcppExport SEXP _StreamFind_rcpp_openbabel_debug_runtime() {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    rcpp_result_gen = Rcpp::wrap(rcpp_openbabel_debug_runtime());
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_get_suspects_screening_csv
 Rcpp::DataFrame rcpp_get_suspects_screening_csv(Rcpp::DataFrame suspects, Rcpp::Nullable<std::string> file);
 RcppExport SEXP _StreamFind_rcpp_get_suspects_screening_csv(SEXP suspectsSEXP, SEXP fileSEXP) {
@@ -1214,6 +1224,7 @@ static const R_CallMethodDef CallEntries[] = {
     {"_StreamFind_duckdb_list_tables", (DL_FUNC) &_StreamFind_duckdb_list_tables, 1},
     {"_StreamFind_duckdb_json_extension_info", (DL_FUNC) &_StreamFind_duckdb_json_extension_info, 1},
     {"_StreamFind_rcpp_openbabel_structure_svg", (DL_FUNC) &_StreamFind_rcpp_openbabel_structure_svg, 5},
+    {"_StreamFind_rcpp_openbabel_debug_runtime", (DL_FUNC) &_StreamFind_rcpp_openbabel_debug_runtime, 0},
     {"_StreamFind_rcpp_get_suspects_screening_csv", (DL_FUNC) &_StreamFind_rcpp_get_suspects_screening_csv, 2},
     {NULL, NULL, 0}
 };

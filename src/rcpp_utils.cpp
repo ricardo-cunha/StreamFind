@@ -121,6 +121,19 @@ std::string rcpp_openbabel_structure_svg(
   return svg.ok ? svg.svg : std::string();
 }
 
+//' Inspect the native Open Babel runtime paths
+//'
+//' Returns diagnostic text describing the loaded Open Babel module path,
+//' `BABEL_DATADIR`, and candidate data directories considered at runtime.
+//'
+//' @return A length-one character string with runtime diagnostics.
+//' @export
+// [[Rcpp::export]]
+std::string rcpp_openbabel_debug_runtime()
+{
+  return sf::obabel::debug_runtime();
+}
+
 //' Create a suspect screening table with the native Open Babel backend
 //'
 //' Normalizes suspect structures with the embedded Open Babel runtime and

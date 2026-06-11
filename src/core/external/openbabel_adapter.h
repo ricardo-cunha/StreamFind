@@ -40,6 +40,8 @@ namespace sf::obabel
       int height_px,
       const std::string &bond_color = "");
 
+  std::string debug_runtime();
+
 } // namespace sf::obabel
 
 #endif // STREAMFIND_OPENBABEL_ADAPTER_H

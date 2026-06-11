@@ -21,7 +21,8 @@ enum
   STREAMFIND_OB_INCHIKEY_CAPACITY = 128,
   STREAMFIND_OB_ERROR_CAPACITY = 2048,
   STREAMFIND_OB_COLOR_CAPACITY = 64,
-  STREAMFIND_OB_SVG_CAPACITY = 262144
+  STREAMFIND_OB_SVG_CAPACITY = 262144,
+  STREAMFIND_OB_DEBUG_CAPACITY = 16384
 };
 
 typedef struct streamfind_ob_normalized_result
@@ -58,6 +59,10 @@ STREAMFIND_OPENBABEL_API int sf_ob_render_structure_svg(
   int height_px,
   const char *bond_color,
   streamfind_ob_svg_result *out);
+
+STREAMFIND_OPENBABEL_API int sf_ob_debug_runtime(
+  char *out,
+  size_t capacity);
 
 #ifdef __cplusplus
 }

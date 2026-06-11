@@ -3,30 +3,18 @@ library(data.table)
 
 project_db <- file.path("dev", "dev_duckdb", "data_nta.duckdb")
 project_id <- "demo_nta"
-
-
 # if (file.exists(project_db)) file.remove(project_db)
-
-internal_standards <- fread(file.path("dev", "dev_duckdb", "internal_standards_v3.csv"))
-internal_standards <- internal_standards[!is.na(rt), ]
-#internal_standards <- internal_standards[, c("name", "InChI", "rt", "ms2_positive")]
 
 suspects <- fread(file.path("dev", "dev_duckdb", "suspects_with_ms2_template.csv"))
 #suspects <- suspects[, c("name", "InChI", "rt", "ms2_positive")]
 
 transformation_products <- fread(file.path("dev", "dev_duckdb", "transformation_products_template_v2.csv"))
-na_cols <- c("precursor_mass", "precursor_xLogP", "precursor_formula",
-             "precursor_SMILES", "precursor_InChI", "precursor_InChIKey",
-             "precursor_name")
-for (col in na_cols) {
-  if (is.list(transformation_products[[col]])) {
-    transformation_products[[col]] <- sapply(transformation_products[[col]],
-      function(x) if (is.null(x)) NA else x)
-  }
-}
 
-ms_files <- StreamFindData::get_ms_file_paths()
-ms_files <- ms_files[grepl("ww_", ms_files)]
+ms_files <- StreamFindData::get_mass_spec_wastewater_files()
+
+internal_standards <- StreamFindData::get_mass_spec_wastewater_internal_standards_csv()
+internal_standards <- data.table::fread(internal_standards)
+internal_standards <- internal_standards[!is.na(rt), ]
 
 # -----------------------------------------------------------------------------
 # 1. Open the NTA project
@@ -177,9 +165,10 @@ workflow <- Workflow(list(
   #   filtered = TRUE
   # ),
   Method_NonTargetAnalysis_MetFragScreening(
-    metfrag_path = "C:\\Users\\cunha\\Documents\\patRoon_deps\\MetFragCommandLine-2.5.0.jar",
+    # metfrag_path = "C:\\Users\\cunha\\Documents\\patRoon_deps\\MetFragCommandLine-2.5.0.jar",
+    metfrag_path = "C:\\Users\\apoli\\Documents\\MetFragCommandLine-2.6.11.jar",
     database_type = "LocalCSV",
-    #database_path = file.path("dev", "dev_duckdb", "suspects_template_V2.csv"),
+    # database_path = file.path("dev", "dev_duckdb", "suspects_template_V2.csv"),
     database_path = file.path("dev", "dev_duckdb", "transformation_products_template_v2.csv"),
     ppm = 10,
     sec = 15,
@@ -194,7 +183,7 @@ workflow <- Workflow(list(
     number_threads = 1L,
     use_smiles = TRUE,
     filtered = FALSE,
-    java_path = "java",
+    java_path = "C:/Users/apoli/.cogniflow/tools/java/21.0.10+7/bin/java.exe",
     run_dir = "",
     debug = TRUE,
     extra_params = list()
@@ -210,11 +199,19 @@ set_workflow(nta, workflow)
 
 show(nta$get_workflow())
 
+
+
 nta$run_workflow()
 
 
 
-get_transformation_products(nta)
+
+delete_cache(nta, name = "NTA_FEATURES_CACHE")
+delete_cache(nta, name = "NTA_INTERNAL_STANDARDS_CACHE")
+delete_cache(nta, name = "NTA_SUSPECTS_CACHE")
+delete_cache(nta, name = "NTA_TRANSFORMATION_PRODUCTS_CACHE")
+
+get_transformation_products(nta)[]
 
 htmlwidgets::saveWidget(
   plot_transformation_products(
@@ -296,10 +293,7 @@ fts_comp[, .(feature, mass, intensity, adduct)]
 
 get_cache(nta)
 
-delete_cache(nta, name = "NTA_FEATURES_CACHE")
-delete_cache(nta, name = "NTA_INTERNAL_STANDARDS_CACHE")
-delete_cache(nta, name = "NTA_SUSPECTS_CACHE")
-delete_cache(nta, name = "NTA_TRANSFORMATION_PRODUCTS_CACHE")
+
 
 print(nta)
 

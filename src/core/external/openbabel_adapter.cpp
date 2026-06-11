@@ -41,6 +41,7 @@ namespace sf::obabel
   using openbabel_available_fn = int (*)();
   using normalize_structure_fn = int (*)(const char *, const char *, streamfind_ob_normalized_result *);
   using render_structure_svg_fn = int (*)(const char *, const char *, int, int, const char *, streamfind_ob_svg_result *);
+  using debug_runtime_fn = int (*)(char *, size_t);
 
   struct OpenBabelApi
   {
@@ -48,6 +49,7 @@ namespace sf::obabel
     openbabel_available_fn available = nullptr;
     normalize_structure_fn normalize = nullptr;
     render_structure_svg_fn render_svg = nullptr;
+    debug_runtime_fn debug_runtime = nullptr;
     std::string error;
   };
 
@@ -57,6 +59,15 @@ namespace sf::obabel
     if (pos == std::wstring::npos)
       return L"";
     return path.substr(0, pos);
+  }
+
+  bool directory_exists(const std::wstring &path)
+  {
+    if (path.empty())
+      return false;
+    const DWORD attributes = GetFileAttributesW(path.c_str());
+    return attributes != INVALID_FILE_ATTRIBUTES &&
+           (attributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
   }
 
   std::wstring current_working_directory()
@@ -69,6 +80,57 @@ namespace sf::obabel
     if (written == 0 || written >= size)
       return L"";
     return std::wstring(buffer.data(), written);
+  }
+
+  std::wstring find_openbabel_data_dir(
+      const std::wstring &dll_path,
+      const std::wstring &module_dir,
+      const std::wstring &cwd)
+  {
+    const std::wstring dll_dir = parent_directory(dll_path);
+    const std::wstring dll_dir_parent = parent_directory(dll_dir);
+    const std::wstring dll_dir_grandparent = parent_directory(dll_dir_parent);
+    const std::wstring dll_dir_root = parent_directory(dll_dir_grandparent);
+    const std::wstring dll_dir_top = parent_directory(dll_dir_root);
+
+    const std::vector<std::wstring> candidates = {
+        dll_dir + L"\\openbabel-3-2-0\\data",
+        dll_dir_grandparent.empty() ? L"" : dll_dir_grandparent + L"\\openbabel-3-2-0\\data",
+        dll_dir_root.empty() ? L"" : dll_dir_root + L"\\openbabel-3-2-0\\data",
+        dll_dir_top.empty() ? L"" : dll_dir_top + L"\\openbabel-3-2-0\\data",
+        module_dir + L"\\core\\external\\openbabel\\openbabel-3-2-0\\data",
+        cwd.empty() ? L"" : cwd + L"\\src\\core\\external\\openbabel\\openbabel-3-2-0\\data"};
+
+    for (const auto &candidate : candidates)
+    {
+      if (directory_exists(candidate))
+        return candidate;
+    }
+
+    return L"";
+  }
+
+  bool configure_openbabel_data_dir(
+      const std::wstring &dll_path,
+      const std::wstring &module_dir,
+      const std::wstring &cwd,
+      std::string &error)
+  {
+    const std::wstring data_dir = find_openbabel_data_dir(dll_path, module_dir, cwd);
+    if (data_dir.empty())
+    {
+      error = "Could not locate Open Babel data directory relative to " +
+              std::string(dll_path.begin(), dll_path.end());
+      return false;
+    }
+
+    if (!SetEnvironmentVariableW(L"BABEL_DATADIR", data_dir.c_str()))
+    {
+      error = "Could not set BABEL_DATADIR for Open Babel runtime.";
+      return false;
+    }
+
+    return true;
   }
 
   OpenBabelApi load_openbabel_api()
@@ -131,14 +193,23 @@ namespace sf::obabel
       return api;
     }
 
+    if (!configure_openbabel_data_dir(loaded_path, module_dir, cwd, api.error))
+    {
+      FreeLibrary(api.module);
+      api.module = nullptr;
+      return api;
+    }
+
     api.available = reinterpret_cast<openbabel_available_fn>(
         GetProcAddress(api.module, "sf_ob_openbabel_available"));
     api.normalize = reinterpret_cast<normalize_structure_fn>(
         GetProcAddress(api.module, "sf_ob_normalize_structure"));
     api.render_svg = reinterpret_cast<render_structure_svg_fn>(
         GetProcAddress(api.module, "sf_ob_render_structure_svg"));
+    api.debug_runtime = reinterpret_cast<debug_runtime_fn>(
+        GetProcAddress(api.module, "sf_ob_debug_runtime"));
 
-    if (api.available == nullptr || api.normalize == nullptr || api.render_svg == nullptr)
+    if (api.available == nullptr || api.normalize == nullptr || api.render_svg == nullptr || api.debug_runtime == nullptr)
     {
       api.error = "Could not resolve Open Babel StreamFind API exports from " +
                   std::string(loaded_path.begin(), loaded_path.end());
@@ -147,6 +218,7 @@ namespace sf::obabel
       api.available = nullptr;
       api.normalize = nullptr;
       api.render_svg = nullptr;
+      api.debug_runtime = nullptr;
     }
 
     return api;
@@ -227,6 +299,23 @@ namespace sf::obabel
         bond_color.empty() ? nullptr : bond_color.c_str(),
         &result);
     return from_svg_result(result);
+#endif
+  }
+
+  std::string debug_runtime()
+  {
+#ifdef _WIN32
+    const OpenBabelApi api = load_openbabel_api();
+    if (api.debug_runtime == nullptr)
+      return api.error.empty() ? "Open Babel runtime unavailable." : api.error;
+
+    std::vector<char> buffer(STREAMFIND_OB_DEBUG_CAPACITY, '\0');
+    api.debug_runtime(buffer.data(), buffer.size());
+    return std::string(buffer.data());
+#else
+    std::vector<char> buffer(STREAMFIND_OB_DEBUG_CAPACITY, '\0');
+    sf_ob_debug_runtime(buffer.data(), buffer.size());
+    return std::string(buffer.data());
 #endif
   }
 } // namespace sf::obabel
