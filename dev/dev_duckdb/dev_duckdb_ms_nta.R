@@ -262,9 +262,9 @@ run_app()
 
 map_components(
   nta,
-  analyses = 11:12,
+  analyses = 10:12,
   mass = suspects[15, ],
-  filtered = FALSE
+  filtered = TRUE
 )
 
 

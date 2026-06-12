@@ -4368,6 +4368,144 @@ map_components.ProjectNonTargetAnalysis <- function(
     )
   }, base_background, base_border, SIMPLIFY = FALSE)]
 
+  safe_id <- paste0("sf_nta_map_", gsub("[^A-Za-z0-9]+", "_", format(Sys.time(), "%Y%m%d%H%M%OS3")), "_", sample.int(1e6, 1))
+  overlay_id <- paste0(safe_id, "_overlay")
+  debug_id <- paste0(safe_id, "_debug")
+
+  click_js <- paste0(
+    "function(params) {",
+    "  var dbg = document.getElementById('", debug_id, "');",
+    "  var selected = (params.nodes && params.nodes.length) ? params.nodes[0] : null;",
+    "  if (!selected) {",
+    "    if (dbg) dbg.textContent = 'vis clear';",
+    "    var allNodes0 = this.body.data.nodes.getIds();",
+    "    var resetNodes0 = [];",
+    "    for (var a = 0; a < allNodes0.length; a++) {",
+    "      var nn0 = this.body.data.nodes.get(allNodes0[a]);",
+    "      resetNodes0.push({",
+    "        id: allNodes0[a],",
+    "        borderWidth: nn0.borderWidth || 2,",
+    "        color: {",
+    "          background: nn0.base_background,",
+    "          border: nn0.base_border,",
+    "          highlight: { background: nn0.base_background, border: nn0.base_border },",
+    "          hover: { background: nn0.base_background, border: nn0.base_border }",
+    "        },",
+    "        font: { color: nn0.base_font_color || '#ffffff', face: 'Arial', bold: false }",
+    "      });",
+    "    }",
+    "    this.body.data.nodes.update(resetNodes0);",
+    "    var allEdges0 = this.body.data.edges.getIds();",
+    "    var resetEdges0 = [];",
+    "    for (var b = 0; b < allEdges0.length; b++) {",
+    "      var ee0 = this.body.data.edges.get(allEdges0[b]);",
+    "      resetEdges0.push({",
+    "        id: allEdges0[b],",
+    "        color: { color: ee0.base_color, highlight: ee0.base_color, hover: ee0.base_color },",
+    "        width: ee0.base_width",
+    "      });",
+    "    }",
+    "    this.body.data.edges.update(resetEdges0);",
+    "    var ov0 = document.getElementById('", overlay_id, "'); if (ov0) ov0.style.display = 'none';",
+    "    return;",
+    "  }",
+    "  if (dbg) dbg.textContent = 'vis click';",
+    "  var keepNodes = {};",
+    "  var keepEdges = {};",
+    "  var queue = [selected];",
+    "  keepNodes[selected] = true;",
+    "  while (queue.length) {",
+    "    var cur = queue.shift();",
+    "    var edgeIds = this.getConnectedEdges(cur) || [];",
+    "    for (var i = 0; i < edgeIds.length; i++) {",
+    "      var eid = edgeIds[i];",
+    "      keepEdges[eid] = true;",
+    "      var connNodes = this.getConnectedNodes(eid) || [];",
+    "      for (var j = 0; j < connNodes.length; j++) {",
+    "        var nid = connNodes[j];",
+    "        if (!keepNodes[nid]) { keepNodes[nid] = true; queue.push(nid); }",
+    "      }",
+    "    }",
+    "  }",
+    "  var allNodes = this.body.data.nodes.getIds();",
+    "  var nodeUpdates = [];",
+    "  for (var k = 0; k < allNodes.length; k++) {",
+    "    var nn = this.body.data.nodes.get(allNodes[k]);",
+    "    if (keepNodes[allNodes[k]]) {",
+    "      nodeUpdates.push({",
+    "        id: allNodes[k],",
+    "        borderWidth: allNodes[k] === selected ? 4 : (nn.borderWidth || 2),",
+    "        color: {",
+    "          background: nn.base_background,",
+    "          border: nn.base_border,",
+    "          highlight: { background: nn.base_background, border: nn.base_border },",
+    "          hover: { background: nn.base_background, border: nn.base_border }",
+    "        },",
+    "        font: { color: nn.base_font_color || '#ffffff', face: 'Arial', bold: allNodes[k] === selected }",
+    "      });",
+    "    } else {",
+    "      nodeUpdates.push({",
+    "        id: allNodes[k],",
+    "        borderWidth: 1,",
+    "        color: {",
+    "          background: '#d6d9de',",
+    "          border: '#aeb6c2',",
+    "          highlight: { background: '#d6d9de', border: '#aeb6c2' },",
+    "          hover: { background: '#d6d9de', border: '#aeb6c2' }",
+    "        },",
+    "        font: { color: '#4b5563', face: 'Arial', bold: false }",
+    "      });",
+    "    }",
+    "  }",
+    "  this.body.data.nodes.update(nodeUpdates);",
+    "  var allEdges = this.body.data.edges.getIds();",
+    "  var edgeUpdates = [];",
+    "  for (var m = 0; m < allEdges.length; m++) {",
+    "    var ee = this.body.data.edges.get(allEdges[m]);",
+    "    if (keepEdges[allEdges[m]]) {",
+    "      edgeUpdates.push({",
+    "        id: allEdges[m],",
+    "        color: { color: ee.base_color, highlight: ee.base_color, hover: ee.base_color },",
+    "        width: ee.base_width",
+    "      });",
+    "    } else {",
+    "      edgeUpdates.push({",
+    "        id: allEdges[m],",
+    "        color: { color: '#c7ced6', highlight: '#c7ced6', hover: '#c7ced6' },",
+    "        width: Math.max(1, ee.base_width * 0.9)",
+    "      });",
+    "    }",
+    "  }",
+    "  this.body.data.edges.update(edgeUpdates);",
+    "}"
+  )
+
+  double_click_js <- paste0(
+    "function(params) {",
+    "  var selected = (params.nodes && params.nodes.length) ? params.nodes[0] : null;",
+    "  var dbg = document.getElementById('", debug_id, "');",
+    "  if (!selected) { if (dbg) dbg.textContent = 'vis dbl none'; return; }",
+    "  if (dbg) dbg.textContent = 'vis dbl';",
+    "  var node = this.body.data.nodes.get(selected);",
+    "  var ov = document.getElementById('", overlay_id, "');",
+    "  if (!ov || !node) return;",
+    "  var titleEl = ov.querySelector('.sf-nta-map-title');",
+    "  var contentEl = ov.querySelector('.sf-nta-map-content');",
+    "  if (titleEl) titleEl.textContent = node.node_label || node.label || node.id || 'Node Details';",
+    "  if (contentEl) contentEl.innerHTML = node.overview_html || '<div style=\"color:#666;\">No metadata available.</div>';",
+    "  ov.style.display = 'block';",
+    "  var ev = params && params.event && params.event.srcEvent ? params.event.srcEvent : null;",
+    "  var x = ev && typeof ev.clientX === 'number' ? ev.clientX : 24;",
+    "  var y = ev && typeof ev.clientY === 'number' ? ev.clientY : 24;",
+    "  var bw = ov.offsetWidth || 320;",
+    "  var bh = ov.offsetHeight || 180;",
+    "  var left = Math.max(12, Math.min(x + 18, window.innerWidth - bw - 12));",
+    "  var top = Math.max(12, Math.min(y + 16, window.innerHeight - bh - 12));",
+    "  ov.style.left = left + 'px';",
+    "  ov.style.top = top + 'px';",
+    "}"
+  )
+
   widget <- visNetwork::visNetwork(nodes, edges, height = "100vh", width = "100%") %>%
     visNetwork::visNodes(
       font = list(size = 13, color = "#ffffff", face = "Arial", strokeWidth = 0, strokeColor = "rgba(0,0,0,0)"),
@@ -4401,9 +4539,11 @@ map_components.ProjectNonTargetAnalysis <- function(
       )
     ) %>%
     visNetwork::visOptions(highlightNearest = FALSE) %>%
-    visNetwork::visLayout(randomSeed = 123)
-
-  safe_id <- paste0("sf_nta_map_", gsub("[^A-Za-z0-9]+", "_", format(Sys.time(), "%Y%m%d%H%M%OS3")), "_", sample.int(1e6, 1))
+    visNetwork::visLayout(randomSeed = 123) %>%
+    visNetwork::visEvents(
+      click = htmlwidgets::JS(click_js),
+      doubleClick = htmlwidgets::JS(double_click_js)
+    )
 
   legend_markup <- if (isTRUE(showLegend)) {
     htmltools::tags$div(
@@ -4420,6 +4560,16 @@ map_components.ProjectNonTargetAnalysis <- function(
     NULL
   }
 
+  debug_markup <- htmltools::tags$div(
+    id = paste0(safe_id, "_debug"),
+    style = paste0(
+      "position:absolute;left:8px;top:8px;z-index:21;",
+      "background:rgba(255,255,255,0.92);color:#374151;border:1px solid rgba(0,0,0,0.1);",
+      "border-radius:4px;padding:3px 6px;font-size:10px;line-height:1.2;pointer-events:none;"
+    ),
+    "idle"
+  )
+
   tooltip_css <- htmltools::tags$style(htmltools::HTML(paste0(
     "#", safe_id, " .vis-tooltip {",
     "font-size:12px !important;",
@@ -4435,7 +4585,7 @@ map_components.ProjectNonTargetAnalysis <- function(
   )))
 
   widget$elementId <- safe_id
-  widget <- htmlwidgets::prependContent(widget, htmltools::tagList(tooltip_css, legend_markup))
+  widget <- htmlwidgets::prependContent(widget, htmltools::tagList(tooltip_css, legend_markup, debug_markup))
 
   on_render_js <- paste0(
     "function(el, x) {",
@@ -4445,7 +4595,9 @@ map_components.ProjectNonTargetAnalysis <- function(
     "  if (el && el.parentElement) { el.parentElement.style.height = '100vh'; el.parentElement.style.overflow = 'hidden'; el.parentElement.style.position = 'relative'; }",
     "  el.style.position = 'relative';",
     "  var overlayId = '", safe_id, "_overlay';",
+    "  var debugId = '", safe_id, "_debug';",
     "  var overlay = document.getElementById(overlayId);",
+    "  var debugEl = document.getElementById(debugId);",
     "  if (!overlay) {",
     "    overlay = document.createElement('div');",
     "    overlay.id = overlayId;",
@@ -4458,7 +4610,10 @@ map_components.ProjectNonTargetAnalysis <- function(
     "  var closeEl = overlay.querySelector('.sf-nta-map-close');",
     "  if (!overlay || !titleEl || !contentEl || !closeEl) return;",
     "  var lastMouse = { x: Math.max(24, Math.round(window.innerWidth * 0.25)), y: Math.max(24, Math.round(window.innerHeight * 0.25)) };",
+    "  var activeNodeId = null;",
+    "  var clickTimer = null;",
     "  function hideOverlay() { overlay.style.display = 'none'; }",
+    "  function setDebug(msg) { if (debugEl) debugEl.textContent = msg; }",
     "  function updateLastMouseFromEvent(ev) {",
     "    if (!ev) return;",
     "    if (typeof ev.clientX === 'number' && typeof ev.clientY === 'number') {",
@@ -4504,25 +4659,29 @@ map_components.ProjectNonTargetAnalysis <- function(
     "    if (!node) return;",
     "    network.body.data.nodes.update({",
     "      id: nodeId,",
+    "      borderWidth: node.borderWidth || 2,",
     "      color: {",
     "        background: node.base_background,",
     "        border: node.base_border,",
-    "        highlight: { background: node.base_background, border: node.base_border },",
-    "        hover: { background: node.base_background, border: node.base_border }",
+        "        highlight: { background: node.base_background, border: node.base_border },",
+        "        hover: { background: node.base_background, border: node.base_border }",
     "      },",
-    "      font: { color: node.base_font_color || '#ffffff' }",
+    "      font: { color: node.base_font_color || '#ffffff', face: 'Arial', bold: nodeId === activeNodeId }",
     "    });",
     "  }",
     "  function dimNode(nodeId) {",
+    "    var node = null;",
+    "    try { node = network.body.data.nodes.get(nodeId); } catch(e) { node = null; }",
     "    network.body.data.nodes.update({",
     "      id: nodeId,",
+    "      borderWidth: 1,",
     "      color: {",
-    "        background: '#d1d5db',",
-    "        border: '#9ca3af',",
-    "        highlight: { background: '#d1d5db', border: '#9ca3af' },",
-    "        hover: { background: '#d1d5db', border: '#9ca3af' }",
+    "        background: '#d6d9de',",
+    "        border: '#aeb6c2',",
+    "        highlight: { background: '#d6d9de', border: '#aeb6c2' },",
+    "        hover: { background: '#d6d9de', border: '#aeb6c2' }",
     "      },",
-    "      font: { color: '#374151' }",
+    "      font: { color: '#4b5563', face: 'Arial', bold: false }",
     "    });",
     "  }",
     "  function resetEdge(edgeId) {",
@@ -4536,10 +4695,13 @@ map_components.ProjectNonTargetAnalysis <- function(
     "    });",
     "  }",
     "  function dimEdge(edgeId) {",
+    "    var edge = null;",
+    "    try { edge = network.body.data.edges.get(edgeId); } catch(e) { edge = null; }",
+    "    var dimWidth = edge && typeof edge.base_width === 'number' && isFinite(edge.base_width) ? Math.max(1, edge.base_width * 0.9) : 1;",
     "    network.body.data.edges.update({",
     "      id: edgeId,",
-    "      color: { color: '#d1d5db', highlight: '#d1d5db', hover: '#d1d5db' },",
-    "      width: 1",
+    "      color: { color: '#c7ced6', highlight: '#c7ced6', hover: '#c7ced6' },",
+    "      width: dimWidth",
     "    });",
     "  }",
     "  function connectedSubgraph(startId) {",
@@ -4563,6 +4725,8 @@ map_components.ProjectNonTargetAnalysis <- function(
     "    return { nodes: keepNodes, edges: keepEdges };",
     "  }",
     "  function applySelection(nodeId) {",
+    "    setDebug('apply ' + nodeId);",
+    "    activeNodeId = nodeId;",
     "    var sub = connectedSubgraph(nodeId);",
     "    var nodeIds = [];",
     "    var edgeIds = [];",
@@ -4576,6 +4740,7 @@ map_components.ProjectNonTargetAnalysis <- function(
     "    }",
     "  }",
     "  function clearSelectionStyles() {",
+    "    activeNodeId = null;",
     "    var nodeIds = [];",
     "    var edgeIds = [];",
     "    try { nodeIds = network.body.data.nodes.getIds(); } catch(e) { nodeIds = []; }",
@@ -4592,21 +4757,8 @@ map_components.ProjectNonTargetAnalysis <- function(
     "    contentEl.innerHTML = node.overview_html || '<div style=\"color:#666;\">No metadata available.</div>';",
     "    placeFixedBox(overlay, pos, 18, 16);",
     "  }",
+    "  setDebug('ready');",
     "  closeEl.onclick = hideOverlay;",
-    "  network.off && network.off('deselectNode');",
-    "  network.on('deselectNode', function() { hideOverlay(); clearSelectionStyles(); });",
-    "  network.off && network.off('selectNode');",
-    "  network.on('selectNode', function(params) {",
-    "    if (!(params.nodes && params.nodes.length)) return;",
-    "    applySelection(params.nodes[0]);",
-    "    showNode(params.nodes[0], pointerPos(params));",
-    "  });",
-    "  network.off && network.off('doubleClick');",
-    "  network.on('doubleClick', function(params) {",
-    "    if (!(params.nodes && params.nodes.length)) return;",
-    "    applySelection(params.nodes[0]);",
-    "    showNode(params.nodes[0], pointerPos(params));",
-    "  });",
     "}"
   )
   widget <- htmlwidgets::onRender(widget, on_render_js)
