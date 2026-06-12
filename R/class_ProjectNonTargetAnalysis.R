@@ -4506,7 +4506,7 @@ map_components.ProjectNonTargetAnalysis <- function(
     "}"
   )
 
-  widget <- visNetwork::visNetwork(nodes, edges, height = "100vh", width = "100%") %>%
+  widget <- visNetwork::visNetwork(nodes, edges, height = "100%", width = "100%") %>%
     visNetwork::visNodes(
       font = list(size = 13, color = "#ffffff", face = "Arial", strokeWidth = 0, strokeColor = "rgba(0,0,0,0)"),
       scaling = list(min = 10, max = 28),
@@ -4545,55 +4545,59 @@ map_components.ProjectNonTargetAnalysis <- function(
       doubleClick = htmlwidgets::JS(double_click_js)
     )
 
-  legend_markup <- if (isTRUE(showLegend)) {
-    htmltools::tags$div(
-      style = paste0(
-        "position:absolute;right:8px;top:8px;z-index:20;background:transparent;",
-        "border:none;border-radius:0;padding:0;font-size:11px;color:#1f2937;box-shadow:none;"
-      ),
-      htmltools::tags$div(style = "display:flex;align-items:center;gap:6px;white-space:nowrap;", htmltools::tags$span(style = "width:12px;height:12px;border-radius:2px;background:#166534;border:1px solid #14532d;display:inline-block;"), "feature"),
-      htmltools::tags$div(style = "display:flex;align-items:center;gap:6px;white-space:nowrap;margin-top:4px;", htmltools::tags$span(style = "width:12px;height:12px;border-radius:2px;background:#6b7280;border:1px solid #4b5563;display:inline-block;"), "isotope"),
-      htmltools::tags$div(style = "display:flex;align-items:center;gap:6px;white-space:nowrap;margin-top:4px;", htmltools::tags$span(style = "width:12px;height:12px;border-radius:2px;background:#1e3a8a;border:1px solid #1e40af;display:inline-block;"), "adduct"),
-      htmltools::tags$div(style = "display:flex;align-items:center;gap:6px;white-space:nowrap;margin-top:4px;", htmltools::tags$span(style = "width:12px;height:12px;border-radius:2px;background:#991b1b;border:1px solid #7f1d1d;display:inline-block;"), "loss")
+  legend_js <- if (isTRUE(showLegend)) {
+    paste0(
+      "  var legendId = mapId + '_legend';",
+      "  if (!document.getElementById(legendId)) {",
+      "    var legend = document.createElement('div');",
+      "    legend.id = legendId;",
+      "    legend.style.cssText = 'position:absolute;right:8px;top:8px;z-index:20;background:transparent;border:none;border-radius:0;padding:0;font-size:11px;color:", if (isTRUE(darkMode)) "#f3f4f6" else "#1f2937", ";box-shadow:none;pointer-events:none;';",
+      "    legend.innerHTML = '<div style=\"display:flex;align-items:center;gap:6px;white-space:nowrap;\"><span style=\"width:12px;height:12px;border-radius:2px;background:#166534;border:1px solid #14532d;display:inline-block;\"></span>feature</div>' +",
+      "      '<div style=\"display:flex;align-items:center;gap:6px;white-space:nowrap;margin-top:4px;\"><span style=\"width:12px;height:12px;border-radius:2px;background:#6b7280;border:1px solid #4b5563;display:inline-block;\"></span>isotope</div>' +",
+      "      '<div style=\"display:flex;align-items:center;gap:6px;white-space:nowrap;margin-top:4px;\"><span style=\"width:12px;height:12px;border-radius:2px;background:#1e3a8a;border:1px solid #1e40af;display:inline-block;\"></span>adduct</div>' +",
+      "      '<div style=\"display:flex;align-items:center;gap:6px;white-space:nowrap;margin-top:4px;\"><span style=\"width:12px;height:12px;border-radius:2px;background:#991b1b;border:1px solid #7f1d1d;display:inline-block;\"></span>loss</div>';",
+      "    if (el) el.appendChild(legend);",
+      "  }"
     )
   } else {
-    NULL
+    ""
   }
-
-  debug_markup <- htmltools::tags$div(
-    id = paste0(safe_id, "_debug"),
-    style = paste0(
-      "position:absolute;left:8px;top:8px;z-index:21;",
-      "background:rgba(255,255,255,0.92);color:#374151;border:1px solid rgba(0,0,0,0.1);",
-      "border-radius:4px;padding:3px 6px;font-size:10px;line-height:1.2;pointer-events:none;"
-    ),
-    "idle"
-  )
-
-  tooltip_css <- htmltools::tags$style(htmltools::HTML(paste0(
-    "#", safe_id, " .vis-tooltip {",
-    "font-size:12px !important;",
-    "line-height:1.35 !important;",
-    "max-width:320px;",
-    "white-space:normal;",
-    if (isTRUE(darkMode)) {
-      "background:rgba(25,25,25,0.98) !important;color:#f3f4f6 !important;border:1px solid rgba(255,255,255,0.12) !important;"
-    } else {
-      "background:rgba(255,255,255,0.98) !important;color:#1f2937 !important;border:1px solid rgba(0,0,0,0.12) !important;"
-    },
-    "}"
-  )))
-
-  widget$elementId <- safe_id
-  widget <- htmlwidgets::prependContent(widget, htmltools::tagList(tooltip_css, legend_markup, debug_markup))
 
   on_render_js <- paste0(
     "function(el, x) {",
     "  var network = this;",
-    "  if (document.documentElement) { document.documentElement.style.height = '100%'; document.documentElement.style.overflow = 'hidden'; }",
-    "  if (document.body) { document.body.style.margin = '0'; document.body.style.height = '100%'; document.body.style.overflow = 'hidden'; }",
-    "  if (el && el.parentElement) { el.parentElement.style.height = '100vh'; el.parentElement.style.overflow = 'hidden'; el.parentElement.style.position = 'relative'; }",
-    "  el.style.position = 'relative';",
+    "  var mapId = '", safe_id, "';",
+    "  var standaloneContainer = document.getElementById('htmlwidget_container');",
+    "  if (standaloneContainer) {",
+    "    document.documentElement.style.height = '100%';",
+    "    document.documentElement.style.margin = '0';",
+    "    document.documentElement.style.overflow = 'hidden';",
+    "    if (document.body) {",
+    "      document.body.style.height = '100vh';",
+    "      document.body.style.minHeight = '100vh';",
+    "      document.body.style.margin = '0';",
+    "      document.body.style.overflow = 'hidden';",
+    "    }",
+    "    standaloneContainer.style.height = '100vh';",
+    "    standaloneContainer.style.minHeight = '100vh';",
+    "    standaloneContainer.style.width = '100%';",
+    "    standaloneContainer.style.margin = '0';",
+    "    standaloneContainer.style.overflow = 'hidden';",
+    "  }",
+    "  if (el) {",
+    "    el.setAttribute('data-sf-nta-map-id', mapId);",
+    "    el.style.position = 'relative';",
+    "    el.style.width = '100%';",
+    "    el.style.height = '100%';",
+    "    el.style.overflow = 'hidden';",
+    "  }",
+    "  if (el && el.parentElement) {",
+    "    el.parentElement.style.position = 'relative';",
+    "    el.parentElement.style.width = '100%';",
+    "    el.parentElement.style.height = '100%';",
+    "    el.parentElement.style.overflow = 'hidden';",
+    "  }",
+    legend_js,
     "  var overlayId = '", safe_id, "_overlay';",
     "  var debugId = '", safe_id, "_debug';",
     "  var overlay = document.getElementById(overlayId);",
@@ -4762,16 +4766,11 @@ map_components.ProjectNonTargetAnalysis <- function(
     "}"
   )
   widget <- htmlwidgets::onRender(widget, on_render_js)
-  if (!is.null(widget$sizingPolicy)) {
-    if (!is.null(widget$sizingPolicy$browser)) {
-      widget$sizingPolicy$browser$padding <- 0
-      widget$sizingPolicy$browser$fill <- TRUE
-    }
-    if (!is.null(widget$sizingPolicy$viewer)) {
-      widget$sizingPolicy$viewer$padding <- 0
-      widget$sizingPolicy$viewer$fill <- TRUE
-    }
-  }
+  widget$sizingPolicy <- htmlwidgets::sizingPolicy(
+    browser.fill = TRUE,
+    viewer.fill = TRUE,
+    padding = 0
+  )
 
   if (!isTRUE(interactive)) {
     message("interactive = FALSE is currently ignored; returning the interactive network widget.")

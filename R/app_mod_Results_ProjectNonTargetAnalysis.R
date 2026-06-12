@@ -185,6 +185,17 @@
       display: flex;
       align-items: center;
     }
+    .features-controls-bar .shiny-input-container[style*='width: 200px'],
+    .features-controls-bar .shiny-input-container[style*='width:200px'] {
+      width: 200px !important;
+      min-width: 200px !important;
+      max-width: 200px !important;
+    }
+    .features-controls-bar .shiny-input-container > select.form-control {
+      width: 200px !important;
+      min-width: 200px !important;
+      max-width: 200px !important;
+    }
     .features-controls-bar .checkbox {
       margin: 0;
       display: flex;
@@ -269,11 +280,23 @@
       background: transparent;
       position: relative;
     }
-    .sf-nta-loading-surface.loading::after {
+    .sf-nta-loading-surface {
+      position: relative;
+    }
+    .sf-nta-loading-surface.loading::before {
       content: '';
       position: absolute;
       inset: 0;
       z-index: 8100;
+      pointer-events: none;
+      background: radial-gradient(circle at center, rgba(255,255,255,0.22) 0, rgba(255,255,255,0.10) 24%, rgba(255,255,255,0.02) 48%, rgba(255,255,255,0) 72%);
+      animation: sf-logo-pulse 1.2s ease-in-out infinite;
+    }
+    .sf-nta-loading-surface.loading::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 8101;
       pointer-events: none;
       background-color: transparent;
       background-image: url('/www/logo_StreamFind.png');
@@ -303,6 +326,7 @@
       flex: 1 1 auto;
       min-height: 0;
       overflow: hidden;
+      position: relative;
     }
     .sf-nta-network-body .visNetwork,
     .sf-nta-network-body .html-widget,
@@ -426,6 +450,7 @@
       overflow: hidden;
       padding: 12px;
       background: transparent;
+      position: relative;
     }
     .sf-nta-table-panel > .html-widget,
     .sf-nta-table-panel .datatables,
@@ -511,7 +536,13 @@
             if (!output || !surface) return;
 
             var syncLoading = function() {
-              surface.classList.toggle('loading', output.classList.contains('recalculating'));
+              var isLoading =
+                output.classList.contains('recalculating') ||
+                !!output.querySelector('.recalculating') ||
+                !!output.querySelector('.shiny-busy') ||
+                !!output.querySelector('.plotly.recalculating') ||
+                !!output.querySelector('.html-widget.recalculating');
+              surface.classList.toggle('loading', isLoading);
             };
 
             syncLoading();
@@ -523,7 +554,7 @@
             var observer = new MutationObserver(function() {
               syncLoading();
             });
-            observer.observe(output, { attributes: true, attributeFilter: ['class'] });
+            observer.observe(output, { attributes: true, attributeFilter: ['class'], childList: true, subtree: true });
             window.__sfNtaLoadingObservers[outputId] = observer;
           };
 
@@ -578,11 +609,18 @@
             setTimeout(function() {
               observeIds(ids);
               resizeIds(ids);
+              initLoadingSurfaces();
             }, 80);
           });
 
           var initLoadingSurfaces = function() {
             [
+              ['%s', '%s'],
+              ['%s', '%s'],
+              ['%s', '%s'],
+              ['%s', '%s'],
+              ['%s', '%s'],
+              ['%s', '%s'],
               ['%s', '%s'],
               ['%s', '%s'],
               ['%s', '%s'],
@@ -638,6 +676,12 @@
         ns_full("feature_ms1_plot_scatter_surface"),
         ns_full("feature_ms2_plot_scatter"),
         ns_full("feature_ms2_plot_scatter_surface"),
+        ns_full("feature_network_plot_scatter"),
+        ns_full("feature_network_plot_scatter_surface"),
+        ns_full("feature_details_table_scatter"),
+        ns_full("feature_details_table_scatter_surface"),
+        ns_full("suspects_table_scatter"),
+        ns_full("suspects_table_scatter_surface"),
         ns_full("internal_standard_eic_plot"),
         ns_full("internal_standard_eic_plot_surface"),
         ns_full("internal_standard_xic_plot"),
@@ -648,6 +692,12 @@
         ns_full("internal_standard_ms1_plot_surface"),
         ns_full("internal_standard_ms2_plot"),
         ns_full("internal_standard_ms2_plot_surface"),
+        ns_full("internal_standard_network_plot"),
+        ns_full("internal_standard_network_plot_surface"),
+        ns_full("internal_standard_details_table"),
+        ns_full("internal_standard_details_table_surface"),
+        ns_full("internal_standard_identification_table"),
+        ns_full("internal_standard_identification_table_surface"),
         ns_full("internal_standard_metrics_plot"),
         ns_full("internal_standard_metrics_plot_surface")
       )
@@ -789,12 +839,13 @@
                       shiny::span("Group by:", style = "font-weight: 700;"),
                       shiny::div(
                         style = "display: flex; align-items: center;",
-                        shiny::radioButtons(
+                        shiny::selectInput(
                           ns_full("chart_color_by"),
                           label = NULL,
                           choices = c("Analysis" = "analysis", "Replicate" = "replicate"),
                           selected = "analysis",
-                          inline = TRUE
+                          width = "200px",
+                          selectize = FALSE
                         )
                       )
                     )
@@ -922,25 +973,32 @@
               shiny::span("Group by:", style = "font-weight: 700;"),
               shiny::div(
                 style = "display: flex; align-items: center;",
-                shiny::radioButtons(
+                shiny::selectInput(
                   ns_full("scatter_color_by"),
                   label = NULL,
                   choices = c("Analysis" = "analysis", "Replicate" = "replicate"),
                   selected = "replicate",
-                  inline = TRUE
+                  width = "200px",
+                  selectize = FALSE
                 )
               )
             ),
             shiny::div(
               style = "display: flex; align-items: center; gap: 8px; flex-wrap: wrap;",
               shiny::span("Select by:", style = "font-weight: 700;"),
-              shiny::radioButtons(
-                ns_full("scatter_select_by"),
-                label = NULL,
-                choices = c("Feature" = "feature", "Component" = "feature_component", "Group" = "feature_group"),
-                selected = "feature",
-                inline = TRUE
-              )
+                shiny::selectInput(
+                  ns_full("scatter_select_by"),
+                  label = NULL,
+                  choices = c(
+                    "Feature" = "feature",
+                  "Component" = "feature_component",
+                  "Group" = "feature_group",
+                  "Group + Component" = "feature_group_component"
+                  ),
+                  selected = "feature",
+                  width = "200px",
+                  selectize = FALSE
+                )
             )
           ),
           shiny::div(
@@ -1078,7 +1136,8 @@
                 shiny::div(
                   class = "sf-nta-network-panel",
                   shiny::div(
-                    class = "sf-nta-network-body",
+                    id = ns_full("feature_network_plot_scatter_surface"),
+                    class = "sf-nta-network-body sf-nta-loading-surface",
                     visNetwork::visNetworkOutput(
                       ns_full("feature_network_plot_scatter"),
                       height = "100%",
@@ -1090,14 +1149,16 @@
               shiny::tabPanel(
                 title = "Details",
                 shiny::div(
-                  class = "sf-nta-table-panel",
+                  id = ns_full("feature_details_table_scatter_surface"),
+                  class = "sf-nta-table-panel sf-nta-loading-surface",
                   DT::dataTableOutput(ns_full("feature_details_table_scatter"))
                 )
               ),
               shiny::tabPanel(
                 title = "Suspects",
                 shiny::div(
-                  class = "sf-nta-table-panel",
+                  id = ns_full("suspects_table_scatter_surface"),
+                  class = "sf-nta-table-panel sf-nta-loading-surface",
                   DT::dataTableOutput(ns_full("suspects_table_scatter"))
                 )
               )
@@ -1140,12 +1201,13 @@
               shiny::span("Group by:", style = "font-weight: 700;"),
               shiny::div(
                 style = "display: flex; align-items: center;",
-                shiny::radioButtons(
+                shiny::selectInput(
                   ns_full("istd_color_by"),
                   label = NULL,
                   choices = c("Analysis" = "analysis", "Replicate" = "replicate"),
                   selected = "replicate",
-                  inline = TRUE
+                  width = "200px",
+                  selectize = FALSE
                 )
               )
             ),
@@ -1259,7 +1321,8 @@
                   shiny::div(
                     class = "sf-nta-network-panel",
                     shiny::div(
-                      class = "sf-nta-network-body",
+                      id = ns_full("internal_standard_network_plot_surface"),
+                      class = "sf-nta-network-body sf-nta-loading-surface",
                       visNetwork::visNetworkOutput(
                         ns_full("internal_standard_network_plot"),
                         height = "100%",
@@ -1270,11 +1333,19 @@
                 ),
                 shiny::tabPanel(
                   title = "Details",
-                  shiny::div(class = "sf-nta-table-panel", DT::dataTableOutput(ns_full("internal_standard_details_table")))
+                  shiny::div(
+                    id = ns_full("internal_standard_details_table_surface"),
+                    class = "sf-nta-table-panel sf-nta-loading-surface",
+                    DT::dataTableOutput(ns_full("internal_standard_details_table"))
+                  )
                 ),
                 shiny::tabPanel(
                   title = "Compound",
-                  shiny::div(class = "sf-nta-table-panel", DT::dataTableOutput(ns_full("internal_standard_identification_table")))
+                  shiny::div(
+                    id = ns_full("internal_standard_identification_table_surface"),
+                    class = "sf-nta-table-panel sf-nta-loading-surface",
+                    DT::dataTableOutput(ns_full("internal_standard_identification_table"))
+                  )
                 ),
                 shiny::tabPanel(
                   title = "Metrics",
@@ -2434,17 +2505,16 @@
         slider_list <- slider_list[!vapply(slider_list, is.null, logical(1))]
       }
 
+      log_cols_controls <- setdiff(log_cols, c("component_is_core", "component_bridge_flag"))
       logi_list <- NULL
-      if (length(log_cols) > 0) {
-        logi_list <- lapply(log_cols, function(col) {
+      if (length(log_cols_controls) > 0) {
+        logi_list <- lapply(log_cols_controls, function(col) {
           col_lower <- tolower(col)
-          default_sel <- if (col_lower == "filtered") "FALSE" else c("TRUE", "FALSE")
-          shiny::checkboxGroupInput(
+          default_value <- if (col_lower == "filled") TRUE else FALSE
+          shiny::checkboxInput(
             ns_full(paste0("scatter_filter_", col)),
             label = col,
-            choices = c("TRUE", "FALSE"),
-            selected = default_sel,
-            inline = TRUE
+            value = default_value
           )
         })
       }
@@ -2493,10 +2563,10 @@
       # Apply logical filters
       log_cols <- names(fts)[sapply(fts, is.logical)]
       for (col in log_cols) {
+        if (identical(col, "filled")) next
         sel <- input[[paste0("scatter_filter_", col)]]
-        if (!is.null(sel) && length(sel) > 0) {
-          keep_vals <- as.logical(sel)
-          fts <- fts[fts[[col]] %in% keep_vals]
+        if (!is.null(sel) && !isTRUE(sel)) {
+          fts <- fts[is.na(fts[[col]]) | !fts[[col]], ]
         }
       }
 
@@ -2530,20 +2600,26 @@
       if (is.null(sel) || !nzchar(sel)) sel <- "analysis"
       sel
     })
-    scatter_selection_cols <- shiny::reactive({
+    scatter_selection_mode <- shiny::reactive({
       sel <- input$scatter_select_by
       if (is.null(sel) || !nzchar(sel)) sel <- "feature"
-      cols <- sel
-      if (sel %in% c("feature", "feature_component")) {
-        cols <- c("analysis", cols)
+      sel
+    })
+    scatter_selection_cols <- shiny::reactive({
+      sel <- scatter_selection_mode()
+      if (identical(sel, "feature")) {
+        return(c("analysis", "feature"))
       }
-      cols
+      if (identical(sel, "feature_component")) {
+        return(c("analysis", "feature_component"))
+      }
+      "feature_group"
     })
 
     scatter_details_group_by <- shiny::reactive({
-      sel <- input$scatter_select_by
-      if (identical(sel, "feature_component")) {
-        return("feature")
+      sel <- scatter_selection_mode()
+      if (sel %in% c("feature_component", "feature_group", "feature_group_component")) {
+        return(unique(c(scatter_color_cols(), "feature")))
       }
       unique(c(scatter_color_cols(), scatter_selection_cols()))
     })
@@ -2672,8 +2748,7 @@
       selected_features_scatter_keys(NULL)
     }, ignoreInit = TRUE)
 
-    # MARK: selected_features_scatter
-    selected_features_scatter <- shiny::reactive({
+    selected_features_scatter_rows <- shiny::reactive({
       keys <- selected_features_scatter_keys()
       if (is.null(keys) || length(keys) == 0) return(NULL)
 
@@ -2702,7 +2777,73 @@
         invisible(NULL)
       })
 
-      fts[sel, c("analysis", "feature"), with = FALSE]
+      fts[sel]
+    })
+
+    selected_features_scatter_targets <- shiny::reactive({
+      rows <- selected_features_scatter_rows()
+      if (is.null(rows) || nrow(rows) == 0) return(NULL)
+
+      fts <- data.table::copy(features_data())
+      if (!nrow(fts)) return(NULL)
+
+      fts$analysis <- as.character(fts$analysis)
+      if ("feature" %in% colnames(fts)) fts$feature <- as.character(fts$feature)
+      if ("feature_component" %in% colnames(fts)) fts$feature_component <- as.character(fts$feature_component)
+      if ("feature_group" %in% colnames(fts)) fts$feature_group <- as.character(fts$feature_group)
+
+      select_by <- scatter_selection_mode()
+      if (identical(select_by, "feature")) {
+        keys <- unique(rows[, c("analysis", "feature"), with = FALSE])
+        target <- fts[keys, on = .(analysis, feature), nomatch = 0]
+      } else if (identical(select_by, "feature_component")) {
+        comps <- unique(rows[, c("analysis", "feature_component"), with = FALSE])
+        comps <- comps[!is.na(feature_component) & nzchar(feature_component)]
+        if (nrow(comps) == 0) return(NULL)
+        target <- fts[comps, on = .(analysis, feature_component), nomatch = 0]
+      } else if (identical(select_by, "feature_group_component")) {
+        group_members <- fts[feature_group %in% unique(rows$feature_group) & !is.na(feature_group) & nzchar(feature_group)]
+        comps <- unique(group_members[, c("analysis", "feature_component"), with = FALSE])
+        comps <- comps[!is.na(feature_component) & nzchar(feature_component)]
+        if (nrow(comps) == 0) return(NULL)
+        target <- fts[comps, on = .(analysis, feature_component), nomatch = 0]
+      } else {
+        groups <- unique(rows[, c("analysis", "feature_group"), with = FALSE])
+        groups <- groups[!is.na(feature_group) & nzchar(feature_group)]
+        if (nrow(groups) == 0) return(NULL)
+        target <- fts[groups, on = .(analysis, feature_group), nomatch = 0]
+      }
+
+      if (!nrow(target)) return(NULL)
+      target
+    })
+
+    scatter_details_filtered <- shiny::reactive({
+      mode <- scatter_selection_mode()
+      isTRUE(input$scatter_filter_filtered) || mode %in% c("feature_component", "feature_group_component")
+    })
+
+    selected_features_scatter_detail_rows <- shiny::reactive({
+      target <- selected_features_scatter_targets()
+      if (is.null(target) || nrow(target) == 0) return(NULL)
+
+      all_fts <- data.table::copy(data.table::as.data.table(features_data()))
+      if (!nrow(all_fts)) return(NULL)
+
+      keys <- unique(target[, c("analysis", "feature"), with = FALSE])
+      keys <- keys[!is.na(analysis) & nzchar(analysis) & !is.na(feature) & nzchar(feature)]
+      if (!nrow(keys)) return(NULL)
+
+      details <- all_fts[keys, on = .(analysis, feature), nomatch = 0]
+      if (!nrow(details)) return(NULL)
+      details
+    })
+
+    # MARK: selected_features_scatter
+    selected_features_scatter <- shiny::reactive({
+      target <- selected_features_scatter_targets()
+      if (is.null(target) || nrow(target) == 0) return(NULL)
+      unique(target[, c("analysis", "feature"), with = FALSE])
     })
 
     # MARK: feature_peaks_plot_scatter
@@ -2718,7 +2859,7 @@
         nts,
         features = selected_features_scatter(),
         groupBy = scatter_details_group_by(),
-        filtered = TRUE,
+        filtered = scatter_details_filtered(),
         showDetails = TRUE,
         darkMode = dark_mode()
       )
@@ -2746,7 +2887,7 @@
         nts,
         features = selected_features_scatter(),
         groupBy = scatter_details_group_by(),
-        filtered = TRUE,
+        filtered = scatter_details_filtered(),
         darkMode = dark_mode()
       )
       shiny::validate(shiny::need(!is.null(p), "No MS1 data for selected features."))
@@ -2773,7 +2914,7 @@
         nts,
         features = selected_features_scatter(),
         groupBy = scatter_details_group_by(),
-        filtered = TRUE,
+        filtered = scatter_details_filtered(),
         darkMode = dark_mode()
       )
       shiny::validate(shiny::need(!is.null(p), "No MS2 data for selected features."))
@@ -2787,24 +2928,96 @@
         plotly::config(displaylogo = FALSE, responsive = TRUE)
     })
 
-    feature_network_graph_data <- shiny::reactive({
-      sel <- selected_features_scatter()
-      shiny::validate(shiny::need(!is.null(sel) && nrow(sel) > 0, "Select one or more points to view the network."))
-      network_data <- build_feature_network_data(
-        feature_dt = features_data(),
-        selected_rows = sel,
-        selection_mode = if (is.null(input$scatter_select_by) || !nzchar(input$scatter_select_by)) "feature" else input$scatter_select_by
-      )
-      shiny::validate(shiny::need(!is.null(network_data) && nrow(network_data$nodes) > 0, "No network data available for the current feature selection."))
-      network_data
+    map_components_scatter_args <- function(rows, select_by, filtered_value = FALSE) {
+      rows <- data.table::copy(data.table::as.data.table(rows))
+      if (nrow(rows) == 0) return(NULL)
+      rows$analysis <- as.character(rows$analysis)
+      rows$feature <- as.character(rows$feature)
+      if ("feature_component" %in% colnames(rows)) rows$feature_component <- as.character(rows$feature_component)
+      if ("feature_group" %in% colnames(rows)) rows$feature_group <- as.character(rows$feature_group)
+
+      analyses <- unique(rows$analysis)
+      analyses <- analyses[!is.na(analyses) & nzchar(analyses)]
+      select_by <- if (is.null(select_by) || !nzchar(select_by)) "feature" else select_by
+
+      if (identical(select_by, "feature_component")) {
+        comps <- unique(rows$feature_component)
+        comps <- comps[!is.na(comps) & nzchar(comps)]
+        return(list(analyses = analyses, components = comps, filtered = filtered_value))
+      }
+      if (identical(select_by, "feature_group")) {
+        grps <- unique(rows$feature_group)
+        grps <- grps[!is.na(grps) & nzchar(grps)]
+        return(list(analyses = analyses, groups = grps, filtered = filtered_value))
+      }
+      feats <- unique(rows$feature)
+      feats <- feats[!is.na(feats) & nzchar(feats)]
+      list(analyses = analyses, features = feats, filtered = filtered_value)
+    }
+
+    feature_network_args <- shiny::reactive({
+      rows <- selected_features_scatter_rows()
+      shiny::validate(shiny::need(!is.null(rows) && nrow(rows) > 0, "Select one or more points to view the network."))
+      mode <- scatter_selection_mode()
+
+      rows <- data.table::copy(data.table::as.data.table(rows))
+      rows$analysis <- as.character(rows$analysis)
+      if ("feature" %in% colnames(rows)) rows$feature <- as.character(rows$feature)
+      if ("feature_component" %in% colnames(rows)) rows$feature_component <- as.character(rows$feature_component)
+      if ("feature_group" %in% colnames(rows)) rows$feature_group <- as.character(rows$feature_group)
+
+      analyses <- unique(rows$analysis)
+      analyses <- analyses[!is.na(analyses) & nzchar(analyses)]
+
+      if (identical(mode, "feature")) {
+        feats <- unique(rows[, c("analysis", "feature"), with = FALSE])
+        args <- list(
+          analyses = analyses,
+          features = feats,
+          filtered = FALSE
+        )
+      } else if (identical(mode, "feature_component")) {
+        feats <- unique(rows[, c("analysis", "feature"), with = FALSE])
+        args <- list(
+          analyses = analyses,
+          features = feats,
+          filtered = TRUE
+        )
+      } else if (identical(mode, "feature_group")) {
+        grps <- unique(rows$feature_group)
+        grps <- grps[!is.na(grps) & nzchar(grps)]
+        args <- list(
+          analyses = analyses,
+          groups = grps,
+          filtered = FALSE
+        )
+      } else {
+        grps <- unique(rows$feature_group)
+        grps <- grps[!is.na(grps) & nzchar(grps)]
+        args <- list(
+          analyses = analyses,
+          groups = grps,
+          filtered = TRUE
+        )
+      }
+      shiny::validate(shiny::need(!is.null(args), "No network data available for the current feature selection."))
+      args
     })
 
     output$feature_network_plot_scatter <- visNetwork::renderVisNetwork({
-      graph_data <- feature_network_graph_data()
-      build_feature_network_widget(
-        nodes = graph_data$nodes,
-        edges = graph_data$edges,
-        widget_id = ns_full("feature_network_plot_scatter")
+      args <- feature_network_args()
+      do.call(
+        map_components,
+        c(
+          list(
+            x = nta_data(),
+            showLegend = TRUE,
+            showDetails = TRUE,
+            interactive = TRUE,
+            darkMode = dark_mode()
+          ),
+          args
+        )
       )
     })
 
@@ -2820,7 +3033,7 @@
         nts,
         features = selected_features_scatter(),
         groupBy = scatter_details_group_by(),
-        filtered = TRUE,
+        filtered = scatter_details_filtered(),
         showDetails = TRUE,
         darkMode = dark_mode()
       )
@@ -2843,8 +3056,9 @@
         )
       )
       nts <- nta_data()
-      sel <- selected_features_scatter()
-      fts <- get_features(nts, features = sel, filtered = TRUE)
+      sel <- selected_features_scatter_targets()
+      shiny::validate(shiny::need(!is.null(sel) && nrow(sel) > 0, "Select one or more points to view profile."))
+      fts <- data.table::copy(sel)
       if (nrow(fts) == 0 || !"feature_group" %in% colnames(fts)) {
         shiny::validate(shiny::need(FALSE, "No feature groups available for selected features."))
       }
@@ -2855,8 +3069,10 @@
       )
       p <- plot_features_profile(
         nts,
+        analyses = unique(fts$analysis),
         groups = groups,
         groupBy = if (identical(input$scatter_color_by, "replicate")) "replicate" else "analysis",
+        filtered = scatter_details_filtered(),
         showLegend = FALSE,
         darkMode = dark_mode()
       )
@@ -2873,10 +3089,9 @@
 
     # MARK: feature_details_table_scatter
     output$feature_details_table_scatter <- DT::renderDT({
-      sel <- selected_features_scatter()
-      shiny::validate(shiny::need(nrow(sel) > 0, "Select one or more points to view details."))
-
-      fts <- data.table::copy(features_data()[analysis %in% sel$analysis & feature %in% sel$feature, ])
+      fts <- selected_features_scatter_detail_rows()
+      shiny::validate(shiny::need(!is.null(fts) && nrow(fts) > 0, "Select one or more points to view details."))
+      fts <- data.table::copy(fts)
 
       if (nrow(fts) == 0) {
         return(DT::datatable(
@@ -3277,26 +3492,35 @@
         plotly::config(displaylogo = FALSE, responsive = TRUE)
     })
 
-    internal_standard_network_graph_data <- shiny::reactive({
-      sel_features <- selected_internal_standards_features()
-      shiny::validate(shiny::need(!is.null(sel_features) && nrow(sel_features) > 0, "Select one or more points to view the network."))
+    internal_standard_network_args <- shiny::reactive({
       sel_rows <- selected_internal_standards_rows()
-      network_data <- build_feature_network_data(
-        feature_dt = features_data(),
-        selected_rows = sel_features,
-        selection_mode = "feature_group",
-        internal_standard_dt = sel_rows
+      shiny::validate(shiny::need(!is.null(sel_rows) && nrow(sel_rows) > 0, "Select one or more points to view the network."))
+      sel_rows <- data.table::copy(data.table::as.data.table(sel_rows))
+      if ("feature_group" %in% colnames(sel_rows)) {
+        sel_rows <- sel_rows[!is.na(feature_group) & nzchar(feature_group), ]
+      }
+      shiny::validate(shiny::need(nrow(sel_rows) > 0, "No internal standard feature groups available for the current selection."))
+      map_components_scatter_args(
+        rows = sel_rows,
+        select_by = "feature_group",
+        filtered_value = TRUE
       )
-      shiny::validate(shiny::need(!is.null(network_data) && nrow(network_data$nodes) > 0, "No network data available for the current internal standard selection."))
-      network_data
     })
 
     output$internal_standard_network_plot <- visNetwork::renderVisNetwork({
-      graph_data <- internal_standard_network_graph_data()
-      build_feature_network_widget(
-        nodes = graph_data$nodes,
-        edges = graph_data$edges,
-        widget_id = ns_full("internal_standard_network_plot")
+      args <- internal_standard_network_args()
+      do.call(
+        map_components,
+        c(
+          list(
+            x = nta_data(),
+            showLegend = TRUE,
+            showDetails = TRUE,
+            interactive = TRUE,
+            darkMode = dark_mode()
+          ),
+          args
+        )
       )
     })
 
