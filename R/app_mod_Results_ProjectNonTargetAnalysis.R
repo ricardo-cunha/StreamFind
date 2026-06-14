@@ -1166,6 +1166,22 @@
                   class = "sf-nta-table-panel sf-nta-loading-surface",
                   DT::dataTableOutput(ns_full("suspects_table_scatter"))
                 )
+              ),
+              shiny::tabPanel(
+                title = "Transformations",
+                height = "100%",
+                shiny::div(
+                  class = "sf-nta-network-panel",
+                  shiny::div(
+                    id = ns_full("tp_network_plot_scatter_surface"),
+                    class = "sf-nta-network-body sf-nta-loading-surface",
+                    visNetwork::visNetworkOutput(
+                      ns_full("tp_network_plot_scatter"),
+                      height = "100%",
+                      width = "100%"
+                    )
+                  )
+                )
               )
             ))
           )
@@ -2495,6 +2511,29 @@
         darkMode = dark_mode(),
         showLegend = TRUE,
         showDetails = TRUE
+      )
+    })
+
+    # MARK: tp_network_args
+    tp_network_args <- shiny::reactive({
+      rows <- selected_features_scatter_rows()
+      shiny::validate(shiny::need(!is.null(rows) && nrow(rows) > 0, "Select one or more points to view TPs."))
+      rows <- data.table::copy(data.table::as.data.table(rows))
+      groups <- unique(rows$feature_group)
+      groups <- groups[!is.na(groups) & nzchar(groups)]
+      shiny::validate(shiny::need(length(groups) > 0, "No feature groups found for the current selection."))
+      groups
+    })
+
+    output$tp_network_plot_scatter <- visNetwork::renderVisNetwork({
+      groups <- tp_network_args()
+      nts <- nta_data()
+      plot_transformation_products(
+        nts,
+        groups = groups,
+        showMS2 = TRUE,
+        showIntensityProfile = TRUE,
+        darkMode = dark_mode()
       )
     })
 

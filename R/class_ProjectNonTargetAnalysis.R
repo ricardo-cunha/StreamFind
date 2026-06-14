@@ -3835,8 +3835,30 @@ plot_transformation_products.ProjectNonTargetAnalysis <- function(
     ),
     htmltools::tags$script(htmltools::HTML(modal_script))
   )
-
-  p <- htmlwidgets::prependContent(p, modal_markup)
+  modal_html <- htmltools::renderTags(modal_markup)$html
+  on_render_js <- paste0(
+    "function(el, x) {
+      var temp = document.createElement('div');
+      temp.innerHTML = ", jsonlite::toJSON(modal_html, auto_unbox = TRUE), ";
+      var frag = document.createDocumentFragment();
+      var scripts = [];
+      while (temp.firstChild) {
+        var node = temp.removeChild(temp.firstChild);
+        if (node.nodeType === 1 && node.tagName === 'SCRIPT') {
+          scripts.push(node.textContent);
+        } else {
+          frag.appendChild(node);
+        }
+      }
+      document.body.appendChild(frag);
+      for (var i = 0; i < scripts.length; i++) {
+        var s = document.createElement('script');
+        s.textContent = scripts[i];
+        document.body.appendChild(s);
+      }
+    }"
+  )
+  p <- htmlwidgets::onRender(p, htmlwidgets::JS(on_render_js))
   if (requireNamespace("plotly", quietly = TRUE)) {
     dep_src <- plotly::plotly_build(plotly::plot_ly(x = c(0, 1), y = c(0, 1), type = "scatter", mode = "lines"))
     dep_list <- htmltools::findDependencies(dep_src)
