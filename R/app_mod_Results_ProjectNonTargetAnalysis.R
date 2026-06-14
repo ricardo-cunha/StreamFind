@@ -122,7 +122,7 @@
       min-height: 0;
       height: 100% !important;
     }
-    .sf-nta-results-summary .bslib-sidebar-resize-handle .visually-hidden {
+    .bslib-sidebar-resize-handle .visually-hidden {
       display: none !important;
     }
     .suspects-table td {
@@ -884,6 +884,7 @@
   shiny::moduleServer(id, function(input, output, session) {
     ns_full <- session$ns
     dark_mode <- shiny::reactive(identical(reactive_theme_mode(), "dark"))
+    render_cache <- new.env(parent = emptyenv())
 
     # Helpers and Data Reactives ------
 
@@ -902,6 +903,10 @@
       shiny::validate(shiny::need(!is.null(x), "NTA data is not available"))
       nta_data(x)
     })
+
+    shiny::observeEvent(nta_data(), {
+      rm(list = ls(envir = render_cache, all.names = TRUE), envir = render_cache)
+    }, ignoreInit = TRUE)
 
     # MARK: features_data
     features_data <- shiny::reactive({
@@ -1428,15 +1433,89 @@
       )
     }
 
+    cache_get_or_set <- function(key, expr) {
+      if (exists(key, envir = render_cache, inherits = FALSE)) {
+        return(get(key, envir = render_cache, inherits = FALSE))
+      }
+      value <- force(expr)
+      assign(key, value, envir = render_cache)
+      value
+    }
+
+    cache_key_part <- function(x) {
+      if (is.null(x)) return("NULL")
+      if (is.data.frame(x)) {
+        if (nrow(x) == 0) return("DT[0]")
+        cols <- colnames(x)
+        rows <- apply(as.data.frame(lapply(x, as.character), stringsAsFactors = FALSE), 1, paste, collapse = "\r")
+        return(paste0("DT[", paste(cols, collapse = ","), "]=", paste(rows, collapse = "\n")))
+      }
+      paste(as.character(unlist(x, use.names = FALSE)), collapse = "\n")
+    }
+
+    identification_table_cache_key <- function(dt, spectra_mode, darkMode) {
+      dt <- data.table::as.data.table(dt)
+      key_cols <- intersect(
+        c("analysis", "feature", "name", "candidate_rank", "SMILES", "InChI", "InChIKey"),
+        colnames(dt)
+      )
+      if (length(key_cols) == 0) {
+        key_cols <- colnames(dt)
+      }
+      key_dt <- dt[, ..key_cols]
+      paste(
+        "identification",
+        spectra_mode,
+        isTRUE(darkMode),
+        cache_key_part(key_dt),
+        sep = "||"
+      )
+    }
+
+    map_components_widget_cached <- function(nts, args, darkMode = FALSE, showLegend = TRUE, showDetails = TRUE) {
+      cache_key <- paste(
+        "map_components_widget",
+        isTRUE(darkMode),
+        isTRUE(showLegend),
+        isTRUE(showDetails),
+        paste(
+          vapply(names(args), function(nm) {
+            paste0(nm, "=", cache_key_part(args[[nm]]))
+          }, character(1)),
+          collapse = "||"
+        ),
+        sep = "||"
+      )
+      cache_get_or_set(
+        cache_key,
+        do.call(
+          map_components,
+          c(
+            list(
+              x = nts,
+              showLegend = showLegend,
+              showDetails = showDetails,
+              interactive = TRUE,
+              darkMode = darkMode
+            ),
+            args
+          )
+        )
+      )
+    }
+
     create_structure_image <- function(smiles, inchi = NULL, width = 180, height = 200, darkMode = FALSE) {
       if ((is.null(smiles) || is.na(smiles) || !nzchar(smiles)) &&
           (is.null(inchi) || is.na(inchi) || !nzchar(inchi))) return("")
       if (!requireNamespace("base64enc", quietly = TRUE)) return("")
-      tryCatch(
+      smiles_key <- if (!is.null(smiles) && !is.na(smiles) && nzchar(smiles)) smiles else ""
+      inchi_key <- if (!is.null(inchi) && !is.na(inchi) && nzchar(inchi)) inchi else ""
+      cache_key <- paste("structure", smiles_key, inchi_key, width, height, isTRUE(darkMode), sep = "||")
+      cache_get_or_set(cache_key, tryCatch(
         {
           svg <- rcpp_openbabel_structure_svg(
-            SMILES = if (!is.null(smiles) && !is.na(smiles) && nzchar(smiles)) smiles else NULL,
-            InChI = if (!is.null(inchi) && !is.na(inchi) && nzchar(inchi)) inchi else NULL,
+            SMILES = if (nzchar(smiles_key)) smiles_key else NULL,
+            InChI = if (nzchar(inchi_key)) inchi_key else NULL,
             width = as.integer(width),
             height = as.integer(height),
             darkMode = isTRUE(darkMode)
@@ -1447,7 +1526,7 @@
         error = function(e) {
           ""
         }
-      )
+      ))
     }
 
     # MARK: create_spectra_image
@@ -1456,7 +1535,8 @@
       if (!requireNamespace("base64enc", quietly = TRUE)) return("")
       if (!requireNamespace("ggplot2", quietly = TRUE)) return("")
       if (!capabilities("cairo")) return("")
-      tryCatch(
+      cache_key <- paste("suspect_spectra", analysis, feature, width, height, isTRUE(darkMode), sep = "||")
+      cache_get_or_set(cache_key, tryCatch(
         {
           sel <- data.table::data.table(analysis = analysis, feature = feature)
           p <- plot_suspects_ms2(
@@ -1470,16 +1550,19 @@
           if (is.null(p)) return("")
           temp_file <- tempfile(fileext = ".svg")
           grDevices::svg(filename = temp_file, width = width / 72, height = height / 72, bg = "transparent", onefile = TRUE)
+          on.exit({
+            try(grDevices::dev.off(), silent = TRUE)
+            unlink(temp_file)
+          }, add = TRUE)
           print(p)
           grDevices::dev.off()
           svg <- paste(readLines(temp_file, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
-          unlink(temp_file)
           svg_data_uri(normalize_inline_svg(svg))
         },
         error = function(e) {
           ""
         }
-      )
+      ))
     }
 
     create_feature_spectra_image <- function(nts, analysis, feature, width = 900, height = 450, darkMode = FALSE) {
@@ -1487,7 +1570,8 @@
       if (!requireNamespace("base64enc", quietly = TRUE)) return("")
       if (!requireNamespace("ggplot2", quietly = TRUE)) return("")
       if (!capabilities("cairo")) return("")
-      tryCatch(
+      cache_key <- paste("feature_spectra", analysis, feature, width, height, isTRUE(darkMode), sep = "||")
+      cache_get_or_set(cache_key, tryCatch(
         {
           sel <- data.table::data.table(analysis = analysis, feature = feature)
           p <- plot_features_ms2(
@@ -1500,16 +1584,19 @@
           if (is.null(p)) return("")
           temp_file <- tempfile(fileext = ".svg")
           grDevices::svg(filename = temp_file, width = width / 72, height = height / 72, bg = "transparent", onefile = TRUE)
+          on.exit({
+            try(grDevices::dev.off(), silent = TRUE)
+            unlink(temp_file)
+          }, add = TRUE)
           print(p)
           grDevices::dev.off()
           svg <- paste(readLines(temp_file, warn = FALSE, encoding = "UTF-8"), collapse = "\n")
-          unlink(temp_file)
           svg_data_uri(normalize_inline_svg(svg))
         },
         error = function(e) {
           ""
         }
-      )
+      ))
     }
 
     analyses_info <- shiny::reactive({
@@ -1533,664 +1620,60 @@
       spectra_mode <- match.arg(spectra_mode)
       dt <- data.table::copy(data.table::as.data.table(dt))
       if (nrow(dt) == 0) return(dt)
+      cache_key <- identification_table_cache_key(dt, spectra_mode = spectra_mode, darkMode = darkMode)
+      result <- cache_get_or_set(cache_key, {
+        dt <- add_replicates(dt)
 
-      dt <- add_replicates(dt)
-
-      smiles_vec <- if ("SMILES" %in% colnames(dt)) dt$SMILES else rep(NA_character_, nrow(dt))
-      inchi_vec <- if ("InChI" %in% colnames(dt)) dt$InChI else rep(NA_character_, nrow(dt))
-      dt$structure <- mapply(
-        function(smiles, inchi) {
-          img_uri <- create_structure_image(smiles, inchi, darkMode = darkMode)
+        smiles_vec <- if ("SMILES" %in% colnames(dt)) as.character(dt$SMILES) else rep("", nrow(dt))
+        inchi_vec <- if ("InChI" %in% colnames(dt)) as.character(dt$InChI) else rep("", nrow(dt))
+        structure_lookup <- unique(data.table::data.table(
+          SMILES = smiles_vec,
+          InChI = inchi_vec
+        ))
+        structure_lookup[, structure := vapply(seq_len(.N), function(i) {
+          img_uri <- create_structure_image(SMILES[i], InChI[i], darkMode = darkMode)
           if (!nzchar(img_uri)) return("")
           sprintf("<img class='suspect-structure-img' src='%s' alt=''/>", img_uri)
-        },
-        smiles_vec,
-        inchi_vec,
-        SIMPLIFY = TRUE,
-        USE.NAMES = FALSE
-      )
+        }, character(1))]
+        dt[, c("SMILES", "InChI") := .(smiles_vec, inchi_vec)]
+        dt <- structure_lookup[dt, on = .(SMILES, InChI)]
 
-      dt$spectra <- mapply(
-        function(analysis, feature) {
+        spectra_lookup <- unique(dt[, .(
+          analysis = as.character(analysis),
+          feature = as.character(feature)
+        )])
+        spectra_lookup[, spectra := vapply(seq_len(.N), function(i) {
           img_uri <- if (identical(spectra_mode, "suspect")) {
-            create_spectra_image(nts, analysis, feature, darkMode = darkMode)
+            create_spectra_image(nts, analysis[i], feature[i], darkMode = darkMode)
           } else {
-            create_feature_spectra_image(nts, analysis, feature, darkMode = darkMode)
+            create_feature_spectra_image(nts, analysis[i], feature[i], darkMode = darkMode)
           }
           if (!nzchar(img_uri)) return("")
           sprintf("<img class='suspect-spectra-img' src='%s' alt=''/>", img_uri)
-        },
-        dt$analysis,
-        dt$feature,
-        SIMPLIFY = TRUE,
-        USE.NAMES = FALSE
-      )
+        }, character(1))]
+        dt <- spectra_lookup[dt, on = .(analysis, feature)]
 
-      exclude_cols <- c(
-        "db_ms2_mz",
-        "db_ms2_intensity",
-        "db_ms2_formula",
-        "exp_ms2_mz",
-        "exp_ms2_intensity",
-        "created_at"
-      )
-      keep_cols <- setdiff(colnames(dt), exclude_cols)
-      base_cols <- c(
-        "structure", "name", "spectra", "analysis", "replicate",
-        "feature", "feature_component", "feature_group", "candidate_rank",
-        "id_level", "score", "shared_fragments", "cosine_similarity",
-        "formula", "InChIKey", "xLogP", "error_mass", "error_rt",
-        "db_ms2_size", "exp_ms2_size"
-      )
-      base_cols <- base_cols[base_cols %in% keep_cols]
-      rest_cols <- setdiff(keep_cols, base_cols)
-      dt[, c(base_cols, rest_cols), with = FALSE]
-    }
-
-    feature_network_key <- function(analysis, feature) {
-      paste(as.character(analysis), as.character(feature), sep = "||")
-    }
-
-    feature_network_format_num <- function(x, digits = 3) {
-      x <- suppressWarnings(as.numeric(x))
-      ifelse(is.finite(x), formatC(x, format = "f", digits = digits), "")
-    }
-
-    feature_network_flag <- function(x) {
-      !is.na(x) & as.logical(x)
-    }
-
-    feature_network_node_role <- function(annotation_category, adduct) {
-      annotation_category <- if (length(annotation_category) == 0 || is.na(annotation_category)) "" else trimws(as.character(annotation_category))
-      adduct <- if (length(adduct) == 0 || is.na(adduct)) "" else trimws(as.character(adduct))
-      if (identical(annotation_category, "isotope")) return("isotope")
-      if (identical(annotation_category, "adduct")) return("adduct")
-      if (identical(annotation_category, "loss")) return("loss")
-      if (adduct %in% c("[M+H]+", "[M-H]-")) return("precursor")
-      "feature"
-    }
-
-    feature_network_node_text <- function(role, adduct = "", annotation_type = "", annotation_element = "") {
-      role <- if (length(role) == 0 || is.na(role)) "" else trimws(as.character(role))
-      adduct <- if (length(adduct) == 0 || is.na(adduct)) "" else trimws(as.character(adduct))
-      annotation_type <- if (length(annotation_type) == 0 || is.na(annotation_type)) "" else trimws(as.character(annotation_type))
-      annotation_element <- if (length(annotation_element) == 0 || is.na(annotation_element)) "" else trimws(as.character(annotation_element))
-
-      if (identical(role, "isotope")) {
-        if (nzchar(annotation_element)) return(annotation_element)
-        if (nzchar(annotation_type)) return(annotation_type)
-        return("i")
-      }
-      if (identical(role, "adduct")) {
-        if (nzchar(annotation_type)) return(annotation_type)
-        if (nzchar(adduct)) return(adduct)
-        return("A")
-      }
-      if (identical(role, "loss")) {
-        if (nzchar(annotation_element)) return(annotation_element)
-        if (nzchar(annotation_type)) return(annotation_type)
-        return("L")
-      }
-      if (nzchar(adduct)) return(adduct)
-      "[M]"
-    }
-
-    feature_network_modal_table <- function(entries) {
-      entries <- Filter(function(x) {
-        val <- as.character(x$value)
-        !is.na(val) && nzchar(val)
-      }, entries)
-      if (length(entries) == 0) {
-        return("<div style='color:#666;'>No metadata available.</div>")
-      }
-      rows <- vapply(
-        entries,
-        function(item) {
-          paste0(
-            "<tr style='border-bottom:1px solid #ececec;'>",
-            "<td style='padding:4px 8px;font-weight:600;vertical-align:top;white-space:nowrap;'>",
-            htmltools::htmlEscape(item$label),
-            "</td>",
-            "<td style='padding:4px 8px;vertical-align:top;'>",
-            htmltools::htmlEscape(item$value),
-            "</td></tr>"
-          )
-        },
-        character(1)
-      )
-      paste0(
-        "<table style='width:100%;border-collapse:collapse;font-size:12px;'>",
-        paste(rows, collapse = ""),
-        "</table>"
-      )
-    }
-
-    build_feature_network_widget <- function(nodes, edges, widget_id) {
-      safe_id <- gsub("[^A-Za-z0-9_]+", "_", widget_id)
-
-      widget <- visNetwork::visNetwork(nodes, edges, height = "100%", width = "100%") %>%
-        visNetwork::visNodes(
-          font = list(size = 13, color = "#ffffff", face = "Arial", strokeWidth = 0, strokeColor = "rgba(0,0,0,0)"),
-          scaling = list(min = 10, max = 28),
-          shapeProperties = list(borderRadius = 2),
-          margin = 2,
-          chosen = FALSE
-        ) %>%
-        visNetwork::visEdges(
-          smooth = FALSE,
-          selectionWidth = 0,
-          hoverWidth = 0.6,
-          font = list(size = 1, color = "rgba(0,0,0,0)", face = "Arial", strokeWidth = 0, strokeColor = "rgba(0,0,0,0)"),
-          chosen = FALSE
-        ) %>%
-        visNetwork::visInteraction(hover = TRUE, hoverConnectedEdges = FALSE, navigationButtons = FALSE, tooltipDelay = 100) %>%
-        visNetwork::visPhysics(
-          enabled = TRUE,
-          stabilization = list(enabled = TRUE, iterations = 200),
-          solver = "forceAtlas2Based",
-          forceAtlas2Based = list(gravitationalConstant = -55, centralGravity = 0.01, springLength = 120, springConstant = 0.045, damping = 0.8)
-        ) %>%
-        visNetwork::visLayout(randomSeed = 123) %>%
-        visNetwork::visOptions(highlightNearest = list(enabled = TRUE, degree = 1, hover = TRUE))
-
-      on_render_js <- paste0(
-        "function(el, x) {
-          var network = this;
-          if (!el) return;
-          el.style.position = 'relative';
-          var styleId = 'sf-nta-net-style-%1$s';
-          if (!document.getElementById(styleId)) {
-            var style = document.createElement('style');
-            style.id = styleId;
-            style.textContent =
-              '.sf-nta-net-modal-overlay-%1$s{display:none;position:fixed;inset:0;background:rgba(20,26,38,0.35);z-index:9998;align-items:center;justify-content:center;}' +
-              '.sf-nta-net-modal-%1$s{width:88vw;height:82vh;background:#fff;border-radius:8px;box-shadow:0 20px 50px rgba(0,0,0,0.28);display:flex;flex-direction:column;overflow:hidden;}' +
-              '.sf-nta-net-modal-header-%1$s{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #e3e3e3;background:#fafafa;}' +
-              '.sf-nta-net-modal-title-%1$s{font-size:15px;font-weight:600;color:#1f2937;}' +
-              '.sf-nta-net-modal-close-%1$s{border:none;background:transparent;font-size:22px;line-height:1;cursor:pointer;color:#666;}' +
-              '.sf-nta-net-modal-content-%1$s{flex:1 1 auto;min-height:0;overflow:auto;padding:10px 14px;background:#fff;}' +
-              '.sf-nta-net-legend-%1$s{position:absolute;right:8px;top:8px;z-index:20;background:transparent;border:none;border-radius:0;padding:0;font-size:11px;color:#1f2937;}' +
-              '.sf-nta-net-legend-row-%1$s{display:flex;align-items:center;gap:6px;white-space:nowrap;}' +
-              '.sf-nta-net-legend-row-%1$s + .sf-nta-net-legend-row-%1$s{margin-top:4px;}' +
-              '.sf-nta-net-legend-box-%1$s{width:14px;height:14px;border-radius:2px;border:1px solid currentColor;display:inline-flex;align-items:center;justify-content:center;font-size:9px;font-weight:700;line-height:1;}';
-            document.head.appendChild(style);
-          }
-          var overlayId = 'sf-nta-net-overlay-%1$s';
-          var overlay = document.getElementById(overlayId);
-          if (!overlay) {
-            overlay = document.createElement('div');
-            overlay.id = overlayId;
-            overlay.className = 'sf-nta-net-modal-overlay-%1$s';
-            overlay.innerHTML =
-              '<div class=\"sf-nta-net-modal-%1$s\">' +
-              '<div class=\"sf-nta-net-modal-header-%1$s\">' +
-              '<div class=\"sf-nta-net-modal-title-%1$s\">Node Details</div>' +
-              '<button type=\"button\" class=\"sf-nta-net-modal-close-%1$s\">×</button>' +
-              '</div>' +
-              '<div class=\"sf-nta-net-modal-content-%1$s\"></div>' +
-              '</div>';
-            document.body.appendChild(overlay);
-            overlay.addEventListener('click', function(e){ if (e.target === overlay) overlay.style.display = 'none'; });
-            overlay.querySelector('.sf-nta-net-modal-close-%1$s').addEventListener('click', function(){ overlay.style.display = 'none'; });
-          }
-          if (!el.querySelector('.sf-nta-net-legend-%1$s')) {
-            var legend = document.createElement('div');
-            legend.className = 'sf-nta-net-legend-%1$s';
-            legend.innerHTML =
-              '<div class=\"sf-nta-net-legend-row-%1$s\"><span class=\"sf-nta-net-legend-box-%1$s\" style=\"color:#166534;background:#166534;\">F</span><span>feature</span></div>' +
-              '<div class=\"sf-nta-net-legend-row-%1$s\"><span class=\"sf-nta-net-legend-box-%1$s\" style=\"color:#6b7280;background:#6b7280;\"> i </span><span>isotope</span></div>' +
-              '<div class=\"sf-nta-net-legend-row-%1$s\"><span class=\"sf-nta-net-legend-box-%1$s\" style=\"color:#1e3a8a;background:#1e3a8a;\">A</span><span>adduct</span></div>' +
-              '<div class=\"sf-nta-net-legend-row-%1$s\"><span class=\"sf-nta-net-legend-box-%1$s\" style=\"color:#991b1b;background:#991b1b;\">L</span><span>loss</span></div>';
-            el.appendChild(legend);
-          }
-          function shadeColor(hex, alpha) {
-            return { background: hex, border: hex, highlight: { background: hex, border: hex }, hover: { background: hex, border: hex } };
-          }
-          function emphasizeNode(nodeId, scale) {
-            if (!nodeId || !network.body || !network.body.data || !network.body.data.nodes) return;
-            var node = null;
-            try { node = network.body.data.nodes.get(nodeId); } catch(e) { node = null; }
-            if (!node) return;
-            var baseValue = (typeof node.base_value === 'number' && isFinite(node.base_value)) ? node.base_value : node.value;
-            var baseColor = node.base_background || '#64748b';
-            var baseBorder = node.base_border || baseColor;
-            network.body.data.nodes.update({
-              id: nodeId,
-              value: baseValue * scale,
-              color: {
-                background: baseColor,
-                border: baseBorder,
-                highlight: { background: baseColor, border: baseBorder },
-                hover: { background: baseColor, border: baseBorder }
-              },
-              shadow: { enabled: true, color: node.shadow_color || 'rgba(0,0,0,0.22)', size: 20, x: 0, y: 0 }
-            });
-          }
-          function resetNode(nodeId) {
-            if (!nodeId || !network.body || !network.body.data || !network.body.data.nodes) return;
-            var node = null;
-            try { node = network.body.data.nodes.get(nodeId); } catch(e) { node = null; }
-            if (!node) return;
-            var baseValue = (typeof node.base_value === 'number' && isFinite(node.base_value)) ? node.base_value : node.value;
-            var baseColor = node.base_background || '#64748b';
-            var baseBorder = node.base_border || baseColor;
-            var seedShadow = !!node.is_seed;
-            network.body.data.nodes.update({
-              id: nodeId,
-              value: baseValue,
-              color: {
-                background: baseColor,
-                border: baseBorder,
-                highlight: { background: baseColor, border: baseBorder },
-                hover: { background: baseColor, border: baseBorder }
-              },
-              shadow: seedShadow ? { enabled: true, color: node.shadow_color || 'rgba(0,0,0,0.22)', size: 18, x: 0, y: 0 } : false
-            });
-          }
-          function emphasizeEdge(edgeId, scale) {
-            if (!edgeId || !network.body || !network.body.data || !network.body.data.edges) return;
-            var edge = null;
-            try { edge = network.body.data.edges.get(edgeId); } catch(e) { edge = null; }
-            if (!edge) return;
-            var baseWidth = (typeof edge.base_width === 'number' && isFinite(edge.base_width)) ? edge.base_width : edge.width;
-            var baseColor = edge.base_color || '#64748b';
-            network.body.data.edges.update({
-              id: edgeId,
-              width: baseWidth * scale,
-              color: { color: baseColor, highlight: baseColor, hover: baseColor }
-            });
-          }
-          function resetEdge(edgeId) {
-            if (!edgeId || !network.body || !network.body.data || !network.body.data.edges) return;
-            var edge = null;
-            try { edge = network.body.data.edges.get(edgeId); } catch(e) { edge = null; }
-            if (!edge) return;
-            var baseWidth = (typeof edge.base_width === 'number' && isFinite(edge.base_width)) ? edge.base_width : edge.width;
-            var baseColor = edge.base_color || '#64748b';
-            network.body.data.edges.update({
-              id: edgeId,
-              width: baseWidth,
-              color: { color: baseColor, highlight: baseColor, hover: baseColor }
-            });
-          }
-          network.off && network.off('hoverNode');
-          network.off && network.off('blurNode');
-          network.on('hoverNode', function(params) {
-            emphasizeNode(params.node, 1.18);
-            var conn = network.getConnectedEdges(params.node) || [];
-            for (var i = 0; i < conn.length; i++) emphasizeEdge(conn[i], 1.18);
-          });
-          network.on('blurNode', function(params) {
-            resetNode(params.node);
-            var conn = network.getConnectedEdges(params.node) || [];
-            for (var i = 0; i < conn.length; i++) resetEdge(conn[i]);
-          });
-          network.off && network.off('hoverEdge');
-          network.off && network.off('blurEdge');
-          network.on('hoverEdge', function(params) { emphasizeEdge(params.edge, 1.18); });
-          network.on('blurEdge', function(params) { resetEdge(params.edge); });
-          network.off && network.off('selectNode');
-          network.on('selectNode', function(params) {
-            if (!params.nodes || !params.nodes.length) return;
-            emphasizeNode(params.nodes[0], 1.22);
-            var conn = network.getConnectedEdges(params.nodes[0]) || [];
-            for (var i = 0; i < conn.length; i++) emphasizeEdge(conn[i], 1.22);
-            var node = null;
-            try { node = network.body.data.nodes.get(params.nodes[0]); } catch(e) { node = null; }
-            if (!node) return;
-            var titleEl = overlay.querySelector('.sf-nta-net-modal-title-%1$s');
-            var contentEl = overlay.querySelector('.sf-nta-net-modal-content-%1$s');
-            if (titleEl) titleEl.textContent = node.node_label || node.label || node.id || 'Node Details';
-            if (contentEl) contentEl.innerHTML = node.overview_html || '<div style=\"color:#666;\">No metadata available.</div>';
-            overlay.style.display = 'flex';
-          });
-          network.off && network.off('deselectNode');
-          network.on('deselectNode', function(params) {
-            var prev = (params.previousSelection && params.previousSelection.nodes) ? params.previousSelection.nodes : [];
-            for (var i = 0; i < prev.length; i++) {
-              resetNode(prev[i]);
-              var conn = network.getConnectedEdges(prev[i]) || [];
-              for (var j = 0; j < conn.length; j++) resetEdge(conn[j]);
-            }
-          });
-        }"
-      )
-      on_render_js <- gsub("%1$s", safe_id, on_render_js, fixed = TRUE)
-      widget <- htmlwidgets::onRender(widget, on_render_js)
-      widget
-    }
-
-    build_feature_network_data <- function(feature_dt, selected_rows, selection_mode = "feature", internal_standard_dt = NULL) {
-      fts <- data.table::copy(data.table::as.data.table(feature_dt))
-      if (nrow(fts) == 0 || is.null(selected_rows) || nrow(selected_rows) == 0) {
-        return(NULL)
-      }
-      if (!all(c("analysis", "feature") %in% colnames(fts))) {
-        return(NULL)
-      }
-
-      fts$analysis <- as.character(fts$analysis)
-      fts$feature <- as.character(fts$feature)
-      if ("feature_component" %in% colnames(fts)) fts$feature_component <- as.character(fts$feature_component)
-      if ("feature_group" %in% colnames(fts)) fts$feature_group <- as.character(fts$feature_group)
-      fts$node_id <- feature_network_key(fts$analysis, fts$feature)
-
-      seeds <- data.table::copy(data.table::as.data.table(selected_rows))
-      if (!all(c("analysis", "feature") %in% colnames(seeds))) {
-        return(NULL)
-      }
-      seeds$analysis <- as.character(seeds$analysis)
-      seeds$feature <- as.character(seeds$feature)
-      seeds$node_id <- feature_network_key(seeds$analysis, seeds$feature)
-      seed_ids <- unique(seeds$node_id)
-      seed_dt <- fts[node_id %in% seed_ids]
-      if (nrow(seed_dt) == 0) {
-        return(NULL)
-      }
-
-      display_dt <- switch(
-        selection_mode,
-        feature_component = {
-          comps <- unique(seed_dt$feature_component)
-          comps <- comps[!is.na(comps) & nzchar(comps)]
-          if (length(comps) == 0) seed_dt else fts[feature_component %in% comps & analysis %in% unique(seed_dt$analysis)]
-        },
-        feature_group = {
-          groups <- unique(seed_dt$feature_group)
-          groups <- groups[!is.na(groups) & nzchar(groups)]
-          group_members <- if (length(groups) == 0) seed_dt else fts[feature_group %in% groups]
-          comps <- unique(group_members$feature_component)
-          comps <- comps[!is.na(comps) & nzchar(comps)]
-          component_neighbors <- if (length(comps) == 0) group_members else fts[feature_component %in% comps & analysis %in% unique(group_members$analysis)]
-          unique(data.table::rbindlist(list(group_members, component_neighbors), fill = TRUE), by = "node_id")
-        },
-        {
-          comps <- unique(seed_dt$feature_component)
-          comps <- comps[!is.na(comps) & nzchar(comps)]
-          if (length(comps) == 0) seed_dt else fts[feature_component %in% comps & analysis %in% unique(seed_dt$analysis)]
-        }
-      )
-
-      if (nrow(display_dt) == 0) {
-        return(NULL)
-      }
-
-      display_dt$is_seed <- identical(selection_mode, "feature") & (display_dt$node_id %in% seed_ids)
-      display_dt$is_group_primary <- FALSE
-      if (identical(selection_mode, "feature_group") && "feature_group" %in% colnames(display_dt) && "feature_group" %in% colnames(seed_dt)) {
-        seed_groups <- unique(seed_dt$feature_group)
-        seed_groups <- seed_groups[!is.na(seed_groups) & nzchar(seed_groups)]
-        display_dt$is_group_primary <- display_dt$feature_group %in% seed_groups
-      }
-
-      if (!is.null(internal_standard_dt) && nrow(internal_standard_dt) > 0) {
-        istd <- data.table::copy(data.table::as.data.table(internal_standard_dt))
-        if (all(c("analysis", "feature") %in% colnames(istd))) {
-          istd$analysis <- as.character(istd$analysis)
-          istd$feature <- as.character(istd$feature)
-          keep_cols <- intersect(
-            c("analysis", "feature", "name", "formula", "SMILES", "InChIKey", "score", "candidate_rank", "id_level", "cosine_similarity", "shared_fragments", "error_mass", "error_rt"),
-            colnames(istd)
-          )
-          if (length(keep_cols) > 2) {
-            istd <- unique(istd[, ..keep_cols], by = c("analysis", "feature"))
-            display_dt <- merge(display_dt, istd, by = c("analysis", "feature"), all.x = TRUE, suffixes = c("", "_istd"), sort = FALSE)
-          }
-        }
-      }
-
-      display_dt[, annotation_category_chr := if ("annotation_category" %in% colnames(display_dt)) as.character(annotation_category) else ""]
-      display_dt[, annotation_parent_feature_chr := if ("annotation_parent_feature" %in% colnames(display_dt)) as.character(annotation_parent_feature) else ""]
-      display_dt[, role := mapply(feature_network_node_role, annotation_category_chr, if ("adduct" %in% colnames(display_dt)) adduct else "", USE.NAMES = FALSE)]
-      display_dt[, is_precursor_like := role %in% c("precursor", "feature")]
-      display_dt[, is_main_ion := is_precursor_like & ("adduct" %in% colnames(display_dt)) & adduct %in% c("[M+H]+", "[M-H]-")]
-
-      resolve_annotation_parent <- function(row) {
-        parent_feature <- as.character(row$annotation_parent_feature_chr)
-        if (!nzchar(parent_feature)) return(NULL)
-        parent <- display_dt[analysis == row$analysis & feature == parent_feature]
-        if (nrow(parent) == 0) return(NULL)
-        parent[1]
-      }
-
-      edge_rows <- list()
-      push_edge <- function(from_id, to_id, category, score, label) {
-        if (!nzchar(from_id) || !nzchar(to_id) || identical(from_id, to_id)) return()
-        edge_rows[[length(edge_rows) + 1]] <<- data.table::data.table(
-          from = from_id,
-          to = to_id,
-          edge_category = category,
-          score = score,
-          edge_label = label
+        exclude_cols <- c(
+          "db_ms2_mz",
+          "db_ms2_intensity",
+          "db_ms2_formula",
+          "exp_ms2_mz",
+          "exp_ms2_intensity",
+          "created_at"
         )
-      }
-
-      for (i in seq_len(nrow(display_dt))) {
-        child <- display_dt[i]
-        child_cat <- as.character(child$annotation_category_chr)
-        if (!child_cat %in% c("isotope", "adduct", "loss")) next
-        parent <- resolve_annotation_parent(child)
-        if (is.null(parent) || nrow(parent) == 0) next
-        child_score <- if ("annotation_score" %in% colnames(display_dt)) suppressWarnings(as.numeric(child$annotation_score[[1]])) else NA_real_
-        if (!is.finite(child_score)) child_score <- 0
-        push_edge(
-          as.character(parent$node_id),
-          as.character(child$node_id),
-          child_cat,
-          child_score,
-          paste0(child_cat, " ", as.character(child$annotation_type))
+        keep_cols <- setdiff(colnames(dt), exclude_cols)
+        base_cols <- c(
+          "structure", "name", "spectra", "analysis", "replicate",
+          "feature", "feature_component", "feature_group", "candidate_rank",
+          "id_level", "score", "shared_fragments", "cosine_similarity",
+          "formula", "InChIKey", "xLogP", "error_mass", "error_rt",
+          "db_ms2_size", "exp_ms2_size"
         )
-      }
-
-      if (identical(selection_mode, "feature_group") && "feature_group" %in% colnames(display_dt)) {
-        valid_group_dt <- display_dt[!is.na(feature_group) & nzchar(feature_group) & is_main_ion %in% TRUE]
-        group_groups <- split(valid_group_dt, valid_group_dt$feature_group)
-        for (grp in group_groups) {
-          if (nrow(grp) < 2) next
-          idx <- utils::combn(seq_len(nrow(grp)), 2)
-          for (j in seq_len(ncol(idx))) {
-            a <- grp[idx[1, j]]
-            b <- grp[idx[2, j]]
-            push_edge(a$node_id, b$node_id, "group", 0.55, "same annotated group")
-          }
-        }
-      }
-
-      edges <- if (length(edge_rows) == 0) {
-        data.table::data.table(from = character(0), to = character(0), edge_category = character(0), score = numeric(0), edge_label = character(0))
-      } else {
-        data.table::rbindlist(edge_rows, fill = TRUE)
-      }
-
-      if (nrow(edges) > 0) {
-        pair_sep <- "<<<PAIR>>>"
-        edges[, pair_id := ifelse(from < to, paste(from, to, sep = pair_sep), paste(to, from, sep = pair_sep))]
-        edges <- edges[, .(
-          categories = paste(unique(edge_category), collapse = "|"),
-          score = max(score, na.rm = TRUE),
-          edge_label = paste(unique(edge_label), collapse = " | ")
-        ), by = pair_id]
-        edges[!is.finite(score), score := 0]
-        edges[, c("from", "to") := tstrsplit(pair_id, pair_sep, fixed = TRUE)]
-        edges[, primary_category := fifelse(grepl("isotope", categories, fixed = TRUE), "isotope",
-          fifelse(grepl("adduct", categories, fixed = TRUE), "adduct",
-            fifelse(grepl("loss", categories, fixed = TRUE), "loss", "group")))]
-        edges[, score_clamped := pmin(pmax(score, 0), 1)]
-        edges[, length := fifelse(
-          primary_category == "group",
-          220,
-          fifelse(
-            primary_category == "isotope",
-            70 + (1 - score_clamped) * 90,
-            fifelse(
-              primary_category == "adduct",
-              85 + (1 - score_clamped) * 95,
-              95 + (1 - score_clamped) * 105
-            )
-          )
-        )]
-        edges[, width := fifelse(primary_category == "isotope", 2.6,
-          fifelse(primary_category == "adduct", 2.3,
-            fifelse(primary_category == "loss", 2.1, 1.6)))]
-        edges[, dashes := primary_category %in% c("group", "loss")]
-        edges[, color := fifelse(primary_category == "isotope", "#6b7280",
-          fifelse(primary_category == "adduct", "#1e3a8a",
-            fifelse(primary_category == "loss", "#991b1b", "#64748b")))]
-        edges[, title := paste0(edge_label, " | score=", feature_network_format_num(score, 3))]
-        edges[, label := ""]
-        edges[, base_width := width]
-        edges[, base_color := color]
-        edges <- edges[, .(from, to, label, title, width, length, dashes, base_width, base_color, color = lapply(color, function(x) list(color = x, highlight = x, hover = x))), ]
-      }
-
-      connected_ids <- if (nrow(edges) > 0) unique(c(edges$from, edges$to)) else character(0)
-      display_dt[, has_graph_edge := node_id %in% connected_ids]
-
-      display_dt[, node_group := fifelse(role == "isotope", "isotope",
-        fifelse(role == "adduct", "adduct",
-          fifelse(role == "loss", "loss", "feature")))]
-      node_color <- c(
-        feature = "#166534",
-        isotope = "#6b7280",
-        adduct = "#1e3a8a",
-        loss = "#991b1b"
-      )
-      node_border <- c(
-        feature = "#14532d",
-        isotope = "#4b5563",
-        adduct = "#1e40af",
-        loss = "#7f1d1d"
-      )
-      display_dt[, label := mapply(
-        feature_network_node_text,
-        role,
-        if ("adduct" %in% colnames(display_dt)) adduct else "",
-        if ("annotation_type" %in% colnames(display_dt)) annotation_type else "",
-        if ("annotation_element" %in% colnames(display_dt)) annotation_element else "",
-        USE.NAMES = FALSE
-      )]
-      display_dt[, value := pmax(14, pmin(26, 12 + log10(pmax(1, as.numeric(intensity))) * 2.2))]
-      display_dt[, title := paste0(
-        "<b>", htmltools::htmlEscape(feature), "</b><br>",
-        "analysis: ", htmltools::htmlEscape(analysis), "<br>",
-        "role: ", htmltools::htmlEscape(role), "<br>",
-        "component: ", htmltools::htmlEscape(if ("feature_component" %in% colnames(display_dt)) feature_component else ""), "<br>",
-        "group: ", htmltools::htmlEscape(if ("feature_group" %in% colnames(display_dt)) feature_group else ""), "<br>",
-        "mass: ", feature_network_format_num(mass, 4), "<br>",
-        "rt: ", feature_network_format_num(rt, 2), "<br>",
-        "intensity: ", feature_network_format_num(intensity, 0), "<br>",
-        "adduct: ", htmltools::htmlEscape(if ("adduct" %in% colnames(display_dt)) adduct else ""), "<br>",
-        "element: ", htmltools::htmlEscape(if ("annotation_element" %in% colnames(display_dt)) as.character(annotation_element) else ""), "<br>",
-        "dev_ppm: ", feature_network_format_num(if ("annotation_mass_error_ppm" %in% colnames(display_dt)) annotation_mass_error_ppm else NA_real_, 3), "<br>",
-        "dev_rt: ", feature_network_format_num(if ("annotation_rt_error" %in% colnames(display_dt)) annotation_rt_error else NA_real_, 3), "<br>",
-        "connected: ", ifelse(has_graph_edge, "yes", "no")
-      )]
-
-      display_dt[, overview_html := mapply(
-        function(feature, analysis, feature_component, feature_group, mass, rt, intensity, adduct,
-                 annotation_category, annotation_type, annotation_parent_feature, annotation_element,
-                 annotation_mass_error_ppm, annotation_rt_error, annotation_rel_intensity,
-                 component_size, component_rt_center, component_rt_spread, component_density,
-                 component_mean_correlation, component_best_partner, component_max_correlation,
-                 component_mean_correlation_to_component, component_membership_score,
-                 component_is_core, component_bridge_flag, name, formula, score, candidate_rank,
-                 id_level, cosine_similarity, shared_fragments, error_mass, error_rt) {
-          entries <- list(
-            list(label = "Feature", value = as.character(feature)),
-            list(label = "Analysis", value = as.character(analysis)),
-            list(label = "Component", value = as.character(feature_component)),
-            list(label = "Group", value = as.character(feature_group)),
-            list(label = "Mass", value = feature_network_format_num(mass, 4)),
-            list(label = "RT", value = feature_network_format_num(rt, 2)),
-            list(label = "Intensity", value = feature_network_format_num(intensity, 0)),
-            list(label = "Adduct", value = as.character(adduct)),
-            list(label = "Annotation Category", value = as.character(annotation_category)),
-            list(label = "Annotation Type", value = as.character(annotation_type)),
-            list(label = "Annotation Parent", value = as.character(annotation_parent_feature)),
-            list(label = "Element", value = as.character(annotation_element)),
-            list(label = "dev_ppm", value = feature_network_format_num(annotation_mass_error_ppm, 3)),
-            list(label = "dev_rt", value = feature_network_format_num(annotation_rt_error, 3)),
-            list(label = "Annotation Rel Intensity", value = feature_network_format_num(annotation_rel_intensity, 3)),
-            list(label = "Component Size", value = feature_network_format_num(component_size, 0)),
-            list(label = "Component RT Center", value = feature_network_format_num(component_rt_center, 2)),
-            list(label = "Component RT Spread", value = feature_network_format_num(component_rt_spread, 2)),
-            list(label = "Component Density", value = feature_network_format_num(component_density, 3)),
-            list(label = "Component Mean Corr", value = feature_network_format_num(component_mean_correlation, 3)),
-            list(label = "Best Partner", value = as.character(component_best_partner)),
-            list(label = "Max Corr", value = feature_network_format_num(component_max_correlation, 3)),
-            list(label = "Mean Corr To Component", value = feature_network_format_num(component_mean_correlation_to_component, 3)),
-            list(label = "Membership Score", value = feature_network_format_num(component_membership_score, 3)),
-            list(label = "Core", value = ifelse(feature_network_flag(component_is_core), "TRUE", "")),
-            list(label = "Bridge", value = ifelse(feature_network_flag(component_bridge_flag), "TRUE", "")),
-            list(label = "Name", value = as.character(name)),
-            list(label = "Formula", value = as.character(formula)),
-            list(label = "Score", value = feature_network_format_num(score, 3)),
-            list(label = "Candidate Rank", value = feature_network_format_num(candidate_rank, 0)),
-            list(label = "ID Level", value = feature_network_format_num(id_level, 0)),
-            list(label = "Cosine Similarity", value = feature_network_format_num(cosine_similarity, 3)),
-            list(label = "Shared Fragments", value = feature_network_format_num(shared_fragments, 0)),
-            list(label = "Mass Error", value = feature_network_format_num(error_mass, 3)),
-            list(label = "RT Error", value = feature_network_format_num(error_rt, 3))
-          )
-          feature_network_modal_table(entries)
-        },
-        feature, analysis,
-        if ("feature_component" %in% colnames(display_dt)) feature_component else "",
-        if ("feature_group" %in% colnames(display_dt)) feature_group else "",
-        if ("mass" %in% colnames(display_dt)) mass else NA_real_,
-        if ("rt" %in% colnames(display_dt)) rt else NA_real_,
-        if ("intensity" %in% colnames(display_dt)) intensity else NA_real_,
-        if ("adduct" %in% colnames(display_dt)) adduct else "",
-        if ("annotation_category" %in% colnames(display_dt)) annotation_category else "",
-        if ("annotation_type" %in% colnames(display_dt)) annotation_type else "",
-        if ("annotation_parent_feature" %in% colnames(display_dt)) annotation_parent_feature else "",
-        if ("annotation_element" %in% colnames(display_dt)) annotation_element else "",
-        if ("annotation_mass_error_ppm" %in% colnames(display_dt)) annotation_mass_error_ppm else NA_real_,
-        if ("annotation_rt_error" %in% colnames(display_dt)) annotation_rt_error else NA_real_,
-        if ("annotation_rel_intensity" %in% colnames(display_dt)) annotation_rel_intensity else NA_real_,
-        if ("component_size" %in% colnames(display_dt)) component_size else NA_real_,
-        if ("component_rt_center" %in% colnames(display_dt)) component_rt_center else NA_real_,
-        if ("component_rt_spread" %in% colnames(display_dt)) component_rt_spread else NA_real_,
-        if ("component_density" %in% colnames(display_dt)) component_density else NA_real_,
-        if ("component_mean_correlation" %in% colnames(display_dt)) component_mean_correlation else NA_real_,
-        if ("component_best_partner" %in% colnames(display_dt)) component_best_partner else "",
-        if ("component_max_correlation" %in% colnames(display_dt)) component_max_correlation else NA_real_,
-        if ("component_mean_correlation_to_component" %in% colnames(display_dt)) component_mean_correlation_to_component else NA_real_,
-        if ("component_membership_score" %in% colnames(display_dt)) component_membership_score else NA_real_,
-        if ("component_is_core" %in% colnames(display_dt)) component_is_core else FALSE,
-        if ("component_bridge_flag" %in% colnames(display_dt)) component_bridge_flag else FALSE,
-        if ("name" %in% colnames(display_dt)) name else "",
-        if ("formula" %in% colnames(display_dt)) formula else "",
-        if ("score" %in% colnames(display_dt)) score else NA_real_,
-        if ("candidate_rank" %in% colnames(display_dt)) candidate_rank else NA_real_,
-        if ("id_level" %in% colnames(display_dt)) id_level else NA_real_,
-        if ("cosine_similarity" %in% colnames(display_dt)) cosine_similarity else NA_real_,
-        if ("shared_fragments" %in% colnames(display_dt)) shared_fragments else NA_real_,
-        if ("error_mass" %in% colnames(display_dt)) error_mass else NA_real_,
-        if ("error_rt" %in% colnames(display_dt)) error_rt else NA_real_,
-        SIMPLIFY = TRUE,
-        USE.NAMES = FALSE
-      )]
-
-      nodes <- display_dt[, .(
-        id = node_id,
-        label,
-        title,
-        value,
-        base_value = value,
-        shape = "box",
-        base_background = unname(node_color[node_group]),
-        base_border = unname(node_border[node_group]),
-        color = Map(function(bg, border) list(background = bg, border = border, highlight = list(background = bg, border = border), hover = list(background = bg, border = border)), node_color[node_group], node_border[node_group]),
-        borderWidth = ifelse(is_seed, 4, 2),
-        is_seed = is_seed,
-        shadow_color = ifelse(is_seed, "rgba(217,119,6,0.28)", "rgba(15,23,42,0.22)"),
-        shadow = Map(function(flag) if (isTRUE(flag)) list(enabled = TRUE, color = "rgba(217,119,6,0.28)", size = 18, x = 0, y = 0) else FALSE, is_seed),
-        node_label = feature,
-        overview_html
-      )]
-
-      list(nodes = nodes, edges = edges, selected_count = nrow(seed_dt))
+        base_cols <- base_cols[base_cols %in% keep_cols]
+        rest_cols <- setdiff(keep_cols, base_cols)
+        dt[, c(base_cols, rest_cols), with = FALSE]
+      })
+      data.table::copy(result)
     }
 
     metrics_summary_table <- function(dt) {
@@ -3006,18 +2489,12 @@
 
     output$feature_network_plot_scatter <- visNetwork::renderVisNetwork({
       args <- feature_network_args()
-      do.call(
-        map_components,
-        c(
-          list(
-            x = nta_data(),
-            showLegend = TRUE,
-            showDetails = TRUE,
-            interactive = TRUE,
-            darkMode = dark_mode()
-          ),
-          args
-        )
+      map_components_widget_cached(
+        nts = nta_data(),
+        args = args,
+        darkMode = dark_mode(),
+        showLegend = TRUE,
+        showDetails = TRUE
       )
     })
 
@@ -3509,18 +2986,12 @@
 
     output$internal_standard_network_plot <- visNetwork::renderVisNetwork({
       args <- internal_standard_network_args()
-      do.call(
-        map_components,
-        c(
-          list(
-            x = nta_data(),
-            showLegend = TRUE,
-            showDetails = TRUE,
-            interactive = TRUE,
-            darkMode = dark_mode()
-          ),
-          args
-        )
+      map_components_widget_cached(
+        nts = nta_data(),
+        args = args,
+        darkMode = dark_mode(),
+        showLegend = TRUE,
+        showDetails = TRUE
       )
     })
 
@@ -3739,7 +3210,13 @@
       if (nrow(suspects) == 0) {
         shiny::validate(shiny::need(FALSE, "No suspects available."))
       }
-      suspects <- suspects[analysis %in% sel$analysis & feature %in% sel$feature, ]
+      sel <- unique(data.table::as.data.table(sel)[, .(
+        analysis = as.character(analysis),
+        feature = as.character(feature)
+      )])
+      suspects[, analysis := as.character(analysis)]
+      suspects[, feature := as.character(feature)]
+      suspects <- suspects[sel, on = .(analysis, feature), nomatch = 0]
       shiny::validate(shiny::need(nrow(suspects) > 0, "No suspects available for selected features."))
 
       suspects <- build_identification_table(suspects, nts, darkMode = dark_mode(), spectra_mode = "suspect")

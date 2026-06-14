@@ -3876,33 +3876,13 @@ map_components.ProjectNonTargetAnalysis <- function(
     stop("visNetwork package is required for this function.")
   }
 
-  if (isTRUE(filtered)) {
-    all_dt <- data.table::as.data.table(
-      get_features(
-        x,
-        analyses = analyses,
-        filtered = TRUE
-      )
+  all_dt <- data.table::as.data.table(
+    get_features(
+      x,
+      analyses = analyses,
+      filtered = TRUE
     )
-  } else {
-    all_dt_false <- data.table::as.data.table(
-      get_features(
-        x,
-        analyses = analyses,
-        filtered = FALSE
-      )
-    )
-    all_dt_true <- data.table::as.data.table(
-      get_features(
-        x,
-        analyses = analyses,
-        filtered = TRUE
-      )
-    )
-    all_dt_false[, .filtered_source_priority := 0L]
-    all_dt_true[, .filtered_source_priority := 1L]
-    all_dt <- data.table::rbindlist(list(all_dt_true, all_dt_false), fill = TRUE, use.names = TRUE)
-  }
+  )
   if (nrow(all_dt) == 0) {
     message("\u2717 No network data available for the current selection.")
     return(invisible(NULL))
@@ -3916,23 +3896,59 @@ map_components.ProjectNonTargetAnalysis <- function(
     paste(as.character(analysis), as.character(feature), sep = "||")
   }
 
-  seed_raw <- data.table::as.data.table(
-    get_features(
-      x,
-      analyses = analyses,
-      features = features,
-      groups = groups,
-      components = components,
-      mass = mass,
-      mz = mz,
-      rt = rt,
-      mobility = mobility,
-      ppm = ppm,
-      sec = sec,
-      millisec = millisec,
-      filtered = filtered
+  if (!"filtered" %in% colnames(all_dt)) {
+    all_dt[, filtered := FALSE]
+  }
+
+  can_subset_seed_locally <- is.null(mass) && is.null(mz) && is.null(rt) && is.null(mobility)
+  if (can_subset_seed_locally) {
+    seed_raw <- data.table::copy(all_dt)
+    if (!is.null(features)) {
+      features_dt <- data.table::as.data.table(features)
+      if (nrow(features_dt) > 0) {
+        if ("analysis" %in% colnames(features_dt) && "feature" %in% colnames(features_dt)) {
+          features_dt[, analysis := as.character(analysis)]
+          features_dt[, feature := as.character(feature)]
+          seed_raw <- seed_raw[features_dt, on = .(analysis, feature), nomatch = 0]
+        } else if ("feature" %in% colnames(features_dt)) {
+          seed_raw <- seed_raw[feature %in% as.character(features_dt$feature)]
+        } else {
+          seed_raw <- seed_raw[feature %in% as.character(unlist(features_dt, use.names = FALSE))]
+        }
+      } else {
+        seed_raw <- seed_raw[0]
+      }
+    }
+    if (!is.null(groups)) {
+      group_vals <- as.character(unlist(groups, use.names = FALSE))
+      seed_raw <- seed_raw[feature_group %in% group_vals]
+    }
+    if (!is.null(components)) {
+      component_vals <- as.character(unlist(components, use.names = FALSE))
+      seed_raw <- seed_raw[feature_component %in% component_vals]
+    }
+    if (!isTRUE(filtered)) {
+      seed_raw <- seed_raw[is.na(filtered) | !filtered]
+    }
+  } else {
+    seed_raw <- data.table::as.data.table(
+      get_features(
+        x,
+        analyses = analyses,
+        features = features,
+        groups = groups,
+        components = components,
+        mass = mass,
+        mz = mz,
+        rt = rt,
+        mobility = mobility,
+        ppm = ppm,
+        sec = sec,
+        millisec = millisec,
+        filtered = filtered
+      )
     )
-  )
+  }
   if (nrow(seed_raw) == 0) {
     message("\u2717 No network seed rows found for the current selection.")
     return(invisible(NULL))
@@ -3971,11 +3987,6 @@ map_components.ProjectNonTargetAnalysis <- function(
   all_dt[, InChIKey := as.character(InChIKey)]
   all_dt[, polarity := as.character(polarity)]
   all_dt[, node_id := feature_network_key(analysis, feature)]
-  if (".filtered_source_priority" %in% colnames(all_dt)) {
-    data.table::setorderv(all_dt, c("analysis", "feature", ".filtered_source_priority"), c(1L, 1L, -1L))
-    all_dt <- unique(all_dt, by = c("analysis", "feature"))
-    all_dt[, .filtered_source_priority := NULL]
-  }
 
   seed_ids <- unique(feature_network_key(seed_raw$analysis, seed_raw$feature))
   seed_dt <- all_dt[node_id %in% seed_ids]
@@ -4164,54 +4175,64 @@ map_components.ProjectNonTargetAnalysis <- function(
     loss = "#7f1d1d"
   )
 
-  edge_rows <- list()
-  push_edge <- function(from_id, to_id, category, score, label) {
-    if (!nzchar(from_id) || !nzchar(to_id) || identical(from_id, to_id)) return()
-    edge_rows[[length(edge_rows) + 1]] <<- data.table::data.table(
-      from = from_id,
-      to = to_id,
-      edge_category = category,
-      score = score,
-      edge_label = label
-    )
-  }
+  edge_parts <- list()
 
-  resolve_annotation_parent <- function(row) {
-    parent_feature <- as.character(row$annotation_parent_feature_chr)
-    if (!nzchar(parent_feature)) return(NULL)
-    parent <- all_dt[analysis == row$analysis & feature == parent_feature]
-    if (nrow(parent) == 0) return(NULL)
-    parent[1]
-  }
-
-  for (i in seq_len(nrow(all_dt))) {
-    child <- all_dt[i]
-    child_cat <- as.character(child$annotation_category_chr)
-    if (!child_cat %in% c("isotope", "adduct", "loss")) next
-    parent <- resolve_annotation_parent(child)
-    if (is.null(parent) || nrow(parent) == 0) next
-    child_score <- suppressWarnings(as.numeric(child$annotation_score[[1]]))
-    if (!is.finite(child_score)) child_score <- 0
-    push_edge(
-      as.character(parent$node_id),
-      as.character(child$node_id),
-      child_cat,
-      child_score,
-      paste0(child_cat, if (nzchar(as.character(child$annotation_type[[1]]))) paste0(" ", as.character(child$annotation_type[[1]])) else "")
+  annotated_children <- all_dt[
+    annotation_category_chr %in% c("isotope", "adduct", "loss") &
+      !is.na(annotation_parent_feature_chr) &
+      nzchar(annotation_parent_feature_chr),
+    .(
+      analysis,
+      child_id = node_id,
+      edge_category = annotation_category_chr,
+      score = suppressWarnings(as.numeric(annotation_score)),
+      annotation_type = as.character(annotation_type),
+      annotation_parent_feature_chr
     )
+  ]
+  if (nrow(annotated_children) > 0) {
+    parent_lookup <- unique(all_dt[, .(
+      analysis,
+      annotation_parent_feature_chr = feature,
+      parent_id = node_id
+    )])
+    annotation_edges <- parent_lookup[annotated_children, on = .(analysis, annotation_parent_feature_chr), nomatch = 0]
+    if (nrow(annotation_edges) > 0) {
+      annotation_edges[!is.finite(score), score := 0]
+      annotation_edges <- annotation_edges[
+        nzchar(parent_id) & nzchar(child_id) & parent_id != child_id,
+        .(
+          from = as.character(parent_id),
+          to = as.character(child_id),
+          edge_category = as.character(edge_category),
+          score = score,
+          edge_label = paste0(
+            edge_category,
+            ifelse(nzchar(annotation_type), paste0(" ", annotation_type), "")
+          )
+        )
+      ]
+      edge_parts[[length(edge_parts) + 1]] <- annotation_edges
+    }
   }
 
   if ("feature_group" %in% colnames(all_dt)) {
     valid_group_dt <- all_dt[!is.na(feature_group) & nzchar(feature_group) & is_main_ion %in% TRUE]
-    group_groups <- split(valid_group_dt, valid_group_dt$feature_group)
-    for (grp in group_groups) {
-      if (nrow(grp) < 2) next
+    group_groups <- split(valid_group_dt[, .(node_id, feature_group)], valid_group_dt$feature_group)
+    group_edge_parts <- lapply(group_groups, function(grp) {
+      if (nrow(grp) < 2) return(NULL)
       idx <- utils::combn(seq_len(nrow(grp)), 2)
-      for (j in seq_len(ncol(idx))) {
-        a <- grp[idx[1, j]]
-        b <- grp[idx[2, j]]
-        push_edge(a$node_id, b$node_id, "group", 0.55, "same annotated group")
-      }
+      data.table::data.table(
+        from = as.character(grp$node_id[idx[1, ]]),
+        to = as.character(grp$node_id[idx[2, ]]),
+        edge_category = "group",
+        score = 0.55,
+        edge_label = "same annotated group"
+      )
+    })
+    group_edge_parts <- Filter(Negate(is.null), group_edge_parts)
+    if (length(group_edge_parts) > 0) {
+      edge_parts[[length(edge_parts) + 1]] <- data.table::rbindlist(group_edge_parts, fill = TRUE)
     }
   }
 
@@ -4221,8 +4242,8 @@ map_components.ProjectNonTargetAnalysis <- function(
     neighbor_map[[a]] <<- unique(c(neighbor_map[[a]], b))
     neighbor_map[[b]] <<- unique(c(neighbor_map[[b]], a))
   }
-  if (length(edge_rows) > 0) {
-    edge_dt_for_reach <- data.table::rbindlist(edge_rows, fill = TRUE)
+  if (length(edge_parts) > 0) {
+    edge_dt_for_reach <- data.table::rbindlist(edge_parts, fill = TRUE)
     for (i in seq_len(nrow(edge_dt_for_reach))) {
       add_neighbor(as.character(edge_dt_for_reach$from[i]), as.character(edge_dt_for_reach$to[i]))
     }
@@ -4260,10 +4281,10 @@ map_components.ProjectNonTargetAnalysis <- function(
     return(invisible(NULL))
   }
 
-  edges <- if (length(edge_rows) == 0) {
+  edges <- if (length(edge_parts) == 0) {
     data.table::data.table(from = character(0), to = character(0), edge_category = character(0), score = numeric(0), edge_label = character(0))
   } else {
-    data.table::rbindlist(edge_rows, fill = TRUE)
+    data.table::rbindlist(edge_parts, fill = TRUE)
   }
   if (nrow(edges) > 0) {
     edges <- edges[from %in% display_ids & to %in% display_ids]
