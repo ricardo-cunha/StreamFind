@@ -7,6 +7,8 @@
 #include <sstream>
 #include <filesystem>
 #include <cmath>
+#include <limits>
+#include <map>
 
 #include "nta.h"
 
@@ -1017,7 +1019,7 @@ namespace nta
       if (n == 0)
         return out;
 
-      // Sort indices once so we can sweep contiguous clusters by m/z.
+      // Sort by m/z
       std::vector<size_t> idx(n);
       std::iota(idx.begin(), idx.end(), 0);
       std::sort(idx.begin(), idx.end(), [&](size_t i, size_t j)
@@ -1025,17 +1027,20 @@ namespace nta
 
       std::vector<float> sorted_mz(n);
       std::vector<float> sorted_intensity(n);
-      std::vector<float> sorted_rt(spectra.rt.size());
+      std::vector<float> sorted_rt(n);
+      std::vector<float> sorted_pre_ce(n, std::numeric_limits<float>::quiet_NaN());
       for (size_t k = 0; k < n; ++k)
       {
         const size_t src = idx[k];
         sorted_mz[k] = spectra.mz[src];
         sorted_intensity[k] = spectra.intensity[src];
-        if (!sorted_rt.empty() && spectra.rt.size() > src)
+        if (spectra.rt.size() > src)
           sorted_rt[k] = spectra.rt[src];
+        if (spectra.pre_ce.size() > src)
+          sorted_pre_ce[k] = spectra.pre_ce[src];
       }
 
-      // Pre-compute total unique RT count for presence filtering.
+      // Total unique RTs across the entire feature
       size_t total_unique_rt = 0;
       if (!sorted_rt.empty())
       {
@@ -1044,57 +1049,106 @@ namespace nta
         total_unique_rt = static_cast<size_t>(std::unique(tmp.begin(), tmp.end()) - tmp.begin());
       }
 
+      // Unique finite pre_ce values across the feature
+      std::vector<float> all_finite_pre_ce;
+      all_finite_pre_ce.reserve(n);
+      for (const float v : sorted_pre_ce)
+        if (std::isfinite(v)) all_finite_pre_ce.push_back(v);
+      std::sort(all_finite_pre_ce.begin(), all_finite_pre_ce.end());
+      all_finite_pre_ce.erase(std::unique(all_finite_pre_ce.begin(), all_finite_pre_ce.end()), all_finite_pre_ce.end());
+      const size_t total_unique_pre_ce = all_finite_pre_ce.size();
+
+      const float mz_tol = std::max(mzClust, 0.0f);
+      const float presence_thresh = std::clamp(presence, 0.0f, 1.0f);
+
       std::vector<float> new_mz;
       std::vector<float> new_intensity;
       new_mz.reserve(n);
       new_intensity.reserve(n);
 
-      const float mz_tol = std::max(mzClust, 0.0f);
-      const float presence_thresh = std::clamp(presence, 0.0f, 1.0f);
-
       size_t start = 0;
       while (start < n)
       {
+        // --- 1. m/z cluster: consecutive sorted peaks within mz_tol ---
         size_t end = start + 1;
         while (end < n && (sorted_mz[end] - sorted_mz[end - 1]) <= mz_tol)
           ++end;
 
-        // Cluster range is [start, end)
-        const size_t cluster_size = end - start;
+        // --- 2. Group the cluster by RT. Peaks from the same scan (same RT)
+        //    are different fragment ions and must NOT be merged.
+        std::map<float, std::vector<size_t>> rt_groups;
+        for (size_t i = start; i < end; ++i)
+          rt_groups[sorted_rt[i]].push_back(i);
 
-        // Presence filter: require enough unique RTs inside this cluster.
+        // Same-scan cluster: only one RT — emit each peak as-is.
+        if (rt_groups.size() <= 1)
+        {
+          for (size_t i = start; i < end; ++i)
+          {
+            new_mz.push_back(sorted_mz[i]);
+            new_intensity.push_back(sorted_intensity[i]);
+          }
+          start = end;
+          continue;
+        }
+
+        // --- 3. Cross-scan cluster: pick best peak per RT, then presence filter ---
+        std::vector<float> reps_mz;
+        std::vector<float> reps_int;
+        std::vector<float> reps_pre_ce;
+        reps_mz.reserve(rt_groups.size());
+        reps_int.reserve(rt_groups.size());
+        reps_pre_ce.reserve(rt_groups.size());
+
+        for (auto &[rt_val, indices] : rt_groups)
+        {
+          size_t best = indices[0];
+          float best_int = sorted_intensity[best];
+          for (size_t ji : indices)
+          {
+            if (sorted_intensity[ji] > best_int)
+            { best = ji; best_int = sorted_intensity[ji]; }
+          }
+          reps_mz.push_back(sorted_mz[best]);
+          reps_int.push_back(best_int);
+          if (std::isfinite(sorted_pre_ce[best]))
+            reps_pre_ce.push_back(sorted_pre_ce[best]);
+        }
+
+        // Presence filter
+        bool pass = true;
         if (presence_thresh > 0.0f && total_unique_rt > 0)
         {
-          std::vector<float> rt_slice;
-          rt_slice.reserve(cluster_size);
-          for (size_t i = start; i < end; ++i)
-            rt_slice.push_back(sorted_rt[i]);
-          std::sort(rt_slice.begin(), rt_slice.end());
-          size_t unique_rt = static_cast<size_t>(std::unique(rt_slice.begin(), rt_slice.end()) - rt_slice.begin());
-
-          if (static_cast<float>(unique_rt) < presence_thresh * static_cast<float>(total_unique_rt))
+          float required = presence_thresh * static_cast<float>(total_unique_rt);
+          if (total_unique_pre_ce > 0 && !reps_pre_ce.empty())
           {
-            start = end;
-            continue;
+            std::sort(reps_pre_ce.begin(), reps_pre_ce.end());
+            size_t uniq_ce = static_cast<size_t>(
+                std::unique(reps_pre_ce.begin(), reps_pre_ce.end()) - reps_pre_ce.begin());
+            if (uniq_ce < total_unique_pre_ce)
+              required *= static_cast<float>(uniq_ce) / static_cast<float>(total_unique_pre_ce);
           }
+          if (static_cast<float>(reps_mz.size()) < required)
+            pass = false;
         }
 
-        float weighted_mz = 0.0f;
-        float intensity_sum = 0.0f;
-        float max_int = 0.0f;
-
-        for (size_t i = start; i < end; ++i)
+        if (!pass)
         {
-          const float inten = sorted_intensity[i];
-          weighted_mz += sorted_mz[i] * inten;
-          intensity_sum += inten;
-          max_int = std::max(max_int, inten);
+          start = end;
+          continue;
         }
 
-        if (intensity_sum > 0.0f)
+        // Merge representatives into one output peak
         {
-          new_mz.push_back(weighted_mz / intensity_sum);
-          new_intensity.push_back(max_int);
+          size_t best_rep = 0;
+          float best_rep_int = reps_int[0];
+          for (size_t i = 1; i < reps_mz.size(); ++i)
+          {
+            if (reps_int[i] > best_rep_int)
+            { best_rep = i; best_rep_int = reps_int[i]; }
+          }
+          new_mz.push_back(reps_mz[best_rep]);
+          new_intensity.push_back(best_rep_int);
         }
 
         start = end;
@@ -4003,13 +4057,14 @@ bool nta::api::PROJECT_NON_TARGET_ANALYSIS::load_features_ms2(
               continue;
 
             const mass_spec::spectra::MS_TARGETS_SPECTRA &res_j = res[ft_j.feature];
-            const int n_res_j = static_cast<int>(res_j.mz.size());
+            const auto clustered = nta::api::merge_NTA_FEATURE_SPECTRA(res_j, mzClust, presence);
+            const int n_res_j = static_cast<int>(clustered.mz.size());
             if (n_res_j == 0)
               continue;
 
             ft_j.ms2_size = n_res_j;
-            ft_j.ms2_mz = utils::encode_floats_base64(res_j.mz);
-            ft_j.ms2_intensity = utils::encode_floats_base64(res_j.intensity);
+            ft_j.ms2_mz = utils::encode_floats_base64(clustered.mz);
+            ft_j.ms2_intensity = utils::encode_floats_base64(clustered.intensity);
             fts_i.set_feature(j, ft_j);
           }
         }

@@ -179,7 +179,7 @@ workflow <- Workflow(list(
     number_threads = 1L,
     use_smiles = TRUE,
     filtered = FALSE,
-    java_path = "C:/Users/apoli/.cogniflow/tools/java/21.0.10+7/bin/java.exe",
+    java_path = "C:\\Users\\apoli\\.cogniflow\\tools\\java\\current\\bin\\java.exe",
     run_dir = "",
     debug = TRUE,
     extra_params = list()
@@ -206,6 +206,19 @@ delete_cache(nta, name = "NTA_FEATURES_CACHE")
 delete_cache(nta, name = "NTA_INTERNAL_STANDARDS_CACHE")
 delete_cache(nta, name = "NTA_SUSPECTS_CACHE")
 delete_cache(nta, name = "NTA_TRANSFORMATION_PRODUCTS_CACHE")
+get_cache(nta)
+
+get_features_ms2(
+  nta,
+  analyses = 11,
+  mass = transformation_products[1:3, ],
+  #mass = internal_standards[4:6, ],
+  ppm = 20,
+  sec = 60,
+  filtered = TRUE
+)
+
+
 
 get_transformation_products(nta)[]
 

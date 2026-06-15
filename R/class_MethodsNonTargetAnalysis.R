@@ -1788,6 +1788,20 @@ run.Method_NonTargetAnalysis_MetFragScreening <- function(x, proj, ...) {
   validate_object(x)
   checkmate::assert_class(proj, "ProjectNonTargetAnalysis")
   p <- x$parameters
+  if (!nzchar(p$metfrag_path)) {
+    stop("`metfrag_path` is empty. Provide the path to MetFragCL.jar ",
+         "(or a native MetFragCL executable).", call. = FALSE)
+  }
+  if (!file.exists(p$metfrag_path)) {
+    stop("MetFrag executable not found at 'metfrag_path': ",
+         p$metfrag_path, call. = FALSE)
+  }
+  is_jar <- grepl("\\.jar$", tolower(p$metfrag_path))
+  if (is_jar && !nzchar(p$java_path)) {
+    stop("`metfrag_path` points to a .jar file but `java_path` is empty. ",
+         "Set java_path to 'java' (system PATH) or the full path to java.exe.",
+         call. = FALSE)
+  }
   success <- rcpp_project_nta_metfrag_screening(
     nta_xptr = proj$get_nts_ptr(),
     metfrag_path = as.character(p$metfrag_path),

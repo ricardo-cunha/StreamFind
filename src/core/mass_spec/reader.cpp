@@ -1729,7 +1729,7 @@ namespace mass_spec
             out.pre_mz.push_back(scan_pre_mz);
             out.pre_mzlow.push_back(mmin);
             out.pre_mzhigh.push_back(mmax);
-            out.pre_ce.push_back(0.0f);
+            out.pre_ce.push_back(i < hd.activation_ce.size() ? hd.activation_ce[i] : 0.0f);
             out.rt.push_back(scan_rt);
             out.mobility.push_back(scan_mobility);
             out.mz.push_back(mzv);

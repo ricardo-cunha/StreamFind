@@ -844,6 +844,44 @@ MetFragParams canonicalize_and_validate_params(const MetFragParams &params)
   MetFragParams out = params;
   out.database_type = canonicalize_database_type(params.database_type);
 
+  // Validate metfrag_path
+  if (out.metfrag_path.empty())
+  {
+    throw std::invalid_argument(
+      "MetFrag 'metfrag_path' is empty. Provide the path to MetFragCL.jar "
+      "(or a native MetFragCL executable)."
+    );
+  }
+  if (!fs::exists(out.metfrag_path))
+  {
+    // If it doesn't exist as a file, it might be a command in PATH;
+    // check with which/where to give a clearer error.
+    throw std::invalid_argument(
+      "MetFrag executable not found at 'metfrag_path': " + out.metfrag_path
+    );
+  }
+
+  // Validate java_path when MetFrag is a .jar
+  bool is_jar = (out.metfrag_path.size() > 4) &&
+                (out.metfrag_path.substr(out.metfrag_path.size() - 4) == ".jar" ||
+                 out.metfrag_path.substr(out.metfrag_path.size() - 4) == ".JAR");
+  if (is_jar)
+  {
+    if (out.java_path.empty())
+    {
+      throw std::invalid_argument(
+        "MetFrag is a .jar file but 'java_path' is empty. "
+        "Set java_path to 'java' (system PATH) or the full path to java.exe."
+      );
+    }
+    if (out.java_path != "java" && out.java_path.find("java") == std::string::npos)
+    {
+      throw std::invalid_argument(
+        "MetFrag 'java_path' does not appear to point to a Java executable: " + out.java_path
+      );
+    }
+  }
+
   if (out.score_types.empty())
     throw std::invalid_argument("MetFrag score_types must not be empty.");
   if (out.score_types.size() != out.score_weights.size())
