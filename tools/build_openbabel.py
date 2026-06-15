@@ -182,6 +182,12 @@ def sync_runtime_artifact(source: Path, destinations: list[Path]) -> None:
       shutil.copy2(source, destination)
 
 
+def sync_runtime_directory(source: Path, destinations: list[Path]) -> None:
+    for destination in destinations:
+        ensure_parent(destination)
+        shutil.copytree(source, destination, dirs_exist_ok=True)
+
+
 def read_stamp_metadata(stamp: Path) -> dict[str, object]:
     if not stamp.exists():
         return {}
@@ -196,6 +202,7 @@ def main() -> int:
     repo_root = Path(args.repo_root).resolve()
     build_root = repo_root / "src" / "core" / "external" / "openbabel" / "build" / args.platform
     include_root = repo_root / "src" / "core" / "external" / "openbabel" / "openbabel-3-2-0"
+    data_root = include_root / "data"
     manifests_root = repo_root / "tools" / "openbabel_sources"
 
     include_flags = [
@@ -240,6 +247,13 @@ def main() -> int:
                 [
                     repo_root / "inst" / "libs" / "x64" / "openbabel_streamfind.dll",
                     repo_root / "python" / "cf_streamfind" / "bin" / "openbabel_streamfind.dll",
+                ],
+            )
+            sync_runtime_directory(
+                data_root,
+                [
+                    repo_root / "inst" / "openbabel-3-2-0" / "data",
+                    repo_root / "python" / "cf_streamfind" / "openbabel-3-2-0" / "data",
                 ],
             )
             print(f"[openbabel] reusing: {runtime_dll.relative_to(repo_root)}")
@@ -306,6 +320,13 @@ def main() -> int:
             [
                 repo_root / "inst" / "libs" / "x64" / "openbabel_streamfind.dll",
                 repo_root / "python" / "cf_streamfind" / "bin" / "openbabel_streamfind.dll",
+            ],
+        )
+        sync_runtime_directory(
+            data_root,
+            [
+                repo_root / "inst" / "openbabel-3-2-0" / "data",
+                repo_root / "python" / "cf_streamfind" / "openbabel-3-2-0" / "data",
             ],
         )
         metadata["openbabel_runtime"] = str(runtime_dll.relative_to(repo_root))

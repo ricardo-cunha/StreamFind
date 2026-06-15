@@ -16,6 +16,8 @@ devtools::install_github("odea-project/StreamFind", upgrade = FALSE, dependencie
 
 pak::pkg_install("odea-project/StreamFind@dev_filesystem", upgrade = FALSE, dependencies = TRUE)
 
+pak::pkg_install("ricardo-cunha/StreamFind@dev_1.0", upgrade = FALSE, dependencies = TRUE)
+
 pak::pkg_install(".")
 
 
