@@ -40,6 +40,8 @@ namespace sf::obabel
 #ifdef _WIN32
   using openbabel_available_fn = int (*)();
   using normalize_structure_fn = int (*)(const char *, const char *, streamfind_ob_normalized_result *);
+  using normalize_structure_from_mol_file_fn = int (*)(const char *, streamfind_ob_normalized_result *);
+  using formula_from_mass_fn = int (*)(double, double, const char *, streamfind_ob_formula_result *);
   using render_structure_svg_fn = int (*)(const char *, const char *, int, int, const char *, streamfind_ob_svg_result *);
   using debug_runtime_fn = int (*)(char *, size_t);
 
@@ -48,6 +50,8 @@ namespace sf::obabel
     HMODULE module = nullptr;
     openbabel_available_fn available = nullptr;
     normalize_structure_fn normalize = nullptr;
+    normalize_structure_from_mol_file_fn normalize_from_mol = nullptr;
+    formula_from_mass_fn formula_from_mass = nullptr;
     render_structure_svg_fn render_svg = nullptr;
     debug_runtime_fn debug_runtime = nullptr;
     std::string error;
@@ -204,6 +208,10 @@ namespace sf::obabel
         GetProcAddress(api.module, "sf_ob_openbabel_available"));
     api.normalize = reinterpret_cast<normalize_structure_fn>(
         GetProcAddress(api.module, "sf_ob_normalize_structure"));
+    api.normalize_from_mol = reinterpret_cast<normalize_structure_from_mol_file_fn>(
+        GetProcAddress(api.module, "sf_ob_normalize_structure_from_mol_file"));
+    api.formula_from_mass = reinterpret_cast<formula_from_mass_fn>(
+        GetProcAddress(api.module, "sf_ob_formula_from_mass"));
     api.render_svg = reinterpret_cast<render_structure_svg_fn>(
         GetProcAddress(api.module, "sf_ob_render_structure_svg"));
     api.debug_runtime = reinterpret_cast<debug_runtime_fn>(
@@ -262,6 +270,77 @@ namespace sf::obabel
         &result);
     return from_c_result(result);
 #endif
+  }
+
+  NormalizedStructure normalize_structure_from_mol_file(
+      const std::string &file_path)
+  {
+#ifdef _WIN32
+    const OpenBabelApi api = load_openbabel_api();
+    if (api.normalize_from_mol == nullptr)
+    {
+      NormalizedStructure out;
+      out.error = api.error.empty() ? "Open Babel runtime unavailable." : api.error;
+      return out;
+    }
+
+    streamfind_ob_normalized_result result{};
+    api.normalize_from_mol(
+        file_path.empty() ? nullptr : file_path.c_str(),
+        &result);
+    return from_c_result(result);
+#else
+    streamfind_ob_normalized_result result{};
+    sf_ob_normalize_structure_from_mol_file(
+        file_path.empty() ? nullptr : file_path.c_str(),
+        &result);
+    return from_c_result(result);
+#endif
+  }
+
+  std::vector<FormulaMatch> formula_from_mass(
+      double monoisotopic_mass,
+      double tolerance_ppm,
+      const std::string &elements)
+  {
+    std::vector<FormulaMatch> out;
+    const char *elem_cstr = elements.empty() ? nullptr : elements.c_str();
+#ifdef _WIN32
+    const OpenBabelApi api = load_openbabel_api();
+    if (api.formula_from_mass == nullptr)
+      return out;
+
+    streamfind_ob_formula_result result{};
+    api.formula_from_mass(monoisotopic_mass, tolerance_ppm, elem_cstr, &result);
+    if (result.count > 0)
+    {
+      out.reserve(static_cast<size_t>(result.count));
+      for (int i = 0; i < result.count; ++i)
+      {
+        FormulaMatch match;
+        match.formula = result.formulas[i];
+        match.exact_mass = result.masses[i];
+        match.error_ppm = result.errors[i];
+        out.push_back(std::move(match));
+      }
+    }
+#else
+    streamfind_ob_formula_result result{};
+    sf_ob_formula_from_mass(monoisotopic_mass, tolerance_ppm, elem_cstr, &result);
+    if (result.count > 0)
+    {
+      out.reserve(static_cast<size_t>(result.count));
+      for (int i = 0; i < result.count; ++i)
+      {
+        FormulaMatch match;
+        match.formula = result.formulas[i];
+        match.exact_mass = result.masses[i];
+        match.error_ppm = result.errors[i];
+        out.push_back(std::move(match));
+      }
+    }
+#endif
+    return out;
   }
 
   StructureSvg render_structure_svg(

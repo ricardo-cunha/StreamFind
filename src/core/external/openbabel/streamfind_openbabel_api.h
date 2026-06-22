@@ -22,7 +22,9 @@ enum
   STREAMFIND_OB_ERROR_CAPACITY = 2048,
   STREAMFIND_OB_COLOR_CAPACITY = 64,
   STREAMFIND_OB_SVG_CAPACITY = 262144,
-  STREAMFIND_OB_DEBUG_CAPACITY = 16384
+  STREAMFIND_OB_DEBUG_CAPACITY = 16384,
+  STREAMFIND_OB_FORMULA_MAX_RESULTS = 256,
+  STREAMFIND_OB_FORMULA_STR_SIZE = 128
 };
 
 typedef struct streamfind_ob_normalized_result
@@ -45,6 +47,15 @@ typedef struct streamfind_ob_svg_result
   char error[STREAMFIND_OB_ERROR_CAPACITY];
 } streamfind_ob_svg_result;
 
+typedef struct streamfind_ob_formula_result
+{
+  int count;
+  char formulas[STREAMFIND_OB_FORMULA_MAX_RESULTS][STREAMFIND_OB_FORMULA_STR_SIZE];
+  double masses[STREAMFIND_OB_FORMULA_MAX_RESULTS];
+  double errors[STREAMFIND_OB_FORMULA_MAX_RESULTS];
+  char error[STREAMFIND_OB_ERROR_CAPACITY];
+} streamfind_ob_formula_result;
+
 STREAMFIND_OPENBABEL_API int sf_ob_openbabel_available(void);
 
 STREAMFIND_OPENBABEL_API int sf_ob_normalize_structure(
@@ -59,6 +70,16 @@ STREAMFIND_OPENBABEL_API int sf_ob_render_structure_svg(
   int height_px,
   const char *bond_color,
   streamfind_ob_svg_result *out);
+
+STREAMFIND_OPENBABEL_API int sf_ob_normalize_structure_from_mol_file(
+  const char *file_path,
+  streamfind_ob_normalized_result *out);
+
+STREAMFIND_OPENBABEL_API int sf_ob_formula_from_mass(
+  double monoisotopic_mass,
+  double tolerance_ppm,
+  const char *elements,
+  streamfind_ob_formula_result *out);
 
 STREAMFIND_OPENBABEL_API int sf_ob_debug_runtime(
   char *out,

@@ -2,7 +2,13 @@
 library(data.table)
 all_files_dir <- "E:\\example_files\\ms_merck"
 if (!dir.exists(all_files_dir)) {
-  stop("Directory with example files not found: ", all_files_dir)
+  all_files_dir <- "D:\\example_files\\ms_merck"
+  if (!dir.exists(all_files_dir)) {
+    all_files_dir <- "C:\\example_files\\ms_merck"
+    if (!dir.exists(all_files_dir)) {
+      stop("Directory with example files not found: ", all_files_dir)
+    }
+  }
 }
 
 dir_merck_1 <- file.path(all_files_dir, "Beispieldaten Routine")

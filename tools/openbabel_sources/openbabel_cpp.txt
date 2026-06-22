@@ -65,6 +65,7 @@ src/core/external/openbabel/openbabel-3-2-0/src/stereo/tetrahedral.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/stereo/perception.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/stereo/facade.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/stereo/gen3dstereohelper.cpp
+src/core/external/openbabel/openbabel-3-2-0/src/formats/mdlformat.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/formats/smilesformat.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/formats/svgformat.cpp
 src/core/external/openbabel/openbabel-3-2-0/src/formats/getinchi.cpp

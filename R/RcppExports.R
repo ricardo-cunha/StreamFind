@@ -351,3 +351,40 @@ rcpp_get_suspects_screening_csv <- function(suspects, file = NULL) {
     .Call(`_StreamFind_rcpp_get_suspects_screening_csv`, suspects, file)
 }
 
+#' Derive possible molecular formulas from monoisotopic mass
+#'
+#' Enumerates possible molecular formulas that match a given monoisotopic mass
+#' within a specified tolerance using exact isotopic masses from Open Babel.
+#'
+#' @param mass Monoisotopic mass in Da.
+#' @param tolerance_ppm Mass tolerance in ppm (default 5).
+#' @param elements Optional character vector of element constraints in the
+#'   format \code{"Symbol:min-max"}, e.g. \code{c("C:1-80", "N:0-10", "O:0-20")}.
+#'   When NULL (default), uses C, H, N, O, P, S with automatically computed
+#'   maximum counts based on the mass.
+#' @return A \code{data.frame} with columns \code{formula}, \code{exact_mass},
+#'   and \code{error_ppm}, sorted by increasing error.
+#' @export
+rcpp_formula_from_mass <- function(mass, tolerance_ppm = 5.0, elements = NULL) {
+    .Call(`_StreamFind_rcpp_formula_from_mass`, mass, tolerance_ppm, elements)
+}
+
+#' Create a suspect screening CSV from MOL files using the native Open Babel
+#' backend
+#'
+#' Reads one or more MOL files, validates each file, and normalizes the
+#' structures using the embedded Open Babel runtime. Returns the standard
+#' suspect-screening columns. When \code{file} is provided, the resulting table
+#' is also written as CSV using \code{data.table::fwrite()}.
+#'
+#' @param files A character vector of full paths to MOL files.
+#' @param file Optional output CSV path. When provided, the normalized table is
+#'   written to disk.
+#' @return A \code{data.frame} with columns \code{name}, \code{formula},
+#'   \code{mass}, \code{rt}, \code{SMILES}, \code{InChI}, \code{InChIKey},
+#'   \code{xLogP}, \code{ms2_positive}, and \code{ms2_negative}.
+#' @export
+rcpp_get_suspect_screening_csv_from_mol_files <- function(files, file = NULL) {
+    .Call(`_StreamFind_rcpp_get_suspect_screening_csv_from_mol_files`, files, file)
+}
+

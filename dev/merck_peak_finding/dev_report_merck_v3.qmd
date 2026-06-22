@@ -299,13 +299,21 @@ nta <- open_ProjectNonTargetAnalysis(
   project_id = project_id
 )
 
-nta$run_app() 
+nta$run_app()
 ```
 
 # Identification
 
 ```{r}
 #| label: merck-suspects-screening
+
+
+
+rcpp_get_suspect_screening_csv_from_mol_files(
+  files = mol_merck_2[grepl(example_key, mol_merck_2)],
+  file = file.path("dev", "merck_peak_finding", "data", "ACC1_28203_suspects.csv")
+)
+
 
 get_suspects_screening_csv(
   suspects = data.table(

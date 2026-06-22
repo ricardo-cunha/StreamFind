@@ -97,6 +97,7 @@ Collate:
     'utils_plots.R'
     'utils_debug_plots.R'
     'utils_fct_assets.R'
+    'fct_install_external_tools.R'
     'fct_get_template_suspect_screening_csv.R'
     'ftc_get_suspects_screening_csv.R'
     'fct_get_template_transformation_products_screening_csv.R'

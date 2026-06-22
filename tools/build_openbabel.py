@@ -168,12 +168,27 @@ def build_windows_dll(
         dll_is_stale = any(obj.stat().st_mtime > dll_mtime for obj in objects)
     if not dll_is_stale:
         return
+    # Write to a temp file first, then rename to avoid permission errors
+    # when the old DLL is locked by a running R process.
+    tmp_dll = output_dll.with_suffix(".dll.tmp")
     command = cxx_compiler + [
         "-shared",
         "-o",
-        str(output_dll),
+        str(tmp_dll),
     ] + [str(obj) for obj in objects]
     subprocess.run(command, check=True)
+    if tmp_dll.exists():
+        if output_dll.exists():
+            try:
+                output_dll.unlink()
+            except PermissionError:
+                pass
+        try:
+            os.replace(str(tmp_dll), str(output_dll))
+        except PermissionError:
+            pass
+        except OSError:
+            pass
 
 
 def sync_runtime_artifact(source: Path, destinations: list[Path]) -> None:

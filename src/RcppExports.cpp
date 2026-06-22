@@ -1145,6 +1145,31 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_formula_from_mass
+Rcpp::DataFrame rcpp_formula_from_mass(double mass, double tolerance_ppm, Rcpp::Nullable<Rcpp::CharacterVector> elements);
+RcppExport SEXP _StreamFind_rcpp_formula_from_mass(SEXP massSEXP, SEXP tolerance_ppmSEXP, SEXP elementsSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< double >::type mass(massSEXP);
+    Rcpp::traits::input_parameter< double >::type tolerance_ppm(tolerance_ppmSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<Rcpp::CharacterVector> >::type elements(elementsSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_formula_from_mass(mass, tolerance_ppm, elements));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_get_suspect_screening_csv_from_mol_files
+Rcpp::DataFrame rcpp_get_suspect_screening_csv_from_mol_files(Rcpp::CharacterVector files, Rcpp::Nullable<std::string> file);
+RcppExport SEXP _StreamFind_rcpp_get_suspect_screening_csv_from_mol_files(SEXP filesSEXP, SEXP fileSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< Rcpp::CharacterVector >::type files(filesSEXP);
+    Rcpp::traits::input_parameter< Rcpp::Nullable<std::string> >::type file(fileSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_get_suspect_screening_csv_from_mol_files(files, file));
+    return rcpp_result_gen;
+END_RCPP
+}
 
 static const R_CallMethodDef CallEntries[] = {
     {"_StreamFind_rcpp_project_new", (DL_FUNC) &_StreamFind_rcpp_project_new, 2},
@@ -1226,6 +1251,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_StreamFind_rcpp_openbabel_structure_svg", (DL_FUNC) &_StreamFind_rcpp_openbabel_structure_svg, 5},
     {"_StreamFind_rcpp_openbabel_debug_runtime", (DL_FUNC) &_StreamFind_rcpp_openbabel_debug_runtime, 0},
     {"_StreamFind_rcpp_get_suspects_screening_csv", (DL_FUNC) &_StreamFind_rcpp_get_suspects_screening_csv, 2},
+    {"_StreamFind_rcpp_formula_from_mass", (DL_FUNC) &_StreamFind_rcpp_formula_from_mass, 3},
+    {"_StreamFind_rcpp_get_suspect_screening_csv_from_mol_files", (DL_FUNC) &_StreamFind_rcpp_get_suspect_screening_csv_from_mol_files, 2},
     {NULL, NULL, 0}
 };
 

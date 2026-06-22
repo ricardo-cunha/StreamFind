@@ -1,5 +1,7 @@
 #include <Rcpp.h>
 
+#include <fstream>
+
 #include "core/external/openbabel_adapter.h"
 
 namespace obabel
@@ -253,6 +255,192 @@ Rcpp::DataFrame rcpp_get_suspects_screening_csv(
       if (!inchi.empty())
       {
         out_inchi[i] = inchi;
+      }
+    }
+  }
+
+  Rcpp::DataFrame out = obabel::as_data_frame(
+    out_name,
+    out_formula,
+    out_mass,
+    out_rt,
+    out_smiles,
+    out_inchi,
+    out_inchikey,
+    out_xlogp,
+    out_ms2_positive,
+    out_ms2_negative
+  );
+
+  obabel::maybe_write_csv(out, file);
+  return out;
+}
+
+//' Derive possible molecular formulas from monoisotopic mass
+//'
+//' Enumerates possible molecular formulas that match a given monoisotopic mass
+//' within a specified tolerance using exact isotopic masses from Open Babel.
+//'
+//' @param mass Monoisotopic mass in Da.
+//' @param tolerance_ppm Mass tolerance in ppm (default 5).
+//' @param elements Optional character vector of element constraints in the
+//'   format \code{"Symbol:min-max"}, e.g. \code{c("C:1-80", "N:0-10", "O:0-20")}.
+//'   When NULL (default), uses C, H, N, O, P, S with automatically computed
+//'   maximum counts based on the mass.
+//' @return A \code{data.frame} with columns \code{formula}, \code{exact_mass},
+//'   and \code{error_ppm}, sorted by increasing error.
+//' @export
+// [[Rcpp::export]]
+Rcpp::DataFrame rcpp_formula_from_mass(
+  double mass,
+  double tolerance_ppm = 5.0,
+  Rcpp::Nullable<Rcpp::CharacterVector> elements = R_NilValue)
+{
+  if (mass <= 0.0)
+  {
+    Rcpp::stop("mass must be positive.");
+  }
+
+  std::string elem_str;
+  if (!elements.isNull())
+  {
+    Rcpp::CharacterVector elem_vec = Rcpp::as<Rcpp::CharacterVector>(elements);
+    bool has_h = false;
+    for (R_xlen_t i = 0; i < elem_vec.size(); ++i)
+    {
+      const std::string token = Rcpp::as<std::string>(elem_vec[i]);
+      // Check if H is already specified (token starts with "H" or "H:")
+      const size_t colon = token.find(':');
+      const std::string symbol = (colon == std::string::npos) ? token : token.substr(0, colon);
+      if (symbol == "H") has_h = true;
+      if (i > 0) elem_str += ";";
+      elem_str += token;
+    }
+    // Always include H if not specified
+    if (!has_h)
+    {
+      if (!elem_str.empty()) elem_str += ";";
+      elem_str += "H:0-" + std::to_string(static_cast<int>((mass * 1.5) / 1.007825) + 1);
+    }
+  }
+
+  const std::vector<sf::obabel::FormulaMatch> matches =
+    sf::obabel::formula_from_mass(mass, tolerance_ppm, elem_str);
+
+  const R_xlen_t n = static_cast<R_xlen_t>(matches.size());
+  Rcpp::CharacterVector out_formula(n);
+  Rcpp::NumericVector out_exact_mass(n);
+  Rcpp::NumericVector out_error_ppm(n);
+
+  for (R_xlen_t i = 0; i < n; ++i)
+  {
+    out_formula[i] = matches[i].formula;
+    out_exact_mass[i] = matches[i].exact_mass;
+    out_error_ppm[i] = matches[i].error_ppm;
+  }
+
+  Rcpp::List out(3);
+  out[0] = out_formula;
+  out[1] = out_exact_mass;
+  out[2] = out_error_ppm;
+  out.attr("names") = Rcpp::CharacterVector::create(
+    "formula", "exact_mass", "error_ppm");
+  out.attr("class") = "data.frame";
+  out.attr("row.names") = Rcpp::IntegerVector::create(NA_INTEGER, -static_cast<int>(n));
+  return Rcpp::DataFrame(out);
+}
+
+//' Create a suspect screening CSV from MOL files using the native Open Babel
+//' backend
+//'
+//' Reads one or more MOL files, validates each file, and normalizes the
+//' structures using the embedded Open Babel runtime. Returns the standard
+//' suspect-screening columns. When \code{file} is provided, the resulting table
+//' is also written as CSV using \code{data.table::fwrite()}.
+//'
+//' @param files A character vector of full paths to MOL files.
+//' @param file Optional output CSV path. When provided, the normalized table is
+//'   written to disk.
+//' @return A \code{data.frame} with columns \code{name}, \code{formula},
+//'   \code{mass}, \code{rt}, \code{SMILES}, \code{InChI}, \code{InChIKey},
+//'   \code{xLogP}, \code{ms2_positive}, and \code{ms2_negative}.
+//' @export
+// [[Rcpp::export]]
+Rcpp::DataFrame rcpp_get_suspect_screening_csv_from_mol_files(
+  Rcpp::CharacterVector files,
+  Rcpp::Nullable<std::string> file = R_NilValue)
+{
+  const R_xlen_t n = files.size();
+  if (n == 0)
+  {
+    Rcpp::stop("files vector is empty.");
+  }
+
+  Rcpp::CharacterVector out_name(n);
+  Rcpp::CharacterVector out_formula(n, NA_STRING);
+  Rcpp::NumericVector out_mass(n, NA_REAL);
+  Rcpp::NumericVector out_rt(n, NA_REAL);
+  Rcpp::CharacterVector out_smiles(n, NA_STRING);
+  Rcpp::CharacterVector out_inchi(n, NA_STRING);
+  Rcpp::CharacterVector out_inchikey(n, NA_STRING);
+  Rcpp::NumericVector out_xlogp(n, NA_REAL);
+  Rcpp::CharacterVector out_ms2_positive(n);
+  Rcpp::CharacterVector out_ms2_negative(n);
+
+  for (R_xlen_t i = 0; i < n; ++i)
+  {
+    const std::string file_path = obabel::string_at(files, i);
+
+    if (file_path.empty())
+    {
+      out_name[i] = "";
+      continue;
+    }
+
+    // Extract filename stem for the name column
+    const size_t sep_pos = file_path.find_last_of("\\/");
+    const std::string filename = (sep_pos == std::string::npos)
+      ? file_path
+      : file_path.substr(sep_pos + 1);
+    const size_t dot_pos = filename.find_last_of('.');
+    const std::string name = (dot_pos == std::string::npos)
+      ? filename
+      : filename.substr(0, dot_pos);
+    out_name[i] = name;
+
+    // Validate file exists
+    std::ifstream test(file_path.c_str());
+    if (!test.good())
+    {
+      continue;
+    }
+    test.close();
+
+    const sf::obabel::NormalizedStructure normalized =
+      sf::obabel::normalize_structure_from_mol_file(file_path);
+
+    if (normalized.ok)
+    {
+      if (!normalized.formula.empty())
+      {
+        out_formula[i] = normalized.formula;
+      }
+      out_mass[i] = normalized.exact_mass;
+      if (!normalized.canonical_smiles.empty())
+      {
+        out_smiles[i] = normalized.canonical_smiles;
+      }
+      if (!normalized.inchi.empty())
+      {
+        out_inchi[i] = normalized.inchi;
+      }
+      if (!normalized.inchikey.empty())
+      {
+        out_inchikey[i] = normalized.inchikey;
+      }
+      if (normalized.has_xlogp)
+      {
+        out_xlogp[i] = normalized.xlogp;
       }
     }
   }

@@ -16,6 +16,7 @@
 #endif
 
 #include <openbabel/descriptor.h>
+#include <openbabel/elements.h>
 #include <openbabel/groupcontrib.h>
 #include <openbabel/mol.h>
 #include <openbabel/obconversion.h>
@@ -437,6 +438,394 @@ extern "C"
 
     out->ok = 1;
     return 1;
+  }
+
+  int sf_ob_normalize_structure_from_mol_file(
+    const char *file_path,
+    streamfind_ob_normalized_result *out)
+  {
+    zero_result(out);
+    if (out == nullptr || file_path == nullptr || *file_path == '\0')
+      return 0;
+
+#ifdef _WIN32
+    ensure_openbabel_data_dir();
+#endif
+    OpenBabel::obErrorLog.SetOutputLevel(OpenBabel::obError);
+
+    OpenBabel::OBMol mol;
+    OpenBabel::OBConversion conv;
+    if (!conv.SetInFormat("mol"))
+    {
+      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY,
+                "Open Babel format unavailable: mol");
+      return 0;
+    }
+    if (!conv.ReadFile(&mol, file_path))
+    {
+      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY,
+                "Open Babel could not read file");
+      return 0;
+    }
+
+    if (mol.NumAtoms() == 0)
+    {
+      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY,
+                "No atoms in molecule");
+      return 0;
+    }
+
+    std::string error;
+    const std::string canonical_smiles = write_molecule(mol, "can", error);
+    if (!error.empty())
+    {
+      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY, error);
+      return 0;
+    }
+
+    const std::string normalized_inchi = write_molecule(mol, "inchi", error);
+    if (!error.empty())
+    {
+      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY, error);
+      return 0;
+    }
+
+    const std::string inchikey = write_molecule(mol, "inchikey", error);
+    if (!error.empty())
+    {
+      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY, error);
+      return 0;
+    }
+
+    copy_text(out->canonical_smiles, STREAMFIND_OB_SMILES_CAPACITY, canonical_smiles);
+    copy_text(out->inchi, STREAMFIND_OB_INCHI_CAPACITY, normalized_inchi);
+    copy_text(out->inchikey, STREAMFIND_OB_INCHIKEY_CAPACITY, inchikey);
+    copy_text(out->formula, STREAMFIND_OB_FORMULA_CAPACITY, normalize_formula(mol.GetFormula()));
+    out->exact_mass = mol.GetExactMass();
+
+    if (OpenBabel::OBDescriptor *logp = OpenBabel::OBDescriptor::FindType("logP"))
+    {
+      const double value = logp->Predict(&mol);
+      if (finite_value(value))
+      {
+        out->xlogp = value;
+        out->has_xlogp = 1;
+      }
+    }
+
+    out->ok = 1;
+    return 1;
+  }
+
+  namespace
+  {
+    struct FormulaElement
+    {
+      std::string symbol;
+      double exact_mass;
+      int min_count;
+      int max_count;
+    };
+
+    void record_formula_dynamic(
+        const std::vector<int> &counts,
+        const std::vector<FormulaElement> &elements,
+        double formula_mass,
+        double error_da,
+        double target_mass,
+        streamfind_ob_formula_result *out)
+    {
+      if (out->count >= STREAMFIND_OB_FORMULA_MAX_RESULTS)
+        return;
+
+      std::string formula;
+      // Hill notation: C first, H second, then others alphabetically
+      // Find indices for special ordering
+      int idx_C = -1, idx_H = -1;
+      for (int i = 0; i < static_cast<int>(elements.size()); ++i)
+      {
+        if (elements[i].symbol == "C") idx_C = i;
+        if (elements[i].symbol == "H") idx_H = i;
+      }
+
+      if (idx_C >= 0 && counts[idx_C] > 0)
+      {
+        formula += "C";
+        if (counts[idx_C] > 1) formula += std::to_string(counts[idx_C]);
+      }
+      if (idx_H >= 0 && counts[idx_H] > 0)
+      {
+        formula += "H";
+        if (counts[idx_H] > 1) formula += std::to_string(counts[idx_H]);
+      }
+      for (int i = 0; i < static_cast<int>(elements.size()); ++i)
+      {
+        if (i == idx_C || i == idx_H) continue;
+        if (counts[i] > 0)
+        {
+          formula += elements[i].symbol;
+          if (counts[i] > 1) formula += std::to_string(counts[i]);
+        }
+      }
+
+      if (formula.empty())
+        return;
+
+      const double error_ppm = (error_da / target_mass) * 1e6;
+
+      std::strncpy(out->formulas[out->count], formula.c_str(),
+                   STREAMFIND_OB_FORMULA_STR_SIZE - 1);
+      out->formulas[out->count][STREAMFIND_OB_FORMULA_STR_SIZE - 1] = '\0';
+      out->masses[out->count] = formula_mass;
+      out->errors[out->count] = error_ppm;
+      out->count++;
+    }
+
+    bool enumerate_formulas_recursive(
+        double remaining_mass,
+        double tolerance_da,
+        int depth,
+        const std::vector<FormulaElement> &elements,
+        std::vector<int> &counts,
+        double current_mass,
+        double target_mass,
+        streamfind_ob_formula_result *out)
+    {
+      if (out->count >= STREAMFIND_OB_FORMULA_MAX_RESULTS)
+        return false;
+
+      if (depth == static_cast<int>(elements.size()))
+      {
+        const double error_da = std::fabs(remaining_mass);
+        if (error_da <= tolerance_da)
+        {
+          record_formula_dynamic(counts, elements, current_mass,
+                                 error_da, target_mass, out);
+        }
+        return true;
+      }
+
+      const double elem_mass = elements[depth].exact_mass;
+      const int min_n = elements[depth].min_count;
+      const int max_n = std::min(elements[depth].max_count,
+          static_cast<int>((remaining_mass + tolerance_da) / elem_mass) + 1);
+
+      // If this is the last element, compute n directly
+      if (depth == static_cast<int>(elements.size()) - 1)
+      {
+        int n = static_cast<int>(std::round(remaining_mass / elem_mass));
+        if (n >= min_n && n <= max_n)
+        {
+          counts[depth] = n;
+          const double new_mass = current_mass + n * elem_mass;
+          const double new_remaining = target_mass - new_mass;
+          const double error_da = std::fabs(new_remaining);
+          if (error_da <= tolerance_da)
+          {
+            record_formula_dynamic(counts, elements, new_mass,
+                                   error_da, target_mass, out);
+          }
+        }
+        return true;
+      }
+
+      for (int n = min_n; n <= max_n; ++n)
+      {
+        counts[depth] = n;
+        const double new_current = current_mass + n * elem_mass;
+        const double new_remaining = target_mass - new_current;
+        if (new_remaining < -tolerance_da)
+          break;
+        if (!enumerate_formulas_recursive(
+                new_remaining, tolerance_da,
+                depth + 1, elements, counts,
+                new_current, target_mass, out))
+          return false;
+      }
+      return true;
+    }
+
+    int parse_atomic_number(const std::string &symbol)
+    {
+      if (symbol == "H")  return 1;
+      if (symbol == "He") return 2;
+      if (symbol == "Li") return 3;
+      if (symbol == "Be") return 4;
+      if (symbol == "B")  return 5;
+      if (symbol == "C")  return 6;
+      if (symbol == "N")  return 7;
+      if (symbol == "O")  return 8;
+      if (symbol == "F")  return 9;
+      if (symbol == "Ne") return 10;
+      if (symbol == "Na") return 11;
+      if (symbol == "Mg") return 12;
+      if (symbol == "Al") return 13;
+      if (symbol == "Si") return 14;
+      if (symbol == "P")  return 15;
+      if (symbol == "S")  return 16;
+      if (symbol == "Cl") return 17;
+      if (symbol == "Ar") return 18;
+      if (symbol == "K")  return 19;
+      if (symbol == "Ca") return 20;
+      if (symbol == "Br") return 35;
+      if (symbol == "I")  return 53;
+      return 0;
+    }
+
+    bool parse_element_constraint(
+        const std::string &token,
+        std::string &symbol,
+        int &min_count,
+        int &max_count)
+    {
+      // Format: "Symbol" or "Symbol:max" or "Symbol:min-max"
+      const size_t colon = token.find(':');
+      if (colon == std::string::npos)
+      {
+        symbol = token;
+        min_count = 0;
+        max_count = 999;
+        return true;
+      }
+
+      symbol = token.substr(0, colon);
+      const std::string range = token.substr(colon + 1);
+
+      const size_t dash = range.find('-');
+      if (dash == std::string::npos)
+      {
+        // "Symbol:max" format
+        min_count = 0;
+        max_count = std::stoi(range);
+      }
+      else
+      {
+        // "Symbol:min-max" format
+        min_count = std::stoi(range.substr(0, dash));
+        max_count = std::stoi(range.substr(dash + 1));
+      }
+      return true;
+    }
+
+    void sort_formula_results(streamfind_ob_formula_result *out)
+    {
+      if (out->count <= 1)
+        return;
+      for (int i = 1; i < out->count; ++i)
+      {
+        for (int j = i; j > 0 && out->errors[j] < out->errors[j - 1]; --j)
+        {
+          std::swap(out->errors[j], out->errors[j - 1]);
+          std::swap(out->masses[j], out->masses[j - 1]);
+          char tmp[STREAMFIND_OB_FORMULA_STR_SIZE];
+          std::strncpy(tmp, out->formulas[j], STREAMFIND_OB_FORMULA_STR_SIZE);
+          std::strncpy(out->formulas[j], out->formulas[j - 1], STREAMFIND_OB_FORMULA_STR_SIZE);
+          std::strncpy(out->formulas[j - 1], tmp, STREAMFIND_OB_FORMULA_STR_SIZE);
+        }
+      }
+    }
+  }
+
+  int sf_ob_formula_from_mass(
+    double monoisotopic_mass,
+    double tolerance_ppm,
+    const char *elements,
+    streamfind_ob_formula_result *out)
+  {
+    std::memset(out, 0, sizeof(*out));
+    if (out == nullptr || monoisotopic_mass <= 0.0)
+      return 0;
+
+#ifdef _WIN32
+    ensure_openbabel_data_dir();
+#endif
+
+    const double tolerance_da = monoisotopic_mass * tolerance_ppm * 1e-6;
+
+    // Parse element constraints
+    std::vector<FormulaElement> elems;
+    int h_index = -1;
+
+    if (elements != nullptr && *elements != '\0')
+    {
+      std::string elem_str(elements);
+      std::istringstream stream(elem_str);
+      std::string token;
+      while (std::getline(stream, token, ';'))
+      {
+        if (token.empty()) continue;
+        FormulaElement elem;
+        if (!parse_element_constraint(token, elem.symbol,
+                                       elem.min_count, elem.max_count))
+          continue;
+        const int an = parse_atomic_number(elem.symbol);
+        if (an == 0) continue;
+        elem.exact_mass = OpenBabel::OBElements::GetExactMass(an);
+        if (elem.symbol == "H") h_index = static_cast<int>(elems.size());
+        elems.push_back(elem);
+      }
+    }
+
+    if (elems.empty())
+    {
+      FormulaElement c, h, n, o, p, s;
+      c.symbol = "C"; c.exact_mass = OpenBabel::OBElements::GetExactMass(6);
+      c.min_count = 0; c.max_count = std::min(130, static_cast<int>(monoisotopic_mass / c.exact_mass) + 1);
+      h.symbol = "H"; h.exact_mass = OpenBabel::OBElements::GetExactMass(1);
+      h.min_count = 0; h.max_count = std::min(260, static_cast<int>(monoisotopic_mass / h.exact_mass) + 1);
+      h_index = 1;
+      n.symbol = "N"; n.exact_mass = OpenBabel::OBElements::GetExactMass(7);
+      n.min_count = 0; n.max_count = std::min(30, static_cast<int>(monoisotopic_mass / n.exact_mass) + 1);
+      o.symbol = "O"; o.exact_mass = OpenBabel::OBElements::GetExactMass(8);
+      o.min_count = 0; o.max_count = std::min(30, static_cast<int>(monoisotopic_mass / o.exact_mass) + 1);
+      p.symbol = "P"; p.exact_mass = OpenBabel::OBElements::GetExactMass(15);
+      p.min_count = 0; p.max_count = std::min(5, static_cast<int>(monoisotopic_mass / p.exact_mass) + 1);
+      s.symbol = "S"; s.exact_mass = OpenBabel::OBElements::GetExactMass(16);
+      s.min_count = 0; s.max_count = std::min(10, static_cast<int>(monoisotopic_mass / s.exact_mass) + 1);
+      elems = {c, h, n, o, p, s};
+    }
+    else
+    {
+      // Fill in auto bounds for any element that has max_count == 999
+      for (auto &elem : elems)
+      {
+        if (elem.max_count == 999)
+        {
+          elem.max_count = static_cast<int>(monoisotopic_mass / elem.exact_mass) + 1;
+        }
+      }
+    }
+
+    // Ensure H is the last element for direct calculation optimization
+    if (h_index >= 0 && h_index != static_cast<int>(elems.size()) - 1)
+    {
+      std::swap(elems[h_index], elems.back());
+    }
+
+    // Sort by descending mass (excluding H which is last) for efficient pruning
+    if (elems.size() > 2)
+    {
+      const int sort_end = static_cast<int>(elems.size()) - 1;
+      for (int i = 0; i < sort_end - 1; ++i)
+      {
+        for (int j = i + 1; j < sort_end; ++j)
+        {
+          if (elems[j].exact_mass > elems[i].exact_mass)
+          {
+            std::swap(elems[i], elems[j]);
+          }
+        }
+      }
+    }
+
+    std::vector<int> counts(elems.size(), 0);
+    enumerate_formulas_recursive(
+        monoisotopic_mass, tolerance_da,
+        0, elems, counts, 0.0, monoisotopic_mass, out);
+
+    sort_formula_results(out);
+
+    return out->count > 0 ? 1 : 0;
   }
 
   int sf_ob_render_structure_svg(
