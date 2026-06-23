@@ -3086,7 +3086,9 @@
     output$internal_standard_identification_table <- DT::renderDT({
       rows <- selected_internal_standards_rows()
       shiny::validate(shiny::need(!is.null(rows) && nrow(rows) > 0, "Select one or more points to view identification."))
-      rows <- build_identification_table(rows, nta_data(), darkMode = dark_mode(), spectra_mode = "feature")
+            internal_standards_table_row_data(data.table::copy(rows))
+            rows <- build_identification_table(rows, nta_data(), darkMode = dark_mode(), spectra_mode = "feature")
+            internal_standards_table_data(rows)
       DT::datatable(
         rows,
         options = list(dom = "t", paging = FALSE, autoWidth = TRUE, scrollX = TRUE, scrollY = "calc(100vh - 293px)"),
@@ -3259,7 +3261,9 @@
       suspects <- suspects[sel, on = .(analysis, feature), nomatch = 0]
       shiny::validate(shiny::need(nrow(suspects) > 0, "No suspects available for selected features."))
 
+      suspects_table_row_data(data.table::copy(suspects))
       suspects <- build_identification_table(suspects, nts, darkMode = dark_mode(), spectra_mode = "suspect")
+      suspects_table_data(suspects)
 
       DT::datatable(
         suspects,
@@ -3275,6 +3279,339 @@
         class = "table table-hover suspects-table",
         rownames = FALSE
       )
+    })
+
+        suspects_table_data <- shiny::reactiveVal(data.table::data.table())
+        suspects_table_row_data <- shiny::reactiveVal(data.table::data.table())
+        internal_standards_table_data <- shiny::reactiveVal(data.table::data.table())
+        internal_standards_table_row_data <- shiny::reactiveVal(data.table::data.table())
+
+    build_modal_ms2_plotly <- function(row) {
+      dm <- dark_mode()
+      build_peak_dt <- function(mz_str, int_str, src, pos = TRUE) {
+        if (is.null(mz_str) || is.na(mz_str) || !nzchar(mz_str) ||
+            is.null(int_str) || is.na(int_str) || !nzchar(int_str)) {
+          return(data.table::data.table(mz = numeric(), intensity = numeric(),
+                                        source = character(), label_text = character(),
+                                        hover_text = character()))
+        }
+        mz_v <- tryCatch(rcpp_decode_string(mz_str), error = function(e) numeric())
+        int_v <- tryCatch(rcpp_decode_string(int_str), error = function(e) numeric())
+        n <- min(length(mz_v), length(int_v))
+        if (n == 0) return(data.table::data.table(mz = numeric(), intensity = numeric(),
+                                                   source = character(), label_text = character(),
+                                                   hover_text = character()))
+        dt <- data.table::data.table(
+          mz = mz_v[seq_len(n)],
+          intensity = if (pos) int_v[seq_len(n)] else -abs(int_v[seq_len(n)]),
+          source = src
+        )
+        dt <- dt[is.finite(mz) & is.finite(intensity)]
+        if (nrow(dt) == 0) return(dt[, `:=`(label_text = character(), hover_text = character())])
+        dt[, label_text := sprintf("%.4f", mz)]
+        dt[, hover_text := paste0(
+          "<b>", src, "</b>\nm/z: ", sprintf("%.4f", mz),
+          "\nintensity: ", sprintf("%.4f", abs(intensity)))]
+        dt
+      }
+
+      exp_dt <- build_peak_dt(row$exp_ms2_mz, row$exp_ms2_intensity, "exp", TRUE)
+      db_dt <- build_peak_dt(row$db_ms2_mz, row$db_ms2_intensity, "db", FALSE)
+
+      if (nrow(db_dt) > 0) {
+        has_smi <- !is.na(row$db_ms2_smiles) && nzchar(row$db_ms2_smiles)
+        has_form <- !is.na(row$db_ms2_formula) && nzchar(row$db_ms2_formula)
+        form_vec <- if (has_form) trimws(strsplit(row$db_ms2_formula, ";", fixed = TRUE)[[1]]) else character()
+        smi_vec <- if (has_smi) trimws(strsplit(row$db_ms2_smiles, ";", fixed = TRUE)[[1]]) else character()
+        for (i in seq_len(nrow(db_dt))) {
+          parts <- paste0("db<br>m/z: ", sprintf("%.4f", db_dt$mz[i]),
+                          "<br>intensity: ", sprintf("%.4f", abs(db_dt$intensity[i])))
+          if (has_form && i <= length(form_vec) && !is.na(form_vec[i]) && nzchar(form_vec[i]))
+            parts <- paste0(parts, "<br>formula: ", form_vec[i])
+          if (has_smi && i <= length(smi_vec) && !is.na(smi_vec[i]) && nzchar(smi_vec[i])) {
+            svg <- tryCatch(rcpp_openbabel_structure_svg(SMILES = smi_vec[i], width = 180L, height = 130L, darkMode = dm),
+                            error = function(e) "")
+            if (nzchar(svg)) {
+              uri <- svg_data_uri(normalize_inline_svg(svg))
+              parts <- paste0(parts, "<br><img src='", uri, "' style='width:180px;height:130px;display:block;margin:2px auto;'>")
+            }
+          }
+          db_dt$hover_text[i] <- parts
+        }
+      }
+
+      # Normalize exp and db separately so each group max = 1
+      if (nrow(exp_dt) > 0) {
+        em <- max(exp_dt$intensity, na.rm = TRUE)
+        if (is.finite(em) && em > 0) exp_dt[, intensity := intensity / em]
+      }
+      if (nrow(db_dt) > 0) {
+        dmx <- max(abs(db_dt$intensity), na.rm = TRUE)
+        if (is.finite(dmx) && dmx > 0) db_dt[, intensity := intensity / dmx]
+      }
+
+      plot_dt <- rbind(exp_dt, db_dt, fill = TRUE)
+      if (nrow(plot_dt) == 0)
+        return(plotly::plot_ly(type = "scatter", mode = "markers") |> plotly::layout(xaxis = list(title = "m/z"), yaxis = list(title = "Intensity")))
+
+      theme <- .get_plot_theme(dm)
+
+      p <- plotly::plot_ly()
+      for (src_name in c("exp", "db")) {
+        seg <- plot_dt[source == src_name]
+        if (nrow(seg) == 0) next
+        clr <- if (src_name == "exp") "#1f77b4" else "#d62728"
+        x_seg <- as.numeric(rbind(seg$mz, seg$mz, rep(NA, nrow(seg))))
+        y_seg <- as.numeric(rbind(rep(0, nrow(seg)), seg$intensity, rep(NA, nrow(seg))))
+        cdata <- as.vector(rbind(seg$hover_text, seg$hover_text, rep(NA_character_, nrow(seg))))
+        p <- p |> plotly::add_trace(
+          x = x_seg, y = y_seg,
+          type = "scattergl", mode = "lines",
+          line = list(color = clr, width = 2),
+          name = src_name, legendgroup = src_name, showlegend = TRUE,
+          hoverinfo = "skip", meta = cdata
+        )
+        label_offset <- 0.025
+        label_y <- if (src_name == "db") seg$intensity - label_offset else seg$intensity + label_offset
+        p <- p |> plotly::add_trace(
+          x = seg$mz, y = label_y,
+          type = "scattergl", mode = "text",
+          text = seg$label_text,
+          textposition = if (src_name == "db") "bottom center" else "top center",
+          textfont = list(size = 9, color = clr),
+          meta = seg$hover_text,
+          hoverinfo = "skip", name = src_name, legendgroup = src_name, showlegend = FALSE
+        )
+      }
+
+      y_range <- c(-1.3, 1.3)
+
+      ax_spec <- .plotly_axis_spec(title = list(text = "<i>m/z</i> / Da"), darkMode = dm)
+      ay_spec <- .plotly_axis_spec(title = list(text = "Intensity"), darkMode = dm)
+      ay_spec$range <- y_range
+      ay_spec$tickvals <- c(-1, -0.5, 0, 0.5, 1)
+      ay_spec$ticktext <- c("1.0", "0.5", "0", "0.5", "1.0")
+
+      p <- p |>
+        plotly::layout(
+          title = NULL,
+          margin = list(l = 55, r = 35, t = 35, b = 80),
+          xaxis = ax_spec,
+          yaxis = ay_spec,
+          paper_bgcolor = "rgba(0,0,0,0)",
+          plot_bgcolor = "rgba(0,0,0,0)"
+        ) |>
+        plotly::config(displaylogo = FALSE, responsive = TRUE,
+                       displayModeBar = "hover")
+
+      tip_id <- paste0("tip_", gsub("[^a-zA-Z0-9]", "_", row$feature))
+      tip_bg <- if (dm) "#222" else "#fff"
+      tip_fg <- if (dm) "#fff" else "#000"
+      p <- htmlwidgets::onRender(p, sprintf("
+        function(el) {
+          var tip = document.getElementById('%s');
+          if (!tip) {
+            tip = document.createElement('div');
+            tip.id = '%s';
+            document.body.appendChild(tip);
+          }
+          tip.style.cssText = 'position:fixed;display:none;z-index:99999;background:%s;border:1px solid #888;border-radius:6px;padding:8px 10px;box-shadow:0 4px 12px rgba(0,0,0,0.2);pointer-events:none;max-width:360px;font-size:12px;color:%s;line-height:1.4;font-family:inherit;';
+          el.on('plotly_hover', function(data) {
+            var pt = data.points[0];
+            if (!pt) return;
+            var idx = pt.pointIndex;
+            if (idx == null) idx = pt.pointNumber;
+            var md = pt.data.meta;
+            var html = '';
+            if (md && Array.isArray(md)) {
+              html = md[idx] || md[Math.floor(idx / 3)] || '';
+            }
+            if (!html || html === 'NA') { tip.style.display = 'none'; return; }
+            tip.innerHTML = html;
+            tip.style.display = 'block';
+            var ex = data.event.clientX || 0;
+            var ey = data.event.clientY || 0;
+            var tx = ex + 18;
+            var ty = ey - 12;
+            if (tx + 360 > window.innerWidth) tx = ex - 370;
+            if (ty < 5) ty = ey + 18;
+            if (ty + 300 > window.innerHeight) ty = window.innerHeight - 310;
+            tip.style.left = tx + 'px';
+            tip.style.top = ty + 'px';
+          });
+          el.on('plotly_unhover', function() { tip.style.display = 'none'; });
+        }
+      ", tip_id, tip_id, tip_bg, tip_fg))
+      p
+    }
+
+    open_details_modal <- function(row, title = "Details") {
+      dm_open <- dark_mode()
+      is_suspect <- "feature_group" %in% names(row) && !"feature_component" %in% names(row)
+
+      fc_val <- NA_character_
+      adduct_val <- NA_character_
+      if (!is_suspect) {
+        fc <- row$feature_component
+        ad <- row$adduct
+        fc_val <- if (is.null(fc) || is.na(fc) || !nzchar(as.character(fc))) NA_character_ else as.character(fc)
+        adduct_val <- if (is.null(ad) || is.na(ad) || !nzchar(as.character(ad))) NA_character_ else as.character(ad)
+      }
+
+      fmt <- function(x, fmt_str) {
+        if (is.null(x) || length(x) == 0 || is.na(x) || !is.finite(x)) NA_character_
+        else sprintf(fmt_str, x)
+      }
+      db_mass_fmt <- if (!is.na(row$db_mass) && is.finite(row$db_mass)) sprintf("%.4f", row$db_mass) else "-"
+      detail_fields <- list(
+        "Name" = row$name,
+        "Formula" = row$formula,
+        "Mass" = db_mass_fmt,
+        "SMILES" = row$SMILES,
+        "InChIKey" = row$InChIKey,
+        "Score" = fmt(row$score, "%.4f"),
+        "Identification Level" = row$id_level,
+        "Mass Error (ppm)" = fmt(row$error_mass, "%.1f"),
+        "RT Error (s)" = fmt(row$error_rt, "%.1f"),
+        "Shared Fragments" = row$shared_fragments,
+        "Cosine Similarity" = fmt(row$cosine_similarity, "%.4f"),
+        "xLogP" = fmt(row$xLogP, "%.4f"),
+        "Analysis" = row$analysis,
+        "Replicate" = row$replicate,
+        "Feature" = row$feature,
+        "Feature Group" = row$feature_group
+      )
+      if (!is_suspect) {
+        detail_fields[["Feature Component"]] <- if (is.na(fc_val) || !nzchar(fc_val)) "-" else fc_val
+        detail_fields[["Adduct"]] <- if (is.na(adduct_val) || !nzchar(adduct_val)) "-" else adduct_val
+      }
+
+      dt_bg1 <- if (dm_open) "#2a2a2a" else "#f5f5f5"
+      dt_bg2 <- if (dm_open) "#1e1e1e" else "#fff"
+      dt_fg <- if (dm_open) "#e0e0e0" else "#000"
+      dt_border <- if (dm_open) "#444" else "#e0e0e0"
+      modal_bg <- if (dm_open) "#1e1e1e" else "#fff"
+      modal_fg <- if (dm_open) "#e0e0e0" else "#000"
+
+      detail_html <- tags$table(
+        class = "modal-detail-table",
+        style = sprintf("width:100%%; border-collapse: collapse; font-size: 12px; color: %s;", dt_fg),
+        lapply(seq_along(detail_fields), function(i) {
+          nm <- names(detail_fields)[i]
+          val <- detail_fields[[i]]
+          if (is.null(val) || is.na(val) || !nzchar(val)) val <- "-"
+          bg <- if (i %% 2 == 0) dt_bg1 else dt_bg2
+          tags$tr(
+            style = paste0("background:", bg, ";"),
+            tags$td(style = sprintf("padding:3px 8px; font-weight:600; width:40%%; border-bottom:1px solid %s; color:%s;", dt_border, dt_fg), nm),
+            tags$td(style = sprintf("padding:3px 8px; border-bottom:1px solid %s; color:%s;", dt_border, dt_fg), val)
+          )
+        })
+      )
+
+      struct_img <- ""
+      if (!is.na(row$SMILES) && nzchar(row$SMILES)) {
+        svg <- tryCatch(
+          rcpp_openbabel_structure_svg(SMILES = row$SMILES, width = 320L, height = 320L, darkMode = dm_open),
+          error = function(e) ""
+        )
+        if (nzchar(svg)) {
+          svg <- gsub("^<\\?xml[^>]*\\?>", "", svg)
+          svg_b64 <- base64enc::base64encode(charToRaw(enc2utf8(svg)))
+          struct_img <- sprintf("<img src='data:image/svg+xml;base64,%s' style='width:320px;height:320px;object-fit:contain;'/>", svg_b64)
+        }
+      }
+
+      ms2_id <- paste0("modal_ms2_", gsub("[^a-zA-Z0-9]", "_", row$feature))
+
+      output[[ms2_id]] <- plotly::renderPlotly({
+        build_modal_ms2_plotly(row)
+      })
+
+      shiny::showModal(
+        shiny::modalDialog(
+          easyClose = TRUE,
+          fade = TRUE,
+          tags$style(HTML(sprintf("
+.modal-dialog { width: 90vw !important; max-width: 90vw !important; }
+.modal-content { height: 90vh; overflow: hidden; background: %s; color: %s; }
+.modal-header { background: %s; color: %s; border-bottom: 1px solid %s; }
+.modal-body { padding: 0 !important; }
+.modal-detail-table td { vertical-align: top; }
+.modal-header .close { color: %s; }
+.modal .js-plotly-plot .modebar,
+.modal .js-plotly-plot .modebar-group { background: transparent !important; box-shadow: none !important; }
+.modal .js-plotly-plot .modebar-btn,
+.modal .js-plotly-plot .modebar-btn:not(.active) { background: none !important; background-color: transparent !important; border: none !important; box-shadow: none !important; color: %s !important; opacity: 1 !important; }
+.modal .js-plotly-plot .modebar-btn:not(.active):hover,
+.modal .js-plotly-plot .modebar-btn:not(.active):focus { background: %s !important; background-color: %s !important; border: none !important; box-shadow: none !important; color: %s !important; }
+.modal .js-plotly-plot .modebar-btn:not(.active) svg,
+.modal .js-plotly-plot .modebar-btn:not(.active) svg * { fill: currentColor !important; stroke: currentColor !important; }
+.modal .js-plotly-plot .modebar-btn.active,
+.modal .js-plotly-plot .modebar-btn--logo,
+.modal .js-plotly-plot .modebar-btn.active:hover { background: %s !important; background-color: %s !important; color: %s !important; }
+.modal .js-plotly-plot .modebar-btn.active svg,
+.modal .js-plotly-plot .modebar-btn.active svg * { fill: currentColor !important; stroke: currentColor !important; }
+", modal_bg, modal_fg, if (dm_open) "#2a2a2a" else "#fafafa", modal_fg, dt_border, modal_fg,
+modal_fg,
+if (dm_open) "rgba(255,255,255,0.1)" else "rgba(0,0,0,0.05)",
+if (dm_open) "rgba(255,255,255,0.1)" else "rgba(0,0,0,0.05)",
+modal_fg,
+if (dm_open) "rgba(255,255,255,0.2)" else "rgba(0,0,0,0.1)",
+if (dm_open) "rgba(255,255,255,0.2)" else "rgba(0,0,0,0.1)",
+modal_fg))),
+          tags$div(
+            style = sprintf("display:grid; grid-template-columns: 30fr 70fr; gap: 12px; height: calc(90vh - 60px); overflow: hidden; background: %s; color: %s;", modal_bg, modal_fg),
+            tags$div(
+              style = sprintf("overflow-y:auto; padding-right:8px; background:%s;", modal_bg),
+              tags$div(style = "text-align:center; margin-bottom:12px;", HTML(struct_img)),
+              detail_html
+            ),
+            tags$div(
+              style = "overflow:hidden; height:100%; width:100%;",
+              plotly::plotlyOutput(session$ns(ms2_id), height = "100%", width = "100%")
+            )
+          ),
+          footer = NULL,
+          title = tags$span(
+            style = sprintf("font-weight:600; font-size:16px; color:%s;", modal_fg),
+            if (!is.null(title) && !is.na(title) && nzchar(title)) title else
+              if (!is.na(row$name) && nzchar(row$name)) row$name else "Details"
+          )
+        )
+      )
+    }
+
+    observeEvent(input$suspects_table_scatter_cell_clicked, {
+      click <- input$suspects_table_scatter_cell_clicked
+      if (is.null(click) || is.null(click$row)) return()
+      display_rows <- suspects_table_data()
+      data_rows <- suspects_table_row_data()
+      if (is.null(display_rows) || nrow(display_rows) < click$row) return()
+      if (is.null(data_rows) || nrow(data_rows) < click$row) return()
+      merged <- data.table::copy(display_rows[click$row, ])
+      for (col in intersect(c("db_ms2_mz","db_ms2_intensity","db_ms2_formula","db_ms2_smiles",
+                              "exp_ms2_mz","exp_ms2_intensity","exp_ms2_size","db_ms2_size"),
+                            colnames(data_rows))) {
+        merged[[col]] <- data_rows[[col]][click$row]
+      }
+      open_details_modal(merged, title = "Suspect Details")
+    })
+
+    observeEvent(input$internal_standard_identification_table_cell_clicked, {
+      click <- input$internal_standard_identification_table_cell_clicked
+      if (is.null(click) || is.null(click$row)) return()
+      display_rows <- internal_standards_table_data()
+      data_rows <- internal_standards_table_row_data()
+      if (is.null(display_rows) || nrow(display_rows) < click$row) return()
+      if (is.null(data_rows) || nrow(data_rows) < click$row) return()
+      merged <- data.table::copy(display_rows[click$row, ])
+      for (col in intersect(c("db_ms2_mz","db_ms2_intensity","db_ms2_formula","db_ms2_smiles",
+                              "exp_ms2_mz","exp_ms2_intensity","exp_ms2_size","db_ms2_size"),
+                            colnames(data_rows))) {
+        merged[[col]] <- data_rows[[col]][click$row]
+      }
+      open_details_modal(merged, title = "Internal Standard Details")
     })
   })
 }
