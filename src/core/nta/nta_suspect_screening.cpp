@@ -121,6 +121,7 @@ namespace nta
       row.db_ms2_mz = suspect.db_ms2_mz;
       row.db_ms2_intensity = suspect.db_ms2_intensity;
       row.db_ms2_formula = suspect.db_ms2_formula;
+      row.db_ms2_smiles = suspect.db_ms2_smiles;
       row.exp_ms2_size = suspect.exp_ms2_size;
       row.exp_ms2_mz = suspect.exp_ms2_mz;
       row.exp_ms2_intensity = suspect.exp_ms2_intensity;
@@ -286,6 +287,7 @@ namespace nta
         row.db_ms2_mz = "";
         row.db_ms2_intensity = "";
         row.db_ms2_formula = "";
+        row.db_ms2_smiles = "";
         row.exp_ms2_size = get_or_default(fts.ms2_size, idx, 0);
         row.exp_ms2_mz = get_or_default(fts.ms2_mz, idx, std::string());
         row.exp_ms2_intensity = get_or_default(fts.ms2_intensity, idx, std::string());
@@ -314,6 +316,7 @@ namespace nta
           row.db_ms2_mz = encode_floats(*sus_mz);
           row.db_ms2_intensity = encode_floats(*sus_int);
           row.db_ms2_formula = "";
+          row.db_ms2_smiles = "";
 
           std::vector<float> exp_mz = decode_floats(row.exp_ms2_mz);
           std::vector<float> exp_int = decode_floats(row.exp_ms2_intensity);

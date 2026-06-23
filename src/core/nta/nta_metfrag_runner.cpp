@@ -37,6 +37,12 @@ namespace
     "SDF",
     "XLS",
     "CSV",
+    "PSV",
+    "FragmentSmilesPSV",
+    "LossFragmentSmilesPSV",
+    "LossFragmentSmilesExtendedPSV",
+    "LossFragmentSmilesCompletePSV",
+    "ExtendedPSV",
     "ExtendedXLS",
     "ExtendedFragmentsXLS"
   };
@@ -67,6 +73,29 @@ namespace
       return "";
     size_t b = s.find_last_not_of(" \t\r\n");
     return s.substr(a, b - a + 1);
+  }
+
+  // Strip leading "mass:" prefixes from a "mass:value;mass:value" string.
+  std::string strip_mass_prefixes(const std::string &input)
+  {
+    if (input.empty()) return {};
+    std::vector<std::string> parts;
+    std::istringstream ss(input);
+    std::string token;
+    while (std::getline(ss, token, ';'))
+    {
+      if (token.empty()) continue;
+      std::size_t colon = token.find(':');
+      if (colon != std::string::npos)
+      {
+        std::string val = token.substr(colon + 1);
+        if (!val.empty()) parts.push_back(val);
+      }
+    }
+    std::string out;
+    for (std::size_t i = 0; i < parts.size(); ++i)
+      out += (i == 0 ? "" : ";") + parts[i];
+    return out;
   }
 
   std::string to_lower_ascii(std::string s)
@@ -287,7 +316,9 @@ namespace
   {
     std::vector<std::string> candidates = {
       results_dir + "/" + sample_name + ".csv",
-      results_dir + "/" + sample_name + "_1.csv"
+      results_dir + "/" + sample_name + "_1.csv",
+      results_dir + "/" + sample_name + ".psv",
+      results_dir + "/" + sample_name + "_1.psv"
     };
 
     try
@@ -296,7 +327,9 @@ namespace
       {
         if (!entry.is_regular_file())
           continue;
-        if (entry.path().extension() != ".csv" && entry.path().extension() != ".CSV")
+        std::string ext = entry.path().extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        if (ext != ".csv" && ext != ".psv")
           continue;
         std::string stem = entry.path().stem().string();
         if (stem.rfind(sample_name, 0) == 0)
@@ -317,7 +350,7 @@ namespace
     return existing;
   }
 
-  std::vector<std::string> split_csv_line(const std::string &line)
+  std::vector<std::string> split_delimited_line(const std::string &line, char delimiter)
   {
     std::vector<std::string> fields;
     std::string field;
@@ -332,13 +365,23 @@ namespace
         else
           in_quotes = !in_quotes;
       }
-      else if (c == ',' && !in_quotes)
+      else if (c == delimiter && !in_quotes)
         { fields.push_back(trim_ws(field)); field.clear(); }
       else
         field += c;
     }
     fields.push_back(trim_ws(field));
     return fields;
+  }
+
+  std::vector<std::string> split_csv_line(const std::string &line)
+  {
+    return split_delimited_line(line, ',');
+  }
+
+  std::vector<std::string> split_psv_line(const std::string &line)
+  {
+    return split_delimited_line(line, '|');
   }
 
   std::string csv_escape(const std::string &value)
@@ -393,6 +436,8 @@ namespace
     double      neutral_mass= std::numeric_limits<double>::quiet_NaN();
     std::string expl_peaks;
     std::string expl_formulas;
+    std::string expl_smiles;
+    std::string expl_aromatic_smiles;
   };
 
   bool normalize_structure_fields(
@@ -448,25 +493,23 @@ namespace
     return "row_" + std::to_string(generated_index);
   }
 
-  // Locate and parse the MetFrag output CSV for a given sample_name.
-  std::vector<MetFragRow> parse_metfrag_csv(
-      const std::string &results_dir,
-      const std::string &sample_name)
+  // Parse a single (CSV or PSV) file and return MetFragRow rows.
+  // Use CSV for standard columns; PSV is used only for SmilesOfExplPeaks supplement.
+  std::vector<MetFragRow> parse_metfrag_file(
+      const std::string &path,
+      bool extract_smiles_only)
   {
     std::vector<MetFragRow> out;
-
-    std::vector<std::string> candidates = collect_metfrag_result_files(results_dir, sample_name);
-
-    std::ifstream f;
-    for (const auto &cand : candidates)
-    { f.open(cand); if (f.is_open()) break; }
+    std::ifstream f(path);
     if (!f.is_open())
       return out;
 
     std::string header_line;
     if (!std::getline(f, header_line))
       return out;
-    auto headers = split_csv_line(header_line);
+    bool is_psv = (header_line.find('|') != std::string::npos);
+    auto split_fn = is_psv ? split_psv_line : split_csv_line;
+    auto headers = split_fn(header_line);
 
     int ci_name  = find_col(headers, {"Name", "CompoundName", "compound_name"});
     int ci_form  = find_col(headers, {"MolecularFormula", "formula"});
@@ -479,6 +522,8 @@ namespace
     int ci_mass  = find_col(headers, {"NeutralMass", "MonoisotopicMass", "ExactMass"});
     int ci_expl  = find_col(headers, {"ExplPeaks", "ExplainedPeaks"});
     int ci_exform= find_col(headers, {"FormulasOfExplPeaks", "ExplPeakFormulas"});
+    int ci_exsmi = find_col(headers, {"SmilesOfExplPeaks"});
+    int ci_exarosmi = find_col(headers, {"AromaticSmilesOfExplPeaks"});
 
     auto gf = [](const std::vector<std::string> &row, int idx) -> std::string {
       if (idx < 0 || static_cast<size_t>(idx) >= row.size()) return "";
@@ -489,37 +534,92 @@ namespace
     while (std::getline(f, line))
     {
       if (trim_ws(line).empty()) continue;
-      auto row = split_csv_line(line);
+      auto row = split_fn(line);
       MetFragRow r;
-      r.name        = gf(row, ci_name);
-      r.formula     = gf(row, ci_form);
-      r.SMILES      = gf(row, ci_smi);
-      r.InChI       = gf(row, ci_inchi);
-      r.InChIKey    = gf(row, ci_ikey);
-      r.database_id = gf(row, ci_id);
-      std::string ss = gf(row, ci_score);
-      if (!ss.empty()) r.score = std::atof(ss.c_str());
-      std::string xs = gf(row, ci_xlogp);
-      if (!xs.empty() && xs != "NA") r.xLogP = std::atof(xs.c_str());
-      std::string ms = gf(row, ci_mass);
-      if (!ms.empty()) r.neutral_mass = std::atof(ms.c_str());
-      r.expl_peaks    = gf(row, ci_expl);
-      r.expl_formulas = gf(row, ci_exform);
-      normalize_structure_fields(
-          r.SMILES,
-          r.InChI,
-          r.InChIKey,
-          r.formula,
-          r.neutral_mass,
-          r.xLogP);
-      r.database_id = resolve_structure_identifier(
-          r.database_id,
-          r.InChIKey,
-          r.InChI,
-          r.SMILES,
-          r.name,
-          out.size() + 1);
+      if (!extract_smiles_only)
+      {
+        r.name        = gf(row, ci_name);
+        r.formula     = gf(row, ci_form);
+        r.SMILES      = gf(row, ci_smi);
+        r.InChI       = gf(row, ci_inchi);
+        r.InChIKey    = gf(row, ci_ikey);
+        r.database_id = gf(row, ci_id);
+        std::string ss = gf(row, ci_score);
+        if (!ss.empty()) r.score = std::atof(ss.c_str());
+        std::string xs = gf(row, ci_xlogp);
+        if (!xs.empty() && xs != "NA") r.xLogP = std::atof(xs.c_str());
+        std::string ms = gf(row, ci_mass);
+        if (!ms.empty()) r.neutral_mass = std::atof(ms.c_str());
+        r.expl_peaks          = gf(row, ci_expl);
+        r.expl_formulas       = gf(row, ci_exform);
+        normalize_structure_fields(
+            r.SMILES,
+            r.InChI,
+            r.InChIKey,
+            r.formula,
+            r.neutral_mass,
+            r.xLogP);
+        r.database_id = resolve_structure_identifier(
+            r.database_id,
+            r.InChIKey,
+            r.InChI,
+            r.SMILES,
+            r.name,
+            out.size() + 1);
+      }
+      // Always extract SMILES columns (available in both CSV and PSV).
+      r.expl_smiles         = gf(row, ci_exsmi);
+      r.expl_aromatic_smiles= gf(row, ci_exarosmi);
       out.push_back(std::move(r));
+    }
+    return out;
+  }
+
+  // Parse MetFrag output: use CSV for all standard columns (correctly aligned),
+  // then supplement fragment SMILES from PSV (if available).
+  std::vector<MetFragRow> parse_metfrag_output(
+      const std::string &results_dir,
+      const std::string &sample_name)
+  {
+    std::vector<std::string> candidates = collect_metfrag_result_files(results_dir, sample_name);
+
+    // Find a CSV file — these have correct column alignment.
+    std::string csv_path;
+    for (const auto &cand : candidates)
+    {
+      std::string ext = cand.size() > 4 ? cand.substr(cand.size() - 4) : "";
+      std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+      if (ext == ".csv")
+      { csv_path = cand; break; }
+    }
+
+    // Find a PSV file — used only for SmilesOfExplPeaks.
+    std::string psv_path;
+    for (const auto &cand : candidates)
+    {
+      std::string ext = cand.size() > 4 ? cand.substr(cand.size() - 4) : "";
+      std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+      if (ext == ".psv")
+      { psv_path = cand; break; }
+    }
+
+    // Parse CSV for full candidate data.
+    std::vector<MetFragRow> out = parse_metfrag_file(csv_path, false);
+
+    // Supplement fragment SMILES from PSV (overwrites empty CSV SMILES).
+    if (!psv_path.empty())
+    {
+      std::vector<MetFragRow> psv_rows = parse_metfrag_file(psv_path, true);
+      if (psv_rows.size() == out.size())
+      {
+        for (std::size_t i = 0; i < out.size(); ++i)
+        {
+          if (!psv_rows[i].expl_smiles.empty())
+            out[i].expl_smiles = psv_rows[i].expl_smiles;
+          if (!psv_rows[i].expl_aromatic_smiles.empty())
+            out[i].expl_aromatic_smiles = psv_rows[i].expl_aromatic_smiles;
+        }
+      }
     }
 
     // Sort descending by score.
@@ -900,8 +1000,8 @@ MetFragParams canonicalize_and_validate_params(const MetFragParams &params)
       throw std::invalid_argument("Unsupported MetFrag candidate_writer '" + writer + "'.");
     }
   }
-  if (std::find(out.candidate_writer.begin(), out.candidate_writer.end(), "CSV") == out.candidate_writer.end())
-    throw std::invalid_argument("MetFrag candidate_writer must include 'CSV' for StreamFind result parsing.");
+  if (std::find(out.candidate_writer.begin(), out.candidate_writer.end(), "FragmentSmilesPSV") == out.candidate_writer.end())
+    throw std::invalid_argument("MetFrag candidate_writer must include 'FragmentSmilesPSV' for StreamFind result parsing.");
   if (out.maximum_tree_depth < 1)
     throw std::invalid_argument("MetFrag maximum_tree_depth must be at least 1.");
   if (out.number_threads < 1)
@@ -1031,8 +1131,8 @@ void metfrag_screening_impl(
       // -- Invoke MetFragCL --------------------------------------------------
       int status = run_metfrag(params.metfrag_path, params.java_path, params_path, log_path);
 
-      // -- Parse output CSV --------------------------------------------------
-      std::vector<MetFragRow> rows = parse_metfrag_csv(run_dir, sample_name);
+      // -- Parse output file (PSV from FragmentSmilesPSV, or CSV fallback) ---
+      std::vector<MetFragRow> rows = parse_metfrag_output(run_dir, sample_name);
       std::vector<std::string> csv_paths = collect_metfrag_result_files(run_dir, sample_name);
 
       if (rows.empty())
@@ -1125,6 +1225,7 @@ void metfrag_screening_impl(
         s.db_ms2_mz          = db_ms2_mz_enc;
         s.db_ms2_intensity   = db_ms2_int_enc;
         s.db_ms2_formula     = db_form;
+        s.db_ms2_smiles      = strip_mass_prefixes(row.expl_smiles);
         s.exp_ms2_size       = feats.ms2_size[fi];
         s.exp_ms2_mz         = feats.ms2_mz[fi];
         s.exp_ms2_intensity  = feats.ms2_intensity[fi];
@@ -1134,11 +1235,18 @@ void metfrag_screening_impl(
         ++n_suspects_found;
       }
 
+      // Keep the PSV result file for features with candidates (inspectable).
+      // Clean up CSV (data already read), MS2 peak list, params, and log.
+      for (const auto &csv_path : csv_paths)
+      {
+        std::string ext = csv_path.size() > 4 ? csv_path.substr(csv_path.size() - 4) : "";
+        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        if (ext == ".csv")
+          fs::remove(csv_path);
+      }
       if (has_ms2)
         fs::remove(ms2_path);
       fs::remove(params_path);
-      for (const auto &csv_path : csv_paths)
-        fs::remove(csv_path);
       if (status == 0)
         fs::remove(log_path);
     } // features

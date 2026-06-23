@@ -1005,6 +1005,7 @@ namespace nta
       std::string db_ms2_mz;
       std::string db_ms2_intensity;
       std::string db_ms2_formula;
+      std::string db_ms2_smiles;
       int exp_ms2_size = 0;
       std::string exp_ms2_mz;
       std::string exp_ms2_intensity;
@@ -1040,6 +1041,7 @@ namespace nta
       std::vector<std::string> db_ms2_mz;
       std::vector<std::string> db_ms2_intensity;
       std::vector<std::string> db_ms2_formula;
+      std::vector<std::string> db_ms2_smiles;
       std::vector<int> exp_ms2_size;
       std::vector<std::string> exp_ms2_mz;
       std::vector<std::string> exp_ms2_intensity;
@@ -1083,6 +1085,7 @@ namespace nta
         suspect_i.db_ms2_mz = db_ms2_mz[i];
         suspect_i.db_ms2_intensity = db_ms2_intensity[i];
         suspect_i.db_ms2_formula = db_ms2_formula[i];
+        suspect_i.db_ms2_smiles = db_ms2_smiles[i];
         suspect_i.exp_ms2_size = exp_ms2_size[i];
         suspect_i.exp_ms2_mz = exp_ms2_mz[i];
         suspect_i.exp_ms2_intensity = exp_ms2_intensity[i];
@@ -1118,6 +1121,7 @@ namespace nta
         db_ms2_mz.push_back(s.db_ms2_mz);
         db_ms2_intensity.push_back(s.db_ms2_intensity);
         db_ms2_formula.push_back(s.db_ms2_formula);
+        db_ms2_smiles.push_back(s.db_ms2_smiles);
         exp_ms2_size.push_back(s.exp_ms2_size);
         exp_ms2_mz.push_back(s.exp_ms2_mz);
         exp_ms2_intensity.push_back(s.exp_ms2_intensity);
@@ -1154,6 +1158,7 @@ namespace nta
       std::vector<std::string> db_ms2_mz;
       std::vector<std::string> db_ms2_intensity;
       std::vector<std::string> db_ms2_formula;
+      std::vector<std::string> db_ms2_smiles;
       std::vector<int> exp_ms2_size;
       std::vector<std::string> exp_ms2_mz;
       std::vector<std::string> exp_ms2_intensity;
@@ -1191,6 +1196,7 @@ namespace nta
         db_ms2_mz.push_back(row.db_ms2_mz);
         db_ms2_intensity.push_back(row.db_ms2_intensity);
         db_ms2_formula.push_back(row.db_ms2_formula);
+        db_ms2_smiles.push_back(row.db_ms2_smiles);
         exp_ms2_size.push_back(row.exp_ms2_size);
         exp_ms2_mz.push_back(row.exp_ms2_mz);
         exp_ms2_intensity.push_back(row.exp_ms2_intensity);
@@ -1242,6 +1248,7 @@ namespace nta
       std::string db_ms2_mz;
       std::string db_ms2_intensity;
       std::string db_ms2_formula;
+      std::string db_ms2_smiles;
       int exp_ms2_size = 0;
       std::string exp_ms2_mz;
       std::string exp_ms2_intensity;
@@ -1277,6 +1284,7 @@ namespace nta
       std::vector<std::string> db_ms2_mz;
       std::vector<std::string> db_ms2_intensity;
       std::vector<std::string> db_ms2_formula;
+      std::vector<std::string> db_ms2_smiles;
       std::vector<int> exp_ms2_size;
       std::vector<std::string> exp_ms2_mz;
       std::vector<std::string> exp_ms2_intensity;
@@ -1320,6 +1328,7 @@ namespace nta
         standard_i.db_ms2_mz = db_ms2_mz[i];
         standard_i.db_ms2_intensity = db_ms2_intensity[i];
         standard_i.db_ms2_formula = db_ms2_formula[i];
+        standard_i.db_ms2_smiles = db_ms2_smiles[i];
         standard_i.exp_ms2_size = exp_ms2_size[i];
         standard_i.exp_ms2_mz = exp_ms2_mz[i];
         standard_i.exp_ms2_intensity = exp_ms2_intensity[i];
@@ -1355,6 +1364,7 @@ namespace nta
         db_ms2_mz.push_back(is.db_ms2_mz);
         db_ms2_intensity.push_back(is.db_ms2_intensity);
         db_ms2_formula.push_back(is.db_ms2_formula);
+        db_ms2_smiles.push_back(is.db_ms2_smiles);
         exp_ms2_size.push_back(is.exp_ms2_size);
         exp_ms2_mz.push_back(is.exp_ms2_mz);
         exp_ms2_intensity.push_back(is.exp_ms2_intensity);
@@ -1391,6 +1401,7 @@ namespace nta
       std::vector<std::string> db_ms2_mz;
       std::vector<std::string> db_ms2_intensity;
       std::vector<std::string> db_ms2_formula;
+      std::vector<std::string> db_ms2_smiles;
       std::vector<int> exp_ms2_size;
       std::vector<std::string> exp_ms2_mz;
       std::vector<std::string> exp_ms2_intensity;
@@ -1428,6 +1439,7 @@ namespace nta
         db_ms2_mz.push_back(row.db_ms2_mz);
         db_ms2_intensity.push_back(row.db_ms2_intensity);
         db_ms2_formula.push_back(row.db_ms2_formula);
+        db_ms2_smiles.push_back(row.db_ms2_smiles);
         exp_ms2_size.push_back(row.exp_ms2_size);
         exp_ms2_mz.push_back(row.exp_ms2_mz);
         exp_ms2_intensity.push_back(row.exp_ms2_intensity);

@@ -187,6 +187,7 @@ namespace nta
         append_optional_varchar(appender, suspects.db_ms2_mz[i], "append NTA_SUSPECTS db_ms2_mz");
         append_optional_varchar(appender, suspects.db_ms2_intensity[i], "append NTA_SUSPECTS db_ms2_intensity");
         append_optional_varchar(appender, suspects.db_ms2_formula[i], "append NTA_SUSPECTS db_ms2_formula");
+        append_optional_varchar(appender, suspects.db_ms2_smiles[i], "append NTA_SUSPECTS db_ms2_smiles");
         check_append_state(duckdb_append_int32(appender, suspects.exp_ms2_size[i]), appender, "append NTA_SUSPECTS exp_ms2_size");
         append_optional_varchar(appender, suspects.exp_ms2_mz[i], "append NTA_SUSPECTS exp_ms2_mz");
         append_optional_varchar(appender, suspects.exp_ms2_intensity[i], "append NTA_SUSPECTS exp_ms2_intensity");
@@ -237,6 +238,7 @@ namespace nta
         append_optional_varchar(appender, internal_standards.db_ms2_mz[i], "append NTA_INTERNAL_STANDARDS db_ms2_mz");
         append_optional_varchar(appender, internal_standards.db_ms2_intensity[i], "append NTA_INTERNAL_STANDARDS db_ms2_intensity");
         append_optional_varchar(appender, internal_standards.db_ms2_formula[i], "append NTA_INTERNAL_STANDARDS db_ms2_formula");
+        append_optional_varchar(appender, internal_standards.db_ms2_smiles[i], "append NTA_INTERNAL_STANDARDS db_ms2_smiles");
         check_append_state(duckdb_append_int32(appender, internal_standards.exp_ms2_size[i]), appender, "append NTA_INTERNAL_STANDARDS exp_ms2_size");
         append_optional_varchar(appender, internal_standards.exp_ms2_mz[i], "append NTA_INTERNAL_STANDARDS exp_ms2_mz");
         append_optional_varchar(appender, internal_standards.exp_ms2_intensity[i], "append NTA_INTERNAL_STANDARDS exp_ms2_intensity");
@@ -1362,6 +1364,7 @@ namespace nta
       project::cache::write_vector(out, exp_ms2_size);
       project::cache::write_vector(out, exp_ms2_mz);
       project::cache::write_vector(out, exp_ms2_intensity);
+      project::cache::write_vector(out, db_ms2_smiles);
       return out;
     }
 
@@ -1399,6 +1402,9 @@ namespace nta
       project::cache::read_vector(reader, value.exp_ms2_size);
       project::cache::read_vector(reader, value.exp_ms2_mz);
       project::cache::read_vector(reader, value.exp_ms2_intensity);
+      // db_ms2_smiles added later; gracefully handle old caches without it.
+      if (!reader.empty())
+        project::cache::read_vector(reader, value.db_ms2_smiles);
       if (!reader.empty())
       {
         throw project::error::ERROR(project::error::ERROR_CODE::SchemaMismatch, "deserialize NTA_SUSPECTS: trailing bytes remain");
@@ -1436,6 +1442,7 @@ namespace nta
       project::cache::write_vector(out, db_ms2_mz);
       project::cache::write_vector(out, db_ms2_intensity);
       project::cache::write_vector(out, db_ms2_formula);
+      project::cache::write_vector(out, db_ms2_smiles);
       project::cache::write_vector(out, exp_ms2_size);
       project::cache::write_vector(out, exp_ms2_mz);
       project::cache::write_vector(out, exp_ms2_intensity);
@@ -1473,6 +1480,9 @@ namespace nta
       project::cache::read_vector(reader, value.db_ms2_mz);
       project::cache::read_vector(reader, value.db_ms2_intensity);
       project::cache::read_vector(reader, value.db_ms2_formula);
+      // db_ms2_smiles added later; gracefully handle old caches without it.
+      if (!reader.empty())
+        project::cache::read_vector(reader, value.db_ms2_smiles);
       project::cache::read_vector(reader, value.exp_ms2_size);
       project::cache::read_vector(reader, value.exp_ms2_mz);
       project::cache::read_vector(reader, value.exp_ms2_intensity);
@@ -1812,10 +1822,11 @@ namespace nta
       value.db_ms2_mz = project::db::result_varchar(&result, 25, row);
       value.db_ms2_intensity = project::db::result_varchar(&result, 26, row);
       value.db_ms2_formula = project::db::result_varchar(&result, 27, row);
-      value.exp_ms2_size = duckdb_value_int32(&result, 28, row);
-      value.exp_ms2_mz = project::db::result_varchar(&result, 29, row);
-      value.exp_ms2_intensity = project::db::result_varchar(&result, 30, row);
-      value.created_at = project::db::result_varchar(&result, 31, row);
+      value.db_ms2_smiles = project::db::result_varchar(&result, 28, row);
+      value.exp_ms2_size = duckdb_value_int32(&result, 29, row);
+      value.exp_ms2_mz = project::db::result_varchar(&result, 30, row);
+      value.exp_ms2_intensity = project::db::result_varchar(&result, 31, row);
+      value.created_at = project::db::result_varchar(&result, 32, row);
       return value;
     }
 
@@ -1850,10 +1861,11 @@ namespace nta
       value.db_ms2_mz = project::db::result_varchar(&result, 25, row);
       value.db_ms2_intensity = project::db::result_varchar(&result, 26, row);
       value.db_ms2_formula = project::db::result_varchar(&result, 27, row);
-      value.exp_ms2_size = duckdb_value_int32(&result, 28, row);
-      value.exp_ms2_mz = project::db::result_varchar(&result, 29, row);
-      value.exp_ms2_intensity = project::db::result_varchar(&result, 30, row);
-      value.created_at = project::db::result_varchar(&result, 31, row);
+      value.db_ms2_smiles = project::db::result_varchar(&result, 28, row);
+      value.exp_ms2_size = duckdb_value_int32(&result, 29, row);
+      value.exp_ms2_mz = project::db::result_varchar(&result, 30, row);
+      value.exp_ms2_intensity = project::db::result_varchar(&result, 31, row);
+      value.created_at = project::db::result_varchar(&result, 32, row);
       return value;
     }
 
@@ -1964,6 +1976,7 @@ namespace nta
       value.db_ms2_mz = table.db_ms2_mz[row];
       value.db_ms2_intensity = table.db_ms2_intensity[row];
       value.db_ms2_formula = table.db_ms2_formula[row];
+      value.db_ms2_smiles = table.db_ms2_smiles[row];
       value.exp_ms2_size = table.exp_ms2_size[row];
       value.exp_ms2_mz = table.exp_ms2_mz[row];
       value.exp_ms2_intensity = table.exp_ms2_intensity[row];
@@ -2002,6 +2015,7 @@ namespace nta
       value.db_ms2_mz = table.db_ms2_mz[row];
       value.db_ms2_intensity = table.db_ms2_intensity[row];
       value.db_ms2_formula = table.db_ms2_formula[row];
+      value.db_ms2_smiles = table.db_ms2_smiles[row];
       value.exp_ms2_size = table.exp_ms2_size[row];
       value.exp_ms2_mz = table.exp_ms2_mz[row];
       value.exp_ms2_intensity = table.exp_ms2_intensity[row];
@@ -3245,6 +3259,7 @@ namespace nta
           "db_ms2_mz VARCHAR, "
           "db_ms2_intensity VARCHAR, "
           "db_ms2_formula VARCHAR, "
+          "db_ms2_smiles VARCHAR, "
           "exp_ms2_size INTEGER, "
           "exp_ms2_mz VARCHAR, "
           "exp_ms2_intensity VARCHAR, "
@@ -3283,6 +3298,7 @@ namespace nta
           "db_ms2_mz VARCHAR, "
           "db_ms2_intensity VARCHAR, "
           "db_ms2_formula VARCHAR, "
+          "db_ms2_smiles VARCHAR, "
           "exp_ms2_size INTEGER, "
           "exp_ms2_mz VARCHAR, "
           "exp_ms2_intensity VARCHAR, "
@@ -3449,11 +3465,12 @@ namespace nta
            {"db_ms2_size", "INTEGER", false},
            {"db_ms2_mz", "VARCHAR", false},
            {"db_ms2_intensity", "VARCHAR", false},
-           {"db_ms2_formula", "VARCHAR", false},
-           {"exp_ms2_size", "INTEGER", false},
-           {"exp_ms2_mz", "VARCHAR", false},
-           {"exp_ms2_intensity", "VARCHAR", false},
-           {"created_at", "TIMESTAMP", false}});
+            {"db_ms2_formula", "VARCHAR", false},
+            {"db_ms2_smiles", "VARCHAR", false},
+            {"exp_ms2_size", "INTEGER", false},
+            {"exp_ms2_mz", "VARCHAR", false},
+            {"exp_ms2_intensity", "VARCHAR", false},
+            {"created_at", "TIMESTAMP", false}});
       project::db::validate_columns_present(
           guard.get(),
           suspects_table_name(),
@@ -3485,6 +3502,7 @@ namespace nta
            {"db_ms2_mz", "VARCHAR", false},
            {"db_ms2_intensity", "VARCHAR", false},
            {"db_ms2_formula", "VARCHAR", false},
+           {"db_ms2_smiles", "VARCHAR", false},
            {"exp_ms2_size", "INTEGER", false},
            {"exp_ms2_mz", "VARCHAR", false},
            {"exp_ms2_intensity", "VARCHAR", false},
@@ -3708,7 +3726,7 @@ namespace nta
       const auto selected_analyses = mass_spec::spectra::sanitize_analyses(query.analyses);
 
       std::string sql =
-          "SELECT project_id, analysis, feature, candidate_rank, name, polarity, db_mass, exp_mass, error_mass, db_rt, exp_rt, error_rt, intensity, area, id_level, score, shared_fragments, cosine_similarity, formula, SMILES, InChI, InChIKey, xLogP, database_id, db_ms2_size, db_ms2_mz, db_ms2_intensity, db_ms2_formula, exp_ms2_size, exp_ms2_mz, exp_ms2_intensity, created_at "
+          "SELECT project_id, analysis, feature, candidate_rank, name, polarity, db_mass, exp_mass, error_mass, db_rt, exp_rt, error_rt, intensity, area, id_level, score, shared_fragments, cosine_similarity, formula, SMILES, InChI, InChIKey, xLogP, database_id, db_ms2_size, db_ms2_mz, db_ms2_intensity, db_ms2_formula, db_ms2_smiles, exp_ms2_size, exp_ms2_mz, exp_ms2_intensity, created_at "
           "FROM NTA_SUSPECTS WHERE project_id = ?";
       if (!selected_analyses.empty())
       {
@@ -3783,7 +3801,7 @@ namespace nta
       const auto selected_analyses = mass_spec::spectra::sanitize_analyses(query.analyses);
 
       std::string sql =
-          "SELECT project_id, analysis, feature, candidate_rank, name, polarity, db_mass, exp_mass, error_mass, db_rt, exp_rt, error_rt, intensity, area, id_level, score, shared_fragments, cosine_similarity, formula, SMILES, InChI, InChIKey, xLogP, database_id, db_ms2_size, db_ms2_mz, db_ms2_intensity, db_ms2_formula, exp_ms2_size, exp_ms2_mz, exp_ms2_intensity, created_at "
+          "SELECT project_id, analysis, feature, candidate_rank, name, polarity, db_mass, exp_mass, error_mass, db_rt, exp_rt, error_rt, intensity, area, id_level, score, shared_fragments, cosine_similarity, formula, SMILES, InChI, InChIKey, xLogP, database_id, db_ms2_size, db_ms2_mz, db_ms2_intensity, db_ms2_formula, db_ms2_smiles, exp_ms2_size, exp_ms2_mz, exp_ms2_intensity, created_at "
           "FROM NTA_INTERNAL_STANDARDS WHERE project_id = ?";
       if (!selected_analyses.empty())
       {

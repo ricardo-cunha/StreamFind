@@ -412,12 +412,14 @@ get_raw_spectra_ms2(
 
 
 suspects_found <- get_suspects(nta)
+head(suspects_found)
+
 internal_standards_found <- get_internal_standards(nta)
 transformation_products_found <- get_transformation_products(nta)
 
 head(features_all)
 head(features_subset)
-head(suspects_found)
+
 head(internal_standards_found)
 head(transformation_products_found)
 

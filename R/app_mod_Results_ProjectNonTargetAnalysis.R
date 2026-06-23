@@ -1673,6 +1673,7 @@
           "db_ms2_mz",
           "db_ms2_intensity",
           "db_ms2_formula",
+          "db_ms2_smiles",
           "exp_ms2_mz",
           "exp_ms2_intensity",
           "created_at"
@@ -3038,7 +3039,7 @@
       rows <- selected_internal_standards_rows()
       shiny::validate(shiny::need(!is.null(rows) && nrow(rows) > 0, "Select one or more points to view details."))
       rows <- data.table::copy(rows)
-      rows <- rows[, setdiff(colnames(rows), c("id", "created_at", "db_ms2_mz", "db_ms2_intensity", "db_ms2_formula", "exp_ms2_mz", "exp_ms2_intensity", "rel_intensity", "dot_size")), with = FALSE]
+      rows <- rows[, setdiff(colnames(rows), c("id", "created_at", "db_ms2_mz", "db_ms2_intensity", "db_ms2_formula", "db_ms2_smiles", "exp_ms2_mz", "exp_ms2_intensity", "rel_intensity", "dot_size")), with = FALSE]
       n_sel <- nrow(rows)
       prop_names <- colnames(rows)
       details_rows <- lapply(prop_names, function(p) {

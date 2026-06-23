@@ -620,6 +620,7 @@ namespace nta::filter_suspects
           s.db_ms2_mz = sus.db_ms2_mz[i];
           s.db_ms2_intensity = sus.db_ms2_intensity[i];
           s.db_ms2_formula = sus.db_ms2_formula[i];
+          s.db_ms2_smiles = sus.db_ms2_smiles[i];
           s.exp_ms2_size = sus.exp_ms2_size[i];
           s.exp_ms2_mz = sus.exp_ms2_mz[i];
           s.exp_ms2_intensity = sus.exp_ms2_intensity[i];
@@ -758,6 +759,7 @@ namespace nta::filter_internal_standards
           is.db_ms2_mz = istd.db_ms2_mz[i];
           is.db_ms2_intensity = istd.db_ms2_intensity[i];
           is.db_ms2_formula = istd.db_ms2_formula[i];
+          is.db_ms2_smiles = istd.db_ms2_smiles[i];
           is.exp_ms2_size = istd.exp_ms2_size[i];
           is.exp_ms2_mz = istd.exp_ms2_mz[i];
           is.exp_ms2_intensity = istd.exp_ms2_intensity[i];

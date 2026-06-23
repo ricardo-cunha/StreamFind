@@ -2445,7 +2445,15 @@ plot_suspects_ms2.ProjectNonTargetAnalysis <- function(
             formula_vec[seq_len(min(n_formulas, length(mz_dec)))] <- formula_split[seq_len(min(n_formulas, length(mz_dec)))]
           }
         }
-        out[[2]] <- data.table::data.table(mz = mz_dec, intensity = -abs(int_dec), analysis = sp$analysis, feature = sp$feature, name = sp$name, formula_fragment = formula_vec, source = "db")
+        smiles_vec <- rep(NA_character_, length(mz_dec))
+        if (!is.na(sp$db_ms2_smiles) && nzchar(sp$db_ms2_smiles)) {
+          smiles_split <- trimws(strsplit(sp$db_ms2_smiles, ";", fixed = TRUE)[[1]])
+          n_smiles <- length(smiles_split)
+          if (n_smiles > 0) {
+            smiles_vec[seq_len(min(n_smiles, length(mz_dec)))] <- sub("^[^:]+:", "", smiles_split[seq_len(min(n_smiles, length(mz_dec)))])
+          }
+        }
+        out[[2]] <- data.table::data.table(mz = mz_dec, intensity = -abs(int_dec), analysis = sp$analysis, feature = sp$feature, name = sp$name, formula_fragment = formula_vec, smiles_fragment = smiles_vec, source = "db")
       }
     }
     if (length(out) > 0) {
@@ -2470,7 +2478,7 @@ plot_suspects_ms2.ProjectNonTargetAnalysis <- function(
     }, by = .(analysis, feature, name, source)]
   }
 
-  exclude_cols <- c("db_ms2_size", "db_ms2_mz", "db_ms2_intensity", "db_ms2_formula", "exp_ms2_size", "exp_ms2_mz", "exp_ms2_intensity")
+  exclude_cols <- c("db_ms2_size", "db_ms2_mz", "db_ms2_intensity", "db_ms2_formula", "db_ms2_smiles", "exp_ms2_size", "exp_ms2_mz", "exp_ms2_intensity")
   detail_cols <- setdiff(colnames(suspects), exclude_cols)
   detail_cols <- setdiff(detail_cols, colnames(suspects_ms2))
   detail_cols <- unique(c("analysis", "feature", "name", detail_cols))

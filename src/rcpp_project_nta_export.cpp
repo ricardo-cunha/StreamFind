@@ -769,7 +769,7 @@ namespace nta_rcpp
     {
       return get_empty_dt();
     }
-    Rcpp::CharacterVector project_id(n), analysis(n), feature(n), feature_group(n), name(n), formula(n), smiles(n), inchi(n), inchikey(n), database_id(n), db_ms2_mz(n), db_ms2_intensity(n), db_ms2_formula(n), exp_ms2_mz(n), exp_ms2_intensity(n), created_at(n);
+    Rcpp::CharacterVector project_id(n), analysis(n), feature(n), feature_group(n), name(n), formula(n), smiles(n), inchi(n), inchikey(n), database_id(n), db_ms2_mz(n), db_ms2_intensity(n), db_ms2_formula(n), db_ms2_smiles(n), exp_ms2_mz(n), exp_ms2_intensity(n), created_at(n);
     Rcpp::IntegerVector candidate_rank(n), polarity(n), id_level(n), shared_fragments(n), db_ms2_size(n), exp_ms2_size(n);
     Rcpp::NumericVector db_mass(n), exp_mass(n), error_mass(n), db_rt(n), exp_rt(n), error_rt(n), intensity(n), area(n), score(n), cosine_similarity(n), xLogP(n);
     for (std::size_t i = 0; i < n; ++i)
@@ -804,6 +804,7 @@ namespace nta_rcpp
       db_ms2_mz[i] = row.db_ms2_mz.empty() ? NA_STRING : Rcpp::String(row.db_ms2_mz);
       db_ms2_intensity[i] = row.db_ms2_intensity.empty() ? NA_STRING : Rcpp::String(row.db_ms2_intensity);
       db_ms2_formula[i] = row.db_ms2_formula.empty() ? NA_STRING : Rcpp::String(row.db_ms2_formula);
+      db_ms2_smiles[i] = row.db_ms2_smiles.empty() ? NA_STRING : Rcpp::String(row.db_ms2_smiles);
       exp_ms2_size[i] = row.exp_ms2_size;
       exp_ms2_mz[i] = row.exp_ms2_mz.empty() ? NA_STRING : Rcpp::String(row.exp_ms2_mz);
       exp_ms2_intensity[i] = row.exp_ms2_intensity.empty() ? NA_STRING : Rcpp::String(row.exp_ms2_intensity);
@@ -839,6 +840,7 @@ namespace nta_rcpp
         Rcpp::Named("db_ms2_mz") = db_ms2_mz,
         Rcpp::Named("db_ms2_intensity") = db_ms2_intensity,
         Rcpp::Named("db_ms2_formula") = db_ms2_formula,
+        Rcpp::Named("db_ms2_smiles") = db_ms2_smiles,
         Rcpp::Named("exp_ms2_size") = exp_ms2_size,
         Rcpp::Named("exp_ms2_mz") = exp_ms2_mz,
         Rcpp::Named("exp_ms2_intensity") = exp_ms2_intensity,
@@ -854,7 +856,7 @@ namespace nta_rcpp
     {
       return get_empty_dt();
     }
-    Rcpp::CharacterVector project_id(n), analysis(n), feature(n), feature_group(n), feature_component(n), adduct(n), name(n), formula(n), smiles(n), inchi(n), inchikey(n), database_id(n), db_ms2_mz(n), db_ms2_intensity(n), db_ms2_formula(n), exp_ms2_mz(n), exp_ms2_intensity(n), created_at(n);
+    Rcpp::CharacterVector project_id(n), analysis(n), feature(n), feature_group(n), feature_component(n), adduct(n), name(n), formula(n), smiles(n), inchi(n), inchikey(n), database_id(n), db_ms2_mz(n), db_ms2_intensity(n), db_ms2_formula(n), db_ms2_smiles(n), exp_ms2_mz(n), exp_ms2_intensity(n), created_at(n);
     Rcpp::IntegerVector candidate_rank(n), polarity(n), id_level(n), shared_fragments(n), db_ms2_size(n), exp_ms2_size(n);
     Rcpp::NumericVector db_mass(n), exp_mass(n), error_mass(n), db_rt(n), exp_rt(n), error_rt(n), intensity(n), area(n), score(n), cosine_similarity(n), xLogP(n);
     for (std::size_t i = 0; i < n; ++i)
@@ -891,6 +893,7 @@ namespace nta_rcpp
       db_ms2_mz[i] = row.db_ms2_mz.empty() ? NA_STRING : Rcpp::String(row.db_ms2_mz);
       db_ms2_intensity[i] = row.db_ms2_intensity.empty() ? NA_STRING : Rcpp::String(row.db_ms2_intensity);
       db_ms2_formula[i] = row.db_ms2_formula.empty() ? NA_STRING : Rcpp::String(row.db_ms2_formula);
+      db_ms2_smiles[i] = row.db_ms2_smiles.empty() ? NA_STRING : Rcpp::String(row.db_ms2_smiles);
       exp_ms2_size[i] = row.exp_ms2_size;
       exp_ms2_mz[i] = row.exp_ms2_mz.empty() ? NA_STRING : Rcpp::String(row.exp_ms2_mz);
       exp_ms2_intensity[i] = row.exp_ms2_intensity.empty() ? NA_STRING : Rcpp::String(row.exp_ms2_intensity);
@@ -928,6 +931,7 @@ namespace nta_rcpp
         Rcpp::Named("db_ms2_mz") = db_ms2_mz,
         Rcpp::Named("db_ms2_intensity") = db_ms2_intensity,
         Rcpp::Named("db_ms2_formula") = db_ms2_formula,
+        Rcpp::Named("db_ms2_smiles") = db_ms2_smiles,
         Rcpp::Named("exp_ms2_size") = exp_ms2_size,
         Rcpp::Named("exp_ms2_mz") = exp_ms2_mz,
         Rcpp::Named("exp_ms2_intensity") = exp_ms2_intensity,
@@ -1079,6 +1083,7 @@ namespace nta_rcpp
         Rcpp::Named("db_ms2_mz") = as_char_vector(sus.db_ms2_mz),
         Rcpp::Named("db_ms2_intensity") = as_char_vector(sus.db_ms2_intensity),
         Rcpp::Named("db_ms2_formula") = as_char_vector(sus.db_ms2_formula),
+        Rcpp::Named("db_ms2_smiles") = as_char_vector(sus.db_ms2_smiles),
         Rcpp::Named("exp_ms2_size") = sus.exp_ms2_size,
         Rcpp::Named("exp_ms2_mz") = as_char_vector(sus.exp_ms2_mz),
         Rcpp::Named("exp_ms2_intensity") = as_char_vector(sus.exp_ms2_intensity));
@@ -1146,6 +1151,7 @@ namespace nta_rcpp
         Rcpp::Named("db_ms2_mz") = as_char_vector(istd.db_ms2_mz),
         Rcpp::Named("db_ms2_intensity") = as_char_vector(istd.db_ms2_intensity),
         Rcpp::Named("db_ms2_formula") = as_char_vector(istd.db_ms2_formula),
+        Rcpp::Named("db_ms2_smiles") = as_char_vector(istd.db_ms2_smiles),
         Rcpp::Named("exp_ms2_size") = istd.exp_ms2_size,
         Rcpp::Named("exp_ms2_mz") = as_char_vector(istd.exp_ms2_mz),
         Rcpp::Named("exp_ms2_intensity") = as_char_vector(istd.exp_ms2_intensity));
