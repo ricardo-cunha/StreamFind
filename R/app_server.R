@@ -782,69 +782,92 @@ app_server <- function(input, output, session) {
     }, ignoreNULL = TRUE, ignoreInit = TRUE)
   }
 
-  output$discard_btn <- shiny::renderUI({
-    if (isTRUE(project_json_dirty())) {
-      shiny::actionButton("discard_project_json", "Discard Changes", class = "btn-danger")
+  reactive_metadata_list <- shiny::reactive({
+    meta <- reactive_metadata()
+    if (is.null(meta) || length(meta) == 0) {
+      return(data.frame(Key = character(), Value = character(), stringsAsFactors = FALSE))
     }
+    keys <- names(meta)
+    vals <- as.character(unlist(meta, use.names = FALSE))
+    if (is.null(keys) || length(keys) == 0) keys <- seq_along(vals)
+    data.frame(Key = keys, Value = vals, stringsAsFactors = FALSE)
   })
 
   output$metadata_ui <- shiny::renderUI({
-    is_dark <- identical(reactive_theme_mode(), "dark")
-    has_ace <- requireNamespace("shinyAce", quietly = TRUE)
+    df <- reactive_metadata_list()
+    rows <- lapply(seq_len(nrow(df)), function(i) {
+      htmltools::div(
+        style = "display: flex; gap: 10px; padding: 3px 0; font-size: 13px;",
+        htmltools::span(style = "font-weight: 600; color: var(--sf-accent); min-width: 200px;", df$Key[i]),
+        htmltools::span(style = "color: var(--sf-text-primary); flex: 1; word-break: break-word;", df$Value[i])
+      )
+    })
+    if (length(rows) == 0) {
+      rows <- list(htmltools::div(style = "color: var(--sf-text-secondary); font-size: 13px;", "No metadata set."))
+    }
     htmltools::div(
       class = "sf-stack sf-fill",
       htmltools::div(
-        class = "sf-toolbar-inline",
-        shiny::actionButton("save_project_json", "Save JSON"),
-        shiny::uiOutput("discard_btn")
+        style = "display: flex; align-items: center; gap: 6px; flex-shrink: 0;",
+        shiny::actionButton(
+          "modify_metadata",
+          label = "",
+          icon = shiny::icon("pencil"),
+          class = "sf-topbar-btn"
+        ),
+        htmltools::tags$p(class = "sf-page-subtitle", style = "margin: 0;", "Project Metadata:")
       ),
-      if (has_ace) {
-        htmltools::div(
-          class = "json-editor-wrapper",
-          shinyAce::aceEditor(
-            "project_json_editor",
-            mode = "json",
-            theme = if (is_dark) "idle_fingers" else "textmate",
-            height = "100%",
-            fontSize = 12,
-            tabSize = 2,
-            useSoftTabs = TRUE,
-            showPrintMargin = FALSE,
-            showLineNumbers = TRUE,
-            debounce = 500,
-            autoComplete = "disabled",
-            value = shiny::isolate(project_json_string())
-          )
-        )
-      } else {
-        htmltools::div(
-          class = "json-editor-wrapper",
-          shiny::tags$textarea(
-            id = "project_json_fallback",
-            class = "form-control",
-            oninput = "Shiny.setInputValue('project_json_fallback', this.value, {priority: 'event'});",
-            shiny::isolate(project_json_string())
-          )
-        )
-      },
-      shiny::tags$script(htmltools::HTML("
-        (function() {
-          if (window.__sfJsonValidityHandler) return;
-          window.__sfJsonValidityHandler = true;
-          Shiny.addCustomMessageHandler('jsonValidity', function(valid) {
-            var el = document.querySelector('.json-editor-wrapper');
-            if (!el) return;
-            el.classList.toggle('valid', !!valid);
-            el.classList.toggle('invalid', !valid);
-          });
-        })();
-      "))
+      htmltools::div(
+        style = "flex: 1; overflow-y: auto; min-height: 0; padding: 5px;",
+        rows
+      )
     )
   })
 
-  shiny::observe({
-    valid <- isTRUE(project_json_valid())
-    session$sendCustomMessage("jsonValidity", valid)
+  shiny::observeEvent(input$modify_metadata, {
+    stored <- stored_metadata_json()
+    if (is.null(stored) || identical(stored, "null")) {
+      project_json_string(DEFAULT_METADATA_JSON)
+    } else {
+      project_json_string(stored)
+    }
+    is_dark <- identical(reactive_theme_mode(), "dark")
+    has_ace <- requireNamespace("shinyAce", quietly = TRUE)
+    editor_ui <- if (has_ace) {
+      shinyAce::aceEditor(
+        "project_json_editor",
+        mode = "json",
+        theme = if (is_dark) "idle_fingers" else "textmate",
+        height = "100%",
+        fontSize = 12,
+        tabSize = 2,
+        useSoftTabs = TRUE,
+        showPrintMargin = FALSE,
+        showLineNumbers = TRUE,
+        debounce = 500,
+        autoComplete = "disabled",
+        value = project_json_string()
+      )
+    } else {
+      shiny::tags$textarea(
+        id = "project_json_fallback",
+        class = "form-control",
+        style = "width: 100%; height: 100%; font-family: monospace; font-size: 12px; resize: none;",
+        oninput = "Shiny.setInputValue('project_json_fallback', this.value, {priority: 'event'});",
+        project_json_string()
+      )
+    }
+    shiny::showModal(shiny::modalDialog(
+      title = "Edit Metadata JSON",
+      editor_ui,
+      footer = shiny::tagList(
+        shiny::actionButton("save_project_json", "Save"),
+        shiny::actionButton("discard_project_json", "Discard", class = "btn-danger")
+      ),
+      size = "l",
+      easyClose = TRUE,
+      fluid = FALSE
+    ))
   })
 
   shiny::observeEvent(input$save_project_json, {
@@ -863,6 +886,7 @@ app_server <- function(input, output, session) {
     if (requireNamespace("shinyAce", quietly = TRUE)) {
       shinyAce::updateAceEditor(session, "project_json_editor", value = pretty)
     }
+    shiny::removeModal()
     shiny::showNotification("Metadata saved.", type = "message", duration = 3)
   })
 
@@ -877,6 +901,7 @@ app_server <- function(input, output, session) {
       new_val <- if (is.null(stored) || identical(stored, "null")) DEFAULT_METADATA_JSON else stored
       shinyAce::updateAceEditor(session, "project_json_editor", value = new_val)
     }
+    shiny::removeModal()
   })
 
   output$analyses_ui <- shiny::renderUI({
@@ -1042,6 +1067,4 @@ app_server <- function(input, output, session) {
   shiny::outputOptions(output, "report_ui", suspendWhenHidden = FALSE)
   shiny::outputOptions(output, "audit_ui", suspendWhenHidden = FALSE)
   shiny::outputOptions(output, "settings_palette_selector", suspendWhenHidden = FALSE)
-  shiny::outputOptions(output, "discard_btn", suspendWhenHidden = FALSE)
-
 }

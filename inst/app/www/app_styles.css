@@ -497,22 +497,27 @@ body {
 }
 
 /* Custom scrollbars using palette accent colors */
-#sf-app *::-webkit-scrollbar {
+#sf-app *::-webkit-scrollbar,
+#shiny-modal-wrapper *::-webkit-scrollbar {
   width: 8px;
   height: 8px;
 }
-#sf-app *::-webkit-scrollbar-track {
+#sf-app *::-webkit-scrollbar-track,
+#shiny-modal-wrapper *::-webkit-scrollbar-track {
   background: transparent;
 }
-#sf-app *::-webkit-scrollbar-thumb {
+#sf-app *::-webkit-scrollbar-thumb,
+#shiny-modal-wrapper *::-webkit-scrollbar-thumb {
   background: var(--sf-accent);
   border-radius: 4px;
   opacity: 0.6;
 }
-#sf-app *::-webkit-scrollbar-thumb:hover {
+#sf-app *::-webkit-scrollbar-thumb:hover,
+#shiny-modal-wrapper *::-webkit-scrollbar-thumb:hover {
   background: var(--sf-control);
 }
-#sf-app * {
+#sf-app *,
+#shiny-modal-wrapper * {
   scrollbar-width: thin;
   scrollbar-color: var(--sf-accent) transparent;
 }
@@ -1952,8 +1957,7 @@ ul.sf-info-list {
   inset: 0;
   z-index: 1060;
   display: none;
-  overflow-x: hidden;
-  overflow-y: auto;
+  overflow: hidden;
   pointer-events: auto;
 }
 
@@ -1962,13 +1966,48 @@ ul.sf-info-list {
   display: flex !important;
   align-items: center;
   justify-content: center;
-  padding: 16px;
 }
 
 #shiny-modal-wrapper .modal-dialog {
   margin: 0;
   width: min(640px, calc(100vw - 32px));
   max-width: 640px;
+}
+#shiny-modal-wrapper .modal-dialog.modal-lg {
+  width: 90vw;
+  max-width: 90vw;
+  height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+#shiny-modal-wrapper .modal-dialog.modal-lg .modal-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+#shiny-modal-wrapper .modal-dialog.modal-lg .modal-body {
+  flex: 1;
+  min-height: 0;
+  padding: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+#shiny-modal-wrapper .modal-dialog.modal-lg .modal-body .ace_editor {
+  flex: 1;
+  min-height: 0;
+  height: 100% !important;
+}
+#shiny-modal-wrapper .modal-dialog.modal-lg .modal-body .ace_editor .ace_scroller {
+  overflow-y: auto;
+}
+#shiny-modal-wrapper .modal-dialog.modal-lg .modal-body textarea {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  height: 100% !important;
+  resize: none;
+  overflow-y: auto;
 }
 
 #shiny-modal-wrapper .modal-content {
