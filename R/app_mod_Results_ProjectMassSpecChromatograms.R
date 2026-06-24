@@ -13,7 +13,7 @@
           3,
           DT::DTOutput(
             ns_full("chrom_analyses_table"),
-            height = "calc(100vh - 35px - 10px - 38px - 52.8px)"
+            height = "calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10) - 38px - 52.8px)"
           )
         ),
         shiny::column(
@@ -21,11 +21,12 @@
           bslib::layout_sidebar(
             sidebar = bslib::sidebar(
               bg = NULL,
+              resizable = FALSE,
               shiny::uiOutput(ns_full("chrom_plot_controls"))
             ),
             shiny::uiOutput(ns_full("chrom_plot_ui"))
           ),
-          height = "calc(100vh - 35px - 10px - 38px - 52.8px)"
+          height = "calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10) - 38px - 52.8px)"
         )
       )
     ),
@@ -36,7 +37,7 @@
           3,
           DT::DTOutput(
             ns_full("peaks_analyses_table"),
-            height = "calc(100vh - 35px - 10px - 38px - 52.8px)"
+            height = "calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10) - 38px - 52.8px)"
           )
         ),
         shiny::column(
@@ -44,10 +45,11 @@
           bslib::layout_sidebar(
             sidebar = bslib::sidebar(
               bg = NULL,
+              resizable = FALSE,
               shiny::uiOutput(ns_full("peaks_plot_controls"))
             ),
             shiny::div(
-              style = "display: flex; flex-direction: column; height: calc(100vh - 35px - 10px - 38px - 52.8px);",
+              style = "display: flex; flex-direction: column; height: calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10) - 38px - 52.8px);",
               shiny::div(
                 style = "flex: 1; min-height: 0;",
                 shiny::uiOutput(ns_full("peaks_plot_ui"))
@@ -58,14 +60,14 @@
               )
             )
           ),
-          height = "calc(100vh - 35px - 10px - 38px - 52.8px)"
+          height = "calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10) - 38px - 52.8px)"
         )
       )
     ),
     shiny::conditionalPanel(
       "input.sf_active_subtab === 'summary'",
       shiny::div(
-        style = "padding: 10px; overflow-y: auto; height: calc(100vh - 125.8px);",
+        style = "padding: 5px; overflow-y: auto; height: calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10) - 90.8px);",
         DT::DTOutput(ns_full("summary_table"))
       )
     )
@@ -151,7 +153,7 @@
         options = list(
           dom = "ft",
           paging = FALSE,
-          scrollY = "calc(100vh - 165px)",
+          scrollY = "calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10) - 130px)",
           scrollCollapse = TRUE,
           columnDefs = list(list(width = "120px", targets = "_all"))
         )
@@ -187,7 +189,7 @@
     # MARK: Chromatograms plot UI -----
     output$chrom_plot_ui <- shiny::renderUI({
       plotly::plotlyOutput(
-        ns_full("chrom_plotly"), height = "calc(100vh - 25px - 10px - 28px - 30px - 52.8px)"
+        ns_full("chrom_plotly"), height = "calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10) - 28px - 30px - 52.8px)"
       )
     })
 
@@ -265,7 +267,7 @@
         options = list(
           dom = "ft",
           paging = FALSE,
-          scrollY = "calc(100vh - 165px)",
+          scrollY = "calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10) - 130px)",
           scrollCollapse = TRUE,
           columnDefs = list(list(width = "120px", targets = "_all"))
         )

@@ -4,9 +4,9 @@
   ns2 <- shiny::NS(id)
 
   htmltools::div(
-    style = "height: calc(100vh - 35px); overflow: hidden;",
+    style = "height: calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10)); overflow: hidden;",
     htmltools::div(
-      style = "padding: 10px;",
+      style = "padding: 5px;",
       shiny::fluidRow(
         shiny::column(
           width = 12,
