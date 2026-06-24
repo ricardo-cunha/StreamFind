@@ -21,7 +21,8 @@ run_app <- function(onStart = NULL, options = list(), enableBookmarking = NULL, 
   # shiny is guaranteed present at this point, so the install wizard can run.
   .app_required_pkgs <- c(
     "golem", "htmltools", "bslib",
-    "shinycssloaders", "shinyFiles", "sortable", "DT", "config"
+    "shinycssloaders", "shinyFiles", "sortable", "DT", "config",
+    "shinyAce"
   )
 
   .missing_pkgs <- .app_required_pkgs[

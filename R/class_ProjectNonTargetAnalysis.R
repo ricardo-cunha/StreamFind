@@ -3517,7 +3517,7 @@ plot_transformation_products.ProjectNonTargetAnalysis <- function(
     "position: fixed;",
     "visibility: hidden;",
     "padding: 5px;",
-    "font-family: verdana;",
+    "font-family: 'Segoe UI';",
     "font-size: 14px;",
     "background-color: rgb(245, 244, 237);",
     "border-radius: 3px;",
@@ -3546,7 +3546,7 @@ plot_transformation_products.ProjectNonTargetAnalysis <- function(
     "      label: nearSet[allNodes[k]] ? nn.node_label : '',",
     "      font: {",
     "        color: nearSet[allNodes[k]] ? 'rgba(0,0,0,1)' : 'rgba(0,0,0,0)',",
-    "        face: 'Arial',",
+    "        face: 'Segoe UI',",
     "        bold: allNodes[k] === selected",
     "      },",
     "      color: nearSet[allNodes[k]] ? nn.base_color : 'rgba(200,200,200,0.2)'",
@@ -3564,7 +3564,7 @@ plot_transformation_products.ProjectNonTargetAnalysis <- function(
     "      color: keep[allEdges[j]] ? e.base_color : 'rgba(200,200,200,0.2)',",
     "      font: {",
     "        color: keep[allEdges[j]] ? 'rgba(0,0,0,1)' : 'rgba(0,0,0,0)',",
-    "        face: 'Arial',",
+    "        face: 'Segoe UI',",
     "        strokeWidth: 0,",
     "        strokeColor: 'rgba(0,0,0,0)'",
     "      }",
@@ -3591,7 +3591,7 @@ plot_transformation_products.ProjectNonTargetAnalysis <- function(
     "    nodeUpdates.push({",
     "      id: allNodes[k],",
     "      label: nn.node_label,",
-    "      font: { color: 'rgba(0,0,0,1)', face: 'Arial', bold: false },",
+    "      font: { color: 'rgba(0,0,0,1)', face: 'Segoe UI', bold: false },",
     "      color: nn.base_color",
     "    });",
     "  }",
@@ -3607,7 +3607,7 @@ plot_transformation_products.ProjectNonTargetAnalysis <- function(
     "      color: e.base_color,",
     "      font: {",
     "        color: 'rgba(0,0,0,0)',",
-    "        face: 'Arial',",
+    "        face: 'Segoe UI',",
     "        strokeWidth: 0,",
     "        strokeColor: 'rgba(0,0,0,0)'",
     "      }",
@@ -3625,7 +3625,7 @@ plot_transformation_products.ProjectNonTargetAnalysis <- function(
     "      label: e.edge_label,",
     "      font: {",
     "        color: 'rgba(0,0,0,1)',",
-    "        face: 'Arial',",
+    "        face: 'Segoe UI',",
     "        strokeWidth: 0,",
     "        strokeColor: 'rgba(0,0,0,0)'",
     "      }",
@@ -3641,7 +3641,7 @@ plot_transformation_products.ProjectNonTargetAnalysis <- function(
     "      label: '',",
     "      font: {",
     "        color: 'rgba(0,0,0,0)',",
-    "        face: 'Arial',",
+    "        face: 'Segoe UI',",
     "        strokeWidth: 0,",
     "        strokeColor: 'rgba(0,0,0,0)'",
     "      }",
@@ -3651,12 +3651,12 @@ plot_transformation_products.ProjectNonTargetAnalysis <- function(
   )
 
   p <- visNetwork::visNetwork(nodes, edges, height = "99vh", width = "100%") %>%
-    visNetwork::visNodes(size = 12, font = list(size = 12, face = "Arial", strokeWidth = 0, strokeColor = "rgba(0,0,0,0)")) %>%
+    visNetwork::visNodes(size = 12, font = list(size = 12, face = "Segoe UI", strokeWidth = 0, strokeColor = "rgba(0,0,0,0)")) %>%
     visNetwork::visGroups(groupname = "parent", color = "darkred") %>%
     visNetwork::visGroups(groupname = "selected_group", color = "orange") %>%
     visNetwork::visGroups(groupname = "assigned", color = "forestgreen") %>%
     visNetwork::visGroups(groupname = "unassigned", color = "lightgray") %>%
-    visNetwork::visEdges(arrows = "to", smooth = TRUE, font = list(size = 8, face = "Arial", strokeWidth = 0, strokeColor = "rgba(0,0,0,0)"), hoverWidth = 0, selectionWidth = 0) %>%
+    visNetwork::visEdges(arrows = "to", smooth = TRUE, font = list(size = 8, face = "Segoe UI", strokeWidth = 0, strokeColor = "rgba(0,0,0,0)"), hoverWidth = 0, selectionWidth = 0) %>%
     visNetwork::visOptions(highlightNearest = FALSE, nodesIdSelection = list(enabled = TRUE)) %>%
     visNetwork::visInteraction(hover = TRUE, hoverConnectedEdges = TRUE, tooltipStyle = tooltip_style) %>%
     visNetwork::visLayout(randomSeed = 123) %>%
@@ -4442,7 +4442,7 @@ map_components.ProjectNonTargetAnalysis <- function(
     "          highlight: { background: nn0.base_background, border: nn0.base_border },",
     "          hover: { background: nn0.base_background, border: nn0.base_border }",
     "        },",
-    "        font: { color: nn0.base_font_color || '#ffffff', face: 'Arial', bold: false }",
+    "        font: { color: nn0.base_font_color || '#ffffff', face: 'Segoe UI', bold: false }",
     "      });",
     "    }",
     "    this.body.data.nodes.update(resetNodes0);",
@@ -4492,7 +4492,7 @@ map_components.ProjectNonTargetAnalysis <- function(
     "          highlight: { background: nn.base_background, border: nn.base_border },",
     "          hover: { background: nn.base_background, border: nn.base_border }",
     "        },",
-    "        font: { color: nn.base_font_color || '#ffffff', face: 'Arial', bold: allNodes[k] === selected }",
+    "        font: { color: nn.base_font_color || '#ffffff', face: 'Segoe UI', bold: allNodes[k] === selected }",
     "      });",
     "    } else {",
     "      nodeUpdates.push({",
@@ -4504,7 +4504,7 @@ map_components.ProjectNonTargetAnalysis <- function(
     "          highlight: { background: '#d6d9de', border: '#aeb6c2' },",
     "          hover: { background: '#d6d9de', border: '#aeb6c2' }",
     "        },",
-    "        font: { color: '#4b5563', face: 'Arial', bold: false }",
+    "        font: { color: '#4b5563', face: 'Segoe UI', bold: false }",
     "      });",
     "    }",
     "  }",
@@ -4559,7 +4559,7 @@ map_components.ProjectNonTargetAnalysis <- function(
 
   widget <- visNetwork::visNetwork(nodes, edges, height = "100%", width = "100%") %>%
     visNetwork::visNodes(
-      font = list(size = 13, color = "#ffffff", face = "Arial", strokeWidth = 0, strokeColor = "rgba(0,0,0,0)"),
+      font = list(size = 13, color = "#ffffff", face = "Segoe UI", strokeWidth = 0, strokeColor = "rgba(0,0,0,0)"),
       scaling = list(min = 10, max = 28),
       shapeProperties = list(borderRadius = 2),
       margin = 2,
@@ -4573,7 +4573,7 @@ map_components.ProjectNonTargetAnalysis <- function(
       smooth = FALSE,
       selectionWidth = 0,
       hoverWidth = 0.6,
-      font = list(size = 1, color = "rgba(0,0,0,0)", face = "Arial", strokeWidth = 0, strokeColor = "rgba(0,0,0,0)"),
+      font = list(size = 1, color = "rgba(0,0,0,0)", face = "Segoe UI", strokeWidth = 0, strokeColor = "rgba(0,0,0,0)"),
       chosen = FALSE
     ) %>%
     visNetwork::visInteraction(hover = TRUE, hoverConnectedEdges = FALSE, navigationButtons = FALSE, tooltipDelay = 100) %>%
@@ -4721,7 +4721,7 @@ map_components.ProjectNonTargetAnalysis <- function(
         "        highlight: { background: node.base_background, border: node.base_border },",
         "        hover: { background: node.base_background, border: node.base_border }",
     "      },",
-    "      font: { color: node.base_font_color || '#ffffff', face: 'Arial', bold: nodeId === activeNodeId }",
+    "      font: { color: node.base_font_color || '#ffffff', face: 'Segoe UI', bold: nodeId === activeNodeId }",
     "    });",
     "  }",
     "  function dimNode(nodeId) {",
@@ -4736,7 +4736,7 @@ map_components.ProjectNonTargetAnalysis <- function(
     "        highlight: { background: '#d6d9de', border: '#aeb6c2' },",
     "        hover: { background: '#d6d9de', border: '#aeb6c2' }",
     "      },",
-    "      font: { color: '#4b5563', face: 'Arial', bold: false }",
+    "      font: { color: '#4b5563', face: 'Segoe UI', bold: false }",
     "    });",
     "  }",
     "  function resetEdge(edgeId) {",

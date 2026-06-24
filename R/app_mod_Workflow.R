@@ -3,7 +3,7 @@
 .mod_Workflow_UI.Project <- function(x, id, ns) {
   ns2 <- shiny::NS(id)
   htmltools::div(
-    style = "height: calc(100vh - 35px); overflow: hidden; padding: 0px; min-height: 0;",
+    style = "height: calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10)); overflow: hidden; padding: 0px; min-height: 0;",
     htmltools::div(
       style = "display: flex; flex-direction: row; height: 100%; overflow: hidden; gap: 5px; min-height: 0;",
       htmltools::div(
@@ -372,7 +372,7 @@
       })
 
       htmltools::div(
-        style = "height: calc(100vh - 35px - 10px); overflow: hidden;",
+        style = "height: calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10) - 10px); overflow: hidden;",
         class = "workflow-box",
       htmltools::div(
         style = "display: flex; flex-direction: column; height: 100%; gap: 5px; min-height: 0;",
@@ -769,10 +769,10 @@
       param_names <- names(settings$parameters)
 
       htmltools::div(
-        style = "height: calc(100vh - 35px - 10px); overflow: hidden;",
+        style = "height: calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10) - 10px); overflow: hidden;",
         class = "method-box",
         htmltools::div(
-          style = "height: calc(100vh - 35px - 20px); overflow-y: auto; padding: 5px;",
+          style = "height: calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10) - 20px); overflow-y: auto; padding: 5px; width: calc(100% - 5px);",
           shiny::tags$div(
             class = "method-details",
             shiny::h3(method_editor_title, style = "margin-top: 0px; margin-bottom: 10px;"),

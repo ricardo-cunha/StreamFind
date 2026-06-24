@@ -71,6 +71,7 @@ Suggests:
     rmarkdown,
     testthat,
     DT,
+    shinyAce,
     config,
     quarto,
     magick,

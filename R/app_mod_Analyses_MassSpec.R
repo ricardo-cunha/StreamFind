@@ -3,10 +3,10 @@
 .mod_Analyses_UI.ProjectMassSpec <- function(x, id, ns) {
   ns2 <- shiny::NS(id)
   htmltools::div(
-    style = "height: calc(100vh - 35px); overflow: hidden;",
+    style = "height: calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10)); overflow: hidden;",
     shiny::column(12, shiny::uiOutput(ns(ns2("analyses_overview_buttons")))),
     shiny::column(12, shiny::uiOutput(ns(ns2("notes_analyses")))),
-    shiny::column(12, DT::dataTableOutput(ns(ns2("AnalysesTable"))), height = "calc(100vh - 35px - 20px - 54px - 96px)")
+    shiny::column(12, DT::dataTableOutput(ns(ns2("AnalysesTable"))), height = "calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10) - 38px - 69px)")
   )
 }
 
@@ -79,7 +79,7 @@
           options = list(
             searching = TRUE,
             processing = TRUE,
-            scrollY = "calc(100vh - 35px - 20px - 54px - 96px - 80px)",
+            scrollY = "calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10) - 38px - 69px - var(--sf-dt-chrome))",
             scrollCollapse = TRUE,
             paging = FALSE,
             dom = "Bfrt",
@@ -183,39 +183,39 @@
     output$analyses_overview_buttons <- shiny::renderUI({
       if (length(reactive_analyses()) > 0) {
         htmltools::div(
-          style = "margin-bottom: 20px;",
-          shinyFiles::shinyFilesButton(
-            ns(ns2("add_analyses_button")),
-            "Add Analyses",
-            paste0(
-              "Select Analyses (",
-              paste(project_details$formats, collapse = "|"),
-              ")"
-            ),
-            multiple = TRUE,
-            style = "width: 200px;"
-          ),
-          shiny::actionButton(
-            ns(ns2("remove_all_analyses")),
-            label = "Delete All Analyses",
-            width = 200
-          )
-        )
-      } else {
-        htmltools::div(
-          style = "margin-bottom: 20px;",
-          shinyFiles::shinyFilesButton(
-            ns(ns2("add_analyses_button")),
-            "Add Analyses",
-            paste0(
-              "Select Analyses (",
-              paste(project_details$formats, collapse = "|"),
-              ")"
-            ),
-            multiple = TRUE,
-            style = "width: 200px;"
-          )
-        )
+          style = "margin-bottom: 5px;",
+           shinyFiles::shinyFilesButton(
+             ns(ns2("add_analyses_button")),
+             "Add Analyses",
+             paste0(
+               "Select Analyses (",
+               paste(project_details$formats, collapse = "|"),
+               ")"
+             ),
+             multiple = TRUE,
+             style = "width: 200px;"
+           ),
+           shiny::actionButton(
+             ns(ns2("remove_all_analyses")),
+             label = "Delete All Analyses",
+             width = 200
+           )
+         )
+       } else {
+         htmltools::div(
+           style = "margin-bottom: 5px;",
+           shinyFiles::shinyFilesButton(
+             ns(ns2("add_analyses_button")),
+             "Add Analyses",
+             paste0(
+               "Select Analyses (",
+               paste(project_details$formats, collapse = "|"),
+               ")"
+             ),
+             multiple = TRUE,
+             style = "width: 200px;"
+           )
+         )
       }
     })
 
@@ -296,7 +296,7 @@
     # out Notes Analyses -----
     output$notes_analyses <- shiny::renderUI({
       shiny::div(
-        style = "margin-bottom: 8px; margin-top: 0px;",
+        style = "margin-bottom: 5px; margin-top: 0px;",
         shiny::tags$ul(
           class = "sf-info-list",
           shiny::tags$li(

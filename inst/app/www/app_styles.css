@@ -3,6 +3,8 @@
    Light/Dark theme via CSS custom properties on #sf-app
    ============================================================ */
 
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Josefin+Sans:wght@300;400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Inter:wght@400;500;600;700&display=swap');
+
 /* ---- Shared Tokens ---- */
 #sf-app {
   --sf-space: 5px;
@@ -16,6 +18,9 @@
   --sf-border: none;
   --sf-shadow-sm: none;
   --sf-shadow-md: none;
+  --sf-pad: 5px;
+  --sf-pad-10: calc(var(--sf-pad) * 2);
+  --sf-dt-chrome: 78px;
   --sf-font-family: "Space Grotesk", "Segoe UI", Helvetica, Arial, sans-serif;
   --sf-app-bg: #ffffff;
   --sf-control-bg: #1e2129;
@@ -31,6 +36,42 @@
 
 /* ---- CSS Custom Properties: Light (default) ---- */
 #sf-app.sf-light {
+  /* 8 core color levels */
+  --sf-bg:                 #ffffff;
+  --sf-surface:            #fbfdfc;
+  --sf-surface-alt:        #eef6f3;
+  --sf-text-primary:       #333333;
+  --sf-text-secondary:     #4b625d;
+  --sf-accent:             #0b6f6b;
+  --sf-control:            #1e2129;
+  --sf-control-text:       #ffffff;
+
+  /* Derived: Inputs */
+  --sf-input-bg:           #ffffff;
+  --sf-input-color:        var(--sf-text-primary);
+  --sf-input-border:       #d0d4dc;
+
+  /* Derived: Tables (use core levels so palettes cascade) */
+  --sf-table-header-bg:    var(--sf-control);
+  --sf-table-header-color: var(--sf-control-text);
+  --sf-table-row-odd-bg:   var(--sf-surface);
+  --sf-table-row-even-bg:  var(--sf-surface-alt);
+  --sf-table-row-color:    var(--sf-text-primary);
+  --sf-table-filter-input-bg:  var(--sf-surface);
+  --sf-table-filter-input-color: var(--sf-text-primary);
+  --sf-table-filter-input-border: var(--sf-input-border);
+
+  /* Derived: Plots (axis/grid colors are mode-constant) */
+  --sf-plot-text:          var(--sf-text-primary);
+  --sf-plot-axis:          #334155;
+  --sf-plot-grid:          rgba(71,85,105,0.52);
+  --sf-plot-zeroline:      rgba(51,65,85,0.68);
+
+  /* Derived: Modals */
+  --sf-modal-bg:           var(--sf-bg);
+  --sf-modal-border:       rgba(30,33,41,0.22);
+
+  /* Existing variables (kept for backward compatibility) */
   --sf-surface-1:          #fbfdfc;
   --sf-surface-2:          #eef6f3;
   --sf-surface-3:          #ddeae6;
@@ -70,6 +111,19 @@
 }
 
 #sf-app.sf-light[data-sf-palette="lagoon"] {
+  /* 8 core color levels */
+  --sf-bg:                 #ffffff;
+  --sf-surface:            #fbfdfc;
+  --sf-surface-alt:        #eef6f3;
+  --sf-text-primary:       #333333;
+  --sf-text-secondary:     #4b625d;
+  --sf-accent:             #0b6f6b;
+  --sf-control:            #0b6f6b;
+  --sf-control-text:       #ffffff;
+
+  /* Font */
+  --sf-font-family:       "Josefin Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+
   --sf-surface-1: #fbfdfc;
   --sf-surface-2: #eef6f3;
   --sf-surface-3: #ddeae6;
@@ -94,6 +148,19 @@
 }
 
 #sf-app.sf-light[data-sf-palette="copper"] {
+  /* 8 core color levels */
+  --sf-bg:                 #ffffff;
+  --sf-surface:            #fffaf5;
+  --sf-surface-alt:        #f7ede1;
+  --sf-text-primary:       #333333;
+  --sf-text-secondary:     #6a5143;
+  --sf-accent:             #a65a3a;
+  --sf-control:            #a65a3a;
+  --sf-control-text:       #fffaf5;
+
+  /* Font */
+  --sf-font-family:       "DM Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+
   --sf-surface-1: #fffaf5;
   --sf-surface-2: #f7ede1;
   --sf-surface-3: #ecd9c4;
@@ -118,6 +185,19 @@
 }
 
 #sf-app.sf-light[data-sf-palette="slate"] {
+  /* 8 core color levels */
+  --sf-bg:                 #ffffff;
+  --sf-surface:            #fbfcfe;
+  --sf-surface-alt:        #eef2f6;
+  --sf-text-primary:       #333333;
+  --sf-text-secondary:     #475569;
+  --sf-accent:             #334155;
+  --sf-control:            #334155;
+  --sf-control-text:       #ffffff;
+
+  /* Font */
+  --sf-font-family:       "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
+
   --sf-surface-1: #fbfcfe;
   --sf-surface-2: #eef2f6;
   --sf-surface-3: #dde3ea;
@@ -142,6 +222,19 @@
 }
 
 #sf-app.sf-light[data-sf-palette="streamfind"] {
+  /* 8 core color levels */
+  --sf-bg:                 #ffffff;
+  --sf-surface:            #f8fbf4;
+  --sf-surface-alt:        #edf3e5;
+  --sf-text-primary:       #333333;
+  --sf-text-secondary:     #46643a;
+  --sf-accent:             #5a8d37;
+  --sf-control:            #102a66;
+  --sf-control-text:       #f7faf5;
+
+  /* Font */
+  --sf-font-family:       "Space Grotesk", "Segoe UI", Helvetica, Arial, sans-serif;
+
   --sf-surface-1: #f8fbf4;
   --sf-surface-2: #edf3e5;
   --sf-surface-3: #dbe7cf;
@@ -167,6 +260,42 @@
 
 /* ---- CSS Custom Properties: Dark ---- */
 #sf-app.sf-dark {
+  /* 8 core color levels */
+  --sf-bg:                 #1e2129;
+  --sf-surface:            #0d1716;
+  --sf-surface-alt:        #13201f;
+  --sf-text-primary:       #e0e0e0;
+  --sf-text-secondary:     #b8c8c4;
+  --sf-accent:             #46c1bb;
+  --sf-control:            #ffffff;
+  --sf-control-text:       #1e2129;
+
+  /* Derived: Inputs */
+  --sf-input-bg:           #2a2f3a;
+  --sf-input-color:        var(--sf-text-primary);
+  --sf-input-border:       #3a3f4a;
+
+  /* Derived: Tables */
+  --sf-table-header-bg:    var(--sf-control);
+  --sf-table-header-color: var(--sf-control-text);
+  --sf-table-row-odd-bg:   var(--sf-surface);
+  --sf-table-row-even-bg:  var(--sf-surface-alt);
+  --sf-table-row-color:    var(--sf-text-primary);
+  --sf-table-filter-input-bg:  var(--sf-surface-alt);
+  --sf-table-filter-input-color: var(--sf-text-primary);
+  --sf-table-filter-input-border: var(--sf-input-border);
+
+  /* Derived: Plots */
+  --sf-plot-text:          var(--sf-text-primary);
+  --sf-plot-axis:          #d7e2ec;
+  --sf-plot-grid:          rgba(255,255,255,0.52);
+  --sf-plot-zeroline:      rgba(255,255,255,0.72);
+
+  /* Derived: Modals */
+  --sf-modal-bg:           var(--sf-surface-alt);
+  --sf-modal-border:       rgba(255,255,255,0.16);
+
+  /* Existing variables (kept for backward compatibility) */
   --sf-surface-1:          #0d1716;
   --sf-surface-2:          #13201f;
   --sf-surface-3:          #1b2c2a;
@@ -206,6 +335,19 @@
 }
 
 #sf-app.sf-dark[data-sf-palette="lagoon"] {
+  /* 8 core color levels */
+  --sf-bg:                 #091211;
+  --sf-surface:            #0d1716;
+  --sf-surface-alt:        #13201f;
+  --sf-text-primary:       #e0e0e0;
+  --sf-text-secondary:     #b8c8c4;
+  --sf-accent:             #46c1bb;
+  --sf-control:            #46c1bb;
+  --sf-control-text:       #091211;
+
+  /* Font */
+  --sf-font-family:       "Josefin Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+
   --sf-surface-1: #0d1716;
   --sf-surface-2: #13201f;
   --sf-surface-3: #1b2c2a;
@@ -230,6 +372,19 @@
 }
 
 #sf-app.sf-dark[data-sf-palette="copper"] {
+  /* 8 core color levels */
+  --sf-bg:                 #150e0a;
+  --sf-surface:            #1c140f;
+  --sf-surface-alt:        #251b15;
+  --sf-text-primary:       #e0e0e0;
+  --sf-text-secondary:     #dec5b8;
+  --sf-accent:             #d08a5f;
+  --sf-control:            #d08a5f;
+  --sf-control-text:       #150e0a;
+
+  /* Font */
+  --sf-font-family:       "DM Sans", "Segoe UI", Helvetica, Arial, sans-serif;
+
   --sf-surface-1: #1c140f;
   --sf-surface-2: #251b15;
   --sf-surface-3: #33261f;
@@ -254,6 +409,19 @@
 }
 
 #sf-app.sf-dark[data-sf-palette="slate"] {
+  /* 8 core color levels */
+  --sf-bg:                 #0b1220;
+  --sf-surface:            #0f172a;
+  --sf-surface-alt:        #172033;
+  --sf-text-primary:       #e0e0e0;
+  --sf-text-secondary:     #cbd5e1;
+  --sf-accent:             #94a3b8;
+  --sf-control:            #94a3b8;
+  --sf-control-text:       #0b1220;
+
+  /* Font */
+  --sf-font-family:       "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
+
   --sf-surface-1: #0f172a;
   --sf-surface-2: #172033;
   --sf-surface-3: #1f2937;
@@ -278,6 +446,19 @@
 }
 
 #sf-app.sf-dark[data-sf-palette="streamfind"] {
+  /* 8 core color levels */
+  --sf-bg:                 #08101d;
+  --sf-surface:            #0d1425;
+  --sf-surface-alt:        #16203a;
+  --sf-text-primary:       #e0e0e0;
+  --sf-text-secondary:     #c6d6bc;
+  --sf-accent:             #7fb24f;
+  --sf-control:            #7fb24f;
+  --sf-control-text:       #08101d;
+
+  /* Font */
+  --sf-font-family:       "Space Grotesk", "Segoe UI", Helvetica, Arial, sans-serif;
+
   --sf-surface-1: #0d1425;
   --sf-surface-2: #16203a;
   --sf-surface-3: #223050;
@@ -315,40 +496,69 @@ body {
   font-family: var(--sf-font-family);
 }
 
+/* Custom scrollbars using palette accent colors */
+#sf-app *::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+#sf-app *::-webkit-scrollbar-track {
+  background: transparent;
+}
+#sf-app *::-webkit-scrollbar-thumb {
+  background: var(--sf-accent);
+  border-radius: 4px;
+  opacity: 0.6;
+}
+#sf-app *::-webkit-scrollbar-thumb:hover {
+  background: var(--sf-control);
+}
+#sf-app * {
+  scrollbar-width: thin;
+  scrollbar-color: var(--sf-accent) transparent;
+}
+
 body[data-sf-theme="light"][data-sf-palette="lagoon"] {
-  --sf-app-bg: #ffffff;
+  --sf-bg: #ffffff;
+  --sf-font-family: "Josefin Sans", "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
 body[data-sf-theme="light"][data-sf-palette="copper"] {
-  --sf-app-bg: #ffffff;
+  --sf-bg: #ffffff;
+  --sf-font-family: "DM Sans", "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
 body[data-sf-theme="light"][data-sf-palette="slate"] {
-  --sf-app-bg: #ffffff;
+  --sf-bg: #ffffff;
+  --sf-font-family: "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
 body[data-sf-theme="light"][data-sf-palette="streamfind"] {
-  --sf-app-bg: #ffffff;
+  --sf-bg: #ffffff;
+  --sf-font-family: "Space Grotesk", "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
 body[data-sf-theme="dark"][data-sf-palette="lagoon"] {
-  --sf-app-bg: #091211;
+  --sf-bg: #091211;
+  --sf-font-family: "Josefin Sans", "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
 body[data-sf-theme="dark"][data-sf-palette="copper"] {
-  --sf-app-bg: #150e0a;
+  --sf-bg: #150e0a;
+  --sf-font-family: "DM Sans", "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
 body[data-sf-theme="dark"][data-sf-palette="slate"] {
-  --sf-app-bg: #0b1220;
+  --sf-bg: #0b1220;
+  --sf-font-family: "Inter", "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
 body[data-sf-theme="dark"][data-sf-palette="streamfind"] {
-  --sf-app-bg: #08101d;
+  --sf-bg: #08101d;
+  --sf-font-family: "Space Grotesk", "Segoe UI", Helvetica, Arial, sans-serif;
 }
 
 body[data-sf-theme][data-sf-palette] {
-  background: var(--sf-app-bg);
+  background: var(--sf-bg);
 }
 
 /* ============================================================
@@ -360,6 +570,7 @@ body[data-sf-theme][data-sf-palette] {
   height: 100vh;
   width: 100vw;
   overflow: hidden;
+  font-family: var(--sf-font-family);
 }
 
 #sf-content {
@@ -665,7 +876,7 @@ body[data-sf-theme][data-sf-palette] {
 .sf-notif-empty {
   padding: var(--sf-space) 0;
   font-size: 12px;
-  color: #888;
+  color: var(--sf-text-secondary);
   text-align: left;
   line-height: 1.45;
 }
@@ -756,12 +967,13 @@ body[data-sf-theme][data-sf-palette] {
 #sf-content {
   flex: 1;
   width: 100%;
-  height: 100%;
   min-height: 0;
   background: var(--sf-content-bg);
   color: var(--sf-content-color);
   overflow: hidden;
   position: relative;
+  display: flex;
+  flex-direction: column;
 }
 
 .sf-boot-overlay {
@@ -771,7 +983,7 @@ body[data-sf-theme][data-sf-palette] {
   align-items: center;
   justify-content: center;
   z-index: 9000;
-  background: #ffffff;
+  background: var(--sf-bg, #ffffff);
   pointer-events: all;
 }
 
@@ -795,15 +1007,26 @@ body[data-sf-theme][data-sf-palette] {
   animation: sf-logo-pulse 1.2s ease-in-out infinite;
 }
 
-/* Conditionally shown page wrappers */
-.sf-page {
-  padding: 0;
-  height: 100%;
+/* Conditionally shown page wrappers — fill content area via flex */
+#sf-content > div[data-display-if] {
+  flex: 1;
   min-height: 0;
-  width: 100%;
-  overflow: auto;
-  background: var(--sf-content-bg);
-  color: var(--sf-content-color);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Page surface containers — fill their parent */
+#sf-project-surface,
+#sf-analyses-surface,
+#sf-explorer-surface,
+#sf-workflow-surface,
+#sf-results-surface,
+#sf-report-surface,
+#sf-audit-surface {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .sf-page-loading-surface {
@@ -818,7 +1041,7 @@ body[data-sf-theme][data-sf-palette] {
   inset: 0;
   z-index: 8100;
   pointer-events: none;
-  background-color: rgba(255, 255, 255, 0.96);
+  background-color: transparent;
   background-image: url('/www/logo_StreamFind.png');
   background-repeat: no-repeat;
   background-position: center center;
@@ -831,7 +1054,7 @@ body[data-sf-theme][data-sf-palette] {
   flex-direction: column;
   gap: var(--sf-space);
   height: 100%;
-  padding: var(--sf-space);
+  padding: 0;
   background: transparent;
 }
 
@@ -840,11 +1063,12 @@ body[data-sf-theme][data-sf-palette] {
   align-items: stretch;
   justify-content: space-between;
   gap: var(--sf-space);
-  padding: var(--sf-space-2);
+  padding: 0 0 var(--sf-space) 0;
   background: transparent;
   border: none;
   border-radius: var(--sf-radius-md);
   box-shadow: none;
+  flex-shrink: 0;
 }
 
 .sf-page-title-block,
@@ -878,6 +1102,8 @@ body[data-sf-theme][data-sf-palette] {
   min-height: 0;
   overflow: hidden;
   background: transparent;
+  display: flex;
+  flex-direction: column;
 }
 
 .sf-split-layout {
@@ -980,12 +1206,56 @@ body[data-sf-theme][data-sf-palette] {
   display: flex;
   flex-direction: column;
   gap: var(--sf-space);
+  min-height: 0;
 }
 
 .sf-fill {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+}
+
+/* JSON editor on Project page */
+.json-editor-wrapper {
+  flex: 1;
+  min-height: calc(100vh - 200px);
+  overflow: hidden;
+  position: relative;
+}
+.json-editor-wrapper .ace_editor {
+  position: absolute !important;
+  inset: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+  border: 2px solid transparent;
+  border-radius: 3px;
+}
+.json-editor-wrapper textarea {
+  position: absolute !important;
+  inset: 0 !important;
+  height: 100% !important;
+  width: 100% !important;
+  border: 2px solid transparent;
+  border-radius: 3px;
+}
+.json-editor-wrapper textarea {
+  resize: none;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 6px;
+}
+.json-editor-wrapper {
+  margin: 0;
+}
+.json-editor-wrapper .ace_editor,
+.json-editor-wrapper textarea {
+  margin: 0;
+}
+.json-editor-wrapper.invalid .ace_editor {
+  border-color: #c0392b !important;
+}
+.json-editor-wrapper.invalid textarea {
+  border-color: #c0392b !important;
 }
 
 .sf-toolbar-inline {
@@ -1012,18 +1282,20 @@ body[data-sf-theme][data-sf-palette] {
   opacity: 0.8;
 }
 
+.sf-home-shell {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
 .sf-home-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, 1fr);
+  grid-template-rows: 1fr 1fr;
   gap: var(--sf-space);
-  align-items: stretch;
   width: 100%;
-  max-width: 100%;
-  flex: 1 1 auto;
-  min-height: 0;
   height: 100%;
-  overflow: hidden;
-  align-content: stretch;
+  min-height: calc(100vh - var(--sf-topbar-height) - 10px);
 }
 
 .sf-project-id-grid {
@@ -1036,14 +1308,14 @@ body[data-sf-theme][data-sf-palette] {
 .sf-home-tile {
   display: flex !important;
   flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start;
+  align-items: center;
+  justify-content: center;
   gap: var(--sf-space);
   width: 100%;
   min-height: 0;
-  height: 100%;
-  padding: var(--sf-space-2) !important;
-  text-align: left;
+  height: 100% !important;
+  padding: var(--sf-space-3) !important;
+  text-align: center;
   min-width: 0;
   overflow: hidden;
   white-space: normal !important;
@@ -1062,8 +1334,8 @@ body[data-sf-theme][data-sf-palette] {
 
 .sf-home-tile-title {
   display: block;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 28px;
+  font-weight: 700;
 }
 
 .sf-home-tile-type {
@@ -1101,21 +1373,18 @@ body[data-sf-theme][data-sf-palette] {
 /* Ensure all text inside content area inherits theme color */
 #sf-content,
 #sf-content p,
-#sf-content span,
-#sf-content div,
 #sf-content h1, #sf-content h2, #sf-content h3,
 #sf-content h4, #sf-content h5, #sf-content h6,
 #sf-content label,
-#sf-content strong {
+#sf-content strong,
+#sf-content li {
   color: inherit;
 }
 
-/* Dark mode: force white text on all content elements, overriding Bootstrap defaults */
+/* Dark mode: force text color on all content elements, overriding Bootstrap defaults */
 #sf-app.sf-dark #sf-content,
 #sf-app.sf-dark .sf-page,
 #sf-app.sf-dark #sf-content p,
-#sf-app.sf-dark #sf-content span,
-#sf-app.sf-dark #sf-content div,
 #sf-app.sf-dark #sf-content h1,
 #sf-app.sf-dark #sf-content h2,
 #sf-app.sf-dark #sf-content h3,
@@ -1125,22 +1394,20 @@ body[data-sf-theme][data-sf-palette] {
 #sf-app.sf-dark #sf-content label,
 #sf-app.sf-dark #sf-content strong,
 #sf-app.sf-dark #sf-content small,
-#sf-app.sf-dark #sf-content li,
-#sf-app.sf-dark #sf-content td,
-#sf-app.sf-dark #sf-content th {
-  color: #e0e0e0;
+#sf-app.sf-dark #sf-content li {
+  color: var(--sf-text-primary);
 }
 
 /* Dark mode: inputs and selects */
 #sf-app.sf-dark #sf-content input:not([type="range"]),
 #sf-app.sf-dark #sf-content select,
 #sf-app.sf-dark #sf-content textarea {
-  background-color: #2a2f3a;
-  color: #e0e0e0;
-  border-color: #3a3f4a;
+  background-color: var(--sf-input-bg);
+  color: var(--sf-input-color);
+  border-color: var(--sf-input-border);
 }
 
-/* Selectize controls keep a white surface, so force dark text in both themes. */
+/* Selectize controls: light mode uses white surface */
 #sf-app #sf-content .selectize-control .selectize-input,
 #sf-app #sf-content .selectize-control .selectize-input input,
 #sf-app #sf-content .selectize-dropdown,
@@ -1151,16 +1418,35 @@ body[data-sf-theme][data-sf-palette] {
   background-color: #ffffff !important;
   color: #1e2129 !important;
 }
-
 #sf-app #sf-content .selectize-control .selectize-input {
   border-color: #d0d4dc !important;
 }
-
 #sf-app #sf-content .selectize-dropdown .active,
 #sf-app #sf-content .selectize-dropdown .selected,
 #sf-app #sf-content .selectize-dropdown .option:hover {
   background-color: #e8eaf0 !important;
   color: #1e2129 !important;
+}
+
+/* Dark mode: selectize controls use palette colors */
+#sf-app.sf-dark #sf-content .selectize-control .selectize-input,
+#sf-app.sf-dark #sf-content .selectize-control .selectize-input input,
+#sf-app.sf-dark #sf-content .selectize-dropdown,
+#sf-app.sf-dark #sf-content .selectize-dropdown-content,
+#sf-app.sf-dark #sf-content .selectize-dropdown .option,
+#sf-app.sf-dark #sf-content .selectize-dropdown .item,
+#sf-app.sf-dark #sf-content .selectize-control.single .selectize-input .item {
+  background-color: var(--sf-surface-alt) !important;
+  color: var(--sf-text-primary) !important;
+}
+#sf-app.sf-dark #sf-content .selectize-control .selectize-input {
+  border-color: var(--sf-input-border) !important;
+}
+#sf-app.sf-dark #sf-content .selectize-dropdown .active,
+#sf-app.sf-dark #sf-content .selectize-dropdown .selected,
+#sf-app.sf-dark #sf-content .selectize-dropdown .option:hover {
+  background-color: var(--sf-surface-3) !important;
+  color: var(--sf-text-primary) !important;
 }
 
 /* ============================================================
@@ -1172,48 +1458,40 @@ body[data-sf-theme][data-sf-palette] {
   display: none !important;
 }
 
-#sf-app.sf-light #sf-content .js-plotly-plot .xtick text,
-#sf-app.sf-light #sf-content .js-plotly-plot .ytick text,
-#sf-app.sf-light #sf-content .js-plotly-plot .xtitle text,
-#sf-app.sf-light #sf-content .js-plotly-plot .ytitle text,
-#sf-app.sf-light #sf-content .js-plotly-plot .legendtext,
-#sf-app.sf-light #sf-content .js-plotly-plot .legendtitletext,
-#sf-app.sf-light #sf-content .js-plotly-plot .cbaxis .tick text,
-#sf-app.sf-light #sf-content .js-plotly-plot .cbtitle,
-#sf-app.sf-light #sf-content .js-plotly-plot .annotation-text {
-  fill: #1e2129 !important;
-  color: #1e2129 !important;
+/* Plotly text colors use the primary text level */
+#sf-app #sf-content .js-plotly-plot .xtick text,
+#sf-app #sf-content .js-plotly-plot .ytick text,
+#sf-app #sf-content .js-plotly-plot .xtitle text,
+#sf-app #sf-content .js-plotly-plot .ytitle text,
+#sf-app #sf-content .js-plotly-plot .legendtext,
+#sf-app #sf-content .js-plotly-plot .legendtitletext,
+#sf-app #sf-content .js-plotly-plot .cbaxis .tick text,
+#sf-app #sf-content .js-plotly-plot .cbtitle,
+#sf-app #sf-content .js-plotly-plot .annotation-text {
+  fill: var(--sf-plot-text) !important;
+  color: var(--sf-plot-text) !important;
 }
 
-#sf-app.sf-dark #sf-content .js-plotly-plot .xtick text,
-#sf-app.sf-dark #sf-content .js-plotly-plot .ytick text,
-#sf-app.sf-dark #sf-content .js-plotly-plot .xtitle text,
-#sf-app.sf-dark #sf-content .js-plotly-plot .ytitle text,
-#sf-app.sf-dark #sf-content .js-plotly-plot .legendtext,
-#sf-app.sf-dark #sf-content .js-plotly-plot .legendtitletext,
-#sf-app.sf-dark #sf-content .js-plotly-plot .cbaxis .tick text,
-#sf-app.sf-dark #sf-content .js-plotly-plot .cbtitle,
-#sf-app.sf-dark #sf-content .js-plotly-plot .annotation-text {
-  fill: #e0e0e0 !important;
-  color: #e0e0e0 !important;
+/* Infolayer text */
+#sf-app #sf-content .js-plotly-plot .infolayer text,
+#sf-app #sf-content .js-plotly-plot .infolayer .xtitle,
+#sf-app #sf-content .js-plotly-plot .infolayer .ytitle {
+  fill: var(--sf-plot-text) !important;
+  color: var(--sf-plot-text) !important;
 }
 
-/* Plotly frequently renders axis titles in infolayer groups with different classes.
-   Force infolayer text colors per theme so axis titles never disappear. */
-#sf-app.sf-light #sf-content .js-plotly-plot .infolayer text,
-#sf-app.sf-light #sf-content .js-plotly-plot .infolayer .xtitle,
-#sf-app.sf-light #sf-content .js-plotly-plot .infolayer .ytitle {
-  fill: #1e2129 !important;
-  color: #1e2129 !important;
+/* Plotly text font */
+#sf-app #sf-content .js-plotly-plot .xtick text,
+#sf-app #sf-content .js-plotly-plot .ytick text,
+#sf-app #sf-content .js-plotly-plot .xtitle text,
+#sf-app #sf-content .js-plotly-plot .ytitle text,
+#sf-app #sf-content .js-plotly-plot .legendtext,
+#sf-app #sf-content .js-plotly-plot .legendtitletext,
+#sf-app #sf-content .js-plotly-plot .gtitle {
+  font-family: var(--sf-font-family) !important;
 }
 
-#sf-app.sf-dark #sf-content .js-plotly-plot .infolayer text,
-#sf-app.sf-dark #sf-content .js-plotly-plot .infolayer .xtitle,
-#sf-app.sf-dark #sf-content .js-plotly-plot .infolayer .ytitle {
-  fill: #ffffff !important;
-  color: #ffffff !important;
-}
-
+/* Modebar: inactive = transparent, hover = surface-alt, active = control */
 #sf-app #sf-content .js-plotly-plot .modebar,
 #sf-app #sf-content .js-plotly-plot .modebar-group {
   background: transparent !important;
@@ -1227,17 +1505,18 @@ body[data-sf-theme][data-sf-palette] {
   background-image: none !important;
   border: none !important;
   box-shadow: none !important;
-  color: var(--sf-topbar-color) !important;
+  color: var(--sf-plot-text) !important;
   opacity: 1 !important;
 }
 
 #sf-app #sf-content .js-plotly-plot .modebar-btn:not(.active):hover,
 #sf-app #sf-content .js-plotly-plot .modebar-btn:not(.active):focus {
-  background: var(--sf-nav-hover-bg) !important;
-  background-color: var(--sf-nav-hover-bg) !important;
+  background: var(--sf-surface-alt) !important;
+  background-color: var(--sf-surface-alt) !important;
   border: none !important;
   box-shadow: none !important;
-  color: var(--sf-topbar-color) !important;
+  color: var(--sf-plot-text) !important;
+  border-radius: var(--sf-radius-sm);
 }
 
 #sf-app #sf-content .js-plotly-plot .modebar-btn:not(.active) svg,
@@ -1249,9 +1528,9 @@ body[data-sf-theme][data-sf-palette] {
 #sf-app #sf-content .js-plotly-plot .modebar-btn.active,
 #sf-app #sf-content .js-plotly-plot .modebar-btn--logo,
 #sf-app #sf-content .js-plotly-plot .modebar-btn.active:hover {
-  background: var(--sf-nav-active-bg) !important;
-  background-color: var(--sf-nav-active-bg) !important;
-  color: var(--sf-nav-active-color) !important;
+  background: var(--sf-control) !important;
+  background-color: var(--sf-control) !important;
+  color: var(--sf-control-text) !important;
 }
 
 #sf-app #sf-content .js-plotly-plot .modebar-btn.active svg,
@@ -1260,31 +1539,18 @@ body[data-sf-theme][data-sf-palette] {
   stroke: currentColor !important;
 }
 
-/* Plotly grid lines: darker in light mode, white in dark mode. */
+/* Plotly grid and zero lines */
 #sf-app #sf-content .js-plotly-plot .gridlayer .xgrid,
 #sf-app #sf-content .js-plotly-plot .gridlayer .ygrid,
 #sf-app #sf-content .js-plotly-plot .gridlayer .zgrid {
-  stroke: rgba(71, 85, 105, 0.52) !important;
+  stroke: var(--sf-plot-grid) !important;
   stroke-width: 1px !important;
-  opacity: 1 !important;
-}
-
-#sf-app.sf-dark #sf-content .js-plotly-plot .gridlayer .xgrid,
-#sf-app.sf-dark #sf-content .js-plotly-plot .gridlayer .ygrid,
-#sf-app.sf-dark #sf-content .js-plotly-plot .gridlayer .zgrid {
-  stroke: rgba(255, 255, 255, 0.52) !important;
   opacity: 1 !important;
 }
 
 #sf-app #sf-content .js-plotly-plot .zerolinelayer .xzl,
 #sf-app #sf-content .js-plotly-plot .zerolinelayer .yzl {
-  stroke: rgba(51, 65, 85, 0.68) !important;
-  opacity: 1 !important;
-}
-
-#sf-app.sf-dark #sf-content .js-plotly-plot .zerolinelayer .xzl,
-#sf-app.sf-dark #sf-content .js-plotly-plot .zerolinelayer .yzl {
-  stroke: rgba(255, 255, 255, 0.72) !important;
+  stroke: var(--sf-plot-zeroline) !important;
   opacity: 1 !important;
 }
 
@@ -1308,6 +1574,30 @@ body[data-sf-theme][data-sf-palette] {
   background: var(--sf-content-bg) !important;
   overflow: hidden !important;
 }
+
+/* Explorer plot surface */
+#sf-explorer-surface .sf-explorer-plot-surface {
+  height: 100%;
+  overflow: hidden;
+}
+.svg-container,
+.svg-container,
+.plotly,
+.plotly .main-svg,
+.plotly .user-select-none,
+.plotly.html-widget {
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+}
+.plotly.html-widget {
+  width: 100%;
+  height: 100%;
+}
+.plotly .user-select-none {
+  width: 100% !important;
+  height: 100% !important;
+}
 /* Tab labels */
 .nav-tabs .nav-link {
   padding: 3px 10px !important;
@@ -1324,38 +1614,39 @@ body[data-sf-theme][data-sf-palette] {
   background: transparent !important;
 }
 .nav-tabs .nav-link:hover:not(.active) {
-  border-bottom: 2px solid #aaa !important;
+  border-bottom: 2px solid var(--sf-text-secondary) !important;
+  opacity: 0.6;
 }
 .nav-tabs {
   border-bottom: 1px solid var(--sf-topbar-border) !important;
 }
 
-/* Remove DataTables borders that contrast with dark bg */
-#sf-app.sf-dark table.dataTable thead th,
-#sf-app.sf-dark table.dataTable thead td {
-  background: #2a2f3a;
-  color: #e0e0e0;
-  border-bottom-color: #3a3f4a;
+/* DataTables table colors use palette variables */
+#sf-app table.dataTable thead th,
+#sf-app table.dataTable thead td {
+  background: var(--sf-table-header-bg);
+  color: var(--sf-table-header-color);
+  border-bottom-color: var(--sf-table-filter-input-border);
 }
-#sf-app.sf-dark table.dataTable tbody tr.odd,
-#sf-app.sf-dark table.dataTable tbody tr.odd td {
-  background: #1e2129;
-  color: #e0e0e0;
+#sf-app table.dataTable tbody tr.odd,
+#sf-app table.dataTable tbody tr.odd td {
+  background: var(--sf-table-row-odd-bg);
+  color: var(--sf-table-row-color);
 }
-#sf-app.sf-dark table.dataTable tbody tr.even,
-#sf-app.sf-dark table.dataTable tbody tr.even td {
-  background: #232830;
-  color: #e0e0e0;
+#sf-app table.dataTable tbody tr.even,
+#sf-app table.dataTable tbody tr.even td {
+  background: var(--sf-table-row-even-bg);
+  color: var(--sf-table-row-color);
 }
-#sf-app.sf-dark .dataTables_wrapper,
-#sf-app.sf-dark .dataTables_info,
-#sf-app.sf-dark .dataTables_filter label {
-  color: #e0e0e0;
+#sf-app .dataTables_wrapper,
+#sf-app .dataTables_info,
+#sf-app .dataTables_filter label {
+  color: var(--sf-table-row-color);
 }
-#sf-app.sf-dark .dataTables_filter input {
-  background: #2a2f3a;
-  color: #e0e0e0;
-  border: 1px solid #3a3f4a;
+#sf-app .dataTables_filter input {
+  background: var(--sf-table-filter-input-bg);
+  color: var(--sf-table-filter-input-color);
+  border: 1px solid var(--sf-table-filter-input-border);
 }
 
 /* ============================================================
@@ -1399,8 +1690,8 @@ ul.sf-info-list {
   width: 26px;
   height: 26px;
   border-radius: 4px;
-  background: #1e2129;
-  color: #ffffff;
+  background: var(--sf-control);
+  color: var(--sf-control-text);
   font-size: 13px;
   cursor: default;
   transition: background 0.15s, transform 0.15s;
@@ -1414,15 +1705,15 @@ ul.sf-info-list {
 /* ============================================================
    Layout helpers — remove Bootstrap/Shiny padding artifacts
    ============================================================ */
-.sf-page .container-fluid,
-.sf-page .row {
+#sf-content .container-fluid,
+#sf-content .row {
   margin: 0 !important;
   padding: 0 !important;
 }
-.sf-page .col-sm-12,
-.sf-page .col-sm-6,
-.sf-page .col-sm-3,
-.sf-page .col-sm-9 {
+#sf-content .col-sm-12,
+#sf-content .col-sm-6,
+#sf-content .col-sm-3,
+#sf-content .col-sm-9 {
   padding-left: 0 !important;
   padding-right: 0 !important;
 }
@@ -1545,16 +1836,16 @@ ul.sf-info-list {
 #sf-app.sf-dark .rank-list-container { color: var(--sf-content-color); }
 #sf-app.sf-dark .rank-list-title     { color: var(--sf-content-color) !important; }
 #sf-app.sf-dark .rank-list {
-  background: #2a2f3a !important;
-  border: 1px solid rgba(255,255,255,0.1) !important;
+  background: var(--sf-surface-alt) !important;
+  border: 1px solid var(--sf-input-border) !important;
 }
 #sf-app.sf-dark .rank-list-item {
-  background: #2a2f3a !important;
-  color: #e0e0e0 !important;
-  border: 1px solid rgba(255,255,255,0.12) !important;
+  background: var(--sf-surface-alt) !important;
+  color: var(--sf-text-primary) !important;
+  border: 1px solid var(--sf-input-border) !important;
 }
 #sf-app.sf-dark .rank-list-item span,
-#sf-app.sf-dark .rank-list-item .workflow-item span { color: #e0e0e0 !important; }
+#sf-app.sf-dark .rank-list-item .workflow-item span { color: var(--sf-text-primary) !important; }
 #sf-app.sf-dark .rank-list-item .fa,
 #sf-app.sf-dark .rank-list-item .fas,
 #sf-app.sf-dark .rank-list-item .far,
@@ -1596,7 +1887,7 @@ ul.sf-info-list {
   z-index:    8000;
   pointer-events: none;
   border-radius: inherit;
-  background-color:  rgba(255, 255, 255, 0.96);
+  background-color: transparent;
   background-image:  url('/www/logo_StreamFind.png');
   background-repeat: no-repeat;
   background-position: center center;
@@ -1628,7 +1919,7 @@ ul.sf-info-list {
 
 .sf-explorer-plot-surface {
   position: relative;
-  min-height: calc(100vh - 25px - 10px - 28px - 30px);
+  height: 100%;
 }
 
 .sf-explorer-plot-surface.loading::after {
@@ -1637,7 +1928,7 @@ ul.sf-info-list {
   inset: 0;
   z-index: 8100;
   pointer-events: none;
-  background-color: rgba(255, 255, 255, 0.96);
+  background-color: transparent;
   background-image: url('/www/logo_StreamFind.png');
   background-repeat: no-repeat;
   background-position: center center;
@@ -1681,15 +1972,15 @@ ul.sf-info-list {
 }
 
 #shiny-modal-wrapper .modal-content {
-  background: #ffffff;
-  border: 1px solid rgba(30, 33, 41, 0.22);
+  background: var(--sf-modal-bg, #ffffff);
+  border: 1px solid var(--sf-modal-border, rgba(30, 33, 41, 0.22));
   border-radius: 6px;
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.42), 0 0 0 1px rgba(255, 255, 255, 0.35);
 }
 
 body[data-sf-theme="dark"] #shiny-modal-wrapper .modal-content {
-  background: #2a2f3a;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: var(--sf-modal-bg);
+  border: 1px solid var(--sf-modal-border);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.08);
 }
 

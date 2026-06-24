@@ -8,7 +8,7 @@
   chrom_surface_id <- ns(ns2("chrom_plot_surface"))
 
   htmltools::div(
-    style = "height: calc(100vh - 35px); overflow: hidden;",
+    style = "height: calc(100vh - var(--sf-topbar-height) - var(--sf-subtopbar-height) - var(--sf-pad-10)); overflow: hidden;",
     htmltools::tags$script(htmltools::HTML(sprintf(
       "(function() {
           var bindSurface = function(outputId, surfaceId) {
@@ -50,53 +50,59 @@
         })();",
       summary_plot_id, summary_surface_id, chrom_plot_id, chrom_surface_id
     ))),
+    shiny::tags$script(htmltools::HTML("
+      Shiny.addCustomMessageHandler('resizePlots', function(ids) {
+        var list = ids || document.querySelectorAll('.js-plotly-plot');
+        if (typeof list === 'string') list = [document.getElementById(list)];
+        if (!list.forEach) list = [list];
+        list.forEach(function(el) {
+          if (el && typeof Plotly !== 'undefined') {
+            var h = el.clientHeight;
+            try { Plotly.relayout(el, {height: h > 100 ? h : undefined, autosize: true}); } catch(e) {}
+            try { Plotly.Plots.resize(el); } catch(e) {}
+          }
+        });
+      });
+    ")),
     shiny::conditionalPanel(
       "input.sf_active_subtab === 'tic'",
-      shiny::fluidRow(
-        shiny::column(
-          3,
+      htmltools::div(
+        style = "display: flex; flex-direction: row; height: 100%; gap: 5px;",
+        htmltools::div(
+          style = "width: 300px; flex-shrink: 0; height: 100%; overflow: auto;",
           DT::dataTableOutput(
             ns(ns2("spectraAnalysesTable")),
-            height = "calc(100vh - 45px)"
+            height = "calc(100vh - var(--sf-topbar-height) - var(--sf-subtopbar-height) - var(--sf-pad-10))"
           )
         ),
-        shiny::column(9,
-          bslib::layout_sidebar(
-            sidebar = bslib::sidebar(
-              width = "200px",
-              bg = NULL,
-              resizable = FALSE,
-              class = "sf-explorer-sidebar",
-              shiny::uiOutput(ns(ns2("summary_plot_controls")))
-            ),
-            shiny::uiOutput(ns(ns2("summary_plot_ui")))
-          ),
-          height = "calc(100vh - 45px)"
+        htmltools::div(
+          style = "width: 200px; flex-shrink: 0; height: 100%; overflow-y: auto;",
+          shiny::uiOutput(ns(ns2("summary_plot_controls")))
+        ),
+        htmltools::div(
+          style = "flex: 1; min-width: 0; height: 100%; overflow: hidden;",
+          shiny::uiOutput(ns(ns2("summary_plot_ui")))
         )
       )
     ),
     shiny::conditionalPanel(
       "input.sf_active_subtab === 'chromatograms'",
-      shiny::fluidRow(
-        shiny::column(
-          3,
+      htmltools::div(
+        style = "display: flex; flex-direction: row; height: 100%; gap: 5px;",
+        htmltools::div(
+          style = "width: 300px; flex-shrink: 0; height: 100%; overflow: auto;",
           DT::dataTableOutput(
             ns(ns2("chromAnalysesTable")),
-            height = "calc(100vh - 45px)"
+            height = "calc(100vh - var(--sf-topbar-height) - var(--sf-subtopbar-height) - var(--sf-pad-10))"
           )
         ),
-        shiny::column(9,
-          bslib::layout_sidebar(
-            sidebar = bslib::sidebar(
-              width = "200px",
-              bg = NULL,
-              resizable = FALSE,
-              class = "sf-explorer-sidebar",
-              shiny::uiOutput(ns(ns2("chrom_plot_controls")))
-            ),
-            shiny::uiOutput(ns(ns2("chrom_plot_ui")))
-          ),
-          height = "calc(100vh - 45px)"
+        htmltools::div(
+          style = "width: 200px; flex-shrink: 0; height: 100%; overflow-y: auto;",
+          shiny::uiOutput(ns(ns2("chrom_plot_controls")))
+        ),
+        htmltools::div(
+          style = "flex: 1; min-width: 0; height: 100%; overflow: hidden;",
+          shiny::uiOutput(ns(ns2("chrom_plot_ui")))
         )
       )
     ),
@@ -126,6 +132,10 @@
     reactive_rt_start <- shiny::reactiveVal(0)
     reactive_number_analyses <- shiny::reactiveVal(0)
 
+    shiny::observeEvent(input$sf_active_subtab, {
+      session$sendCustomMessage("resizePlots", TRUE)
+    })
+
     update_reactive_vars <- function(
       reactive_analyses,
       reactive_has_results_spectra,
@@ -153,7 +163,7 @@
       reactive_has_results_spectra(nrow(hd) > 0)
       reactive_has_results_chromatograms(nrow(chrom_hd) > 0)
       if (nrow(hd) > 0) {
-        reactive_levels(as.numeric(unique(hd$level)))
+        reactive_levels(sort(as.numeric(unique(hd$level))))
         reactive_rt_end(round(max(hd$rt), digits = 0))
         reactive_rt_start(round(min(hd$rt), digits = 0))
       } else {
@@ -246,7 +256,7 @@
         options = list(
           dom = "ft",
           paging = FALSE,
-          scrollY = "calc(100vh - 25px - 10px - 28px - 10px - 100px)",
+          scrollY = "calc(100vh - var(--sf-topbar-height) - var(--sf-subtopbar-height) - var(--sf-pad-10) - 28px - 55px)",
           scrollCollapse = TRUE
         )
       )
@@ -260,14 +270,14 @@
           htmltools::h4("No analyses found!")
         )
       } else if (reactive_has_results_spectra()) {
-        htmltools::div(
-          id = ns(ns2("summary_plot_surface")),
-          class = "sf-explorer-plot-surface",
-          plotly::plotlyOutput(
-            ns(ns2("summary_plotly")),
-            height = "calc(100vh - 25px - 10px - 28px - 30px)"
+          htmltools::div(
+            id = ns(ns2("summary_plot_surface")),
+            class = "sf-explorer-plot-surface",
+            plotly::plotlyOutput(
+              ns(ns2("summary_plotly")),
+              height = "calc(100vh - var(--sf-topbar-height) - var(--sf-subtopbar-height) - var(--sf-pad-10))"
+            )
           )
-        )
       } else {
         htmltools::div(
           style = "margin-top: 20px;",
@@ -376,11 +386,18 @@
               interactive = TRUE,
               darkMode = dark_mode()
             ))
-            return(plotly::layout(
-              p,
-              title = NULL,
-              paper_bgcolor = "rgba(0,0,0,0)",
-              plot_bgcolor = "rgba(0,0,0,0)"
+            session$onFlushed(function() {
+              session$sendCustomMessage("resizePlots", ns(ns2("summary_plotly")))
+            }, once = TRUE)
+            return(plotly::config(
+              plotly::layout(
+                p,
+                title = NULL,
+                paper_bgcolor = "rgba(0,0,0,0)",
+                plot_bgcolor = "rgba(0,0,0,0)",
+                autosize = TRUE
+              ),
+              responsive = TRUE
             ))
           } else if (identical(input$summary_plot_view, "tic_3d")) {
             p <- suppressWarnings(plot_spectra_tic_3d(
@@ -394,11 +411,18 @@
               useMobility = isTRUE(input$summary_plot_use_mobility),
               darkMode = dark_mode()
             ))
-            return(plotly::layout(
-              p,
-              title = NULL,
-              paper_bgcolor = "rgba(0,0,0,0)",
-              plot_bgcolor = "rgba(0,0,0,0)"
+            session$onFlushed(function() {
+              session$sendCustomMessage("resizePlots", ns(ns2("summary_plotly")))
+            }, once = TRUE)
+            return(plotly::config(
+              plotly::layout(
+                p,
+                title = NULL,
+                paper_bgcolor = "rgba(0,0,0,0)",
+                plot_bgcolor = "rgba(0,0,0,0)",
+                autosize = TRUE
+              ),
+              responsive = TRUE
             ))
           }
         }
@@ -501,7 +525,7 @@
         options = list(
           dom = "ft",
           paging = FALSE,
-          scrollY = "calc(100vh - 25px - 10px - 28px - 10px - 100px)",
+          scrollY = "calc(100vh - var(--sf-topbar-height) - var(--sf-subtopbar-height) - var(--sf-pad-10) - 28px - 55px)",
           scrollCollapse = TRUE
         )
       )
@@ -520,7 +544,7 @@
           class = "sf-explorer-plot-surface",
           plotly::plotlyOutput(
             ns(ns2("chrom_plotly")),
-            height = "calc(100vh - 25px - 10px - 28px - 30px)"
+            height = "calc(100vh - var(--sf-topbar-height) - var(--sf-subtopbar-height) - var(--sf-pad-10))"
           )
         )
       } else {
@@ -562,6 +586,7 @@
     # out Chromatograms plotly -----
     output$chrom_plotly <- plotly::renderPlotly({
       if (reactive_number_analyses() == 0) return()
+      if (!identical(input$sf_active_subtab, "chromatograms")) return()
       selected <- selected_analysis_names(input$chromAnalysesTable_rows_selected)
       if (length(selected) == 0) return()
       if (!reactive_has_results_chromatograms()) return()
@@ -572,11 +597,18 @@
         interactive = TRUE,
         darkMode = dark_mode()
       )
-      plotly::layout(
-        p,
-        title = NULL,
-        paper_bgcolor = "rgba(0,0,0,0)",
-        plot_bgcolor = "rgba(0,0,0,0)"
+      session$onFlushed(function() {
+        session$sendCustomMessage("resizePlots", ns(ns2("chrom_plotly")))
+      }, once = TRUE)
+      plotly::config(
+        plotly::layout(
+          p,
+          title = NULL,
+          paper_bgcolor = "rgba(0,0,0,0)",
+          plot_bgcolor = "rgba(0,0,0,0)",
+          autosize = TRUE
+        ),
+        responsive = TRUE
       )
     })
 

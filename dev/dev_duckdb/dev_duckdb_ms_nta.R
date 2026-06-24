@@ -16,6 +16,14 @@ internal_standards <- StreamFindData::get_mass_spec_wastewater_internal_standard
 internal_standards <- data.table::fread(internal_standards)
 internal_standards <- internal_standards[!is.na(rt), ]
 
+
+nta <- open_ProjectNonTargetAnalysis(
+  db = project_db,
+  project_id = project_id
+)
+nta$run_app()
+
+
 nta <- open_ProjectNonTargetAnalysis(
   db = project_db,
   project_id = project_id,

@@ -223,17 +223,6 @@ app_server <- function(input, output, session) {
     htmltools::div(
       class = "sf-page-shell sf-home-shell",
       htmltools::div(
-        class = "sf-page-toolbar",
-        htmltools::div(
-          class = "sf-page-title-block",
-          htmltools::tags$h3(class = "sf-page-title", "Home"),
-          htmltools::tags$p(
-            class = "sf-page-subtitle",
-            "Start a new project from any available project class or open an existing StreamFind DuckDB file."
-          )
-        )
-      ),
-      htmltools::div(
         class = "sf-home-grid",
         project_tiles,
         shiny::actionButton(
@@ -382,6 +371,72 @@ app_server <- function(input, output, session) {
   shiny::observeEvent(input$settings_theme_palette, {
     shiny::req(is.character(input$settings_theme_palette), nzchar(input$settings_theme_palette))
     reactive_theme_palette(input$settings_theme_palette)
+  })
+
+  output$settings_palette_selector <- shiny::renderUI({
+    mode <- reactive_theme_mode()
+    is_dark <- identical(mode, "dark")
+
+    palettes <- list(
+      lagoon = list(
+        name = "Lagoon",
+        font = "\"Josefin Sans\", \"Segoe UI\", Helvetica, Arial, sans-serif",
+        light = c("#ffffff", "#fbfdfc", "#050505", "#0b6f6b", "#0b6f6b"),
+        dark  = c("#091211", "#0d1716", "#ffffff", "#46c1bb", "#46c1bb")
+      ),
+      copper = list(
+        name = "Copper",
+        font = "\"DM Sans\", \"Segoe UI\", Helvetica, Arial, sans-serif",
+        light = c("#ffffff", "#fffaf5", "#2b1b12", "#a65a3a", "#a65a3a"),
+        dark  = c("#150e0a", "#1c140f", "#fff7f2", "#d08a5f", "#d08a5f")
+      ),
+      slate = list(
+        name = "Slate",
+        font = "\"Inter\", \"Segoe UI\", Helvetica, Arial, sans-serif",
+        light = c("#ffffff", "#fbfcfe", "#111827", "#334155", "#334155"),
+        dark  = c("#0b1220", "#0f172a", "#f8fafc", "#94a3b8", "#94a3b8")
+      ),
+      streamfind = list(
+        name = "StreamFind",
+        font = "\"Space Grotesk\", \"Segoe UI\", Helvetica, Arial, sans-serif",
+        light = c("#ffffff", "#f8fbf4", "#102a66", "#5a8d37", "#102a66"),
+        dark  = c("#08101d", "#0d1425", "#f4f8ef", "#7fb24f", "#7fb24f")
+      )
+    )
+
+    selected <- reactive_theme_palette()
+
+    items <- lapply(names(palettes), function(key) {
+      p <- palettes[[key]]
+      cols <- if (is_dark) p$dark else p$light
+      is_sel <- identical(key, selected)
+
+      bar_divs <- lapply(cols, function(col) {
+        htmltools::div(
+          style = sprintf(
+            "width: 14px; height: 14px; flex-shrink: 0; background: %s; border-radius: 1px; border: 1px solid rgba(0,0,0,0.12);",
+            col
+          )
+        )
+      })
+
+      row_style <- sprintf(
+        "display: flex; align-items: center; gap: 6px; padding: 5px 8px; cursor: pointer; font-size: 12px; border-radius: 2px; %s",
+        if (is_sel) "background: var(--sf-nav-hover-bg); font-weight: 600;" else "background: transparent;"
+      )
+
+      htmltools::div(
+        style = row_style,
+        onclick = sprintf(
+          "Shiny.setInputValue('settings_theme_palette', '%s', {priority: 'event'});",
+          key
+        ),
+        htmltools::div(style = "display: flex; gap: 2px; align-items: center;", bar_divs),
+        htmltools::span(style = sprintf("font-family: %s;", p$font), p$name)
+      )
+    })
+
+    htmltools::div(style = "display: flex; flex-direction: column; gap: 2px;", items)
   })
 
   lapply(names(project_registry), function(project_class) {
@@ -668,185 +723,160 @@ app_server <- function(input, output, session) {
     )
   })
 
-  metadata_dt <- shiny::reactiveVal()
+  DEFAULT_METADATA_JSON <- jsonlite::toJSON(
+    list(key = "value", key2 = "value2"),
+    pretty = TRUE,
+    auto_unbox = TRUE
+  )
 
-  metadata_to_dt <- function(meta) {
-    if (is.null(meta) || length(meta) == 0) {
-      return(data.table::data.table(Name = character(), Value = character()))
-    }
-    if (inherits(meta, "data.frame")) {
-      dt <- data.table::as.data.table(meta)
-      if (ncol(dt) >= 2) {
-        dt <- dt[, seq_len(2), with = FALSE]
-        data.table::setnames(dt, c("Name", "Value"))
-        dt[, Name := as.character(Name)]
-        dt[, Value := as.character(Value)]
-        return(dt)
-      }
-    }
-    values <- unlist(meta, use.names = FALSE)
-    names_vec <- names(meta)
-    if (is.null(names_vec) || !length(names_vec)) {
-      names_vec <- rep("", length(values))
-    }
-    data.table::data.table(
-      Name = as.character(names_vec),
-      Value = as.character(values)
-    )
+  stored_metadata_json <- shiny::reactive({
+    meta <- reactive_metadata()
+    if (is.null(meta) || length(meta) == 0) return("null")
+    .convert_to_json(meta)
+  })
+
+  project_json_string <- shiny::reactiveVal()
+
+  project_json_valid <- shiny::reactive({
+    txt <- project_json_string()
+    if (is.null(txt) || !nzchar(trimws(txt))) return(FALSE)
+    jsonlite::validate(txt)
+  })
+
+  .normalize_json <- function(x) {
+    if (is.null(x) || identical(x, "null")) return("null")
+    p <- tryCatch(jsonlite::fromJSON(x, simplifyVector = FALSE), error = function(e) NULL)
+    if (is.null(p)) return(x)
+    jsonlite::toJSON(p, pretty = TRUE, auto_unbox = TRUE)
   }
 
-  normalize_metadata_dt <- function(dt) {
-    if (is.null(dt)) {
-      return(data.table::data.table(Name = character(), Value = character()))
-    }
-    dt <- data.table::as.data.table(dt)
-    if (ncol(dt) >= 2) {
-      dt <- dt[, seq_len(2), with = FALSE]
-      data.table::setnames(dt, c("Name", "Value"))
-    }
-    dt[, Name := as.character(Name)]
-    dt[, Value := as.character(Value)]
-    dt <- dt[!(is.na(Name) | !nzchar(trimws(Name)))]
-    dt <- dt[!grepl("^place_holder_", Name)]
-    dt[is.na(Value), Value := ""]
-    dt[]
-  }
-
-  metadata_is_dirty <- shiny::reactive({
-    current_dt <- normalize_metadata_dt(metadata_dt())
-    stored_dt <- normalize_metadata_dt(metadata_to_dt(reactive_metadata()))
-    identical(
-      as.data.frame(current_dt, stringsAsFactors = FALSE),
-      as.data.frame(stored_dt, stringsAsFactors = FALSE)
-    ) == FALSE
+  project_json_dirty <- shiny::reactive({
+    current <- .normalize_json(project_json_string())
+    stored <- .normalize_json(stored_metadata_json())
+    default <- .normalize_json(DEFAULT_METADATA_JSON)
+    if (identical(current, stored)) return(FALSE)
+    if (identical(current, default)) return(FALSE)
+    TRUE
   })
 
   shiny::observe({
-    tryCatch(
-      {
-        metadata_dt(metadata_to_dt(reactive_metadata()))
-      },
-      error = function(e) message("Error initializing metadata: ", e)
-    )
+    stored <- stored_metadata_json()
+    if (is.null(stored) || identical(stored, "null")) {
+      project_json_string(DEFAULT_METADATA_JSON)
+    } else {
+      project_json_string(stored)
+    }
   })
 
-  output$update_metadata_ui <- shiny::renderUI({
-    dt <- metadata_dt()
-    if (!is.null(dt)) {
-      controls <- list(
-        class = "sf-toolbar-inline",
-        shiny::actionButton("update_metadata", "Update Metadata")
-      )
-      if (isTRUE(metadata_is_dirty())) {
-        controls <- c(
-          controls,
-          list(shiny::actionButton("discard_changes", "Discard Changes", class = "btn-danger"))
-        )
-      }
-      return(do.call(htmltools::div, controls))
+  if (requireNamespace("shinyAce", quietly = TRUE)) {
+    shiny::observeEvent(input$project_json_editor, {
+      txt <- input$project_json_editor
+      if (is.null(txt)) return()
+      project_json_string(txt)
+    }, ignoreNULL = TRUE, ignoreInit = TRUE)
+  } else {
+    shiny::observeEvent(input$project_json_fallback, {
+      txt <- input$project_json_fallback
+      if (is.null(txt)) return()
+      project_json_string(txt)
+    }, ignoreNULL = TRUE, ignoreInit = TRUE)
+  }
+
+  output$discard_btn <- shiny::renderUI({
+    if (isTRUE(project_json_dirty())) {
+      shiny::actionButton("discard_project_json", "Discard Changes", class = "btn-danger")
     }
   })
 
   output$metadata_ui <- shiny::renderUI({
+    is_dark <- identical(reactive_theme_mode(), "dark")
+    has_ace <- requireNamespace("shinyAce", quietly = TRUE)
     htmltools::div(
       class = "sf-stack sf-fill",
       htmltools::div(
         class = "sf-toolbar-inline",
-        shiny::actionButton("add_row", "Add New Row", class = "btn-light"),
-        shiny::uiOutput("update_metadata_ui")
+        shiny::actionButton("save_project_json", "Save JSON"),
+        shiny::uiOutput("discard_btn")
       ),
-      htmltools::div(
-        class = "sf-info-text",
-        shiny::HTML("<i class='fa fa-info-circle'></i> Double-click on any cell to edit its value")
-      ),
-      htmltools::div(
-        class = "sf-fill",
-        DT::DTOutput("metadata_dt")
-      )
-    )
-  })
-
-  output$metadata_dt <- DT::renderDT({
-    dt_display <- metadata_dt()
-    if (!is.null(dt_display) && nrow(dt_display) > 0) {
-      dt_display$Delete <- paste0(
-        '<button class="btn btn-danger btn-sm delete-btn" data-row="',
-        seq_len(nrow(dt_display)), '"><i class="fa fa-trash"></i></button>'
-      )
-    }
-    DT::datatable(
-      dt_display,
-      rownames = FALSE,
-      editable = list(target = "cell", disable = list(columns = c(2))),
-      selection = "none",
-      escape = FALSE,
-      callback = DT::JS(paste0(
-        "table.on('click', '.delete-btn', function() {",
-        "var row = $(this).data('row');",
-        "var timestamp = Date.now();",
-        "Shiny.setInputValue('delete_row', row + '_' + timestamp, {priority: 'event'});",
-        "});"
-      )),
-      options = list(
-        searching = TRUE,
-        processing = TRUE,
-        paging = FALSE,
-        dom = "ft",
-        scrollY = "calc(100vh - 35px - 310px)",
-        scrollCollapse = TRUE,
-        columnDefs = list(
-          list(orderable = FALSE, targets = 2),
-          list(width = "60px", targets = 2)
+      if (has_ace) {
+        htmltools::div(
+          class = "json-editor-wrapper",
+          shinyAce::aceEditor(
+            "project_json_editor",
+            mode = "json",
+            theme = if (is_dark) "idle_fingers" else "textmate",
+            height = "100%",
+            fontSize = 12,
+            tabSize = 2,
+            useSoftTabs = TRUE,
+            showPrintMargin = FALSE,
+            showLineNumbers = TRUE,
+            debounce = 500,
+            autoComplete = "disabled",
+            value = shiny::isolate(project_json_string())
+          )
         )
-      ),
-      class = "cell-border stripe"
-    )
-  }, server = TRUE)
-
-  shiny::observeEvent(input$metadata_dt_cell_edit, {
-    info <- input$metadata_dt_cell_edit
-    dt <- metadata_dt()
-    dt[info$row, (info$col + 1)] <- info$value
-    metadata_dt(dt)
-  })
-
-  shiny::observeEvent(input$add_row, {
-    dt <- metadata_dt()
-    if (is.null(dt)) dt <- data.table::data.table(Name = character(), Value = character())
-    place_holder_idx <- nrow(dt) + 1
-    place_holder_name <- paste0("place_holder_", place_holder_idx)
-    dt <- rbind(dt, data.table::data.table(Name = place_holder_name, Value = place_holder_name))
-    dt <- dt[!duplicated(dt), ]
-    metadata_dt(dt)
-  })
-
-  shiny::observeEvent(input$delete_row, {
-    delete_info <- input$delete_row
-    row_to_delete <- as.numeric(strsplit(delete_info, "_")[[1]][1])
-    dt <- metadata_dt()
-    if (!is.null(dt) && !is.na(row_to_delete) && row_to_delete > 0 && row_to_delete <= nrow(dt)) {
-      dt <- dt[-row_to_delete, ]
-      metadata_dt(dt)
-    }
-  }, ignoreInit = TRUE)
-
-  shiny::observeEvent(input$update_metadata, {
-    tryCatch(
-      {
-        project <- reactive_analyses()
-        shiny::req(!is.null(project))
-        dt <- normalize_metadata_dt(metadata_dt())
-        metadata_list <- as.list(stats::setNames(dt$Value, dt$Name))
-        project$set_metadata(metadata_list)
-        sync_project_state(project)
-        metadata_dt(metadata_to_dt(reactive_metadata()))
+      } else {
+        htmltools::div(
+          class = "json-editor-wrapper",
+          shiny::tags$textarea(
+            id = "project_json_fallback",
+            class = "form-control",
+            oninput = "Shiny.setInputValue('project_json_fallback', this.value, {priority: 'event'});",
+            shiny::isolate(project_json_string())
+          )
+        )
       },
-      error = function(e) message("Error updating metadata: ", e)
+      shiny::tags$script(htmltools::HTML("
+        (function() {
+          if (window.__sfJsonValidityHandler) return;
+          window.__sfJsonValidityHandler = true;
+          Shiny.addCustomMessageHandler('jsonValidity', function(valid) {
+            var el = document.querySelector('.json-editor-wrapper');
+            if (!el) return;
+            el.classList.toggle('valid', !!valid);
+            el.classList.toggle('invalid', !valid);
+          });
+        })();
+      "))
     )
   })
 
-  shiny::observeEvent(input$discard_changes, {
-    metadata_dt(metadata_to_dt(reactive_metadata()))
+  shiny::observe({
+    valid <- isTRUE(project_json_valid())
+    session$sendCustomMessage("jsonValidity", valid)
+  })
+
+  shiny::observeEvent(input$save_project_json, {
+    txt <- project_json_string()
+    if (!jsonlite::validate(txt)) {
+      shiny::showNotification("Invalid JSON — cannot save.", type = "error")
+      return()
+    }
+    project <- reactive_analyses()
+    shiny::req(!is.null(project))
+    parsed <- jsonlite::fromJSON(txt, simplifyVector = FALSE)
+    pretty <- jsonlite::toJSON(parsed, pretty = TRUE, auto_unbox = TRUE)
+    project$set_metadata(pretty)
+    sync_project_state(project)
+    project_json_string(pretty)
+    if (requireNamespace("shinyAce", quietly = TRUE)) {
+      shinyAce::updateAceEditor(session, "project_json_editor", value = pretty)
+    }
+    shiny::showNotification("Metadata saved.", type = "message", duration = 3)
+  })
+
+  shiny::observeEvent(input$discard_project_json, {
+    stored <- stored_metadata_json()
+    if (is.null(stored) || identical(stored, "null")) {
+      project_json_string(DEFAULT_METADATA_JSON)
+    } else {
+      project_json_string(stored)
+    }
+    if (requireNamespace("shinyAce", quietly = TRUE)) {
+      new_val <- if (is.null(stored) || identical(stored, "null")) DEFAULT_METADATA_JSON else stored
+      shinyAce::updateAceEditor(session, "project_json_editor", value = new_val)
+    }
   })
 
   output$analyses_ui <- shiny::renderUI({
@@ -930,7 +960,7 @@ app_server <- function(input, output, session) {
       )),
       htmltools::div(
         class = "audit-table",
-        style = "padding: 0px; box-sizing: border-box; height: calc(100vh - 35px); overflow-y: auto;",
+        style = "padding: 0px; box-sizing: border-box; height: calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10)); overflow-y: auto;",
         DT::DTOutput("audit_ui_dt", width = "100%")
       )
     )
@@ -947,7 +977,7 @@ app_server <- function(input, output, session) {
         dom = "ft",
         paging = FALSE,
         scrollX = TRUE,
-        scrollY = "calc(100vh - 35px - 10px - 170px)",
+        scrollY = "calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10) - 10px - 170px)",
         scrollCollapse = TRUE,
         autoWidth = TRUE,
         columnDefs = list(list(className = "dt-left", targets = "_all"))
@@ -990,24 +1020,8 @@ app_server <- function(input, output, session) {
         ),
         htmltools::div(
           class = "sf-settings-section",
-          htmltools::tags$h4(class = "sf-panel-title", style = "font-size: 14px;", "Palette"),
-          shiny::selectInput(
-            "settings_theme_palette",
-            label = NULL,
-            choices = c(
-              "Lagoon" = "lagoon",
-              "Copper" = "copper",
-              "Slate" = "slate",
-              "StreamFind" = "streamfind"
-            ),
-            selected = reactive_theme_palette(),
-            selectize = FALSE
-          )
-        ),
-        htmltools::div(
-          class = "sf-settings-note",
-          style = "font-size: 12px;",
-          "Theme changes apply to the current app session only."
+          htmltools::tags$h4(class = "sf-panel-title", style = "font-size: 14px;", "Style"),
+          shiny::uiOutput("settings_palette_selector")
         )
       )
     )
@@ -1027,5 +1041,7 @@ app_server <- function(input, output, session) {
   shiny::outputOptions(output, "results_ui", suspendWhenHidden = FALSE)
   shiny::outputOptions(output, "report_ui", suspendWhenHidden = FALSE)
   shiny::outputOptions(output, "audit_ui", suspendWhenHidden = FALSE)
+  shiny::outputOptions(output, "settings_palette_selector", suspendWhenHidden = FALSE)
+  shiny::outputOptions(output, "discard_btn", suspendWhenHidden = FALSE)
 
 }

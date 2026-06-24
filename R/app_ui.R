@@ -107,76 +107,55 @@ app_ui <- function(request) {
           ),
           shiny::conditionalPanel(
             "input.sf_active_tab === 'home' || !input.sf_active_tab",
-            htmltools::div(class = "sf-page", shiny::uiOutput("home_ui"))
+            shiny::uiOutput("home_ui")
           ),
           shiny::conditionalPanel(
             "input.sf_active_tab === 'project'",
             htmltools::div(
-              class = "sf-page",
-              htmltools::div(
-                id = "sf-project-surface",
-                shiny::uiOutput("project_ui")
-              )
+              id = "sf-project-surface",
+              shiny::uiOutput("project_ui")
             )
           ),
           shiny::conditionalPanel(
             "input.sf_active_tab === 'analyses'",
             htmltools::div(
-              class = "sf-page",
-              htmltools::div(
-                id = "sf-analyses-surface",
-                shiny::uiOutput("analyses_ui")
-              )
+              id = "sf-analyses-surface",
+              shiny::uiOutput("analyses_ui")
             )
           ),
           shiny::conditionalPanel(
             "input.sf_active_tab === 'explorer'",
             htmltools::div(
-              class = "sf-page",
-              htmltools::div(
-                id = "sf-explorer-surface",
-                shiny::uiOutput("explorer_ui")
-              )
+              id = "sf-explorer-surface",
+              shiny::uiOutput("explorer_ui")
             )
           ),
           shiny::conditionalPanel(
             "input.sf_active_tab === 'workflow'",
             htmltools::div(
-              class = "sf-page",
-              htmltools::div(
-                id = "sf-workflow-surface",
-                shiny::uiOutput("workflow_ui")
-              )
+              id = "sf-workflow-surface",
+              shiny::uiOutput("workflow_ui")
             )
           ),
           shiny::conditionalPanel(
             "input.sf_active_tab === 'results'",
             htmltools::div(
-              class = "sf-page",
-              htmltools::div(
-                id = "sf-results-surface",
-                shiny::uiOutput("results_ui")
-              )
+              id = "sf-results-surface",
+              shiny::uiOutput("results_ui")
             )
           ),
           shiny::conditionalPanel(
             "input.sf_active_tab === 'report'",
             htmltools::div(
-              class = "sf-page",
-              htmltools::div(
-                id = "sf-report-surface",
-                shiny::uiOutput("report_ui")
-              )
+              id = "sf-report-surface",
+              shiny::uiOutput("report_ui")
             )
           ),
           shiny::conditionalPanel(
             "input.sf_active_tab === 'audit'",
             htmltools::div(
-              class = "sf-page",
-              htmltools::div(
-                id = "sf-audit-surface",
-                shiny::uiOutput("audit_ui")
-              )
+              id = "sf-audit-surface",
+              shiny::uiOutput("audit_ui")
             )
           ),
           
@@ -213,6 +192,11 @@ golem_add_external_resources <- function() {
         type = "text/css",
         href = "shared/bootstrap/css/bootstrap.min.css"
       )
+    ),
+    # Google Fonts for palette-specific fonts
+    htmltools::tags$link(
+      href = "https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Josefin+Sans:wght@300;400;500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Inter:wght@400;500;600;700&display=swap",
+      rel = "stylesheet"
     ),
     golem::bundle_resources(
       path = app_sys("app/www"),
