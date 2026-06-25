@@ -15,44 +15,62 @@
 # MARK: Volumes for shinyFiles
 #' @noRd
 .app_util_get_volumes <- function() {
-  os_type <- Sys.info()["sysname"]
-  host_dirs <- list.files("/", pattern = "^host_", full.names = TRUE)
+  home_dir <- Sys.getenv("USERPROFILE", unset = Sys.getenv("HOME", unset = "~"))
+  volumes <- c(
+    "wd" = normalizePath(getwd(), winslash = "/", mustWork = FALSE),
+    "Home" = normalizePath(home_dir, winslash = "/", mustWork = FALSE)
+  )
 
-  # Docker with host mount (Linux: /host_fs with rshared, Windows: /host_home etc.)
-  if (dir.exists("/host_fs")) {
-    drives <- list.files("/host_fs/media", full.names = TRUE)
-    names(drives) <- basename(drives)
-    mnt_drives <- list.files("/host_fs/mnt", full.names = TRUE)
-    if (length(mnt_drives) > 0) {
-      names(mnt_drives) <- basename(mnt_drives)
-      drives <- c(drives, mnt_drives)
+  # Standard mount root for Docker host bind mounts
+  standard_host_root <- "/mnt/streamfind-host"
+  if (dir.exists(standard_host_root)) {
+    mounted <- list.files(standard_host_root, full.names = TRUE, recursive = FALSE, no.. = TRUE)
+    mounted <- mounted[dir.exists(mounted)]
+    if (length(mounted) > 0) {
+      names(mounted) <- paste("Host", basename(mounted))
+      mounted <- normalizePath(mounted, winslash = "/", mustWork = FALSE)
+      volumes <- c(volumes, mounted)
     }
-    drives <- c("Host Root" = "/host_fs", drives)
+  }
 
-  } else if (length(host_dirs) > 0) {
-    # Docker Desktop or general /host_* mounts
-    drives <- structure(host_dirs, names = basename(host_dirs))
-    # Normalize paths to avoid double-slash issues in Docker
-    drives <- normalizePath(drives, mustWork = FALSE, winslash = "/")
+  # Legacy /host_* mounts (Docker Desktop for Windows)
+  legacy_host_dirs <- list.files("/", pattern = "^host_", full.names = TRUE)
+  legacy_host_dirs <- legacy_host_dirs[dir.exists(legacy_host_dirs)]
+  if (length(legacy_host_dirs) > 0) {
+    names(legacy_host_dirs) <- paste("Legacy", basename(legacy_host_dirs))
+    legacy_host_dirs <- gsub("^/{2,}", "/", legacy_host_dirs)
+    volumes <- c(volumes, legacy_host_dirs)
+  }
 
-  } else if (os_type == "Windows") {
+  # Windows drive letters
+  os_type <- Sys.info()["sysname"]
+  if (os_type == "Windows") {
     drives <- system(
       'powershell -NoProfile -Command "Get-PSDrive -PSProvider FileSystem | Select-Object -ExpandProperty Name"',
       intern = TRUE
     )
     drives <- paste0(drives, ":")
     names(drives) <- drives
-
-  } else {
-    drives <- list.files("/media", full.names = TRUE)
-    names(drives) <- basename(drives)
-    if (length(drives) == 0) {
-      drives <- list.files("/mnt", full.names = TRUE)
-      names(drives) <- basename(drives)
+    volumes <- c(volumes, drives)
+  } else if (length(volumes) == 1) {
+    # Fallback for Linux without any host mounts
+    media_dirs <- list.files("/media", full.names = TRUE)
+    names(media_dirs) <- basename(media_dirs)
+    if (length(media_dirs) == 0) {
+      media_dirs <- list.files("/mnt", full.names = TRUE)
+      names(media_dirs) <- basename(media_dirs)
     }
+    volumes <- c(volumes, media_dirs)
   }
 
-  c("wd" = getwd(), drives)
+  # Sanitize: remove any NA paths and normalize double slashes
+  volumes <- volumes[!is.na(volumes) & nzchar(volumes)]
+  volumes <- gsub("^/{2,}", "/", volumes)
+  # Add "wd" alias pointing to first volume for backward compatibility
+  if (length(volumes) > 0 && !"wd" %in% names(volumes)) {
+    volumes <- c("wd" = unname(volumes[1]), volumes)
+  }
+  volumes
 }
 
 #' @noRd

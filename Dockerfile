@@ -99,6 +99,8 @@ RUN set -ex \
     && echo 'SF_HOME="/home/$SF_USER/.streamfind"' >> /etc/cont-init.d/01_setup_streamfind \
     && echo 'mkdir -p "$SF_HOME/external"' >> /etc/cont-init.d/01_setup_streamfind \
     && echo 'chown -R "$SF_USER" "$SF_HOME"' >> /etc/cont-init.d/01_setup_streamfind \
+    && echo 'mkdir -p /mnt/streamfind-host' >> /etc/cont-init.d/01_setup_streamfind \
+    && echo 'chown "$SF_USER":"$SF_USER" /mnt/streamfind-host' >> /etc/cont-init.d/01_setup_streamfind \
     && echo 'if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then' >> /etc/cont-init.d/01_setup_streamfind \
     && echo '    ssh-keygen -A' >> /etc/cont-init.d/01_setup_streamfind \
     && echo 'fi' >> /etc/cont-init.d/01_setup_streamfind \

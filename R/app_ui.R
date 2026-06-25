@@ -405,8 +405,14 @@ golem_add_external_resources <- function() {
           if (!dirName) return;
           path.push(dirName);
 
-          var selectedRoot = modal.querySelector('.sF-breadcrumps');
-          selectedRoot = selectedRoot ? selectedRoot.dataset.selectedroot : '';
+          var selectedRoot = '';
+          if (window.jQuery) {
+            selectedRoot = window.jQuery(modal).find('.sF-breadcrumps').data('selectedRoot');
+          }
+          if (!selectedRoot) {
+            var el = modal.querySelector('.sF-breadcrumps');
+            selectedRoot = el ? el.dataset.selectedroot : '';
+          }
 
           Shiny.setInputValue(button.id + '-modal', { path: path, root: selectedRoot }, {priority: 'event'});
           e.preventDefault();

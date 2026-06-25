@@ -7,7 +7,7 @@ app_server <- function(input, output, session) {
   volumes <- .app_util_get_volumes()
   project_obj <- NULL
 
-  # Debug log — append with log_debug() to see entries in the Terminal modal
+  # Debug log — shows in the Terminal modal
   .debug_log <- shiny::reactiveVal(character())
   log_debug <- function(...) {
     msg <- paste0(...)
@@ -15,6 +15,13 @@ app_server <- function(input, output, session) {
     entry <- paste0("[", timestamp, "] ", msg)
     .debug_log(c(.debug_log(), entry))
     message(msg)
+  }
+
+  # Refresh volumes (re-reads host mounts for container environments)
+  refresh_volumes <- function() {
+    vols <- .app_util_get_volumes()
+    reactive_volumes(vols)
+    vols
   }
 
   reactive_project_class <- shiny::reactiveVal(NA_character_)
@@ -164,6 +171,7 @@ app_server <- function(input, output, session) {
   show_create_project_modal <- function(project_class) {
     details <- projects_overview(project_class)
     reactive_create_class(project_class)
+    refresh_volumes()
     shiny::showModal(
       htmltools::tagAppendAttributes(
         shiny::modalDialog(
@@ -181,6 +189,7 @@ app_server <- function(input, output, session) {
   }
 
   show_open_project_modal <- function() {
+    refresh_volumes()
     shiny::showModal(
       htmltools::tagAppendAttributes(
         shiny::modalDialog(
@@ -488,15 +497,7 @@ app_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   shiny::observeEvent(input$home_open_project, {
-    log_debug("open_project: button clicked, checking volumes and paths")
-    vols <- reactive_volumes()
-    for (nm in names(vols)) {
-      p <- vols[[nm]]
-      log_debug("open_project: volume ", nm, " = ", p, " | exists? ", dir.exists(p))
-    }
-    # Quick non-recursive check in the working directory for duckdb files
-    wd_dbs <- list.files(getwd(), pattern = "\\.duckdb$", full.names = TRUE, recursive = FALSE, ignore.case = TRUE)
-    log_debug("open_project: duckdb files in wd = ", if (length(wd_dbs) > 0) paste(wd_dbs, collapse = "; ") else "NONE")
+    refresh_volumes()
     reactive_open_db(NA_character_)
     reactive_open_resolution(NULL)
     reactive_open_project_id(NA_character_)
