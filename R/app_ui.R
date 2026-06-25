@@ -40,42 +40,42 @@ app_ui <- function(request) {
           id = "sf-nav",
           # Home
           htmltools::div(class = "sf-nav-group active", `data-tab` = "home",
-            htmltools::tags$button(class = "sf-nav-btn active sf-btn-transparent-hover", `data-tab` = "home", title = "Home",
+            htmltools::tags$button(type = "button", class = "sf-nav-btn active sf-btn-transparent-hover", `data-tab` = "home", title = "Home",
               shiny::icon("home"))
           ),
           # Project
           htmltools::div(class = "sf-nav-group", `data-tab` = "project",
-            htmltools::tags$button(class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "project", title = "Project",
+            htmltools::tags$button(type = "button", class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "project", title = "Project",
               "Project")
           ),
           # Analyses
           htmltools::div(class = "sf-nav-group", `data-tab` = "analyses",
-            htmltools::tags$button(class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "analyses", title = "Analyses",
+            htmltools::tags$button(type = "button", class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "analyses", title = "Analyses",
               "Analyses")
           ),
           # Explorer
           htmltools::div(class = "sf-nav-group", `data-tab` = "explorer",
-            htmltools::tags$button(class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "explorer", title = "Explorer",
+            htmltools::tags$button(type = "button", class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "explorer", title = "Explorer",
               "Explorer")
           ),
           # Workflow
           htmltools::div(class = "sf-nav-group", `data-tab` = "workflow",
-            htmltools::tags$button(class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "workflow", title = "Workflow",
+            htmltools::tags$button(type = "button", class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "workflow", title = "Workflow",
               "Workflow")
           ),
           # Results
           htmltools::div(class = "sf-nav-group", `data-tab` = "results",
-            htmltools::tags$button(class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "results", title = "Results",
+            htmltools::tags$button(type = "button", class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "results", title = "Results",
               "Results")
           ),
           # Report
           htmltools::div(class = "sf-nav-group", `data-tab` = "report",
-            htmltools::tags$button(class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "report", title = "Report",
+            htmltools::tags$button(type = "button", class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "report", title = "Report",
               "Report")
           ),
           # Audit Trail
           htmltools::div(class = "sf-nav-group", `data-tab` = "audit",
-            htmltools::tags$button(class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "audit", title = "Audit Trail",
+            htmltools::tags$button(type = "button", class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "audit", title = "Audit Trail",
               "Audit Trail")
           ),
           
@@ -83,6 +83,12 @@ app_ui <- function(request) {
         htmltools::div(
           id = "sf-topbar-right",
           shiny::uiOutput("project_data_type"),
+          htmltools::tags$button(
+            class = "sf-topbar-btn",
+            onclick = "Shiny.setInputValue('open_terminal_modal', Math.random(), {priority: 'event'});",
+            title = "Terminal Log",
+            htmltools::tags$i(class = "fa-solid fa-terminal")
+          ),
           shiny::uiOutput("notifications_ui"),
           shiny::uiOutput("settings_dropdown_ui")
         )
@@ -211,6 +217,16 @@ golem_add_external_resources <- function() {
     ),
     # Navigation + theme toggle JS
     shiny::tags$script(htmltools::HTML("
+      function sfShowPanel(tab) {
+        var panels = [].slice.call(document.querySelectorAll('#sf-content > .shiny-panel-conditional'));
+        var map = { home: 0, project: 1, analyses: 2, explorer: 3, workflow: 4, results: 5, report: 6, audit: 7 };
+        var idx = map[tab];
+        if (idx == null) return;
+        panels.forEach(function(p, i) {
+          p.style.display = (i === idx) ? '' : 'none';
+        });
+      }
+
       function sfPageLoadingTarget(tab) {
         var targets = {
           project:   { outputId: 'project_ui',  surfaceId: 'sf-project-surface' },
@@ -224,6 +240,50 @@ golem_add_external_resources <- function() {
         return targets[tab] || null;
       }
 
+      function sfActivateTabFallback(trigger) {
+        if (!trigger) return false;
+
+        var href = trigger.getAttribute('href');
+        if (!href || href.charAt(0) !== '#') return false;
+
+        var tabsList = trigger.closest('.nav-tabs, .nav-pills');
+        if (!tabsList) return false;
+
+        var tabContent = tabsList.nextElementSibling;
+        while (tabContent && !(tabContent.classList && tabContent.classList.contains('tab-content'))) {
+          tabContent = tabContent.nextElementSibling;
+        }
+        if (!tabContent) return false;
+
+        var targetPane = document.querySelector(href);
+        if (!targetPane) return false;
+
+        tabsList.querySelectorAll('li').forEach(function(item) {
+          item.classList.remove('active');
+        });
+        tabsList.querySelectorAll(\"a[data-toggle='tab'], a[data-bs-toggle='tab']\").forEach(function(link) {
+          link.classList.remove('active');
+          link.setAttribute('aria-selected', 'false');
+          link.setAttribute('tabindex', '-1');
+        });
+
+        tabContent.querySelectorAll('.tab-pane').forEach(function(pane) {
+          pane.classList.remove('active', 'in', 'show');
+        });
+
+        var parentItem = trigger.closest('li');
+        if (parentItem) parentItem.classList.add('active');
+        trigger.classList.add('active');
+        trigger.setAttribute('aria-selected', 'true');
+        trigger.removeAttribute('tabindex');
+        targetPane.classList.add('active', 'in', 'show');
+
+        if (window.jQuery) {
+          window.jQuery(trigger).trigger('shown.bs.tab');
+        }
+        return true;
+      }
+
       function sfMarkPageLoading(tab) {
         var target = sfPageLoadingTarget(tab);
         if (!target) return;
@@ -233,6 +293,7 @@ golem_add_external_resources <- function() {
 
       // sfNavigate: activate a main tab
       function sfNavigate(tab, subtab) {
+        sfShowPanel(tab);
         Shiny.setInputValue('sf_active_tab', tab, {priority: 'event'});
         sfMarkPageLoading(tab);
 
@@ -251,6 +312,7 @@ golem_add_external_resources <- function() {
 
       // sfSubNavigate: switch sub-tab on the second topbar
       function sfSubNavigate(tab, subtab) {
+        sfShowPanel(tab);
         Shiny.setInputValue('sf_active_tab', tab, {priority: 'event'});
         Shiny.setInputValue('sf_active_subtab', subtab, {priority: 'event'});
         sfMarkPageLoading(tab);
@@ -272,6 +334,8 @@ golem_add_external_resources <- function() {
 
       // Event delegation on nav bars
       document.addEventListener('DOMContentLoaded', function() {
+        sfShowPanel('home');
+
         document.getElementById('sf-nav').addEventListener('click', function(e) {
           var mainBtn = e.target.closest('.sf-nav-btn');
           if (mainBtn) {
@@ -285,6 +349,67 @@ golem_add_external_resources <- function() {
           if (subBtn) {
             sfSubNavigate(subBtn.getAttribute('data-tab'), subBtn.getAttribute('data-subtab'));
           }
+        });
+
+        document.addEventListener('click', function(e) {
+          var tabTrigger = e.target.closest(\"a[data-toggle='tab'], a[data-bs-toggle='tab']\");
+          if (!tabTrigger) return;
+
+          if (window.jQuery && window.jQuery.fn && window.jQuery.fn.tab) {
+            try {
+              e.preventDefault();
+              window.jQuery(tabTrigger).tab('show');
+              return;
+            } catch (err) {
+              // Fall back to manual class toggling when the plugin is unavailable.
+            }
+          }
+
+          e.preventDefault();
+          sfActivateTabFallback(tabTrigger);
+        });
+
+        // Delegated dblclick workaround for shinyFiles directory navigation.
+        // shinyFiles binds dblclick via direct binding (not delegation) which
+        // can fail on re-populated file lists. This delegated fallback ensures
+        // double-clicking a directory always navigates into it.
+        document.addEventListener('dblclick', function(e) {
+          var dir = e.target.closest('.sF-modalContainer .sF-directory');
+          if (!dir) return;
+          if (e.defaultPrevented) return;
+
+          var modal = dir.closest('.sF-modalContainer');
+          var button = modal && modal._shinyfiles_button;
+          // See if shinyFiles stored the button reference on the modal element
+          if (!button) {
+            // Try to find it via jQuery data (shinyFiles uses $.data on the modal)
+            if (window.jQuery) {
+              var jqModal = window.jQuery(modal);
+              button = jqModal.data('button');
+              if (button && button.length) button = button[0];
+            }
+          }
+          if (!button) return;
+
+          // Build current path from breadcrumbs
+          var selects = modal.querySelectorAll('.sF-breadcrumps > option');
+          var path = [];
+          for (var i = 0; i < selects.length; i++) {
+            path.push(selects[i].value);
+          }
+          path = path.reverse();
+
+          // Append the clicked directory name
+          var dirNameEl = dir.querySelector('.sF-file-name');
+          var dirName = dirNameEl ? dirNameEl.textContent.trim() : '';
+          if (!dirName) return;
+          path.push(dirName);
+
+          var selectedRoot = modal.querySelector('.sF-breadcrumps');
+          selectedRoot = selectedRoot ? selectedRoot.dataset.selectedroot : '';
+
+          Shiny.setInputValue(button.id + '-modal', { path: path, root: selectedRoot }, {priority: 'event'});
+          e.preventDefault();
         });
       });
 

@@ -43,3 +43,5 @@
 ^dist/.*$
 ^.*\.egg-info$
 ^.*\.egg-info/.*$
+^\.dockerignore$
+

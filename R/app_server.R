@@ -7,6 +7,16 @@ app_server <- function(input, output, session) {
   volumes <- .app_util_get_volumes()
   project_obj <- NULL
 
+  # Debug log — append with log_debug() to see entries in the Terminal modal
+  .debug_log <- shiny::reactiveVal(character())
+  log_debug <- function(...) {
+    msg <- paste0(...)
+    timestamp <- format(Sys.time(), "%H:%M:%OS3")
+    entry <- paste0("[", timestamp, "] ", msg)
+    .debug_log(c(.debug_log(), entry))
+    message(msg)
+  }
+
   reactive_project_class <- shiny::reactiveVal(NA_character_)
   reactive_project_db <- shiny::reactiveVal(NA_character_)
   reactive_project_id <- shiny::reactiveVal(NA_character_)
@@ -446,7 +456,47 @@ app_server <- function(input, output, session) {
     }, ignoreInit = TRUE)
   })
 
+  shiny::observeEvent(input$open_terminal_modal, {
+    log_lines <- .debug_log()
+    if (length(log_lines) == 0) log_lines <- "No log entries yet."
+    shiny::showModal(
+      htmltools::tagAppendAttributes(
+        shiny::modalDialog(
+          title = htmltools::tagList(
+            htmltools::tags$i(class = "fa-solid fa-terminal"),
+            " Debug Terminal"
+          ),
+          easyClose = TRUE,
+          fade = TRUE,
+          size = "l",
+          shiny::tags$pre(
+            style = "background: #1e2129; color: #f0f0f0; padding: 12px; border-radius: 4px; font-size: 12px; line-height: 1.5; max-height: 70vh; overflow-y: auto; white-space: pre-wrap; word-break: break-all; margin: 0; font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;",
+            paste(log_lines, collapse = "\n")
+          ),
+          footer = shiny::tagList(
+            shiny::actionButton("clear_terminal_log", "Clear", class = "btn-danger"),
+            shiny::modalButton("Close")
+          )
+        ),
+        class = "sf-wizard-modal"
+      )
+    )
+  }, ignoreInit = TRUE)
+
+  shiny::observeEvent(input$clear_terminal_log, {
+    .debug_log(character())
+  }, ignoreInit = TRUE)
+
   shiny::observeEvent(input$home_open_project, {
+    log_debug("open_project: button clicked, checking volumes and paths")
+    vols <- reactive_volumes()
+    for (nm in names(vols)) {
+      p <- vols[[nm]]
+      log_debug("open_project: volume ", nm, " = ", p, " | exists? ", dir.exists(p))
+    }
+    # Quick non-recursive check in the working directory for duckdb files
+    wd_dbs <- list.files(getwd(), pattern = "\\.duckdb$", full.names = TRUE, recursive = FALSE, ignore.case = TRUE)
+    log_debug("open_project: duckdb files in wd = ", if (length(wd_dbs) > 0) paste(wd_dbs, collapse = "; ") else "NONE")
     reactive_open_db(NA_character_)
     reactive_open_resolution(NULL)
     reactive_open_project_id(NA_character_)
@@ -507,22 +557,41 @@ app_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   shiny::observeEvent(input$open_project_db, {
-    fileinfo <- shinyFiles::parseFilePaths(reactive_volumes(), input$open_project_db)
+    log_debug("shinyFiles: input$open_project_db triggered")
+    volumes <- reactive_volumes()
+    log_debug("shinyFiles: volumes = ", paste(names(volumes), volumes, sep = "=", collapse = "; "))
+    raw_input <- input$open_project_db
+    log_debug("shinyFiles: raw input class = ", paste(class(raw_input), collapse = ", "))
+    log_debug("shinyFiles: raw input = ", paste(capture.output(str(raw_input, max.level = 2)), collapse = "\n"))
+    fileinfo <- shinyFiles::parseFilePaths(volumes, raw_input)
+    log_debug("shinyFiles: parseFilePaths output nrow = ", nrow(fileinfo))
+    if (nrow(fileinfo) > 0) {
+      log_debug("shinyFiles: datapath = ", fileinfo$datapath[1])
+      log_debug("shinyFiles: name = ", fileinfo$name[1])
+      log_debug("shinyFiles: filesystem path exists? ", file.exists(fileinfo$datapath[1]))
+    }
     if (nrow(fileinfo) == 0) {
+      log_debug("shinyFiles: no file selected, returning")
       return()
     }
     db_path <- fileinfo$datapath[1]
     if (!is_duckdb_path(db_path)) {
+      log_debug("shinyFiles: not a duckdb path: ", db_path)
       reactive_open_db(NA_character_)
       reactive_open_resolution(structure(list(message = "Please select a file with the .duckdb extension."), class = "app_project_resolution_error"))
       reactive_open_project_id(NA_character_)
       return()
     }
+    log_debug("shinyFiles: resolving project db: ", db_path)
     reactive_open_db(db_path)
     resolution <- tryCatch(
       .app_util_resolve_project_db(db_path, registry = project_registry),
       error = function(e) structure(list(message = conditionMessage(e)), class = "app_project_resolution_error")
     )
+    log_debug("shinyFiles: resolution class = ", if (inherits(resolution, "app_project_resolution_error")) "ERROR" else "OK")
+    if (!inherits(resolution, "app_project_resolution_error")) {
+      log_debug("shinyFiles: rows found = ", nrow(resolution$rows))
+    }
     reactive_open_resolution(resolution)
     if (!inherits(resolution, "app_project_resolution_error") && !is.null(resolution) && nrow(resolution$rows) > 0) {
       reactive_open_project_id(resolution$rows$project_id[[1]])

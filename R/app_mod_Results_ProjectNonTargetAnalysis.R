@@ -3544,8 +3544,14 @@
               detail_html
             ),
             tags$div(
+              id = session$ns(paste0(ms2_id, "_surface")),
+              class = "position-relative sf-nta-loading-surface",
               style = "overflow:hidden; height:100%; width:100%;",
-              plotly::plotlyOutput(session$ns(ms2_id), height = "100%", width = "100%")
+              plotly::plotlyOutput(session$ns(ms2_id), height = "100%", width = "100%"),
+              tags$script(HTML(sprintf(
+                "setTimeout(function(){ bindLoadingSurfaceWhenReady('%s','%s'); }, 50);",
+                session$ns(ms2_id), session$ns(paste0(ms2_id, "_surface"))
+              )))
             )
           ),
           footer = NULL,

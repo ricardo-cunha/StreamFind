@@ -16,17 +16,33 @@
 #' @noRd
 .app_util_get_volumes <- function() {
   os_type <- Sys.info()["sysname"]
-  if (os_type == "Windows") {
-    # drives <- system("wmic logicaldisk get name", intern = TRUE)
-    # drives <- drives[grepl(":", drives)]
-    # drives <- gsub("\\s+", "", drives)
-    # names(drives) <- drives
+  host_dirs <- list.files("/", pattern = "^host_", full.names = TRUE)
+
+  # Docker with host mount (Linux: /host_fs with rshared, Windows: /host_home etc.)
+  if (dir.exists("/host_fs")) {
+    drives <- list.files("/host_fs/media", full.names = TRUE)
+    names(drives) <- basename(drives)
+    mnt_drives <- list.files("/host_fs/mnt", full.names = TRUE)
+    if (length(mnt_drives) > 0) {
+      names(mnt_drives) <- basename(mnt_drives)
+      drives <- c(drives, mnt_drives)
+    }
+    drives <- c("Host Root" = "/host_fs", drives)
+
+  } else if (length(host_dirs) > 0) {
+    # Docker Desktop or general /host_* mounts
+    drives <- structure(host_dirs, names = basename(host_dirs))
+    # Normalize paths to avoid double-slash issues in Docker
+    drives <- normalizePath(drives, mustWork = FALSE, winslash = "/")
+
+  } else if (os_type == "Windows") {
     drives <- system(
       'powershell -NoProfile -Command "Get-PSDrive -PSProvider FileSystem | Select-Object -ExpandProperty Name"',
       intern = TRUE
     )
     drives <- paste0(drives, ":")
     names(drives) <- drives
+
   } else {
     drives <- list.files("/media", full.names = TRUE)
     names(drives) <- basename(drives)
@@ -35,6 +51,7 @@
       names(drives) <- basename(drives)
     }
   }
+
   c("wd" = getwd(), drives)
 }
 
