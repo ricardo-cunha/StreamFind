@@ -286,26 +286,17 @@
     .sf-nta-loading-surface {
       position: relative;
     }
-    .sf-nta-loading-surface.loading::before {
+    .sf-nta-loading-surface.loading::after {
       content: '';
       position: absolute;
       inset: 0;
       z-index: 8100;
       pointer-events: none;
-      background: radial-gradient(circle at center, rgba(255,255,255,0.22) 0, rgba(255,255,255,0.10) 24%, rgba(255,255,255,0.02) 48%, rgba(255,255,255,0) 72%);
-      animation: sf-logo-pulse 1.2s ease-in-out infinite;
-    }
-    .sf-nta-loading-surface.loading::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      z-index: 8101;
-      pointer-events: none;
       background-color: transparent;
       background-image: url('/www/logo_StreamFind.png');
       background-repeat: no-repeat;
       background-position: center center;
-      background-size: auto 70%;
+      background-size: auto 80px;
       animation: sf-logo-pulse 1.2s ease-in-out infinite;
     }
     .sf-nta-feature-plot-holder .plotly,
@@ -3408,11 +3399,13 @@
           margin = list(l = 55, r = 35, t = 35, b = 80),
           xaxis = ax_spec,
           yaxis = ay_spec,
-          paper_bgcolor = "rgba(0,0,0,0)",
-          plot_bgcolor = "rgba(0,0,0,0)"
+          paper_bgcolor = .get_plot_theme(dm)$background,
+          plot_bgcolor = .get_plot_theme(dm)$background,
+          font = list(color = .get_plot_theme(dm)$text)
         ) |>
         plotly::config(displaylogo = FALSE, responsive = TRUE,
-                       displayModeBar = "hover")
+                       displayModeBar = TRUE,
+                       modeBarButtonsToRemove = c("select2d", "lasso2d"))
 
       tip_id <- paste0("tip_", gsub("[^a-zA-Z0-9]", "_", row$feature))
       tip_bg <- if (dm) "#222" else "#fff"
@@ -3496,25 +3489,15 @@
         detail_fields[["Adduct"]] <- if (is.na(adduct_val) || !nzchar(adduct_val)) "-" else adduct_val
       }
 
-      dt_bg1 <- if (dm_open) "#2a2a2a" else "#f5f5f5"
-      dt_bg2 <- if (dm_open) "#1e1e1e" else "#fff"
-      dt_fg <- if (dm_open) "#e0e0e0" else "#000"
-      dt_border <- if (dm_open) "#444" else "#e0e0e0"
-      modal_bg <- if (dm_open) "#1e1e1e" else "#fff"
-      modal_fg <- if (dm_open) "#e0e0e0" else "#000"
-
       detail_html <- tags$table(
         class = "modal-detail-table",
-        style = sprintf("width:100%%; border-collapse: collapse; font-size: 12px; color: %s;", dt_fg),
         lapply(seq_along(detail_fields), function(i) {
           nm <- names(detail_fields)[i]
           val <- detail_fields[[i]]
           if (is.null(val) || is.na(val) || !nzchar(val)) val <- "-"
-          bg <- if (i %% 2 == 0) dt_bg1 else dt_bg2
           tags$tr(
-            style = paste0("background:", bg, ";"),
-            tags$td(style = sprintf("padding:3px 8px; font-weight:600; width:40%%; border-bottom:1px solid %s; color:%s;", dt_border, dt_fg), nm),
-            tags$td(style = sprintf("padding:3px 8px; border-bottom:1px solid %s; color:%s;", dt_border, dt_fg), val)
+            tags$td(nm),
+            tags$td(val)
           )
         })
       )
@@ -3542,38 +3525,21 @@
         shiny::modalDialog(
           easyClose = TRUE,
           fade = TRUE,
-          tags$style(HTML(sprintf("
+          tags$style(HTML("
 .modal-dialog { width: 90vw !important; max-width: 90vw !important; }
-.modal-content { height: 90vh; overflow: hidden; background: %s; color: %s; }
-.modal-header { background: %s; color: %s; border-bottom: 1px solid %s; }
+.modal-content { height: 90vh; overflow: hidden; }
 .modal-body { padding: 0 !important; }
 .modal-detail-table td { vertical-align: top; }
-.modal-header .close { color: %s; }
-.modal .js-plotly-plot .modebar,
-.modal .js-plotly-plot .modebar-group { background: transparent !important; box-shadow: none !important; }
-.modal .js-plotly-plot .modebar-btn,
-.modal .js-plotly-plot .modebar-btn:not(.active) { background: none !important; background-color: transparent !important; border: none !important; box-shadow: none !important; color: %s !important; opacity: 1 !important; }
-.modal .js-plotly-plot .modebar-btn:not(.active):hover,
-.modal .js-plotly-plot .modebar-btn:not(.active):focus { background: %s !important; background-color: %s !important; border: none !important; box-shadow: none !important; color: %s !important; }
-.modal .js-plotly-plot .modebar-btn:not(.active) svg,
-.modal .js-plotly-plot .modebar-btn:not(.active) svg * { fill: currentColor !important; stroke: currentColor !important; }
-.modal .js-plotly-plot .modebar-btn.active,
-.modal .js-plotly-plot .modebar-btn--logo,
-.modal .js-plotly-plot .modebar-btn.active:hover { background: %s !important; background-color: %s !important; color: %s !important; }
-.modal .js-plotly-plot .modebar-btn.active svg,
-.modal .js-plotly-plot .modebar-btn.active svg * { fill: currentColor !important; stroke: currentColor !important; }
-", modal_bg, modal_fg, if (dm_open) "#2a2a2a" else "#fafafa", modal_fg, dt_border, modal_fg,
-modal_fg,
-if (dm_open) "rgba(255,255,255,0.1)" else "rgba(0,0,0,0.05)",
-if (dm_open) "rgba(255,255,255,0.1)" else "rgba(0,0,0,0.05)",
-modal_fg,
-if (dm_open) "rgba(255,255,255,0.2)" else "rgba(0,0,0,0.1)",
-if (dm_open) "rgba(255,255,255,0.2)" else "rgba(0,0,0,0.1)",
-modal_fg))),
+.modal-detail-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.modal-detail-table tr:nth-child(odd) { background: var(--sf-surface); }
+.modal-detail-table tr:nth-child(even) { background: var(--sf-surface-alt); }
+.modal-detail-table td { padding: 3px 8px; border-bottom: 1px solid var(--sf-input-border); color: var(--sf-text-primary); }
+.modal-detail-table td:first-child { font-weight: 600; width: 40%; }
+")),
           tags$div(
-            style = sprintf("display:grid; grid-template-columns: 30fr 70fr; gap: 12px; height: calc(90vh - 60px); overflow: hidden; background: %s; color: %s;", modal_bg, modal_fg),
+            style = "display:grid; grid-template-columns: 30fr 70fr; gap: 12px; height: calc(90vh - 60px); overflow: hidden;",
             tags$div(
-              style = sprintf("overflow-y:auto; padding-right:8px; background:%s;", modal_bg),
+              style = "overflow-y:auto; padding-right:8px;",
               tags$div(style = "text-align:center; margin-bottom:12px;", HTML(struct_img)),
               detail_html
             ),
@@ -3584,7 +3550,7 @@ modal_fg))),
           ),
           footer = NULL,
           title = tags$span(
-            style = sprintf("font-weight:600; font-size:16px; color:%s;", modal_fg),
+            style = "font-weight:600; font-size:16px;",
             if (!is.null(title) && !is.na(title) && nzchar(title)) title else
               if (!is.na(row$name) && nzchar(row$name)) row$name else "Details"
           )

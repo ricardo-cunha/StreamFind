@@ -533,11 +533,16 @@ body[data-sf-theme="light"][data-sf-palette="lagoon"] {
   --sf-control: #0b6f6b;
   --sf-control-bg: #0b6f6b;
   --sf-control-color: #ffffff;
+  --sf-control-text: #ffffff;
   --sf-control-hover-bg: #095754;
   --sf-control-hover-color: #ffffff;
   --sf-modal-bg: #ffffff;
   --sf-modal-border: rgba(30, 33, 41, 0.22);
   --sf-input-border: #d0d4dc;
+  --sf-plot-text: var(--sf-text-primary);
+  --sf-plot-axis: #334155;
+  --sf-plot-grid: rgba(71,85,105,0.52);
+  --sf-plot-zeroline: rgba(51,65,85,0.68);
 }
 
 body[data-sf-theme="light"][data-sf-palette="copper"] {
@@ -551,11 +556,16 @@ body[data-sf-theme="light"][data-sf-palette="copper"] {
   --sf-control: #a65a3a;
   --sf-control-bg: #a65a3a;
   --sf-control-color: #fffaf5;
+  --sf-control-text: #fffaf5;
   --sf-control-hover-bg: #8b4a2e;
   --sf-control-hover-color: #fffaf5;
   --sf-modal-bg: #ffffff;
   --sf-modal-border: rgba(30, 33, 41, 0.22);
   --sf-input-border: #d0d4dc;
+  --sf-plot-text: var(--sf-text-primary);
+  --sf-plot-axis: #334155;
+  --sf-plot-grid: rgba(71,85,105,0.52);
+  --sf-plot-zeroline: rgba(51,65,85,0.68);
 }
 
 body[data-sf-theme="light"][data-sf-palette="slate"] {
@@ -569,11 +579,16 @@ body[data-sf-theme="light"][data-sf-palette="slate"] {
   --sf-control: #334155;
   --sf-control-bg: #334155;
   --sf-control-color: #ffffff;
+  --sf-control-text: #ffffff;
   --sf-control-hover-bg: #1f2937;
   --sf-control-hover-color: #ffffff;
   --sf-modal-bg: #ffffff;
   --sf-modal-border: rgba(30, 33, 41, 0.22);
   --sf-input-border: #d0d4dc;
+  --sf-plot-text: var(--sf-text-primary);
+  --sf-plot-axis: #334155;
+  --sf-plot-grid: rgba(71,85,105,0.52);
+  --sf-plot-zeroline: rgba(51,65,85,0.68);
 }
 
 body[data-sf-theme="light"][data-sf-palette="streamfind"] {
@@ -587,11 +602,16 @@ body[data-sf-theme="light"][data-sf-palette="streamfind"] {
   --sf-control: #102a66;
   --sf-control-bg: #102a66;
   --sf-control-color: #f7faf5;
+  --sf-control-text: #f7faf5;
   --sf-control-hover-bg: #173983;
   --sf-control-hover-color: #f7faf5;
   --sf-modal-bg: #ffffff;
   --sf-modal-border: rgba(30, 33, 41, 0.22);
   --sf-input-border: #d0d4dc;
+  --sf-plot-text: var(--sf-text-primary);
+  --sf-plot-axis: #334155;
+  --sf-plot-grid: rgba(71,85,105,0.52);
+  --sf-plot-zeroline: rgba(51,65,85,0.68);
 }
 
 body[data-sf-theme="dark"][data-sf-palette="lagoon"] {
@@ -605,11 +625,16 @@ body[data-sf-theme="dark"][data-sf-palette="lagoon"] {
   --sf-control: #46c1bb;
   --sf-control-bg: #46c1bb;
   --sf-control-color: #091211;
+  --sf-control-text: #091211;
   --sf-control-hover-bg: #2fa39e;
   --sf-control-hover-color: #091211;
   --sf-modal-bg: #13201f;
   --sf-modal-border: rgba(255, 255, 255, 0.16);
   --sf-input-border: #3a3f4a;
+  --sf-plot-text: var(--sf-text-primary);
+  --sf-plot-axis: #d7e2ec;
+  --sf-plot-grid: rgba(255,255,255,0.52);
+  --sf-plot-zeroline: rgba(255,255,255,0.72);
 }
 
 body[data-sf-theme="dark"][data-sf-palette="copper"] {
@@ -623,11 +648,16 @@ body[data-sf-theme="dark"][data-sf-palette="copper"] {
   --sf-control: #d08a5f;
   --sf-control-bg: #d08a5f;
   --sf-control-color: #150e0a;
+  --sf-control-text: #150e0a;
   --sf-control-hover-bg: #b26f47;
   --sf-control-hover-color: #150e0a;
   --sf-modal-bg: #251b15;
   --sf-modal-border: rgba(255, 255, 255, 0.16);
   --sf-input-border: #3a3f4a;
+  --sf-plot-text: var(--sf-text-primary);
+  --sf-plot-axis: #d7e2ec;
+  --sf-plot-grid: rgba(255,255,255,0.52);
+  --sf-plot-zeroline: rgba(255,255,255,0.72);
 }
 
 body[data-sf-theme="dark"][data-sf-palette="slate"] {
@@ -641,11 +671,16 @@ body[data-sf-theme="dark"][data-sf-palette="slate"] {
   --sf-control: #94a3b8;
   --sf-control-bg: #94a3b8;
   --sf-control-color: #0b1220;
+  --sf-control-text: #0b1220;
   --sf-control-hover-bg: #cbd5e1;
   --sf-control-hover-color: #0b1220;
   --sf-modal-bg: #172033;
   --sf-modal-border: rgba(255, 255, 255, 0.16);
   --sf-input-border: #3a3f4a;
+  --sf-plot-text: var(--sf-text-primary);
+  --sf-plot-axis: #d7e2ec;
+  --sf-plot-grid: rgba(255,255,255,0.52);
+  --sf-plot-zeroline: rgba(255,255,255,0.72);
 }
 
 body[data-sf-theme="dark"][data-sf-palette="streamfind"] {
@@ -659,15 +694,38 @@ body[data-sf-theme="dark"][data-sf-palette="streamfind"] {
   --sf-control: #7fb24f;
   --sf-control-bg: #7fb24f;
   --sf-control-color: #08101d;
+  --sf-control-text: #08101d;
   --sf-control-hover-bg: #96c266;
   --sf-control-hover-color: #08101d;
   --sf-modal-bg: #16203a;
   --sf-modal-border: rgba(255, 255, 255, 0.16);
   --sf-input-border: #3a3f4a;
+  --sf-plot-text: var(--sf-text-primary);
+  --sf-plot-axis: #d7e2ec;
+  --sf-plot-grid: rgba(255,255,255,0.52);
+  --sf-plot-zeroline: rgba(255,255,255,0.72);
 }
 
 body[data-sf-theme][data-sf-palette] {
   background: var(--sf-bg);
+}
+
+/* Modal theme overrides (outside #sf-app, body-level vars apply) */
+.modal-content {
+  background-color: var(--sf-bg) !important;
+  color: var(--sf-text-primary) !important;
+}
+.modal-header {
+  background-color: var(--sf-bg) !important;
+  color: var(--sf-text-primary) !important;
+  border-bottom-color: var(--sf-input-border) !important;
+}
+.modal-body {
+  background-color: var(--sf-bg) !important;
+}
+.modal-header .close,
+.modal-header .btn-close {
+  color: var(--sf-text-primary) !important;
 }
 
 /* ============================================================
@@ -1121,7 +1179,7 @@ body[data-sf-theme][data-sf-palette] {
   align-items: center;
   justify-content: center;
   z-index: 9000;
-  background: var(--sf-bg, #ffffff);
+  background: transparent;
   pointer-events: all;
 }
 
@@ -1133,9 +1191,8 @@ body[data-sf-theme][data-sf-palette] {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: min(70vh, 70vw);
-  height: 70%;
-  aspect-ratio: 1 / 1;
+  width: 80px;
+  height: 80px;
 }
 
 .sf-boot-overlay-inner img {
@@ -1183,7 +1240,7 @@ body[data-sf-theme][data-sf-palette] {
   background-image: url('/www/logo_StreamFind.png');
   background-repeat: no-repeat;
   background-position: center center;
-  background-size: min(280px, 42%);
+  background-size: auto 80px;
   animation: sf-logo-pulse 1.2s ease-in-out infinite;
 }
 
@@ -1672,6 +1729,54 @@ body[data-sf-theme][data-sf-palette] {
   stroke: currentColor !important;
 }
 
+/* Modebar rules for modals (outside #sf-app) */
+.js-plotly-plot .modebar,
+.js-plotly-plot .modebar-group {
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.js-plotly-plot .modebar-btn,
+.js-plotly-plot .modebar-btn:not(.active) {
+  background: none !important;
+  background-color: transparent !important;
+  background-image: none !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--sf-plot-text) !important;
+  opacity: 1 !important;
+}
+
+.js-plotly-plot .modebar-btn:not(.active):hover,
+.js-plotly-plot .modebar-btn:not(.active):focus {
+  background: var(--sf-surface-alt) !important;
+  background-color: var(--sf-surface-alt) !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: var(--sf-plot-text) !important;
+  border-radius: var(--sf-radius-sm);
+}
+
+.js-plotly-plot .modebar-btn:not(.active) svg,
+.js-plotly-plot .modebar-btn:not(.active) svg * {
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
+
+.js-plotly-plot .modebar-btn.active,
+.js-plotly-plot .modebar-btn--logo,
+.js-plotly-plot .modebar-btn.active:hover {
+  background: var(--sf-control) !important;
+  background-color: var(--sf-control) !important;
+  color: var(--sf-control-text) !important;
+}
+
+.js-plotly-plot .modebar-btn.active svg,
+.js-plotly-plot .modebar-btn.active svg * {
+  fill: currentColor !important;
+  stroke: currentColor !important;
+}
+
 /* Plotly grid and zero lines */
 #sf-app #sf-content .js-plotly-plot .gridlayer .xgrid,
 #sf-app #sf-content .js-plotly-plot .gridlayer .ygrid,
@@ -1683,6 +1788,21 @@ body[data-sf-theme][data-sf-palette] {
 
 #sf-app #sf-content .js-plotly-plot .zerolinelayer .xzl,
 #sf-app #sf-content .js-plotly-plot .zerolinelayer .yzl {
+  stroke: var(--sf-plot-zeroline) !important;
+  opacity: 1 !important;
+}
+
+/* Grid/zero-line rules for modals (outside #sf-app) */
+.js-plotly-plot .gridlayer .xgrid,
+.js-plotly-plot .gridlayer .ygrid,
+.js-plotly-plot .gridlayer .zgrid {
+  stroke: var(--sf-plot-grid) !important;
+  stroke-width: 1px !important;
+  opacity: 1 !important;
+}
+
+.js-plotly-plot .zerolinelayer .xzl,
+.js-plotly-plot .zerolinelayer .yzl {
   stroke: var(--sf-plot-zeroline) !important;
   opacity: 1 !important;
 }
@@ -2009,7 +2129,7 @@ ul.sf-info-list {
 #sf-app.sf-dark .rank-list-item svg   { color: inherit; }
 
 /* ============================================================
-   Loading Spinner — StreamFind logo pulse on recalculating outputs
+   Loading Spinner — StreamFind logo pulse, transparent bg, no shading
    ============================================================ */
 @keyframes sf-logo-pulse {
   0%, 100% { opacity: 0.18; transform: scale(0.94); }
@@ -2027,7 +2147,7 @@ ul.sf-info-list {
 .plot-modal .html-widget-output,
 .plot-modal .plotly { position: relative; }
 
-/* The overlay: semi-transparent panel + pulsing logo centred at 50% height */
+/* The overlay: pulsing logo centred, no shading */
 #sf-content .shiny-bound-output.recalculating::after,
 #sf-content .html-widget-output.recalculating::after,
 #sf-content .plotly.recalculating::after,
@@ -2048,7 +2168,7 @@ ul.sf-info-list {
   background-image:  url('/www/logo_StreamFind.png');
   background-repeat: no-repeat;
   background-position: center center;
-  background-size: auto 70%;
+  background-size: auto 80px;
   animation:  sf-logo-pulse 1.2s ease-in-out infinite;
 }
 
@@ -2089,7 +2209,7 @@ ul.sf-info-list {
   background-image: url('/www/logo_StreamFind.png');
   background-repeat: no-repeat;
   background-position: center center;
-  background-size: auto 70%;
+  background-size: auto 80px;
   animation: sf-logo-pulse 1.2s ease-in-out infinite;
 }
 /* ============================================================
