@@ -40,42 +40,42 @@ app_ui <- function(request) {
           id = "sf-nav",
           # Home
           htmltools::div(class = "sf-nav-group active", `data-tab` = "home",
-            htmltools::tags$button(class = "sf-nav-btn active", `data-tab` = "home", title = "Home",
+            htmltools::tags$button(class = "sf-nav-btn active sf-btn-transparent-hover", `data-tab` = "home", title = "Home",
               shiny::icon("home"))
           ),
           # Project
           htmltools::div(class = "sf-nav-group", `data-tab` = "project",
-            htmltools::tags$button(class = "sf-nav-btn", `data-tab` = "project", title = "Project",
+            htmltools::tags$button(class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "project", title = "Project",
               "Project")
           ),
           # Analyses
           htmltools::div(class = "sf-nav-group", `data-tab` = "analyses",
-            htmltools::tags$button(class = "sf-nav-btn", `data-tab` = "analyses", title = "Analyses",
+            htmltools::tags$button(class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "analyses", title = "Analyses",
               "Analyses")
           ),
           # Explorer
           htmltools::div(class = "sf-nav-group", `data-tab` = "explorer",
-            htmltools::tags$button(class = "sf-nav-btn", `data-tab` = "explorer", title = "Explorer",
+            htmltools::tags$button(class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "explorer", title = "Explorer",
               "Explorer")
           ),
           # Workflow
           htmltools::div(class = "sf-nav-group", `data-tab` = "workflow",
-            htmltools::tags$button(class = "sf-nav-btn", `data-tab` = "workflow", title = "Workflow",
+            htmltools::tags$button(class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "workflow", title = "Workflow",
               "Workflow")
           ),
           # Results
           htmltools::div(class = "sf-nav-group", `data-tab` = "results",
-            htmltools::tags$button(class = "sf-nav-btn", `data-tab` = "results", title = "Results",
+            htmltools::tags$button(class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "results", title = "Results",
               "Results")
           ),
           # Report
           htmltools::div(class = "sf-nav-group", `data-tab` = "report",
-            htmltools::tags$button(class = "sf-nav-btn", `data-tab` = "report", title = "Report",
+            htmltools::tags$button(class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "report", title = "Report",
               "Report")
           ),
           # Audit Trail
           htmltools::div(class = "sf-nav-group", `data-tab` = "audit",
-            htmltools::tags$button(class = "sf-nav-btn", `data-tab` = "audit", title = "Audit Trail",
+            htmltools::tags$button(class = "sf-nav-btn sf-btn-transparent-hover", `data-tab` = "audit", title = "Audit Trail",
               "Audit Trail")
           ),
           

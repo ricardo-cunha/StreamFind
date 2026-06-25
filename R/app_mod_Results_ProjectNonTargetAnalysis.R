@@ -122,7 +122,10 @@
       min-height: 0;
       height: 100% !important;
     }
-    .bslib-sidebar-resize-handle .visually-hidden {
+    .bslib-sidebar-resize-handle {
+      display: none !important;
+    }
+    .bslib-sidebar-toggle {
       display: none !important;
     }
     .suspects-table td {
@@ -911,7 +914,7 @@
     # MARK: features_data
     features_data <- shiny::reactive({
       nts <- nta_data()
-      fts <- data.table::as.data.table(get_features(nts, filtered = TRUE))
+      fts <- data.table::as.data.table(get_features(nts, filtered = FALSE))
       if (nrow(fts) == 0) return(fts)
       digits_for_col <- function(col) {
         col_lower <- tolower(col)
@@ -2065,8 +2068,14 @@
       for (col in log_cols) {
         if (identical(col, "filled")) next
         sel <- input[[paste0("scatter_filter_", col)]]
-        if (!is.null(sel) && !isTRUE(sel)) {
-          fts <- fts[is.na(fts[[col]]) | !fts[[col]], ]
+        if (identical(col, "filtered")) {
+          if (isTRUE(sel)) {
+            fts <- fts[!is.na(fts[[col]]) & fts[[col]], ]
+          }
+        } else {
+          if (!is.null(sel) && !isTRUE(sel)) {
+            fts <- fts[is.na(fts[[col]]) | !fts[[col]], ]
+          }
         }
       }
 
@@ -2083,14 +2092,14 @@
       if (nrow(fts) == 0) return(fts)
 
       fts$rel_intensity <- NA_real_
-      if ("intensity" %in% colnames(fts) && "analysis" %in% colnames(fts)) {
-        max_intensity_global <- max(fts$intensity, na.rm = TRUE)
-        fts$rel_intensity <- fts$intensity / max_intensity_global
-        fts$rel_intensity[is.infinite(fts$rel_intensity) | is.na(fts$rel_intensity)] <- 0
+      if ("intensity" %in% colnames(fts)) {
+        max_int <- max(fts$intensity, na.rm = TRUE)
+        fts$rel_intensity <- if (is.finite(max_int) && max_int > 0) fts$intensity / max_int else 0
+        fts$rel_intensity[!is.finite(fts$rel_intensity)] <- 0
       } else {
         fts$rel_intensity <- 0
       }
-      fts$dot_size <- 6 + 10 * fts$rel_intensity
+      fts$dot_size <- 5 + sqrt(fts$rel_intensity) * 20
       fts
     })
 
@@ -2138,6 +2147,7 @@
       fts[, color_cols] <- lapply(fts[, color_cols, drop = FALSE], as.character)
       for (col in color_cols) fts[[col]][is.na(fts[[col]])] <- ""
       fts$color_var <- do.call(paste, c(fts[, color_cols, drop = FALSE], sep = "_"))
+      fts <- fts[order(fts$color_var), ]
 
       pal <- .get_colors(unique(fts$color_var), darkMode = dark_mode())
       hide_legend <- length(unique(fts$color_var)) > 50
@@ -2149,11 +2159,7 @@
       for (col in sel_cols) fts[[col]][is.na(fts[[col]])] <- ""
       fts$scatter_key <- do.call(paste, c(fts[, sel_cols, drop = FALSE], sep = "||"))
 
-      # Ensure size is numeric vector to avoid ordering issues with formula notation
-      # size_values <- as.numeric(fts$dot_size)
-
       fts_highlight <- plotly::highlight_key(fts, ~scatter_key)
-
       p <- plotly::plot_ly(
         data = fts_highlight,
         source = "features_scatter",
@@ -2166,8 +2172,9 @@
         marker = list(
           sizemode = "diameter",
           size = ~dot_size,
+          sizeref = 1,
           sizemin = 3,
-          opacity = 0.95,
+          opacity = 0.22,
           line = list(width = 0)
         ),
         hoverinfo = "none"
@@ -2223,7 +2230,6 @@
           )
         )
       )
-
       p <- plotly::event_register(p, "plotly_click")
       p <- plotly::event_register(p, "plotly_doubleclick")
       features_scatter_events_ready(TRUE)
@@ -2741,10 +2747,14 @@
       if ("feature_group" %in% colnames(istd)) istd$feature_group <- as.character(istd$feature_group)
       if ("name" %in% colnames(istd)) istd$name <- as.character(istd$name)
       istd$replicate <- as.character(istd$replicate)
-      max_intensity_global <- if ("intensity" %in% colnames(istd)) max(istd$intensity, na.rm = TRUE) else NA_real_
-      istd$rel_intensity <- if (is.finite(max_intensity_global) && max_intensity_global > 0) istd$intensity / max_intensity_global else 0
+      if ("intensity" %in% colnames(istd)) {
+        max_int <- max(istd$intensity, na.rm = TRUE)
+        istd$rel_intensity <- if (is.finite(max_int) && max_int > 0) istd$intensity / max_int else 0
+      } else {
+        istd$rel_intensity <- 0
+      }
       istd$rel_intensity[!is.finite(istd$rel_intensity)] <- 0
-      istd$dot_size <- 6 + 10 * istd$rel_intensity
+      istd$dot_size <- 5 + sqrt(istd$rel_intensity) * 20
       istd
     })
 
@@ -2778,6 +2788,7 @@
       istd[, (color_cols) := lapply(.SD, as.character), .SDcols = color_cols]
       for (col in color_cols) istd[[col]][is.na(istd[[col]])] <- ""
       istd$color_var <- do.call(paste, c(istd[, ..color_cols], sep = "_"))
+      istd <- istd[order(istd$color_var), ]
 
       sel_cols <- istd_selection_cols()
       sel_cols <- sel_cols[sel_cols %in% colnames(istd)]
@@ -2797,7 +2808,6 @@
       hide_legend <- length(unique(istd$color_var)) > 50
 
       istd_highlight <- plotly::highlight_key(istd, ~scatter_key)
-
       p <- plotly::plot_ly(
         data = istd_highlight,
         source = "internal_standards_scatter",
@@ -2810,8 +2820,9 @@
         marker = list(
           sizemode = "diameter",
           size = ~dot_size,
+          sizeref = 1,
           sizemin = 3,
-          opacity = 0.95,
+          opacity = 0.22,
           line = list(width = 0)
         ),
         hoverinfo = "text",
@@ -2874,7 +2885,6 @@
           )
         )
       )
-
       p <- plotly::event_register(p, "plotly_click")
       p <- plotly::event_register(p, "plotly_doubleclick")
       internal_standards_scatter_events_ready(TRUE)

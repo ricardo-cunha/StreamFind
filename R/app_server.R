@@ -83,7 +83,7 @@ app_server <- function(input, output, session) {
     htmltools::tags$button(
       type = "button",
       class = paste(
-        "sf-subbar-btn",
+        "sf-subbar-btn sf-btn-transparent-hover",
         if (!is.na(active_key) && identical(active_key, key)) "active" else ""
       ),
       `data-tab` = tab,
@@ -212,7 +212,7 @@ app_server <- function(input, output, session) {
       shiny::actionButton(
         inputId = paste0("home_create_", project_class),
         label = htmltools::tagList(
-          htmltools::tags$span(class = "sf-home-tile-title", entry$label),
+          htmltools::tags$span(class = "sf-home-tile-title", paste("New", entry$label)),
           htmltools::tags$span(class = "sf-home-tile-type", paste("Project Type:", project_class)),
           htmltools::tags$span(class = "sf-home-tile-copy", entry$description)
         ),
@@ -697,11 +697,13 @@ app_server <- function(input, output, session) {
     })
     htmltools::div(
       class = "sf-panel sf-panel-muted",
+      htmltools::tags$br(),
       htmltools::div(class = "sf-path-preview", db_path),
       htmltools::tags$p(
         class = "sf-panel-copy",
-        paste0("Resolved project class: ", resolution$project_label, " (", resolution$project_class, ")")
+        paste0("Project type: ", resolution$project_label)
       ),
+      htmltools::tags$br(),
       htmltools::div(class = "sf-project-id-grid", project_tiles)
     )
   })
@@ -812,8 +814,8 @@ app_server <- function(input, output, session) {
         shiny::actionButton(
           "modify_metadata",
           label = "",
-          icon = shiny::icon("pencil"),
-          class = "sf-topbar-btn"
+          icon = shiny::icon("pen-to-square", class = "fa-solid"),
+          class = "sf-topbar-btn sf-btn-transparent-hover"
         ),
         htmltools::tags$p(class = "sf-page-subtitle", style = "margin: 0;", "Project Metadata:")
       ),
@@ -833,7 +835,7 @@ app_server <- function(input, output, session) {
     }
     is_dark <- identical(reactive_theme_mode(), "dark")
     has_ace <- requireNamespace("shinyAce", quietly = TRUE)
-    editor_ui <- if (has_ace) {
+    editor_core <- if (has_ace) {
       shinyAce::aceEditor(
         "project_json_editor",
         mode = "json",
@@ -857,6 +859,10 @@ app_server <- function(input, output, session) {
         project_json_string()
       )
     }
+    editor_ui <- htmltools::div(
+      style = "flex: 1; min-height: 0; height: 100%; display: flex; flex-direction: column; overflow: hidden;",
+      editor_core
+    )
     shiny::showModal(shiny::modalDialog(
       title = "Edit Metadata JSON",
       editor_ui,

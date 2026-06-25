@@ -23,6 +23,8 @@ nta <- open_ProjectNonTargetAnalysis(
 )
 nta$run_app()
 
+run_app()
+
 
 nta <- open_ProjectNonTargetAnalysis(
   db = project_db,

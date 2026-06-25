@@ -102,10 +102,6 @@
         border-top: 1px solid #ccc;
         padding-top: 2px;
       }
-      .modal-content {
-        resize: both;
-        overflow: auto;
-      }
       .modal-dialog {
         position: relative;
         width: auto;
