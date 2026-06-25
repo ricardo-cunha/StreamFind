@@ -4,17 +4,23 @@
 #'
 #' @noRd
 app_server <- function(input, output, session) {
-  volumes <- .app_util_get_volumes()
   project_obj <- NULL
 
   # Debug log — shows in the Terminal modal
+  # Uses a plain vector mirror to avoid reading reactiveVal outside reactive context
   .debug_log <- shiny::reactiveVal(character())
+  .debug_log_data <- character()
   log_debug <- function(...) {
     msg <- paste0(...)
     timestamp <- format(Sys.time(), "%H:%M:%OS3")
     entry <- paste0("[", timestamp, "] ", msg)
-    .debug_log(c(.debug_log(), entry))
+    .debug_log_data <<- c(.debug_log_data, entry)
+    # Only set the reactiveVal if Shiny is running (safe outside reactive context)
+    if (shiny::isRunning()) {
+      .debug_log(.debug_log_data)
+    }
     message(msg)
+    cat(entry, "\n", sep = "", file = stdout())
   }
 
   # Refresh volumes (re-reads host mounts for container environments)
@@ -23,6 +29,54 @@ app_server <- function(input, output, session) {
     reactive_volumes(vols)
     vols
   }
+
+  # Dependency diagnostics at startup
+  log_debug("=== Dependency Check ===")
+  log_debug("R version: ", R.version.string)
+  log_debug("Platform: ", R.version$platform)
+  log_debug("StreamFind version: ", as.character(utils::packageVersion("StreamFind")))
+  ob_ok <- tryCatch({
+    info <- rcpp_openbabel_debug_runtime()
+    log_debug("OpenBabel: ", info)
+    TRUE
+  }, error = function(e) {
+    log_debug("OpenBabel: ERROR - ", conditionMessage(e))
+    FALSE
+  })
+  if (ob_ok) {
+    log_debug("OpenBabel test SVG: ",
+      tryCatch({
+        svg <- rcpp_openbabel_structure_svg(SMILES = "CCO", width = 100L, height = 100L, darkMode = FALSE)
+        if (is.character(svg) && nzchar(svg) && grepl("<svg", svg, fixed = TRUE)) "OK" else "FAIL (empty/invalid)"
+      }, error = function(e) paste("ERROR:", conditionMessage(e)))
+    )
+  }
+  log_debug("Java: ",
+    tryCatch({
+      ver <- system("java -version 2>&1", intern = TRUE)[1]
+      ver
+    }, error = function(e) "NOT FOUND")
+  )
+  log_debug("rJava available: ", requireNamespace("rJava", quietly = TRUE))
+  log_debug("rcdk available: ", requireNamespace("rcdk", quietly = TRUE))
+  metfrag_jar <- file.path(Sys.getenv("HOME", "/home/streamfind"), ".streamfind", "external", "metfrag", "MetFragCL.jar")
+  log_debug("MetFrag jar: ", if (file.exists(metfrag_jar)) metfrag_jar else "NOT FOUND")
+  log_debug("DuckDB: ",
+    tryCatch({
+      con <- DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
+      ver <- DBI::dbGetQuery(con, "SELECT version()")[1, 1]
+      DBI::dbDisconnect(con, shutdown = TRUE)
+      ver
+    }, error = function(e) paste("ERROR:", conditionMessage(e)))
+  )
+  log_debug("=== End Dependency Check ===")
+
+  # Flush any startup log entries that were buffered before shiny was running
+  if (length(.debug_log_data) > 0) {
+    .debug_log(.debug_log_data)
+  }
+
+  volumes <- .app_util_get_volumes()
 
   reactive_project_class <- shiny::reactiveVal(NA_character_)
   reactive_project_db <- shiny::reactiveVal(NA_character_)
@@ -494,6 +548,7 @@ app_server <- function(input, output, session) {
 
   shiny::observeEvent(input$clear_terminal_log, {
     .debug_log(character())
+    .debug_log_data <<- character()
   }, ignoreInit = TRUE)
 
   shiny::observeEvent(input$home_open_project, {

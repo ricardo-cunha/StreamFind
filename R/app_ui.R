@@ -293,9 +293,10 @@ golem_add_external_resources <- function() {
 
       // sfNavigate: activate a main tab
       function sfNavigate(tab, subtab) {
-        sfShowPanel(tab);
         Shiny.setInputValue('sf_active_tab', tab, {priority: 'event'});
-        sfMarkPageLoading(tab);
+        if (typeof subtab === 'string') {
+          Shiny.setInputValue('sf_active_subtab', subtab, {priority: 'event'});
+        }
 
         document.querySelectorAll('#sf-nav .sf-nav-group').forEach(function(grp) {
           grp.classList.toggle('active', grp.getAttribute('data-tab') === tab);
@@ -305,17 +306,15 @@ golem_add_external_resources <- function() {
           btn.classList.toggle('active', btn.getAttribute('data-tab') === tab);
         });
 
-        if (typeof subtab === 'string') {
-          sfSubNavigate(tab, subtab);
-        }
+        // Let Shiny process the tab change first, then show the panel
+        setTimeout(function() { sfShowPanel(tab); }, 0);
+        sfMarkPageLoading(tab);
       }
 
       // sfSubNavigate: switch sub-tab on the second topbar
       function sfSubNavigate(tab, subtab) {
-        sfShowPanel(tab);
         Shiny.setInputValue('sf_active_tab', tab, {priority: 'event'});
         Shiny.setInputValue('sf_active_subtab', subtab, {priority: 'event'});
-        sfMarkPageLoading(tab);
 
         document.querySelectorAll('#sf-nav .sf-nav-group').forEach(function(grp) {
           grp.classList.toggle('active', grp.getAttribute('data-tab') === tab);
@@ -330,12 +329,13 @@ golem_add_external_resources <- function() {
             btn.getAttribute('data-tab') === tab &&
             btn.getAttribute('data-subtab') === subtab);
         });
+
+        setTimeout(function() { sfShowPanel(tab); }, 0);
+        sfMarkPageLoading(tab);
       }
 
       // Event delegation on nav bars
       document.addEventListener('DOMContentLoaded', function() {
-        sfShowPanel('home');
-
         document.getElementById('sf-nav').addEventListener('click', function(e) {
           var mainBtn = e.target.closest('.sf-nav-btn');
           if (mainBtn) {
@@ -417,6 +417,12 @@ golem_add_external_resources <- function() {
           Shiny.setInputValue(button.id + '-modal', { path: path, root: selectedRoot }, {priority: 'event'});
           e.preventDefault();
         });
+      });
+
+      // Initialize home panel when Shiny is connected (not just DOM ready)
+      document.addEventListener('shiny:connected', function() {
+        Shiny.setInputValue('sf_active_tab', 'home', {priority: 'event'});
+        sfShowPanel('home');
       });
 
       // Apply mode/style to the app root and body so shared CSS and modals stay in sync.

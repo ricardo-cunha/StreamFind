@@ -88,7 +88,7 @@ RUN mkdir -p /home/$STREAMFIND_USER/.streamfind/external/metfrag && \
 RUN set -ex \
     && mkdir -p /etc/services.d/shiny /etc/services.d/code-server /etc/services.d/ssh /etc/cont-init.d \
     && echo '#!/usr/bin/with-contenv bash' > /etc/services.d/shiny/run \
-    && echo 'exec su - streamfind -c "R -e '\''library(StreamFind); run_app(options = list(port = 3838, host = \"0.0.0.0\"))'\''"' >> /etc/services.d/shiny/run \
+    && echo 'exec su - streamfind -c "R -e '\''Sys.setenv(BABEL_DATADIR=\"/usr/local/lib/R/site-library/StreamFind/openbabel-3-2-0/data\"); library(StreamFind); run_app(options = list(port = 3838, host = \"0.0.0.0\"))'\''"' >> /etc/services.d/shiny/run \
     && echo '#!/usr/bin/with-contenv bash' > /etc/services.d/code-server/run \
     && echo 'export PASSWORD="${CS_PASSWORD:-streamfind}"' >> /etc/services.d/code-server/run \
     && echo "exec su - streamfind -c 'code-server --bind-addr 0.0.0.0:8080 --auth password'" >> /etc/services.d/code-server/run \
