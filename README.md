@@ -148,6 +148,118 @@ nta$run_app()
 This is useful when you want to browse analyses, results, and workflow
 state without leaving the package data model.
 
+## Docker container
+
+A Docker image is provided that bundles StreamFind, its R dependencies,
+code-server (VS Code in the browser), SSH access, and pre-installed
+external tools (Java, MetFrag). The app listens on port `3838`,
+code-server on `8080`, and SSH on `22`.
+
+### Build the image
+
+``` bash
+docker build -t streamfind .
+```
+
+### Run with host file access
+
+Mount host directories so the app can access your data files. The mount
+base name (the part after the last `/`) becomes the volume name shown in
+the file browser.
+
+``` bash
+# Mount from Windows (PowerShell)
+docker run -d --name streamfind `
+  -v "C:\Users\apoli:/mnt/streamfind-host/home:rw" `
+  -v "D:\:/mnt/streamfind-host/data:rw" `
+  -p 3838:3838 -p 8080:8080 -p 2222:22 `
+  -e SSH_PASSWORD=yourpassword -e CS_PASSWORD=yourpassword `
+  streamfind
+
+# Mount from Linux/macOS
+docker run -d --name streamfind \
+  -v /home/user:/mnt/streamfind-host/home:rw \
+  -v /mnt/data:/mnt/streamfind-host/data:rw \
+  -p 3838:3838 -p 8080:8080 -p 2222:22 \
+  -e SSH_PASSWORD=yourpassword -e CS_PASSWORD=yourpassword \
+  streamfind
+```
+
+The volumes appear in the file browser as:
+
+| Volume name | Container path                              |
+|-------------|---------------------------------------------|
+| `wd`        | Working directory                           |
+| `home`      | `/mnt/streamfind-host/home` → host home     |
+| `data`      | `/mnt/streamfind-host/data` → external drive |
+
+### Legacy host mounts (Docker Desktop for Windows)
+
+If you prefer the `-v C:\Users\apoli:/host_home` syntax (without
+`/mnt/streamfind-host`), the app still detects these and shows them
+using their mount-point base name:
+
+``` bash
+docker run -d --name streamfind `
+  -v "C:\Users\apoli:/host_home:rw" `
+  -v "D:\:/host_d:rw" `
+  -p 3838:3838 -p 8080:8080 -p 2222:22 `
+  -e SSH_PASSWORD=yourpassword -e CS_PASSWORD=yourpassword `
+  streamfind
+```
+
+Volumes appear as `host_home` and `host_d` in the file browser.
+
+### Accessing network / SMB / CIFS drives
+
+To access a network share (e.g. `\\10.89.11.34\share`):
+
+**On the Docker host (not inside the container), mount the share
+first:**
+
+Linux:
+
+``` bash
+sudo mount -t cifs //10.89.11.34/share /mnt/network/project_data \
+  -o username=youruser,password=yourpass,uid=$(id -u),gid=$(id -g)
+```
+
+Windows: Map the drive as a drive letter (e.g. `Z:`), then pass it to
+Docker:
+
+``` powershell
+docker run -d --name streamfind -v "Z:\:/mnt/streamfind-host/network_data:rw" ...
+```
+
+Or mount it on a Linux VM and mount that path into the container.
+
+Once mounted, the directory appears under `/mnt/streamfind-host/` (or
+`/host_*` on legacy mounts) and is automatically detected by the app's
+file-browser volume list.
+
+### Useful commands
+
+``` bash
+# Watch the startup log
+docker logs streamfind -f
+
+# Run a one-off R command inside the container
+docker exec streamfind R -e 'library(StreamFind); rcpp_openbabel_structure_svg("CCO")'
+
+# Open a shell
+docker exec -it streamfind bash
+
+# Stop and remove
+docker stop streamfind; docker rm streamfind
+```
+
+### Environment variables
+
+| Variable       | Default      | Description                     |
+|----------------|--------------|---------------------------------|
+| `SSH_PASSWORD` | `streamfind` | SSH password for streamfind     |
+| `CS_PASSWORD`  | `streamfind` | code-server web UI password     |
+
 ## External dependencies
 
 Some workflows depend on third-party tools that are not bundled with

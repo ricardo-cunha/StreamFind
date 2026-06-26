@@ -37,7 +37,7 @@
   legacy_host_dirs <- list.files("/", pattern = "^host_", full.names = TRUE)
   legacy_host_dirs <- legacy_host_dirs[dir.exists(legacy_host_dirs)]
   if (length(legacy_host_dirs) > 0) {
-    names(legacy_host_dirs) <- paste("Legacy", basename(legacy_host_dirs))
+    names(legacy_host_dirs) <- basename(legacy_host_dirs)
     legacy_host_dirs <- gsub("^/{2,}", "/", legacy_host_dirs)
     volumes <- c(volumes, legacy_host_dirs)
   }

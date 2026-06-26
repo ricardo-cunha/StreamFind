@@ -43,7 +43,13 @@ $(OPENBABEL_STAMP): FORCE ../tools/build_openbabel.py ../tools/openbabel_sources
 	"$(PYTHON)" ../tools/build_openbabel.py --repo-root .. --platform linux --cc "$(CC)" --cxx "$(CXX17)" --ar "$(AR)" --cflag="$(CPICFLAGS)" --cflag=-O2 --cflag=-w --cxxflag="$(CXX17STD)" --cxxflag="$(CPICFLAGS)" --cxxflag=-O2 --cxxflag=-w $(if $(filter 1 TRUE true yes YES,$(OPENBABEL_RELEASE_ARTIFACT_ONLY)),--release-artifact-only,)
 
 PKG_CXXFLAGS += $(SHLIB_OPENMP_CXXFLAGS)
-PKG_LIBS += $(SHLIB_OPENMP_CXXFLAGS) $(OPENBABEL_OPEN_LIB) $(OPENBABEL_INCHI_LIB) -lz
+PKG_LIBS += $(SHLIB_OPENMP_CXXFLAGS)
+# Force-link all objects from the vendored OpenBabel static archive so format
+# plugins (e.g. SVG) that register themselves via static initialisation are
+# not stripped by the linker.  Without --whole-archive the SVG format output
+# returns empty on Linux.
+PKG_LIBS += -Wl,--whole-archive $(OPENBABEL_OPEN_LIB) -Wl,--no-whole-archive
+PKG_LIBS += $(OPENBABEL_INCHI_LIB) -lz
 
 # Link against the vendored DuckDB build.
 PKG_CPPFLAGS += -Icore/external/duckdb/linux/

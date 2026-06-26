@@ -120,7 +120,11 @@ std::string rcpp_openbabel_structure_svg(
     height,
     bond_color
   );
-  return svg.ok ? svg.svg : std::string();
+  if (!svg.ok) {
+    Rcpp::warning("OpenBabel SVG rendering failed: " + svg.error);
+    return std::string();
+  }
+  return svg.svg;
 }
 
 //' Inspect the native Open Babel runtime paths
