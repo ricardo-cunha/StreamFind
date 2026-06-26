@@ -148,71 +148,107 @@ docker build -t streamfind .
 
 ### Run with host file access
 
-Mount host directories under `/host/<name>`. The name you choose becomes the volume label in the shinyFiles browser. The first mounted volume is the default root.
+StreamFind is designed to work on project databases and analytical files mounted from the host machine. The container filesystem should be treated as runtime infrastructure; routine project work should happen in host-mounted folders.
+
+The recommended convention is to mount host directories under `/host/<name>`. The `<name>` part is reused directly as the volume label in the StreamFind file browser. The first detected host-mounted volume is used as the default root in shinyFiles dialogs.
 
 ```bash
-# Linux/macOS — user-chosen names
+# Linux/macOS — user-chosen mount names
 docker run -d --name streamfind \
-  -v /home/ricardo/projects:/host/projects:rw \
-  -v /mnt/instrument-data:/host/instrument_data:rw \
-  -v /mnt/archive:/host/archive:ro \
+  -v /path/to/projects:/host/projects:rw \
+  -v /path/to/instrument-data:/host/instrument_data:rw \
+  -v /path/to/archive:/host/archive:ro \
   -p 3838:3838 \
   -p 8080:8080 \
-  streamfind
-
-# Windows (PowerShell) — user-chosen names
-docker run -d --name streamfind `
-  -v "C:\Users\apoli\projects:/host/projects:rw" `
-  -v "D:\data:/host/instrument_data:rw" `
-  -p 3838:3838 -p 8080:8080 -p 2222:22 `
-  -e SSH_PASSWORD=yourpassword -e CS_PASSWORD=yourpassword `
+  -p 2222:22 \
+  -e CS_PASSWORD=yourpassword \
+  -e SSH_PASSWORD=yourpassword \
   streamfind
 ```
 
-Volumes appear in the file browser as:
+```powershell
+# Windows PowerShell — user-chosen mount names
+docker run -d --name streamfind `
+  -v "C:\Path\To\Projects:/host/projects:rw" `
+  -v "D:\InstrumentData:/host/instrument_data:rw" `
+  -v "Z:\Archive:/host/archive:ro" `
+  -p 3838:3838 `
+  -p 8080:8080 `
+  -p 2222:22 `
+  -e CS_PASSWORD=yourpassword `
+  -e SSH_PASSWORD=yourpassword `
+  streamfind
+```
 
-| Volume name | Path |
-|-------------|------|
-| `projects` (default) | `/host/projects` → host home |
-| `instrument_data` | `/host/instrument_data` → external drive |
-| `archive` | `/host/archive` → read-only archive |
-| `.streamfind_debug` | Container home directory (last, debug only) |
+The example above exposes these roots:
 
-The *first user-mounted volume* (`projects` above) is the shinyFiles default root. The internal `.streamfind_debug` entry is always last and is not meant for regular user work — it exists as a fallback and for diagnostics.
+| shinyFiles label | Container path | Intended use |
+|---|---|---|
+| `projects` | `/host/projects` | StreamFind DuckDB projects and working files |
+| `instrument_data` | `/host/instrument_data` | Raw analytical data |
+| `archive` | `/host/archive` | Read-only reference/archive data |
+| `.streamfind_debug` | `/home/streamfind` | Internal fallback/debug only |
+
+The internal `.streamfind_debug` entry is always added last and is not intended for routine work. It exists only as a fallback and for diagnostics.
+
+Open the StreamFind app at:
+
+```text
+http://localhost:3838
+```
+
+Open code-server at:
+
+```text
+http://localhost:8080
+```
+
+code-server starts in the first detected host-mounted folder by default, so file inspection and development happen in the mounted workspace rather than in the container home directory.
 
 ### Custom mount roots
 
-By default the app scans `/host` for subdirectories. If you mount your data at different paths, set `STREAMFIND_HOST_ROOTS` to a colon-separated list of directories:
+By default, StreamFind scans `/host` for directly mounted subdirectories. Advanced deployments can scan other container paths by setting `STREAMFIND_HOST_ROOTS` to a colon-separated list.
 
 ```bash
 docker run -d --name streamfind \
-  -v /home/data:/workspace/my_data:rw \
-  -v /mnt/archive:/archive/prod:ro \
+  -v /path/to/projects:/workspace/projects:rw \
+  -v /path/to/archive:/archive/reference:ro \
   -e STREAMFIND_HOST_ROOTS="/workspace:/archive" \
   -p 3838:3838 \
+  -p 8080:8080 \
   streamfind
 ```
 
-The app scans each directory in order and creates a volume entry for every subdirectory found. The first detected subdirectory becomes the default root.
+StreamFind scans each configured root in order and exposes its direct subdirectories as file-browser volumes. If a configured root contains no subdirectories, the root itself is exposed as a volume. The first detected volume becomes the default shinyFiles root.
 
 ### Accessing network / SMB / CIFS drives
 
-Mount the share on the Docker host first, then bind-mount it into the container:
+Network drives must be mounted on the Docker host first and then bind-mounted into the container.
 
 Linux:
+
 ```bash
-sudo mount -t cifs //10.89.11.34/share /mnt/network/project_data \
+sudo mount -t cifs //server/share /mnt/network/project_data \
   -o username=youruser,password=yourpass,uid=$(id -u),gid=$(id -g)
+
 docker run -d --name streamfind \
-  -v /mnt/network/project_data:/host/network_data:rw ...
+  -v /mnt/network/project_data:/host/network_data:rw \
+  -p 3838:3838 \
+  -p 8080:8080 \
+  streamfind
 ```
 
-Windows: Map the drive (e.g. `Z:`), then pass it:
+Windows: map the share as a drive letter, for example `Z:`, and pass it to Docker:
+
 ```powershell
-docker run -d --name streamfind -v "Z:\:/host/network_data:rw" ...
+docker run -d --name streamfind `
+  -v "Z:\:/host/network_data:rw" `
+  -p 3838:3838 `
+  -p 8080:8080 `
+  streamfind
 ```
 
-Once mounted, the directory is automatically detected as a file-browser volume.
+Once mounted under `/host/<name>` or under a path listed in `STREAMFIND_HOST_ROOTS`, the directory is automatically detected as a file-browser volume.
 
 ### Useful commands
 
@@ -236,7 +272,7 @@ docker stop streamfind; docker rm streamfind
 |----------|---------|-------------|
 | `SSH_PASSWORD` | `streamfind` | SSH password for the `streamfind` user |
 | `CS_PASSWORD` | `streamfind` | code-server web UI password |
-| `STREAMFIND_WORKSPACE` | `/host` | code-server workspace root (first subfolder is the IDE start dir) |
+| `STREAMFIND_WORKSPACE` | `/host` | code-server workspace root; the first detected subfolder is the IDE start directory |
 | `STREAMFIND_HOST_ROOTS` | `/host` | Colon-separated list of directories to scan for user-mounted volumes |
 
 ## External dependencies
