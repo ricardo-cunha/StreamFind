@@ -195,19 +195,20 @@
       )
     })
 
+    vol_cfg <- .app_util_get_volumes()
     shinyFiles::shinyFileSave(
       input,
       "summary_plot_save",
-      roots = .app_util_get_volumes(),
-      defaultRoot = "wd",
+      roots = vol_cfg$volumes,
+      defaultRoot = vol_cfg$default_root,
       session = session
     )
 
     shinyFiles::shinyFileSave(
       input,
       "chrom_plot_save",
-      roots = .app_util_get_volumes(),
-      defaultRoot = "wd",
+      roots = vol_cfg$volumes,
+      defaultRoot = vol_cfg$default_root,
       session = session
     )
 

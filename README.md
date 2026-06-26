@@ -163,79 +163,84 @@ docker build -t streamfind .
 
 ### Run with host file access
 
-Mount host directories so the app can access your data files. The mount
-base name (the part after the last `/`) becomes the volume name shown in
-the file browser.
+Mount host directories under `/host/<name>`. The name you choose becomes
+the volume label in the shinyFiles browser. The first mounted volume is
+the default root.
 
 ``` bash
-# Mount from Windows (PowerShell)
-docker run -d --name streamfind `
-  -v "C:\Users\apoli:/mnt/streamfind-host/home:rw" `
-  -v "D:\:/mnt/streamfind-host/data:rw" `
-  -p 3838:3838 -p 8080:8080 -p 2222:22 `
-  -e SSH_PASSWORD=yourpassword -e CS_PASSWORD=yourpassword `
-  streamfind
-
-# Mount from Linux/macOS
+# Linux/macOS — user-chosen names
 docker run -d --name streamfind \
-  -v /home/user:/mnt/streamfind-host/home:rw \
-  -v /mnt/data:/mnt/streamfind-host/data:rw \
-  -p 3838:3838 -p 8080:8080 -p 2222:22 \
-  -e SSH_PASSWORD=yourpassword -e CS_PASSWORD=yourpassword \
+  -v /home/ricardo/projects:/host/projects:rw \
+  -v /mnt/instrument-data:/host/instrument_data:rw \
+  -v /mnt/archive:/host/archive:ro \
+  -p 3838:3838 \
+  -p 8080:8080 \
   streamfind
-```
 
-The volumes appear in the file browser as:
-
-| Volume name | Container path                              |
-|-------------|---------------------------------------------|
-| `wd`        | Working directory                           |
-| `home`      | `/mnt/streamfind-host/home` → host home     |
-| `data`      | `/mnt/streamfind-host/data` → external drive |
-
-### Legacy host mounts (Docker Desktop for Windows)
-
-If you prefer the `-v C:\Users\apoli:/host_home` syntax (without
-`/mnt/streamfind-host`), the app still detects these and shows them
-using their mount-point base name:
-
-``` bash
+# Windows (PowerShell) — user-chosen names
 docker run -d --name streamfind `
-  -v "C:\Users\apoli:/host_home:rw" `
-  -v "D:\:/host_d:rw" `
+  -v "C:\Users\apoli\projects:/host/projects:rw" `
+  -v "D:\data:/host/instrument_data:rw" `
   -p 3838:3838 -p 8080:8080 -p 2222:22 `
   -e SSH_PASSWORD=yourpassword -e CS_PASSWORD=yourpassword `
   streamfind
 ```
 
-Volumes appear as `host_home` and `host_d` in the file browser.
+Volumes appear in the file browser as:
+
+| Volume name           | Path                                              |
+|-----------------------|---------------------------------------------------|
+| `projects` (default)  | `/host/projects` → host home                      |
+| `instrument_data`     | `/host/instrument_data` → external drive          |
+| `archive`             | `/host/archive` → read-only archive               |
+| `.streamfind_debug`   | Container home directory (last, debug only)       |
+
+The *first user-mounted volume* (`projects` above) is the shinyFiles
+default root. The internal `.streamfind_debug` entry is always last and
+is not meant for regular user work — it exists as a fallback and for
+diagnostics.
+
+### Custom mount roots
+
+By default the app scans `/host` for subdirectories. If you mount your
+data at different paths, set `STREAMFIND_HOST_ROOTS` to a
+colon-separated list of directories:
+
+``` bash
+docker run -d --name streamfind \
+  -v /home/data:/workspace/my_data:rw \
+  -v /mnt/archive:/archive/prod:ro \
+  -e STREAMFIND_HOST_ROOTS="/workspace:/archive" \
+  -p 3838:3838 \
+  streamfind
+```
+
+The app scans each directory in order and creates a volume entry for
+every subdirectory found. The first detected subdirectory becomes the
+default root.
 
 ### Accessing network / SMB / CIFS drives
 
-To access a network share (e.g. `\\10.89.11.34\share`):
-
-**On the Docker host (not inside the container), mount the share
-first:**
+Mount the share on the Docker host first, then bind-mount it into the
+container:
 
 Linux:
 
 ``` bash
 sudo mount -t cifs //10.89.11.34/share /mnt/network/project_data \
   -o username=youruser,password=yourpass,uid=$(id -u),gid=$(id -g)
+docker run -d --name streamfind \
+  -v /mnt/network/project_data:/host/network_data:rw ...
 ```
 
-Windows: Map the drive as a drive letter (e.g. `Z:`), then pass it to
-Docker:
+Windows: Map the drive (e.g. `Z:`), then pass it:
 
 ``` powershell
-docker run -d --name streamfind -v "Z:\:/mnt/streamfind-host/network_data:rw" ...
+docker run -d --name streamfind -v "Z:\:/host/network_data:rw" ...
 ```
 
-Or mount it on a Linux VM and mount that path into the container.
-
-Once mounted, the directory appears under `/mnt/streamfind-host/` (or
-`/host_*` on legacy mounts) and is automatically detected by the app's
-file-browser volume list.
+Once mounted, the directory is automatically detected as a file-browser
+volume.
 
 ### Useful commands
 
@@ -257,8 +262,10 @@ docker stop streamfind; docker rm streamfind
 
 | Variable       | Default      | Description                     |
 |----------------|--------------|---------------------------------|
-| `SSH_PASSWORD` | `streamfind` | SSH password for streamfind     |
-| `CS_PASSWORD`  | `streamfind` | code-server web UI password     |
+| `SSH_PASSWORD`         | `streamfind`                 | SSH password for streamfind                  |
+| `CS_PASSWORD`          | `streamfind`                 | code-server web UI password                  |
+| `STREAMFIND_WORKSPACE` | `/host`                      | code-server workspace root (first subfolder is the IDE start dir) |
+| `STREAMFIND_HOST_ROOTS` | `/host`                     | Colon-separated list of directories to scan for user-mounted volumes |
 
 ## External dependencies
 

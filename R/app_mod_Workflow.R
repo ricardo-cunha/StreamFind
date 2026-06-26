@@ -261,7 +261,7 @@
           input,
           "save_workflow",
           roots = reactive_volumes(),
-          defaultRoot = "wd",
+          defaultRoot = names(reactive_volumes())[1],
           session = session
         )
 
@@ -526,11 +526,12 @@
             shiny::tags$span(shiny::HTML(output))
           }
 
+          default_root <- names(reactive_volumes())[1]
           shinyFiles::shinyFileChoose(
             input,
             pram_load_name,
             roots = reactive_volumes(),
-            defaultRoot = "wd",
+            defaultRoot = default_root,
             session = session,
             filetypes = list(csv = "csv")
           )
@@ -539,7 +540,7 @@
             input,
             pram_save_name,
             roots = reactive_volumes(),
-            defaultRoot = "wd",
+            defaultRoot = default_root,
             session = session
           )
 
@@ -892,11 +893,12 @@
       )
     })
 
+    vol_cfg <- .app_util_get_volumes()
     shinyFiles::shinyFileChoose(
       input,
       "load_workflow",
-      roots = .app_util_get_volumes(),
-      defaultRoot = "wd",
+      roots = vol_cfg$volumes,
+      defaultRoot = vol_cfg$default_root,
       session = session,
       filetypes = list(json = "json", rds = "rds")
     )

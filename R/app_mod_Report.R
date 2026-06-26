@@ -95,11 +95,12 @@
       file.path(path_dir, path_name)
     }
 
+    vol_cfg <- .app_util_get_volumes()
     shinyFiles::shinyFileChoose(
       input,
       "select_qmd_file",
-      roots = .app_util_get_volumes(),
-      defaultRoot = "wd",
+      roots = vol_cfg$volumes,
+      defaultRoot = vol_cfg$default_root,
       session = session,
       filetypes = "qmd"
     )
@@ -107,16 +108,16 @@
     shinyFiles::shinyFileSave(
       input,
       "select_output_file",
-      roots = .app_util_get_volumes(),
-      defaultRoot = "wd",
+      roots = vol_cfg$volumes,
+      defaultRoot = vol_cfg$default_root,
       session = session
     )
 
     shinyFiles::shinyDirChoose(
       input,
       "select_execute_dir",
-      roots = .app_util_get_volumes(),
-      defaultRoot = "wd",
+      roots = vol_cfg$volumes,
+      defaultRoot = vol_cfg$default_root,
       session = session
     )
 

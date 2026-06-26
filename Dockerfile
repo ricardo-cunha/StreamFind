@@ -5,6 +5,7 @@ ENV S6_VERSION="v2.1.0.2"
 ENV STREAMFIND_USER=streamfind
 ENV SSH_PASSWORD=streamfind
 ENV CS_PASSWORD=streamfind
+ENV STREAMFIND_HOST_ROOTS=/host
 
 # ── System dependencies ──────────────────────────────────────────────────────
 # StreamFind needs C++17, OpenMP, zlib, and Python for its vendored
@@ -91,7 +92,10 @@ RUN set -ex \
     && echo 'exec su - streamfind -c "R -e '\''Sys.setenv(BABEL_DATADIR=\"/usr/local/lib/R/site-library/StreamFind/openbabel-3-2-0/data\"); library(StreamFind); run_app(options = list(port = 3838, host = \"0.0.0.0\"))'\''"' >> /etc/services.d/shiny/run \
     && echo '#!/usr/bin/with-contenv bash' > /etc/services.d/code-server/run \
     && echo 'export PASSWORD="${CS_PASSWORD:-streamfind}"' >> /etc/services.d/code-server/run \
-    && echo "exec su - streamfind -c 'code-server --bind-addr 0.0.0.0:8080 --auth password'" >> /etc/services.d/code-server/run \
+    && echo 'SF_WORKSPACE="${STREAMFIND_WORKSPACE:-/host}"' >> /etc/services.d/code-server/run \
+    && echo 'first_mount="$(find "$SF_WORKSPACE" -mindepth 1 -maxdepth 1 -type d 2>/dev/null | head -n 1)"' >> /etc/services.d/code-server/run \
+    && echo 'if [ -z "$first_mount" ]; then first_mount="/home/$STREAMFIND_USER"; fi' >> /etc/services.d/code-server/run \
+    && echo 'exec su - streamfind -c "code-server \"$first_mount\" --bind-addr 0.0.0.0:8080 --auth password"' >> /etc/services.d/code-server/run \
     && echo '#!/usr/bin/with-contenv bash' > /etc/services.d/ssh/run \
     && echo 'exec /usr/sbin/sshd -D' >> /etc/services.d/ssh/run \
     && echo '#!/usr/bin/with-contenv bash' > /etc/cont-init.d/01_setup_streamfind \
@@ -99,8 +103,8 @@ RUN set -ex \
     && echo 'SF_HOME="/home/$SF_USER/.streamfind"' >> /etc/cont-init.d/01_setup_streamfind \
     && echo 'mkdir -p "$SF_HOME/external"' >> /etc/cont-init.d/01_setup_streamfind \
     && echo 'chown -R "$SF_USER" "$SF_HOME"' >> /etc/cont-init.d/01_setup_streamfind \
-    && echo 'mkdir -p /mnt/streamfind-host' >> /etc/cont-init.d/01_setup_streamfind \
-    && echo 'chown "$SF_USER":"$SF_USER" /mnt/streamfind-host' >> /etc/cont-init.d/01_setup_streamfind \
+    && echo 'mkdir -p /host' >> /etc/cont-init.d/01_setup_streamfind \
+    && echo 'chown "$SF_USER":"$SF_USER" /host' >> /etc/cont-init.d/01_setup_streamfind \
     && echo 'if [ ! -f /etc/ssh/ssh_host_rsa_key ]; then' >> /etc/cont-init.d/01_setup_streamfind \
     && echo '    ssh-keygen -A' >> /etc/cont-init.d/01_setup_streamfind \
     && echo 'fi' >> /etc/cont-init.d/01_setup_streamfind \

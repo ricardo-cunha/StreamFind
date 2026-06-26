@@ -25,9 +25,9 @@ app_server <- function(input, output, session) {
 
   # Refresh volumes (re-reads host mounts for container environments)
   refresh_volumes <- function() {
-    vols <- .app_util_get_volumes()
-    reactive_volumes(vols)
-    vols
+    vol_cfg <- .app_util_get_volumes()
+    reactive_volumes(vol_cfg$volumes)
+    vol_cfg
   }
 
   # Dependency diagnostics at startup
@@ -76,7 +76,9 @@ app_server <- function(input, output, session) {
     .debug_log(.debug_log_data)
   }
 
-  volumes <- .app_util_get_volumes()
+  volume_config <- .app_util_get_volumes()
+  volumes <- volume_config$volumes
+  default_root <- volume_config$default_root
 
   reactive_project_class <- shiny::reactiveVal(NA_character_)
   reactive_project_db <- shiny::reactiveVal(NA_character_)
@@ -263,14 +265,14 @@ app_server <- function(input, output, session) {
   shinyFiles::shinyFileSave(
     input, "create_project_db",
     roots = volumes,
-    defaultRoot = "wd",
+    defaultRoot = default_root,
     session = session,
     filetypes = list(duckdb = "duckdb")
   )
   shinyFiles::shinyFileChoose(
     input, "open_project_db",
     roots = volumes,
-    defaultRoot = "wd",
+    defaultRoot = default_root,
     session = session,
     filetypes = "duckdb"
   )

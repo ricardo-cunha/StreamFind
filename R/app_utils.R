@@ -14,32 +14,31 @@
 
 # MARK: Volumes for shinyFiles
 #' @noRd
-.app_util_get_volumes <- function() {
-  home_dir <- Sys.getenv("USERPROFILE", unset = Sys.getenv("HOME", unset = "~"))
-  volumes <- c(
-    "wd" = normalizePath(getwd(), winslash = "/", mustWork = FALSE),
-    "Home" = normalizePath(home_dir, winslash = "/", mustWork = FALSE)
-  )
+.app_util_get_volumes <- function(include_internal = TRUE) {
+  host_roots_env <- Sys.getenv("STREAMFIND_HOST_ROOTS", unset = "/host")
+  host_roots <- strsplit(host_roots_env, ":", fixed = TRUE)[[1]]
+  host_roots <- trimws(host_roots)
+  host_roots <- host_roots[nzchar(host_roots)]
 
-  # Standard mount root for Docker host bind mounts
-  standard_host_root <- "/mnt/streamfind-host"
-  if (dir.exists(standard_host_root)) {
-    mounted <- list.files(standard_host_root, full.names = TRUE, recursive = FALSE, no.. = TRUE)
+  volumes <- character()
+
+  for (root in host_roots) {
+    if (!dir.exists(root)) next
+
+    root <- gsub("^/{2,}", "/", normalizePath(root, winslash = "/", mustWork = FALSE))
+
+    mounted <- list.files(root, full.names = TRUE, recursive = FALSE, no.. = TRUE)
     mounted <- mounted[dir.exists(mounted)]
-    if (length(mounted) > 0) {
-      names(mounted) <- paste("Host", basename(mounted))
-      mounted <- normalizePath(mounted, winslash = "/", mustWork = FALSE)
-      volumes <- c(volumes, mounted)
-    }
-  }
 
-  # Legacy /host_* mounts (Docker Desktop for Windows)
-  legacy_host_dirs <- list.files("/", pattern = "^host_", full.names = TRUE)
-  legacy_host_dirs <- legacy_host_dirs[dir.exists(legacy_host_dirs)]
-  if (length(legacy_host_dirs) > 0) {
-    names(legacy_host_dirs) <- basename(legacy_host_dirs)
-    legacy_host_dirs <- gsub("^/{2,}", "/", legacy_host_dirs)
-    volumes <- c(volumes, legacy_host_dirs)
+    if (length(mounted) > 0) {
+      names(mounted) <- basename(mounted)
+      volumes <- c(volumes, mounted)
+    } else {
+      # Root itself is the mount target — add it directly
+      root_name <- basename(root)
+      if (!nzchar(root_name)) root_name <- "root"
+      volumes <- c(volumes, structure(root, names = root_name))
+    }
   }
 
   # Windows drive letters
@@ -52,25 +51,22 @@
     drives <- paste0(drives, ":")
     names(drives) <- drives
     volumes <- c(volumes, drives)
-  } else if (length(volumes) == 1) {
-    # Fallback for Linux without any host mounts
-    media_dirs <- list.files("/media", full.names = TRUE)
-    names(media_dirs) <- basename(media_dirs)
-    if (length(media_dirs) == 0) {
-      media_dirs <- list.files("/mnt", full.names = TRUE)
-      names(media_dirs) <- basename(media_dirs)
-    }
-    volumes <- c(volumes, media_dirs)
   }
 
-  # Sanitize: remove any NA paths and normalize double slashes
   volumes <- volumes[!is.na(volumes) & nzchar(volumes)]
-  volumes <- gsub("^/{2,}", "/", volumes)
-  # Add "wd" alias pointing to first volume for backward compatibility
-  if (length(volumes) > 0 && !"wd" %in% names(volumes)) {
-    volumes <- c("wd" = unname(volumes[1]), volumes)
+  volumes <- volumes[!duplicated(volumes)]
+
+  if (include_internal) {
+    internal <- normalizePath("~", winslash = "/", mustWork = FALSE)
+    volumes <- c(volumes, ".streamfind_debug" = internal)
   }
-  volumes
+
+  default_root <- if (length(volumes) > 0) names(volumes)[1] else ".streamfind_debug"
+
+  list(
+    volumes = volumes,
+    default_root = default_root
+  )
 }
 
 #' @noRd
@@ -363,11 +359,12 @@
       reactive_show_init_modal(FALSE)
       project_db_var <- paste0(time_var, "_select_ProjectDB")
       project_id_var <- paste0(time_var, "_project_id")
+      initial_default <- if (length(volumes) > 0) names(volumes)[1] else "wd"
       shinyFiles::shinyFileSave(
         input,
         project_db_var,
         roots = volumes,
-        defaultRoot = "wd",
+        defaultRoot = initial_default,
         session = session,
         filetypes = list(duckdb = "duckdb")
       )

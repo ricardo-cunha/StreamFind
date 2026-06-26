@@ -28,19 +28,20 @@
     project_details <- projects_overview(class(analyses_obj)[1])
 
     # Register shinyFileChoose once (must be outside renderUI) -----
+    vol_cfg <- .app_util_get_volumes()
     shinyFiles::shinyFileChoose(
       input,
       "add_analyses_button",
-      roots = .app_util_get_volumes(),
-      defaultRoot = "wd",
+      roots = vol_cfg$volumes,
+      defaultRoot = vol_cfg$default_root,
       session = session,
       filetypes = project_details$formats
     )
     shinyFiles::shinyFileChoose(
       input,
       "upload_analyses_info",
-      roots = .app_util_get_volumes(),
-      defaultRoot = "wd",
+      roots = vol_cfg$volumes,
+      defaultRoot = vol_cfg$default_root,
       session = session,
       filetypes = "csv"
     )
