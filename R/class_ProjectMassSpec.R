@@ -70,6 +70,7 @@ ProjectMassSpec <- R6::R6Class(
       .mass_spec_ptr <- mass_spec_ptr_res$value
       .assert_only_internal_init_args(mass_spec_ptr_res$dots, "ProjectMassSpec$initialize()")
       super$initialize(db = db, project_id = project_id, .ptr = .ptr)
+      .sf_log("ProjectMassSpec", "Opening MassSpec project")
       private$.mass_spec_ptr <- if (is.null(.mass_spec_ptr)) {
         rcpp_project_mass_spec_new(self$get_ptr(), file_paths, replicates, blanks)
       } else {
@@ -709,6 +710,7 @@ add_analyses.ProjectMassSpec <- function(x, file_paths = character(), replicates
   checkmate::assert_character(file_paths, min.len = 1, any.missing = FALSE)
   checkmate::assert_character(replicates, any.missing = FALSE)
   checkmate::assert_character(blanks, any.missing = FALSE)
+  .sf_log("ProjectMassSpec", "Adding analyses", paste(length(file_paths), "files"))
   rcpp_project_mass_spec_import_files(x$get_mass_spec_ptr(), file_paths, replicates, blanks)
   invisible(x)
 }
@@ -720,6 +722,7 @@ remove_analyses.ProjectMassSpec <- function(x, analyses = character()) {
   checkmate::assert_class(x, "ProjectMassSpec")
   analyses_info <- data.table::as.data.table(get_analyses.ProjectMassSpec(x))
   sel_names <- .resolve_analyses_selection(analyses, analyses_info$analysis)
+  .sf_log("ProjectMassSpec", "Removing analyses", paste(length(sel_names), "analyses"))
   for (analysis in sel_names) {
     rcpp_project_mass_spec_remove_analysis(x$get_mass_spec_ptr(), analysis)
   }
@@ -748,6 +751,7 @@ get_replicate_names.ProjectMassSpec <- function(x) {
 set_replicate_names.ProjectMassSpec <- function(x, value) {
   checkmate::assert_class(x, "ProjectMassSpec")
   checkmate::assert_character(value, any.missing = FALSE)
+  .sf_log("ProjectMassSpec", "Updating replicate names")
   rcpp_project_mass_spec_set_replicate_names(x$get_mass_spec_ptr(), value)
   invisible(x)
 }
@@ -766,6 +770,7 @@ get_blank_names.ProjectMassSpec <- function(x) {
 set_blank_names.ProjectMassSpec <- function(x, value) {
   checkmate::assert_class(x, "ProjectMassSpec")
   checkmate::assert_character(value, any.missing = FALSE)
+  .sf_log("ProjectMassSpec", "Updating blank names")
   rcpp_project_mass_spec_set_blank_names(x$get_mass_spec_ptr(), value)
   invisible(x)
 }
@@ -784,6 +789,7 @@ get_concentrations.ProjectMassSpec <- function(x) {
 set_concentrations.ProjectMassSpec <- function(x, value) {
   checkmate::assert_class(x, "ProjectMassSpec")
   if (!is.numeric(value)) stop("value must be numeric.")
+  .sf_log("ProjectMassSpec", "Updating concentrations")
   rcpp_project_mass_spec_set_concentrations(x$get_mass_spec_ptr(), value)
   invisible(x)
 }

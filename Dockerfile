@@ -6,6 +6,7 @@ ENV STREAMFIND_USER=streamfind
 ENV SSH_PASSWORD=streamfind
 ENV CS_PASSWORD=streamfind
 ENV STREAMFIND_HOST_ROOTS=/host
+ENV STREAMFIND_DEBUG_MODE=false
 
 # ── System dependencies ──────────────────────────────────────────────────────
 # StreamFind needs C++17, OpenMP, zlib, and Python for its vendored

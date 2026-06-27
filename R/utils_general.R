@@ -1,6 +1,25 @@
 # MARK: General utility functions
 # General utility functions -----
 
+# MARK: .sf_log
+#' @noRd
+.sf_log <- function(class = "Project", action, detail = NULL) {
+  checkmate::assert_character(class, len = 1, any.missing = FALSE)
+  checkmate::assert_character(action, len = 1, any.missing = FALSE)
+
+  msg <- paste0("[", class, "] ", action)
+
+  if (!is.null(detail)) {
+    detail <- paste(as.character(detail), collapse = " ")
+    if (nzchar(detail)) {
+      msg <- paste(msg, detail)
+    }
+  }
+
+  message(msg)
+  invisible(msg)
+}
+
 # MARK: .resolve_analyses_selection
 #' @title .resolve_analyses_selection
 #' @description Utility to resolve analyses selection by name or index, returning only valid matches.

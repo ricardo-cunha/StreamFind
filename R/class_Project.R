@@ -37,7 +37,10 @@ Project <- R6::R6Class(
       checkmate::assert_character(project_id, len = 1)
       private$.db <- db
       private$.project_id <- project_id
+      .sf_log("Project", "Opening DuckDB", db)
+      .sf_log("Project", "Using project id", project_id)
       private$.ptr <- if (is.null(.ptr)) rcpp_project_new(db, project_id) else .ptr
+      .sf_log("Project", "Project handle ready")
     },
     #' @description Return the native project pointer.
     get_ptr = function() {
@@ -193,6 +196,7 @@ get_project_id.Project <- function(x) {
 #' @export
 validate.Project <- function(x) {
   checkmate::assert_class(x, "Project")
+  .sf_log("Project", "Validating project schema")
   rcpp_project_validate(x$get_ptr())
   invisible(x)
 }
@@ -203,6 +207,7 @@ validate.Project <- function(x) {
 #' @export
 close.Project <- function(con, ...) {
   checkmate::assert_class(con, "Project")
+  .sf_log("Project", "Closing DuckDB")
   rcpp_project_close(con$get_ptr())
   invisible(con)
 }
@@ -221,6 +226,7 @@ get_metadata.Project <- function(x) {
 #' @export
 set_metadata.Project <- function(x, value) {
   checkmate::assert_class(x, "Project")
+  .sf_log("Project", "Updating project metadata")
   metadata_json <- if (is.null(value)) {
     "null"
   } else if (is.character(value) && length(value) == 1L) {
@@ -263,6 +269,7 @@ get_workflow.Project <- function(x) {
 #' @export
 set_workflow.Project <- function(x, value) {
   checkmate::assert_class(x, "Project")
+  .sf_log("Project", "Updating project workflow")
   workflow_json <- if (is.null(value)) {
     "null"
   } else if (is.character(value) && length(value) == 1L) {
@@ -308,6 +315,11 @@ delete_cache.Project <- function(x, name = NULL) {
   if (!is.null(name)) {
     checkmate::assert_character(name, len = 1, any.missing = FALSE)
   }
+  if (is.null(name)) {
+    .sf_log("Project", "Clearing project cache")
+  } else {
+    .sf_log("Project", "Clearing cache", name)
+  }
   rcpp_project_delete_cache(x$get_ptr(), name)
   invisible(x)
 }
@@ -349,8 +361,7 @@ run_method.Project <- function(x, step) {
       class(x)[1]
     ))
   }
-  cat("\u2699 Running ", step_name, "\n", sep = "")
-  flush.console()
+  .sf_log("Run", "Applying method", step_name)
   run_method <- NULL
   for (cls in class(step)) {
     run_method <- utils::getS3method("run", cls, optional = TRUE)
@@ -400,6 +411,7 @@ run_workflow.Project <- function(x, workflow = NULL) {
     warning("There are no workflow methods to run!")
     return(invisible(x))
   }
+  .sf_log("Run", "Running workflow")
   set_workflow.Project(x, workflow)
   for (i in seq_along(workflow)) {
     run_method.Project(x, workflow[[i]])
@@ -522,6 +534,7 @@ run_app.Project <- function(x) {
 #' @export
 copy.Project <- function(x, db = x$get_db(), project_id = x$get_project_id()) {
   checkmate::assert_class(x, "Project")
+  .sf_log("Project", "Copying project", paste(x$get_project_id(), "to", project_id))
   copied_ptr <- rcpp_project_copy(x$get_ptr(), db, project_id)
   Project$new(db, project_id, .ptr = copied_ptr)
 }

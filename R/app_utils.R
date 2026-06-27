@@ -654,3 +654,48 @@
     `);
   "))
 }
+
+# MARK: Dependency check
+#' @noRd
+.app_util_dependency_check <- function() {
+  message("")
+  .sf_log("Debug", "=== Dependency Check ===")
+  .sf_log("Debug", paste("R version:", R.version.string))
+  .sf_log("Debug", paste("Platform:", R.version$platform))
+  .sf_log("Debug", paste("StreamFind version:", as.character(utils::packageVersion("StreamFind"))))
+  ob_ok <- tryCatch({
+    info <- rcpp_openbabel_debug_runtime()
+    for (line in strsplit(info, "\n")[[1]]) {
+      if (nzchar(line)) .sf_log("Debug", line)
+    }
+    TRUE
+  }, error = function(e) {
+    .sf_log("Debug", paste("OpenBabel ERROR:", conditionMessage(e)))
+    FALSE
+  })
+  if (ob_ok) {
+    svg_result <- tryCatch({
+      svg <- rcpp_openbabel_structure_svg(SMILES = "CCO", width = 100L, height = 100L, darkMode = FALSE)
+      if (is.character(svg) && nzchar(svg) && grepl("<svg", svg, fixed = TRUE)) "OK" else "FAIL (empty/invalid)"
+    }, error = function(e) paste("ERROR:", conditionMessage(e)))
+    .sf_log("Debug", "OpenBabel test SVG", svg_result)
+  }
+  java_ver <- tryCatch({
+    system2("java", "-version", stdout = TRUE, stderr = TRUE)[1]
+  }, error = function(e) "NOT FOUND")
+  .sf_log("Debug", "Java", java_ver)
+  .sf_log("Debug", "rJava available", requireNamespace("rJava", quietly = TRUE))
+  .sf_log("Debug", "rcdk available", requireNamespace("rcdk", quietly = TRUE))
+  metfrag_jar <- file.path(.ext_dir(), "metfrag", "MetFragCL.jar")
+  .sf_log("Debug", "MetFrag jar", if (file.exists(metfrag_jar)) metfrag_jar else "NOT FOUND")
+  duckdb_ver <- tryCatch({
+    con <- DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
+    ver <- DBI::dbGetQuery(con, "SELECT version()")[1, 1]
+    DBI::dbDisconnect(con, shutdown = TRUE)
+    ver
+  }, error = function(e) paste("ERROR:", conditionMessage(e)))
+  .sf_log("Debug", "DuckDB", duckdb_ver)
+  .sf_log("Debug", "=== End Dependency Check ===")
+  message("")
+  invisible(NULL)
+}

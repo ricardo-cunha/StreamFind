@@ -30,46 +30,10 @@ app_server <- function(input, output, session) {
     vol_cfg
   }
 
-  # Dependency diagnostics at startup
-  log_debug("=== Dependency Check ===")
-  log_debug("R version: ", R.version.string)
-  log_debug("Platform: ", R.version$platform)
-  log_debug("StreamFind version: ", as.character(utils::packageVersion("StreamFind")))
-  ob_ok <- tryCatch({
-    info <- rcpp_openbabel_debug_runtime()
-    log_debug("OpenBabel: ", info)
-    TRUE
-  }, error = function(e) {
-    log_debug("OpenBabel: ERROR - ", conditionMessage(e))
-    FALSE
-  })
-  if (ob_ok) {
-    log_debug("OpenBabel test SVG: ",
-      tryCatch({
-        svg <- rcpp_openbabel_structure_svg(SMILES = "CCO", width = 100L, height = 100L, darkMode = FALSE)
-        if (is.character(svg) && nzchar(svg) && grepl("<svg", svg, fixed = TRUE)) "OK" else "FAIL (empty/invalid)"
-      }, error = function(e) paste("ERROR:", conditionMessage(e)))
-    )
+  # Debug mode (opt-in via STREAMFIND_DEBUG_MODE=true)
+  if (identical(Sys.getenv("STREAMFIND_DEBUG_MODE"), "true")) {
+    .app_util_dependency_check()
   }
-  log_debug("Java: ",
-    tryCatch({
-      ver <- system("java -version 2>&1", intern = TRUE)[1]
-      ver
-    }, error = function(e) "NOT FOUND")
-  )
-  log_debug("rJava available: ", requireNamespace("rJava", quietly = TRUE))
-  log_debug("rcdk available: ", requireNamespace("rcdk", quietly = TRUE))
-  metfrag_jar <- file.path(Sys.getenv("HOME", "/home/streamfind"), ".streamfind", "external", "metfrag", "MetFragCL.jar")
-  log_debug("MetFrag jar: ", if (file.exists(metfrag_jar)) metfrag_jar else "NOT FOUND")
-  log_debug("DuckDB: ",
-    tryCatch({
-      con <- DBI::dbConnect(duckdb::duckdb(), dbdir = ":memory:")
-      ver <- DBI::dbGetQuery(con, "SELECT version()")[1, 1]
-      DBI::dbDisconnect(con, shutdown = TRUE)
-      ver
-    }, error = function(e) paste("ERROR:", conditionMessage(e)))
-  )
-  log_debug("=== End Dependency Check ===")
 
   # Flush any startup log entries that were buffered before shiny was running
   if (length(.debug_log_data) > 0) {
@@ -615,40 +579,52 @@ app_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   shiny::observeEvent(input$open_project_db, {
-    log_debug("shinyFiles: input$open_project_db triggered")
-    volumes <- reactive_volumes()
-    log_debug("shinyFiles: volumes = ", paste(names(volumes), volumes, sep = "=", collapse = "; "))
+    if (identical(Sys.getenv("STREAMFIND_DEBUG_MODE"), "true")) {
+      .sf_log("Debug", "shinyFiles: input$open_project_db triggered")
+      .sf_log("Debug", paste("shinyFiles: volumes =", paste(names(shiny::isolate(reactive_volumes())), shiny::isolate(reactive_volumes()), sep = "=", collapse = "; ")))
+      .sf_log("Debug", paste("shinyFiles: raw input class =", paste(class(input$open_project_db), collapse = ", ")))
+    }
     raw_input <- input$open_project_db
-    log_debug("shinyFiles: raw input class = ", paste(class(raw_input), collapse = ", "))
-    log_debug("shinyFiles: raw input = ", paste(capture.output(str(raw_input, max.level = 2)), collapse = "\n"))
-    fileinfo <- shinyFiles::parseFilePaths(volumes, raw_input)
-    log_debug("shinyFiles: parseFilePaths output nrow = ", nrow(fileinfo))
+    fileinfo <- shinyFiles::parseFilePaths(reactive_volumes(), raw_input)
+    if (identical(Sys.getenv("STREAMFIND_DEBUG_MODE"), "true")) {
+      .sf_log("Debug", paste("shinyFiles: parseFilePaths output nrow =", nrow(fileinfo)))
+    }
     if (nrow(fileinfo) > 0) {
-      log_debug("shinyFiles: datapath = ", fileinfo$datapath[1])
-      log_debug("shinyFiles: name = ", fileinfo$name[1])
-      log_debug("shinyFiles: filesystem path exists? ", file.exists(fileinfo$datapath[1]))
+      if (identical(Sys.getenv("STREAMFIND_DEBUG_MODE"), "true")) {
+        .sf_log("Debug", paste("shinyFiles: datapath =", fileinfo$datapath[1]))
+        .sf_log("Debug", paste("shinyFiles: name =", fileinfo$name[1]))
+        .sf_log("Debug", paste("shinyFiles: filesystem path exists?", file.exists(fileinfo$datapath[1])))
+      }
     }
     if (nrow(fileinfo) == 0) {
-      log_debug("shinyFiles: no file selected, returning")
+      if (identical(Sys.getenv("STREAMFIND_DEBUG_MODE"), "true")) {
+        .sf_log("Debug", "shinyFiles: no file selected, returning")
+      }
       return()
     }
     db_path <- fileinfo$datapath[1]
     if (!is_duckdb_path(db_path)) {
-      log_debug("shinyFiles: not a duckdb path: ", db_path)
+      if (identical(Sys.getenv("STREAMFIND_DEBUG_MODE"), "true")) {
+        .sf_log("Debug", paste("shinyFiles: not a duckdb path:", db_path))
+      }
       reactive_open_db(NA_character_)
       reactive_open_resolution(structure(list(message = "Please select a file with the .duckdb extension."), class = "app_project_resolution_error"))
       reactive_open_project_id(NA_character_)
       return()
     }
-    log_debug("shinyFiles: resolving project db: ", db_path)
+    if (identical(Sys.getenv("STREAMFIND_DEBUG_MODE"), "true")) {
+      .sf_log("Debug", paste("shinyFiles: resolving project db:", db_path))
+    }
     reactive_open_db(db_path)
     resolution <- tryCatch(
       .app_util_resolve_project_db(db_path, registry = project_registry),
       error = function(e) structure(list(message = conditionMessage(e)), class = "app_project_resolution_error")
     )
-    log_debug("shinyFiles: resolution class = ", if (inherits(resolution, "app_project_resolution_error")) "ERROR" else "OK")
-    if (!inherits(resolution, "app_project_resolution_error")) {
-      log_debug("shinyFiles: rows found = ", nrow(resolution$rows))
+    if (identical(Sys.getenv("STREAMFIND_DEBUG_MODE"), "true")) {
+      .sf_log("Debug", paste("shinyFiles: resolution class =", if (inherits(resolution, "app_project_resolution_error")) "ERROR" else "OK"))
+      if (!inherits(resolution, "app_project_resolution_error")) {
+        .sf_log("Debug", paste("shinyFiles: rows found =", nrow(resolution$rows)))
+      }
     }
     reactive_open_resolution(resolution)
     if (!inherits(resolution, "app_project_resolution_error") && !is.null(resolution) && nrow(resolution$rows) > 0) {
