@@ -78,7 +78,7 @@ RUN R -e 'install.packages("remotes")' && \
 RUN R CMD INSTALL . --preclean --no-test-load
 
 # ── StreamFindData (example data) from GitHub ────────────────────────────────
-RUN R -e "pak::pkg_install('odea-project/StreamFindData', upgrade = FALSE)"
+RUN R -e "pak::pkg_install('ricardo-cunha/StreamFindData', upgrade = FALSE)"
 
 # ── Bundle external tools (MetFrag) ─────────────────────────────────────────
 RUN mkdir -p /home/$STREAMFIND_USER/.streamfind/external/metfrag && \
