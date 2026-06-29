@@ -1001,7 +1001,7 @@ MetFragParams canonicalize_and_validate_params(const MetFragParams &params)
     }
   }
   if (std::find(out.candidate_writer.begin(), out.candidate_writer.end(), "FragmentSmilesPSV") == out.candidate_writer.end())
-    throw std::invalid_argument("MetFrag candidate_writer must include 'FragmentSmilesPSV' for StreamFind result parsing.");
+    throw std::invalid_argument("MetFrag candidate_writer must include 'FragmentSmilesPSV' for streamfind result parsing.");
   if (out.maximum_tree_depth < 1)
     throw std::invalid_argument("MetFrag maximum_tree_depth must be at least 1.");
   if (out.number_threads < 1)

@@ -1,7 +1,7 @@
 #' Database-Backed Audit Logging (S3 class)
 #'
-#' Provides a DB-backed audit trail interface for StreamFind projects: logs create/update/delete/run events automatically,
-#' allows querying of all audit logs, and is intended for use by Engine or other StreamFind components.
+#' Provides a DB-backed audit trail interface for streamfind projects: logs create/update/delete/run events automatically,
+#' allows querying of all audit logs, and is intended for use by Engine or other streamfind components.
 #'
 #' The `AuditTrail` class is an S3 object responsible for ensuring its own table schema and handling all persistence in the unified DuckDB file for this project.
 #' All typical list and data-frame operations are returned for queries. This is the standard audit logging interface for the package.

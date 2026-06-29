@@ -1,6 +1,6 @@
 ---
 title: "SF2025_01 - Report Peak Finding Merck (Milestone 1, part 2/2)"
-subtitle: "C++ Implementation and Integration in StreamFind"
+subtitle: "C++ Implementation and Integration in streamfind"
 author: "Ricardo Cunha"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 toc: true
@@ -12,8 +12,8 @@ format:
       margin-width: 300px
       gutter-width: 1.5rem
     other-links:
-      - text: StreamFind
-        href: https://odea-project.github.io/StreamFind/
+      - text: streamfind
+        href: https://odea-project.github.io/streamfind/
         icon: github
     html-math-method: katex
     theme: journal
@@ -62,11 +62,11 @@ library(DT)
 library(magrittr)
 library(ggplot2)
 library(plotly)
-library(StreamFind)
+library(streamfind)
 
 devtools::load_all()
 
-source(file.path("C:\\Users\\apoli\\Documents\\github\\StreamFind\\dev\\merck_peak_finding\\dev_resources.R"))
+source(file.path("C:\\Users\\apoli\\Documents\\github\\streamfind\\dev\\merck_peak_finding\\dev_resources.R"))
 
 examples <- unique(merck2_files_ex$example)
 ```
@@ -126,7 +126,7 @@ run_peak_finding_debug_targets <- function(example_name) {
     ms$Workflow = list(ps_ff)
     ms$run_workflow()
   }
-  log_path <- "C:\\Users\\apoli\\Documents\\github\\StreamFind\\log"
+  log_path <- "C:\\Users\\apoli\\Documents\\github\\streamfind\\log"
   log_files <- list.files(log_path, pattern = "peak_detection", full.names = TRUE)
   folder_ex1 <- file.path(log_path, paste0("example_", example_name))
   if (!dir.exists(folder_ex1)) {
@@ -159,8 +159,8 @@ run_peak_finding_debug_targets <- function(example_name) {
 #| results: hide
 #| include: false
 
-source("C:\\Users\\apoli\\Documents\\github\\StreamFind\\dev\\merck_peak_finding\\dev_log_plot.R")
-log_path <- "C:\\Users\\apoli\\Documents\\github\\StreamFind\\log"
+source("C:\\Users\\apoli\\Documents\\github\\streamfind\\dev\\merck_peak_finding\\dev_log_plot.R")
+log_path <- "C:\\Users\\apoli\\Documents\\github\\streamfind\\log"
 log_example_folders <- list.dirs(log_path, recursive = FALSE, full.names = TRUE)
 log_example_folders <- log_example_folders[grepl("example_", log_example_folders)]
 

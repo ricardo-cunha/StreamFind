@@ -23,22 +23,22 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake/streamfind_openbabel.cmake)
 # -----------------------------------------------------------------------------
 # Vendored zlib for Python/native builds
 # -----------------------------------------------------------------------------
-set(CF_STREAMFIND_ZLIB_SOURCE_DIR
+set(CF_streamfind_ZLIB_SOURCE_DIR
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/zlib/zlib-develop
 )
 
-if(NOT EXISTS "${CF_STREAMFIND_ZLIB_SOURCE_DIR}/zlib.h")
+if(NOT EXISTS "${CF_streamfind_ZLIB_SOURCE_DIR}/zlib.h")
   message(FATAL_ERROR
-    "Vendored zlib source not found at '${CF_STREAMFIND_ZLIB_SOURCE_DIR}'."
+    "Vendored zlib source not found at '${CF_streamfind_ZLIB_SOURCE_DIR}'."
   )
 endif()
 
 add_subdirectory(
-  ${CF_STREAMFIND_ZLIB_SOURCE_DIR}
+  ${CF_streamfind_ZLIB_SOURCE_DIR}
   ${CMAKE_CURRENT_BINARY_DIR}/vendored-zlib
 )
 
-set(CF_STREAMFIND_HAS_ZLIB TRUE)
+set(CF_streamfind_HAS_ZLIB TRUE)
 
 # -----------------------------------------------------------------------------
 # OpenMP
@@ -73,7 +73,7 @@ add_custom_command(
 )
 
 # -----------------------------------------------------------------------------
-# Shared StreamFind sources
+# Shared streamfind sources
 # -----------------------------------------------------------------------------
 file(GLOB JSON_SCHEMA_VALIDATOR_SOURCES CONFIGURE_DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/json-schema-validator/src/*.cpp
@@ -94,7 +94,7 @@ file(GLOB MASS_SPEC_SOURCES CONFIGURE_DEPENDS
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/mass_spec/*.cpp
 )
 
-set(STREAMFIND_CORE_SOURCES
+set(streamfind_CORE_SOURCES
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/simdutf_wrapper.cpp
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/openbabel_adapter.cpp
   ${JSON_SCHEMA_VALIDATOR_SOURCES}
@@ -109,19 +109,19 @@ set(STREAMFIND_CORE_SOURCES
 # Vendored DuckDB
 # -----------------------------------------------------------------------------
 if(WIN32)
-  set(CF_STREAMFIND_DUCKDB_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/windows)
-  set(CF_STREAMFIND_DUCKDB_LIB ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/windows/duckdb.lib)
-  set(CF_STREAMFIND_DUCKDB_RUNTIME_DLL ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/windows/duckdb.dll)
+  set(CF_streamfind_DUCKDB_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/windows)
+  set(CF_streamfind_DUCKDB_LIB ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/windows/duckdb.lib)
+  set(CF_streamfind_DUCKDB_RUNTIME_DLL ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/windows/duckdb.dll)
 elseif(APPLE)
   message(FATAL_ERROR "Vendored DuckDB linkage is not configured for macOS yet.")
 else()
-  set(CF_STREAMFIND_DUCKDB_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/linux)
-  set(CF_STREAMFIND_DUCKDB_LIB ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/linux/libduckdb_static.a)
+  set(CF_streamfind_DUCKDB_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/linux)
+  set(CF_streamfind_DUCKDB_LIB ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/linux/libduckdb_static.a)
 endif()
 
 add_library(cf_streamfind_steps SHARED
   ${CMAKE_CURRENT_SOURCE_DIR}/python/cf_streamfind/cpp/steps.cpp
-  ${STREAMFIND_CORE_SOURCES}
+  ${streamfind_CORE_SOURCES}
   ${SIG_HEADER}
 )
 
@@ -132,7 +132,7 @@ target_include_directories(cf_streamfind_steps PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/asm
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external
-  ${CF_STREAMFIND_ZLIB_SOURCE_DIR}
+  ${CF_streamfind_ZLIB_SOURCE_DIR}
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/simdutf
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/nlohmann
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/json-schema-validator/src
@@ -141,14 +141,14 @@ target_include_directories(cf_streamfind_steps PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/mass_spec
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/nta
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/project
-  ${CF_STREAMFIND_DUCKDB_INCLUDE}
+  ${CF_streamfind_DUCKDB_INCLUDE}
 )
 
 streamfind_enable_openbabel(cf_streamfind_steps ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(cf_streamfind_steps PRIVATE ${CF_STREAMFIND_DUCKDB_LIB})
+target_link_libraries(cf_streamfind_steps PRIVATE ${CF_streamfind_DUCKDB_LIB})
 
-target_link_libraries(cf_streamfind_steps PRIVATE StreamFind::zlib)
-target_compile_definitions(cf_streamfind_steps PRIVATE CF_STREAMFIND_HAS_ZLIB=1)
+target_link_libraries(cf_streamfind_steps PRIVATE streamfind::zlib)
+target_compile_definitions(cf_streamfind_steps PRIVATE CF_streamfind_HAS_ZLIB=1)
 
 if(OpenMP_CXX_FOUND)
   target_link_libraries(cf_streamfind_steps PRIVATE OpenMP::OpenMP_CXX)
@@ -185,19 +185,19 @@ if(CMAKE_CONFIGURATION_TYPES)
   endforeach()
 endif()
 
-set(CF_STREAMFIND_RUNTIME_DLLS)
+set(CF_streamfind_RUNTIME_DLLS)
 if(WIN32)
   if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/inst/libs/x64/duckdb.dll")
-    list(APPEND CF_STREAMFIND_RUNTIME_DLLS ${CMAKE_CURRENT_SOURCE_DIR}/inst/libs/x64/duckdb.dll)
-  elseif(EXISTS "${CF_STREAMFIND_DUCKDB_RUNTIME_DLL}")
-    list(APPEND CF_STREAMFIND_RUNTIME_DLLS ${CF_STREAMFIND_DUCKDB_RUNTIME_DLL})
+    list(APPEND CF_streamfind_RUNTIME_DLLS ${CMAKE_CURRENT_SOURCE_DIR}/inst/libs/x64/duckdb.dll)
+  elseif(EXISTS "${CF_streamfind_DUCKDB_RUNTIME_DLL}")
+    list(APPEND CF_streamfind_RUNTIME_DLLS ${CF_streamfind_DUCKDB_RUNTIME_DLL})
   endif()
 endif()
 
-if(CF_STREAMFIND_RUNTIME_DLLS)
+if(CF_streamfind_RUNTIME_DLLS)
   add_custom_command(TARGET cf_streamfind_steps POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E make_directory ${CMAKE_CURRENT_BINARY_DIR}/cf_streamfind/bin
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CF_STREAMFIND_RUNTIME_DLLS} ${CMAKE_CURRENT_BINARY_DIR}/cf_streamfind/bin
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${CF_streamfind_RUNTIME_DLLS} ${CMAKE_CURRENT_BINARY_DIR}/cf_streamfind/bin
   )
 endif()
 

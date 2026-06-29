@@ -53,11 +53,11 @@
 #' @return A `MassSpecMethod_GenerateFormulas_genform` object.
 #'
 #' @references
-#' \insertRef{patroon01}{StreamFind}
+#' \insertRef{patroon01}{streamfind}
 #'
-#' \insertRef{patroon02}{StreamFind}
+#' \insertRef{patroon02}{streamfind}
 #'
-#' \insertRef{genform}{StreamFind}
+#' \insertRef{genform}{streamfind}
 #'
 #' @export
 #'
@@ -124,7 +124,7 @@ MassSpecMethod_GenerateFormulas_genform <- function(
       batchSize = as.integer(batchSize)
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "GenForm",
     developer = "Markus Meringer",
     contact = "Markus.Meringer@Uni-Bayreuth.De",

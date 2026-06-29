@@ -1,6 +1,6 @@
 # MARK: MassSpecAnalyses
 #' @title Analyses class and methods for handling Mass Spectrometry data
-#' @description The `MassSpecAnalyses` class represents mass spectrometry (MS) raw data files and holds results from processing MS data. It is a subclass of the [StreamFind::Analyses] class and provides methods to manage and inspect MS data. The `MassSpecAnalyses` class is built from a character vector of file paths to MS raw data files. The possible file formats are *mzML* and *mzXML*. If `msconvert` from \href{https://proteowizard.sourceforge.io/}{ProteoWizard} is installed and found via CLI (i.e., must be added to the environmental variables), the engine can also load vendor formats (i.e., Agilent MassHunter .d, Thermo Scientific RAW, Shimadzu LCD (except ITOF), Sciex WIFF/WIFF2) by direct conversion to *mzML*. Note that conversion of vendor formats is only possible under Windows OS.
+#' @description The `MassSpecAnalyses` class represents mass spectrometry (MS) raw data files and holds results from processing MS data. It is a subclass of the [streamfind::Analyses] class and provides methods to manage and inspect MS data. The `MassSpecAnalyses` class is built from a character vector of file paths to MS raw data files. The possible file formats are *mzML* and *mzXML*. If `msconvert` from \href{https://proteowizard.sourceforge.io/}{ProteoWizard} is installed and found via CLI (i.e., must be added to the environmental variables), the engine can also load vendor formats (i.e., Agilent MassHunter .d, Thermo Scientific RAW, Shimadzu LCD (except ITOF), Sciex WIFF/WIFF2) by direct conversion to *mzML*. Note that conversion of vendor formats is only possible under Windows OS.
 #' @template arg-ms-files
 #' @template arg-ms-centroid
 #' @template arg-ms-levels
@@ -18,14 +18,14 @@
 #'  - `chromatograms_headers`: A `data.table` with the headers of the chromatograms in the analysis.
 #'  - `metadata`: A list with metadata information for the analysis.
 #'  - `concentration`: The concentration for the analysis.
-#'  The `results` element is a list of results, where each element is a specific [StreamFind::Results] child class. Currently, the `MassSpecAnalyses` class supports the following results: [StreamFind::MassSpecResults_NonTargetAnalysis], [StreamFind::MassSpecSpectra], and [StreamFind::Chromatograms].
+#'  The `results` element is a list of results, where each element is a specific [streamfind::Results] child class. Currently, the `MassSpecAnalyses` class supports the following results: [streamfind::MassSpecResults_NonTargetAnalysis], [streamfind::MassSpecSpectra], and [streamfind::Chromatograms].
 #'
 #' @references
-#' \insertRef{pugixml01}{StreamFind}
+#' \insertRef{pugixml01}{streamfind}
 #'
-#' \insertRef{proteo01}{StreamFind}
+#' \insertRef{proteo01}{streamfind}
 #'
-#' \insertRef{proteo02}{StreamFind}
+#' \insertRef{proteo02}{streamfind}
 #'
 #' @export
 #'
@@ -2265,7 +2265,7 @@ get_raw_chromatograms.MassSpecAnalyses <- function(
       } else if (!is.null(chromatograms)) {
         return(data.table::data.table())
       }
-      # cache <- StreamFind:::.load_cache_sqlite(
+      # cache <- streamfind:::.load_cache_sqlite(
       #   "parsed_ms_chromatograms",
       #   z$file,
       #   idx
@@ -2297,7 +2297,7 @@ get_raw_chromatograms.MassSpecAnalyses <- function(
         chrom$replicate <- z$replicate
       }
       if (!is.null(cache$hash)) {
-        StreamFind:::.save_cache_sqlite(
+        streamfind:::.save_cache_sqlite(
           "parsed_ms_chromatograms",
           chrom,
           cache$hash
@@ -2497,7 +2497,7 @@ load_chromatograms.MassSpecAnalyses <- function(
 #' @export
 #' 
 #' @references
-#' \insertRef{tisler01}{StreamFind}
+#' \insertRef{tisler01}{streamfind}
 #' 
 get_matrix_suppression.MassSpecAnalyses <- function(x, rtWindowVal = 10) {
   mpList <- .calculate_tic_matrix_suppression(x, rtWindowVal)
@@ -2523,7 +2523,7 @@ get_matrix_suppression.MassSpecAnalyses <- function(x, rtWindowVal = 10) {
 #' @export
 #' 
 #' @references
-#' \insertRef{tisler01}{StreamFind}
+#' \insertRef{tisler01}{streamfind}
 #' 
 plot_matrix_suppression.MassSpecAnalyses <- function(
   x,
@@ -2789,7 +2789,7 @@ plot_matrix_suppression.MassSpecAnalyses <- function(
 
         tryCatch(
           {
-            StreamFind::convert_ms_files(
+            streamfind::convert_ms_files(
               files = files_to_convert,
               outputFormat = "mzML",
               outputPath = NULL,

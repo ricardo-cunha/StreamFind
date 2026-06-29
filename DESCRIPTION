@@ -1,4 +1,4 @@
-Package: StreamFind
+Package: streamfind
 Title: DuckDB-Backed Project Framework for Analytical Workflows
 Version: 1.0.0
 Author: Ricardo Cunha [cre, aut, fnd] (<https://orcid.org/0000-0002-6791-0119>)
@@ -7,7 +7,7 @@ Authors@R: c(
         person("Ricardo", "Cunha", email="cunha@iuta.de", role=c("cre", "aut", "fnd"), comment = c(ORCID = "0000-0002-6791-0119")),
         person("Walter", "Laurito", email="laurito@fzi.de", role = "ctb")
     )
-Description: StreamFind provides a DuckDB-backed project framework for
+Description: streamfind provides a DuckDB-backed project framework for
     assembling, running, and inspecting analytical workflows in R. The
     current package centres on Project child classes that expose
     domain-specific interfaces for mass spectrometry and non-target
@@ -15,14 +15,14 @@ Description: StreamFind provides a DuckDB-backed project framework for
     ProjectMassSpecChromatograms, and ProjectNonTargetAnalysis.
     Workflows are expressed as ordered Method objects, persisted with the
     project, executed reproducibly, and inspected through both
-    programmatic APIs and an integrated Shiny application. StreamFind is
+    programmatic APIs and an integrated Shiny application. streamfind is
     developed within the project "Flexible Data Analysis and Workflow
     Designer to Identify Chemicals in the Water Cycle" and is intended
     to support transparent, reusable processing pipelines for research
     and routine analytical work.
 License: GPL-3
-URL: https://github.com/odea-project/StreamFind, https://odea-project.github.io/StreamFind/
-BugReports: https://github.com/odea-project/StreamFind/issues
+URL: https://github.com/odea-project/streamfind, https://odea-project.github.io/streamfind/
+BugReports: https://github.com/odea-project/streamfind/issues
 Depends: R (>= 4.3.0)
 Imports:
     R6,
@@ -125,5 +125,5 @@ Collate:
     'app_server.R'
     'app_ui.R'
     'run_app.R'
-    'streamFind-package.R'
+    'streamfind-package.R'
     'zzz.R'

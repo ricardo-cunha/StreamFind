@@ -3,9 +3,9 @@ library(patRoon)
 
 # Resources -------------------------------------------------------------------
 
-pat_all_files <- StreamFindData::get_ms_file_paths()
+pat_all_files <- streamfindData::get_ms_file_paths()
 
-pat_all_db <- StreamFindData::get_ms_tof_spiked_chemicals()
+pat_all_db <- streamfindData::get_ms_tof_spiked_chemicals()
 
 cols <- c("name", "formula", "mass", "rt", "polarity", "fragments", "tag")
 db <- pat_all_db[, cols, with = FALSE]
@@ -55,16 +55,16 @@ ms <- MassSpecEngine$new(files = anaInfo)
 ms$add_settings(list(
   Method_find_features_openms(),
   Method_group_features_openms(),
-  Method_fill_features_StreamFind(),
-  # Method_annotate_features_StreamFind(),
-  Method_find_internal_standards_StreamFind(database = dbis, ppm = 8, sec = 10)
-  # Method_filter_features_StreamFind(excludeIsotopes = TRUE),
+  Method_fill_features_streamfind(),
+  # Method_annotate_features_streamfind(),
+  Method_find_internal_standards_streamfind(database = dbis, ppm = 8, sec = 10)
+  # Method_filter_features_streamfind(excludeIsotopes = TRUE),
   # Method_filter_features_patRoon(absMinIntensity = 5000, maxReplicateIntRSD = 30, blankThreshold = 5, absMinReplicateAbundance = 3),
-  # Method_load_features_eic_StreamFind(rtExpand = 60, mzExpand = 0.0005),
-  # Method_calculate_quality_StreamFind(),
-  # Method_filter_features_StreamFind(minSnRatio = 3),
-  # Method_load_features_ms2_StreamFind(),
-  # Method_suspect_screening_StreamFind(database = dbsus, ppm = 5, sec = 10)
+  # Method_load_features_eic_streamfind(rtExpand = 60, mzExpand = 0.0005),
+  # Method_calculate_quality_streamfind(),
+  # Method_filter_features_streamfind(minSnRatio = 3),
+  # Method_load_features_ms2_streamfind(),
+  # Method_suspect_screening_streamfind(database = dbsus, ppm = 5, sec = 10)
 ))
 
 ms$run_workflow()

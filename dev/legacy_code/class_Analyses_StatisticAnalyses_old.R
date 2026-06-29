@@ -8,7 +8,7 @@
 #' 
 StatisticAnalyses <- S7::new_class(
   name = "StatisticAnalyses",
-  package = "StreamFind",
+  package = "streamfind",
   parent = S7::new_S3_class("Analyses"),
   properties = list(
 
@@ -20,7 +20,7 @@ StatisticAnalyses <- S7::new_class(
     ## type -----
     type = S7::new_property(S7::class_character, getter = function(self) {
       out <- rep("model", nrow(self$analyses))
-      if (is(self$results[["model"]], "StreamFind::StatisticModel")) {
+      if (is(self$results[["model"]], "streamfind::StatisticModel")) {
         has_test <- !is.null(self$results[["model"]]$model$res$test$data)
         has_prediction <- !is.null(self$results[["model"]]$model$res$prediction$data)
         if (has_test) out <- c(out, rep("test", nrow(self$results[["model"]]$model$res$test$data)))
@@ -94,7 +94,7 @@ StatisticAnalyses <- S7::new_class(
           return(FALSE)
         }
       }
-      if (!is(self@results[["DataFrame"]], "StreamFind::DataFrame")) {
+      if (!is(self@results[["DataFrame"]], "streamfind::DataFrame")) {
         return(FALSE)
       }
       TRUE
@@ -107,7 +107,7 @@ StatisticAnalyses <- S7::new_class(
         if (!is.null(self@results[["DataFrame"]])) {
           data <- self@results[["DataFrame"]]
         } else {
-          data <- StreamFind::DataFrame(data = self$analyses)
+          data <- streamfind::DataFrame(data = self$analyses)
         }
         if (self$has_model) {
           if (self$has_test) data$data <- rbind(data$data, self$test$data)
@@ -116,7 +116,7 @@ StatisticAnalyses <- S7::new_class(
         data
       },
       setter = function(self, value) {
-        if (is(value, "StreamFind::DataFrame")) {
+        if (is(value, "streamfind::DataFrame")) {
           self@results[["results"]] <- list()
           self@results[[value@name]] <- value
         } else {
@@ -135,7 +135,7 @@ StatisticAnalyses <- S7::new_class(
       if (length(self@results) == 0) {
         return(FALSE)
       }
-      if (!any(vapply(self@results, function(x) is(x, "StreamFind::StatisticModel"), FALSE))) {
+      if (!any(vapply(self@results, function(x) is(x, "streamfind::StatisticModel"), FALSE))) {
         return(FALSE)
       }
       TRUE
@@ -146,7 +146,7 @@ StatisticAnalyses <- S7::new_class(
     model = S7::new_property(S7::class_list,
       getter = function(self) {
         if (self$has_model) {
-          model_sel <- vapply(self@results, function(x) is(x, "StreamFind::StatisticModel"), FALSE)
+          model_sel <- vapply(self@results, function(x) is(x, "streamfind::StatisticModel"), FALSE)
           model <- self@results[model_sel]
           if (length(model) > 1) {
             warning("More than one model found, returning the first one!")
@@ -156,7 +156,7 @@ StatisticAnalyses <- S7::new_class(
         NULL
       },
       setter = function(self, value) {
-        if (is(value, "StreamFind::StatisticModel")) {
+        if (is(value, "streamfind::StatisticModel")) {
           self@results[[value@name]] <- value
         } else {
           warning("Value must be a Model results object! Not done.")
@@ -216,7 +216,7 @@ StatisticAnalyses <- S7::new_class(
       if (is.null(self@results[["quantification"]])) {
         return(FALSE)
       }
-      if (!is(self@results[["quantification"]], "StreamFind::Quantification")) {
+      if (!is(self@results[["quantification"]], "streamfind::Quantification")) {
         return(FALSE)
       }
       TRUE
@@ -232,7 +232,7 @@ StatisticAnalyses <- S7::new_class(
         NULL
       },
       setter = function(self, value) {
-        if (is(value, "StreamFind::Quantification")) {
+        if (is(value, "streamfind::Quantification")) {
           self@results[["quantification"]] <- value
         } else {
           warning("Value must be a Quantification results object! Not done.")
@@ -296,7 +296,7 @@ StatisticAnalyses <- S7::new_class(
 #' @noRd
 S7::method(names, StatisticAnalyses) <- function(x) {
   out <- rownames(x$analyses)
-  if (is(x$results[["model"]], "StreamFind::StatisticModel")) {
+  if (is(x$results[["model"]], "streamfind::StatisticModel")) {
     has_test <- !is.null(x$results[["model"]]$model$res$test)
     has_prediction <- !is.null(x$results[["model"]]$model$res$prediction)
     if (has_test) out <- c(out, rownames(x$results[["model"]]$model$res$test$data))
@@ -377,7 +377,7 @@ S7::method(remove, StatisticAnalyses) <- function(x, value) {
 
 #' @export
 #' @noRd
-`[.StreamFind::StatisticAnalyses` <- function(x, i) {
+`[.streamfind::StatisticAnalyses` <- function(x, i) {
   if (is.character(i)) {
     x@analyses <- x@analyses[rownames(x@analyses) %in% i, ]
     x@results <- list()
@@ -394,7 +394,7 @@ S7::method(remove, StatisticAnalyses) <- function(x, value) {
 ## `[<-` -----
 #' @export
 #' @noRd
-`[<-.StreamFind::StatisticAnalyses` <- function(x, i, value) {
+`[<-.streamfind::StatisticAnalyses` <- function(x, i, value) {
   x <- add(x, value)
   x
 }
@@ -403,7 +403,7 @@ S7::method(remove, StatisticAnalyses) <- function(x, value) {
 ## `[[` -----
 #' @export
 #' @noRd
-`[[.StreamFind::StatisticAnalyses` <- function(x, i) {
+`[[.streamfind::StatisticAnalyses` <- function(x, i) {
   if (is.character(i)) {
     x@analyses <- x@analyses[rownames(x@analyses) %in% i, ]
     x@results <- list()
@@ -420,7 +420,7 @@ S7::method(remove, StatisticAnalyses) <- function(x, value) {
 ## `[[<-` -----
 #' @export
 #' @noRd
-`[[<-.StreamFind::StatisticAnalyses` <- function(x, i, value) {
+`[[<-.streamfind::StatisticAnalyses` <- function(x, i, value) {
   x <- add(x, value)
   x
 }

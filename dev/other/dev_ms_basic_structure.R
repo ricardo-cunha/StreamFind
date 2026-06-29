@@ -1,5 +1,5 @@
 
-library(StreamFind)
+library(streamfind)
 
 # Tasks -----------------------------------------------------------------------
 
@@ -18,9 +18,9 @@ library(StreamFind)
 
 # Resources -------------------------------------------------------------------
 
-all_files <- StreamFindData::get_ms_file_paths()
+all_files <- streamfindData::get_ms_file_paths()
 
-all_db <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+all_db <- streamfindData::get_ms_tof_spiked_chemicals_with_ms2()
 db <- all_db[!grepl("IS", all_db$tag, fixed = TRUE), ]
 cols <- c("name", "formula", "mass", "SMILES", "rt", "polarity", "fragments")
 # cols <- c("name", "formula", "mass", "SMILES", "rt")
@@ -56,17 +56,17 @@ files_df <- data.frame(
 
 ps <- list(
   Method_find_features_openms(),
-  Method_annotate_features_StreamFind(),
+  Method_annotate_features_streamfind(),
   Method_group_features_openms(),
-  Method_find_internal_standards_StreamFind(database = dbis, ppm = 8, sec = 10),
-  Method_filter_features_StreamFind(minIntensity = 5000, maxGroupSd = 10, minGroupAbundance = 3, blank = 5, excludeIsotopes = TRUE),
-  Method_load_features_eic_StreamFind(rtExpand = 60, mzExpand = 0.0005, runParallel = FALSE),
-  # Method_load_features_ms1_StreamFind(),
-  Method_load_features_ms2_StreamFind(),
-  Method_calculate_quality_StreamFind(),
-  Method_filter_features_StreamFind(minSnRatio = 3),
-  Method_suspect_screening_StreamFind(database = db, ppm = 10, sec = 15, ppmMS2 = 10, minFragments = 3),
-  Method_filter_features_StreamFind(onlySuspects = TRUE)
+  Method_find_internal_standards_streamfind(database = dbis, ppm = 8, sec = 10),
+  Method_filter_features_streamfind(minIntensity = 5000, maxGroupSd = 10, minGroupAbundance = 3, blank = 5, excludeIsotopes = TRUE),
+  Method_load_features_eic_streamfind(rtExpand = 60, mzExpand = 0.0005, runParallel = FALSE),
+  # Method_load_features_ms1_streamfind(),
+  Method_load_features_ms2_streamfind(),
+  Method_calculate_quality_streamfind(),
+  Method_filter_features_streamfind(minSnRatio = 3),
+  Method_suspect_screening_streamfind(database = db, ppm = 10, sec = 15, ppmMS2 = 10, minFragments = 3),
+  Method_filter_features_streamfind(onlySuspects = TRUE)
 )
 
 # patRoon::clearCache("all")
@@ -347,7 +347,7 @@ ms$plot_groups_overview(mass = db[1:3, ], filtered = TRUE, legendNames = TRUE)
 
 
 
-ms2$add_settings(Method_load_features_eic_StreamFind())
+ms2$add_settings(Method_load_features_eic_streamfind())
 
 ms2$add_features_eic(ms2$load_features_eic())
 
@@ -446,17 +446,17 @@ ms$add_settings(
   list(
     Method_find_features_xcms3_centwave(),
     Method_group_features_xcms3_peakdensity(),
-    Method_filter_features_StreamFind(
+    Method_filter_features_streamfind(
       minIntensity = 10000,
       minSnRatio = 20,
       maxGroupSd = 30,
       blank = 5,
       minGroupAbundance = 3
     ),
-    Method_load_features_ms1_StreamFind(presence = 0.5),
-    Method_load_features_ms2_StreamFind(presence = 0.5),
-    Method_load_groups_ms1_StreamFind(presence = 0.5),
-    Method_load_groups_ms2_StreamFind(presence = 0.5)
+    Method_load_features_ms1_streamfind(presence = 0.5),
+    Method_load_features_ms2_streamfind(presence = 0.5),
+    Method_load_groups_ms1_streamfind(presence = 0.5),
+    Method_load_groups_ms2_streamfind(presence = 0.5)
   )
 )
 
@@ -517,7 +517,7 @@ View(ms$get_features())
 
 ffs <- Method_find_features_xcms3_centwave()
 
-ffs <- Method_filter_features_StreamFind()
+ffs <- Method_filter_features_streamfind()
 
 sloop::s3_dispatch(validate(ffs))
 
@@ -723,7 +723,7 @@ if (ms$has_groups()) {
   new("MSPeakLists",
     peakLists = plist,
     averagedPeakLists = aplist,
-    algorithm = "StreamFind"
+    algorithm = "streamfind"
   )
 }
 
@@ -805,16 +805,16 @@ file.remove("feature_list.txt")
 
 
 
-sss <- Method_suspect_screening_StreamFind(database = db, ppm = 5, sec = 10)
+sss <- Method_suspect_screening_streamfind(database = db, ppm = 5, sec = 10)
 
 
 
 
 # implement export MS2 ------
 
-slfms2 <- Method_load_features_ms2_StreamFind()
+slfms2 <- Method_load_features_ms2_streamfind()
 slfms2$parameters$minIntensity <- 100
-slgms2 <- Method_load_groups_ms2_StreamFind()
+slgms2 <- Method_load_groups_ms2_streamfind()
 slgms2$parameters$minIntensity <- 100
 msbp <- ms$subset_analyses(4:6)
 
@@ -877,11 +877,11 @@ ms$group_features(gfs)
 
 ms$get_groups()
 
-rtf1 <- Method_filter_features_StreamFind(
+rtf1 <- Method_filter_features_streamfind(
   rtFilter = c(0, 100)
 )
 
-rtf2 <- Method_filter_features_StreamFind(
+rtf2 <- Method_filter_features_streamfind(
   rtFilter = c(1400, 1500)
 )
 
@@ -1234,7 +1234,7 @@ ms$get_history()
 #   return(copy(ms2))
 # }
 
-#' #' @title Method_load_groups_ms1_StreamFind
+#' #' @title Method_load_groups_ms1_streamfind
 #' #'
 #' #' @description Settings for loading MS1 spectra for feature groups.
 #' #'
@@ -1246,11 +1246,11 @@ ms$get_history()
 #' #' @template arg-verbose
 #' #'
 #' #' @return A ProcessingStep S3 class object with subclass
-#' #' Method_load_groups_ms1_StreamFind.
+#' #' Method_load_groups_ms1_streamfind.
 #' #'
 #' #' @export
 #' #'
-#' Method_load_groups_ms1_StreamFind <- function(
+#' Method_load_groups_ms1_streamfind <- function(
 #'     mzClust = 0.003,
 #'     presence = 0.6,
 #'     minIntensity = 1000,
@@ -1260,7 +1260,7 @@ ms$get_history()
 #'   
 #'   settings <- list(
 #'     call = "load_groups_ms1",
-#'     algorithm = "StreamFind",
+#'     algorithm = "streamfind",
 #'     parameters = list(
 #'       "mzClust" = mzClust,
 #'       "presence" = presence,
@@ -1269,11 +1269,11 @@ ms$get_history()
 #'       "runParallel" = runParallel,
 #'       "verbose" = verbose
 #'     ),
-#'     version = as.character(packageVersion("StreamFind")),
-#'     software = "StreamFind",
+#'     version = as.character(packageVersion("streamfind")),
+#'     software = "streamfind",
 #'     developer = "Ricardo Cunha",
 #'     contact = "cunha@iuta.de",
-#'     link = "https://odea-project.github.io/StreamFind",
+#'     link = "https://odea-project.github.io/streamfind",
 #'     doi = NA_character_
 #'   )
 #'   
@@ -1282,17 +1282,17 @@ ms$get_history()
 #'   return(settings)
 #' }
 #' 
-#' #' @describeIn Method_load_groups_ms1_StreamFind
+#' #' @describeIn Method_load_groups_ms1_streamfind
 #' #' Validates the object structure, returning a logical value of length one.
 #' #'
-#' #' @param x A Method_load_groups_ms1_StreamFind S3 class object.
+#' #' @param x A Method_load_groups_ms1_streamfind S3 class object.
 #' #'
 #' #' @export
 #' #'
-#' validate.Method_load_groups_ms1_StreamFind <- function(x) {
+#' validate.Method_load_groups_ms1_streamfind <- function(x) {
 #'   all(
 #'     checkmate::test_choice(x$call, "load_groups_ms1"),
-#'     checkmate::test_choice(x$algorithm, "StreamFind"),
+#'     checkmate::test_choice(x$algorithm, "streamfind"),
 #'     checkmate::test_number(x$parameters$mzClust),
 #'     checkmate::test_number(x$parameters$minIntensity),
 #'     checkmate::test_logical(x$parameters$filtered, max.len = 1),
@@ -1301,7 +1301,7 @@ ms$get_history()
 #'   )
 #' }
 #' 
-#' #' @title Method_load_groups_ms2_StreamFind
+#' #' @title Method_load_groups_ms2_streamfind
 #' #'
 #' #' @description Settings for loading MS2 spectra for feature groups.
 #' #'
@@ -1313,11 +1313,11 @@ ms$get_history()
 #' #' @template arg-verbose
 #' #'
 #' #' @return A ProcessingStep S3 class object with subclass
-#' #' Method_load_groups_ms2_StreamFind.
+#' #' Method_load_groups_ms2_streamfind.
 #' #'
 #' #' @export
 #' #'
-#' Method_load_groups_ms2_StreamFind <- function(
+#' Method_load_groups_ms2_streamfind <- function(
 #'     mzClust = 0.01,
 #'     presence = 0.3,
 #'     minIntensity = 250,
@@ -1327,7 +1327,7 @@ ms$get_history()
 #'   
 #'   settings <- list(
 #'     call = "load_groups_ms2",
-#'     algorithm = "StreamFind",
+#'     algorithm = "streamfind",
 #'     parameters = list(
 #'       "mzClust" = mzClust,
 #'       "presence" = presence,
@@ -1336,11 +1336,11 @@ ms$get_history()
 #'       "runParallel" = runParallel,
 #'       "verbose" = verbose
 #'     ),
-#'     version = as.character(packageVersion("StreamFind")),
-#'     software = "StreamFind",
+#'     version = as.character(packageVersion("streamfind")),
+#'     software = "streamfind",
 #'     developer = "Ricardo Cunha",
 #'     contact = "cunha@iuta.de",
-#'     link = "https://odea-project.github.io/StreamFind",
+#'     link = "https://odea-project.github.io/streamfind",
 #'     doi = NA_character_
 #'   )
 #'   
@@ -1349,17 +1349,17 @@ ms$get_history()
 #'   return(settings)
 #' }
 #' 
-#' #' @describeIn Method_load_groups_ms2_StreamFind
+#' #' @describeIn Method_load_groups_ms2_streamfind
 #' #' Validates the object structure, returning a logical value of length one.
 #' #'
-#' #' @param x A Method_load_groups_ms2_StreamFind S3 class object.
+#' #' @param x A Method_load_groups_ms2_streamfind S3 class object.
 #' #'
 #' #' @export
 #' #'
-#' validate.Method_load_groups_ms2_StreamFind <- function(x) {
+#' validate.Method_load_groups_ms2_streamfind <- function(x) {
 #'   all(
 #'     checkmate::test_choice(x$call, "load_groups_ms2"),
-#'     checkmate::test_choice(x$algorithm, "StreamFind"),
+#'     checkmate::test_choice(x$algorithm, "streamfind"),
 #'     checkmate::test_number(x$parameters$mzClust),
 #'     checkmate::test_number(x$parameters$minIntensity),
 #'     checkmate::test_logical(x$parameters$filtered, max.len = 1),
@@ -1394,7 +1394,7 @@ ms$get_history()
 #'   
 #'   parameters <- settings$parameters
 #' 
-#'   if ("StreamFind" %in% algorithm) {
+#'   if ("streamfind" %in% algorithm) {
 #' 
 #'     cached_ms1 <- FALSE
 #' 
@@ -1525,7 +1525,7 @@ ms$get_history()
 #'   
 #'   parameters <- settings$parameters
 #' 
-#'   if ("StreamFind" %in% algorithm) {
+#'   if ("streamfind" %in% algorithm) {
 #' 
 #'     cached_ms2 <- FALSE
 #' 

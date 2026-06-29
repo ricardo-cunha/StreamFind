@@ -10,4 +10,4 @@ Future tests should cover at least:
 - local package install and wheel install behavior
 - `steps.nq` packaging and signature-generation expectations
 - `projectRef` JSON input validation
-- `sf_nta_find_features` step execution against a prepared StreamFind project
+- `sf_nta_find_features` step execution against a prepared streamfind project

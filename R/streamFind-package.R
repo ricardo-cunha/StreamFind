@@ -1,5 +1,5 @@
 #' @keywords internal
-#' @useDynLib StreamFind, .registration=TRUE
+#' @useDynLib streamfind, .registration=TRUE
 "_PACKAGE"
 
 ## usethis namespace: start

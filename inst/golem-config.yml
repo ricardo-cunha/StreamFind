@@ -1,5 +1,5 @@
 default:
-  golem_name: StreamFind
+  golem_name: streamfind
   golem_version: 0.2.0
   app_prod: no
 production:

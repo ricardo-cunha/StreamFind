@@ -1,4 +1,4 @@
-#' @title MassSpecMethod_IntegrateSpectra_StreamFind Class
+#' @title MassSpecMethod_IntegrateSpectra_streamfind Class
 #'
 #' @description Integrates Spectra using the function `findpeaks` from the package \pkg{pracma}
 #' with natively added peak exclusion and evaluation steps.
@@ -11,11 +11,11 @@
 #' @param maxPeakWidth Numeric (length 1) with the maximum peak width.
 #' @param minSN Numeric (length 1) with the minimum signal-to-noise ratio.
 #'
-#' @return A MassSpecMethod_IntegrateSpectra_StreamFind object.
+#' @return A MassSpecMethod_IntegrateSpectra_streamfind object.
 #'
 #' @export
 #'
-MassSpecMethod_IntegrateSpectra_StreamFind <- function(
+MassSpecMethod_IntegrateSpectra_streamfind <- function(
   merge = TRUE,
   closeByThreshold = 45,
   minPeakHeight = 0,
@@ -28,7 +28,7 @@ MassSpecMethod_IntegrateSpectra_StreamFind <- function(
     type = "MassSpec",
     method = "IntegrateSpectra",
     required = "LoadSpectra",
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     parameters = list(
       merge = merge,
       closeByThreshold = closeByThreshold,
@@ -39,26 +39,26 @@ MassSpecMethod_IntegrateSpectra_StreamFind <- function(
       minSN = minSN
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid MassSpecMethod_IntegrateSpectra_StreamFind object!")
+    stop("Invalid MassSpecMethod_IntegrateSpectra_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
-validate_object.MassSpecMethod_IntegrateSpectra_StreamFind = function(x) {
+validate_object.MassSpecMethod_IntegrateSpectra_streamfind = function(x) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_choice(x$method, "IntegrateSpectra")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_logical(x$parameters$merge, max.len = 1)
   checkmate::assert_number(x$parameters$closeByThreshold)
   checkmate::assert_number(x$parameters$minPeakHeight)
@@ -72,7 +72,7 @@ validate_object.MassSpecMethod_IntegrateSpectra_StreamFind = function(x) {
 
 #' @export
 #' @noRd
-run.MassSpecMethod_IntegrateSpectra_StreamFind <- function(x, engine = NULL) {
+run.MassSpecMethod_IntegrateSpectra_streamfind <- function(x, engine = NULL) {
   if (!is(engine, "MassSpecEngine")) {
     warning("Engine is not a MassSpecEngine object!")
     return(FALSE)

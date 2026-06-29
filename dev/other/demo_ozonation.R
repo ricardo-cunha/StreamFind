@@ -1,5 +1,5 @@
 
-library(StreamFind)
+library(streamfind)
 
 
 # Convert files ----------------------------------------------------------------
@@ -8,7 +8,7 @@ library(StreamFind)
 # ?convert_ms_files
 
 # Load file paths
-all_files <- StreamFindData::get_ms_file_paths()
+all_files <- streamfindData::get_ms_file_paths()
 files <- all_files[grepl("blank|influent|o3sw", all_files)]
 
 
@@ -87,7 +87,7 @@ ms$import_settings("ffs.json")
 
 
 # Loads a database of chemicals
-db <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+db <- streamfindData::get_ms_tof_spiked_chemicals_with_ms2()
 cols <- c("name", "formula", "mass", "rt", "polarity", "fragments", "tag")
 db <- db[, cols, with = FALSE]
 dbis <- db[grepl("IS", db$tag), ] # Only spiked internal standards
@@ -96,27 +96,27 @@ dbsus <- db[!grepl("IS", db$tag), ]
 # Add other module processing settings
 ms$add_settings(
   list(
-    Method_annotate_features_StreamFind(),
+    Method_annotate_features_streamfind(),
 
     Method_group_features_openms(),
 
-    Method_find_internal_standards_StreamFind(database = dbis, ppm = 8, sec = 10),
+    Method_find_internal_standards_streamfind(database = dbis, ppm = 8, sec = 10),
 
-    Method_filter_features_StreamFind(excludeIsotopes = TRUE),
+    Method_filter_features_streamfind(excludeIsotopes = TRUE),
 
     Method_filter_features_patRoon(
       absMinIntensity = 5000, maxReplicateIntRSD = 30, blankThreshold = 5, absMinReplicateAbundance = 3
     ),
 
-    Method_load_features_eic_StreamFind(rtExpand = 60, mzExpand = 0.0005),
+    Method_load_features_eic_streamfind(rtExpand = 60, mzExpand = 0.0005),
 
-    Method_calculate_quality_StreamFind(),
+    Method_calculate_quality_streamfind(),
 
-    Method_filter_features_StreamFind(minSnRatio = 3),
+    Method_filter_features_streamfind(minSnRatio = 3),
     
-    Method_load_features_ms2_StreamFind(),
+    Method_load_features_ms2_streamfind(),
 
-    Method_suspect_screening_StreamFind(database = dbsus, ppm = 5, sec = 10)
+    Method_suspect_screening_streamfind(database = dbsus, ppm = 5, sec = 10)
   )
 )
 

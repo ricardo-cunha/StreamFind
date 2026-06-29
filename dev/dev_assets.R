@@ -12,11 +12,11 @@ devtools::document()
 
 # Installs the package
 devtools::install(upgrade = FALSE, dependencies = TRUE, build_vignettes = FALSE)
-devtools::install_github("odea-project/StreamFind", upgrade = FALSE, dependencies = TRUE, build_vignettes = FALSE)
+devtools::install_github("odea-project/streamfind", upgrade = FALSE, dependencies = TRUE, build_vignettes = FALSE)
 
-pak::pkg_install("odea-project/StreamFind@dev_filesystem", upgrade = FALSE, dependencies = TRUE)
+pak::pkg_install("odea-project/streamfind@dev_filesystem", upgrade = FALSE, dependencies = TRUE)
 
-pak::pkg_install("ricardo-cunha/StreamFind@dev_1.0", upgrade = FALSE, dependencies = TRUE)
+pak::pkg_install("ricardo-cunha/streamfind@dev_1.0", upgrade = FALSE, dependencies = TRUE)
 
 pak::pkg_install(".")
 
@@ -67,7 +67,7 @@ print(non_ascii_lines)
 
 # Others -----------------------------------------------------------------------
 
-system.file(package = "StreamFind", dir = "extdata")
+system.file(package = "streamfind", dir = "extdata")
 
 usethis::use_build_ignore("man-roxygen")
 
@@ -82,7 +82,7 @@ usethis::use_test("app")
 # Documentation
 
 ## Vignette ----
-usethis::use_vignette("StreamFind")
+usethis::use_vignette("streamfind")
 devtools::build_vignettes()
 
 ## Code Coverage ----

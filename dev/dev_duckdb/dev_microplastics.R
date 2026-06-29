@@ -1,5 +1,5 @@
 
-library(StreamFind)
+library(streamfind)
 
 files <- list.files("D:\\microplastics", full.names = TRUE)
 

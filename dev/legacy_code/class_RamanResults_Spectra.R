@@ -5,7 +5,7 @@
 #' @param peaks A list of peaks, where each element is a `data.table` representing the peaks for a corresponding spectrum.
 #' @param chrom_peaks A list where each element is a `data.table` representing the chromatographic peaks found in each spectrum, when a time dimension is present.
 #' @export
-#' @seealso [StreamFind::Results] for the parent class.
+#' @seealso [streamfind::Results] for the parent class.
 #'
 RamanResults_Spectra <- function(
   spectra = list(),
@@ -17,8 +17,8 @@ RamanResults_Spectra <- function(
     list(
       type = "Raman",
       name = "RamanResults_Spectra",
-      software = "StreamFind",
-      version = as.character(packageVersion("StreamFind")),
+      software = "streamfind",
+      version = as.character(packageVersion("streamfind")),
       spectra = spectra,
       is_averaged = is_averaged,
       peaks = peaks,

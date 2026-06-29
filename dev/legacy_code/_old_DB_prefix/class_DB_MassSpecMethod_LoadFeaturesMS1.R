@@ -2,7 +2,7 @@
 # Native ------
 
 #' @title DB_MassSpecMethod_LoadFeaturesMS1_native class
-#' @description Native StreamFind method for loading MS1 traces into features stored in a database.
+#' @description Native streamfind method for loading MS1 traces into features stored in a database.
 #' @param rtWindow Numeric length-2 vector of retention time offsets (seconds) to expand left/right feature windows. Note that left offset should be negative.
 #' @param mzWindow Numeric length-2 vector of m/z offsets (Da) to expand left/right feature windows. Note that left offset should be negative.
 #' @param mzClust Numeric(1) m/z tolerance used when clustering traces.
@@ -27,11 +27,11 @@ DB_MassSpecMethod_LoadFeaturesMS1_native <- function(
     input_class = "DB_MassSpecResults_NonTargetAnalysis",
     output_class = "DB_MassSpecResults_NonTargetAnalysis",
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_,
     parameters = list(
       rtWindow = rtWindow,

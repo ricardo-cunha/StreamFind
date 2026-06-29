@@ -1,8 +1,8 @@
 # MARK: MassSpecResults_NonTargetAnalysis
 #' @title Constructor and methods to handle non-target analysis (NTA) for mass spectrometry data
-#' @description Create a `MassSpecResults_NonTargetAnalysis` object (child of [StreamFind::Results]) that reuses an existing `MassSpecAnalyses` DuckDB (for analyses and spectra) and stores NTA features in its own DuckDB.
+#' @description Create a `MassSpecResults_NonTargetAnalysis` object (child of [streamfind::Results]) that reuses an existing `MassSpecAnalyses` DuckDB (for analyses and spectra) and stores NTA features in its own DuckDB.
 #' @template arg-projectPath
-#' @param features A data.frame/data.table with NTA feature results as produced by [StreamFind::MassSpecMethod_FindFeatures_native], written to the `Features` table.
+#' @param features A data.frame/data.table with NTA feature results as produced by [streamfind::MassSpecMethod_FindFeatures_native], written to the `Features` table.
 #' @return An object of class `MassSpecResults_NonTargetAnalysis` (and `Results`) pointing to the feature DuckDB on disk and holding an `analyses` field with the linked `MassSpecAnalyses`.
 #' @export
 #'
@@ -2678,7 +2678,7 @@ get_internal_standards.MassSpecResults_NonTargetAnalysis <- function(x, analyses
 #' @export
 #'
 #' @references
-#' \insertRef{bader01}{StreamFind}
+#' \insertRef{bader01}{streamfind}
 #'
 get_fold_change.MassSpecResults_NonTargetAnalysis <- function(
   x,

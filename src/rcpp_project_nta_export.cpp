@@ -1432,7 +1432,7 @@ SEXP rcpp_project_non_target_analysis_new(SEXP project_xptr)
   return nta_rcpp::project_call([&]() {
     auto *ptr = new nta::PROJECT_NON_TARGET_ANALYSIS(nta_rcpp::project_from_xptr(project_xptr).context());
     Rcpp::XPtr<nta::PROJECT_NON_TARGET_ANALYSIS> out(ptr, true);
-    out.attr("class") = "StreamFindProjectNonTargetAnalysis";
+    out.attr("class") = "streamfindProjectNonTargetAnalysis";
     return SEXP(out);
   });
 }

@@ -1,47 +1,47 @@
-#' @title RamanMethod_SubtractSpectraSection_StreamFind Class
+#' @title RamanMethod_SubtractSpectraSection_streamfind Class
 #'
 #' @description Subtracts a section of the spectra based on a variable (i.e. column name).
 #'
 #' @param sectionVal Character (length 1) with the variable to be used for sectioning.
 #' @param sectionWindow Numeric (length 2) with the window for the sectioning.
 #'
-#' @return A RamanMethod_SubtractSpectraSection_StreamFind object.
+#' @return A RamanMethod_SubtractSpectraSection_streamfind object.
 #'
 #' @export
 #'
-RamanMethod_SubtractSpectraSection_StreamFind <- function(
+RamanMethod_SubtractSpectraSection_streamfind <- function(
   sectionVal = "rt",
   sectionWindow = c(10, 200)
 ) {
   x <- ProcessingStep(
     type = "Raman",
     method = "SubtractSpectraSection",
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     parameters = list(
       sectionVal = sectionVal,
       sectionWindow = sectionWindow
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid RamanMethod_SubtractSpectraSection_StreamFind object!")
+    stop("Invalid RamanMethod_SubtractSpectraSection_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
-validate_object.RamanMethod_SubtractSpectraSection_StreamFind <- function(x) {
+validate_object.RamanMethod_SubtractSpectraSection_streamfind <- function(x) {
   checkmate::assert_choice(x$type, "Raman")
   checkmate::assert_choice(x$method, "SubtractSpectraSection")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_character(x$parameters$sectionVal, min.len = 1)
   checkmate::assert_numeric(x$parameters$sectionWindow, len = 2)
   NextMethod()
@@ -51,7 +51,7 @@ validate_object.RamanMethod_SubtractSpectraSection_StreamFind <- function(x) {
 
 #' @export
 #' @noRd
-run.RamanMethod_SubtractSpectraSection_StreamFind <- function(
+run.RamanMethod_SubtractSpectraSection_streamfind <- function(
   x,
   engine = NULL
 ) {

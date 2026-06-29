@@ -1,4 +1,4 @@
-#' MassSpecMethod_FilterFeatures_StreamFind Class
+#' MassSpecMethod_FilterFeatures_streamfind Class
 #'
 #' @description Settings for filtering of features and feature groups.
 #'
@@ -23,11 +23,11 @@
 #' with the filter.
 #' @param onlyWithMS2 Logical (length 1) with `TRUE` for filtering features without MS2 spectra.
 #'
-#' @return A `MassSpecMethod_FilterFeatures_StreamFind` object.
+#' @return A `MassSpecMethod_FilterFeatures_streamfind` object.
 #'
 #' @export
 #'
-MassSpecMethod_FilterFeatures_StreamFind <- function(
+MassSpecMethod_FilterFeatures_streamfind <- function(
   correctIntensity = TRUE,
   minSnRatio = NA_real_,
   minGaussianFit = NA_real_,
@@ -44,7 +44,7 @@ MassSpecMethod_FilterFeatures_StreamFind <- function(
     type = "MassSpec",
     method = "FilterFeatures",
     required = "FindFeatures",
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     input_class = "MassSpecResults_NonTargetAnalysis",
     output_class = "MassSpecResults_NonTargetAnalysis",
     parameters = list(
@@ -61,27 +61,27 @@ MassSpecMethod_FilterFeatures_StreamFind <- function(
       onlyWithMS2 = as.logical(onlyWithMS2)
     ),
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid MassSpecMethod_FilterFeatures_StreamFind object!")
+    stop("Invalid MassSpecMethod_FilterFeatures_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
 #'
-validate_object.MassSpecMethod_FilterFeatures_StreamFind <- function(x) {
+validate_object.MassSpecMethod_FilterFeatures_streamfind <- function(x) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_choice(x$method, "FilterFeatures")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_logical(x$parameters$correctIntensity, len = 1)
   checkmate::assert_numeric(x$parameters$minSnRatio, len = 1)
   checkmate::assert_numeric(x$parameters$minGaussianFit, len = 1)
@@ -104,7 +104,7 @@ validate_object.MassSpecMethod_FilterFeatures_StreamFind <- function(x) {
 #' @export
 #' @noRd
 #'
-run.MassSpecMethod_FilterFeatures_StreamFind <- function(
+run.MassSpecMethod_FilterFeatures_streamfind <- function(
   x,
   engine = NULL
 ) {
@@ -1145,7 +1145,7 @@ MassSpecMethod_FilterFeatures_patRoon <- function(
       "negate" = as.logical(negate)
     ),
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "patRoon",
     developer = "Rick Helmus",
     contact = "r.helmus@uva.nl",

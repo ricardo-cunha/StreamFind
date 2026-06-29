@@ -1,4 +1,4 @@
-# Debug plotting utilities for StreamFind
+# Debug plotting utilities for streamfind
 # Helper functions for visualizing debug logs from processing methods
 
 #' Plot RT alignment shifts from DB_MassSpecMethod_GroupFeatures debug log

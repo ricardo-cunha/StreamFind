@@ -21,7 +21,7 @@ add_library(
   zutil.c
 )
 
-add_library(StreamFind::zlib ALIAS streamfind_zlib)
+add_library(streamfind::zlib ALIAS streamfind_zlib)
 
 target_include_directories(
   streamfind_zlib

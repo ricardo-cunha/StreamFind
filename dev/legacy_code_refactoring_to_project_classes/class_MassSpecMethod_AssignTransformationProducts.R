@@ -1,5 +1,5 @@
-﻿#' @title MassSpecMethod_AssignTransformationProducts_native class
-#' @description Native StreamFind method to link transformation products and parents using an existing Suspects
+#' @title MassSpecMethod_AssignTransformationProducts_native class
+#' @description Native streamfind method to link transformation products and parents using an existing Suspects
 #' table and assign feature groups based on matched suspect features. Writes the TransformationProducts table.
 #' @param transformation_products A data.frame with transformation products and parent entries. Uses `SMILES` to
 #' link parents and products via `precursor_SMILES`.
@@ -51,11 +51,11 @@ MassSpecMethod_AssignTransformationProducts_native <- function(
 		input_class = "MassSpecResults_NonTargetAnalysis",
 		output_class = "MassSpecResults_NonTargetAnalysis",
 		number_permitted = Inf,
-		version = as.character(packageVersion("StreamFind")),
-		software = "StreamFind",
+		version = as.character(packageVersion("streamfind")),
+		software = "streamfind",
 		developer = "Ricardo Cunha",
 		contact = "cunha@iuta.de",
-		link = "https://odea-project.github.io/StreamFind",
+		link = "https://odea-project.github.io/streamfind",
 		doi = NA_character_,
 		parameters = list(
 			transformation_products = transformation_products,

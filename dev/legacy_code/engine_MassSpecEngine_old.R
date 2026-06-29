@@ -68,15 +68,15 @@
 #' @template arg-renderEngine
 #' 
 #' @references
-#' \insertRef{patroon01}{StreamFind}
+#' \insertRef{patroon01}{streamfind}
 #' 
-#' \insertRef{patroon02}{StreamFind}
+#' \insertRef{patroon02}{streamfind}
 #' 
-#' \insertRef{pugixml01}{StreamFind}
+#' \insertRef{pugixml01}{streamfind}
 #' 
-#' \insertRef{proteo01}{StreamFind}
+#' \insertRef{proteo01}{streamfind}
 #' 
-#' \insertRef{proteo02}{StreamFind}
+#' \insertRef{proteo02}{streamfind}
 #' 
 #' @export
 #' 
@@ -94,7 +94,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
       if (missing(value)) {
         return(self$Analyses@results[["NonTargetAnalysisResults"]])
       }
-      if (is(value, "StreamFind::NonTargetAnalysisResults")) {
+      if (is(value, "streamfind::NonTargetAnalysisResults")) {
         self$Analyses@NonTargetAnalysisResults <- value
       } else {
         warning("Value must be an NonTargetAnalysisResults results object! Not done.")
@@ -109,7 +109,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
       if (missing(value)) {
         return(self$Analyses@Spectra)
       }
-      if (is(value, "StreamFind::MassSpecSpectra")) {
+      if (is(value, "streamfind::MassSpecSpectra")) {
         self$Analyses@Spectra <- value
       } else {
         warning("Value must be a Spectra object! Not done.")
@@ -124,7 +124,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
       if (missing(value)) {
         return(self$Analyses@Chromatograms)
       }
-      if (is(value, "StreamFind::Chromatograms")) {
+      if (is(value, "streamfind::Chromatograms")) {
         self$Analyses@Chromatograms <- value
       } else {
         warning("Value must be a Chromatograms object! Not done.")
@@ -155,7 +155,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
     #' @param levels Numeric vector with the MS levels to consider when centroiding data. Default
     #' is `c(1, 2)`.
     #' 
-    #' @seealso [StreamFind::CoreEngine]
+    #' @seealso [streamfind::CoreEngine]
     #'
     #' @return A new MassSpecEngine class object.
     #'
@@ -356,7 +356,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
     #' @param rt Numeric (length 2). The retention time range to filter the TIC.
     #'
     get_spectra_tic = function(analyses = NULL, levels = c(1, 2), rt = NULL) {
-      StreamFind::get_spectra_tic(self$Analyses, analyses, levels, rt)
+      streamfind::get_spectra_tic(self$Analyses, analyses, levels, rt)
     },
 
     # MARK: get_spectra_bpc
@@ -366,7 +366,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
     #' @param rt Numeric (length 2). The retention time range to filter the BPC.
     #'
     get_spectra_bpc = function(analyses = NULL, levels = c(1, 2), rt = NULL) {
-      StreamFind::get_spectra_bpc(self$Analyses, analyses, levels, rt)
+      streamfind::get_spectra_bpc(self$Analyses, analyses, levels, rt)
     },
     
     # MARK: get_raw_spectra
@@ -386,7 +386,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                isolationWindow = 1.3,
                                minIntensityMS1 = 0,
                                minIntensityMS2 = 0) {
-      StreamFind::get_raw_spectra(
+      streamfind::get_raw_spectra(
         self$Analyses,
         analyses, levels, mass, mz, rt, mobility, ppm, sec, millisec, id,
         allTraces, isolationWindow, minIntensityMS1, minIntensityMS2
@@ -406,7 +406,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                sec = 60,
                                millisec = 5,
                                id = NULL) {
-      StreamFind::get_spectra_eic(
+      streamfind::get_spectra_eic(
         self$Analyses,
         analyses, mass, mz, rt, mobility, ppm, sec, millisec, id
       )
@@ -427,7 +427,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                mzClust = 0.003,
                                presence = 0.8,
                                minIntensity = 1000) {
-      StreamFind::get_spectra_ms1(
+      streamfind::get_spectra_ms1(
         self$Analyses,
         analyses, mass, mz, rt, mobility, ppm, sec, millisec, id,
         mzClust, presence, minIntensity
@@ -450,7 +450,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                mzClust = 0.005,
                                presence = 0.8,
                                minIntensity = 0) {
-      StreamFind::get_spectra_ms2(
+      streamfind::get_spectra_ms2(
         self$Analyses,
         analyses, mass, mz, rt, mobility, ppm, sec, millisec, id,
         isolationWindow, mzClust, presence, minIntensity
@@ -474,7 +474,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                 downsize = 1,
                                 interactive = TRUE,
                                 renderEngine = "webgl") {
-      StreamFind::plot_spectra_tic(
+      streamfind::plot_spectra_tic(
         self$Analyses, analyses,levels, rt, xLab, yLab, title, colorBy, legendNames,
         downsize, interactive, renderEngine
       )
@@ -493,7 +493,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                 legendNames = NULL,
                                 interactive = TRUE,
                                 renderEngine = "webgl") {
-      StreamFind::plot_spectra_bpc(
+      streamfind::plot_spectra_bpc(
         self$Analyses, analyses, levels, rt, xLab, yLab, title, colorBy, legendNames,
         interactive, renderEngine
       )
@@ -518,7 +518,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                 colorBy = "targets",
                                 interactive = TRUE,
                                 renderEngine = "webgl") {
-      StreamFind::plot_spectra_eic(
+      streamfind::plot_spectra_eic(
         self$Analyses, analyses, mass, mz, rt, mobility, ppm, sec, millisec, id, legendNames, xLab,
         yLab, title, colorBy, interactive, renderEngine
       )
@@ -561,7 +561,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                 secMark = 10,
                                 numberRows = 1,
                                 renderEngine = "webgl") {
-      StreamFind::plot_spectra_xic(
+      streamfind::plot_spectra_xic(
         self$Analyses, analyses, mass, mz, rt, mobility, ppm, sec, millisec, id,
         legendNames, plotTargetMark, targetsMark, ppmMark, secMark, numberRows, renderEngine
       )
@@ -589,7 +589,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                 colorBy = "targets",
                                 showText = FALSE,
                                 interactive = TRUE) {
-      StreamFind::plot_spectra_ms1(
+      streamfind::plot_spectra_ms1(
         self$Analyses, analyses, mass, mz, rt, mobility, ppm, sec, millisec, id, mzClust,
         presence, minIntensity, legendNames, xLab, yLab, title, colorBy, showText, interactive
       )
@@ -617,7 +617,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                 title = NULL,
                                 colorBy = "targets",
                                 interactive = TRUE) {
-      StreamFind::plot_spectra_ms2(
+      streamfind::plot_spectra_ms2(
         self$Analyses, analyses, mass, mz, rt, mobility, ppm, sec, millisec, id, isolationWindow,
         mzClust, presence, minIntensity, legendNames, xLab, yLab, title, colorBy, interactive
       )
@@ -649,7 +649,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                      rtmin = 0,
                                      rtmax = 0,
                                      minIntensity = NULL) {
-      StreamFind::get_raw_chromatograms(
+      streamfind::get_raw_chromatograms(
         self$Analyses,
         analyses, chromatograms, rtmin, rtmax, minIntensity
       )
@@ -688,7 +688,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                  rtmax = 0,
                                  minIntensity = NULL) {
       if (self$has_results_chromatograms()) {
-        StreamFind::get_chromatograms(
+        streamfind::get_chromatograms(
           self$Chromatograms, analyses, chromatograms, rtmin, rtmax, minIntensity
         )
       } else {
@@ -706,7 +706,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                        rtmax = 0,
                                        minIntensity = NULL) {
       if (self$has_results_chromatograms()) {
-        StreamFind::get_chromatograms_peaks(
+        streamfind::get_chromatograms_peaks(
           self$Chromatograms, analyses, chromatograms, rtmin, rtmax, minIntensity
         )
       } else {
@@ -733,7 +733,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                   interactive = TRUE,
                                   renderEngine = "webgl") {
       if (self$has_results_chromatograms()) {
-        StreamFind::plot_chromatograms(
+        streamfind::plot_chromatograms(
           self$Chromatograms, analyses, chromatograms, rtmin, rtmax, minIntensity,
           normalized, xLab, yLab, title, colorBy, legendNames, interactive, renderEngine
         )
@@ -755,7 +755,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                            interactive = TRUE,
                                            renderEngine = "webgl") {
       if (self$has_results_chromatograms()) {
-        StreamFind::plot_chromatograms_baseline(
+        streamfind::plot_chromatograms_baseline(
           self$Chromatograms, analyses, chromatograms,
           xLab, yLab, title, colorBy, interactive, renderEngine
         )
@@ -781,7 +781,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                         interactive = TRUE,
                                         renderEngine = "webgl") {
       if (self$has_results_chromatograms()) {
-        StreamFind::plot_chromatograms_peaks(
+        streamfind::plot_chromatograms_peaks(
           self$Chromatograms, analyses, chromatograms, rtmin, rtmax, minIntensity,
           xLab, yLab, title, colorBy, legendNames, interactive, renderEngine
         )
@@ -812,7 +812,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                            minIntensityMS1 = 0,
                            minIntensityMS2 = 0) {
       if (self$has_results_spectra()) {
-        StreamFind::get_spectra(
+        streamfind::get_spectra(
           self$Spectra,
           analyses, levels, mass, mz, rt, mobility, ppm, sec, millisec, id, allTraces,
           isolationWindow, minIntensityMS1, minIntensityMS2
@@ -852,7 +852,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                             interactive = TRUE,
                             renderEngine = "webgl") {
       if (self$has_results_spectra()) {
-        StreamFind::plot_spectra(
+        streamfind::plot_spectra(
           self$Spectra,
           analyses, levels, mass, mz, rt, mobility, ppm, sec, millisec, id,
           allTraces, isolationWindow, minIntensityMS1, minIntensityMS2,
@@ -895,7 +895,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                zLab = NULL,
                                renderEngine = "webgl") {
       if (self$has_results_spectra()) {
-        StreamFind::plot_spectra(
+        streamfind::plot_spectra(
           self$Spectra,
           analyses, levels, mass, mz, rt, mobility, ppm, sec, millisec, id,
           allTraces, isolationWindow, minIntensityMS1, minIntensityMS2,
@@ -919,7 +919,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                     interactive = TRUE,
                                     renderEngine = "webgl") {
       if (self$has_results_spectra()) {
-        StreamFind::plot_spectra_charges(
+        streamfind::plot_spectra_charges(
           self$Spectra,
           analyses, legendNames, title, colorBy, xLab, yLab, interactive, renderEngine
         )
@@ -934,7 +934,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
     #' @description Gets a data.table with peaks from spectra in each analysis.
     get_spectra_peaks = function(analyses = NULL) {
       if (self$has_results_spectra()) {
-        StreamFind::get_spectra_peaks(self$Spectra, analyses)
+        streamfind::get_spectra_peaks(self$Spectra, analyses)
       } else {
         warning("No spectra results available! Not done.")
         return(NULL)
@@ -957,7 +957,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                   interactive = TRUE,
                                   renderEngine = "webgl") {
       if (self$has_results_spectra()) {
-        StreamFind::plot_spectra_charges(
+        streamfind::plot_spectra_charges(
           self$Spectra,
           analyses, legendNames, colorBy, xVal, xLab, yLab, title, interactive, renderEngine
         )
@@ -983,7 +983,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                      interactive = TRUE,
                                      renderEngine = "webgl") {
       if (self$has_results_spectra()) {
-        StreamFind::plot_spectra_baseline(
+        streamfind::plot_spectra_baseline(
           self$Spectra,
           analyses, legendNames, colorBy, xVal, xLab, yLab, title, interactive, renderEngine
         )
@@ -998,7 +998,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
     #' @description Gets a matrix with spectra from analyses.
     get_spectra_matrix = function(analyses = NULL) {
       if (self$has_results_spectra()) {
-        StreamFind::get_spectra_matrix(self$Spectra, analyses)
+        streamfind::get_spectra_matrix(self$Spectra, analyses)
       } else {
         warning("No spectra results available! Not done.")
         return(NULL)
@@ -1013,7 +1013,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
     #' @description Gets a data.table with the features count from NonTargetAnalysisResults results.
     get_features_count = function(analyses = NULL, filtered = FALSE) {
       if (self$has_results_nts()) {
-        StreamFind::get_features_count(
+        streamfind::get_features_count(
           self$NonTargetAnalysisResults, analyses, filtered
         )
       } else {
@@ -1036,7 +1036,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                    showLegend = TRUE,
                                    showHoverText = TRUE) {
       if (self$has_results_nts()) {
-        StreamFind::plot_features_count(
+        streamfind::plot_features_count(
           self$NonTargetAnalysisResults, analyses, filtered, yLab, title, colorBy, showLegend, showHoverText
         )
       } else {
@@ -1060,7 +1060,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                             millisec = 5,
                             filtered = FALSE) {
       if (self$has_results_nts()) {
-        StreamFind::get_features(
+        streamfind::get_features(
           self$NonTargetAnalysisResults, analyses, features, mass, mz, rt, mobility, ppm, sec, millisec, filtered
         )
       } else {
@@ -1095,7 +1095,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                             interactive = TRUE,
                             renderEngine = "webgl") {
       if (self$has_results_nts()) {
-        StreamFind::map_features(
+        streamfind::map_features(
           self$NonTargetAnalysisResults, analyses, features, mass, mz, rt, mobility, ppm, sec, millisec, neutral_mass,
           filtered, legendNames, xLab, yLab, title, colorBy, showLegend, interactive, renderEngine
         )
@@ -1125,7 +1125,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                       colorBy = "replicates+targets",
                                       renderEngine = "webgl") {
       if (self$has_results_nts()) {
-        StreamFind::map_features_intensity(
+        streamfind::map_features_intensity(
           self$NonTargetAnalysisResults, analyses, features, mass, mz, rt, mobility, ppm, sec, millisec,
           filtered, legendNames, xLab, yLab, title, colorBy, renderEngine
         )
@@ -1152,7 +1152,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                 filtered = FALSE,
                                 useLoadedData = TRUE) {
       if (self$has_results_nts()) {
-        StreamFind::get_features_eic(
+        streamfind::get_features_eic(
           self$NonTargetAnalysisResults, analyses, features, mass, mz, rt, mobility, ppm, sec, millisec,
           rtExpand, mzExpand, filtered, useLoadedData
         )
@@ -1186,7 +1186,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                              interactive = TRUE,
                              renderEngine = "webgl") {
       if (self$has_results_nts()) {
-        StreamFind::plot_features(
+        streamfind::plot_features(
           self$NonTargetAnalysisResults, analyses, features, mass, mz, rt, mobility, ppm, sec, millisec,
           rtExpand, mzExpand, useLoadedData, filtered, legendNames, xLab, yLab, title, colorBy,
           interactive, renderEngine
@@ -1218,7 +1218,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                 filtered = FALSE,
                                 useLoadedData = TRUE) {
       if (self$has_results_nts()) {
-        StreamFind::get_features_ms1(
+        streamfind::get_features_ms1(
           self$NonTargetAnalysisResults, analyses, features, mass, mz, rt, mobility, ppm, sec, millisec,
           rtWindow, mzWindow, mzClust, presence, minIntensity, filtered, useLoadedData
         )
@@ -1255,7 +1255,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                  showText = FALSE,
                                  interactive = TRUE) {
       if (self$has_results_nts()) {
-        StreamFind::plot_features_ms1(
+        streamfind::plot_features_ms1(
           self$NonTargetAnalysisResults, analyses, features, mass, mz, rt, mobility, ppm, sec, millisec, rtWindow,
           mzWindow, mzClust, presence, minIntensity, filtered, useLoadedData, legendNames,
           xLab, yLab, title, colorBy, showText, interactive
@@ -1286,7 +1286,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                 filtered = FALSE,
                                 useLoadedData = TRUE) {
       if (self$has_results_nts()) {
-        StreamFind::get_features_ms2(
+        streamfind::get_features_ms2(
           self$NonTargetAnalysisResults, analyses, features, mass, mz, rt, mobility, ppm, sec, millisec,
           isolationWindow, mzClust, presence, minIntensity, filtered, useLoadedData
         )
@@ -1322,7 +1322,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                  showText = TRUE,
                                  interactive = TRUE) {
       if (self$has_results_nts()) {
-        StreamFind::plot_features_ms2(
+        streamfind::plot_features_ms2(
           self$NonTargetAnalysisResults, analyses, features, mass, mz, rt, mobility, ppm, sec, millisec, isolationWindow,
           mzClust, presence, minIntensity, filtered, useLoadedData, legendNames, xLab, yLab, title,
           colorBy, showText, interactive
@@ -1357,7 +1357,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                           metadata = FALSE,
                           correctIntensity = FALSE) {
       if (self$has_results_nts()) {
-        StreamFind::get_groups(
+        streamfind::get_groups(
           self$NonTargetAnalysisResults, groups, mass, mz, rt, mobility, ppm, sec, millisec,
           filtered, intensities, average, sdValues, metadata, correctIntensity
         )
@@ -1390,7 +1390,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                            interactive = TRUE,
                            renderEngine = "webgl") {
       if (self$has_results_nts()) {
-        StreamFind::plot_groups(
+        streamfind::plot_groups(
           self$NonTargetAnalysisResults, analyses, groups, mass, mz, rt, mobility, ppm, sec, millisec, rtExpand, mzExpand,
           filtered, legendNames, xLab, yLab, title, colorBy, interactive, renderEngine
         )
@@ -1429,7 +1429,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                     heights = c(0.35, 0.5, 0.15),
                                     renderEngine = "webgl") {
       if (self$has_results_nts()) {
-        StreamFind::plot_groups_overview(
+        streamfind::plot_groups_overview(
           self$NonTargetAnalysisResults, analyses, groups, mass, mz, rt, mobility, ppm, sec, millisec, rtExpand,
           mzExpand, useLoadedData, correctIntensity, filtered, legendNames, title, heights,
           renderEngine
@@ -1466,7 +1466,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                    showLegend = TRUE,
                                    renderEngine = "webgl") {
       if (self$has_results_nts()) {
-        StreamFind::plot_groups_profile(
+        streamfind::plot_groups_profile(
           self$NonTargetAnalysisResults, analyses, groups, mass, mz, rt, mobility, ppm, sec, millisec, filtered,
           correctIntensity, averaged, normalized, legendNames, yLab, title, showLegend, renderEngine
         )
@@ -1499,7 +1499,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                               groupBy = "groups",
                               filtered = FALSE) {
       if (self$has_results_nts()) {
-        StreamFind::get_groups_ms1(
+        streamfind::get_groups_ms1(
           self$NonTargetAnalysisResults, groups, mass, mz, rt, mobility, ppm, sec, millisec,
           rtWindow, mzWindow, mzClustFeatures, presenceFeatures, minIntensityFeatures,
           useLoadedData, mzClust, presence, minIntensity, groupBy, filtered
@@ -1540,7 +1540,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                showText = FALSE,
                                interactive = TRUE) {
       if (self$has_results_nts()) {
-        StreamFind::plot_groups_ms1(
+        streamfind::plot_groups_ms1(
           self$NonTargetAnalysisResults, groups, mass, mz, rt, mobility, ppm, sec, millisec, rtWindow, mzWindow,
           mzClustFeatures, presenceFeatures, minIntensityFeatures, useLoadedData,
           mzClust, presence, minIntensity, groupBy, filtered, legendNames,
@@ -1574,7 +1574,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                               groupBy = "groups",
                               filtered = FALSE) {
       if (self$has_results_nts()) {
-        StreamFind::get_groups_ms2(
+        streamfind::get_groups_ms2(
           self$NonTargetAnalysisResults, groups, mass, mz, rt, mobility, ppm, sec, millisec,
           isolationWindow, mzClustFeatures, presenceFeatures, minIntensityFeatures,
           useLoadedData, mzClust, presence, minIntensity, groupBy, filtered
@@ -1614,7 +1614,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                showText = TRUE,
                                interactive = TRUE) {
       if (self$has_results_nts()) {
-        StreamFind::plot_groups_ms2(
+        streamfind::plot_groups_ms2(
           self$NonTargetAnalysisResults, groups, mass, mz, rt, mobility, ppm, sec, millisec, isolationWindow,
           mzClustFeatures, presenceFeatures, minIntensityFeatures, useLoadedData,
           mzClust, presence, minIntensity, groupBy, filtered, legendNames,
@@ -1641,7 +1641,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                               millisec = 5,
                               filtered = FALSE) {
       if (self$has_results_nts()) {
-        StreamFind::get_components(
+        streamfind::get_components(
           self$NonTargetAnalysisResults, analyses, features, mass, mz, rt, mobility, ppm, sec, millisec, filtered
         )
       } else {
@@ -1672,7 +1672,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                               showLegend = TRUE,
                               renderEngine = "webgl") {
       if (self$has_results_nts()) {
-        StreamFind::map_components(
+        streamfind::map_components(
           self$NonTargetAnalysisResults, analyses, features, mass, mz, rt, mobility, ppm, sec, millisec, filtered,
           legendNames, xLab, yLab, title, colorBy, interactive, showLegend, renderEngine
         )
@@ -1711,7 +1711,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                             minFragments = 3,
                             filtered = FALSE) {
       if (self$has_results_nts()) {
-        StreamFind::get_suspects(
+        streamfind::get_suspects(
           self$NonTargetAnalysisResults, analyses, database, features, mass, mz, rt, mobility, ppm, sec, millisec,
           ppmMS2, mzrMS2, minCusiness, minFragments, filtered
         )
@@ -1758,7 +1758,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                              heights = c(0.5, 0.5),
                              interactive = TRUE) {
       if (self$has_results_nts()) {
-        StreamFind::plot_suspects(
+        streamfind::plot_suspects(
           self$NonTargetAnalysisResults, analyses, database, features, mass, mz, rt, mobility, ppm,
           sec, millisec, ppmMS2, mzrMS2, minCusiness, minFragments, filtered, rtExpand, mzExpand,
           useLoadedData, legendNames, colorBy, heights, interactive
@@ -1779,7 +1779,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
     #'
     get_internal_standards = function(average = TRUE) {
       if (self$has_results_nts()) {
-        StreamFind::get_internal_standards(self$NonTargetAnalysisResults, average)
+        streamfind::get_internal_standards(self$NonTargetAnalysisResults, average)
       } else {
         warning("No NonTargetAnalysisResults results available! Not done.")
         return(data.table::data.table())
@@ -1806,7 +1806,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                        widths = TRUE,
                                        renderEngine = "webgl") {
       if (self$has_results_nts()) {
-        StreamFind::plot_internal_standards(
+        streamfind::plot_internal_standards(
           self$NonTargetAnalysisResults, analyses, presence, recovery, deviations, widths, renderEngine
         )
       } else {
@@ -1851,7 +1851,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                fillZerosWithLowerLimit = FALSE,
                                lowerLimit = NA_real_) {
       if (self$has_results_nts()) {
-        StreamFind::get_fold_change(
+        streamfind::get_fold_change(
           self$NonTargetAnalysisResults, replicatesIn, replicatesOut, groups, mass, mz, rt, mobility, ppm, sec, millisec,
           filtered, constantThreshold, eliminationThreshold, correctIntensity,
           fillZerosWithLowerLimit, lowerLimit
@@ -1903,7 +1903,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                 interactive = TRUE,
                                 showLegend = TRUE) {
       if (self$has_results_nts()) {
-        StreamFind::plot_fold_change(
+        streamfind::plot_fold_change(
           self$NonTargetAnalysisResults, replicatesIn, replicatesOut, groups, mass, mz, rt, mobility, ppm, sec, millisec,
           filtered, constantThreshold, eliminationThreshold, correctIntensity,
           fillZerosWithLowerLimit, lowerLimit, normalized, yLab, title, interactive, showLegend
@@ -1933,7 +1933,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                              filtered = FALSE,
                              averaged = TRUE) {
       if (self$has_results_nts()) {
-        StreamFind::get_compounds(
+        streamfind::get_compounds(
           self$NonTargetAnalysisResults, analyses, features, mass, mz, rt, mobility, ppm, sec, millisec,
           filtered, averaged
         )
@@ -1952,7 +1952,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
     #'
     get_patRoon_features = function(filtered = FALSE, featureGroups = TRUE) {
       if (self$has_results_nts()) {
-        StreamFind::get_patRoon_features( self$NonTargetAnalysisResults, filtered, featureGroups)
+        streamfind::get_patRoon_features( self$NonTargetAnalysisResults, filtered, featureGroups)
       } else {
         warning("No NonTargetAnalysisResults results available! Not done.")
         return(NULL)
@@ -1994,7 +1994,7 @@ MassSpecEngine <- R6::R6Class("MassSpecEngine",
                                        avgFun = "mean",
                                        method = "distance") {
       if (self$has_results_nts()) {
-        StreamFind::get_patRoon_MSPeakLists(
+        streamfind::get_patRoon_MSPeakLists(
           self$NonTargetAnalysisResults, clusterMzWindow, topMost, minIntensityPre, minIntensityPost, avgFun, method
         )
       } else {

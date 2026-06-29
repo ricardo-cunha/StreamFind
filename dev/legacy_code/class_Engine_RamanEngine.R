@@ -1,6 +1,6 @@
 # MARK: RamanEngine
 #' @title Engine dedicated to Raman spectroscopic data processing
-#' @description The *RamanEngine* R6 class is a framework for parsing, processing, inspecting and storing Raman spectroscopic data. The engine has *Raman* as data type. The *Analyses* active field has class [StreamFind::RamanAnalyses], where Raman data can be loaded from "asc", "sif", "json", "wdf", "sdf", "csv" and "txt" files. The *results* active field is a list that can hold the class [StreamFind::RamanResults_Spectra]. Note that the *RamanEngine* is a subclass of [StreamFind::Engine] and inherits all methods from the parent class.
+#' @description The *RamanEngine* R6 class is a framework for parsing, processing, inspecting and storing Raman spectroscopic data. The engine has *Raman* as data type. The *Analyses* active field has class [streamfind::RamanAnalyses], where Raman data can be loaded from "asc", "sif", "json", "wdf", "sdf", "csv" and "txt" files. The *results* active field is a list that can hold the class [streamfind::RamanResults_Spectra]. Note that the *RamanEngine* is a subclass of [streamfind::Engine] and inherits all methods from the parent class.
 #' @template arg-core-metadata
 #' @template arg-core-workflow
 #' @template arg-analyses
@@ -15,9 +15,9 @@
 #' @template arg-raman-target
 #' @template arg-raman-minIntensity
 #' @template arg-raman-targets
-#' @seealso [StreamFind::Engine] for the parent class.
+#' @seealso [streamfind::Engine] for the parent class.
 #' @references
-#' \insertRef{orpl01}{StreamFind}
+#' \insertRef{orpl01}{streamfind}
 #'
 #' @export
 #'
@@ -44,8 +44,8 @@ RamanEngine <- R6::R6Class("RamanEngine",
   public = list(
 
     # MARK: initialize
-    #' @description Creates an R6 class *RamanEngine*. Child of [StreamFind::Engine] R6 class.
-    #' @param analyses A [StreamFind::RamanAnalyses] class object or a `character vector` with full file paths to "asc", "sif", "json", "wdf", "sdf", "csv" and/or "txt" raman files or a `data.frame` with colnames `file`, `replicate` and `blank`. The "replicate" column is used to group the analyses and the "blank" column is used to identify the blank samples. The "file" column is the full to the raman files.
+    #' @description Creates an R6 class *RamanEngine*. Child of [streamfind::Engine] R6 class.
+    #' @param analyses A [streamfind::RamanAnalyses] class object or a `character vector` with full file paths to "asc", "sif", "json", "wdf", "sdf", "csv" and/or "txt" raman files or a `data.frame` with colnames `file`, `replicate` and `blank`. The "replicate" column is used to group the analyses and the "blank" column is used to identify the blank samples. The "file" column is the full to the raman files.
     #'
     initialize = function(metadata = NULL,
                           workflow = NULL,

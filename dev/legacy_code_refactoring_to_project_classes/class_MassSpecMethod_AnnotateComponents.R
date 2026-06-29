@@ -1,5 +1,5 @@
 #' @title MassSpecMethod_AnnotateComponents_native class
-#' @description Native StreamFind method to annotate feature components with isotope, adduct, and in-source fragment relationships.
+#' @description Native streamfind method to annotate feature components with isotope, adduct, and in-source fragment relationships.
 #'
 #' This method performs three sequential annotation steps for each feature component:
 #'
@@ -44,11 +44,11 @@ MassSpecMethod_AnnotateComponents_native <- function(
 		input_class = "MassSpecResults_NonTargetAnalysis",
 		output_class = "MassSpecResults_NonTargetAnalysis",
 		number_permitted = 1,
-		version = as.character(packageVersion("StreamFind")),
-		software = "StreamFind",
+		version = as.character(packageVersion("streamfind")),
+		software = "streamfind",
 		developer = "Ricardo Cunha",
 		contact = "cunha@iuta.de",
-		link = "https://odea-project.github.io/StreamFind",
+		link = "https://odea-project.github.io/streamfind",
 		doi = NA_character_,
 		parameters = list(
 			maxIsotopes = maxIsotopes,

@@ -1,41 +1,41 @@
-#' @title RamanMethod_MergeSpectraTimeSeries_StreamFind
+#' @title RamanMethod_MergeSpectraTimeSeries_streamfind
 #'
 #' @description Merges Raman spectra based on time series data. It collapses data files into a single file.
 #'
 #' @param preCut The number of pre Raman scans to exclude when merging.
 #'
-#' @return A RamanMethod_MergeSpectraTimeSeries_StreamFind object.
+#' @return A RamanMethod_MergeSpectraTimeSeries_streamfind object.
 #'
 #' @export
 #'
-RamanMethod_MergeSpectraTimeSeries_StreamFind <- function(preCut = 2) {
+RamanMethod_MergeSpectraTimeSeries_streamfind <- function(preCut = 2) {
   x <- ProcessingStep(
     type = "Raman",
     method = "MergeSpectraTimeSeries",
     required = NA_character_,
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     parameters = list(preCut = preCut),
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid RamanMethod_MergeSpectraTimeSeries_StreamFind object!")
+    stop("Invalid RamanMethod_MergeSpectraTimeSeries_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
-validate_object.RamanMethod_MergeSpectraTimeSeries_StreamFind <- function(x) {
+validate_object.RamanMethod_MergeSpectraTimeSeries_streamfind <- function(x) {
   checkmate::assert_choice(x$type, "Raman")
   checkmate::assert_choice(x$method, "MergeSpectraTimeSeries")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_number(x$parameters$preCut)
   NextMethod()
   NULL
@@ -44,7 +44,7 @@ validate_object.RamanMethod_MergeSpectraTimeSeries_StreamFind <- function(x) {
 
 #' @export
 #' @noRd
-run.RamanMethod_MergeSpectraTimeSeries_StreamFind <- function(
+run.RamanMethod_MergeSpectraTimeSeries_streamfind <- function(
   x,
   engine = NULL
 ) {

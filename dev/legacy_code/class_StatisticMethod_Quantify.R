@@ -13,7 +13,7 @@
 StatisticMethod_Quantify_mcrals <- S7::new_class(
   "StatisticMethod_Quantify_mcrals",
   parent = S7::new_S3_class("ProcessingStep"),
-  package = "StreamFind",
+  package = "streamfind",
   constructor = function(regression = "linear", concentrations = NA_real_) {
     S7::new_object(
       ProcessingStep(
@@ -26,7 +26,7 @@ StatisticMethod_Quantify_mcrals <- S7::new_class(
           concentrations = concentrations
         ),
         number_permitted = 1,
-        version = as.character(packageVersion("StreamFind")),
+        version = as.character(packageVersion("streamfind")),
         software = "mdatools",
         developer = "Sergey Kucheryavskiy",
         contact = "svk@bio.aau.dk",
@@ -66,8 +66,8 @@ S7::method(run, StatisticMethod_Quantify_mcrals) <- function(x, engine = NULL) {
     return(FALSE)
   }
   
-  if (!is(engine$Analyses$model, "StreamFind::MCRALS")) {
-    warning("Model is not StreamFind::MCRALS! Not done.")
+  if (!is(engine$Analyses$model, "streamfind::MCRALS")) {
+    warning("Model is not streamfind::MCRALS! Not done.")
     return(FALSE)
   }
   
@@ -91,7 +91,7 @@ S7::method(run, StatisticMethod_Quantify_mcrals) <- function(x, engine = NULL) {
   
   model_data <- get_model_data(engine$model)
   
-  res <- StreamFind::Quantification()
+  res <- streamfind::Quantification()
   
   for (i in seq_len(ncol(model_data$contribution) - 2)) {
     compound <- colnames(model_data$contribution)[i]

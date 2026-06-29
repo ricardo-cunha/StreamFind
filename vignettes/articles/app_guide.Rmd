@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 
 # Overview
 
-The StreamFind app is a graphical front-end for the same Project/Workflow/Method
+The streamfind app is a graphical front-end for the same Project/Workflow/Method
 framework that is available from R. It does not maintain a separate analysis
 state. Instead, it reads and writes the same DuckDB-backed project data that the
 R API uses.
@@ -30,7 +30,7 @@ The app can be launched in two ways.
 ## Start without a project
 
 ```{r, eval = FALSE}
-library(StreamFind)
+library(streamfind)
 run_app()
 ```
 
@@ -131,7 +131,7 @@ continue scripting against the same project afterward.
 
 # Next articles
 
-- `vignette("general_guide", package = "StreamFind")` introduces the project
+- `vignette("general_guide", package = "streamfind")` introduces the project
   framework.
-- `vignette("demo_nts", package = "StreamFind")` shows a full
+- `vignette("demo_nts", package = "streamfind")` shows a full
   `ProjectNonTargetAnalysis` workflow.

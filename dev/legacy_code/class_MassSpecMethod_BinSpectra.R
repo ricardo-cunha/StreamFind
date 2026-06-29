@@ -1,13 +1,13 @@
-#' @title MassSpecMethod_BinSpectra_StreamFind Class
+#' @title MassSpecMethod_BinSpectra_streamfind Class
 #' @description Bins spectral data based on variables.
 #' @param binNames Character with the variable names for building the bins. Possible values are *rt*, *mz*, *mass*, *mobility*. Note that the `binNames` must be in the spectra column names.
 #' @param binValues Numeric with the bin values for each variable.
 #' @param byUnit Logical of length one to bin by unit, meaning that the binning is performed by the number of units not actual values. For instance, if the bin is 10 and `binName` is *rt*, then the binning is performed by 10 seconds not 10 values for each bin. If byUnit is `FALSE`, then the binning is performed by the actual values but only the first of binNames and binValues is used.
 #' @param refBinAnalysis The analysis index to use a reference for creating the bins.
-#' @returns A MassSpecMethod_BinSpectra_StreamFind object.
+#' @returns A MassSpecMethod_BinSpectra_streamfind object.
 #' @export
 #'
-MassSpecMethod_BinSpectra_StreamFind <- function(
+MassSpecMethod_BinSpectra_streamfind <- function(
   binNames = c("rt", "mz"),
   binValues = c(5, 10),
   byUnit = TRUE,
@@ -17,7 +17,7 @@ MassSpecMethod_BinSpectra_StreamFind <- function(
     type = "MassSpec",
     method = "BinSpectra",
     required = "LoadSpectra",
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     input_class = "MassSpecResults_Spectra",
     output_class = "MassSpecResults_Spectra",
     parameters = list(
@@ -27,27 +27,27 @@ MassSpecMethod_BinSpectra_StreamFind <- function(
       refBinAnalysis = as.integer(refBinAnalysis)
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid MassSpecMethod_BinSpectra_StreamFind object!")
+    stop("Invalid MassSpecMethod_BinSpectra_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
 #'
-validate_object.MassSpecMethod_BinSpectra_StreamFind <- function(x) {
+validate_object.MassSpecMethod_BinSpectra_streamfind <- function(x) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_choice(x$method, "BinSpectra")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_character(x$parameters$binNames)
   checkmate::assert_true(all(
     x$parameters$binNames %in% c("rt", "mz", "mass", "mobility")
@@ -63,7 +63,7 @@ validate_object.MassSpecMethod_BinSpectra_StreamFind <- function(x) {
 
 #' @export
 #' @noRd
-run.MassSpecMethod_BinSpectra_StreamFind <- function(
+run.MassSpecMethod_BinSpectra_streamfind <- function(
   x,
   engine = NULL
 ) {

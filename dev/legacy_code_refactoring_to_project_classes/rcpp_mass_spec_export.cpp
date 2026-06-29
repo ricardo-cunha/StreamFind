@@ -1817,7 +1817,7 @@ SEXP rcpp_project_mass_spec_new(SEXP project_xptr) {
     return project::project_call([&]() {
         auto* ptr = new mass_spec::PROJECT_MASS_SPEC(project_from_xptr(project_xptr).context());
         Rcpp::XPtr<mass_spec::PROJECT_MASS_SPEC> out(ptr, true);
-        out.attr("class") = "StreamFindProjectMassSpec";
+        out.attr("class") = "streamfindProjectMassSpec";
         return SEXP(out);
     });
 }
@@ -1827,7 +1827,7 @@ SEXP rcpp_project_mass_spec_spectra_new(SEXP project_xptr) {
     return project::project_call([&]() {
         auto* ptr = new mass_spec::PROJECT_MASS_SPEC_SPECTRA(project_from_xptr(project_xptr).context());
         Rcpp::XPtr<mass_spec::PROJECT_MASS_SPEC_SPECTRA> out(ptr, true);
-        out.attr("class") = "StreamFindProjectMassSpecSpectra";
+        out.attr("class") = "streamfindProjectMassSpecSpectra";
         return SEXP(out);
     });
 }
@@ -1837,7 +1837,7 @@ SEXP rcpp_project_mass_spec_chromatograms_new(SEXP project_xptr) {
     return project::project_call([&]() {
         auto* ptr = new mass_spec::PROJECT_MASS_SPEC_CHROMATOGRAMS(project_from_xptr(project_xptr).context());
         Rcpp::XPtr<mass_spec::PROJECT_MASS_SPEC_CHROMATOGRAMS> out(ptr, true);
-        out.attr("class") = "StreamFindProjectMassSpecChromatograms";
+        out.attr("class") = "streamfindProjectMassSpecChromatograms";
         return SEXP(out);
     });
 }

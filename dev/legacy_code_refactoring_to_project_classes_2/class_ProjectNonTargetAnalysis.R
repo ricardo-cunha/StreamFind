@@ -36,7 +36,7 @@
       algorithm = "native",
       title = "Find Features",
       description = "Run project-owned feature detection using shared Mass Spec tables.",
-      details = "Native StreamFind feature finding over the active project analyses. Results are persisted into shared NTS feature tables for the owning project."
+      details = "Native streamfind feature finding over the active project analyses. Results are persisted into shared NTS feature tables for the owning project."
     ),
     load_features_ms1 = .make_project_processing_step(
       method = "load_features_ms1",

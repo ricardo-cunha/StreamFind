@@ -23,7 +23,7 @@ ude_db <- ude_db[, cols, with = FALSE]
 files <- list.files(path, pattern = ".mzML", full.names = TRUE)
 
 # Settings for annotation of isotopes
-afs <- Method_annotate_features_StreamFind(
+afs <- Method_annotate_features_streamfind(
   maxIsotopes = 5,
   elements = c("C", "H", "N", "O", "S", "Cl", "Br"),
   mode = "small molecules",
@@ -128,7 +128,7 @@ toforb_ms$plot_spectra_xic(mz = meto_db, ppm = 20, sec = 240)
 
 suspects_ms <- tof_ms$subset_features(features = tof_suspects)
 
-slfms2 <- Method_load_features_ms2_StreamFind(
+slfms2 <- Method_load_features_ms2_streamfind(
   isolationWindow = 1.3,
   mzClust = 0.008,
   presence = 0.9,

@@ -147,7 +147,7 @@ S3 wrappers for \code{Project} R6 methods providing a thin functional interface.
 
 \item \code{report_quarto(Project)}: Generate a Quarto report for the active project.
 
-\item \code{run_app(Project)}: Run the StreamFind app using the active project as startup context.
+\item \code{run_app(Project)}: Run the streamfind app using the active project as startup context.
 
 \item \code{copy(Project)}: Copy this project to another database and/or project id, returning a new \code{Project} object.
 

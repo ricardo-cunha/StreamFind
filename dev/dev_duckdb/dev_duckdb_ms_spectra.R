@@ -1,6 +1,6 @@
 # MARK: Project Mass Spec shared DuckDB test
 
-standards <- StreamFindData::get_ms_tof_spiked_chemicals()
+standards <- streamfindData::get_ms_tof_spiked_chemicals()
 standards <- standards[grepl("S", standards$tag), ]
 cols <- c("name", "formula", "mass", "rt", "tag")
 internal_standards <- standards[standards$tag %in% "IS", ]
@@ -8,7 +8,7 @@ internal_standards <- internal_standards[, cols, with = FALSE]
 internal_standards <- internal_standards[!internal_standards$name %in% c("Ibuprofen-d3", "Naproxen-d3"), ]
 standards <- standards[standards$tag %in% "S", ]
 standards <- standards[, cols, with = FALSE]
-db_with_ms2 <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+db_with_ms2 <- streamfindData::get_ms_tof_spiked_chemicals_with_ms2()
 db_with_ms2 <- db_with_ms2[db_with_ms2$tag %in% "S", ]
 db_with_ms2 <- db_with_ms2[, c("name", "formula", "mass", "SMILES", "rt", "polarity", "fragments"), with = FALSE]
 db_with_ms2$polarity[db_with_ms2$polarity == 1] <- "positive"

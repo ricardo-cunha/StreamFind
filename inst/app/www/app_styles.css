@@ -1,5 +1,5 @@
 /* ============================================================
-   StreamFind App — Custom Dashboard Styles
+   streamfind App — Custom Dashboard Styles
    Light/Dark theme via CSS custom properties on #sf-app
    ============================================================ */
 
@@ -1239,7 +1239,7 @@ body[data-sf-theme][data-sf-palette] {
   z-index: 8100;
   pointer-events: none;
   background-color: transparent;
-  background-image: url('/www/logo_StreamFind.png');
+  background-image: url('/www/streamfind.png');
   background-repeat: no-repeat;
   background-position: center center;
   background-size: auto 80px;
@@ -2000,7 +2000,7 @@ ul.sf-info-list {
 }
 
 /* ============================================================
-  Global Buttons — enforced across StreamFind app shell and its
+  Global Buttons — enforced across streamfind app shell and its
   own Shiny/plot modals, but not shinyFiles dialogs.
   Scope: all .btn except topbar buttons (.sf-topbar-btn).
   Trash/danger: always red (#c0392b) with white icon.
@@ -2133,7 +2133,7 @@ ul.sf-info-list {
 #sf-app.sf-dark .rank-list-item svg   { color: inherit; }
 
 /* ============================================================
-   Loading Spinner — StreamFind logo pulse, transparent bg, no shading
+   Loading Spinner — streamfind logo pulse, transparent bg, no shading
    ============================================================ */
 @keyframes sf-logo-pulse {
   0%, 100% { opacity: 0.18; transform: scale(0.94); }
@@ -2169,7 +2169,7 @@ ul.sf-info-list {
   pointer-events: none;
   border-radius: inherit;
   background-color: transparent;
-  background-image:  url('/www/logo_StreamFind.png');
+  background-image:  url('/www/streamfind.png');
   background-repeat: no-repeat;
   background-position: center center;
   background-size: auto 80px;
@@ -2210,7 +2210,7 @@ ul.sf-info-list {
   z-index: 8100;
   pointer-events: none;
   background-color: transparent;
-  background-image: url('/www/logo_StreamFind.png');
+  background-image: url('/www/streamfind.png');
   background-repeat: no-repeat;
   background-position: center center;
   background-size: auto 80px;

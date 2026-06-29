@@ -16,5 +16,5 @@ sudo apt install -y --no-install-recommends r-base
 sudo add-apt-repository -y ppa:c2d4u.team/c2d4u4.0+
 
 
-## Install StreamFind and dependencies ##
-R < ./dev/install_StreamFind_and_dependencies.R --no-save
+## Install streamfind and dependencies ##
+R < ./dev/install_streamfind_and_dependencies.R --no-save

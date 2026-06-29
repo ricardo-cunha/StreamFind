@@ -13,8 +13,8 @@ StatisticResults_KNN_class <- function(model = list()) {
     list(
       type = "Statistic",
       name = "StatisticResults_KNN_class",
-      software = "StreamFind",
-      version = as.character(packageVersion("StreamFind")),
+      software = "streamfind",
+      version = as.character(packageVersion("streamfind")),
       model = model
     ),
     class = c(
@@ -40,7 +40,7 @@ validate_object.StatisticResults_KNN_class <- function(x) {
     c("StatisticResults_KNN_class", "StatisticResults_Model", "Results")
   ))
   checkmate::assert_true(x$name == "StatisticResults_KNN_class")
-  checkmate::assert_true(x$software == "StreamFind")
+  checkmate::assert_true(x$software == "streamfind")
   NextMethod()
   NULL
 }

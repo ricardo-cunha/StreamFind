@@ -31,12 +31,12 @@ library(kableExtra)
 library(magrittr)
 library(ggplot2)
 library(plotly)
-library(StreamFind)
+library(streamfind)
 ```
 
 ```{r logo, echo=FALSE}
-path_extdata <- system.file(package = "StreamFindData", dir = "extdata")
-logo <- file.path(path_extdata, "logo_StreamFind.png")
+path_www <- system.file(package = "streamfind", "app", "www")
+logo <- file.path(path_www, "streamfind.png")
 htmltools::img(src = knitr::image_uri(logo), style = "margin-left:inherit;position:absolute;top:100px;left:740px;width:200px;")
 ```
 

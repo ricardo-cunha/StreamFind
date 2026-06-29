@@ -19,13 +19,13 @@
 #' @param MP Logical. If TRUE then multiprocessing is enabled. Default is FALSE.
 #' @return A `MassSpecMethod_GenerateTransformationProducts_biotransformer` object.
 #' @references
-#' \insertRef{patroon01}{StreamFind}
+#' \insertRef{patroon01}{streamfind}
 #'
-#' \insertRef{patroon02}{StreamFind}
+#' \insertRef{patroon02}{streamfind}
 #'
-#' \insertRef{biotransformer01}{StreamFind}
+#' \insertRef{biotransformer01}{streamfind}
 #'
-#' \insertRef{biotransformer02}{StreamFind}
+#' \insertRef{biotransformer02}{streamfind}
 #'
 #' @export
 #'
@@ -71,7 +71,7 @@ MassSpecMethod_GenerateTransformationProducts_biotransformer <- function(
       MP = as.logical(MP)
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "BioTransformer",
     developer = "Yannick Djoumbou-Feunang, David S. Wishart",
     contact = "http://feedback.wishartlab.com/?site=biotransformer",
@@ -312,7 +312,7 @@ MassSpecMethod_GenerateTransformationProducts_cts <- function(
       parallel = as.logical(parallel)
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "Chemical Transformation Simulator",
     developer = "U.S. Environmental Protection Agency",
     contact = "https://www.epa.gov/aboutepa/forms/contact-epa",

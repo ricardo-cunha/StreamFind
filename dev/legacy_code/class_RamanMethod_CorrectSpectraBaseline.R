@@ -27,7 +27,7 @@ RamanMethod_CorrectSpectraBaseline_baseline_als <- function(
       maxit = maxit
     ),
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "baseline",
     developer = "Kristian Hovde Liland",
     contact = "kristian.liland@nmbu.no",
@@ -138,7 +138,7 @@ run.RamanMethod_CorrectSpectraBaseline_baseline_als <- function(
 #'
 #' @references
 #'
-#' \insertRef{airpls01}{StreamFind}
+#' \insertRef{airpls01}{streamfind}
 #'
 #' @export
 #'
@@ -158,7 +158,7 @@ RamanMethod_CorrectSpectraBaseline_airpls <- function(
       itermax = itermax
     ),
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "airPLS",
     developer = "Zhi-Min Zhang",
     contact = "zmzhang@csu.edu.cn",

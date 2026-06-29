@@ -1,4 +1,4 @@
-url: https://odea-project.github.io/StreamFind/
+url: https://odea-project.github.io/streamfind/
 
 template:
   bootstrap: 5
@@ -8,7 +8,7 @@ template:
     - pkgdown/extra.css
 
 home:
-  title: StreamFind
+  title: streamfind
   description: >
     DuckDB-backed project framework for mass spectrometry and non-target
     analysis workflows in R.
@@ -33,13 +33,13 @@ navbar:
       text: Articles
       menu:
         - text: Package Overview
-          href: articles/StreamFind.html
+          href: articles/streamfind.html
     news:
       text: News
       href: news/index.html
     github:
       icon: fab fa-github
-      href: https://github.com/odea-project/StreamFind
+      href: https://github.com/odea-project/streamfind
 
 reference:
   - title: Project Framework
@@ -104,4 +104,4 @@ reference:
 
   - title: Package
     contents:
-      - StreamFind-package
+      - streamfind-package

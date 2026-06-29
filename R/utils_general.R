@@ -102,7 +102,7 @@
   prefix <- .project_method_prefix(project_class)
   search_envs <- unique(Filter(Negate(is.null), list(
     envir,
-    tryCatch(asNamespace("StreamFind"), error = function(...) NULL)
+    tryCatch(asNamespace("streamfind"), error = function(...) NULL)
   )))
   constructor_names <- unique(unlist(lapply(
     search_envs,
@@ -123,7 +123,7 @@
     return(list())
   }
   methods <- lapply(constructor_names, function(nm) {
-    get(nm, envir = tryCatch(asNamespace("StreamFind"), error = function(...) envir), inherits = TRUE)()
+    get(nm, envir = tryCatch(asNamespace("streamfind"), error = function(...) envir), inherits = TRUE)()
   })
   names(methods) <- vapply(methods, function(step) step$method, character(1))
   methods
@@ -137,7 +137,7 @@
 #' @noRd
 .project_open_function <- function(project_class, envir = parent.frame()) {
   fn_name <- .project_open_function_name(project_class)
-  namespace_env <- tryCatch(asNamespace("StreamFind"), error = function(...) NULL)
+  namespace_env <- tryCatch(asNamespace("streamfind"), error = function(...) NULL)
   if (!exists(fn_name, mode = "function", envir = envir, inherits = TRUE) &&
       (is.null(namespace_env) || !exists(fn_name, mode = "function", envir = namespace_env, inherits = TRUE))) {
     stop("No open function registered for project class '", project_class, "'.", call. = FALSE)
@@ -155,7 +155,7 @@
     number_permitted = 1,
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_) {
   if (length(required) == 1 && is.na(required)) {
     required <- character()

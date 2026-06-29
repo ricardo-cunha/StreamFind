@@ -3,7 +3,7 @@
 # Available: xcms (centwave), openms, kpic2, and native
 
 # Load required libraries
-library(StreamFind)
+library(streamfind)
 library(ggplot2)
 library(dplyr)
 library(microbenchmark)
@@ -26,7 +26,7 @@ dummy <- MassSpecEngine$new(analyses = files) # dummy to cache data files
 
 # Create methods with comparable parameters
 methods <- list(
-  # Native StreamFind method
+  # Native streamfind method
   native = MassSpecMethod_FindFeatures_native(
     rtWindows = data.frame(rtmin = 300, rtmax = 3000),
     resolution_profile = c(15000, 25000, 35000),

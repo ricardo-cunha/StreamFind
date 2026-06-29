@@ -1,6 +1,6 @@
 # MARK: MassSpecResults_NonTargetAnalysis2
 #' @title Constructor and methods to handle non-target analysis results for mass spectrometry data
-#' @description The `MassSpecResults_NonTargetAnalysis2` class is a child of the [StreamFind::Results] class and is used to store results from non-target analysis (NTA) workflows for mass spectrometry data ("MassSpec"). It is specifically designed to handle the output from `rcpp_nts_find_features2()`.
+#' @description The `MassSpecResults_NonTargetAnalysis2` class is a child of the [streamfind::Results] class and is used to store results from non-target analysis (NTA) workflows for mass spectrometry data ("MassSpec"). It is specifically designed to handle the output from `rcpp_nts_find_features2()`.
 #' @param info A data frame containing information about the analyses.
 #' @param headers A list of data frames containing information about the spectra headers.
 #' @param features A list of data frames containing information about the features detected by `rcpp_nts_find_features2()`.
@@ -8,7 +8,7 @@
 #' \itemize{
 #'   \item `type`: The type of the results, which is "MassSpec".
 #'   \item `name`: The name of the results, which is "MassSpecResults_NonTargetAnalysis2".
-#'   \item `software`: The software used for the analysis, which is "StreamFind".
+#'   \item `software`: The software used for the analysis, which is "streamfind".
 #'   \item `version`: The version of the software, as a character string.
 #'   \item `info`: A data frame containing information about the analyses.
 #'   \item `headers`: A list of data frames containing information about the spectra headers.
@@ -35,8 +35,8 @@ MassSpecResults_NonTargetAnalysis2 <- function(
     list(
       type = "MassSpec",
       name = "MassSpecResults_NonTargetAnalysis2",
-      software = "StreamFind",
-      version = as.character(packageVersion("StreamFind")),
+      software = "streamfind",
+      version = as.character(packageVersion("streamfind")),
       info = info,
       headers = headers,
       features = features
@@ -57,7 +57,7 @@ MassSpecResults_NonTargetAnalysis2 <- function(
 validate_object.MassSpecResults_NonTargetAnalysis2 <- function(x) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_true(x$name == "MassSpecResults_NonTargetAnalysis2")
-  checkmate::assert_true(x$software == "StreamFind")
+  checkmate::assert_true(x$software == "streamfind")
   checkmate::assert_character(x$version, len = 1)
   if (length(x$features) > 0) {
     checkmate::assert_true(identical(x$info$analysis, names(x$features)))
@@ -4222,7 +4222,7 @@ map_components.MassSpecResults_NonTargetAnalysis2 <- function(
 #' @export
 #'
 #' @references
-#' \insertRef{bader01}{StreamFind}
+#' \insertRef{bader01}{streamfind}
 #'
 get_fold_change.MassSpecResults_NonTargetAnalysis2 <- function(
     x,
@@ -5332,7 +5332,7 @@ report.MassSpecResults_NonTargetAnalysis2 <- function(
     MassSpecResults_NonTargetAnalysis2 = NULL,
     name = NULL,
     data = NULL) {
-  if (!is(MassSpecResults_NonTargetAnalysis2, "StreamFind::MassSpecResults_NonTargetAnalysis2")) {
+  if (!is(MassSpecResults_NonTargetAnalysis2, "streamfind::MassSpecResults_NonTargetAnalysis2")) {
     warning(
       "MassSpecResults_NonTargetAnalysis2 object is not of class MassSpecResults_NonTargetAnalysis2! Not done."
     )

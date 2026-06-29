@@ -60,7 +60,7 @@
   # Warn if no external tools found — e.g. when loaded via devtools::load_all()
   if (!found_any && interactive() && !dir.exists(ext_dir)) {
     packageStartupMessage(
-      "StreamFind external tools not found. ",
+      "streamfind external tools not found. ",
       "Run install_external_tools() to download and set up Java and CFM-ID."
     )
   }

@@ -25,7 +25,7 @@ library(magrittr)
 library(ggplot2)
 library(plotly)
 library(data.table)
-library(StreamFind)
+library(streamfind)
 
 knitr::opts_chunk$set(
   echo = TRUE,

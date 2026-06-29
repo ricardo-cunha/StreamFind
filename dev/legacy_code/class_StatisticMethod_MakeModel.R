@@ -13,7 +13,7 @@
 #' @param gamma Numeric (length 1) with the gamma value for the PCA.
 #' @param info Character (length 1) with additional information.
 #' @references
-#' \insertRef{mdatools01}{StreamFind}
+#' \insertRef{mdatools01}{streamfind}
 #'
 #' @return A StatisticMethod_MakeModel_pca_mdatools object.
 #' @export
@@ -52,7 +52,7 @@ StatisticMethod_MakeModel_pca_mdatools <- function(
       info = info
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "mdatools",
     developer = "Sergey Kucheryavskiy",
     contact = "svk@bio.aau.dk",
@@ -155,9 +155,9 @@ run.StatisticMethod_MakeModel_pca_mdatools <- function(
 #' @param exclcols Integer vector with the column indices to be excluded.
 #' @param info Character (length 1) with additional information.
 #' @references
-#' \insertRef{mdatools01}{StreamFind}
+#' \insertRef{mdatools01}{streamfind}
 #'
-#' \insertRef{mdatools02}{StreamFind}
+#' \insertRef{mdatools02}{streamfind}
 #'
 #' @return A StatisticMethod_MakeModel_mcrpure_mdatools object.
 #' @export
@@ -184,7 +184,7 @@ StatisticMethod_MakeModel_mcrpure_mdatools <- function(
       info = info
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "mdatools",
     developer = "Sergey Kucheryavskiy",
     contact = "svk@bio.aau.dk",
@@ -279,9 +279,9 @@ run.StatisticMethod_MakeModel_mcrpure_mdatools <- function(
 #' @note The functionality to define the initial pure components spectra as well as forcing
 #' concentration and spectra values are not included in this integration of \link[mdatools]{mcrals}.
 #' @references
-#' \insertRef{mdatools01}{StreamFind}
+#' \insertRef{mdatools01}{streamfind}
 #'
-#' \insertRef{mdatools02}{StreamFind}
+#' \insertRef{mdatools02}{streamfind}
 #'
 #' @return A StatisticMethod_MakeModel_mcrals_mdatools object.
 #' @export
@@ -316,7 +316,7 @@ StatisticMethod_MakeModel_mcrals_mdatools <- function(
       info = info
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "mdatools",
     developer = "Sergey Kucheryavskiy",
     contact = "svk@bio.aau.dk",
@@ -439,7 +439,7 @@ run.StatisticMethod_MakeModel_mcrals_mdatools <- function(
 #' @param l Integer (length 1) with the minimum vote for definite decision, otherwise doubt.
 #' (More precisely, less than k-l dissenting votes are allowed, even if k is increased by ties.)
 #' @references
-#' \insertRef{class01}{StreamFind}
+#' \insertRef{class01}{streamfind}
 #'
 #' @return A StatisticMethod_MakeModel_knn object.
 #' @export
@@ -456,7 +456,7 @@ StatisticMethod_MakeModel_knn_class <- function(k = 3, l = 0) {
       prob = TRUE
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "class",
     developer = "Brian D. Ripley",
     contact = "ripley@stats.ox.ac.uk",
@@ -514,7 +514,7 @@ run.StatisticMethod_MakeModel_knn <- function(x, engine = NULL) {
   )
 
   func <- class::knn
-  engine$model <- StreamFind::KNN(
+  engine$model <- streamfind::KNN(
     model = list("func" = func, "conditions" = conditions, "res" = list())
   )
   message(paste0("\U2713 ", "KNN classification model added!"))

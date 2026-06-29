@@ -1,5 +1,5 @@
-#ifndef STREAMFIND_OPENBABEL_API_H
-#define STREAMFIND_OPENBABEL_API_H
+#ifndef streamfind_OPENBABEL_API_H
+#define streamfind_OPENBABEL_API_H
 
 #include <stddef.h>
 
@@ -7,24 +7,24 @@
 extern "C" {
 #endif
 
-#if defined(_WIN32) && defined(STREAMFIND_OPENBABEL_BUILD_DLL)
-#define STREAMFIND_OPENBABEL_API __declspec(dllexport)
+#if defined(_WIN32) && defined(streamfind_OPENBABEL_BUILD_DLL)
+#define streamfind_OPENBABEL_API __declspec(dllexport)
 #else
-#define STREAMFIND_OPENBABEL_API
+#define streamfind_OPENBABEL_API
 #endif
 
 enum
 {
-  STREAMFIND_OB_SMILES_CAPACITY = 4096,
-  STREAMFIND_OB_FORMULA_CAPACITY = 256,
-  STREAMFIND_OB_INCHI_CAPACITY = 8192,
-  STREAMFIND_OB_INCHIKEY_CAPACITY = 128,
-  STREAMFIND_OB_ERROR_CAPACITY = 2048,
-  STREAMFIND_OB_COLOR_CAPACITY = 64,
-  STREAMFIND_OB_SVG_CAPACITY = 262144,
-  STREAMFIND_OB_DEBUG_CAPACITY = 16384,
-  STREAMFIND_OB_FORMULA_MAX_RESULTS = 256,
-  STREAMFIND_OB_FORMULA_STR_SIZE = 128
+  streamfind_OB_SMILES_CAPACITY = 4096,
+  streamfind_OB_FORMULA_CAPACITY = 256,
+  streamfind_OB_INCHI_CAPACITY = 8192,
+  streamfind_OB_INCHIKEY_CAPACITY = 128,
+  streamfind_OB_ERROR_CAPACITY = 2048,
+  streamfind_OB_COLOR_CAPACITY = 64,
+  streamfind_OB_SVG_CAPACITY = 262144,
+  streamfind_OB_DEBUG_CAPACITY = 16384,
+  streamfind_OB_FORMULA_MAX_RESULTS = 256,
+  streamfind_OB_FORMULA_STR_SIZE = 128
 };
 
 typedef struct streamfind_ob_normalized_result
@@ -33,37 +33,37 @@ typedef struct streamfind_ob_normalized_result
   int has_xlogp;
   double exact_mass;
   double xlogp;
-  char canonical_smiles[STREAMFIND_OB_SMILES_CAPACITY];
-  char formula[STREAMFIND_OB_FORMULA_CAPACITY];
-  char inchi[STREAMFIND_OB_INCHI_CAPACITY];
-  char inchikey[STREAMFIND_OB_INCHIKEY_CAPACITY];
-  char error[STREAMFIND_OB_ERROR_CAPACITY];
+  char canonical_smiles[streamfind_OB_SMILES_CAPACITY];
+  char formula[streamfind_OB_FORMULA_CAPACITY];
+  char inchi[streamfind_OB_INCHI_CAPACITY];
+  char inchikey[streamfind_OB_INCHIKEY_CAPACITY];
+  char error[streamfind_OB_ERROR_CAPACITY];
 } streamfind_ob_normalized_result;
 
 typedef struct streamfind_ob_svg_result
 {
   int ok;
-  char svg[STREAMFIND_OB_SVG_CAPACITY];
-  char error[STREAMFIND_OB_ERROR_CAPACITY];
+  char svg[streamfind_OB_SVG_CAPACITY];
+  char error[streamfind_OB_ERROR_CAPACITY];
 } streamfind_ob_svg_result;
 
 typedef struct streamfind_ob_formula_result
 {
   int count;
-  char formulas[STREAMFIND_OB_FORMULA_MAX_RESULTS][STREAMFIND_OB_FORMULA_STR_SIZE];
-  double masses[STREAMFIND_OB_FORMULA_MAX_RESULTS];
-  double errors[STREAMFIND_OB_FORMULA_MAX_RESULTS];
-  char error[STREAMFIND_OB_ERROR_CAPACITY];
+  char formulas[streamfind_OB_FORMULA_MAX_RESULTS][streamfind_OB_FORMULA_STR_SIZE];
+  double masses[streamfind_OB_FORMULA_MAX_RESULTS];
+  double errors[streamfind_OB_FORMULA_MAX_RESULTS];
+  char error[streamfind_OB_ERROR_CAPACITY];
 } streamfind_ob_formula_result;
 
-STREAMFIND_OPENBABEL_API int sf_ob_openbabel_available(void);
+streamfind_OPENBABEL_API int sf_ob_openbabel_available(void);
 
-STREAMFIND_OPENBABEL_API int sf_ob_normalize_structure(
+streamfind_OPENBABEL_API int sf_ob_normalize_structure(
   const char *smiles,
   const char *inchi,
   streamfind_ob_normalized_result *out);
 
-STREAMFIND_OPENBABEL_API int sf_ob_render_structure_svg(
+streamfind_OPENBABEL_API int sf_ob_render_structure_svg(
   const char *smiles,
   const char *inchi,
   int width_px,
@@ -71,17 +71,17 @@ STREAMFIND_OPENBABEL_API int sf_ob_render_structure_svg(
   const char *bond_color,
   streamfind_ob_svg_result *out);
 
-STREAMFIND_OPENBABEL_API int sf_ob_normalize_structure_from_mol_file(
+streamfind_OPENBABEL_API int sf_ob_normalize_structure_from_mol_file(
   const char *file_path,
   streamfind_ob_normalized_result *out);
 
-STREAMFIND_OPENBABEL_API int sf_ob_formula_from_mass(
+streamfind_OPENBABEL_API int sf_ob_formula_from_mass(
   double monoisotopic_mass,
   double tolerance_ppm,
   const char *elements,
   streamfind_ob_formula_result *out);
 
-STREAMFIND_OPENBABEL_API int sf_ob_debug_runtime(
+streamfind_OPENBABEL_API int sf_ob_debug_runtime(
   char *out,
   size_t capacity);
 
@@ -89,4 +89,4 @@ STREAMFIND_OPENBABEL_API int sf_ob_debug_runtime(
 }
 #endif
 
-#endif // STREAMFIND_OPENBABEL_API_H
+#endif // streamfind_OPENBABEL_API_H

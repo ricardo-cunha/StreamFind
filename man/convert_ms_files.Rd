@@ -48,7 +48,7 @@ double backslash or to single forward slash.
 
 }
 \references{
-\insertRef{proteo01}{StreamFind}
+\insertRef{proteo01}{streamfind}
 
-\insertRef{proteo02}{StreamFind}
+\insertRef{proteo02}{streamfind}
 }

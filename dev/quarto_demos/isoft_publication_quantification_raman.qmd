@@ -11,8 +11,8 @@ format:
       margin-width: 300px
       gutter-width: 1.5rem
     other-links:
-      - text: StreamFind
-        href: https://odea-project.github.io/StreamFind/
+      - text: streamfind
+        href: https://odea-project.github.io/streamfind/
         icon: github
     html-math-method: katex
     theme: journal
@@ -62,15 +62,15 @@ library(DT)
 library(magrittr)
 library(ggplot2)
 library(plotly)
-library(StreamFind)
+library(streamfind)
 ```
 
 ```{r}
 #| label: data
 #| code-fold: true
 
-path <- "E:/iSoft/ABC_StreamFind_Raman_MS"
-#path <- "C:/Users/apoli/Documents/example_files/isoft/ABC_StreamFind_Raman_MS"
+path <- "E:/iSoft/ABC_streamfind_Raman_MS"
+#path <- "C:/Users/apoli/Documents/example_files/isoft/ABC_streamfind_Raman_MS"
 rfiles <- list.files(path = paste0(path, "/1_Quantification"), pattern = "\\.sif$", full.names = TRUE)
 ```
 
@@ -80,7 +80,7 @@ rfiles <- list.files(path = paste0(path, "/1_Quantification"), pattern = "\\.sif
 #| label: raman-engine
 #| code-fold: true
 
-raman <- StreamFind::RamanEngine$new(
+raman <- streamfind::RamanEngine$new(
   analyses = rfiles
 )
 
@@ -127,28 +127,28 @@ raman$run(
 )
 
 raman$run(
-  RamanSettings_DeleteSpectraSection_StreamFind(
+  RamanSettings_DeleteSpectraSection_streamfind(
     rtmin = 0,
     rtmax = 10
   )
 )
 
 raman$run(
-  RamanSettings_DeleteSpectraSection_StreamFind(
+  RamanSettings_DeleteSpectraSection_streamfind(
     shiftmin = -100,
     shiftmax = 300
   )
 )
 
 raman$run(
-  RamanSettings_DeleteSpectraSection_StreamFind(
+  RamanSettings_DeleteSpectraSection_streamfind(
     shiftmin = 2700,
     shiftmax = 3000
   )
 )
 
 raman$run(
-  RamanSettings_BinSpectra_StreamFind(
+  RamanSettings_BinSpectra_streamfind(
     binNames = "rt",
     binValues = 10,
     byUnit = FALSE
@@ -156,7 +156,7 @@ raman$run(
 )
 
 raman$run(
-  RamanSettings_SubtractSpectraSection_StreamFind(
+  RamanSettings_SubtractSpectraSection_streamfind(
     sectionVal = "rt",
     sectionWindow = c(20, 200)
   )
@@ -167,14 +167,14 @@ plot_chroms_blk <- raman$plot_chromatograms(
 )
 
 raman$run(
-  RamanSettings_DeleteSpectraSection_StreamFind(
+  RamanSettings_DeleteSpectraSection_streamfind(
     rtmin = 0,
     rtmax = 300
   )
 )
 
 raman$run(
-  RamanSettings_DeleteSpectraSection_StreamFind(
+  RamanSettings_DeleteSpectraSection_streamfind(
     rtmin = 700,
     rtmax = 1000
   )
@@ -197,14 +197,14 @@ raman$run(
 )
 
 raman$run(
-  RamanSettings_DeleteSpectraSection_StreamFind(
+  RamanSettings_DeleteSpectraSection_streamfind(
     shiftmin = -100,
     shiftmax = 400
   )
 )
 
 raman$run(
-  RamanSettings_DeleteSpectraSection_StreamFind(
+  RamanSettings_DeleteSpectraSection_streamfind(
     shiftmin = 2350,
     shiftmax = 3000
   )
@@ -241,7 +241,7 @@ plot_chrom_peaks_grouped <- plot_chromatograms_peaks(
 )
 
 raman$run(
-  RamanSettings_FilterSpectra_StreamFind(
+  RamanSettings_FilterSpectra_streamfind(
     onlyChromPeaksSpectra = TRUE
   )
 )
@@ -255,7 +255,7 @@ plot_chrom_peaks_onlypeaks <- plot_chromatograms_peaks(
 plot_spectra_peaks_analyses <- raman$plot_spectra(colorBy = "analyses+targets")
 
 raman$run(
-  RamanSettings_AverageSpectra_StreamFind(
+  RamanSettings_AverageSpectra_streamfind(
     by = "replicates+chrom_peaks"
   )
 )
@@ -349,7 +349,7 @@ raman$plot_spectra(colorBy = "replicates+targets")
 #| label: statistic-engine
 #| code-fold: true
 
-statistic <- StreamFind::StatisticEngine$new(
+statistic <- streamfind::StatisticEngine$new(
   analyses = get_spectra_matrix(raman$analyses, targets = "2_411")
 )
 
@@ -394,7 +394,7 @@ clear_cache("results_MakeModel_mcrals_mdatools")
 #| label: statistic2-engine
 #| code-fold: true
 
-statistic2 <- StreamFind::StatisticEngine$new(
+statistic2 <- streamfind::StatisticEngine$new(
   analyses = get_spectra_matrix(raman$analyses, targets = "1_621")
 )
 

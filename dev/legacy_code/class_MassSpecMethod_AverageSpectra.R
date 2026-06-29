@@ -1,4 +1,4 @@
-#' @title MassSpecMethod_AverageSpectra_StreamFind Class
+#' @title MassSpecMethod_AverageSpectra_streamfind Class
 #'
 #' @description Averages spectra based on variables.
 #'
@@ -7,11 +7,11 @@
 #' `replicates+chrom_peaks+rt`.
 #' @param weightedAveraged Logical (length 1) for weighted averaging.
 #'
-#' @return A MassSpecMethod_AverageSpectra_StreamFind object.
+#' @return A MassSpecMethod_AverageSpectra_streamfind object.
 #'
 #' @export
 #'
-MassSpecMethod_AverageSpectra_StreamFind <- function(
+MassSpecMethod_AverageSpectra_streamfind <- function(
   by = "replicates",
   weightedAveraged = TRUE
 ) {
@@ -19,33 +19,33 @@ MassSpecMethod_AverageSpectra_StreamFind <- function(
     type = "MassSpec",
     method = "AverageSpectra",
     required = "LoadSpectra",
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     parameters = list(
       by = by,
       weightedAveraged = weightedAveraged
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid MassSpecMethod_AverageSpectra_StreamFind object!")
+    stop("Invalid MassSpecMethod_AverageSpectra_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
 #'
-validate_object.MassSpecMethod_AverageSpectra_StreamFind <- function(x) {
+validate_object.MassSpecMethod_AverageSpectra_streamfind <- function(x) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_choice(x$method, "AverageSpectra")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_choice(
     x$parameters$by,
     c(
@@ -65,7 +65,7 @@ validate_object.MassSpecMethod_AverageSpectra_StreamFind <- function(x) {
 
 #' @export
 #' @noRd
-run.MassSpecMethod_AverageSpectra_StreamFind <- function(x, engine = NULL) {
+run.MassSpecMethod_AverageSpectra_streamfind <- function(x, engine = NULL) {
   if (!is(engine, "MassSpecEngine")) {
     warning("Engine is not a MassSpecEngine object!")
     return(FALSE)
@@ -109,7 +109,7 @@ run.MassSpecMethod_AverageSpectra_StreamFind <- function(x, engine = NULL) {
         if (!"id" %in% colnames(spectra)) {
           warning(
             "Filter spectra to keep only from chromatographic peaks ",
-            "using MassSpecMethod_FilterSpectra_StreamFind! Not done."
+            "using MassSpecMethod_FilterSpectra_streamfind! Not done."
           )
           return(FALSE)
         }

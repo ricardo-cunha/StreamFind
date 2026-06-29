@@ -1,6 +1,6 @@
 # MARK: MassSpecResults_Spectra S3 Class
 #' @title Constructor and methods to handle mass spectrometry spectra results
-#' @description The `MassSpecResults_Spectra` class is a child of [StreamFind::Results] and is used to store mass spectrometry spectra results.
+#' @description The `MassSpecResults_Spectra` class is a child of [streamfind::Results] and is used to store mass spectrometry spectra results.
 #' @param spectra A list of spectra data.table objects.
 #' @param replicates A character vector of replicate names.
 #' @param is_averaged Logical indicating if the spectra are averaged.
@@ -8,7 +8,7 @@
 #' @param peaks A list of data.table objects containing peak information for each spectrum.
 #' @param charges A list of data.table objects containing charge information for each spectrum
 #' @export
-#' @seealso [StreamFind::Results]
+#' @seealso [streamfind::Results]
 #'
 MassSpecResults_Spectra <- function(
   spectra = list(),
@@ -22,8 +22,8 @@ MassSpecResults_Spectra <- function(
     list(
       type = "MassSpec",
       name = "MassSpecResults_Spectra",
-      software = "StreamFind",
-      version = as.character(packageVersion("StreamFind")),
+      software = "streamfind",
+      version = as.character(packageVersion("streamfind")),
       spectra = spectra,
       is_averaged = is_averaged,
       peaks = peaks,

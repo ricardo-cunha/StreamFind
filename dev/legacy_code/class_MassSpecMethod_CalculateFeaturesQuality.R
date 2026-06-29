@@ -1,4 +1,4 @@
-#' Mass Spectrometry Method to Calculate Features Quality (StreamFind algorithm)
+#' Mass Spectrometry Method to Calculate Features Quality (streamfind algorithm)
 #'
 #' @description Settings for calculating quality parameters of features (e.g., signal-to-noise (sn) ratio).
 #'
@@ -15,11 +15,11 @@
 #' calculating feature quality.
 #' @param baseCut Numeric of length 1 with the base cut for calculating feature Gaussian fit.
 #'
-#' @return A `MassSpecMethod_CalculateFeaturesQuality_StreamFind` object.
+#' @return A `MassSpecMethod_CalculateFeaturesQuality_streamfind` object.
 #'
 #' @export
 #'
-MassSpecMethod_CalculateFeaturesQuality_StreamFind <- function(
+MassSpecMethod_CalculateFeaturesQuality_streamfind <- function(
   filtered = FALSE,
   rtExpand = 0,
   mzExpand = 0,
@@ -33,7 +33,7 @@ MassSpecMethod_CalculateFeaturesQuality_StreamFind <- function(
     type = "MassSpec",
     method = "CalculateFeaturesQuality",
     required = "FindFeatures",
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     input_class = "MassSpecResults_NonTargetAnalysis",
     output_class = "MassSpecResults_NonTargetAnalysis",
     parameters = list(
@@ -47,29 +47,29 @@ MassSpecMethod_CalculateFeaturesQuality_StreamFind <- function(
       "baseCut" = as.numeric(baseCut)
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid MassSpecMethod_CalculateFeaturesQuality_StreamFind object!")
+    stop("Invalid MassSpecMethod_CalculateFeaturesQuality_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
 #'
-validate_object.MassSpecMethod_CalculateFeaturesQuality_StreamFind <- function(
+validate_object.MassSpecMethod_CalculateFeaturesQuality_streamfind <- function(
   x
 ) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_choice(x$method, "CalculateFeaturesQuality")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_logical(x$parameters$filtered, max.len = 1)
   checkmate::assert_number(x$parameters$rtExpand)
   checkmate::assert_number(x$parameters$mzExpand)
@@ -84,7 +84,7 @@ validate_object.MassSpecMethod_CalculateFeaturesQuality_StreamFind <- function(
 #' @export
 #' @noRd
 #'
-run.MassSpecMethod_CalculateFeaturesQuality_StreamFind <- function(
+run.MassSpecMethod_CalculateFeaturesQuality_streamfind <- function(
   x,
   engine = NULL
 ) {

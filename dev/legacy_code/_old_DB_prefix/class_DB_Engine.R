@@ -1,7 +1,7 @@
 # MARK: DB_Engine
 # DB_Engine -----
-#' @title File-based Database Engine for StreamFind
-#' @description The [StreamFind::DB_Engine] R6 class provides file-based storage for StreamFind Engine data using DuckDB.
+#' @title File-based Database Engine for streamfind
+#' @description The [streamfind::DB_Engine] R6 class provides file-based storage for streamfind Engine data using DuckDB.
 #' @template arg-core-projectPath
 #' @template arg-core-metadata
 #' @template arg-core-workflow
@@ -29,7 +29,7 @@ DB_Engine <- R6::R6Class(
   active = list(
 
     # MARK: Metadata
-    #' @field Metadata A [StreamFind::Metadata] object loaded from database.
+    #' @field Metadata A [streamfind::Metadata] object loaded from database.
     Metadata = function(value) {
       if (missing(value)) {
         return(self$get_metadata())
@@ -39,7 +39,7 @@ DB_Engine <- R6::R6Class(
     },
 
     # MARK: Workflow
-    #' @field Workflow A [StreamFind::Workflow] object loaded from database.
+    #' @field Workflow A [streamfind::Workflow] object loaded from database.
     Workflow = function(value) {
       if (missing(value)) {
         return(self$get_workflow())
@@ -49,7 +49,7 @@ DB_Engine <- R6::R6Class(
     },
 
     # MARK: Analyses
-    #' @field Analyses A [StreamFind::DB_Analyses] child object.
+    #' @field Analyses A [streamfind::DB_Analyses] child object.
     Analyses = function() {
       NULL
     },
@@ -61,7 +61,7 @@ DB_Engine <- R6::R6Class(
     },
 
     # MARK: Cache
-    #' @field Cache A [StreamFind::DB_Cache] object for managing cached data.
+    #' @field Cache A [streamfind::DB_Cache] object for managing cached data.
     Cache = function() {
       DB_Cache(projectPath = private$.projectPath)
     }
@@ -114,7 +114,7 @@ DB_Engine <- R6::R6Class(
 
     # MARK: get_project_path
     #' @description Get the project path.
-    #' @return Character string with the path to the StreamFind (.sf) project directory.
+    #' @return Character string with the path to the streamfind (.sf) project directory.
     get_project_path = function() {
       private$.projectPath
     },
@@ -238,8 +238,8 @@ DB_Engine <- R6::R6Class(
     },
 
     # MARK: run
-    #' @description Runs a processing method defined by the [StreamFind::ProcessingStep] object.
-    #' @param step A [StreamFind::ProcessingStep] object.
+    #' @description Runs a processing method defined by the [streamfind::ProcessingStep] object.
+    #' @param step A [streamfind::ProcessingStep] object.
     #'
     run = function(step = NULL) {
       if (is.null(step)) {
@@ -297,7 +297,7 @@ DB_Engine <- R6::R6Class(
     },
 
     # MARK: run_workflow
-    #' @description Runs all [StreamFind::ProcessingStep] objects in the [StreamFind::Workflow].
+    #' @description Runs all [streamfind::ProcessingStep] objects in the [streamfind::Workflow].
     run_workflow = function() {
       if (length(self$Workflow) > 0) {
         steps <- self$Workflow
@@ -523,7 +523,7 @@ DB_Engine <- R6::R6Class(
     },
 
     # MARK: run_app
-    #' @description Runs the StreamFind Shiny app to explore, process and manage the engine data.
+    #' @description Runs the streamfind Shiny app to explore, process and manage the engine data.
     #'
     #' @note The engine data is saved in an **rds** file and loaded in the app. If save file is
     #' defined in the engine it is used, otherwise the save file name is automatically set to the
@@ -693,7 +693,7 @@ DB_Engine <- R6::R6Class(
   icon_path <- file.path(sf_root, "streamfind.ico")
   if (!file.exists(icon_path)) {
     sf_icon <- c(
-      system.file("app/www/streamfind.ico", package = "StreamFind", mustWork = FALSE),
+      system.file("app/www/streamfind.ico", package = "streamfind", mustWork = FALSE),
       file.path(getwd(), "inst", "app", "www", "streamfind.ico")
     )
     sf_icon <- sf_icon[file.exists(sf_icon)]
@@ -731,7 +731,7 @@ DB_Engine <- R6::R6Class(
   # create_icon_from_png <- function(path) {
   #   if (!requireNamespace("magick", quietly = TRUE)) return(invisible(FALSE))
   #   icon_candidates <- c(
-  #     system.file("app/www/sf_icon.png", package = "StreamFind", mustWork = FALSE),
+  #     system.file("app/www/sf_icon.png", package = "streamfind", mustWork = FALSE),
   #     file.path(getwd(), "inst", "app", "www", "sf_icon.png")
   #   )
   #   icon_candidates <- icon_candidates[file.exists(icon_candidates)]

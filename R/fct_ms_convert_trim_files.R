@@ -5,9 +5,9 @@
 #' `mzML` or `mzXML`.
 #'
 #' @references
-#' \insertRef{proteo01}{StreamFind}
+#' \insertRef{proteo01}{streamfind}
 #'
-#' \insertRef{proteo02}{StreamFind}
+#' \insertRef{proteo02}{streamfind}
 #'
 #' @return A `data.frame` with the formats compatible for conversion.
 #'
@@ -51,9 +51,9 @@ check_compatible_ms_formats_for_conversion <- function() {
 #' 
 #' @references
 #' 
-#' \insertRef{proteo01}{StreamFind}
+#' \insertRef{proteo01}{streamfind}
 #' 
-#' \insertRef{proteo02}{StreamFind}
+#' \insertRef{proteo02}{streamfind}
 #' 
 #' @export
 #' 
@@ -174,13 +174,13 @@ convert_ms_files <- function(files = NULL, outputFormat = "mzML", outputPath = N
 #' @export
 #' 
 #' @references
-#' \insertRef{mzr01}{StreamFind}
+#' \insertRef{mzr01}{streamfind}
 #' 
-#' \insertRef{mzr02}{StreamFind}
+#' \insertRef{mzr02}{streamfind}
 #' 
-#' \insertRef{mzr03}{StreamFind}
+#' \insertRef{mzr03}{streamfind}
 #' 
-#' \insertRef{mzr04}{StreamFind}
+#' \insertRef{mzr04}{streamfind}
 #' 
 trim_ms_files_spectra <- function(files, MS1 = TRUE, MS2 = TRUE,
                                   rtWindow = NULL, mzWindow = NULL,

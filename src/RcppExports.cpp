@@ -12,7 +12,7 @@ Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
 
 // rcpp_project_new
 SEXP rcpp_project_new(std::string db_path, std::string project_id);
-RcppExport SEXP _StreamFind_rcpp_project_new(SEXP db_pathSEXP, SEXP project_idSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_new(SEXP db_pathSEXP, SEXP project_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -24,7 +24,7 @@ END_RCPP
 }
 // rcpp_project_get_domain
 std::string rcpp_project_get_domain(SEXP project_xptr);
-RcppExport SEXP _StreamFind_rcpp_project_get_domain(SEXP project_xptrSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_get_domain(SEXP project_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -35,7 +35,7 @@ END_RCPP
 }
 // rcpp_project_copy
 SEXP rcpp_project_copy(SEXP project_xptr, std::string db_path, std::string project_id);
-RcppExport SEXP _StreamFind_rcpp_project_copy(SEXP project_xptrSEXP, SEXP db_pathSEXP, SEXP project_idSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_copy(SEXP project_xptrSEXP, SEXP db_pathSEXP, SEXP project_idSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -48,7 +48,7 @@ END_RCPP
 }
 // rcpp_project_validate
 void rcpp_project_validate(SEXP project_xptr);
-RcppExport SEXP _StreamFind_rcpp_project_validate(SEXP project_xptrSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_validate(SEXP project_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type project_xptr(project_xptrSEXP);
@@ -58,7 +58,7 @@ END_RCPP
 }
 // rcpp_project_close
 void rcpp_project_close(SEXP project_xptr);
-RcppExport SEXP _StreamFind_rcpp_project_close(SEXP project_xptrSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_close(SEXP project_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type project_xptr(project_xptrSEXP);
@@ -68,7 +68,7 @@ END_RCPP
 }
 // rcpp_project_get_metadata
 std::string rcpp_project_get_metadata(SEXP project_xptr);
-RcppExport SEXP _StreamFind_rcpp_project_get_metadata(SEXP project_xptrSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_get_metadata(SEXP project_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -79,7 +79,7 @@ END_RCPP
 }
 // rcpp_project_set_metadata
 void rcpp_project_set_metadata(SEXP project_xptr, std::string metadata_json);
-RcppExport SEXP _StreamFind_rcpp_project_set_metadata(SEXP project_xptrSEXP, SEXP metadata_jsonSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_set_metadata(SEXP project_xptrSEXP, SEXP metadata_jsonSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type project_xptr(project_xptrSEXP);
@@ -90,7 +90,7 @@ END_RCPP
 }
 // rcpp_project_get_workflow
 std::string rcpp_project_get_workflow(SEXP project_xptr);
-RcppExport SEXP _StreamFind_rcpp_project_get_workflow(SEXP project_xptrSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_get_workflow(SEXP project_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -101,7 +101,7 @@ END_RCPP
 }
 // rcpp_project_set_workflow
 void rcpp_project_set_workflow(SEXP project_xptr, std::string workflow_json);
-RcppExport SEXP _StreamFind_rcpp_project_set_workflow(SEXP project_xptrSEXP, SEXP workflow_jsonSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_set_workflow(SEXP project_xptrSEXP, SEXP workflow_jsonSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type project_xptr(project_xptrSEXP);
@@ -112,7 +112,7 @@ END_RCPP
 }
 // rcpp_project_list_tables
 CharacterVector rcpp_project_list_tables(SEXP project_xptr);
-RcppExport SEXP _StreamFind_rcpp_project_list_tables(SEXP project_xptrSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_list_tables(SEXP project_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -123,7 +123,7 @@ END_RCPP
 }
 // rcpp_project_get_audit
 DataFrame rcpp_project_get_audit(SEXP project_xptr);
-RcppExport SEXP _StreamFind_rcpp_project_get_audit(SEXP project_xptrSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_get_audit(SEXP project_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -134,7 +134,7 @@ END_RCPP
 }
 // rcpp_project_get_cache_size
 double rcpp_project_get_cache_size(SEXP project_xptr);
-RcppExport SEXP _StreamFind_rcpp_project_get_cache_size(SEXP project_xptrSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_get_cache_size(SEXP project_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -145,7 +145,7 @@ END_RCPP
 }
 // rcpp_project_get_cache
 DataFrame rcpp_project_get_cache(SEXP project_xptr);
-RcppExport SEXP _StreamFind_rcpp_project_get_cache(SEXP project_xptrSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_get_cache(SEXP project_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -156,7 +156,7 @@ END_RCPP
 }
 // rcpp_project_delete_cache
 void rcpp_project_delete_cache(SEXP project_xptr, Nullable<std::string> name);
-RcppExport SEXP _StreamFind_rcpp_project_delete_cache(SEXP project_xptrSEXP, SEXP nameSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_delete_cache(SEXP project_xptrSEXP, SEXP nameSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type project_xptr(project_xptrSEXP);
@@ -167,7 +167,7 @@ END_RCPP
 }
 // rcpp_decode_string
 std::vector<float> rcpp_decode_string(std::string base64_encoded);
-RcppExport SEXP _StreamFind_rcpp_decode_string(SEXP base64_encodedSEXP) {
+RcppExport SEXP _streamfind_rcpp_decode_string(SEXP base64_encodedSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -178,7 +178,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_new
 SEXP rcpp_project_mass_spec_new(SEXP project_xptr, CharacterVector file_paths, CharacterVector replicates, CharacterVector blanks);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_new(SEXP project_xptrSEXP, SEXP file_pathsSEXP, SEXP replicatesSEXP, SEXP blanksSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_new(SEXP project_xptrSEXP, SEXP file_pathsSEXP, SEXP replicatesSEXP, SEXP blanksSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -192,7 +192,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_import_files
 void rcpp_project_mass_spec_import_files(SEXP mass_spec_xptr, CharacterVector file_paths, CharacterVector replicates, CharacterVector blanks);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_import_files(SEXP mass_spec_xptrSEXP, SEXP file_pathsSEXP, SEXP replicatesSEXP, SEXP blanksSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_import_files(SEXP mass_spec_xptrSEXP, SEXP file_pathsSEXP, SEXP replicatesSEXP, SEXP blanksSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type mass_spec_xptr(mass_spec_xptrSEXP);
@@ -205,7 +205,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_remove_analysis
 void rcpp_project_mass_spec_remove_analysis(SEXP mass_spec_xptr, std::string analysis);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_remove_analysis(SEXP mass_spec_xptrSEXP, SEXP analysisSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_remove_analysis(SEXP mass_spec_xptrSEXP, SEXP analysisSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type mass_spec_xptr(mass_spec_xptrSEXP);
@@ -216,7 +216,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_list_analyses
 DataFrame rcpp_project_mass_spec_list_analyses(SEXP mass_spec_xptr);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_list_analyses(SEXP mass_spec_xptrSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_list_analyses(SEXP mass_spec_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -227,7 +227,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_get_analysis_names
 CharacterVector rcpp_project_mass_spec_get_analysis_names(SEXP mass_spec_xptr);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_get_analysis_names(SEXP mass_spec_xptrSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_get_analysis_names(SEXP mass_spec_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -238,7 +238,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_get_replicate_names
 CharacterVector rcpp_project_mass_spec_get_replicate_names(SEXP mass_spec_xptr);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_get_replicate_names(SEXP mass_spec_xptrSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_get_replicate_names(SEXP mass_spec_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -249,7 +249,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_set_replicate_names
 void rcpp_project_mass_spec_set_replicate_names(SEXP mass_spec_xptr, CharacterVector values);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_set_replicate_names(SEXP mass_spec_xptrSEXP, SEXP valuesSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_set_replicate_names(SEXP mass_spec_xptrSEXP, SEXP valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type mass_spec_xptr(mass_spec_xptrSEXP);
@@ -260,7 +260,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_get_blank_names
 CharacterVector rcpp_project_mass_spec_get_blank_names(SEXP mass_spec_xptr);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_get_blank_names(SEXP mass_spec_xptrSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_get_blank_names(SEXP mass_spec_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -271,7 +271,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_set_blank_names
 void rcpp_project_mass_spec_set_blank_names(SEXP mass_spec_xptr, CharacterVector values);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_set_blank_names(SEXP mass_spec_xptrSEXP, SEXP valuesSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_set_blank_names(SEXP mass_spec_xptrSEXP, SEXP valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type mass_spec_xptr(mass_spec_xptrSEXP);
@@ -282,7 +282,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_get_concentrations
 NumericVector rcpp_project_mass_spec_get_concentrations(SEXP mass_spec_xptr);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_get_concentrations(SEXP mass_spec_xptrSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_get_concentrations(SEXP mass_spec_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -293,7 +293,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_set_concentrations
 void rcpp_project_mass_spec_set_concentrations(SEXP mass_spec_xptr, NumericVector values);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_set_concentrations(SEXP mass_spec_xptrSEXP, SEXP valuesSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_set_concentrations(SEXP mass_spec_xptrSEXP, SEXP valuesSEXP) {
 BEGIN_RCPP
     Rcpp::RNGScope rcpp_rngScope_gen;
     Rcpp::traits::input_parameter< SEXP >::type mass_spec_xptr(mass_spec_xptrSEXP);
@@ -304,7 +304,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_get_spectra_headers
 DataFrame rcpp_project_mass_spec_get_spectra_headers(SEXP mass_spec_xptr, SEXP analyses);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_get_spectra_headers(SEXP mass_spec_xptrSEXP, SEXP analysesSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_get_spectra_headers(SEXP mass_spec_xptrSEXP, SEXP analysesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -316,7 +316,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_get_chromatograms_headers
 DataFrame rcpp_project_mass_spec_get_chromatograms_headers(SEXP mass_spec_xptr, SEXP analyses);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_get_chromatograms_headers(SEXP mass_spec_xptrSEXP, SEXP analysesSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_get_chromatograms_headers(SEXP mass_spec_xptrSEXP, SEXP analysesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -328,7 +328,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_get_spectra_tic
 DataFrame rcpp_project_mass_spec_get_spectra_tic(SEXP mass_spec_xptr, SEXP analyses, std::vector<int> levels, double rtmin, double rtmax);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_get_spectra_tic(SEXP mass_spec_xptrSEXP, SEXP analysesSEXP, SEXP levelsSEXP, SEXP rtminSEXP, SEXP rtmaxSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_get_spectra_tic(SEXP mass_spec_xptrSEXP, SEXP analysesSEXP, SEXP levelsSEXP, SEXP rtminSEXP, SEXP rtmaxSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -343,7 +343,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_get_raw_spectra
 DataFrame rcpp_project_mass_spec_get_raw_spectra(SEXP mass_spec_xptr, SEXP analyses, std::vector<int> levels, SEXP mass, SEXP mz, SEXP rt, SEXP mobility, CharacterVector id, double ppm, double sec, double millisec, bool all_traces, double isolation_window, float min_intensity_ms1, float min_intensity_ms2);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_get_raw_spectra(SEXP mass_spec_xptrSEXP, SEXP analysesSEXP, SEXP levelsSEXP, SEXP massSEXP, SEXP mzSEXP, SEXP rtSEXP, SEXP mobilitySEXP, SEXP idSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP millisecSEXP, SEXP all_tracesSEXP, SEXP isolation_windowSEXP, SEXP min_intensity_ms1SEXP, SEXP min_intensity_ms2SEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_get_raw_spectra(SEXP mass_spec_xptrSEXP, SEXP analysesSEXP, SEXP levelsSEXP, SEXP massSEXP, SEXP mzSEXP, SEXP rtSEXP, SEXP mobilitySEXP, SEXP idSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP millisecSEXP, SEXP all_tracesSEXP, SEXP isolation_windowSEXP, SEXP min_intensity_ms1SEXP, SEXP min_intensity_ms2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -368,7 +368,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_get_raw_spectra_eic
 DataFrame rcpp_project_mass_spec_get_raw_spectra_eic(SEXP mass_spec_xptr, SEXP analyses, SEXP mass, SEXP mz, SEXP rt, SEXP mobility, CharacterVector id, double ppm, double sec, double millisec);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_get_raw_spectra_eic(SEXP mass_spec_xptrSEXP, SEXP analysesSEXP, SEXP massSEXP, SEXP mzSEXP, SEXP rtSEXP, SEXP mobilitySEXP, SEXP idSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP millisecSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_get_raw_spectra_eic(SEXP mass_spec_xptrSEXP, SEXP analysesSEXP, SEXP massSEXP, SEXP mzSEXP, SEXP rtSEXP, SEXP mobilitySEXP, SEXP idSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP millisecSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -388,7 +388,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_get_raw_spectra_ms1
 DataFrame rcpp_project_mass_spec_get_raw_spectra_ms1(SEXP mass_spec_xptr, SEXP analyses, SEXP mass, SEXP mz, SEXP rt, SEXP mobility, CharacterVector id, double ppm, double sec, double millisec, float mz_clust, float presence, float min_intensity);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_get_raw_spectra_ms1(SEXP mass_spec_xptrSEXP, SEXP analysesSEXP, SEXP massSEXP, SEXP mzSEXP, SEXP rtSEXP, SEXP mobilitySEXP, SEXP idSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP millisecSEXP, SEXP mz_clustSEXP, SEXP presenceSEXP, SEXP min_intensitySEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_get_raw_spectra_ms1(SEXP mass_spec_xptrSEXP, SEXP analysesSEXP, SEXP massSEXP, SEXP mzSEXP, SEXP rtSEXP, SEXP mobilitySEXP, SEXP idSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP millisecSEXP, SEXP mz_clustSEXP, SEXP presenceSEXP, SEXP min_intensitySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -411,7 +411,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_get_raw_spectra_ms2
 DataFrame rcpp_project_mass_spec_get_raw_spectra_ms2(SEXP mass_spec_xptr, SEXP analyses, SEXP mass, SEXP mz, SEXP rt, SEXP mobility, CharacterVector id, double ppm, double sec, double millisec, float isolation_window, float mz_clust, float presence, float min_intensity);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_get_raw_spectra_ms2(SEXP mass_spec_xptrSEXP, SEXP analysesSEXP, SEXP massSEXP, SEXP mzSEXP, SEXP rtSEXP, SEXP mobilitySEXP, SEXP idSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP millisecSEXP, SEXP isolation_windowSEXP, SEXP mz_clustSEXP, SEXP presenceSEXP, SEXP min_intensitySEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_get_raw_spectra_ms2(SEXP mass_spec_xptrSEXP, SEXP analysesSEXP, SEXP massSEXP, SEXP mzSEXP, SEXP rtSEXP, SEXP mobilitySEXP, SEXP idSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP millisecSEXP, SEXP isolation_windowSEXP, SEXP mz_clustSEXP, SEXP presenceSEXP, SEXP min_intensitySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -435,7 +435,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_get_raw_chromatograms
 DataFrame rcpp_project_mass_spec_get_raw_chromatograms(SEXP mass_spec_xptr, std::string analysis, std::vector<int> indices);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_get_raw_chromatograms(SEXP mass_spec_xptrSEXP, SEXP analysisSEXP, SEXP indicesSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_get_raw_chromatograms(SEXP mass_spec_xptrSEXP, SEXP analysisSEXP, SEXP indicesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -448,7 +448,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_spectra_new
 SEXP rcpp_project_mass_spec_spectra_new(SEXP project_xptr, CharacterVector file_paths, CharacterVector replicates, CharacterVector blanks);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_spectra_new(SEXP project_xptrSEXP, SEXP file_pathsSEXP, SEXP replicatesSEXP, SEXP blanksSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_spectra_new(SEXP project_xptrSEXP, SEXP file_pathsSEXP, SEXP replicatesSEXP, SEXP blanksSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -462,7 +462,7 @@ END_RCPP
 }
 // rcpp_project_mass_spec_chromatograms_new
 SEXP rcpp_project_mass_spec_chromatograms_new(SEXP project_xptr, CharacterVector file_paths, CharacterVector replicates, CharacterVector blanks);
-RcppExport SEXP _StreamFind_rcpp_project_mass_spec_chromatograms_new(SEXP project_xptrSEXP, SEXP file_pathsSEXP, SEXP replicatesSEXP, SEXP blanksSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_chromatograms_new(SEXP project_xptrSEXP, SEXP file_pathsSEXP, SEXP replicatesSEXP, SEXP blanksSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -476,7 +476,7 @@ END_RCPP
 }
 // rcpp_project_non_target_analysis_new
 SEXP rcpp_project_non_target_analysis_new(SEXP project_xptr);
-RcppExport SEXP _StreamFind_rcpp_project_non_target_analysis_new(SEXP project_xptrSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_non_target_analysis_new(SEXP project_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -487,7 +487,7 @@ END_RCPP
 }
 // rcpp_project_non_target_analysis_get_features
 Rcpp::List rcpp_project_non_target_analysis_get_features(SEXP nta_xptr, SEXP analyses, SEXP features, SEXP groups, SEXP components, SEXP mass, SEXP mz, SEXP rt, SEXP mobility, double ppm, double sec, double millisec, bool include_filtered);
-RcppExport SEXP _StreamFind_rcpp_project_non_target_analysis_get_features(SEXP nta_xptrSEXP, SEXP analysesSEXP, SEXP featuresSEXP, SEXP groupsSEXP, SEXP componentsSEXP, SEXP massSEXP, SEXP mzSEXP, SEXP rtSEXP, SEXP mobilitySEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP millisecSEXP, SEXP include_filteredSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_non_target_analysis_get_features(SEXP nta_xptrSEXP, SEXP analysesSEXP, SEXP featuresSEXP, SEXP groupsSEXP, SEXP componentsSEXP, SEXP massSEXP, SEXP mzSEXP, SEXP rtSEXP, SEXP mobilitySEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP millisecSEXP, SEXP include_filteredSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -510,7 +510,7 @@ END_RCPP
 }
 // rcpp_project_non_target_analysis_get_features_count
 Rcpp::List rcpp_project_non_target_analysis_get_features_count(SEXP nta_xptr, CharacterVector analyses, bool include_filtered);
-RcppExport SEXP _StreamFind_rcpp_project_non_target_analysis_get_features_count(SEXP nta_xptrSEXP, SEXP analysesSEXP, SEXP include_filteredSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_non_target_analysis_get_features_count(SEXP nta_xptrSEXP, SEXP analysesSEXP, SEXP include_filteredSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -523,7 +523,7 @@ END_RCPP
 }
 // rcpp_project_nta_get_matrix_suppression
 Rcpp::List rcpp_project_nta_get_matrix_suppression(SEXP nta_xptr, Rcpp::CharacterVector analyses, double rtWindowVal, Rcpp::Nullable<std::string> refBlankReplicate);
-RcppExport SEXP _StreamFind_rcpp_project_nta_get_matrix_suppression(SEXP nta_xptrSEXP, SEXP analysesSEXP, SEXP rtWindowValSEXP, SEXP refBlankReplicateSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_get_matrix_suppression(SEXP nta_xptrSEXP, SEXP analysesSEXP, SEXP rtWindowValSEXP, SEXP refBlankReplicateSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -537,7 +537,7 @@ END_RCPP
 }
 // rcpp_project_nta_correct_matrix_suppression
 bool rcpp_project_nta_correct_matrix_suppression(SEXP nta_xptr, double mpRtWindow, Rcpp::Nullable<std::string> refBlankReplicate);
-RcppExport SEXP _StreamFind_rcpp_project_nta_correct_matrix_suppression(SEXP nta_xptrSEXP, SEXP mpRtWindowSEXP, SEXP refBlankReplicateSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_correct_matrix_suppression(SEXP nta_xptrSEXP, SEXP mpRtWindowSEXP, SEXP refBlankReplicateSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -550,7 +550,7 @@ END_RCPP
 }
 // rcpp_project_non_target_analysis_get_suspects
 Rcpp::List rcpp_project_non_target_analysis_get_suspects(SEXP nta_xptr, SEXP analyses, SEXP features, SEXP groups, SEXP mass, SEXP mz, SEXP rt, SEXP mobility, double ppm, double sec, double millisec);
-RcppExport SEXP _StreamFind_rcpp_project_non_target_analysis_get_suspects(SEXP nta_xptrSEXP, SEXP analysesSEXP, SEXP featuresSEXP, SEXP groupsSEXP, SEXP massSEXP, SEXP mzSEXP, SEXP rtSEXP, SEXP mobilitySEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP millisecSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_non_target_analysis_get_suspects(SEXP nta_xptrSEXP, SEXP analysesSEXP, SEXP featuresSEXP, SEXP groupsSEXP, SEXP massSEXP, SEXP mzSEXP, SEXP rtSEXP, SEXP mobilitySEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP millisecSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -571,7 +571,7 @@ END_RCPP
 }
 // rcpp_project_non_target_analysis_get_internal_standards
 Rcpp::List rcpp_project_non_target_analysis_get_internal_standards(SEXP nta_xptr, SEXP analyses, SEXP features, SEXP groups, SEXP mass, SEXP mz, SEXP rt, SEXP mobility, double ppm, double sec, double millisec);
-RcppExport SEXP _StreamFind_rcpp_project_non_target_analysis_get_internal_standards(SEXP nta_xptrSEXP, SEXP analysesSEXP, SEXP featuresSEXP, SEXP groupsSEXP, SEXP massSEXP, SEXP mzSEXP, SEXP rtSEXP, SEXP mobilitySEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP millisecSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_non_target_analysis_get_internal_standards(SEXP nta_xptrSEXP, SEXP analysesSEXP, SEXP featuresSEXP, SEXP groupsSEXP, SEXP massSEXP, SEXP mzSEXP, SEXP rtSEXP, SEXP mobilitySEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP millisecSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -592,7 +592,7 @@ END_RCPP
 }
 // rcpp_project_non_target_analysis_get_transformation_products
 Rcpp::List rcpp_project_non_target_analysis_get_transformation_products(SEXP nta_xptr);
-RcppExport SEXP _StreamFind_rcpp_project_non_target_analysis_get_transformation_products(SEXP nta_xptrSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_non_target_analysis_get_transformation_products(SEXP nta_xptrSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -603,7 +603,7 @@ END_RCPP
 }
 // rcpp_project_non_target_analysis_assign_transformation_products
 bool rcpp_project_non_target_analysis_assign_transformation_products(SEXP nta_xptr, Rcpp::List transformation_products, std::string chromatographic_phase, double mzrMS2);
-RcppExport SEXP _StreamFind_rcpp_project_non_target_analysis_assign_transformation_products(SEXP nta_xptrSEXP, SEXP transformation_productsSEXP, SEXP chromatographic_phaseSEXP, SEXP mzrMS2SEXP) {
+RcppExport SEXP _streamfind_rcpp_project_non_target_analysis_assign_transformation_products(SEXP nta_xptrSEXP, SEXP transformation_productsSEXP, SEXP chromatographic_phaseSEXP, SEXP mzrMS2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -617,7 +617,7 @@ END_RCPP
 }
 // rcpp_project_nta_find_features
 bool rcpp_project_nta_find_features(SEXP nta_xptr, std::vector<float> rtWindowsMin, std::vector<float> rtWindowsMax, float ppmThreshold, float noiseThreshold, float minSNR, int minTraces, float baselineWindow, float maxWidth, float baseQuantile, std::string debugAnalysis, float debugMZ, int debugSpecIdx);
-RcppExport SEXP _StreamFind_rcpp_project_nta_find_features(SEXP nta_xptrSEXP, SEXP rtWindowsMinSEXP, SEXP rtWindowsMaxSEXP, SEXP ppmThresholdSEXP, SEXP noiseThresholdSEXP, SEXP minSNRSEXP, SEXP minTracesSEXP, SEXP baselineWindowSEXP, SEXP maxWidthSEXP, SEXP baseQuantileSEXP, SEXP debugAnalysisSEXP, SEXP debugMZSEXP, SEXP debugSpecIdxSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_find_features(SEXP nta_xptrSEXP, SEXP rtWindowsMinSEXP, SEXP rtWindowsMaxSEXP, SEXP ppmThresholdSEXP, SEXP noiseThresholdSEXP, SEXP minSNRSEXP, SEXP minTracesSEXP, SEXP baselineWindowSEXP, SEXP maxWidthSEXP, SEXP baseQuantileSEXP, SEXP debugAnalysisSEXP, SEXP debugMZSEXP, SEXP debugSpecIdxSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -640,7 +640,7 @@ END_RCPP
 }
 // rcpp_project_nta_load_features_ms1
 bool rcpp_project_nta_load_features_ms1(SEXP nta_xptr, bool filtered, std::vector<float> rtWindow, std::vector<float> mzWindow, float minTracesIntensity, float mzClust, float presence);
-RcppExport SEXP _StreamFind_rcpp_project_nta_load_features_ms1(SEXP nta_xptrSEXP, SEXP filteredSEXP, SEXP rtWindowSEXP, SEXP mzWindowSEXP, SEXP minTracesIntensitySEXP, SEXP mzClustSEXP, SEXP presenceSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_load_features_ms1(SEXP nta_xptrSEXP, SEXP filteredSEXP, SEXP rtWindowSEXP, SEXP mzWindowSEXP, SEXP minTracesIntensitySEXP, SEXP mzClustSEXP, SEXP presenceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -657,7 +657,7 @@ END_RCPP
 }
 // rcpp_project_nta_load_features_ms2
 bool rcpp_project_nta_load_features_ms2(SEXP nta_xptr, bool filtered, float minTracesIntensity, float isolationWindow, float mzClust, float presence);
-RcppExport SEXP _StreamFind_rcpp_project_nta_load_features_ms2(SEXP nta_xptrSEXP, SEXP filteredSEXP, SEXP minTracesIntensitySEXP, SEXP isolationWindowSEXP, SEXP mzClustSEXP, SEXP presenceSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_load_features_ms2(SEXP nta_xptrSEXP, SEXP filteredSEXP, SEXP minTracesIntensitySEXP, SEXP isolationWindowSEXP, SEXP mzClustSEXP, SEXP presenceSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -673,7 +673,7 @@ END_RCPP
 }
 // rcpp_project_nta_create_components
 bool rcpp_project_nta_create_components(SEXP nta_xptr, std::vector<float> rtWindow, float minCorrelation, float debugRT, std::string debugAnalysis);
-RcppExport SEXP _StreamFind_rcpp_project_nta_create_components(SEXP nta_xptrSEXP, SEXP rtWindowSEXP, SEXP minCorrelationSEXP, SEXP debugRTSEXP, SEXP debugAnalysisSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_create_components(SEXP nta_xptrSEXP, SEXP rtWindowSEXP, SEXP minCorrelationSEXP, SEXP debugRTSEXP, SEXP debugAnalysisSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -688,7 +688,7 @@ END_RCPP
 }
 // rcpp_project_nta_annotate_components
 bool rcpp_project_nta_annotate_components(SEXP nta_xptr, int maxIsotopes, int maxCharge, int maxGaps, float ppm, Rcpp::CharacterVector isotopeElements, std::string debugComponent, std::string debugAnalysis);
-RcppExport SEXP _StreamFind_rcpp_project_nta_annotate_components(SEXP nta_xptrSEXP, SEXP maxIsotopesSEXP, SEXP maxChargeSEXP, SEXP maxGapsSEXP, SEXP ppmSEXP, SEXP isotopeElementsSEXP, SEXP debugComponentSEXP, SEXP debugAnalysisSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_annotate_components(SEXP nta_xptrSEXP, SEXP maxIsotopesSEXP, SEXP maxChargeSEXP, SEXP maxGapsSEXP, SEXP ppmSEXP, SEXP isotopeElementsSEXP, SEXP debugComponentSEXP, SEXP debugAnalysisSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -706,7 +706,7 @@ END_RCPP
 }
 // rcpp_project_nta_group_features
 bool rcpp_project_nta_group_features(SEXP nta_xptr, std::string method, float rtDeviation, float ppm, int minSamples, float binSize, bool debug, float debugRT);
-RcppExport SEXP _StreamFind_rcpp_project_nta_group_features(SEXP nta_xptrSEXP, SEXP methodSEXP, SEXP rtDeviationSEXP, SEXP ppmSEXP, SEXP minSamplesSEXP, SEXP binSizeSEXP, SEXP debugSEXP, SEXP debugRTSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_group_features(SEXP nta_xptrSEXP, SEXP methodSEXP, SEXP rtDeviationSEXP, SEXP ppmSEXP, SEXP minSamplesSEXP, SEXP binSizeSEXP, SEXP debugSEXP, SEXP debugRTSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -724,7 +724,7 @@ END_RCPP
 }
 // rcpp_project_nta_fill_features
 bool rcpp_project_nta_fill_features(SEXP nta_xptr, bool withinReplicate, bool filtered, float rtExpand, float mzExpand, float maxPeakWidth, float minTracesIntensity, int minNumberTraces, float minIntensity, float rtApexDeviation, float minSignalToNoiseRatio, float minGaussianFit, std::string debugFG);
-RcppExport SEXP _StreamFind_rcpp_project_nta_fill_features(SEXP nta_xptrSEXP, SEXP withinReplicateSEXP, SEXP filteredSEXP, SEXP rtExpandSEXP, SEXP mzExpandSEXP, SEXP maxPeakWidthSEXP, SEXP minTracesIntensitySEXP, SEXP minNumberTracesSEXP, SEXP minIntensitySEXP, SEXP rtApexDeviationSEXP, SEXP minSignalToNoiseRatioSEXP, SEXP minGaussianFitSEXP, SEXP debugFGSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_fill_features(SEXP nta_xptrSEXP, SEXP withinReplicateSEXP, SEXP filteredSEXP, SEXP rtExpandSEXP, SEXP mzExpandSEXP, SEXP maxPeakWidthSEXP, SEXP minTracesIntensitySEXP, SEXP minNumberTracesSEXP, SEXP minIntensitySEXP, SEXP rtApexDeviationSEXP, SEXP minSignalToNoiseRatioSEXP, SEXP minGaussianFitSEXP, SEXP debugFGSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -747,7 +747,7 @@ END_RCPP
 }
 // rcpp_project_nta_blank_subtraction
 bool rcpp_project_nta_blank_subtraction(SEXP nta_xptr, float blankThreshold, float rtExpand, float mzExpand);
-RcppExport SEXP _StreamFind_rcpp_project_nta_blank_subtraction(SEXP nta_xptrSEXP, SEXP blankThresholdSEXP, SEXP rtExpandSEXP, SEXP mzExpandSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_blank_subtraction(SEXP nta_xptrSEXP, SEXP blankThresholdSEXP, SEXP rtExpandSEXP, SEXP mzExpandSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -761,7 +761,7 @@ END_RCPP
 }
 // rcpp_project_nta_filter_features
 bool rcpp_project_nta_filter_features(SEXP nta_xptr, double minSN, double minIntensity, double minArea, double minWidth, double maxWidth, double maxPPM, double minFwhmRT, double maxFwhmRT, double minFwhmMZ, double maxFwhmMZ, double minGaussianA, double minGaussianMu, double maxGaussianMu, double minGaussianSigma, double maxGaussianSigma, double minGaussianR2, double maxJaggedness, double minSharpness, double minAsymmetry, double maxAsymmetry, int maxModality, double minPlates, Rcpp::LogicalVector onlyFilled, bool removeFilled, int minSizeEIC, int minSizeMS1, int minSizeMS2, double minRelPresenceReplicate, bool removeIsotopes, bool removeAdducts, bool removeLosses);
-RcppExport SEXP _StreamFind_rcpp_project_nta_filter_features(SEXP nta_xptrSEXP, SEXP minSNSEXP, SEXP minIntensitySEXP, SEXP minAreaSEXP, SEXP minWidthSEXP, SEXP maxWidthSEXP, SEXP maxPPMSEXP, SEXP minFwhmRTSEXP, SEXP maxFwhmRTSEXP, SEXP minFwhmMZSEXP, SEXP maxFwhmMZSEXP, SEXP minGaussianASEXP, SEXP minGaussianMuSEXP, SEXP maxGaussianMuSEXP, SEXP minGaussianSigmaSEXP, SEXP maxGaussianSigmaSEXP, SEXP minGaussianR2SEXP, SEXP maxJaggednessSEXP, SEXP minSharpnessSEXP, SEXP minAsymmetrySEXP, SEXP maxAsymmetrySEXP, SEXP maxModalitySEXP, SEXP minPlatesSEXP, SEXP onlyFilledSEXP, SEXP removeFilledSEXP, SEXP minSizeEICSEXP, SEXP minSizeMS1SEXP, SEXP minSizeMS2SEXP, SEXP minRelPresenceReplicateSEXP, SEXP removeIsotopesSEXP, SEXP removeAdductsSEXP, SEXP removeLossesSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_filter_features(SEXP nta_xptrSEXP, SEXP minSNSEXP, SEXP minIntensitySEXP, SEXP minAreaSEXP, SEXP minWidthSEXP, SEXP maxWidthSEXP, SEXP maxPPMSEXP, SEXP minFwhmRTSEXP, SEXP maxFwhmRTSEXP, SEXP minFwhmMZSEXP, SEXP maxFwhmMZSEXP, SEXP minGaussianASEXP, SEXP minGaussianMuSEXP, SEXP maxGaussianMuSEXP, SEXP minGaussianSigmaSEXP, SEXP maxGaussianSigmaSEXP, SEXP minGaussianR2SEXP, SEXP maxJaggednessSEXP, SEXP minSharpnessSEXP, SEXP minAsymmetrySEXP, SEXP maxAsymmetrySEXP, SEXP maxModalitySEXP, SEXP minPlatesSEXP, SEXP onlyFilledSEXP, SEXP removeFilledSEXP, SEXP minSizeEICSEXP, SEXP minSizeMS1SEXP, SEXP minSizeMS2SEXP, SEXP minRelPresenceReplicateSEXP, SEXP removeIsotopesSEXP, SEXP removeAdductsSEXP, SEXP removeLossesSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -803,7 +803,7 @@ END_RCPP
 }
 // rcpp_project_nta_filter_suspects
 bool rcpp_project_nta_filter_suspects(SEXP nta_xptr, Rcpp::CharacterVector names, double minScore, double maxErrorRT, double maxErrorMass, Rcpp::IntegerVector idLevels, int minSharedFragments, double minCosineSimilarity);
-RcppExport SEXP _StreamFind_rcpp_project_nta_filter_suspects(SEXP nta_xptrSEXP, SEXP namesSEXP, SEXP minScoreSEXP, SEXP maxErrorRTSEXP, SEXP maxErrorMassSEXP, SEXP idLevelsSEXP, SEXP minSharedFragmentsSEXP, SEXP minCosineSimilaritySEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_filter_suspects(SEXP nta_xptrSEXP, SEXP namesSEXP, SEXP minScoreSEXP, SEXP maxErrorRTSEXP, SEXP maxErrorMassSEXP, SEXP idLevelsSEXP, SEXP minSharedFragmentsSEXP, SEXP minCosineSimilaritySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -821,7 +821,7 @@ END_RCPP
 }
 // rcpp_project_nta_filter_internal_standards
 bool rcpp_project_nta_filter_internal_standards(SEXP nta_xptr, Rcpp::CharacterVector names, double minScore, double maxErrorRT, double maxErrorMass, Rcpp::IntegerVector idLevels, int minSharedFragments, double minCosineSimilarity);
-RcppExport SEXP _StreamFind_rcpp_project_nta_filter_internal_standards(SEXP nta_xptrSEXP, SEXP namesSEXP, SEXP minScoreSEXP, SEXP maxErrorRTSEXP, SEXP maxErrorMassSEXP, SEXP idLevelsSEXP, SEXP minSharedFragmentsSEXP, SEXP minCosineSimilaritySEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_filter_internal_standards(SEXP nta_xptrSEXP, SEXP namesSEXP, SEXP minScoreSEXP, SEXP maxErrorRTSEXP, SEXP maxErrorMassSEXP, SEXP idLevelsSEXP, SEXP minSharedFragmentsSEXP, SEXP minCosineSimilaritySEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -839,7 +839,7 @@ END_RCPP
 }
 // rcpp_project_nta_find_internal_standards
 bool rcpp_project_nta_find_internal_standards(SEXP nta_xptr, Rcpp::List suspects, Rcpp::CharacterVector analyses, double ppm, double sec, double ppmMS2, double mzrMS2, double minCosineSimilarity, int minSharedFragments, bool filtered);
-RcppExport SEXP _StreamFind_rcpp_project_nta_find_internal_standards(SEXP nta_xptrSEXP, SEXP suspectsSEXP, SEXP analysesSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP ppmMS2SEXP, SEXP mzrMS2SEXP, SEXP minCosineSimilaritySEXP, SEXP minSharedFragmentsSEXP, SEXP filteredSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_find_internal_standards(SEXP nta_xptrSEXP, SEXP suspectsSEXP, SEXP analysesSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP ppmMS2SEXP, SEXP mzrMS2SEXP, SEXP minCosineSimilaritySEXP, SEXP minSharedFragmentsSEXP, SEXP filteredSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -859,7 +859,7 @@ END_RCPP
 }
 // rcpp_project_nta_suspect_screening
 bool rcpp_project_nta_suspect_screening(SEXP nta_xptr, Rcpp::List suspects, Rcpp::CharacterVector analyses, double ppm, double sec, double ppmMS2, double mzrMS2, double minCosineSimilarity, int minSharedFragments, bool filtered);
-RcppExport SEXP _StreamFind_rcpp_project_nta_suspect_screening(SEXP nta_xptrSEXP, SEXP suspectsSEXP, SEXP analysesSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP ppmMS2SEXP, SEXP mzrMS2SEXP, SEXP minCosineSimilaritySEXP, SEXP minSharedFragmentsSEXP, SEXP filteredSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_suspect_screening(SEXP nta_xptrSEXP, SEXP suspectsSEXP, SEXP analysesSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP ppmMS2SEXP, SEXP mzrMS2SEXP, SEXP minCosineSimilaritySEXP, SEXP minSharedFragmentsSEXP, SEXP filteredSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -879,7 +879,7 @@ END_RCPP
 }
 // rcpp_project_nta_filter_features_ms2
 bool rcpp_project_nta_filter_features_ms2(SEXP nta_xptr, int top, double minIntensity, double relMinIntensity, bool blankClean, double mzClust, double blankPresenceThreshold, double globalPresenceThreshold);
-RcppExport SEXP _StreamFind_rcpp_project_nta_filter_features_ms2(SEXP nta_xptrSEXP, SEXP topSEXP, SEXP minIntensitySEXP, SEXP relMinIntensitySEXP, SEXP blankCleanSEXP, SEXP mzClustSEXP, SEXP blankPresenceThresholdSEXP, SEXP globalPresenceThresholdSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_filter_features_ms2(SEXP nta_xptrSEXP, SEXP topSEXP, SEXP minIntensitySEXP, SEXP relMinIntensitySEXP, SEXP blankCleanSEXP, SEXP mzClustSEXP, SEXP blankPresenceThresholdSEXP, SEXP globalPresenceThresholdSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -897,7 +897,7 @@ END_RCPP
 }
 // rcpp_project_nta_metfrag_screening
 bool rcpp_project_nta_metfrag_screening(SEXP nta_xptr, std::string metfrag_path, std::string database_type, std::string database_path, Rcpp::CharacterVector analyses, double ppm, double sec, double ppmMS2, double mzrMS2, int top_n, Rcpp::CharacterVector score_types, Rcpp::NumericVector score_weights, Rcpp::CharacterVector pre_processing_candidate_filter, Rcpp::CharacterVector post_processing_candidate_filter, int maximum_tree_depth, int number_threads, bool use_smiles, bool filtered, std::string java_path, std::string run_dir, Rcpp::List extra_params);
-RcppExport SEXP _StreamFind_rcpp_project_nta_metfrag_screening(SEXP nta_xptrSEXP, SEXP metfrag_pathSEXP, SEXP database_typeSEXP, SEXP database_pathSEXP, SEXP analysesSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP ppmMS2SEXP, SEXP mzrMS2SEXP, SEXP top_nSEXP, SEXP score_typesSEXP, SEXP score_weightsSEXP, SEXP pre_processing_candidate_filterSEXP, SEXP post_processing_candidate_filterSEXP, SEXP maximum_tree_depthSEXP, SEXP number_threadsSEXP, SEXP use_smilesSEXP, SEXP filteredSEXP, SEXP java_pathSEXP, SEXP run_dirSEXP, SEXP extra_paramsSEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_metfrag_screening(SEXP nta_xptrSEXP, SEXP metfrag_pathSEXP, SEXP database_typeSEXP, SEXP database_pathSEXP, SEXP analysesSEXP, SEXP ppmSEXP, SEXP secSEXP, SEXP ppmMS2SEXP, SEXP mzrMS2SEXP, SEXP top_nSEXP, SEXP score_typesSEXP, SEXP score_weightsSEXP, SEXP pre_processing_candidate_filterSEXP, SEXP post_processing_candidate_filterSEXP, SEXP maximum_tree_depthSEXP, SEXP number_threadsSEXP, SEXP use_smilesSEXP, SEXP filteredSEXP, SEXP java_pathSEXP, SEXP run_dirSEXP, SEXP extra_paramsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -928,7 +928,7 @@ END_RCPP
 }
 // rcpp_project_nta_assign_transformation_products
 Rcpp::List rcpp_project_nta_assign_transformation_products(Rcpp::List suspects, Rcpp::List transformation_products, std::string chromatographic_phase, double mzrMS2);
-RcppExport SEXP _StreamFind_rcpp_project_nta_assign_transformation_products(SEXP suspectsSEXP, SEXP transformation_productsSEXP, SEXP chromatographic_phaseSEXP, SEXP mzrMS2SEXP) {
+RcppExport SEXP _streamfind_rcpp_project_nta_assign_transformation_products(SEXP suspectsSEXP, SEXP transformation_productsSEXP, SEXP chromatographic_phaseSEXP, SEXP mzrMS2SEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -942,7 +942,7 @@ END_RCPP
 }
 // rcpp_json_make_example
 std::string rcpp_json_make_example();
-RcppExport SEXP _StreamFind_rcpp_json_make_example() {
+RcppExport SEXP _streamfind_rcpp_json_make_example() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -952,7 +952,7 @@ END_RCPP
 }
 // rcpp_json_parse
 Rcpp::List rcpp_json_parse(const std::string& s);
-RcppExport SEXP _StreamFind_rcpp_json_parse(SEXP sSEXP) {
+RcppExport SEXP _streamfind_rcpp_json_parse(SEXP sSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -963,7 +963,7 @@ END_RCPP
 }
 // rcpp_json_read_file
 std::string rcpp_json_read_file(std::string file_path);
-RcppExport SEXP _StreamFind_rcpp_json_read_file(SEXP file_pathSEXP) {
+RcppExport SEXP _streamfind_rcpp_json_read_file(SEXP file_pathSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -974,7 +974,7 @@ END_RCPP
 }
 // rcpp_json_read_subtree
 std::string rcpp_json_read_subtree(std::string file_path, std::string path);
-RcppExport SEXP _StreamFind_rcpp_json_read_subtree(SEXP file_pathSEXP, SEXP pathSEXP) {
+RcppExport SEXP _streamfind_rcpp_json_read_subtree(SEXP file_pathSEXP, SEXP pathSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -986,7 +986,7 @@ END_RCPP
 }
 // rcpp_json_list_children
 Rcpp::CharacterVector rcpp_json_list_children(std::string file_path, std::string path);
-RcppExport SEXP _StreamFind_rcpp_json_list_children(SEXP file_pathSEXP, SEXP pathSEXP) {
+RcppExport SEXP _streamfind_rcpp_json_list_children(SEXP file_pathSEXP, SEXP pathSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -998,7 +998,7 @@ END_RCPP
 }
 // rcpp_json_schema_validation_ok
 bool rcpp_json_schema_validation_ok();
-RcppExport SEXP _StreamFind_rcpp_json_schema_validation_ok() {
+RcppExport SEXP _streamfind_rcpp_json_schema_validation_ok() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1008,7 +1008,7 @@ END_RCPP
 }
 // rcpp_json_schema_validation_error
 std::string rcpp_json_schema_validation_error();
-RcppExport SEXP _StreamFind_rcpp_json_schema_validation_error() {
+RcppExport SEXP _streamfind_rcpp_json_schema_validation_error() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1018,7 +1018,7 @@ END_RCPP
 }
 // rcpp_asm_read_file
 std::string rcpp_asm_read_file(std::string file_path);
-RcppExport SEXP _StreamFind_rcpp_asm_read_file(SEXP file_pathSEXP) {
+RcppExport SEXP _streamfind_rcpp_asm_read_file(SEXP file_pathSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1029,7 +1029,7 @@ END_RCPP
 }
 // rcpp_asm_index_table
 Rcpp::DataFrame rcpp_asm_index_table(std::string file_path);
-RcppExport SEXP _StreamFind_rcpp_asm_index_table(SEXP file_pathSEXP) {
+RcppExport SEXP _streamfind_rcpp_asm_index_table(SEXP file_pathSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1040,7 +1040,7 @@ END_RCPP
 }
 // rcpp_asm_read_subtree
 std::string rcpp_asm_read_subtree(std::string file_path, std::string path);
-RcppExport SEXP _StreamFind_rcpp_asm_read_subtree(SEXP file_pathSEXP, SEXP pathSEXP) {
+RcppExport SEXP _streamfind_rcpp_asm_read_subtree(SEXP file_pathSEXP, SEXP pathSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1052,7 +1052,7 @@ END_RCPP
 }
 // rcpp_asm_read_primary_data
 std::string rcpp_asm_read_primary_data(std::string file_path);
-RcppExport SEXP _StreamFind_rcpp_asm_read_primary_data(SEXP file_pathSEXP) {
+RcppExport SEXP _streamfind_rcpp_asm_read_primary_data(SEXP file_pathSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1063,7 +1063,7 @@ END_RCPP
 }
 // rcpp_asm_list_children
 Rcpp::CharacterVector rcpp_asm_list_children(std::string file_path, std::string path);
-RcppExport SEXP _StreamFind_rcpp_asm_list_children(SEXP file_pathSEXP, SEXP pathSEXP) {
+RcppExport SEXP _streamfind_rcpp_asm_list_children(SEXP file_pathSEXP, SEXP pathSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1075,7 +1075,7 @@ END_RCPP
 }
 // rcpp_asm_validate_file
 bool rcpp_asm_validate_file(std::string json_file_path, std::string schema_file, std::string schema_root_dir);
-RcppExport SEXP _StreamFind_rcpp_asm_validate_file(SEXP json_file_pathSEXP, SEXP schema_fileSEXP, SEXP schema_root_dirSEXP) {
+RcppExport SEXP _streamfind_rcpp_asm_validate_file(SEXP json_file_pathSEXP, SEXP schema_fileSEXP, SEXP schema_root_dirSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1088,7 +1088,7 @@ END_RCPP
 }
 // duckdb_list_tables
 CharacterVector duckdb_list_tables(std::string db_path);
-RcppExport SEXP _StreamFind_duckdb_list_tables(SEXP db_pathSEXP) {
+RcppExport SEXP _streamfind_duckdb_list_tables(SEXP db_pathSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1099,7 +1099,7 @@ END_RCPP
 }
 // duckdb_json_extension_info
 List duckdb_json_extension_info(std::string db_path);
-RcppExport SEXP _StreamFind_duckdb_json_extension_info(SEXP db_pathSEXP) {
+RcppExport SEXP _streamfind_duckdb_json_extension_info(SEXP db_pathSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1110,7 +1110,7 @@ END_RCPP
 }
 // rcpp_openbabel_structure_svg
 std::string rcpp_openbabel_structure_svg(Rcpp::Nullable<std::string> SMILES, Rcpp::Nullable<std::string> InChI, int width, int height, bool darkMode);
-RcppExport SEXP _StreamFind_rcpp_openbabel_structure_svg(SEXP SMILESSEXP, SEXP InChISEXP, SEXP widthSEXP, SEXP heightSEXP, SEXP darkModeSEXP) {
+RcppExport SEXP _streamfind_rcpp_openbabel_structure_svg(SEXP SMILESSEXP, SEXP InChISEXP, SEXP widthSEXP, SEXP heightSEXP, SEXP darkModeSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1125,7 +1125,7 @@ END_RCPP
 }
 // rcpp_openbabel_debug_runtime
 std::string rcpp_openbabel_debug_runtime();
-RcppExport SEXP _StreamFind_rcpp_openbabel_debug_runtime() {
+RcppExport SEXP _streamfind_rcpp_openbabel_debug_runtime() {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1135,7 +1135,7 @@ END_RCPP
 }
 // rcpp_get_suspects_screening_csv
 Rcpp::DataFrame rcpp_get_suspects_screening_csv(Rcpp::DataFrame suspects, Rcpp::Nullable<std::string> file);
-RcppExport SEXP _StreamFind_rcpp_get_suspects_screening_csv(SEXP suspectsSEXP, SEXP fileSEXP) {
+RcppExport SEXP _streamfind_rcpp_get_suspects_screening_csv(SEXP suspectsSEXP, SEXP fileSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1147,7 +1147,7 @@ END_RCPP
 }
 // rcpp_formula_from_mass
 Rcpp::DataFrame rcpp_formula_from_mass(double mass, double tolerance_ppm, Rcpp::Nullable<Rcpp::CharacterVector> elements);
-RcppExport SEXP _StreamFind_rcpp_formula_from_mass(SEXP massSEXP, SEXP tolerance_ppmSEXP, SEXP elementsSEXP) {
+RcppExport SEXP _streamfind_rcpp_formula_from_mass(SEXP massSEXP, SEXP tolerance_ppmSEXP, SEXP elementsSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1160,7 +1160,7 @@ END_RCPP
 }
 // rcpp_get_suspect_screening_csv_from_mol_files
 Rcpp::DataFrame rcpp_get_suspect_screening_csv_from_mol_files(Rcpp::CharacterVector files, Rcpp::Nullable<std::string> file);
-RcppExport SEXP _StreamFind_rcpp_get_suspect_screening_csv_from_mol_files(SEXP filesSEXP, SEXP fileSEXP) {
+RcppExport SEXP _streamfind_rcpp_get_suspect_screening_csv_from_mol_files(SEXP filesSEXP, SEXP fileSEXP) {
 BEGIN_RCPP
     Rcpp::RObject rcpp_result_gen;
     Rcpp::RNGScope rcpp_rngScope_gen;
@@ -1172,91 +1172,91 @@ END_RCPP
 }
 
 static const R_CallMethodDef CallEntries[] = {
-    {"_StreamFind_rcpp_project_new", (DL_FUNC) &_StreamFind_rcpp_project_new, 2},
-    {"_StreamFind_rcpp_project_get_domain", (DL_FUNC) &_StreamFind_rcpp_project_get_domain, 1},
-    {"_StreamFind_rcpp_project_copy", (DL_FUNC) &_StreamFind_rcpp_project_copy, 3},
-    {"_StreamFind_rcpp_project_validate", (DL_FUNC) &_StreamFind_rcpp_project_validate, 1},
-    {"_StreamFind_rcpp_project_close", (DL_FUNC) &_StreamFind_rcpp_project_close, 1},
-    {"_StreamFind_rcpp_project_get_metadata", (DL_FUNC) &_StreamFind_rcpp_project_get_metadata, 1},
-    {"_StreamFind_rcpp_project_set_metadata", (DL_FUNC) &_StreamFind_rcpp_project_set_metadata, 2},
-    {"_StreamFind_rcpp_project_get_workflow", (DL_FUNC) &_StreamFind_rcpp_project_get_workflow, 1},
-    {"_StreamFind_rcpp_project_set_workflow", (DL_FUNC) &_StreamFind_rcpp_project_set_workflow, 2},
-    {"_StreamFind_rcpp_project_list_tables", (DL_FUNC) &_StreamFind_rcpp_project_list_tables, 1},
-    {"_StreamFind_rcpp_project_get_audit", (DL_FUNC) &_StreamFind_rcpp_project_get_audit, 1},
-    {"_StreamFind_rcpp_project_get_cache_size", (DL_FUNC) &_StreamFind_rcpp_project_get_cache_size, 1},
-    {"_StreamFind_rcpp_project_get_cache", (DL_FUNC) &_StreamFind_rcpp_project_get_cache, 1},
-    {"_StreamFind_rcpp_project_delete_cache", (DL_FUNC) &_StreamFind_rcpp_project_delete_cache, 2},
-    {"_StreamFind_rcpp_decode_string", (DL_FUNC) &_StreamFind_rcpp_decode_string, 1},
-    {"_StreamFind_rcpp_project_mass_spec_new", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_new, 4},
-    {"_StreamFind_rcpp_project_mass_spec_import_files", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_import_files, 4},
-    {"_StreamFind_rcpp_project_mass_spec_remove_analysis", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_remove_analysis, 2},
-    {"_StreamFind_rcpp_project_mass_spec_list_analyses", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_list_analyses, 1},
-    {"_StreamFind_rcpp_project_mass_spec_get_analysis_names", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_analysis_names, 1},
-    {"_StreamFind_rcpp_project_mass_spec_get_replicate_names", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_replicate_names, 1},
-    {"_StreamFind_rcpp_project_mass_spec_set_replicate_names", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_set_replicate_names, 2},
-    {"_StreamFind_rcpp_project_mass_spec_get_blank_names", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_blank_names, 1},
-    {"_StreamFind_rcpp_project_mass_spec_set_blank_names", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_set_blank_names, 2},
-    {"_StreamFind_rcpp_project_mass_spec_get_concentrations", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_concentrations, 1},
-    {"_StreamFind_rcpp_project_mass_spec_set_concentrations", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_set_concentrations, 2},
-    {"_StreamFind_rcpp_project_mass_spec_get_spectra_headers", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_spectra_headers, 2},
-    {"_StreamFind_rcpp_project_mass_spec_get_chromatograms_headers", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_chromatograms_headers, 2},
-    {"_StreamFind_rcpp_project_mass_spec_get_spectra_tic", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_spectra_tic, 5},
-    {"_StreamFind_rcpp_project_mass_spec_get_raw_spectra", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_raw_spectra, 15},
-    {"_StreamFind_rcpp_project_mass_spec_get_raw_spectra_eic", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_raw_spectra_eic, 10},
-    {"_StreamFind_rcpp_project_mass_spec_get_raw_spectra_ms1", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_raw_spectra_ms1, 13},
-    {"_StreamFind_rcpp_project_mass_spec_get_raw_spectra_ms2", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_raw_spectra_ms2, 14},
-    {"_StreamFind_rcpp_project_mass_spec_get_raw_chromatograms", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_get_raw_chromatograms, 3},
-    {"_StreamFind_rcpp_project_mass_spec_spectra_new", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_spectra_new, 4},
-    {"_StreamFind_rcpp_project_mass_spec_chromatograms_new", (DL_FUNC) &_StreamFind_rcpp_project_mass_spec_chromatograms_new, 4},
-    {"_StreamFind_rcpp_project_non_target_analysis_new", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_new, 1},
-    {"_StreamFind_rcpp_project_non_target_analysis_get_features", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_get_features, 13},
-    {"_StreamFind_rcpp_project_non_target_analysis_get_features_count", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_get_features_count, 3},
-    {"_StreamFind_rcpp_project_nta_get_matrix_suppression", (DL_FUNC) &_StreamFind_rcpp_project_nta_get_matrix_suppression, 4},
-    {"_StreamFind_rcpp_project_nta_correct_matrix_suppression", (DL_FUNC) &_StreamFind_rcpp_project_nta_correct_matrix_suppression, 3},
-    {"_StreamFind_rcpp_project_non_target_analysis_get_suspects", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_get_suspects, 11},
-    {"_StreamFind_rcpp_project_non_target_analysis_get_internal_standards", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_get_internal_standards, 11},
-    {"_StreamFind_rcpp_project_non_target_analysis_get_transformation_products", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_get_transformation_products, 1},
-    {"_StreamFind_rcpp_project_non_target_analysis_assign_transformation_products", (DL_FUNC) &_StreamFind_rcpp_project_non_target_analysis_assign_transformation_products, 4},
-    {"_StreamFind_rcpp_project_nta_find_features", (DL_FUNC) &_StreamFind_rcpp_project_nta_find_features, 13},
-    {"_StreamFind_rcpp_project_nta_load_features_ms1", (DL_FUNC) &_StreamFind_rcpp_project_nta_load_features_ms1, 7},
-    {"_StreamFind_rcpp_project_nta_load_features_ms2", (DL_FUNC) &_StreamFind_rcpp_project_nta_load_features_ms2, 6},
-    {"_StreamFind_rcpp_project_nta_create_components", (DL_FUNC) &_StreamFind_rcpp_project_nta_create_components, 5},
-    {"_StreamFind_rcpp_project_nta_annotate_components", (DL_FUNC) &_StreamFind_rcpp_project_nta_annotate_components, 8},
-    {"_StreamFind_rcpp_project_nta_group_features", (DL_FUNC) &_StreamFind_rcpp_project_nta_group_features, 8},
-    {"_StreamFind_rcpp_project_nta_fill_features", (DL_FUNC) &_StreamFind_rcpp_project_nta_fill_features, 13},
-    {"_StreamFind_rcpp_project_nta_blank_subtraction", (DL_FUNC) &_StreamFind_rcpp_project_nta_blank_subtraction, 4},
-    {"_StreamFind_rcpp_project_nta_filter_features", (DL_FUNC) &_StreamFind_rcpp_project_nta_filter_features, 32},
-    {"_StreamFind_rcpp_project_nta_filter_suspects", (DL_FUNC) &_StreamFind_rcpp_project_nta_filter_suspects, 8},
-    {"_StreamFind_rcpp_project_nta_filter_internal_standards", (DL_FUNC) &_StreamFind_rcpp_project_nta_filter_internal_standards, 8},
-    {"_StreamFind_rcpp_project_nta_find_internal_standards", (DL_FUNC) &_StreamFind_rcpp_project_nta_find_internal_standards, 10},
-    {"_StreamFind_rcpp_project_nta_suspect_screening", (DL_FUNC) &_StreamFind_rcpp_project_nta_suspect_screening, 10},
-    {"_StreamFind_rcpp_project_nta_filter_features_ms2", (DL_FUNC) &_StreamFind_rcpp_project_nta_filter_features_ms2, 8},
-    {"_StreamFind_rcpp_project_nta_metfrag_screening", (DL_FUNC) &_StreamFind_rcpp_project_nta_metfrag_screening, 21},
-    {"_StreamFind_rcpp_project_nta_assign_transformation_products", (DL_FUNC) &_StreamFind_rcpp_project_nta_assign_transformation_products, 4},
-    {"_StreamFind_rcpp_json_make_example", (DL_FUNC) &_StreamFind_rcpp_json_make_example, 0},
-    {"_StreamFind_rcpp_json_parse", (DL_FUNC) &_StreamFind_rcpp_json_parse, 1},
-    {"_StreamFind_rcpp_json_read_file", (DL_FUNC) &_StreamFind_rcpp_json_read_file, 1},
-    {"_StreamFind_rcpp_json_read_subtree", (DL_FUNC) &_StreamFind_rcpp_json_read_subtree, 2},
-    {"_StreamFind_rcpp_json_list_children", (DL_FUNC) &_StreamFind_rcpp_json_list_children, 2},
-    {"_StreamFind_rcpp_json_schema_validation_ok", (DL_FUNC) &_StreamFind_rcpp_json_schema_validation_ok, 0},
-    {"_StreamFind_rcpp_json_schema_validation_error", (DL_FUNC) &_StreamFind_rcpp_json_schema_validation_error, 0},
-    {"_StreamFind_rcpp_asm_read_file", (DL_FUNC) &_StreamFind_rcpp_asm_read_file, 1},
-    {"_StreamFind_rcpp_asm_index_table", (DL_FUNC) &_StreamFind_rcpp_asm_index_table, 1},
-    {"_StreamFind_rcpp_asm_read_subtree", (DL_FUNC) &_StreamFind_rcpp_asm_read_subtree, 2},
-    {"_StreamFind_rcpp_asm_read_primary_data", (DL_FUNC) &_StreamFind_rcpp_asm_read_primary_data, 1},
-    {"_StreamFind_rcpp_asm_list_children", (DL_FUNC) &_StreamFind_rcpp_asm_list_children, 2},
-    {"_StreamFind_rcpp_asm_validate_file", (DL_FUNC) &_StreamFind_rcpp_asm_validate_file, 3},
-    {"_StreamFind_duckdb_list_tables", (DL_FUNC) &_StreamFind_duckdb_list_tables, 1},
-    {"_StreamFind_duckdb_json_extension_info", (DL_FUNC) &_StreamFind_duckdb_json_extension_info, 1},
-    {"_StreamFind_rcpp_openbabel_structure_svg", (DL_FUNC) &_StreamFind_rcpp_openbabel_structure_svg, 5},
-    {"_StreamFind_rcpp_openbabel_debug_runtime", (DL_FUNC) &_StreamFind_rcpp_openbabel_debug_runtime, 0},
-    {"_StreamFind_rcpp_get_suspects_screening_csv", (DL_FUNC) &_StreamFind_rcpp_get_suspects_screening_csv, 2},
-    {"_StreamFind_rcpp_formula_from_mass", (DL_FUNC) &_StreamFind_rcpp_formula_from_mass, 3},
-    {"_StreamFind_rcpp_get_suspect_screening_csv_from_mol_files", (DL_FUNC) &_StreamFind_rcpp_get_suspect_screening_csv_from_mol_files, 2},
+    {"_streamfind_rcpp_project_new", (DL_FUNC) &_streamfind_rcpp_project_new, 2},
+    {"_streamfind_rcpp_project_get_domain", (DL_FUNC) &_streamfind_rcpp_project_get_domain, 1},
+    {"_streamfind_rcpp_project_copy", (DL_FUNC) &_streamfind_rcpp_project_copy, 3},
+    {"_streamfind_rcpp_project_validate", (DL_FUNC) &_streamfind_rcpp_project_validate, 1},
+    {"_streamfind_rcpp_project_close", (DL_FUNC) &_streamfind_rcpp_project_close, 1},
+    {"_streamfind_rcpp_project_get_metadata", (DL_FUNC) &_streamfind_rcpp_project_get_metadata, 1},
+    {"_streamfind_rcpp_project_set_metadata", (DL_FUNC) &_streamfind_rcpp_project_set_metadata, 2},
+    {"_streamfind_rcpp_project_get_workflow", (DL_FUNC) &_streamfind_rcpp_project_get_workflow, 1},
+    {"_streamfind_rcpp_project_set_workflow", (DL_FUNC) &_streamfind_rcpp_project_set_workflow, 2},
+    {"_streamfind_rcpp_project_list_tables", (DL_FUNC) &_streamfind_rcpp_project_list_tables, 1},
+    {"_streamfind_rcpp_project_get_audit", (DL_FUNC) &_streamfind_rcpp_project_get_audit, 1},
+    {"_streamfind_rcpp_project_get_cache_size", (DL_FUNC) &_streamfind_rcpp_project_get_cache_size, 1},
+    {"_streamfind_rcpp_project_get_cache", (DL_FUNC) &_streamfind_rcpp_project_get_cache, 1},
+    {"_streamfind_rcpp_project_delete_cache", (DL_FUNC) &_streamfind_rcpp_project_delete_cache, 2},
+    {"_streamfind_rcpp_decode_string", (DL_FUNC) &_streamfind_rcpp_decode_string, 1},
+    {"_streamfind_rcpp_project_mass_spec_new", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_new, 4},
+    {"_streamfind_rcpp_project_mass_spec_import_files", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_import_files, 4},
+    {"_streamfind_rcpp_project_mass_spec_remove_analysis", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_remove_analysis, 2},
+    {"_streamfind_rcpp_project_mass_spec_list_analyses", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_list_analyses, 1},
+    {"_streamfind_rcpp_project_mass_spec_get_analysis_names", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_get_analysis_names, 1},
+    {"_streamfind_rcpp_project_mass_spec_get_replicate_names", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_get_replicate_names, 1},
+    {"_streamfind_rcpp_project_mass_spec_set_replicate_names", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_set_replicate_names, 2},
+    {"_streamfind_rcpp_project_mass_spec_get_blank_names", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_get_blank_names, 1},
+    {"_streamfind_rcpp_project_mass_spec_set_blank_names", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_set_blank_names, 2},
+    {"_streamfind_rcpp_project_mass_spec_get_concentrations", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_get_concentrations, 1},
+    {"_streamfind_rcpp_project_mass_spec_set_concentrations", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_set_concentrations, 2},
+    {"_streamfind_rcpp_project_mass_spec_get_spectra_headers", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_get_spectra_headers, 2},
+    {"_streamfind_rcpp_project_mass_spec_get_chromatograms_headers", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_get_chromatograms_headers, 2},
+    {"_streamfind_rcpp_project_mass_spec_get_spectra_tic", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_get_spectra_tic, 5},
+    {"_streamfind_rcpp_project_mass_spec_get_raw_spectra", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_get_raw_spectra, 15},
+    {"_streamfind_rcpp_project_mass_spec_get_raw_spectra_eic", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_get_raw_spectra_eic, 10},
+    {"_streamfind_rcpp_project_mass_spec_get_raw_spectra_ms1", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_get_raw_spectra_ms1, 13},
+    {"_streamfind_rcpp_project_mass_spec_get_raw_spectra_ms2", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_get_raw_spectra_ms2, 14},
+    {"_streamfind_rcpp_project_mass_spec_get_raw_chromatograms", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_get_raw_chromatograms, 3},
+    {"_streamfind_rcpp_project_mass_spec_spectra_new", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_spectra_new, 4},
+    {"_streamfind_rcpp_project_mass_spec_chromatograms_new", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_chromatograms_new, 4},
+    {"_streamfind_rcpp_project_non_target_analysis_new", (DL_FUNC) &_streamfind_rcpp_project_non_target_analysis_new, 1},
+    {"_streamfind_rcpp_project_non_target_analysis_get_features", (DL_FUNC) &_streamfind_rcpp_project_non_target_analysis_get_features, 13},
+    {"_streamfind_rcpp_project_non_target_analysis_get_features_count", (DL_FUNC) &_streamfind_rcpp_project_non_target_analysis_get_features_count, 3},
+    {"_streamfind_rcpp_project_nta_get_matrix_suppression", (DL_FUNC) &_streamfind_rcpp_project_nta_get_matrix_suppression, 4},
+    {"_streamfind_rcpp_project_nta_correct_matrix_suppression", (DL_FUNC) &_streamfind_rcpp_project_nta_correct_matrix_suppression, 3},
+    {"_streamfind_rcpp_project_non_target_analysis_get_suspects", (DL_FUNC) &_streamfind_rcpp_project_non_target_analysis_get_suspects, 11},
+    {"_streamfind_rcpp_project_non_target_analysis_get_internal_standards", (DL_FUNC) &_streamfind_rcpp_project_non_target_analysis_get_internal_standards, 11},
+    {"_streamfind_rcpp_project_non_target_analysis_get_transformation_products", (DL_FUNC) &_streamfind_rcpp_project_non_target_analysis_get_transformation_products, 1},
+    {"_streamfind_rcpp_project_non_target_analysis_assign_transformation_products", (DL_FUNC) &_streamfind_rcpp_project_non_target_analysis_assign_transformation_products, 4},
+    {"_streamfind_rcpp_project_nta_find_features", (DL_FUNC) &_streamfind_rcpp_project_nta_find_features, 13},
+    {"_streamfind_rcpp_project_nta_load_features_ms1", (DL_FUNC) &_streamfind_rcpp_project_nta_load_features_ms1, 7},
+    {"_streamfind_rcpp_project_nta_load_features_ms2", (DL_FUNC) &_streamfind_rcpp_project_nta_load_features_ms2, 6},
+    {"_streamfind_rcpp_project_nta_create_components", (DL_FUNC) &_streamfind_rcpp_project_nta_create_components, 5},
+    {"_streamfind_rcpp_project_nta_annotate_components", (DL_FUNC) &_streamfind_rcpp_project_nta_annotate_components, 8},
+    {"_streamfind_rcpp_project_nta_group_features", (DL_FUNC) &_streamfind_rcpp_project_nta_group_features, 8},
+    {"_streamfind_rcpp_project_nta_fill_features", (DL_FUNC) &_streamfind_rcpp_project_nta_fill_features, 13},
+    {"_streamfind_rcpp_project_nta_blank_subtraction", (DL_FUNC) &_streamfind_rcpp_project_nta_blank_subtraction, 4},
+    {"_streamfind_rcpp_project_nta_filter_features", (DL_FUNC) &_streamfind_rcpp_project_nta_filter_features, 32},
+    {"_streamfind_rcpp_project_nta_filter_suspects", (DL_FUNC) &_streamfind_rcpp_project_nta_filter_suspects, 8},
+    {"_streamfind_rcpp_project_nta_filter_internal_standards", (DL_FUNC) &_streamfind_rcpp_project_nta_filter_internal_standards, 8},
+    {"_streamfind_rcpp_project_nta_find_internal_standards", (DL_FUNC) &_streamfind_rcpp_project_nta_find_internal_standards, 10},
+    {"_streamfind_rcpp_project_nta_suspect_screening", (DL_FUNC) &_streamfind_rcpp_project_nta_suspect_screening, 10},
+    {"_streamfind_rcpp_project_nta_filter_features_ms2", (DL_FUNC) &_streamfind_rcpp_project_nta_filter_features_ms2, 8},
+    {"_streamfind_rcpp_project_nta_metfrag_screening", (DL_FUNC) &_streamfind_rcpp_project_nta_metfrag_screening, 21},
+    {"_streamfind_rcpp_project_nta_assign_transformation_products", (DL_FUNC) &_streamfind_rcpp_project_nta_assign_transformation_products, 4},
+    {"_streamfind_rcpp_json_make_example", (DL_FUNC) &_streamfind_rcpp_json_make_example, 0},
+    {"_streamfind_rcpp_json_parse", (DL_FUNC) &_streamfind_rcpp_json_parse, 1},
+    {"_streamfind_rcpp_json_read_file", (DL_FUNC) &_streamfind_rcpp_json_read_file, 1},
+    {"_streamfind_rcpp_json_read_subtree", (DL_FUNC) &_streamfind_rcpp_json_read_subtree, 2},
+    {"_streamfind_rcpp_json_list_children", (DL_FUNC) &_streamfind_rcpp_json_list_children, 2},
+    {"_streamfind_rcpp_json_schema_validation_ok", (DL_FUNC) &_streamfind_rcpp_json_schema_validation_ok, 0},
+    {"_streamfind_rcpp_json_schema_validation_error", (DL_FUNC) &_streamfind_rcpp_json_schema_validation_error, 0},
+    {"_streamfind_rcpp_asm_read_file", (DL_FUNC) &_streamfind_rcpp_asm_read_file, 1},
+    {"_streamfind_rcpp_asm_index_table", (DL_FUNC) &_streamfind_rcpp_asm_index_table, 1},
+    {"_streamfind_rcpp_asm_read_subtree", (DL_FUNC) &_streamfind_rcpp_asm_read_subtree, 2},
+    {"_streamfind_rcpp_asm_read_primary_data", (DL_FUNC) &_streamfind_rcpp_asm_read_primary_data, 1},
+    {"_streamfind_rcpp_asm_list_children", (DL_FUNC) &_streamfind_rcpp_asm_list_children, 2},
+    {"_streamfind_rcpp_asm_validate_file", (DL_FUNC) &_streamfind_rcpp_asm_validate_file, 3},
+    {"_streamfind_duckdb_list_tables", (DL_FUNC) &_streamfind_duckdb_list_tables, 1},
+    {"_streamfind_duckdb_json_extension_info", (DL_FUNC) &_streamfind_duckdb_json_extension_info, 1},
+    {"_streamfind_rcpp_openbabel_structure_svg", (DL_FUNC) &_streamfind_rcpp_openbabel_structure_svg, 5},
+    {"_streamfind_rcpp_openbabel_debug_runtime", (DL_FUNC) &_streamfind_rcpp_openbabel_debug_runtime, 0},
+    {"_streamfind_rcpp_get_suspects_screening_csv", (DL_FUNC) &_streamfind_rcpp_get_suspects_screening_csv, 2},
+    {"_streamfind_rcpp_formula_from_mass", (DL_FUNC) &_streamfind_rcpp_formula_from_mass, 3},
+    {"_streamfind_rcpp_get_suspect_screening_csv_from_mol_files", (DL_FUNC) &_streamfind_rcpp_get_suspect_screening_csv_from_mol_files, 2},
     {NULL, NULL, 0}
 };
 
-RcppExport void R_init_StreamFind(DllInfo *dll) {
+RcppExport void R_init_streamfind(DllInfo *dll) {
     R_registerRoutines(dll, NULL, CallEntries, NULL, NULL);
     R_useDynamicSymbols(dll, FALSE);
 }

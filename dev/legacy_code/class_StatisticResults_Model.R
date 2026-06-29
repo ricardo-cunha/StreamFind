@@ -9,8 +9,8 @@ StatisticResults_Model <- function(model = list()) {
     list(
       type = "Statistic",
       name = "StatisticResults_Model",
-      software = "StreamFind",
-      version = as.character(packageVersion("StreamFind")),
+      software = "streamfind",
+      version = as.character(packageVersion("streamfind")),
       model = model
     ),
     class = c("StatisticResults_Model", "Results")
@@ -30,7 +30,7 @@ validate_object.StatisticResults_Model <- function(x) {
   checkmate::assert_true(
     all(c("StatisticResults_Model", "Results") %in% class(x))
   )
-  checkmate::assert_true(x$software == "StreamFind")
+  checkmate::assert_true(x$software == "streamfind")
   checkmate::assert_list(x$model)
   NextMethod()
   NULL

@@ -14,7 +14,7 @@ from typing import Iterable
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Build vendored Open Babel/InChI runtime artifacts for StreamFind."
+        description="Build vendored Open Babel/InChI runtime artifacts for streamfind."
     )
     parser.add_argument("--repo-root", required=True, help="Path to the repository root.")
     parser.add_argument(
@@ -241,7 +241,7 @@ def main() -> int:
     c_flags = expand_flags(args.cflag)
     if args.platform == "windows":
         c_flags = c_flags + ["-DHAVE_ISFINITE=1"]
-        cxx_flags = cxx_flags + ["-DHAVE_ISFINITE=1", "-DSTREAMFIND_OPENBABEL_BUILD_DLL"]
+        cxx_flags = cxx_flags + ["-DHAVE_ISFINITE=1", "-Dstreamfind_OPENBABEL_BUILD_DLL"]
     cxx_compiler = split_command(args.cxx)
     c_compiler = split_command(args.cc)
     archiver = split_command(args.ar)

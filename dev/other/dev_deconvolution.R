@@ -3,7 +3,7 @@ wd2 <- "C:/Users/apoli/Documents/Dev_230830_Bevacizumab_Avastin_LotB8703H40_Rama
 
 files <- list.files(paste0(wd2, "/HRMS_2.5mgmL"), pattern = "mzML", full.names = TRUE)
 
-# files <- StreamFindData::get_ms_file_paths()[29]
+# files <- streamfindData::get_ms_file_paths()[29]
 
 ms <- MassSpecEngine$new(files)
 
@@ -19,7 +19,7 @@ ms$correct_chromatograms_baseline(Method_correct_chromatograms_baseline_airpls()
 
 # ms$plot_chromatograms(colorBy = "analyses")
 
-ps <- Method_integrate_chromatograms_StreamFind(
+ps <- Method_integrate_chromatograms_streamfind(
   merge = TRUE,
   closeByThreshold = 2,
   minPeakHeight = 20000,
@@ -59,7 +59,7 @@ ms$chromatograms_peaks
 
 # ms$plot_chromatograms_peaks(colorBy = "targets+analyses")
 
-ms$deconvolute_spectra_charges(Method_deconvolute_spectra_charges_StreamFind())
+ms$deconvolute_spectra_charges(Method_deconvolute_spectra_charges_streamfind())
 
 ms$plot_spectra()
 
@@ -114,7 +114,7 @@ ms2$plot_chrom_peaks(colorBy = "targets+analyses")
 
 ms2$plot_spectra_ms1(analyses = 6, rt = data.table(rtmin = 342 - 2.5, rtmax = 342 + 2.5), presence = 0.1, mzClust = 0.01, minIntensity = 50, interactive = FALSE)
 
-dps <- Method_deconvolute_spectra_charges_StreamFind(
+dps <- Method_deconvolute_spectra_charges_streamfind(
   rtmin = 342 - 2.5,
   rtmax = 342 + 2.5
 )

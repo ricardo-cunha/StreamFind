@@ -1,5 +1,5 @@
 #' @title MassSpecMethod_FeatureBlankSubtraction_native class
-#' @description Native StreamFind method for blank subtraction of features.
+#' @description Native streamfind method for blank subtraction of features.
 #' @param blankThreshold numeric(1) threshold multiplier for blank feature intensities to consider a feature as present in blanks. To be present a features must be at least blankThreshold times more intense in samples than in blanks.
 #' @param rtExpand numeric(1) retention time expansion window in seconds around feature RT for EIC extraction.
 #' @param mzExpand numeric(1) m/z expansion window in Da around feature m/z for EIC extraction.
@@ -18,11 +18,11 @@ MassSpecMethod_FeatureBlankSubtraction_native <- function(
 		input_class = "MassSpecResults_NonTargetAnalysis",
 		output_class = "MassSpecResults_NonTargetAnalysis",
 		number_permitted = 1,
-		version = as.character(packageVersion("StreamFind")),
-		software = "StreamFind",
+		version = as.character(packageVersion("streamfind")),
+		software = "streamfind",
 		developer = "Ricardo Cunha",
 		contact = "cunha@iuta.de",
-		link = "https://odea-project.github.io/StreamFind",
+		link = "https://odea-project.github.io/streamfind",
 		doi = NA_character_,
 		parameters = list(
 			blankThreshold = blankThreshold,

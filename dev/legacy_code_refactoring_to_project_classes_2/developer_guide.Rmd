@@ -1,5 +1,5 @@
 ---
-title: 'StreamFind Developer Guide'
+title: 'streamfind Developer Guide'
 subtitle: |
   | Implementation of processing methods and algorithms
   | <br>
@@ -15,7 +15,7 @@ output:
     toc_float: true
 vignette: >
   %\VignetteEncoding{UTF-8}
-  %\VignetteIndexEntry{StreamFind Developer Guide}
+  %\VignetteIndexEntry{streamfind Developer Guide}
   %\VignetteEngine{knitr::rmarkdown}
 editor_options: 
   chunk_output_type: console
@@ -28,7 +28,7 @@ library(kableExtra)
 library(magrittr)
 library(ggplot2)
 library(plotly)
-library(StreamFind)
+library(streamfind)
 
 # Global options
 knitr::opts_chunk$set(
@@ -64,11 +64,11 @@ path_wd <- getwd()
 
 ```{r resources, include=FALSE}
 # MS files
-all_files <- StreamFindData::get_ms_file_paths()
+all_files <- streamfindData::get_ms_file_paths()
 files <- all_files[grepl("blank|influent|o3sw", all_files)]
 
 # Chemicals database
-db <- StreamFindData::get_ms_tof_spiked_chemicals()
+db <- streamfindData::get_ms_tof_spiked_chemicals()
 db <- db[grepl("S", db$tag), ]
 cols <- c("name", "formula", "mass", "rt", "tag")
 db <- db[, cols, with = FALSE]
@@ -91,36 +91,36 @@ pre code {
 
 ***
 
-# StreamFind
+# streamfind
 
-The StreamFind is an R package and can be used for data management, processing, visualization and reporting. This guide 
+The streamfind is an R package and can be used for data management, processing, visualization and reporting. This guide 
 uses mass spectrometry (MS) data as example and aims to instruct developers to implement new processing modules and 
-additional processing algorithms for new or existing processing methods in StreamFind.
+additional processing algorithms for new or existing processing methods in streamfind.
 
 ## Setup
 
-The R package is in the [StreamFind GitHub repository](https://github.com/odea-project/StreamFind) of the 
+The R package is in the [streamfind GitHub repository](https://github.com/odea-project/streamfind) of the 
 [ODEA Project](https://github.com/odea-project). For development, the recommendation is to download the repository 
 locally using [git](https://git-scm.com/) tracking for version control. The [GitHub desktop](https://desktop.github.com/) 
 tool can be used for more easily install and configure git with your GitHub account, which is recommended for authoring 
 contributions. Since it is an R package, the [RStudio](https://posit.co/products/open-source/rstudio/) IDE is 
 recommended for development. Yet, others (e.g., [VS Code](https://code.visualstudio.com/download)) will also work. When 
 using RStudio, the repository can be downloaded via new project, selecting version control, then git and finally adding 
-the GitHub *url* https://github.com/odea-project/StreamFind. This should create a local image of the StreamFind repository 
+the GitHub *url* https://github.com/odea-project/streamfind. This should create a local image of the streamfind repository 
 directly with git tracking, if git or GitHub desktop were properly installed and configured. When using RStudio, the 
 project should directly be identified as package development where all tools are available to support development. We 
 recommend setting the *Use devtools package functions if available* and *generate documentation via Roxygen* (in the 
 configure bottom you select all options) located in the *Build* tab under the *Configure Build Tools...*. For other 
 IDEs, we recommend using the package [devtools](https://www.r-project.org/nosvn/pandoc/devtools.html). Considering that 
-the local image of the StreamFind repository is installed with git tracking, the first step for development is to create 
+the local image of the streamfind repository is installed with git tracking, the first step for development is to create 
 a dedicated branch for implementation of new processing modules and/or algorithms. The master branch should not be 
 changed directly but modified by pull requests from the dedicated development branch, giving the opportunity for code 
 revision.
 
 ## Structure
 
-The streamFind R package is centered around the [R6](https://r6.r-lib.org/index.html) class system, which brings object 
-oriented programming to R. For MS, the [MassSpecEngine](https://odea-project.github.io/StreamFind/reference/MassSpecEngine.html) 
+The streamfind R package is centered around the [R6](https://r6.r-lib.org/index.html) class system, which brings object 
+oriented programming to R. For MS, the [MassSpecEngine](https://odea-project.github.io/streamfind/reference/MassSpecEngine.html) 
 R6 class is used for management of the `Metadata`, `MassSpecAnalyses`, `MassSpecResults`, `AuditTrail` and `Config` class objects.
 
 ```{r create-empty-ms, results='markup'}
@@ -134,7 +134,7 @@ ms
 Under development...
 
 <!-- For implementation of processing methods, the [S7](https://rconsortium.github.io/S7/index.html) class *ProcessingStep*  -->
-<!-- is used to dispatch settings to processing methods. See article [Evaluation of Wastewater Ozonation with Mass Spectrometry](https://odea-project.github.io/StreamFind/articles/demo_ozonation_project.html) for demonstration of usage.  -->
+<!-- is used to dispatch settings to processing methods. See article [Evaluation of Wastewater Ozonation with Mass Spectrometry](https://odea-project.github.io/streamfind/articles/demo_ozonation_project.html) for demonstration of usage.  -->
 <!-- In essence, a given algorithm to be applied to a processing method is added to the *MassSpecEngine* or to a *Workflow*  -->
 <!-- object as a *ProcessingStep* which is then used to process the data with the defined settings or parameters. The  -->
 <!-- structure of a *ProcessingStep* is exemplified below for the algorithm `openms` to find features in MS data. -->
@@ -185,11 +185,11 @@ Under development...
 
 <!-- ## Semantics -->
 
-<!-- Consistent semantics are attempted within the StreamFind R package. Some of the class and method names were already mentioned above and a clear use of the *underscore* to separate words for methods and use of *Upper Camel Case* for classes is visible. In this section, we try to highlight the defined rules for the most important semantic aspects. All the methods available via the class `MassSpecEngine$` are written with underscore to separate the words (e.g., `get_analysis_names()` or `annotate_features()`). The arguments of methods, functions and class constructors are always written with *Lower Camel Case* when more than one word is needed (e.g., `colorBy` or `minIntensity`). Classes are written with *Upper Camel Case* when two or more words are used (e.g., *MassSpecAnalysis* or *Metadata*) with the exception of the specific constructor functions for the different algorithm settings, which use the syntax `[engine name]Settings_[method name]_[algorithm name]` (e.g., *MassSpecSettings_FilterFeatures_StreamFind* or *RamanSettings_BinSpectra_StreamFind*); This supports and facilitates the association of the settings with the respective engine and processing method. Functions or methods not available to the user (i.e., not exported via the package NAMESPACE) are written with `.` at the beginning, followed by *underscore* to separate words (e.g., *.get_colors()* or *.plot_spectra_ms2_static()*). This is also applied to the S3 generics of the processing modules, which use the syntax `.s3_[module method]` (e.g., `.s3_FindFeatures` or `.s3_GroupFeatures`). -->
+<!-- Consistent semantics are attempted within the streamfind R package. Some of the class and method names were already mentioned above and a clear use of the *underscore* to separate words for methods and use of *Upper Camel Case* for classes is visible. In this section, we try to highlight the defined rules for the most important semantic aspects. All the methods available via the class `MassSpecEngine$` are written with underscore to separate the words (e.g., `get_analysis_names()` or `annotate_features()`). The arguments of methods, functions and class constructors are always written with *Lower Camel Case* when more than one word is needed (e.g., `colorBy` or `minIntensity`). Classes are written with *Upper Camel Case* when two or more words are used (e.g., *MassSpecAnalysis* or *Metadata*) with the exception of the specific constructor functions for the different algorithm settings, which use the syntax `[engine name]Settings_[method name]_[algorithm name]` (e.g., *MassSpecSettings_FilterFeatures_streamfind* or *RamanSettings_BinSpectra_streamfind*); This supports and facilitates the association of the settings with the respective engine and processing method. Functions or methods not available to the user (i.e., not exported via the package NAMESPACE) are written with `.` at the beginning, followed by *underscore* to separate words (e.g., *.get_colors()* or *.plot_spectra_ms2_static()*). This is also applied to the S3 generics of the processing modules, which use the syntax `.s3_[module method]` (e.g., `.s3_FindFeatures` or `.s3_GroupFeatures`). -->
 
 <!-- ## Files -->
 
-<!-- The file structure of the StreamFind package is in line with the [CRAN official package development guideline](https://cran.r-project.org/doc/manuals/R-exts.html#:~:text=Contents%5D%5BIndex%5D-,1.1%20Package%20structure,which%20should%20not%20be%20empty).). All relevant files for the developer are in the R, src, man-roxygen, tests and vignettes. In the R folder are the R scripts, in the src folder are C++ libraries and the [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html) interface functions, in the man-roxygen are the templates for documentation of arguments, in the tests are the test units that should be applied for each processing method and each algorithm implementation and finally, in the vignettes are articles, tutorials and guides for the users. R file names in the R folder have a defined name syntax according to the content/function. Class files are named with `class_[class type in capital_[class name].R]`. Exported MS function files are named with `fct_[optional engine associated]_[unique name].R`. Utility functions not exported are named with `utils_[unique name].R`. S3 methods for processing modules are written with `methods_S3_[engine name]_[method name]_[algorithm].R`. *ProcessingStep* constructors for a given engine are placed in a file named `class_S3_[engine name]Settings.R`. -->
+<!-- The file structure of the streamfind package is in line with the [CRAN official package development guideline](https://cran.r-project.org/doc/manuals/R-exts.html#:~:text=Contents%5D%5BIndex%5D-,1.1%20Package%20structure,which%20should%20not%20be%20empty).). All relevant files for the developer are in the R, src, man-roxygen, tests and vignettes. In the R folder are the R scripts, in the src folder are C++ libraries and the [Rcpp](https://cran.r-project.org/web/packages/Rcpp/index.html) interface functions, in the man-roxygen are the templates for documentation of arguments, in the tests are the test units that should be applied for each processing method and each algorithm implementation and finally, in the vignettes are articles, tutorials and guides for the users. R file names in the R folder have a defined name syntax according to the content/function. Class files are named with `class_[class type in capital_[class name].R]`. Exported MS function files are named with `fct_[optional engine associated]_[unique name].R`. Utility functions not exported are named with `utils_[unique name].R`. S3 methods for processing modules are written with `methods_S3_[engine name]_[method name]_[algorithm].R`. *ProcessingStep* constructors for a given engine are placed in a file named `class_S3_[engine name]Settings.R`. -->
 
 <!-- # Implementation -->
 

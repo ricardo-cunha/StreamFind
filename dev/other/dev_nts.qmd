@@ -11,8 +11,8 @@ format:
       margin-width: 300px
       gutter-width: 1.5rem
     other-links:
-      - text: StreamFind
-        href: https://odea-project.github.io/StreamFind/
+      - text: streamfind
+        href: https://odea-project.github.io/streamfind/
         icon: github
     html-math-method: katex
     theme: journal
@@ -53,14 +53,14 @@ library(DT)
 library(magrittr)
 library(ggplot2)
 library(plotly)
-library(StreamFind)
+library(streamfind)
 ```
 
 # Resources
 
 ```{r}
 #| include: false
-ms_files <- StreamFindData::get_ms_file_paths()
+ms_files <- streamfindData::get_ms_file_paths()
 ms_files <- ms_files[grepl("blank|influent|o3sw", ms_files)]
 ms_files_df <- data.frame(
   "file" = ms_files,
@@ -82,7 +82,7 @@ ms_files_df <- data.frame(
   )
 )
 
-db <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+db <- streamfindData::get_ms_tof_spiked_chemicals_with_ms2()
 cols <- c("name", "formula", "mass", "rt", "fragments", "tag")
 db <- db[, cols, with = FALSE]
 dbis <- db[grepl("IS", db$tag), ]
@@ -106,7 +106,7 @@ ms$Metadata["name"] <- "nts_dev"
 
 ```{r}
 nta_workflow <- list(
-  StreamFind::MassSpecMethod_FindFeatures_openms(
+  streamfind::MassSpecMethod_FindFeatures_openms(
     noiseThrInt = 1000,
     chromSNR = 4,
     chromFWHM = 8,
@@ -130,7 +130,7 @@ nta_workflow <- list(
     useFFMIntensities = FALSE,
     verbose = FALSE
   ),
-  StreamFind::MassSpecMethod_CalculateFeaturesQuality_StreamFind(
+  streamfind::MassSpecMethod_CalculateFeaturesQuality_streamfind(
     filtered = FALSE,
     rtExpand = 4,
     mzExpand = 0.002,
@@ -140,29 +140,29 @@ nta_workflow <- list(
     minNumberTraces = 5,
     baseCut = 0
   ),
-  StreamFind::MassSpecMethod_AnnotateFeatures_StreamFind(
+  streamfind::MassSpecMethod_AnnotateFeatures_streamfind(
     rtWindowAlignment = 0.3,
     maxIsotopes = 8,
     maxCharge = 2,
     maxGaps = 1
   ),
-  StreamFind::MassSpecMethod_GroupFeatures_openms(
+  streamfind::MassSpecMethod_GroupFeatures_openms(
     rtalign = FALSE,
     maxAlignRT = 10,
     maxAlignMZ = 0.008,
     maxGroupRT = 10,
     maxGroupMZ = 0.008
   ),
-  StreamFind::MassSpecMethod_FilterFeatures_StreamFind(
+  streamfind::MassSpecMethod_FilterFeatures_streamfind(
     excludeIsotopes = TRUE,
     excludeAdducts = TRUE
   ),
-  StreamFind::MassSpecMethod_FilterFeatures_StreamFind(
+  streamfind::MassSpecMethod_FilterFeatures_streamfind(
     minSnRatio = 4,
     minGaussianFit = 0.4,
     conservative = TRUE
   ),
-  StreamFind::MassSpecMethod_FillFeatures_StreamFind(
+  streamfind::MassSpecMethod_FillFeatures_streamfind(
     withinReplicate = FALSE,
     filtered = FALSE,
     rtExpand = 2,
@@ -177,38 +177,38 @@ nta_workflow <- list(
     minSignalToNoiseRatio = 4,
     minGaussianFit = 0.4
   ),
-  StreamFind::MassSpecMethod_FindInternalStandards_StreamFind(
+  streamfind::MassSpecMethod_FindInternalStandards_streamfind(
     database = dbis,
     ppm = 15,
     sec = 15
   ),
-  StreamFind::MassSpecMethod_CorrectMatrixSuppression_TiChri(
+  streamfind::MassSpecMethod_CorrectMatrixSuppression_TiChri(
     mpRtWindow = 10,
     istdAssignment = "nearest",
     istdRtWindow = 50,
     istdN = 2
   ),
-  StreamFind::MassSpecMethod_FilterFeatures_StreamFind(
+  streamfind::MassSpecMethod_FilterFeatures_streamfind(
     correctIntensity = TRUE,
     blankThreshold = 5,
     conservative = FALSE
   ),
-  StreamFind::MassSpecMethod_FilterFeatures_StreamFind(
+  streamfind::MassSpecMethod_FilterFeatures_streamfind(
     minSnRatio = 4,
     minGaussianFit = 0.4,
     conservative = FALSE,
   ),
-  StreamFind::MassSpecMethod_FilterFeatures_StreamFind(
+  streamfind::MassSpecMethod_FilterFeatures_streamfind(
     correctIntensity = TRUE,
     minIntensity = 4000,
     conservative = FALSE,
   ),
-  StreamFind::MassSpecMethod_FilterFeatures_StreamFind(
+  streamfind::MassSpecMethod_FilterFeatures_streamfind(
     correctIntensity = TRUE,
     maxDeviationInReplicate = 30,
     minAbundanceInReplicate = 3
   ),
-  StreamFind::MassSpecMethod_LoadFeaturesMS1_StreamFind(
+  streamfind::MassSpecMethod_LoadFeaturesMS1_streamfind(
     rtWindow = c(-2, 2),
     mzWindow = c(-1, 6),
     mzClust = 0.008,
@@ -216,14 +216,14 @@ nta_workflow <- list(
     minIntensity = 250,
     filtered = FALSE
   ),
-  StreamFind::MassSpecMethod_LoadFeaturesMS2_StreamFind(
+  streamfind::MassSpecMethod_LoadFeaturesMS2_streamfind(
     isolationWindow = 1.3,
     mzClust = 0.008,
     presence = 0.3,
     minIntensity = 10,
     filtered = TRUE
   ),
-  # StreamFind::MassSpecMethod_FilterFeaturesMS2_native(
+  # streamfind::MassSpecMethod_FilterFeaturesMS2_native(
   #   top = 25,
   #   relMinIntensity = 0.05,
   #   blankClean = TRUE,
@@ -231,7 +231,7 @@ nta_workflow <- list(
   #   blankPresenceThreshold = 0.8,
   #   globalPresenceThreshold = 0.3
   # ),
-  StreamFind::MassSpecMethod_SuspectScreening_StreamFind(
+  streamfind::MassSpecMethod_SuspectScreening_streamfind(
     database = dbsus,
     ppm = 10,
     sec = 15,
@@ -241,7 +241,7 @@ nta_workflow <- list(
     minFragments = 3,
     filtered = FALSE
   ),
-  StreamFind::MassSpecMethod_GenerateCompounds_metfrag(
+  streamfind::MassSpecMethod_GenerateCompounds_metfrag(
     method = "CL",
     timeout = 300,
     timeoutRetries = 5,

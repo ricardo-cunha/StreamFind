@@ -9,7 +9,7 @@
 #'
 #' @noRd
 app_sys <- function(...) {
-  system.file(..., package = "StreamFind")
+  system.file(..., package = "streamfind")
 }
 
 #' Read App Config

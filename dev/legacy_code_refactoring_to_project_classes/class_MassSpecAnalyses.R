@@ -800,7 +800,7 @@ plot_chromatograms.MassSpecAnalyses <- function(
   if (ext %in% c("duckdb", "db")) {
     return(projectPath)
   }
-  file.path(projectPath, "StreamFind.duckdb")
+  file.path(projectPath, "streamfind.duckdb")
 }
 
 #' @noRd
@@ -1291,7 +1291,7 @@ plot_chromatograms.MassSpecAnalyses <- function(
 
         tryCatch(
           {
-            StreamFind::convert_ms_files(
+            streamfind::convert_ms_files(
               files = files_to_convert,
               outputFormat = "mzML",
               outputPath = NULL,

@@ -146,7 +146,7 @@ as.Method <- function(value) {
   if (!is.na(value$method) && nzchar(value$method) && !is.na(value$owner_class) && nzchar(value$owner_class)) {
     constructor_name <- paste0(sub("^Project", "Method_", value$owner_class), "_", value$method)
     constructor_envs <- Filter(Negate(is.null), list(
-      tryCatch(asNamespace("StreamFind"), error = function(...) NULL),
+      tryCatch(asNamespace("streamfind"), error = function(...) NULL),
       .GlobalEnv
     ))
     constructor_exists <- any(vapply(

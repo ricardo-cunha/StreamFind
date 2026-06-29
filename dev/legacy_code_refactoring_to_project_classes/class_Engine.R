@@ -1,7 +1,7 @@
 # MARK: Engine
 # Engine -----
-#' @title Unified DuckDB-based Engine for StreamFind
-#' @description The [StreamFind::Engine] R6 class provides project storage in a single unified DuckDB file for all tables and components within StreamFind.
+#' @title Unified DuckDB-based Engine for streamfind
+#' @description The [streamfind::Engine] R6 class provides project storage in a single unified DuckDB file for all tables and components within streamfind.
 #' @param db Path to DuckDB project file (with .duckdb extension)
 #' @template arg-core-metadata
 #' @template arg-core-workflow
@@ -29,7 +29,7 @@ Engine <- R6::R6Class(
   # active bindings -----
   active = list(
     # MARK: Metadata
-    #' @field Metadata A [StreamFind::Metadata] object loaded from database.
+    #' @field Metadata A [streamfind::Metadata] object loaded from database.
     Metadata = function(value) {
       if (missing(value)) {
         return(self$get_metadata())
@@ -39,7 +39,7 @@ Engine <- R6::R6Class(
     },
 
     # MARK: Workflow
-    #' @field Workflow A [StreamFind::Workflow] object loaded from database.
+    #' @field Workflow A [streamfind::Workflow] object loaded from database.
     Workflow = function(value) {
       if (missing(value)) {
         return(self$get_workflow())
@@ -49,19 +49,19 @@ Engine <- R6::R6Class(
     },
 
     # MARK: Analyses
-    #' @field Analyses A [StreamFind::Analyses] child object.
+    #' @field Analyses A [streamfind::Analyses] child object.
     Analyses = function() {
       NULL
     },
 
     # MARK: AuditTrail
-    #' @field AuditTrail A [StreamFind::AuditTrail] object for this engine (DB-backed, see [AuditTrail] class)
+    #' @field AuditTrail A [streamfind::AuditTrail] object for this engine (DB-backed, see [AuditTrail] class)
     AuditTrail = function() {
       AuditTrail(db = private$.db)
     },
 
     # MARK: Cache
-    #' @field Cache A [StreamFind::Cache] object for managing cached data.
+    #' @field Cache A [streamfind::Cache] object for managing cached data.
     Cache = function() {
       Cache(db = private$.db)
     },
@@ -233,8 +233,8 @@ Engine <- R6::R6Class(
     },
 
     # MARK: run
-    #' @description Runs a processing method defined by the [StreamFind::ProcessingStep] object.
-    #' @param step A [StreamFind::ProcessingStep] object.
+    #' @description Runs a processing method defined by the [streamfind::ProcessingStep] object.
+    #' @param step A [streamfind::ProcessingStep] object.
     run = function(step = NULL) {
       if (is.null(step)) {
         warning("No ProcessingStep provided!")
@@ -291,7 +291,7 @@ Engine <- R6::R6Class(
     },
 
     # MARK: run_workflow
-    #' @description Runs all [StreamFind::ProcessingStep] objects in the [StreamFind::Workflow].
+    #' @description Runs all [streamfind::ProcessingStep] objects in the [streamfind::Workflow].
     run_workflow = function() {
       if (length(self$Workflow) > 0) {
         steps <- self$Workflow
@@ -494,7 +494,7 @@ Engine <- R6::R6Class(
     },
 
     # MARK: run_app
-    #' @description Runs the StreamFind Shiny app to explore, process and manage the engine data.
+    #' @description Runs the streamfind Shiny app to explore, process and manage the engine data.
     #'
     #' @note The engine data is saved in an **rds** file and loaded in the app. If save file is
     #' defined in the engine it is used, otherwise the save file name is automatically set to the

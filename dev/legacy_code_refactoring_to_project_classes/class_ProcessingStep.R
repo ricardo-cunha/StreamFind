@@ -1,6 +1,6 @@
 #' @title Generic ProcessingStep class and methods
 #' @name ProcessingStep
-#' @description The `ProcessingStep` class is used to define a processing step within a [StreamFind::Workflow]. It contains information about the data type, method, algorithm, parameters, and other relevant metadata for the processing step. The `ProcessingStep` is the parent class of all processing methods in StreamFind.
+#' @description The `ProcessingStep` class is used to define a processing step within a [streamfind::Workflow]. It contains information about the data type, method, algorithm, parameters, and other relevant metadata for the processing step. The `ProcessingStep` is the parent class of all processing methods in streamfind.
 #' @param type A character string representing the data type (e.g., "MassSpec", "Raman").
 #' @param method A character string representing the method used (e.g., "BaselineCorrection").
 #' @param required A character vector of required preceding methods.
@@ -172,7 +172,7 @@ as.ProcessingStep <- function(value) {
       value$version <- NA_character_
     }
     if (is.na(value$version)) {
-      value$version <- as.character(packageVersion("StreamFind"))
+      value$version <- as.character(packageVersion("streamfind"))
     }
     if (is.na(value$doi)) {
       value$doi <- NA_character_
@@ -241,7 +241,7 @@ read.ProcessingStep <- function(x, file) {
     }
   } else if (grepl(".rds", file)) {
     res <- readRDS(file)
-    if (is(res, "StreamFind::ProcessingStep")) {
+    if (is(res, "streamfind::ProcessingStep")) {
       return(res)
     }
   }

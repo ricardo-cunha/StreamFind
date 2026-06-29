@@ -1,5 +1,5 @@
-#ifndef STREAMFIND_OPENBABEL_ADAPTER_H
-#define STREAMFIND_OPENBABEL_ADAPTER_H
+#ifndef streamfind_OPENBABEL_ADAPTER_H
+#define streamfind_OPENBABEL_ADAPTER_H
 
 #include <string>
 #include <vector>
@@ -60,4 +60,4 @@ namespace sf::obabel
 
 } // namespace sf::obabel
 
-#endif // STREAMFIND_OPENBABEL_ADAPTER_H
+#endif // streamfind_OPENBABEL_ADAPTER_H

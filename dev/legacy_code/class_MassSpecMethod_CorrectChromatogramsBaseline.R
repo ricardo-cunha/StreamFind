@@ -31,7 +31,7 @@ MassSpecMethod_CorrectChromatogramsBaseline_baseline_als <- function(
       liftByLowestNegativeToZero = as.logical(liftByLowestNegativeToZero)
     ),
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "baseline",
     developer = "Kristian Hovde Liland",
     contact = "kristian.liland@nmbu.no",
@@ -166,7 +166,7 @@ run.MassSpecMethod_CorrectChromatogramsBaseline_baseline_als <- function(
 #'
 #' @references
 #'
-#' \insertRef{airpls01}{StreamFind}
+#' \insertRef{airpls01}{streamfind}
 #'
 #' @export
 #'
@@ -186,7 +186,7 @@ MassSpecMethod_CorrectChromatogramsBaseline_airpls <- function(
       itermax = as.numeric(itermax)
     ),
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "airPLS",
     developer = "Zhi-Min Zhang",
     contact = "zmzhang@csu.edu.cn",

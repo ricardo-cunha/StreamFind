@@ -1,4 +1,4 @@
-#' @title Mass Spectrometry Method for Annotating Features in MassSpecResults_NonTargetAnalysis (StreamFind algorithm)
+#' @title Mass Spectrometry Method for Annotating Features in MassSpecResults_NonTargetAnalysis (streamfind algorithm)
 #' @description Method for annotation of isotopic and adduct features. The method uses the
 #' `maxIsotopes` to define the maximum length of the isotopic chain. The list of candidate features
 #' is build with the `rtWindowAlignment` and the maximum mass increment to match the maximum chain
@@ -18,11 +18,11 @@
 #' isotopes.
 #' @param maxGaps Numeric (length 1) with the maximum of allowed gaps in isotopic chains.
 #'
-#' @return A `MassSpecMethod_AnnotateFeatures_StreamFind` object.
+#' @return A `MassSpecMethod_AnnotateFeatures_streamfind` object.
 #'
 #' @export
 #'
-MassSpecMethod_AnnotateFeatures_StreamFind <- function(
+MassSpecMethod_AnnotateFeatures_streamfind <- function(
   rtWindowAlignment = 0.3,
   maxIsotopes = 8,
   maxCharge = 1,
@@ -32,7 +32,7 @@ MassSpecMethod_AnnotateFeatures_StreamFind <- function(
     type = "MassSpec",
     method = "AnnotateFeatures",
     required = "FindFeatures",
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     input_class = "MassSpecResults_NonTargetAnalysis",
     output_class = "MassSpecResults_NonTargetAnalysis",
     parameters = list(
@@ -42,27 +42,27 @@ MassSpecMethod_AnnotateFeatures_StreamFind <- function(
       maxGaps = as.integer(maxGaps)
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid MassSpecMethod_AnnotateFeatures_StreamFind object!")
+    stop("Invalid MassSpecMethod_AnnotateFeatures_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
 #'
-validate_object.MassSpecMethod_AnnotateFeatures_StreamFind <- function(x) {
+validate_object.MassSpecMethod_AnnotateFeatures_streamfind <- function(x) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_choice(x$method, "AnnotateFeatures")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_count(x$parameters$maxIsotopes)
   checkmate::assert_count(x$parameters$maxCharge)
   checkmate::assert_count(x$parameters$maxGaps)
@@ -73,7 +73,7 @@ validate_object.MassSpecMethod_AnnotateFeatures_StreamFind <- function(x) {
 #' @export
 #' @noRd
 #'
-run.MassSpecMethod_AnnotateFeatures_StreamFind <- function(x, engine = NULL) {
+run.MassSpecMethod_AnnotateFeatures_streamfind <- function(x, engine = NULL) {
   if (!is(engine, "MassSpecEngine")) {
     warning("Engine is not a MassSpecEngine object!")
     return(FALSE)

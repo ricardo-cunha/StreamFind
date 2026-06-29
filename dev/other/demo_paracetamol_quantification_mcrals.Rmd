@@ -28,7 +28,7 @@ library(magrittr)
 library(ggplot2)
 library(plotly)
 library(data.table)
-library(StreamFind)
+library(streamfind)
 
 knitr::opts_chunk$set(
   echo = TRUE,
@@ -59,7 +59,7 @@ pre code {
 
 ***
 
-This article demonstrates how StreamFind can be used to quantity the active product ingredient (API) in Fizamol (i.e., 
+This article demonstrates how streamfind can be used to quantity the active product ingredient (API) in Fizamol (i.e., 
 paracetamol) from Raman data and using the Multivariate Curve Resolution with Alternating Least Squares (MCR-ALS) 
 statistical method. A calibration curve is acquired with pure paracetamol diluted in water at different concentrations.
 Two Fizamol tablets (*fiz_a* and *fiz_b*) are diluted in water to a concentration of approx. 10 mg/ml and pure 
@@ -125,7 +125,7 @@ within engine, as shown below.
 # with an ordered list of processing settings
 raman_workflow <- list(
   RamanSettings_AverageSpectra_native(),
-  RamanSettings_SubtractBlankSpectra_StreamFind(),
+  RamanSettings_SubtractBlankSpectra_streamfind(),
   RamanSettings_SmoothSpectra_savgol(fl = 7, forder = 4, dorder = 0),
   RamanSettings_DeleteSpectraSection_native(min = -100, max = 350),
   RamanSettings_DeleteSpectraSection_native(min = 1800, max = 2500),

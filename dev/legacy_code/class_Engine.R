@@ -1,7 +1,7 @@
 # MARK: Engine
 # Engine -----
 #' @title Generic (top level) Engine class for project management
-#' @description The [StreamFind::Engine] R6 class is used to harmonize the interface across different data types for data management and processing.
+#' @description The [streamfind::Engine] R6 class is used to harmonize the interface across different data types for data management and processing.
 #' @template arg-core-metadata
 #' @template arg-core-workflow
 #' @template arg-core-analyses
@@ -26,7 +26,7 @@ Engine <- R6::R6Class(
   active = list(
 
     # MARK: Metadata
-    #' @field Metadata A [StreamFind::Metadata] object. When setting it can also be a named list with elements of length one.
+    #' @field Metadata A [streamfind::Metadata] object. When setting it can also be a named list with elements of length one.
     Metadata = function(value) {
       if (missing(value)) {
         return(private$.Metadata)
@@ -62,7 +62,7 @@ Engine <- R6::R6Class(
     },
 
     # MARK: Workflow
-    #' @field Workflow A [StreamFind::Workflow] S3 class object. When settings can also be a list of [StreamFind::ProcessingStep] objects or a full path string to an **rds** or **json** file containing a [StreamFind::Workflow] object.
+    #' @field Workflow A [streamfind::Workflow] S3 class object. When settings can also be a list of [streamfind::ProcessingStep] objects or a full path string to an **rds** or **json** file containing a [streamfind::Workflow] object.
     Workflow = function(value) {
       if (missing(value)) {
         return(private$.Workflow)
@@ -129,7 +129,7 @@ Engine <- R6::R6Class(
     },
 
     # MARK: Analyses
-    #' @field Analyses An [StreamFind::Analyses] S3 class object or a child for a specific data type.
+    #' @field Analyses An [streamfind::Analyses] S3 class object or a child for a specific data type.
     Analyses = function(value) {
       if (missing(value)) {
         return(private$.Analyses)
@@ -172,7 +172,7 @@ Engine <- R6::R6Class(
     },
 
     # MARK: Results
-    #' @field Results A named list of [StreamFind::Results] S3 class objects or a child for specific results.
+    #' @field Results A named list of [streamfind::Results] S3 class objects or a child for specific results.
     Results = function(value) {
       if (missing(value)) {
         return(private$.Analyses$results)
@@ -184,7 +184,7 @@ Engine <- R6::R6Class(
           return(invisible(self))
         }
         if (grepl(value$type, private$.type)) {
-          private$.Analyses$results[[gsub("StreamFind::", "", is(value)[1])]] <- value
+          private$.Analyses$results[[gsub("streamfind::", "", is(value)[1])]] <- value
           if (!is.null(private$.AuditTrail)) {
             private$.AuditTrail <- add(private$.AuditTrail, value)
           }
@@ -201,7 +201,7 @@ Engine <- R6::R6Class(
                   next
                 }
                 if (grepl(value[[i]]$type, private$.type)) {
-                  private$.Analyses$results[[gsub("StreamFind::", "", is(value)[1])]] <- value[[i]]
+                  private$.Analyses$results[[gsub("streamfind::", "", is(value)[1])]] <- value[[i]]
                   if (!is.null(private$.AuditTrail)) {
                     private$.AuditTrail <- add(private$.AuditTrail, value[[i]])
                   }
@@ -227,7 +227,7 @@ Engine <- R6::R6Class(
     },
 
     # MARK: AuditTrail
-    #' @field AuditTrail An [StreamFind::AuditTrail] S3 class object. Only getter method.
+    #' @field AuditTrail An [streamfind::AuditTrail] S3 class object. Only getter method.
     AuditTrail = function(value) {
       if (!missing(value)) {
         warning("AuditTrail is read-only! Not set.")
@@ -237,7 +237,7 @@ Engine <- R6::R6Class(
     },
 
     # MARK: Config
-    #' @field Config An [StreamFind::EngineConfig] S3 class object.
+    #' @field Config An [streamfind::EngineConfig] S3 class object.
     Config = function(value) {
       if (missing(value)) {
         return(private$.Config)
@@ -273,7 +273,7 @@ Engine <- R6::R6Class(
   public = list(
 
     # MARK: initialize
-    #' @description Creates an [StreamFind::Engine] R6 class object.
+    #' @description Creates an [streamfind::Engine] R6 class object.
     #' @param ... Additional arguments passed to the method, internal use only.
     initialize = function(metadata = NULL, workflow = NULL, analyses = NULL, ...) {
       dots <- list(...)
@@ -431,9 +431,9 @@ Engine <- R6::R6Class(
     },
 
     # MARK: has_results
-    #' @description Checks if there are [StreamFind::Results] in the `Analyses` field.
+    #' @description Checks if there are [streamfind::Results] in the `Analyses` field.
     #'
-    #' @param value A string or a vector of strings with the name/s of the [StreamFind::Results]
+    #' @param value A string or a vector of strings with the name/s of the [streamfind::Results]
     #' child/s for checking the presence.
     #'
     has_results = function(value = NULL) {
@@ -545,7 +545,7 @@ Engine <- R6::R6Class(
 
     # MARK: save
     #' @description Saves the engine data as an **sqlite** or **rds** file. If no file path is
-    #' given, the engine data is saved in the file of the [StreamFind::Metadata] field. If no file
+    #' given, the engine data is saved in the file of the [streamfind::Metadata] field. If no file
     #' is specified in the `Metadata` the engine data is saved as **rds** format with the engine
     #' class and date in the `Metadata` as file name.
     #'
@@ -629,9 +629,9 @@ Engine <- R6::R6Class(
     },
 
     # MARK: run
-    #' @description Runs a processing method defined by the [StreamFind::ProcessingStep] object.
+    #' @description Runs a processing method defined by the [streamfind::ProcessingStep] object.
     #'
-    #' @param step A [StreamFind::ProcessingStep] object.
+    #' @param step A [streamfind::ProcessingStep] object.
     #'
     run = function(step = NULL) {
       if (is.null(step)) {
@@ -750,7 +750,7 @@ Engine <- R6::R6Class(
     },
 
     # MARK: run_workflow
-    #' @description Runs all [StreamFind::ProcessingStep] objects in the [StreamFind::Workflow].
+    #' @description Runs all [streamfind::ProcessingStep] objects in the [streamfind::Workflow].
     run_workflow = function() {
       if (length(self$Workflow) > 0) {
         steps <- self$Workflow
@@ -875,7 +875,7 @@ Engine <- R6::R6Class(
     },
 
     # MARK: run_app
-    #' @description Runs the StreamFind Shiny app to explore, process and manage the engine data.
+    #' @description Runs the streamfind Shiny app to explore, process and manage the engine data.
     #'
     #' @note The engine data is saved in an **rds** file and loaded in the app. If save file is
     #' defined in the engine it is used, otherwise the save file name is automatically set to the

@@ -11,7 +11,7 @@ run_app <- function(onStart = NULL, options = list(), enableBookmarking = NULL, 
   # shiny is a hard prerequisite: the wizard itself needs it, so handle separately
   if (!requireNamespace("shiny", quietly = TRUE)) {
     message(
-      "The 'shiny' package is required to run the StreamFind app.\n",
+      "The 'shiny' package is required to run the streamfind app.\n",
       "Install it with: install.packages('shiny')"
     )
     return(invisible(NULL))
@@ -35,7 +35,7 @@ run_app <- function(onStart = NULL, options = list(), enableBookmarking = NULL, 
     return(invisible(NULL))
   }
 
-  library(StreamFind)
+  library(streamfind)
   dots <- list(...)
   if ("db" %in% names(dots)) {
     db <- dots$db
@@ -80,7 +80,7 @@ run_app <- function(onStart = NULL, options = list(), enableBookmarking = NULL, 
     shiny::div(
       class = "sf-wizard",
       shiny::h3("\u26a0 Missing Required Packages"),
-      shiny::p("The following packages must be installed before running the StreamFind app:"),
+      shiny::p("The following packages must be installed before running the streamfind app:"),
       shiny::tags$ul(
         lapply(missing_pkgs, function(p) shiny::tags$li(shiny::span(class = "sf-pkg", p)))
       ),
@@ -133,7 +133,7 @@ run_app <- function(onStart = NULL, options = list(), enableBookmarking = NULL, 
         shiny::strong("\u2713 Done!"),
         " Restart your R session and run ",
         shiny::code("run_app()"),
-        " again to start StreamFind."
+        " again to start streamfind."
       )
     })
   }

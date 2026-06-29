@@ -1,4 +1,4 @@
 library(testthat)
-library(StreamFind)
+library(streamfind)
 
-test_check("StreamFind")
+test_check("streamfind")

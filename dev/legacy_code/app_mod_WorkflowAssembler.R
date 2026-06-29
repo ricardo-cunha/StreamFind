@@ -68,7 +68,7 @@
     ns <- session$ns
     # MARK: Global Constants/Mutable
     # Global Constants/Mutable -----
-    pkg_resources <- system.file(package = "StreamFind", dir = "extdata")
+    pkg_resources <- system.file(package = "streamfind", dir = "extdata")
     volumes <- .app_util_get_volumes()
     engine <- NULL
     analyses_class_dummy <- NULL
@@ -112,7 +112,7 @@
     # obs Clean Start -----
     shiny::observeEvent(reactive_clean_start(), {
       if (reactive_clean_start()) {
-        envSF <- asNamespace("StreamFind")
+        envSF <- asNamespace("streamfind")
         engine_type <- reactive_engine_type()
         engine_call <- get(engine_type, envir = envSF)
         engine_call_new <- engine_call[["new"]]
@@ -451,7 +451,7 @@
       engine_data_type <- gsub("Engine", "", engine_type)
       analyses_dummy_call <- get(
         paste0(engine_data_type, "Analyses"),
-        envir = asNamespace("StreamFind")
+        envir = asNamespace("streamfind")
       )
       analyses_class_dummy <<- suppressMessages(do.call(
         analyses_dummy_call,

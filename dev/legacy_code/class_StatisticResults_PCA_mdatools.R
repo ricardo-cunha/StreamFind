@@ -13,8 +13,8 @@ StatisticResults_PCA_mdatools <- function(model = list()) {
     list(
       type = "Statistic",
       name = "StatisticResults_PCA_mdatools",
-      software = "StreamFind",
-      version = as.character(packageVersion("StreamFind")),
+      software = "streamfind",
+      version = as.character(packageVersion("streamfind")),
       model = model
     ),
     class = c(
@@ -40,7 +40,7 @@ validate_object.StatisticResults_PCA_mdatools <- function(x) {
     c("StatisticResults_PCA_mdatools", "StatisticResults_Model", "Results")
   ))
   checkmate::assert_true(x$name == "StatisticResults_PCA_mdatools")
-  checkmate::assert_true(x$software == "StreamFind")
+  checkmate::assert_true(x$software == "streamfind")
   checkmate::assert_class(x$model, "pca")
   NextMethod()
   NULL

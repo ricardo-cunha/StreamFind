@@ -2,7 +2,7 @@
 # Native ------
 
 #' @title DB_MassSpecMethod_FindFeatures_native class
-#' @description Native StreamFind method for finding features (i.e., chromatographic peaks) in liquid chromatography coupled to high resolution mass spectrometry files.
+#' @description Native streamfind method for finding features (i.e., chromatographic peaks) in liquid chromatography coupled to high resolution mass spectrometry files.
 #' @param rtWindows data.frame with rtmin and rtmax columns for retention time windows for data inclusion.
 #' @param ppmThreshold integer(1) maximum allowed mass error in ppm for considering traces in a mass cluster.
 #' @param minSNR numeric(1) minimum signal-to-noise ratio for considering a trace and chromatographic peak.
@@ -41,11 +41,11 @@ DB_MassSpecMethod_FindFeatures_native <- function(
     input_class = "DB_MassSpecAnalyses",
     output_class = "DB_MassSpecResults_NonTargetAnalysis",
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_,
     parameters = list(
       rtWindows = rtWindows,

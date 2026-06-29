@@ -1,4 +1,4 @@
-#' MassSpecMethod_FillFeatures_StreamFind Class
+#' MassSpecMethod_FillFeatures_streamfind Class
 #'
 #' @description Settings for filling missing values in features.
 #'
@@ -24,11 +24,11 @@
 #' consider a feature.
 #' @param minGaussianFit Numeric of length one with the minimum Gaussian fit to consider a feature.
 #'
-#' @return A MassSpecMethod_FillFeatures_StreamFind class object.
+#' @return A MassSpecMethod_FillFeatures_streamfind class object.
 #'
 #' @export
 #'
-MassSpecMethod_FillFeatures_StreamFind <- function(
+MassSpecMethod_FillFeatures_streamfind <- function(
   withinReplicate = TRUE,
   filtered = TRUE,
   rtExpand = 0,
@@ -47,7 +47,7 @@ MassSpecMethod_FillFeatures_StreamFind <- function(
     type = "MassSpec",
     method = "FillFeatures",
     required = c("FindFeatures", "GroupFeatures"),
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     input_class = "MassSpecResults_NonTargetAnalysis",
     output_class = "MassSpecResults_NonTargetAnalysis",
     parameters = list(
@@ -66,11 +66,11 @@ MassSpecMethod_FillFeatures_StreamFind <- function(
       minGaussianFit = as.numeric(minGaussianFit)
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
 }
@@ -78,10 +78,10 @@ MassSpecMethod_FillFeatures_StreamFind <- function(
 #' @export
 #' @noRd
 #'
-validate_object.MassSpecMethod_FillFeatures_StreamFind <- function(x) {
+validate_object.MassSpecMethod_FillFeatures_streamfind <- function(x) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_choice(x$method, "FillFeatures")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_logical(x$parameters$withinReplicate, len = 1)
   checkmate::assert_logical(x$parameters$filtered, len = 1)
   checkmate::assert_numeric(x$parameters$rtExpand, len = 1)
@@ -103,7 +103,7 @@ validate_object.MassSpecMethod_FillFeatures_StreamFind <- function(x) {
 #' @export
 #' @noRd
 #'
-run.MassSpecMethod_FillFeatures_StreamFind <- function(x, engine = NULL) {
+run.MassSpecMethod_FillFeatures_streamfind <- function(x, engine = NULL) {
   if (!is(engine, "MassSpecEngine")) {
     warning("Engine is not a MassSpecEngine object!")
     return(FALSE)

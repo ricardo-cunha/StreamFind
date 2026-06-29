@@ -1,4 +1,4 @@
-library(StreamFind)
+library(streamfind)
 
 asm_root <- "E:/example_files/asm"
 asm_data <- file.path(asm_root, "data")

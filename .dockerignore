@@ -38,7 +38,6 @@ demos/
 vignettes/articles/
 .ai_plan/
 *.md
-README.Rmd
 README.html
 
 # Build artifacts

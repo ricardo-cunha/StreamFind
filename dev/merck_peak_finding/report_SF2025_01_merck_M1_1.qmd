@@ -1,6 +1,6 @@
 ---
 title: "SF2025_01 - Report Peak Finding Merck (Milestone 1, part 1/2)"
-subtitle: "C++ Implementation and Integration in StreamFind"
+subtitle: "C++ Implementation and Integration in streamfind"
 author: "Ricardo Cunha"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 toc: true
@@ -12,8 +12,8 @@ format:
       margin-width: 300px
       gutter-width: 1.5rem
     other-links:
-      - text: StreamFind
-        href: https://odea-project.github.io/StreamFind/
+      - text: streamfind
+        href: https://odea-project.github.io/streamfind/
         icon: github
     html-math-method: katex
     theme: journal
@@ -62,24 +62,24 @@ library(DT)
 library(magrittr)
 library(ggplot2)
 library(plotly)
-library(StreamFind)
+library(streamfind)
 
 devtools::load_all()
 
-source(file.path("C:\\Users\\apoli\\Documents\\github\\StreamFind\\dev\\merck_peak_finding\\dev_resources.R"))
+source(file.path("C:\\Users\\apoli\\Documents\\github\\streamfind\\dev\\merck_peak_finding\\dev_resources.R"))
 
 examples <- unique(files_merck_ex$example)
 ```
 
 # Merck Peak Finding - Milestone 1
 
-This report described the results of the first phase of the low intenisty peak algorithm for Merck. This phase focused on the development of an algorithm for detecting low-intensity peaks using deterministic approaches and machine learning methods. No clear advantage of machine learning methods was observed in this phase, and therefore the focus shifted to optimizing the deterministic C++ implementation integrated into StreamFind. The report includes the overview of the algorithm logic, demonstration of the C++ implementation using four curated datasets from Merck, and a comparative analysis of its performance against other established algorithms such as OpenMS and XCMS3 (centWave). The evaluation is based on precision and recall metrics using manually curated peak lists from Merck as a reference. The second part of the report includes additional tests based on another curated datasets from Merck.
+This report described the results of the first phase of the low intenisty peak algorithm for Merck. This phase focused on the development of an algorithm for detecting low-intensity peaks using deterministic approaches and machine learning methods. No clear advantage of machine learning methods was observed in this phase, and therefore the focus shifted to optimizing the deterministic C++ implementation integrated into streamfind. The report includes the overview of the algorithm logic, demonstration of the C++ implementation using four curated datasets from Merck, and a comparative analysis of its performance against other established algorithms such as OpenMS and XCMS3 (centWave). The evaluation is based on precision and recall metrics using manually curated peak lists from Merck as a reference. The second part of the report includes additional tests based on another curated datasets from Merck.
 
 ## Algorithm Logic
 
 ### Overview
 
-The algorithm was first developed in R and then implemented in C++ for better performance and integration into StreamFind. The  `nts::NTS_DATA::find_features()` function implements a comprehensive, deterministic peak detection algorithm optimized for low-intensity (i.e., 200 to 1000 counts) mass spectrometry data. Yet, high-intensity peaks (i.e., above 8M counts) are also detected effectively. The algorithm processes liquid chromatography-mass spectrometry (LC-MS) data through a sequential pipeline of noise reduction, m/z clustering, baseline estimation, and derivative-based peak detection, with separate processing for positive and negative ion modes. The raw code can be found in the `src/nts/nts.cpp` and `src/nts/utils.cpp` files of the branch file_system of the StreamFind repository.
+The algorithm was first developed in R and then implemented in C++ for better performance and integration into streamfind. The  `nts::NTS_DATA::find_features()` function implements a comprehensive, deterministic peak detection algorithm optimized for low-intensity (i.e., 200 to 1000 counts) mass spectrometry data. Yet, high-intensity peaks (i.e., above 8M counts) are also detected effectively. The algorithm processes liquid chromatography-mass spectrometry (LC-MS) data through a sequential pipeline of noise reduction, m/z clustering, baseline estimation, and derivative-based peak detection, with separate processing for positive and negative ion modes. The raw code can be found in the `src/nts/nts.cpp` and `src/nts/utils.cpp` files of the branch file_system of the streamfind repository.
 
 ### Algorithm Steps
 
@@ -206,7 +206,7 @@ run_peak_finding_debug_targets <- function(example_name) {
     ms$Workflow = list(ps_ff)
     ms$run_workflow()
   }
-  log_path <- "C:\\Users\\apoli\\Documents\\github\\StreamFind\\log"
+  log_path <- "C:\\Users\\apoli\\Documents\\github\\streamfind\\log"
   log_files <- list.files(log_path, pattern = "peak_detection", full.names = TRUE)
   folder_ex1 <- file.path(log_path, paste0("example_", example_name))
   if (!dir.exists(folder_ex1)) {
@@ -239,8 +239,8 @@ run_peak_finding_debug_targets <- function(example_name) {
 #| results: hide
 #| include: false
 
-source("C:\\Users\\apoli\\Documents\\github\\StreamFind\\dev\\merck_peak_finding\\dev_log_plot.R")
-log_path <- "C:\\Users\\apoli\\Documents\\github\\StreamFind\\log\\report_01"
+source("C:\\Users\\apoli\\Documents\\github\\streamfind\\dev\\merck_peak_finding\\dev_log_plot.R")
+log_path <- "C:\\Users\\apoli\\Documents\\github\\streamfind\\log\\report_01"
 log_example_folders <- list.dirs(log_path, recursive = FALSE, full.names = TRUE)
 log_example_folders <- log_example_folders[grepl("example_", log_example_folders)]
 
@@ -488,8 +488,8 @@ ps_ff_xcms <- MassSpecMethod_FindFeatures_xcms3_centwave(
 #| label: run-speed-test
 #| include: false
 
-#source("C:\\Users\\apoli\\Documents\\github\\StreamFind\\dev\\merck_peak_finding\\run_speed_test.R")
-results_dir <- "C:\\Users\\apoli\\Documents\\github\\StreamFind\\dev\\merck_peak_finding"
+#source("C:\\Users\\apoli\\Documents\\github\\streamfind\\dev\\merck_peak_finding\\run_speed_test.R")
+results_dir <- "C:\\Users\\apoli\\Documents\\github\\streamfind\\dev\\merck_peak_finding"
 all_results <- fread(file.path(results_dir, "speed_test_all_results.csv"))
 summary_stats <- fread(file.path(results_dir, "speed_test_summary_stats.csv"))
 all_intensity_data <- fread(file.path(results_dir, "speed_test_intensity_data.csv"))
@@ -686,7 +686,7 @@ if (!is.null(intensity_summary) && nrow(intensity_summary) > 0) {
 }
 ```
 
-## Preliminary StreamFind Workflow
+## Preliminary streamfind Workflow
 
 ```{r}
 #| label: create-demo-engine

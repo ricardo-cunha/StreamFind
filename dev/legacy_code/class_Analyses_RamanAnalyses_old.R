@@ -19,7 +19,7 @@
 #' @export
 #' 
 RamanAnalyses <- S7::new_class("RamanAnalyses",
-  package = "StreamFind",
+  package = "streamfind",
   parent = S7::new_S3_class("Analyses"),
   properties = list(
 
@@ -164,7 +164,7 @@ RamanAnalyses <- S7::new_class("RamanAnalyses",
             return(FALSE)
           }
         } else {
-          if (!is(self@results[["RamanSpectra"]], "StreamFind::RamanSpectra")) {
+          if (!is(self@results[["RamanSpectra"]], "streamfind::RamanSpectra")) {
             return(FALSE)
           }
         }
@@ -181,14 +181,14 @@ RamanAnalyses <- S7::new_class("RamanAnalyses",
           return(self@results[["RamanSpectra"]])
         } else {
           if (length(self) > 0) {
-            StreamFind::RamanSpectra(lapply(self@analyses, function(x) x$spectra))
+            streamfind::RamanSpectra(lapply(self@analyses, function(x) x$spectra))
           } else {
-            StreamFind::RamanSpectra()
+            streamfind::RamanSpectra()
           }
         }
       },
       setter = function(self, value) {
-        if (is(value, "StreamFind::RamanSpectra")) {
+        if (is(value, "streamfind::RamanSpectra")) {
           if (!value$is_averaged) {
             analyses_names <- unname(names(self))
             value_analyses_names <- names(value$spectra)
@@ -336,7 +336,7 @@ S7::method(remove, RamanAnalyses) <- function(x, value) {
 
 #' @export
 #' @noRd
-`[.StreamFind::RamanAnalyses` <- function(x, i) {
+`[.streamfind::RamanAnalyses` <- function(x, i) {
   x@analyses <- x@analyses[i]
   if (!is.null(x@results[["RamanSpectra"]])) {
     spec <- x@results[["RamanSpectra"]]
@@ -355,14 +355,14 @@ S7::method(remove, RamanAnalyses) <- function(x, value) {
 
 #' @export
 #' @noRd
-`[<-.StreamFind::RamanAnalyses` <- function(x, i, value) {
+`[<-.streamfind::RamanAnalyses` <- function(x, i, value) {
   warning("Method not implemented in RamanAnalyses! Use add or remove methods instead.")
   return(x)
 }
 
 #' @export
 #' @noRd
-`[[.StreamFind::RamanAnalyses` <- function(x, i) {
+`[[.streamfind::RamanAnalyses` <- function(x, i) {
   x@analyses <- x@analyses[[i]]
   if (!is.null(x@results[["RamanSpectra"]])) {
     spec <- x@results[["RamanSpectra"]]
@@ -381,7 +381,7 @@ S7::method(remove, RamanAnalyses) <- function(x, value) {
 
 #' @export
 #' @noRd
-`[[<-.StreamFind::RamanAnalyses` <- function(x, i, value) {
+`[[<-.streamfind::RamanAnalyses` <- function(x, i, value) {
   warning("Method not implemented in RamanAnalyses! Use add or remove methods instead.")
   return(x)
 }
@@ -395,7 +395,7 @@ S7::method(`c`, RamanAnalyses) <- function(x, ...) {
     return(x)
   }
   
-  dots <- dots[vapply(dots, function(z) is(z, "StreamFind::RamanAnalyses"), FALSE)]
+  dots <- dots[vapply(dots, function(z) is(z, "streamfind::RamanAnalyses"), FALSE)]
   
   if (length(dots) == 0) {
     return(x)
@@ -466,7 +466,7 @@ S7::method(get_spectra, RamanAnalyses) <- function(x,
   
   if (x@has_spectra) {
     if (useRawData) {
-      spec <- StreamFind::RamanSpectra(lapply(x@analyses, function(z) z$spectra))
+      spec <- streamfind::RamanSpectra(lapply(x@analyses, function(z) z$spectra))
       spec$spectra <- spec$spectra[analyses]
       
     } else {
@@ -1378,14 +1378,14 @@ S7::method(plot_chromatograms_peaks, RamanAnalyses) <- function(x,
           "orpl_format" = {
             
             if (!reticulate::py_module_available("orpl")) {
-              if (!reticulate::virtualenv_exists("r-StreamFind")) {
-                warning("Python virtual environment 'r-StreamFind' not found!")
+              if (!reticulate::virtualenv_exists("r-streamfind")) {
+                warning("Python virtual environment 'r-streamfind' not found!")
                 return(NULL)
               }
               
               tryCatch(
                 {
-                  reticulate::py_install("orpl", envname = "r-StreamFind")
+                  reticulate::py_install("orpl", envname = "r-streamfind")
                 },
                 error = function(e) {
                   warning("Error installing Python module 'orpl'! The error is ", e)

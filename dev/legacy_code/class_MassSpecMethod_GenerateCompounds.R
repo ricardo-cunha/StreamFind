@@ -24,17 +24,17 @@
 #' @return A `MassSpecMethod_GenerateCompounds_metfrag` object.
 #' @references
 #'
-#' \insertRef{metfrag01}{StreamFind}
+#' \insertRef{metfrag01}{streamfind}
 #'
-#' \insertRef{metfrag02}{StreamFind}
+#' \insertRef{metfrag02}{streamfind}
 #'
-#' \insertRef{metfrag03}{StreamFind}
+#' \insertRef{metfrag03}{streamfind}
 #'
-#' \insertRef{metfrag04}{StreamFind}
+#' \insertRef{metfrag04}{streamfind}
 #'
-#' \insertRef{patroon01}{StreamFind}
+#' \insertRef{patroon01}{streamfind}
 #'
-#' \insertRef{patroon02}{StreamFind}
+#' \insertRef{patroon02}{streamfind}
 #'
 #' @export
 #'
@@ -93,7 +93,7 @@ MassSpecMethod_GenerateCompounds_metfrag <- function(
       maxCandidatesToStop = as.numeric(maxCandidatesToStop)
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "MetFrag",
     developer = "Christoph Ruttkies and Emma L. Schymanski",
     contact = "cruttkie@ipb-halle.de",

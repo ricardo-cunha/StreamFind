@@ -21,7 +21,7 @@
 #' @template arg-raman-targets
 #'
 #' @references
-#' \insertRef{orpl01}{StreamFind}
+#' \insertRef{orpl01}{streamfind}
 #'
 #' @export
 #'

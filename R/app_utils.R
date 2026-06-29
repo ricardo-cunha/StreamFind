@@ -15,7 +15,7 @@
 # MARK: Volumes for shinyFiles
 #' @noRd
 .app_util_get_volumes <- function(include_internal = TRUE) {
-  host_roots_env <- Sys.getenv("STREAMFIND_HOST_ROOTS", unset = "/host")
+  host_roots_env <- Sys.getenv("streamfind_HOST_ROOTS", unset = "/host")
   host_roots <- strsplit(host_roots_env, ":", fixed = TRUE)[[1]]
   host_roots <- trimws(host_roots)
   host_roots <- host_roots[nzchar(host_roots)]
@@ -119,7 +119,7 @@
     explorer = ".mod_Explorer",
     results = ".mod_Result"
   )
-  namespace_env <- tryCatch(asNamespace("StreamFind"), error = function(...) envir)
+  namespace_env <- tryCatch(asNamespace("streamfind"), error = function(...) envir)
   list(
     ui = get0(paste0(prefix, "_UI.", owner), mode = "function", envir = namespace_env, inherits = TRUE),
     server = get0(paste0(prefix, "_Server.", owner), mode = "function", envir = namespace_env, inherits = TRUE)
@@ -212,7 +212,7 @@
 .app_util_resolve_project_db <- function(db, registry = projects_overview()) {
   rows <- .app_util_read_project_rows(db)
   if (nrow(rows) == 0) {
-    stop("The selected DuckDB file does not contain any StreamFind project rows.", call. = FALSE)
+    stop("The selected DuckDB file does not contain any streamfind project rows.", call. = FALSE)
   }
   rows[, domain := trimws(as.character(domain))]
   rows <- rows[!is.na(project_id) & nzchar(trimws(project_id))]
@@ -225,7 +225,7 @@
   if (anyNA(rows$project_class) || any(!nzchar(rows$project_class))) {
     bad_domains <- unique(rows$domain[is.na(rows$project_class) | !nzchar(rows$project_class)])
     stop(
-      "Unable to map project domain(s) to a StreamFind project class: ",
+      "Unable to map project domain(s) to a streamfind project class: ",
       paste(bad_domains, collapse = ", "),
       ".",
       call. = FALSE
@@ -287,12 +287,12 @@
   model_elements <- list()
 
   model_elements[[1]] <- shiny::img(
-    src = "www/logo_StreamFind.png",
+    src = "www/streamfind.png",
     width = 250,
     style = "display: block; margin-left: auto; margin-right: auto; margin-bottom: 30px;"
   )
 
-  # Color palette for tiles based on StreamFind logo (green and blue theme)
+  # Color palette for tiles based on streamfind logo (green and blue theme)
   tile_colors <- c(
     "#1e7e34", "#0066cc", "#2d9f4f", "#0052a3",
     "#27ae60", "#2874a6", "#229954", "#1f618d",
@@ -370,12 +370,12 @@
       )
       shiny::showModal(shiny::modalDialog(
         title = "Open Project",
-        shiny::p("Select a StreamFind DuckDB file and enter the project ID."),
+        shiny::p("Select a streamfind DuckDB file and enter the project ID."),
         shiny::div(
           shinyFiles::shinySaveButton(
             project_db_var,
             "Choose DuckDB File",
-            "Select or create a StreamFind .duckdb file",
+            "Select or create a streamfind .duckdb file",
             filename = "project",
             filetype = list(duckdb = "duckdb"),
             multiple = FALSE,
@@ -662,7 +662,7 @@
   .sf_log("Debug", "=== Dependency Check ===")
   .sf_log("Debug", paste("R version:", R.version.string))
   .sf_log("Debug", paste("Platform:", R.version$platform))
-  .sf_log("Debug", paste("StreamFind version:", as.character(utils::packageVersion("StreamFind"))))
+  .sf_log("Debug", paste("streamfind version:", as.character(utils::packageVersion("streamfind"))))
   ob_ok <- tryCatch({
     info <- rcpp_openbabel_debug_runtime()
     for (line in strsplit(info, "\n")[[1]]) {

@@ -1607,7 +1607,7 @@ plot_chromatograms.DB_MassSpecAnalyses <- function(
 
         tryCatch(
           {
-            StreamFind::convert_ms_files(
+            streamfind::convert_ms_files(
               files = files_to_convert,
               outputFormat = "mzML",
               outputPath = NULL,

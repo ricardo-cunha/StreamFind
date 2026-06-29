@@ -14,11 +14,11 @@ RamanMethod_NormalizeSpectra_minmax <- function() {
     algorithm = "minmax",
     parameters = list(),
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
@@ -104,7 +104,7 @@ RamanMethod_NormalizeSpectra_snv <- function(liftTozero = FALSE) {
     algorithm = "snv",
     parameters = list(liftTozero = liftTozero),
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = NA_character_,
     developer = "J\u00FCrgen Schram",
     contact = "schram@hsnr.de",
@@ -197,11 +197,11 @@ RamanMethod_NormalizeSpectra_scale <- function() {
     algorithm = "scale",
     parameters = list(),
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
@@ -281,11 +281,11 @@ RamanMethod_NormalizeSpectra_blockweight <- function() {
     algorithm = "blockweight",
     parameters = list(),
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
@@ -363,11 +363,11 @@ RamanMethod_NormalizeSpectra_meancenter <- function() {
     algorithm = "meancenter",
     parameters = list(),
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {

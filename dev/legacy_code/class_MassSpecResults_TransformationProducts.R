@@ -1,10 +1,10 @@
 # MARK: MassSpecResults_TransformationProducts
 #' @title Constructor and methods to store transformation products results from non-target analysis
-#' @description The `MassSpecResults_TransformationProducts` class is a child of [StreamFind::Results] and is used to store transformation products results from non-target analysis.
+#' @description The `MassSpecResults_TransformationProducts` class is a child of [streamfind::Results] and is used to store transformation products results from non-target analysis.
 #' @param parents A data.table containing parent compound information.
 #' @param transformation_products A list containing transformation products for each parent compound.
 #' @export
-#' @seealso [StreamFind::Results]
+#' @seealso [streamfind::Results]
 #'
 MassSpecResults_TransformationProducts <- function(
     parents = data.table::data.table(),
@@ -13,8 +13,8 @@ MassSpecResults_TransformationProducts <- function(
     list(
       type = "MassSpec",
       name = "MassSpecResults_TransformationProducts",
-      software = "StreamFind",
-      version = as.character(packageVersion("StreamFind")),
+      software = "streamfind",
+      version = as.character(packageVersion("streamfind")),
       parents = parents,
       transformation_products = transformation_products
     ),

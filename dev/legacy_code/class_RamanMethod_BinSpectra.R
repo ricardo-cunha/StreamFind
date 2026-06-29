@@ -1,4 +1,4 @@
-#' @title RamanMethod_BinSpectra_StreamFind Class
+#' @title RamanMethod_BinSpectra_streamfind Class
 #'
 #' @description Bins spectral data based on variables.
 #'
@@ -11,11 +11,11 @@
 #' of binNames and binValues is used.
 #' @param refBinAnalysis The analysis index to use a reference for creating the bins.
 #'
-#' @returns A RamanMethod_BinSpectra_StreamFind object.
+#' @returns A RamanMethod_BinSpectra_streamfind object.
 #'
 #' @export
 #'
-RamanMethod_BinSpectra_StreamFind <- function(
+RamanMethod_BinSpectra_streamfind <- function(
   binNames = c("rt"),
   binValues = c(5),
   byUnit = FALSE,
@@ -25,7 +25,7 @@ RamanMethod_BinSpectra_StreamFind <- function(
     type = "Raman",
     method = "BinSpectra",
     required = NA_character_,
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     parameters = list(
       binNames = binNames,
       binValues = binValues,
@@ -33,26 +33,26 @@ RamanMethod_BinSpectra_StreamFind <- function(
       refBinAnalysis = refBinAnalysis
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid RamanMethod_BinSpectra_StreamFind object!")
+    stop("Invalid RamanMethod_BinSpectra_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
-validate_object.RamanMethod_BinSpectra_StreamFind <- function(x) {
+validate_object.RamanMethod_BinSpectra_streamfind <- function(x) {
   checkmate::assert_choice(x$type, "Raman")
   checkmate::assert_choice(x$method, "BinSpectra")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_character(x$parameters$binNames)
   checkmate::assert_true(all(x$parameters$binNames %in% c("rt", "shift")))
   checkmate::assert_numeric(x$parameters$binValues)
@@ -71,7 +71,7 @@ validate_object.RamanMethod_BinSpectra_StreamFind <- function(x) {
 
 #' @export
 #' @noRd
-run.RamanMethod_BinSpectra_StreamFind <- function(x, engine = NULL) {
+run.RamanMethod_BinSpectra_streamfind <- function(x, engine = NULL) {
   if (!is(engine, "RamanEngine")) {
     warning("Engine is not a RamanEngine object!")
     return(FALSE)

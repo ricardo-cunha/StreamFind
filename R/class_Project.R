@@ -1,5 +1,5 @@
 #' @title Internal Project Base R6 Class
-#' @description Internal DuckDB-backed StreamFind project runtime.
+#' @description Internal DuckDB-backed streamfind project runtime.
 #' @template arg-Project-db
 #' @template arg-Project-project-id
 #' @template arg-Project-value
@@ -118,7 +118,7 @@ Project <- R6::R6Class(
     report_quarto = function(template = NULL, output_file = NULL, execute_dir = getwd(), ...) {
       report_quarto.Project(self, template = template, output_file = output_file, execute_dir = execute_dir, ...)
     },
-    #' @description Run the StreamFind app using the active project as startup context.
+    #' @description Run the streamfind app using the active project as startup context.
     run_app = function() {
       run_app.Project(self)
     },
@@ -516,7 +516,7 @@ report_quarto.Project <- function(x, template = NULL, output_file = NULL, execut
   invisible(x)
 }
 
-#' @describeIn ProjectS3 Run the StreamFind app using the active project as startup context.
+#' @describeIn ProjectS3 Run the streamfind app using the active project as startup context.
 #' @method run_app Project
 #' @export
 run_app.Project <- function(x) {

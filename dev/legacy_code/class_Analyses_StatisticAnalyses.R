@@ -92,7 +92,7 @@ validate_object.StatisticAnalyses = function(x) {
 #'
 get_analysis_names.StatisticAnalyses <- function(x) {
   out <- rownames(x$analyses)
-  if (is(x$results[["model"]], "StreamFind::StatisticModel")) {
+  if (is(x$results[["model"]], "streamfind::StatisticModel")) {
     has_test <- !is.null(x$results[["model"]]$model$res$test)
     has_prediction <- !is.null(x$results[["model"]]$model$res$prediction)
     if (has_test) {

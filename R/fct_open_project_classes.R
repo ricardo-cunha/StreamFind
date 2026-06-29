@@ -1,5 +1,5 @@
 #' @title Projects Overview
-#' @description Return metadata describing the public StreamFind project classes.
+#' @description Return metadata describing the public streamfind project classes.
 #'   The overview includes the class name, user-facing label, project domain,
 #'   supported input file formats, a short description, the corresponding
 #'   `open_<ProjectClass>()` function name, app module owners, result module

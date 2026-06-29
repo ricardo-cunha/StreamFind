@@ -27,7 +27,7 @@ SOURCES := $(filter-out core/external/simdutf/simdutf.cpp core/external/simdutf/
 
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 
-# Vendored runtime DLLs copied alongside StreamFind.dll so they are found at
+# Vendored runtime DLLs copied alongside streamfind.dll so they are found at
 # load time (LoadLibrary / implicit import resolution) after installation.
 .PHONY: copy_vendor_dlls
 copy_vendor_dlls: $(SHLIB)

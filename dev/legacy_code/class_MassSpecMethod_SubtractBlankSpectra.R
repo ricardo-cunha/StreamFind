@@ -1,43 +1,43 @@
-#' @title MassSpecMethod_SubtractBlankSpectra_StreamFind Class
+#' @title MassSpecMethod_SubtractBlankSpectra_streamfind Class
 #'
 #' @description Subtracts the blank spectra to each analysis according to the blank assignment.
 #'
 #' @param negativeToZero Logical (length 1) indicating if negative values should be set to zero.
 #'
-#' @return A MassSpecMethod_SubtractBlankSpectra_StreamFind object.
+#' @return A MassSpecMethod_SubtractBlankSpectra_streamfind object.
 #'
 #' @export
 #'
-MassSpecMethod_SubtractBlankSpectra_StreamFind <- function(
+MassSpecMethod_SubtractBlankSpectra_streamfind <- function(
   negativeToZero = FALSE
 ) {
   x <- ProcessingStep(
     type = "MassSpec",
     method = "SubtractBlankSpectra",
     required = "LoadSpectra",
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     parameters = list(negativeToZero = negativeToZero),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid MassSpecMethod_SubtractBlankSpectra_StreamFind object!")
+    stop("Invalid MassSpecMethod_SubtractBlankSpectra_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
-validate_object.MassSpecMethod_SubtractBlankSpectra_StreamFind = function(x) {
+validate_object.MassSpecMethod_SubtractBlankSpectra_streamfind = function(x) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_choice(x$method, "SubtractBlankSpectra")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_logical(x$parameters$negativeToZero, max.len = 1)
   NextMethod()
   NULL
@@ -45,7 +45,7 @@ validate_object.MassSpecMethod_SubtractBlankSpectra_StreamFind = function(x) {
 
 #' @export
 #' @noRd
-run.MassSpecMethod_SubtractBlankSpectra_StreamFind <- function(
+run.MassSpecMethod_SubtractBlankSpectra_streamfind <- function(
   x,
   engine = NULL
 ) {

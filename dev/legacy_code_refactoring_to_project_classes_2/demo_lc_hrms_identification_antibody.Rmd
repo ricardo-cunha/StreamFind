@@ -25,7 +25,7 @@ library(magrittr)
 library(ggplot2)
 library(plotly)
 library(data.table)
-library(StreamFind)
+library(streamfind)
 
 knitr::opts_chunk$set(
   echo = TRUE,
@@ -76,11 +76,11 @@ basename(files)
 
 # Processing Engine
 
-The `StreamFind` package provides a flexible and powerful framework for processing mass spectrometry data. In this example, we will use the `MassSpecEngine` class to handle the LC-HRMS data. The engine will be initialized with the raw files, and we will specify that the data should be centroided and processed at level 1. Note that The `msconvert` from [ProteoWizard](https://proteowizard.sourceforge.io/) was used in the background to convert the files to the open format mzML.
+The `streamfind` package provides a flexible and powerful framework for processing mass spectrometry data. In this example, we will use the `MassSpecEngine` class to handle the LC-HRMS data. The engine will be initialized with the raw files, and we will specify that the data should be centroided and processed at level 1. Note that The `msconvert` from [ProteoWizard](https://proteowizard.sourceforge.io/) was used in the background to convert the files to the open format mzML.
 
 ```{r engine}
 # Starts engine for identification
-ms <- StreamFind::MassSpecEngine$new(
+ms <- streamfind::MassSpecEngine$new(
   metadata = list(name = "Identification of Bevacizumab"),
   analyses = files,
   centroid = TRUE,

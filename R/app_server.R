@@ -30,8 +30,8 @@ app_server <- function(input, output, session) {
     vol_cfg
   }
 
-  # Debug mode (opt-in via STREAMFIND_DEBUG_MODE=true)
-  if (identical(Sys.getenv("STREAMFIND_DEBUG_MODE"), "true")) {
+  # Debug mode (opt-in via streamfind_DEBUG_MODE=true)
+  if (identical(Sys.getenv("streamfind_DEBUG_MODE"), "true")) {
     .app_util_dependency_check()
   }
 
@@ -142,7 +142,7 @@ app_server <- function(input, output, session) {
 
   load_project_object <- function(project_class, db, project_id) {
     opener_name <- .project_open_function_name(project_class)
-    opener <- get0(opener_name, envir = asNamespace("StreamFind"), mode = "function", inherits = FALSE)
+    opener <- get0(opener_name, envir = asNamespace("streamfind"), mode = "function", inherits = FALSE)
     if (is.null(opener)) {
       stop("Project open function not found: ", opener_name)
     }
@@ -242,7 +242,7 @@ app_server <- function(input, output, session) {
   )
 
   output$app_mode_ui <- shiny::renderUI({
-    shiny::tags$span("StreamFind")
+    shiny::tags$span("streamfind")
   })
 
   output$home_ui <- shiny::renderUI({
@@ -436,7 +436,7 @@ app_server <- function(input, output, session) {
         dark  = c("#0b1220", "#0f172a", "#f8fafc", "#94a3b8", "#94a3b8")
       ),
       streamfind = list(
-        name = "StreamFind",
+        name = "streamfind",
         font = "\"Space Grotesk\", \"Segoe UI\", Helvetica, Arial, sans-serif",
         light = c("#ffffff", "#f8fbf4", "#102a66", "#5a8d37", "#102a66"),
         dark  = c("#08101d", "#0d1425", "#f4f8ef", "#7fb24f", "#7fb24f")
@@ -579,32 +579,32 @@ app_server <- function(input, output, session) {
   }, ignoreInit = TRUE)
 
   shiny::observeEvent(input$open_project_db, {
-    if (identical(Sys.getenv("STREAMFIND_DEBUG_MODE"), "true")) {
+    if (identical(Sys.getenv("streamfind_DEBUG_MODE"), "true")) {
       .sf_log("Debug", "shinyFiles: input$open_project_db triggered")
       .sf_log("Debug", paste("shinyFiles: volumes =", paste(names(shiny::isolate(reactive_volumes())), shiny::isolate(reactive_volumes()), sep = "=", collapse = "; ")))
       .sf_log("Debug", paste("shinyFiles: raw input class =", paste(class(input$open_project_db), collapse = ", ")))
     }
     raw_input <- input$open_project_db
     fileinfo <- shinyFiles::parseFilePaths(reactive_volumes(), raw_input)
-    if (identical(Sys.getenv("STREAMFIND_DEBUG_MODE"), "true")) {
+    if (identical(Sys.getenv("streamfind_DEBUG_MODE"), "true")) {
       .sf_log("Debug", paste("shinyFiles: parseFilePaths output nrow =", nrow(fileinfo)))
     }
     if (nrow(fileinfo) > 0) {
-      if (identical(Sys.getenv("STREAMFIND_DEBUG_MODE"), "true")) {
+      if (identical(Sys.getenv("streamfind_DEBUG_MODE"), "true")) {
         .sf_log("Debug", paste("shinyFiles: datapath =", fileinfo$datapath[1]))
         .sf_log("Debug", paste("shinyFiles: name =", fileinfo$name[1]))
         .sf_log("Debug", paste("shinyFiles: filesystem path exists?", file.exists(fileinfo$datapath[1])))
       }
     }
     if (nrow(fileinfo) == 0) {
-      if (identical(Sys.getenv("STREAMFIND_DEBUG_MODE"), "true")) {
+      if (identical(Sys.getenv("streamfind_DEBUG_MODE"), "true")) {
         .sf_log("Debug", "shinyFiles: no file selected, returning")
       }
       return()
     }
     db_path <- fileinfo$datapath[1]
     if (!is_duckdb_path(db_path)) {
-      if (identical(Sys.getenv("STREAMFIND_DEBUG_MODE"), "true")) {
+      if (identical(Sys.getenv("streamfind_DEBUG_MODE"), "true")) {
         .sf_log("Debug", paste("shinyFiles: not a duckdb path:", db_path))
       }
       reactive_open_db(NA_character_)
@@ -612,7 +612,7 @@ app_server <- function(input, output, session) {
       reactive_open_project_id(NA_character_)
       return()
     }
-    if (identical(Sys.getenv("STREAMFIND_DEBUG_MODE"), "true")) {
+    if (identical(Sys.getenv("streamfind_DEBUG_MODE"), "true")) {
       .sf_log("Debug", paste("shinyFiles: resolving project db:", db_path))
     }
     reactive_open_db(db_path)
@@ -620,7 +620,7 @@ app_server <- function(input, output, session) {
       .app_util_resolve_project_db(db_path, registry = project_registry),
       error = function(e) structure(list(message = conditionMessage(e)), class = "app_project_resolution_error")
     )
-    if (identical(Sys.getenv("STREAMFIND_DEBUG_MODE"), "true")) {
+    if (identical(Sys.getenv("streamfind_DEBUG_MODE"), "true")) {
       .sf_log("Debug", paste("shinyFiles: resolution class =", if (inherits(resolution, "app_project_resolution_error")) "ERROR" else "OK"))
       if (!inherits(resolution, "app_project_resolution_error")) {
         .sf_log("Debug", paste("shinyFiles: rows found =", nrow(resolution$rows)))
@@ -668,7 +668,7 @@ app_server <- function(input, output, session) {
   shiny::observeEvent(input$open_project_confirm, {
     resolution <- reactive_open_resolution()
     if (inherits(resolution, "app_project_resolution_error") || is.null(resolution)) {
-      shiny::showNotification("Please select a valid StreamFind DuckDB file.", type = "warning", duration = 5)
+      shiny::showNotification("Please select a valid streamfind DuckDB file.", type = "warning", duration = 5)
       return()
     }
     selected_project_id <- reactive_open_project_id()
@@ -746,7 +746,7 @@ app_server <- function(input, output, session) {
       shinyFiles::shinyFilesButton(
         "open_project_db",
         "Choose Existing DuckDB File",
-        "Select a StreamFind DuckDB file",
+        "Select a streamfind DuckDB file",
         multiple = FALSE,
         class = "btn btn-default"
       ),

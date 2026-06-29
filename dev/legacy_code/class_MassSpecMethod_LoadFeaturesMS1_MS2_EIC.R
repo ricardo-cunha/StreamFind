@@ -1,5 +1,5 @@
-# MARK: MassSpecMethod_LoadFeaturesMS1_StreamFind
-#' @title MassSpecMethod_LoadFeaturesMS1_StreamFind S3 Class
+# MARK: MassSpecMethod_LoadFeaturesMS1_streamfind
+#' @title MassSpecMethod_LoadFeaturesMS1_streamfind S3 Class
 #' @description Settings for loading MS1 spectra for features.
 #' @template arg-ms-rtWindow
 #' @template arg-ms-mzWindow
@@ -7,10 +7,10 @@
 #' @template arg-ms-presence
 #' @template arg-ms-minIntensity
 #' @template arg-ms-filtered
-#' @return A `MassSpecMethod_LoadFeaturesMS1_StreamFind` object.
+#' @return A `MassSpecMethod_LoadFeaturesMS1_streamfind` object.
 #' @export
 #'
-MassSpecMethod_LoadFeaturesMS1_StreamFind <- function(
+MassSpecMethod_LoadFeaturesMS1_streamfind <- function(
   rtWindow = c(-2, 2),
   mzWindow = c(-1, 6),
   mzClust = 0.005,
@@ -22,7 +22,7 @@ MassSpecMethod_LoadFeaturesMS1_StreamFind <- function(
     type = "MassSpec",
     method = "LoadFeaturesMS1",
     required = "FindFeatures",
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     input_class = "MassSpecResults_NonTargetAnalysis",
     output_class = "MassSpecResults_NonTargetAnalysis",
     parameters = list(
@@ -34,26 +34,26 @@ MassSpecMethod_LoadFeaturesMS1_StreamFind <- function(
       "filtered" = filtered
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid MassSpecMethod_LoadFeaturesMS1_StreamFind object!")
+    stop("Invalid MassSpecMethod_LoadFeaturesMS1_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
-validate_object.MassSpecMethod_LoadFeaturesMS1_StreamFind <- function(x) {
+validate_object.MassSpecMethod_LoadFeaturesMS1_streamfind <- function(x) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_choice(x$method, "LoadFeaturesMS1")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_double(as.numeric(x$parameters$rtWindow), max.len = 2)
   checkmate::assert_double(as.numeric(x$parameters$mzWindow), max.len = 2)
   checkmate::assert_number(x$parameters$mzClust)
@@ -65,7 +65,7 @@ validate_object.MassSpecMethod_LoadFeaturesMS1_StreamFind <- function(x) {
 
 #' @export
 #' @noRd
-run.MassSpecMethod_LoadFeaturesMS1_StreamFind <- function(x, engine = NULL) {
+run.MassSpecMethod_LoadFeaturesMS1_streamfind <- function(x, engine = NULL) {
   if (!is(engine, "MassSpecEngine")) {
     warning("Engine is not a MassSpecEngine object!")
     return(FALSE)
@@ -116,18 +116,18 @@ run.MassSpecMethod_LoadFeaturesMS1_StreamFind <- function(x, engine = NULL) {
   )
 }
 
-# MARK: MassSpecMethod_LoadFeaturesMS2_StreamFind
-#' @title MassSpecMethod_LoadFeaturesMS2_StreamFind S3 Class
+# MARK: MassSpecMethod_LoadFeaturesMS2_streamfind
+#' @title MassSpecMethod_LoadFeaturesMS2_streamfind S3 Class
 #' @description Settings for loading MS2 spectra for features.
 #' @template arg-ms-isolationWindow
 #' @template arg-ms-mzClust
 #' @template arg-ms-presence
 #' @template arg-ms-minIntensity
 #' @template arg-ms-filtered
-#' @return A `MassSpecMethod_LoadFeaturesMS2_StreamFind` object.
+#' @return A `MassSpecMethod_LoadFeaturesMS2_streamfind` object.
 #' @export
 #'
-MassSpecMethod_LoadFeaturesMS2_StreamFind <- function(
+MassSpecMethod_LoadFeaturesMS2_streamfind <- function(
   isolationWindow = 1.3,
   mzClust = 0.005,
   presence = 0.8,
@@ -138,7 +138,7 @@ MassSpecMethod_LoadFeaturesMS2_StreamFind <- function(
     type = "MassSpec",
     method = "LoadFeaturesMS2",
     required = "FindFeatures",
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     input_class = "MassSpecResults_NonTargetAnalysis",
     output_class = "MassSpecResults_NonTargetAnalysis",
     parameters = list(
@@ -149,26 +149,26 @@ MassSpecMethod_LoadFeaturesMS2_StreamFind <- function(
       "filtered" = filtered
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid MassSpecMethod_LoadFeaturesMS2_StreamFind object!")
+    stop("Invalid MassSpecMethod_LoadFeaturesMS2_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
-validate_object.MassSpecMethod_LoadFeaturesMS2_StreamFind <- function(x) {
+validate_object.MassSpecMethod_LoadFeaturesMS2_streamfind <- function(x) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_choice(x$method, "LoadFeaturesMS2")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_number(x$parameters$isolationWindow)
   checkmate::assert_number(x$parameters$mzClust)
   checkmate::assert_number(x$parameters$minIntensity)
@@ -179,7 +179,7 @@ validate_object.MassSpecMethod_LoadFeaturesMS2_StreamFind <- function(x) {
 
 #' @export
 #' @noRd
-run.MassSpecMethod_LoadFeaturesMS2_StreamFind <- function(x, engine = NULL) {
+run.MassSpecMethod_LoadFeaturesMS2_streamfind <- function(x, engine = NULL) {
   if (!is(engine, "MassSpecEngine")) {
     warning("Engine is not a MassSpecEngine object!")
     return(FALSE)
@@ -229,18 +229,18 @@ run.MassSpecMethod_LoadFeaturesMS2_StreamFind <- function(x, engine = NULL) {
   )
 }
 
-# MARK: MassSpecMethod_LoadFeaturesEIC_StreamFind
-#' @title MassSpecMethod_LoadFeaturesEIC_StreamFind S3 Class
+# MARK: MassSpecMethod_LoadFeaturesEIC_streamfind
+#' @title MassSpecMethod_LoadFeaturesEIC_streamfind S3 Class
 #' @description Settings for loading spectra EIC for feature groups.
 #' @template arg-ms-rtExpand
 #' @template arg-ms-mzExpand
 #' @template arg-ms-filtered
 #' @param minIntensity Numeric of length one with the minimum intensity of traces to extract for
 #' EIC.
-#' @return A `MassSpecMethod_LoadFeaturesEIC_StreamFind` object.
+#' @return A `MassSpecMethod_LoadFeaturesEIC_streamfind` object.
 #' @export
 #'
-MassSpecMethod_LoadFeaturesEIC_StreamFind <- function(
+MassSpecMethod_LoadFeaturesEIC_streamfind <- function(
   filtered = FALSE,
   rtExpand = 120,
   mzExpand = 0,
@@ -250,7 +250,7 @@ MassSpecMethod_LoadFeaturesEIC_StreamFind <- function(
     type = "MassSpec",
     method = "LoadFeaturesEIC",
     required = "FindFeatures",
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     parameters = list(
       "filtered" = filtered,
       "rtExpand" = rtExpand,
@@ -258,26 +258,26 @@ MassSpecMethod_LoadFeaturesEIC_StreamFind <- function(
       "minIntensity" = minIntensity
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid MassSpecMethod_LoadFeaturesEIC_StreamFind object!")
+    stop("Invalid MassSpecMethod_LoadFeaturesEIC_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
-validate_object.MassSpecMethod_LoadFeaturesEIC_StreamFind <- function(x) {
+validate_object.MassSpecMethod_LoadFeaturesEIC_streamfind <- function(x) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_choice(x$method, "LoadFeaturesEIC")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_number(x$parameters$rtExpand)
   checkmate::assert_number(x$parameters$mzExpand)
   checkmate::assert_number(x$parameters$minIntensity)
@@ -287,7 +287,7 @@ validate_object.MassSpecMethod_LoadFeaturesEIC_StreamFind <- function(x) {
 
 #' @export
 #' @noRd
-run.MassSpecMethod_LoadFeaturesEIC_StreamFind <- function(x, engine = NULL) {
+run.MassSpecMethod_LoadFeaturesEIC_streamfind <- function(x, engine = NULL) {
   if (!is(engine, "MassSpecEngine")) {
     warning("Engine is not a MassSpecEngine object!")
     return(FALSE)

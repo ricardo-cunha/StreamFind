@@ -9,7 +9,7 @@ build-backend = "scikit_build_core.build"
 [project]
 name = "cf-streamfind"
 version = "0.1.1"
-description = "CogniFlow package with processing steps based on the StreamFind native algorithms."
+description = "CogniFlow package with processing steps based on the streamfind native algorithms."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE.md" }

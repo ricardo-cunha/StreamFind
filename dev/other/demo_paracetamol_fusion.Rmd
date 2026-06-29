@@ -28,7 +28,7 @@ library(magrittr)
 library(ggplot2)
 library(plotly)
 library(data.table)
-library(StreamFind)
+library(streamfind)
 
 knitr::opts_chunk$set(
   echo = TRUE,
@@ -78,11 +78,11 @@ pre code {
 
 ***
 
-This article demonstrates how StreamFind, using mass spectrometry (MS) combined with Raman spectroscopy data, can be used to assess quality variation in the pharmaceutical Fizamol, which contains paracetamol as the active ingredient (API). Each product sample was measured by both MS and Raman spectroscopy. The data are pre-processed and fused to be used in unsupervised and supervised statistical analysis for quality assessment.
+This article demonstrates how streamfind, using mass spectrometry (MS) combined with Raman spectroscopy data, can be used to assess quality variation in the pharmaceutical Fizamol, which contains paracetamol as the active ingredient (API). Each product sample was measured by both MS and Raman spectroscopy. The data are pre-processed and fused to be used in unsupervised and supervised statistical analysis for quality assessment.
 
 # Pre-processing
 
-Data is pre-processed using StreamFind's built-in data-specific engines for MS and Raman data. Pre-processing workflows for each data type are performed prior to data fusion to improve statistical analysis.
+Data is pre-processed using streamfind's built-in data-specific engines for MS and Raman data. Pre-processing workflows for each data type are performed prior to data fusion to improve statistical analysis.
 
 ## MS
 
@@ -154,11 +154,11 @@ scroll_box(width = "100%", height = "400px")
 
 ```{r ms-workflow}
 ms_workflow <- list(
-  MassSpecMethod_LoadSpectra_StreamFind(levels = 1, mzmax = 300, rtmax = 120),
-  MassSpecMethod_BinSpectra_StreamFind(binNames = c("rt", "mz"), binValues = c(5, 2), refBinAnalysis = 1),
+  MassSpecMethod_LoadSpectra_streamfind(levels = 1, mzmax = 300, rtmax = 120),
+  MassSpecMethod_BinSpectra_streamfind(binNames = c("rt", "mz"), binValues = c(5, 2), refBinAnalysis = 1),
   MassSpecMethod_NormalizeSpectra_minmax(),
-  MassSpecMethod_AverageSpectra_StreamFind(),
-  MassSpecMethod_SubtractBlankSpectra_StreamFind(negativeToZero = TRUE),
+  MassSpecMethod_AverageSpectra_streamfind(),
+  MassSpecMethod_SubtractBlankSpectra_streamfind(negativeToZero = TRUE),
   MassSpecMethod_NormalizeSpectra_blockweight()
 )
 
@@ -245,7 +245,7 @@ scroll_box(width = "100%", height = "400px")
 ```{r raman-workflow}
 raman_workflow <- list(
   RamanMethod_AverageSpectra_native(),
-  RamanMethod_SubtractBlankSpectra_StreamFind(),
+  RamanMethod_SubtractBlankSpectra_streamfind(),
   RamanMethod_SmoothSpectra_savgol(fl = 21, forder = 4, dorder = 0),
   RamanMethod_DeleteSpectraSection_native(min = -100, max = 350),
   RamanMethod_DeleteSpectraSection_native(min = 1800, max = 2500),

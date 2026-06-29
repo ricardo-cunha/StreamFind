@@ -559,7 +559,7 @@
       idx_selected_method <- gsub("^(\\d+)_.*", "\\1", selected_method)
       method_name <- processing_methods[short_selected_method]
       help_url <- paste0(
-        "https://odea-project.github.io/StreamFind/reference/",
+        "https://odea-project.github.io/streamfind/reference/",
         method_name,
         ".html"
       )
@@ -921,13 +921,13 @@
       short_selected_method <- gsub("^\\d+_", "", selected_method)
       idx_selected_method <- gsub("^(\\d+)_.*", "\\1", selected_method)
       method_name <- processing_methods[short_selected_method]
-      package_name <- "StreamFind"
+      package_name <- "streamfind"
       package_path <- find.package(package_name, lib.loc = .libPaths())
       tryCatch(
         {
-          # rd <- tools:::fetchRdDB(paste0(package_path, "/help/StreamFind"), method_name)
+          # rd <- tools:::fetchRdDB(paste0(package_path, "/help/streamfind"), method_name)
 
-          rd_list <- tools::Rd_db("StreamFind")
+          rd_list <- tools::Rd_db("streamfind")
           rd <- NULL
           for (entry in rd_list) {
             aliases <- unlist(lapply(entry, function(x) {
@@ -947,7 +947,7 @@
               sprintf(
                 "No Rd entry with alias '%s' found in package '%s'.",
                 method_name,
-                "StreamFind"
+                "streamfind"
               )
             )
           }

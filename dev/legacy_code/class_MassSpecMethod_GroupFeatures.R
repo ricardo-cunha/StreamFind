@@ -196,15 +196,15 @@
 #' @return A `MassSpecMethod_GroupFeatures_xcms3_peakdensity` object.
 #'
 #' @references
-#' \insertRef{patroon01}{StreamFind}
+#' \insertRef{patroon01}{streamfind}
 #'
-#' \insertRef{patroon02}{StreamFind}
+#' \insertRef{patroon02}{streamfind}
 #'
-#' \insertRef{xcms01}{StreamFind}
+#' \insertRef{xcms01}{streamfind}
 #'
-#' \insertRef{xcms02}{StreamFind}
+#' \insertRef{xcms02}{streamfind}
 #'
-#' \insertRef{xcms03}{StreamFind}
+#' \insertRef{xcms03}{streamfind}
 #'
 #' @export
 #'
@@ -230,7 +230,7 @@ MassSpecMethod_GroupFeatures_xcms3_peakdensity <- function(
       maxFeatures = maxFeatures
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "xcms",
     developer = "Colin Smith, Johannes Rainer",
     contact = "siuzdak@scripps.edu",
@@ -348,15 +348,15 @@ run.MassSpecMethod_GroupFeatures_xcms3_peakdensity <- function(
 #' @return A `MassSpecMethod_GroupFeatures_xcms3_peakdensity_peakgroups` object.
 #'
 #' @references
-#' \insertRef{patroon01}{StreamFind}
+#' \insertRef{patroon01}{streamfind}
 #'
-#' \insertRef{patroon02}{StreamFind}
+#' \insertRef{patroon02}{streamfind}
 #'
-#' \insertRef{xcms01}{StreamFind}
+#' \insertRef{xcms01}{streamfind}
 #'
-#' \insertRef{xcms02}{StreamFind}
+#' \insertRef{xcms02}{streamfind}
 #'
-#' \insertRef{xcms03}{StreamFind}
+#' \insertRef{xcms03}{streamfind}
 #'
 #' @export
 #'
@@ -404,7 +404,7 @@ MassSpecMethod_GroupFeatures_xcms3_peakdensity_peakgroups <- function(
       subsetAdjust = subsetAdjust
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "xcms",
     developer = "Colin Smith, Johannes Rainer",
     contact = "siuzdak@scripps.edu",
@@ -523,11 +523,11 @@ run.MassSpecMethod_GroupFeatures_xcms3_peakdensity_peakgroups <- function(
 #' @return A `MassSpecMethod_GroupFeatures_openms` object.
 #'
 #' @references
-#' \insertRef{patroon01}{StreamFind}
+#' \insertRef{patroon01}{streamfind}
 #'
-#' \insertRef{patroon02}{StreamFind}
+#' \insertRef{patroon02}{streamfind}
 #'
-#' \insertRef{openms01}{StreamFind}
+#' \insertRef{openms01}{streamfind}
 #'
 #' @export
 #'
@@ -557,7 +557,7 @@ MassSpecMethod_GroupFeatures_openms <- function(
       verbose = verbose
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "openms",
     developer = "Oliver Kohlbacher",
     contact = "oliver.kohlbacher@uni-tuebingen.de",

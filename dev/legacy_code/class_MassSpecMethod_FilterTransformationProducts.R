@@ -1,4 +1,4 @@
-#' MassSpecMethod_FilterTransformationProducts_StreamFind Class
+#' MassSpecMethod_FilterTransformationProducts_streamfind Class
 #'
 #' @description Settings for filtering of transformation products.
 #'
@@ -7,11 +7,11 @@
 #' @param minSharedParentFragments Numeric (length 1) with the minimum number of shared parent fragments.
 #' Transformation products with number_shared_fragments below this value will be filtered out.
 #'
-#' @return A `MassSpecMethod_FilterTransformationProducts_StreamFind` object.
+#' @return A `MassSpecMethod_FilterTransformationProducts_streamfind` object.
 #'
 #' @export
 #'
-MassSpecMethod_FilterTransformationProducts_StreamFind <- function(
+MassSpecMethod_FilterTransformationProducts_streamfind <- function(
   minParentSimilarity = 0,
   minSharedParentFragments = 0
 ) {
@@ -19,7 +19,7 @@ MassSpecMethod_FilterTransformationProducts_StreamFind <- function(
     type = "MassSpec",
     method = "FilterTransformationProducts",
     required = "FindTransformationProducts",
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     input_class = "MassSpecResults_TransformationProducts",
     output_class = "MassSpecResults_TransformationProducts",
     parameters = list(
@@ -27,27 +27,27 @@ MassSpecMethod_FilterTransformationProducts_StreamFind <- function(
       minSharedParentFragments = as.numeric(minSharedParentFragments)
     ),
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid MassSpecMethod_FilterTransformationProducts_StreamFind object!")
+    stop("Invalid MassSpecMethod_FilterTransformationProducts_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
 #'
-validate_object.MassSpecMethod_FilterTransformationProducts_StreamFind <- function(x) {
+validate_object.MassSpecMethod_FilterTransformationProducts_streamfind <- function(x) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_choice(x$method, "FilterTransformationProducts")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_numeric(x$parameters$minParentSimilarity, len = 1)
   checkmate::assert_numeric(x$parameters$minSharedParentFragments, len = 1)
   NULL
@@ -56,7 +56,7 @@ validate_object.MassSpecMethod_FilterTransformationProducts_StreamFind <- functi
 #' @export
 #' @noRd
 #'
-run.MassSpecMethod_FilterTransformationProducts_StreamFind <- function(
+run.MassSpecMethod_FilterTransformationProducts_streamfind <- function(
   x,
   engine = NULL
 ) {

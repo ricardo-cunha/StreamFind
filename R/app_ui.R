@@ -32,7 +32,7 @@ app_ui <- function(request) {
         htmltools::div(
           id = "sf-logo",
           htmltools::tags$img(
-            src = "www/logo_StreamFind.png"
+            src = "www/streamfind.png"
           )
         ),
         # ---- Horizontal navigation (replaces sidebar) ----
@@ -106,8 +106,8 @@ app_ui <- function(request) {
             htmltools::div(
               class = "sf-boot-overlay-inner",
               htmltools::tags$img(
-                src = "www/logo_StreamFind.png",
-                alt = "StreamFind loading"
+                src = "www/streamfind.png",
+                alt = "streamfind loading"
               )
             )
           ),
@@ -206,7 +206,7 @@ golem_add_external_resources <- function() {
     ),
     golem::bundle_resources(
       path = app_sys("app/www"),
-      app_title = "StreamFind"
+      app_title = "streamfind"
     ),
     # Bootstrap 3.4.1 JS (jQuery plugin) — Shiny ships Bootstrap 3 CSS but
     # doesn't auto-load its JS when the UI is built with raw htmltools::div().

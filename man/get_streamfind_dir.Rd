@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_install_external_tools.R
 \name{get_streamfind_dir}
 \alias{get_streamfind_dir}
-\title{Path to the StreamFind home directory}
+\title{Path to the streamfind home directory}
 \usage{
 get_streamfind_dir()
 }

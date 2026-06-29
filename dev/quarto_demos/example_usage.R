@@ -1,7 +1,7 @@
 # Example usage of the report_quarto function
 
-# Load your StreamFind package (assuming it's loaded)
-# library(StreamFind)
+# Load your streamfind package (assuming it's loaded)
+# library(streamfind)
 
 # Basic MS Demo -----
 # dev_file_path <- "C:/Users/apoli/Documents/example_files"
@@ -33,7 +33,7 @@
 
 # lcdad_engine$save("lcdada_quant.rds")
 
-# library(StreamFind)
+# library(streamfind)
 # lcdad_engine <- MassSpecEngine$new()
 # lcdad_engine$load("lcdada_quant.rds")
 
@@ -72,7 +72,7 @@
 
 
 # LC-HRMS NTS -----
-library(StreamFind)
+library(streamfind)
 nts_engine <- MassSpecEngine$new(
   metadata = list(
     name = "Example LC-HRMS Non-Targeted Screening Analysis",
@@ -153,7 +153,7 @@ plot_transformation_products_network(
 engine$Results$MassSpecResults_TransformationProducts$parents
 unique(get_suspects(nts_engine$MassSpecResults_NonTargetAnalysis)[, c("name", "SMILES")])
 get_groups(nts_engine$MassSpecResults_NonTargetAnalysis, groups = "M250_R509_8661")
-StreamFind::run_app()
+streamfind::run_app()
 
 readRDS("C:/Users/apoli/Documents/demos/demo_02/nts_engine_res.rds")
 

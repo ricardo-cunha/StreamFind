@@ -2,7 +2,7 @@
 # Native ------
 
 #' @title DB_MassSpecMethod_SuspectScreening_native class
-#' @description Native StreamFind method for suspect screening in non-target analysis results by matching features against a provided suspect database.
+#' @description Native streamfind method for suspect screening in non-target analysis results by matching features against a provided suspect database.
 #' @param suspects A data.frame with suspect information. Must contain columns: `name` (character) and either `mass` (neutral monoisotopic mass) or `mz` (expected m/z). Optional columns: `rt` (retention time in seconds), `formula` (molecular formula), `SMILES`, `fragments` or `fragments_mz` (MS2 fragment m/z values, semicolon-separated), `fragments_int` (MS2 fragment intensities, semicolon-separated), `fragments_formula` (fragment formulas, semicolon-separated).
 #' @param ppm Numeric. Mass tolerance in parts-per-million for matching suspect mass or *m/z* to features. Default: 5.
 #' @param sec Numeric. Retention time tolerance in seconds for matching suspect RT to features. Default: 10.
@@ -48,11 +48,11 @@ DB_MassSpecMethod_SuspectScreening_native <- function(
     input_class = "DB_MassSpecResults_NonTargetAnalysis",
     output_class = "DB_MassSpecResults_NonTargetAnalysis",
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_,
     parameters = list(
       suspects = suspects,
@@ -226,11 +226,11 @@ run.DB_MassSpecMethod_SuspectScreening_native <- function(x, engine = NULL) {
 #'
 #' @references
 #'
-#' \insertRef{metfrag01}{StreamFind}
+#' \insertRef{metfrag01}{streamfind}
 #'
-#' \insertRef{metfrag02}{StreamFind}
+#' \insertRef{metfrag02}{streamfind}
 #'
-#' \insertRef{metfrag03}{StreamFind}
+#' \insertRef{metfrag03}{streamfind}
 #'
 #' @export
 #'
@@ -264,7 +264,7 @@ DB_MassSpecMethod_SuspectScreening_metfrag <- function(
     input_class = "DB_MassSpecResults_NonTargetAnalysis",
     output_class = "DB_MassSpecResults_NonTargetAnalysis",
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "MetFragCL",
     developer = "Christoph Ruttkies and Emma L. Schymanski",
     contact = "cruttkie@ipb-halle.de",
@@ -1002,7 +1002,7 @@ run.DB_MassSpecMethod_SuspectScreening_metfrag <- function(x, engine = NULL) {
     on.exit(parallel::stopCluster(cl), add = TRUE)
     parallel::clusterEvalQ(cl, {
       library(data.table)
-      library(StreamFind)
+      library(streamfind)
     })
     chunk_size <- parameters$n_cores
     chunks <- split(idx, ceiling(seq_along(idx) / chunk_size))

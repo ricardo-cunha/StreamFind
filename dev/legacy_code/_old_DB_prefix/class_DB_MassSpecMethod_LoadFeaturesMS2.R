@@ -2,7 +2,7 @@
 # Native ------
 
 #' @title DB_MassSpecMethod_LoadFeaturesMS2_native class
-#' @description Native StreamFind method for loading MS2 spectra into features stored in a database.
+#' @description Native streamfind method for loading MS2 spectra into features stored in a database.
 #' @param isolationWindow Numeric(1) isolation window (Da) around precursor m/z for MS2 extraction.
 #' @param mzClust Numeric(1) m/z tolerance used when clustering traces.
 #' @param presence Numeric(1) minimum fraction (0-1) of scans required to keep a cluster.
@@ -25,11 +25,11 @@ DB_MassSpecMethod_LoadFeaturesMS2_native <- function(
     input_class = "DB_MassSpecResults_NonTargetAnalysis",
     output_class = "DB_MassSpecResults_NonTargetAnalysis",
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_,
     parameters = list(
       isolationWindow = isolationWindow,

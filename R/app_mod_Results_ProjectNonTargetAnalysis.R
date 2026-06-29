@@ -293,7 +293,7 @@
       z-index: 8100;
       pointer-events: none;
       background-color: transparent;
-      background-image: url('/www/logo_StreamFind.png');
+      background-image: url('/www/streamfind.png');
       background-repeat: no-repeat;
       background-position: center center;
       background-size: auto 80px;

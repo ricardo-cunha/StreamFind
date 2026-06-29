@@ -13,7 +13,7 @@
 #' - `type`: The type of analysis, which is "Raman".
 #' - `metadata`: A list containing metadata for the analysis.
 #' - `spectra`: A `data.table` containing the Raman spectra data, with columns for shift, intensity, and optionally other parameters like rt and id.
-#' The `results` element is a list that can hold results. Possible results is currently only [StreamFind::RamanResults_Spectra].
+#' The `results` element is a list that can hold results. Possible results is currently only [streamfind::RamanResults_Spectra].
 #'
 #' @export
 #'
@@ -440,12 +440,12 @@ get_spectra.RamanAnalyses <- function(
     return(list())
   }
   if (is.null(x$results[["RamanResults_Spectra"]]) && !useRawData) {
-    x$results[["RamanResults_Spectra"]] <- StreamFind::RamanResults_Spectra(
+    x$results[["RamanResults_Spectra"]] <- streamfind::RamanResults_Spectra(
       lapply(x$analyses, function(z) z$spectra)
     )
   }
   if (useRawData) {
-    spec <- StreamFind::RamanResults_Spectra(
+    spec <- streamfind::RamanResults_Spectra(
       lapply(x$analyses, function(z) z$spectra)
     )
     spec$spectra <- spec$spectra[analyses]
@@ -1553,13 +1553,13 @@ plot_chromatograms_peaks.RamanAnalyses <- function(
               return(NULL)
             }
             if (!reticulate::py_module_available("orpl")) {
-              if (!reticulate::virtualenv_exists("r-StreamFind")) {
-                warning("Python virtual environment 'r-StreamFind' not found!")
+              if (!reticulate::virtualenv_exists("r-streamfind")) {
+                warning("Python virtual environment 'r-streamfind' not found!")
                 return(NULL)
               }
               tryCatch(
                 {
-                  reticulate::py_install("orplib", envname = "r-StreamFind")
+                  reticulate::py_install("orplib", envname = "r-streamfind")
                 },
                 error = function(e) {
                   warning(

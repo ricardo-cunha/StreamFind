@@ -20,8 +20,8 @@ MassSpecResults_Chromatograms <- function(
     list(
       type = "MassSpec",
       name = "MassSpecResults_Chromatograms",
-      software = "StreamFind",
-      version = as.character(packageVersion("StreamFind")),
+      software = "streamfind",
+      version = as.character(packageVersion("streamfind")),
       chromatograms = chromatograms,
       is_averaged = is_averaged,
       peaks = peaks,
@@ -44,7 +44,7 @@ MassSpecResults_Chromatograms <- function(
 #'
 validate_object.MassSpecResults_Chromatograms <- function(x) {
   checkmate::assert_true(x$name == "MassSpecResults_Chromatograms")
-  checkmate::assert_true(x$software == "StreamFind")
+  checkmate::assert_true(x$software == "streamfind")
   checkmate::assert_list(x$chromatograms)
   checkmate::assert_character(x$replicates)
   checkmate::assert_list(x$peaks)
@@ -230,7 +230,7 @@ plot_chromatograms.MassSpecResults_Chromatograms <- function(
   interactive = TRUE,
   renderEngine = "webgl"
 ) {
-  chroms <- StreamFind::get_chromatograms(
+  chroms <- streamfind::get_chromatograms(
     x,
     analyses,
     chromatograms,

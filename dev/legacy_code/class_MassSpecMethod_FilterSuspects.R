@@ -1,4 +1,4 @@
-#' MassSpecMethod_FilterSuspects_StreamFind Class
+#' MassSpecMethod_FilterSuspects_streamfind Class
 #'
 #' @description Settings for filtering of suspects based on screening quality metrics.
 #'
@@ -9,11 +9,11 @@
 #' @param maxIdLevel Numeric (length 1) with the maximum identification level.
 #' Suspects with id_level above this value will be filtered out.
 #'
-#' @return A `MassSpecMethod_FilterSuspects_StreamFind` object.
+#' @return A `MassSpecMethod_FilterSuspects_streamfind` object.
 #'
 #' @export
 #'
-MassSpecMethod_FilterSuspects_StreamFind <- function(
+MassSpecMethod_FilterSuspects_streamfind <- function(
   minSharedFragments = NA_real_,
   minCuiness = NA_real_,
   maxIdLevel = NA_real_
@@ -22,7 +22,7 @@ MassSpecMethod_FilterSuspects_StreamFind <- function(
     type = "MassSpec",
     method = "FilterSuspects",
     required = "SuspectScreening",
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     input_class = "MassSpecResults_NonTargetAnalysis",
     output_class = "MassSpecResults_NonTargetAnalysis",
     parameters = list(
@@ -31,27 +31,27 @@ MassSpecMethod_FilterSuspects_StreamFind <- function(
       maxIdLevel = as.numeric(maxIdLevel)
     ),
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid MassSpecMethod_FilterSuspects_StreamFind object!")
+    stop("Invalid MassSpecMethod_FilterSuspects_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
 #'
-validate_object.MassSpecMethod_FilterSuspects_StreamFind <- function(x) {
+validate_object.MassSpecMethod_FilterSuspects_streamfind <- function(x) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_choice(x$method, "FilterSuspects")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_numeric(x$parameters$minSharedFragments, len = 1)
   checkmate::assert_numeric(x$parameters$minCuiness, len = 1)
   checkmate::assert_numeric(x$parameters$maxIdLevel, len = 1)
@@ -61,7 +61,7 @@ validate_object.MassSpecMethod_FilterSuspects_StreamFind <- function(x) {
 #' @export
 #' @noRd
 #'
-run.MassSpecMethod_FilterSuspects_StreamFind <- function(
+run.MassSpecMethod_FilterSuspects_streamfind <- function(
   x,
   engine = NULL
 ) {

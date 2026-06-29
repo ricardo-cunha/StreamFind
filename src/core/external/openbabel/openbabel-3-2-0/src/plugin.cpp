@@ -224,7 +224,7 @@ bool OBPlugin::Display(string& txt, const char* param, const char* ID)
 
 std::vector<std::string> EnableStaticPlugins()
 {
-  // StreamFind links a curated set of Open Babel translation units directly
+  // streamfind links a curated set of Open Babel translation units directly
   // into the package DLL, so these plugin singletons are already retained.
   // The original static-library reference list forces every plugin symbol in
   // the full Open Babel distribution, which breaks minimal embedded builds.

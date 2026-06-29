@@ -1,7 +1,7 @@
 devtools::load_all()
-all_files <- StreamFindData::get_ms_file_paths()
+all_files <- streamfindData::get_ms_file_paths()
 files <- all_files[grepl("blank|influent|o3sw", all_files)]
-db_all <- StreamFindData::get_ms_tof_spiked_chemicals()
+db_all <- streamfindData::get_ms_tof_spiked_chemicals()
 db_all <- db_all[grepl("S", db_all$tag), ]
 cols <- c("name", "formula", "mass", "rt", "tag")
 db_is <- db_all[db_all$tag %in% "IS", ]
@@ -9,7 +9,7 @@ db_is <- db_is[, cols, with = FALSE]
 db_is <- db_is[!db_is$name %in% c("Ibuprofen-d3", "Naproxen-d3"), ]
 db <- db_all[db_all$tag %in% "S", ]
 db <- db[, cols, with = FALSE]
-db_with_ms2 <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+db_with_ms2 <- streamfindData::get_ms_tof_spiked_chemicals_with_ms2()
 db_with_ms2 <- db_with_ms2[db_with_ms2$tag %in% "S", ]
 db_with_ms2 <- db_with_ms2[, c("name", "formula", "mass", "SMILES", "rt", "polarity", "fragments"), with = FALSE]
 db_with_ms2$polarity[db_with_ms2$polarity == 1] <- "positive"
@@ -74,7 +74,7 @@ ms$Analyses <- set_blank_names(ms$Analyses, blks)
 ms$run(MassSpecMethod_FindFeatures_xcms3_centwave())
 
 ms$run(
-  MassSpecMethod_AnnotateFeatures_StreamFind(
+  MassSpecMethod_AnnotateFeatures_streamfind(
     rtWindowAlignment = 0.3,
     maxIsotopes = 8,
     maxCharge = 2,
@@ -83,7 +83,7 @@ ms$run(
 )
 
 ms$run(
-  MassSpecMethod_FilterFeatures_StreamFind(
+  MassSpecMethod_FilterFeatures_streamfind(
     excludeIsotopes = TRUE,
     excludeAdducts = TRUE
   )
@@ -92,13 +92,13 @@ ms$run(
 ms$run(MassSpecMethod_GroupFeatures_xcms3_peakdensity())
 
 ms$run(
-  MassSpecMethod_FilterFeatures_StreamFind(
+  MassSpecMethod_FilterFeatures_streamfind(
     minIntensity = 3000
   )
 )
 
 ms$run(
-  MassSpecMethod_CalculateFeaturesQuality_StreamFind(
+  MassSpecMethod_CalculateFeaturesQuality_streamfind(
     filtered = FALSE,
     rtExpand = 2,
     mzExpand = 0.0005,
@@ -109,13 +109,13 @@ ms$run(
 )
 
 ms$run(
-  MassSpecMethod_FilterFeatures_StreamFind(
+  MassSpecMethod_FilterFeatures_streamfind(
     minSnRatio = 5
   )
 )
 
 ms$run(
-  MassSpecMethod_FilterFeatures_StreamFind(
+  MassSpecMethod_FilterFeatures_streamfind(
     maxDeviationInReplicate = 40,
     blankThreshold = 5,
     minAbundanceInReplicate = 3
@@ -123,7 +123,7 @@ ms$run(
 )
 
 ms$run(
-  MassSpecMethod_FindInternalStandards_StreamFind(
+  MassSpecMethod_FindInternalStandards_streamfind(
     database = db_is,
     ppm = 8,
     sec = 10
@@ -140,25 +140,25 @@ ms$run(
 )
 
 ms$run(
-  MassSpecMethod_LoadFeaturesMS1_StreamFind(
+  MassSpecMethod_LoadFeaturesMS1_streamfind(
     filtered = FALSE
   )
 )
 
 ms$run(
-  MassSpecMethod_LoadFeaturesMS2_StreamFind(
+  MassSpecMethod_LoadFeaturesMS2_streamfind(
     filtered = FALSE
   )
 )
 
 ms$run(
-  MassSpecMethod_LoadFeaturesEIC_StreamFind(
+  MassSpecMethod_LoadFeaturesEIC_streamfind(
     filtered = FALSE
   )
 )
 
 ms$run(
-  MassSpecMethod_SuspectScreening_StreamFind(
+  MassSpecMethod_SuspectScreening_streamfind(
     database = db_with_ms2,
     ppm = 10,
     sec = 15,
@@ -231,7 +231,7 @@ ms$run(
 #   showLegend = TRUE
 # )
 # get_compounds(nts)
-#StreamFind::clear_cache("all")
+#streamfind::clear_cache("all")
 # Access feature_list
 #names(ms$NTS$feature_list)
 # modify feature_list

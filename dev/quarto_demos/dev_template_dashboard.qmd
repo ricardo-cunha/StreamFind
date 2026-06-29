@@ -1,6 +1,6 @@
 ---
 title: "Short Dashboard for Mass Spectrometry"
-logo: "`r file.path(system.file(package = 'StreamFind', dir = 'extdata'), 'logo_StreamFind.png')`"
+logo: "`r file.path(system.file(package = 'streamfind', 'app', 'www'), 'streamfind.png')`"
 format:
   dashboard:
     theme: lux
@@ -8,7 +8,7 @@ format:
     embed-resources: true
     nav-buttons:
       - icon: github
-        href: https://github.com/odea-project/StreamFind
+        href: https://github.com/odea-project/streamfind
 editor_options:
   chunk_output_type: console
 ---
@@ -35,14 +35,14 @@ library(DT)
 library(magrittr)
 library(ggplot2)
 library(plotly)
-library(StreamFind)
+library(streamfind)
 ```
 
 ```{r}
 #| include: false
 
-ms_files <- StreamFindData::get_ms_file_paths()[10:27]
-db <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+ms_files <- streamfindData::get_ms_file_paths()[10:27]
+db <- streamfindData::get_ms_tof_spiked_chemicals_with_ms2()
 cols <- c("name", "formula", "mass", "rt", "fragments", "tag")
 db <- db[, cols, with = FALSE]
 dbis <- db[grepl("IS", db$tag), ]

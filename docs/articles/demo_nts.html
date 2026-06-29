@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Non-target Analysis for Wastewater Treatment Evaluation • StreamFind</title>
+<title>Non-target Analysis for Wastewater Treatment Evaluation • streamfind</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
@@ -19,7 +19,7 @@
 
     <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
 
-    <a class="navbar-brand me-2" href="../index.html">StreamFind</a>
+    <a class="navbar-brand me-2" href="../index.html">streamfind</a>
 
     <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
@@ -30,18 +30,18 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item"><a class="nav-link" href="../articles/StreamFind.html">Get started</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/streamfind.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/app_guide.html">StreamFind App Guide</a></li>
+<li><a class="dropdown-item" href="../articles/app_guide.html">streamfind App Guide</a></li>
     <li><a class="dropdown-item" href="../articles/demo_lc_dad_quantification_antibody.html">Quantification of Intact Monoclonal Antibody with LC-DAD</a></li>
     <li><a class="dropdown-item" href="../articles/demo_lc_hrms_identification_antibody.html">Identification of Intact Monoclonal Antibody with LC-HRMS</a></li>
     <li><a class="dropdown-item" href="../articles/demo_ms_raman_fusion_bsa.html">Purity Evaluation of Bovine Serum Albumin Products</a></li>
     <li><a class="dropdown-item" href="../articles/demo_nts.html">Non-target Analysis for Wastewater Treatment Evaluation</a></li>
-    <li><a class="dropdown-item" href="../articles/developer_guide.html">StreamFind Developer Guide</a></li>
-    <li><a class="dropdown-item" href="../articles/general_guide.html">StreamFind Get Started Guide</a></li>
+    <li><a class="dropdown-item" href="../articles/developer_guide.html">streamfind Developer Guide</a></li>
+    <li><a class="dropdown-item" href="../articles/general_guide.html">streamfind Get Started Guide</a></li>
   </ul>
 </li>
       </ul>
@@ -49,7 +49,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/odea-project/StreamFind/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/odea-project/streamfind/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -76,7 +76,7 @@ Cunha</h4>
                   
             <h4 data-toc-skip class="date">29 September, 2025</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/odea-project/StreamFind/blob/HEAD/vignettes/articles/demo_nts.Rmd" class="external-link"><code>vignettes/articles/demo_nts.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/odea-project/streamfind/blob/HEAD/vignettes/articles/demo_nts.Rmd" class="external-link"><code>vignettes/articles/demo_nts.Rmd</code></a></small>
       <div class="d-none name"><code>demo_nts.Rmd</code></div>
     </div>
 
@@ -87,7 +87,7 @@ Cunha</h4>
 <div class="section level2">
 <h2 id="introduction">Introduction<a class="anchor" aria-label="anchor" href="#introduction"></a>
 </h2>
-<p>In this article we demonstrate how StreamFind can be used to evaluate
+<p>In this article we demonstrate how streamfind can be used to evaluate
 ozonation of secondary wastewater effluent (i.e., effluent of the
 aerated biological treatment) using mass spectrometry (MS). A set of 18
 <em>mzML</em> files are used, representing blank, influent and effluent
@@ -113,19 +113,19 @@ modes.</p>
 [16] "03_tof_ww_is_pos_o3sw_effluent-r001.mzML"
 [17] "03_tof_ww_is_pos_o3sw_effluent-r002.mzML"
 [18] "03_tof_ww_is_pos_o3sw_effluent-r003.mzML"</code></pre>
-<p>The showcase will use the StreamFind <em>MassSpecEngine</em>, which
+<p>The showcase will use the streamfind <em>MassSpecEngine</em>, which
 encapsulates all tools required for parsing, storing, processing and
 visualizing MS data. Note that not all methods/functions will be shown,
 as the demonstration focuses of the workflow to assess wastewater
 treatment. Other processing methods for MS data are available in the
-StreamFind package and can be found in the <a href="https://odea-project.github.io/StreamFind/reference/index.html">StreamFind
+streamfind package and can be found in the <a href="https://odea-project.github.io/streamfind/reference/index.html">streamfind
 reference documentation</a>.</p>
 </div>
 <div class="section level2">
 <h2 id="massspecengine">
 <em>MassSpecEngine</em><a class="anchor" aria-label="anchor" href="#massspecengine"></a>
 </h2>
-<p>The <a href="https://r6.r-lib.org/" class="external-link"><em>R6</em></a> <a href="https://odea-project.github.io/StreamFind/reference/MassSpecEngine.html"><em>MassSpecEngine</em></a>
+<p>The <a href="https://r6.r-lib.org/" class="external-link"><em>R6</em></a> <a href="https://odea-project.github.io/streamfind/reference/MassSpecEngine.html"><em>MassSpecEngine</em></a>
 class object is created using <code>MassSpecEngine$new()</code>, as
 shown below. The <code>analyses</code> argument can be used to add the
 set of ms files directly. In this demonstration, we use <em>mzML</em>
@@ -185,7 +185,7 @@ Alternatively, a <code>data.frame</code> with column names
 <em>file</em>, <em>replicate</em> and <em>blank</em> could be added as
 the <code>analyses</code> argument in
 <code>MassSpecEngine$new(analyses = files)</code> to have directly the
-replicate and blank replicate names assigned (more details <a href="https://odea-project.github.io/StreamFind/reference/MassSpecEngine.html#method-MassSpecEngine-new">here</a>).</p>
+replicate and blank replicate names assigned (more details <a href="https://odea-project.github.io/streamfind/reference/MassSpecEngine.html#method-MassSpecEngine-new">here</a>).</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Character vector with analysis replicate names</span></span>
 <span><span class="va">rpls</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span></span>
@@ -225,12 +225,12 @@ replicate and blank replicate names assigned (more details <a href="https://odea
 </h2>
 <p>Data processing is performed by steps according to
 <em>ProcessingStep</em> objects. <em>ProcessingStep</em> class objects
-are obtained via the respective <a href="https://odea-project.github.io/StreamFind/reference/index.html#processing-settings-for-ms-data"><code>[Engine type]Method_[method name]_[algorithm name]</code></a>
+are obtained via the respective <a href="https://odea-project.github.io/streamfind/reference/index.html#processing-settings-for-ms-data"><code>[Engine type]Method_[method name]_[algorithm name]</code></a>
 constructor functions, attributing the respective subclass. Below we
 obtain the <em>ProcessingStep</em> for the method
 <code>FindFeatures</code> using the algorithm <em>openms</em>. The
 parameters can be changed via the constructor arguments. Documentation
-for each <em>ProcessingStep</em> subclass can be found in the <a href="https://odea-project.github.io/StreamFind/reference/index.html">StreamFind
+for each <em>ProcessingStep</em> subclass can be found in the <a href="https://odea-project.github.io/streamfind/reference/index.html">streamfind
 reference documentation</a>.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Gets ProcessingStep for finding features using the openms algorithm</span></span>
@@ -306,7 +306,7 @@ reference documentation</a>.</p>
 <span>  <span class="va">ffs</span>,</span>
 <span></span>
 <span>  <span class="co"># Annotation of natural isotopes and adducts</span></span>
-<span>  <span class="fu"><a href="../reference/MassSpecMethod_AnnotateFeatures_StreamFind.html">MassSpecMethod_AnnotateFeatures_StreamFind</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/MassSpecMethod_AnnotateFeatures_streamfind.html">MassSpecMethod_AnnotateFeatures_streamfind</a></span><span class="op">(</span></span>
 <span>    rtWindowAlignment <span class="op">=</span> <span class="fl">0.3</span>,</span>
 <span>    maxIsotopes <span class="op">=</span> <span class="fl">8</span>,</span>
 <span>    maxCharge <span class="op">=</span> <span class="fl">2</span>,</span>
@@ -314,7 +314,7 @@ reference documentation</a>.</p>
 <span>  <span class="op">)</span>,</span>
 <span></span>
 <span>  <span class="co"># Excludes annotated isotopes and adducts</span></span>
-<span>  <span class="fu"><a href="../reference/MassSpecMethod_FilterFeatures_StreamFind.html">MassSpecMethod_FilterFeatures_StreamFind</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/MassSpecMethod_FilterFeatures_streamfind.html">MassSpecMethod_FilterFeatures_streamfind</a></span><span class="op">(</span></span>
 <span>    excludeIsotopes <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>    excludeAdducts <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span>  <span class="op">)</span>,</span>
@@ -331,13 +331,13 @@ reference documentation</a>.</p>
 <span>  <span class="op">)</span>,</span>
 <span></span>
 <span>  <span class="co"># Filter feature groups with maximum intensity below 5000 counts</span></span>
-<span>  <span class="fu"><a href="../reference/MassSpecMethod_FilterFeatures_StreamFind.html">MassSpecMethod_FilterFeatures_StreamFind</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/MassSpecMethod_FilterFeatures_streamfind.html">MassSpecMethod_FilterFeatures_streamfind</a></span><span class="op">(</span></span>
 <span>    minIntensity <span class="op">=</span> <span class="fl">3000</span></span>
 <span>  <span class="op">)</span>,</span>
 <span></span>
 <span>  <span class="co"># Fill features with missing data</span></span>
 <span>  <span class="co"># Reduces false negatives</span></span>
-<span>  <span class="fu"><a href="../reference/MassSpecMethod_FillFeatures_StreamFind.html">MassSpecMethod_FillFeatures_StreamFind</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/MassSpecMethod_FillFeatures_streamfind.html">MassSpecMethod_FillFeatures_streamfind</a></span><span class="op">(</span></span>
 <span>    withinReplicate <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>    rtExpand <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>    mzExpand <span class="op">=</span> <span class="fl">0.0005</span>,</span>
@@ -349,7 +349,7 @@ reference documentation</a>.</p>
 <span>  <span class="op">)</span>,</span>
 <span></span>
 <span>  <span class="co"># Calculate quality metrics for each feature</span></span>
-<span>  <span class="fu"><a href="../reference/MassSpecMethod_CalculateFeaturesQuality_StreamFind.html">MassSpecMethod_CalculateFeaturesQuality_StreamFind</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/MassSpecMethod_CalculateFeaturesQuality_streamfind.html">MassSpecMethod_CalculateFeaturesQuality_streamfind</a></span><span class="op">(</span></span>
 <span>    filtered <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>    rtExpand <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>    mzExpand <span class="op">=</span> <span class="fl">0.0005</span>,</span>
@@ -360,7 +360,7 @@ reference documentation</a>.</p>
 <span></span>
 <span>  <span class="co"># Filter features based on minimum signal-to-noise ratio (s/n)</span></span>
 <span>  <span class="co"># The s/n is calculated using the CalculateFeaturesQuality method</span></span>
-<span>  <span class="fu"><a href="../reference/MassSpecMethod_FilterFeatures_StreamFind.html">MassSpecMethod_FilterFeatures_StreamFind</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/MassSpecMethod_FilterFeatures_streamfind.html">MassSpecMethod_FilterFeatures_streamfind</a></span><span class="op">(</span></span>
 <span>    minSnRatio <span class="op">=</span> <span class="fl">5</span></span>
 <span>  <span class="op">)</span>,</span>
 <span></span>
@@ -375,7 +375,7 @@ reference documentation</a>.</p>
 <span>  <span class="co"># db_is is a data.table with the</span></span>
 <span>  <span class="co"># name, mass and expected retention time of</span></span>
 <span>  <span class="co"># spiked internal standards, as shown below</span></span>
-<span>  <span class="fu"><a href="../reference/MassSpecMethod_FindInternalStandards_StreamFind.html">MassSpecMethod_FindInternalStandards_StreamFind</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/MassSpecMethod_FindInternalStandards_streamfind.html">MassSpecMethod_FindInternalStandards_streamfind</a></span><span class="op">(</span></span>
 <span>    database <span class="op">=</span> <span class="va">db_is</span>,</span>
 <span>    ppm <span class="op">=</span> <span class="fl">8</span>,</span>
 <span>    sec <span class="op">=</span> <span class="fl">10</span></span>
@@ -391,24 +391,24 @@ reference documentation</a>.</p>
 <span>  <span class="op">)</span>,</span>
 <span></span>
 <span>  <span class="co"># Loads MS1 for features not filtered</span></span>
-<span>  <span class="fu"><a href="../reference/MassSpecMethod_LoadFeaturesMS1_StreamFind.html">MassSpecMethod_LoadFeaturesMS1_StreamFind</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/MassSpecMethod_LoadFeaturesMS1_streamfind.html">MassSpecMethod_LoadFeaturesMS1_streamfind</a></span><span class="op">(</span></span>
 <span>    filtered <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span>  <span class="op">)</span>,</span>
 <span></span>
 <span>  <span class="co"># Loads MS2 for features not filtered</span></span>
-<span>  <span class="fu"><a href="../reference/MassSpecMethod_LoadFeaturesMS2_StreamFind.html">MassSpecMethod_LoadFeaturesMS2_StreamFind</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/MassSpecMethod_LoadFeaturesMS2_streamfind.html">MassSpecMethod_LoadFeaturesMS2_streamfind</a></span><span class="op">(</span></span>
 <span>    filtered <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span>  <span class="op">)</span>,</span>
 <span></span>
 <span>  <span class="co"># Loads feature extracted ion chromatograms (EIC)</span></span>
-<span>  <span class="fu"><a href="../reference/MassSpecMethod_LoadFeaturesEIC_StreamFind.html">MassSpecMethod_LoadFeaturesEIC_StreamFind</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/MassSpecMethod_LoadFeaturesEIC_streamfind.html">MassSpecMethod_LoadFeaturesEIC_streamfind</a></span><span class="op">(</span></span>
 <span>    filtered <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span>  <span class="op">)</span>,</span>
 <span></span>
-<span>  <span class="co"># Performs suspect screening using the StreamFind algorithm</span></span>
+<span>  <span class="co"># Performs suspect screening using the streamfind algorithm</span></span>
 <span>  <span class="co"># db_with_ms2 is a database with suspect chemical standards</span></span>
 <span>  <span class="co"># includes MS2 data (i.e., fragmentation pattern) from standards</span></span>
-<span>  <span class="fu"><a href="../reference/MassSpecMethod_SuspectScreening_StreamFind.html">MassSpecMethod_SuspectScreening_StreamFind</a></span><span class="op">(</span></span>
+<span>  <span class="fu"><a href="../reference/MassSpecMethod_SuspectScreening_streamfind.html">MassSpecMethod_SuspectScreening_streamfind</a></span><span class="op">(</span></span>
 <span>    database <span class="op">=</span> <span class="va">db_with_ms2</span>,</span>
 <span>    ppm <span class="op">=</span> <span class="fl">10</span>,</span>
 <span>    sec <span class="op">=</span> <span class="fl">15</span>,</span>
@@ -428,20 +428,20 @@ the order will matter when the workflow is applied!</p>
 <span><span class="co"># Printing the data processing workflow</span></span>
 <span><span class="fu">show</span><span class="op">(</span><span class="va">ms</span><span class="op">$</span><span class="va">Workflow</span><span class="op">)</span></span></code></pre></div>
 <pre><code><span><span class="fl">1</span><span class="op">:</span> <span class="fu">FindFeatures</span> <span class="op">(</span><span class="va">openms</span><span class="op">)</span></span>
-<span><span class="fl">2</span><span class="op">:</span> <span class="fu">AnnotateFeatures</span> <span class="op">(</span><span class="va">StreamFind</span><span class="op">)</span></span>
-<span><span class="fl">3</span><span class="op">:</span> <span class="fu">FilterFeatures</span> <span class="op">(</span><span class="va">StreamFind</span><span class="op">)</span></span>
+<span><span class="fl">2</span><span class="op">:</span> <span class="fu">AnnotateFeatures</span> <span class="op">(</span><span class="va">streamfind</span><span class="op">)</span></span>
+<span><span class="fl">3</span><span class="op">:</span> <span class="fu">FilterFeatures</span> <span class="op">(</span><span class="va">streamfind</span><span class="op">)</span></span>
 <span><span class="fl">4</span><span class="op">:</span> <span class="fu">GroupFeatures</span> <span class="op">(</span><span class="va">openms</span><span class="op">)</span></span>
-<span><span class="fl">5</span><span class="op">:</span> <span class="fu">FilterFeatures</span> <span class="op">(</span><span class="va">StreamFind</span><span class="op">)</span></span>
-<span><span class="fl">6</span><span class="op">:</span> <span class="fu">FillFeatures</span> <span class="op">(</span><span class="va">StreamFind</span><span class="op">)</span></span>
-<span><span class="fl">7</span><span class="op">:</span> <span class="fu">CalculateFeaturesQuality</span> <span class="op">(</span><span class="va">StreamFind</span><span class="op">)</span></span>
-<span><span class="fl">8</span><span class="op">:</span> <span class="fu">FilterFeatures</span> <span class="op">(</span><span class="va">StreamFind</span><span class="op">)</span></span>
+<span><span class="fl">5</span><span class="op">:</span> <span class="fu">FilterFeatures</span> <span class="op">(</span><span class="va">streamfind</span><span class="op">)</span></span>
+<span><span class="fl">6</span><span class="op">:</span> <span class="fu">FillFeatures</span> <span class="op">(</span><span class="va">streamfind</span><span class="op">)</span></span>
+<span><span class="fl">7</span><span class="op">:</span> <span class="fu">CalculateFeaturesQuality</span> <span class="op">(</span><span class="va">streamfind</span><span class="op">)</span></span>
+<span><span class="fl">8</span><span class="op">:</span> <span class="fu">FilterFeatures</span> <span class="op">(</span><span class="va">streamfind</span><span class="op">)</span></span>
 <span><span class="fl">9</span><span class="op">:</span> <span class="fu">FilterFeatures</span> <span class="op">(</span><span class="va">patRoon</span><span class="op">)</span></span>
-<span><span class="fl">10</span><span class="op">:</span> <span class="fu">FindInternalStandards</span> <span class="op">(</span><span class="va">StreamFind</span><span class="op">)</span></span>
+<span><span class="fl">10</span><span class="op">:</span> <span class="fu">FindInternalStandards</span> <span class="op">(</span><span class="va">streamfind</span><span class="op">)</span></span>
 <span><span class="fl">11</span><span class="op">:</span> <span class="fu">CorrectMatrixSuppression</span> <span class="op">(</span><span class="va">TiChri</span><span class="op">)</span></span>
-<span><span class="fl">12</span><span class="op">:</span> <span class="fu">LoadFeaturesMS1</span> <span class="op">(</span><span class="va">StreamFind</span><span class="op">)</span></span>
-<span><span class="fl">13</span><span class="op">:</span> <span class="fu">LoadFeaturesMS2</span> <span class="op">(</span><span class="va">StreamFind</span><span class="op">)</span></span>
-<span><span class="fl">14</span><span class="op">:</span> <span class="fu">LoadFeaturesEIC</span> <span class="op">(</span><span class="va">StreamFind</span><span class="op">)</span></span>
-<span><span class="fl">15</span><span class="op">:</span> <span class="fu">SuspectScreening</span> <span class="op">(</span><span class="va">StreamFind</span><span class="op">)</span></span></code></pre>
+<span><span class="fl">12</span><span class="op">:</span> <span class="fu">LoadFeaturesMS1</span> <span class="op">(</span><span class="va">streamfind</span><span class="op">)</span></span>
+<span><span class="fl">13</span><span class="op">:</span> <span class="fu">LoadFeaturesMS2</span> <span class="op">(</span><span class="va">streamfind</span><span class="op">)</span></span>
+<span><span class="fl">14</span><span class="op">:</span> <span class="fu">LoadFeaturesEIC</span> <span class="op">(</span><span class="va">streamfind</span><span class="op">)</span></span>
+<span><span class="fl">15</span><span class="op">:</span> <span class="fu">SuspectScreening</span> <span class="op">(</span><span class="va">streamfind</span><span class="op">)</span></span></code></pre>
 </div>
 <div class="section level2">
 <h2 id="run_workflow">
@@ -460,9 +460,9 @@ added.</p>
 </h2>
 <p>The created features and feature groups can be inspected as
 <code>data.table</code> objects or plotted by dedicated methods of the
-<a href="https://odea-project.github.io/StreamFind/reference/MassSpecResults_NonTargetAnalysis.html">MassSpecResults_NonTargetAnalysis</a>
+<a href="https://odea-project.github.io/streamfind/reference/MassSpecResults_NonTargetAnalysis.html">MassSpecResults_NonTargetAnalysis</a>
 class. Internally, the <em>MassSpecEngine</em> stores the results in the
-results list of the <a href="https://odea-project.github.io/StreamFind/reference/MassSpecAnalyses.html">MassSpecAnalyses</a>
+results list of the <a href="https://odea-project.github.io/streamfind/reference/MassSpecAnalyses.html">MassSpecAnalyses</a>
 object, which can be accessed with
 <code>MassSpecEngine$Results$MassSpecResults_NonTargetAnalysis</code> as
 shown below. The <em>MassSpecResults_NonTargetAnalysis</em> object can
@@ -623,7 +623,7 @@ Internal standards profile across analyses
 <p>The method <em>AnnotateFeatures</em> was applied to annotate the
 natural isotopes and adducts into components. Implementation of
 annotation for in-source fragments is planned but not yet available with
-the StreamFind algorithm. The method
+the streamfind algorithm. The method
 <code>MassSpecEngine$get_components()</code> can be used to search for
 components, as shown below for the analysis number 11. Because the
 filters <code>excludeIsotopes</code> and <code>minIntensity</code> were

@@ -1,7 +1,7 @@
 # MARK: Workflow
 #' @title Generic (top level) Workflow class and methods
-#' @description The `Workflow` class is an ordered list of [StreamFind::ProcessingStep] objects dedicated to a specific type of data.
-#' @param processing_steps A list of [StreamFind::ProcessingStep] objects.
+#' @description The `Workflow` class is an ordered list of [streamfind::ProcessingStep] objects dedicated to a specific type of data.
+#' @param processing_steps A list of [streamfind::ProcessingStep] objects.
 #' @details
 #' Phase 1 of the project-hierarchy refactor freezes `owner_class` as part of the
 #' processing-step metadata. Workflows continue to validate by `type`, but now retain
@@ -144,7 +144,7 @@ get_methods.Workflow <- function(x) {
 #' object.
 #' @param x A `Workflow` object.
 #' @param i An index or logical vector indicating which elements to replace.
-#' @param value A list of [StreamFind::ProcessingStep] objects to replace the selected
+#' @param value A list of [streamfind::ProcessingStep] objects to replace the selected
 #' elements with.
 #' @export
 #' 
@@ -166,7 +166,7 @@ get_methods.Workflow <- function(x) {
 #' @describeIn Workflow Replace elements in a Workflow object using `[[<-`.
 #' @param x A `Workflow` object.
 #' @param i An index indicating which element to replace or a character to add a new element.
-#' @param value A [StreamFind::ProcessingStep] object to replace the selected element with.
+#' @param value A [streamfind::ProcessingStep] object to replace the selected element with.
 #' @export
 #' 
 `[[<-.Workflow` <- function(x, i, value) {

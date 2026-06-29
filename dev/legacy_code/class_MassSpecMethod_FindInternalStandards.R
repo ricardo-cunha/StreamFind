@@ -1,13 +1,13 @@
-#' @title Mass Spectrometry Method for Finding Internal Standards in MassSpecResults_NonTargetAnalysis (StreamFind algorithm)
+#' @title Mass Spectrometry Method for Finding Internal Standards in MassSpecResults_NonTargetAnalysis (streamfind algorithm)
 #' @description Processing method for finding internal standards using a data.frame of internal standards.
 #' @param database A data.table with at least the columns name, mass, and rt indicating the name, neutral monoisotopic mass and retention time of the internal standards, respectively.
 #' @template arg-ms-ppm
 #' @template arg-ms-sec
 #' @param filtered Logical, indicating if features that were marked as filtered should be used (TRUE) or not (FALSE).
-#' @return A `MassSpecMethod_FindInternalStandards_StreamFind` object.
+#' @return A `MassSpecMethod_FindInternalStandards_streamfind` object.
 #' @export
 #'
-MassSpecMethod_FindInternalStandards_StreamFind <- function(
+MassSpecMethod_FindInternalStandards_streamfind <- function(
   database = data.table::data.table(
     name = character(),
     formula = character(),
@@ -22,7 +22,7 @@ MassSpecMethod_FindInternalStandards_StreamFind <- function(
     type = "MassSpec",
     method = "FindInternalStandards",
     required = "FindFeatures",
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     parameters = list(
       database = data.table::as.data.table(database),
       ppm = as.numeric(ppm),
@@ -30,26 +30,26 @@ MassSpecMethod_FindInternalStandards_StreamFind <- function(
       filtered = as.logical(filtered)
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid MassSpecMethod_FindInternalStandards_StreamFind object!")
+    stop("Invalid MassSpecMethod_FindInternalStandards_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
-validate_object.MassSpecMethod_FindInternalStandards_StreamFind <- function(x) {
+validate_object.MassSpecMethod_FindInternalStandards_streamfind <- function(x) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_choice(x$method, "FindInternalStandards")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_number(x$parameters$ppm)
   checkmate::assert_number(x$parameters$sec)
   checkmate::assert_logical(x$parameters$filtered)
@@ -65,7 +65,7 @@ validate_object.MassSpecMethod_FindInternalStandards_StreamFind <- function(x) {
 
 #' @export
 #' @noRd
-run.MassSpecMethod_FindInternalStandards_StreamFind <- function(
+run.MassSpecMethod_FindInternalStandards_streamfind <- function(
   x,
   engine = NULL
 ) {

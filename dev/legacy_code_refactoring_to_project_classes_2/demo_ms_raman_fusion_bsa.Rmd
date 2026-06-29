@@ -28,7 +28,7 @@ library(magrittr)
 library(ggplot2)
 library(plotly)
 library(data.table)
-library(StreamFind)
+library(streamfind)
 
 knitr::opts_chunk$set(
   echo = TRUE,
@@ -88,7 +88,7 @@ basename(ms_files)
 With the *.d* files, a *MassSpecEngine* is created to pre-process the MS data. Note that the MS files were centroided and converted to mzML during creation of the *MassSpecEngine*, using the installed `msconvert` tool from the [ProteoWizard](https://proteowizard.sourceforge.io/) in the background. The analysis replicate names are modified to properly assign the analyses within each replicate measurement. Two water (H2O) files were used as blanks for the analyses.
 
 ```{r engine-creation}
-ms <- StreamFind::MassSpecEngine$new(
+ms <- streamfind::MassSpecEngine$new(
   metadata = list(name = "BSA Quality Evaluation MS Project"),
   analyses = ms_files,
   centroid = TRUE,
@@ -222,7 +222,7 @@ ms$run(
 # The binning is applied to ensure that all spectra have the same dimensions
 # (i.e., mass-time and intensity pair)
 ms$run(
-  MassSpecMethod_BinSpectra_StreamFind(
+  MassSpecMethod_BinSpectra_streamfind(
     binNames = c("rt", "mass"),
     binValues = c(5, 20),
     byUnit = TRUE,
@@ -231,7 +231,7 @@ ms$run(
 )
 
 ms$run(
-  MassSpecMethod_AverageSpectra_StreamFind(
+  MassSpecMethod_AverageSpectra_streamfind(
     by = "replicates",
     weightedAveraged = FALSE
   )

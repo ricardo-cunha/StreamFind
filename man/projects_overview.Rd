@@ -14,7 +14,7 @@ If \code{project_class} is \code{NULL}, a named list keyed by public project cla
 Otherwise, a named list describing the selected project class.
 }
 \description{
-Return metadata describing the public StreamFind project classes.
+Return metadata describing the public streamfind project classes.
 The overview includes the class name, user-facing label, project domain,
 supported input file formats, a short description, the corresponding
 \verb{open_<ProjectClass>()} function name, app module owners, result module

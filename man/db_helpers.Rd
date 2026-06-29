@@ -5,7 +5,7 @@
 \alias{query_db.default}
 \alias{list_db_tables.default}
 \alias{get_db_table_info.default}
-\title{Generic DuckDB Methods for DB-backed StreamFind Objects}
+\title{Generic DuckDB Methods for DB-backed streamfind Objects}
 \usage{
 \method{query_db}{default}(x, sql, params = NULL)
 

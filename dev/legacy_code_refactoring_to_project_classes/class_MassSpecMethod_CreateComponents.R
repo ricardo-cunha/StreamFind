@@ -1,5 +1,5 @@
 #' @title MassSpecMethod_CreateComponents_native class
-#' @description Native StreamFind method to assign component identifiers by clustering features that overlap in retention time using their FWHM windows, with optional EIC correlation-based sub-clustering.
+#' @description Native streamfind method to assign component identifiers by clustering features that overlap in retention time using their FWHM windows, with optional EIC correlation-based sub-clustering.
 #' @param rtWindow Numeric length-2 vector of retention time offsets (seconds) applied left/right to the FWHM window when checking overlaps. Defaults to no offset.
 #' @param minCorrelation Numeric value (0-1) for minimum Pearson correlation between EIC profiles to keep features in the same component. Features with correlation below this threshold are separated into different components. Set to 0 to disable EIC correlation filtering. Defaults to 0.8.
 #' @param debugRT Numeric retention time (seconds) to debug. Components containing features within debugRT ± rtWindow will be logged to log. Set to 0 to disable debugging. Defaults to 0.
@@ -20,11 +20,11 @@ MassSpecMethod_CreateComponents_native <- function(
 		input_class = "MassSpecResults_NonTargetAnalysis",
 		output_class = "MassSpecResults_NonTargetAnalysis",
 		number_permitted = 1,
-		version = as.character(packageVersion("StreamFind")),
-		software = "StreamFind",
+		version = as.character(packageVersion("streamfind")),
+		software = "streamfind",
 		developer = "Ricardo Cunha",
 		contact = "cunha@iuta.de",
-		link = "https://odea-project.github.io/StreamFind",
+		link = "https://odea-project.github.io/streamfind",
 		doi = NA_character_,
 		parameters = list(
 			rtWindow = rtWindow,

@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 
 # Overview
 
-StreamFind is built around persistent DuckDB-backed project objects. Instead of
+streamfind is built around persistent DuckDB-backed project objects. Instead of
 creating transient analysis containers in memory, you open a `Project` child
 class, import analytical files, attach a `Workflow`, run project-owned
 `Method`s, and then inspect or visualize the stored results either from R or
@@ -62,13 +62,13 @@ feature-finding routine for `ProjectNonTargetAnalysis`.
 The project registry can be inspected programmatically:
 
 ```{r}
-StreamFind::projects_overview()
+streamfind::projects_overview()
 ```
 
 To inspect a single class:
 
 ```{r}
-StreamFind::projects_overview("ProjectNonTargetAnalysis")
+streamfind::projects_overview("ProjectNonTargetAnalysis")
 ```
 
 # Create or open a project
@@ -78,7 +78,7 @@ functions either create a new project entry or reopen an existing one in the
 same database.
 
 ```{r, eval = FALSE}
-library(StreamFind)
+library(streamfind)
 
 db_file <- "streamfind.duckdb"
 
@@ -261,8 +261,8 @@ For reproducible work, the most practical pattern is:
 
 # Next articles
 
-- The app interface is described in `vignette("app_guide", package = "StreamFind")`.
+- The app interface is described in `vignette("app_guide", package = "streamfind")`.
 - A complete non-target analysis example is shown in
-  `vignette("demo_nts", package = "StreamFind")`.
+  `vignette("demo_nts", package = "streamfind")`.
 - Package extension and developer patterns are summarized in
-  `vignette("developer_guide", package = "StreamFind")`.
+  `vignette("developer_guide", package = "streamfind")`.

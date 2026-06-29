@@ -94,7 +94,7 @@ json make_schema() {
 // [[Rcpp::export]]
 std::string rcpp_json_make_example() {
   json j;
-  j["name"] = "StreamFind";
+  j["name"] = "streamfind";
   j["version"] = 1;
   j["features"] = {"search", "filter", "cluster"};
   return j.dump();
@@ -152,7 +152,7 @@ Rcpp::CharacterVector rcpp_json_list_children(std::string file_path, std::string
 // [[Rcpp::export]]
 bool rcpp_json_schema_validation_ok() {
   const json schema = make_schema();
-  const json instance = R"({"name":"StreamFind","version":1})"_json;
+  const json instance = R"({"name":"streamfind","version":1})"_json;
 
   json_validator validator;
   validator.set_root_schema(schema);
@@ -163,7 +163,7 @@ bool rcpp_json_schema_validation_ok() {
 // [[Rcpp::export]]
 std::string rcpp_json_schema_validation_error() {
   const json schema = make_schema();
-  const json instance = R"({"name":"StreamFind","version":0})"_json;
+  const json instance = R"({"name":"streamfind","version":0})"_json;
 
   json_validator validator;
   validator.set_root_schema(schema);

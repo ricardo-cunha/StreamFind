@@ -11,8 +11,8 @@ format:
       margin-width: 300px
       gutter-width: 1.5rem
     other-links:
-      - text: StreamFind
-        href: https://odea-project.github.io/StreamFind/
+      - text: streamfind
+        href: https://odea-project.github.io/streamfind/
         icon: github
     html-math-method: katex
     theme: journal
@@ -62,7 +62,7 @@ library(DT)
 library(magrittr)
 library(ggplot2)
 library(plotly)
-library(StreamFind)
+library(streamfind)
 ```
 
 ```{r}
@@ -70,7 +70,7 @@ library(StreamFind)
 #| code-fold: true
 
 path <- "demo_data/raman_quality_evaluation"
-#path <- "C:/Users/apoli/Documents/example_files/isoft/ABC_StreamFind_Raman_MS"
+#path <- "C:/Users/apoli/Documents/example_files/isoft/ABC_streamfind_Raman_MS"
 
 msfiles <- list.files(
   path = path,
@@ -93,7 +93,7 @@ ramanfiles <- list.files(
 #| label: raman-engine
 #| code-fold: true
 
-raman <- StreamFind::RamanEngine$new(
+raman <- streamfind::RamanEngine$new(
   analyses = ramanfiles
 )
 
@@ -150,7 +150,7 @@ raman$run(
 )
 
 raman$run(
-  RamanMethod_BinSpectra_StreamFind(
+  RamanMethod_BinSpectra_streamfind(
     binNames = "rt",
     binValues = 10,
     byUnit = FALSE
@@ -299,7 +299,7 @@ get_spectra(raman$Analyses)
 #| label: statistic-engine
 #| code-fold: true
 
-statistic <- StreamFind::StatisticEngine$new(
+statistic <- streamfind::StatisticEngine$new(
   analyses = get_spectra_matrix(raman$analyses)
 )
 

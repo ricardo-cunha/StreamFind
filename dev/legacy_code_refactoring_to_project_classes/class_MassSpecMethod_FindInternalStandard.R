@@ -1,5 +1,5 @@
 #' @title MassSpecMethod_FindInternalStandard_native class
-#' @description Native StreamFind method for finding internal standards in non-target analysis results by suspect screening against a provided database.
+#' @description Native streamfind method for finding internal standards in non-target analysis results by suspect screening against a provided database.
 #' @param suspects A data.frame with suspect information. Must contain columns: `name` (character) and either `mass` (neutral monoisotopic mass) or `mz` (expected m/z). Optional columns: `rt` (retention time in seconds), `formula` (molecular formula), `SMILES`, `ms2_positive`/`ms2_negative` (MS2 fragment mz-int pairs separated by `;`), or legacy `fragments`/`fragments_mz` + `fragments_int`.
 #' @param ppm Numeric. Mass tolerance in parts-per-million for matching suspect mass or *m/z* to features. Default: 5.
 #' @param sec Numeric. Retention time tolerance in seconds for matching suspect RT to features. Default: 10.
@@ -46,11 +46,11 @@ MassSpecMethod_FindInternalStandard_native <- function(
 		input_class = "MassSpecResults_NonTargetAnalysis",
 		output_class = "MassSpecResults_NonTargetAnalysis",
 		number_permitted = Inf,
-		version = as.character(packageVersion("StreamFind")),
-		software = "StreamFind",
+		version = as.character(packageVersion("streamfind")),
+		software = "streamfind",
 		developer = "Ricardo Cunha",
 		contact = "cunha@iuta.de",
-		link = "https://odea-project.github.io/StreamFind",
+		link = "https://odea-project.github.io/streamfind",
 		doi = NA_character_,
 		parameters = list(
 			suspects = suspects,

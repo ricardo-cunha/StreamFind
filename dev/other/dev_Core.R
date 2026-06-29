@@ -1,4 +1,4 @@
-library(StreamFind)
+library(streamfind)
 
 ## Metadata -----
 a <- Metadata()
@@ -37,8 +37,8 @@ show(wf)
 a <- Analyses()
 
 # MassSpecAnalyses -----
-ms_files <- StreamFindData::get_ms_file_paths()[1:3]
-db <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+ms_files <- streamfindData::get_ms_file_paths()[1:3]
+db <- streamfindData::get_ms_tof_spiked_chemicals_with_ms2()
 cols <- c("name", "formula", "mass", "rt", "fragments", "tag")
 db <- db[, cols, with = FALSE]
 dbis <- db[grepl("IS", db$tag), ]
@@ -73,8 +73,8 @@ engine$load("engine.json")
 engine <- Engine$new(Metadata = list(file = "engine.rds"))
 
 # MassSpecResults_Spectra -----
-ms_files <- StreamFindData::get_ms_file_paths()[1]
-db <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+ms_files <- streamfindData::get_ms_file_paths()[1]
+db <- streamfindData::get_ms_tof_spiked_chemicals_with_ms2()
 cols <- c("name", "formula", "mass", "rt", "fragments", "tag")
 db <- db[, cols, with = FALSE]
 dbis <- db[grepl("IS", db$tag), ]
@@ -139,7 +139,7 @@ engine$run(
 #class(engine$Analyses$results$MassSpecResults_Spectra)
 
 engine$run(
-  MassSpecMethod_BinSpectra_StreamFind(
+  MassSpecMethod_BinSpectra_streamfind(
     binNames = c("rt", "mz"),
     binValues = c(10, 10),
     byUnit = TRUE,
@@ -156,7 +156,7 @@ clear_cache("all")
 
 # MassSpecResults_NonTargetAnalysis -----
 ## Resources ----
-ms_files <- StreamFindData::get_ms_file_paths()
+ms_files <- streamfindData::get_ms_file_paths()
 ms_files <- ms_files[grepl("blank|influent|o3sw", ms_files)]
 ms_files_df <- data.frame(
   "file" = ms_files,
@@ -177,7 +177,7 @@ ms_files_df <- data.frame(
     rep("blank_pos", 3)
   )
 )
-db <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+db <- streamfindData::get_ms_tof_spiked_chemicals_with_ms2()
 cols <- c("name", "formula", "mass", "rt", "fragments", "tag")
 db <- db[, cols, with = FALSE]
 dbis <- db[grepl("IS", db$tag), ]
@@ -191,7 +191,7 @@ engine <- MassSpecEngine$new(
 engine$run(MassSpecMethod_FindFeatures_openms())
 
 engine$run(
-  MassSpecMethod_CalculateFeaturesQuality_StreamFind(
+  MassSpecMethod_CalculateFeaturesQuality_streamfind(
     filtered = FALSE,
     rtExpand = 2,
     mzExpand = 0.0005,
@@ -203,7 +203,7 @@ engine$run(
 
 engine$run(MassSpecMethod_GroupFeatures_openms())
 
-engine$run(MassSpecMethod_AnnotateFeatures_StreamFind())
+engine$run(MassSpecMethod_AnnotateFeatures_streamfind())
 
 engine$save("engine.rds")
 
@@ -235,11 +235,11 @@ class(engine)
 
 
 # App -----
-library(StreamFind)
+library(streamfind)
 complete_files_path <- "C:/Users/apoli/Documents/example_files"
 ms_files <- list.files(complete_files_path, pattern = "mzML$", full.names = TRUE, recursive = FALSE)[1:3]
-#ms_files <- StreamFindData::get_ms_file_paths()[1:3]
-db <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+#ms_files <- streamfindData::get_ms_file_paths()[1:3]
+db <- streamfindData::get_ms_tof_spiked_chemicals_with_ms2()
 cols <- c("name", "formula", "mass", "rt", "fragments", "tag")
 db <- db[, cols, with = FALSE]
 dbis <- db[grepl("IS", db$tag), ]
@@ -257,13 +257,13 @@ run_app(file = "engine.rds")
 
 
 # RamanAnalyses -----
-raman_files <- StreamFindData::get_raman_file_paths()[1:2]
+raman_files <- streamfindData::get_raman_file_paths()[1:2]
 a <- RamanAnalyses(raman_files)
 info(a)
 plot_spectra(a, analyses = 1)
 
 # RamanEngine -----
-raman_files <- StreamFindData::get_raman_file_paths()[1:2]
+raman_files <- streamfindData::get_raman_file_paths()[1:2]
 b <- RamanEngine$new(metadata = list(name = "test engine for Raman analysis"), analyses = raman_files)
 b$save("raman.rds")
 show(b$Metadata)

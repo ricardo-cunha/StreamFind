@@ -4,7 +4,7 @@
 \alias{Project}
 \title{Internal Project Base R6 Class}
 \description{
-Internal DuckDB-backed StreamFind project runtime.
+Internal DuckDB-backed streamfind project runtime.
 }
 \keyword{internal}
 \section{Methods}{
@@ -304,7 +304,7 @@ Generate a Quarto report for the active project.
 \if{html}{\out{<a id="method-Project-run_app"></a>}}
 \if{latex}{\out{\hypertarget{method-Project-run_app}{}}}
 \subsection{Method \code{run_app()}}{
-Run the StreamFind app using the active project as startup context.
+Run the streamfind app using the active project as startup context.
 \subsection{Usage}{
 \if{html}{\out{<div class="r">}}\preformatted{Project$run_app()}\if{html}{\out{</div>}}
 }

@@ -147,7 +147,7 @@ namespace sf::obabel
             reinterpret_cast<LPCWSTR>(&load_openbabel_api),
             &self))
     {
-      api.error = "GetModuleHandleExW failed for StreamFind module.";
+      api.error = "GetModuleHandleExW failed for streamfind module.";
       return api;
     }
 
@@ -155,7 +155,7 @@ namespace sf::obabel
     DWORD path_size = GetModuleFileNameW(self, module_path.data(), static_cast<DWORD>(module_path.size()));
     if (path_size == 0)
     {
-      api.error = "GetModuleFileNameW failed for StreamFind module.";
+      api.error = "GetModuleFileNameW failed for streamfind module.";
       return api;
     }
     if (path_size >= module_path.size())
@@ -164,7 +164,7 @@ namespace sf::obabel
       path_size = GetModuleFileNameW(self, module_path.data(), static_cast<DWORD>(module_path.size()));
       if (path_size == 0)
       {
-        api.error = "GetModuleFileNameW failed for StreamFind module.";
+        api.error = "GetModuleFileNameW failed for streamfind module.";
         return api;
       }
     }
@@ -219,7 +219,7 @@ namespace sf::obabel
 
     if (api.available == nullptr || api.normalize == nullptr || api.render_svg == nullptr || api.debug_runtime == nullptr)
     {
-      api.error = "Could not resolve Open Babel StreamFind API exports from " +
+      api.error = "Could not resolve Open Babel streamfind API exports from " +
                   std::string(loaded_path.begin(), loaded_path.end());
       FreeLibrary(api.module);
       api.module = nullptr;
@@ -388,11 +388,11 @@ namespace sf::obabel
     if (api.debug_runtime == nullptr)
       return api.error.empty() ? "Open Babel runtime unavailable." : api.error;
 
-    std::vector<char> buffer(STREAMFIND_OB_DEBUG_CAPACITY, '\0');
+    std::vector<char> buffer(streamfind_OB_DEBUG_CAPACITY, '\0');
     api.debug_runtime(buffer.data(), buffer.size());
     return std::string(buffer.data());
 #else
-    std::vector<char> buffer(STREAMFIND_OB_DEBUG_CAPACITY, '\0');
+    std::vector<char> buffer(streamfind_OB_DEBUG_CAPACITY, '\0');
     sf_ob_debug_runtime(buffer.data(), buffer.size());
     return std::string(buffer.data());
 #endif

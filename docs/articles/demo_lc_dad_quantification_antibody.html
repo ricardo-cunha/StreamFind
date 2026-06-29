@@ -5,7 +5,7 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<title>Quantification of Intact Monoclonal Antibody with LC-DAD • StreamFind</title>
+<title>Quantification of Intact Monoclonal Antibody with LC-DAD • streamfind</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
 <script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
@@ -19,7 +19,7 @@
 
     <nav class="navbar navbar-expand-lg fixed-top bg-primary" data-bs-theme="dark" aria-label="Site navigation"><div class="container">
 
-    <a class="navbar-brand me-2" href="../index.html">StreamFind</a>
+    <a class="navbar-brand me-2" href="../index.html">streamfind</a>
 
     <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.3.0</small>
 
@@ -30,18 +30,18 @@
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="nav-item"><a class="nav-link" href="../articles/StreamFind.html">Get started</a></li>
+<li class="nav-item"><a class="nav-link" href="../articles/streamfind.html">Get started</a></li>
 <li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
 <li class="active nav-item dropdown">
   <button class="nav-link dropdown-toggle" type="button" id="dropdown-articles" data-bs-toggle="dropdown" aria-expanded="false" aria-haspopup="true">Articles</button>
   <ul class="dropdown-menu" aria-labelledby="dropdown-articles">
-<li><a class="dropdown-item" href="../articles/app_guide.html">StreamFind App Guide</a></li>
+<li><a class="dropdown-item" href="../articles/app_guide.html">streamfind App Guide</a></li>
     <li><a class="dropdown-item" href="../articles/demo_lc_dad_quantification_antibody.html">Quantification of Intact Monoclonal Antibody with LC-DAD</a></li>
     <li><a class="dropdown-item" href="../articles/demo_lc_hrms_identification_antibody.html">Identification of Intact Monoclonal Antibody with LC-HRMS</a></li>
     <li><a class="dropdown-item" href="../articles/demo_ms_raman_fusion_bsa.html">Purity Evaluation of Bovine Serum Albumin Products</a></li>
     <li><a class="dropdown-item" href="../articles/demo_nts.html">Non-target Analysis for Wastewater Treatment Evaluation</a></li>
-    <li><a class="dropdown-item" href="../articles/developer_guide.html">StreamFind Developer Guide</a></li>
-    <li><a class="dropdown-item" href="../articles/general_guide.html">StreamFind Get Started Guide</a></li>
+    <li><a class="dropdown-item" href="../articles/developer_guide.html">streamfind Developer Guide</a></li>
+    <li><a class="dropdown-item" href="../articles/general_guide.html">streamfind Get Started Guide</a></li>
   </ul>
 </li>
       </ul>
@@ -49,7 +49,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
-<li class="nav-item"><a class="external-link nav-link" href="https://github.com/odea-project/StreamFind/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/odea-project/streamfind/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -76,7 +76,7 @@ Cunha</h4>
                   
             <h4 data-toc-skip class="date">29 September, 2025</h4>
       
-      <small class="dont-index">Source: <a href="https://github.com/odea-project/StreamFind/blob/HEAD/vignettes/articles/demo_lc_dad_quantification_antibody.Rmd" class="external-link"><code>vignettes/articles/demo_lc_dad_quantification_antibody.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/odea-project/streamfind/blob/HEAD/vignettes/articles/demo_lc_dad_quantification_antibody.Rmd" class="external-link"><code>vignettes/articles/demo_lc_dad_quantification_antibody.Rmd</code></a></small>
       <div class="d-none name"><code>demo_lc_dad_quantification_antibody.Rmd</code></div>
     </div>
 
@@ -109,7 +109,7 @@ files are in Agilent’s .d format.</p>
 <div class="section level2">
 <h2 id="processing-engine">Processing Engine<a class="anchor" aria-label="anchor" href="#processing-engine"></a>
 </h2>
-<p>The <code>StreamFind</code> package provides a flexible and powerful
+<p>The <code>streamfind</code> package provides a flexible and powerful
 framework for processing mass spectrometry data. In this example, we
 will use the <code>MassSpecEngine</code> class to handle the LC-DAD
 data. The engine will be initialized with the raw files, and we will
@@ -118,7 +118,7 @@ Note that The <code>msconvert</code> from <a href="https://proteowizard.sourcefo
 the background to convert the files to the open format mzML.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Starts engine for quantification</span></span>
-<span><span class="va">ms</span> <span class="op">&lt;-</span> <span class="fu">StreamFind</span><span class="fu">::</span><span class="va"><a href="../reference/MassSpecEngine.html">MassSpecEngine</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
+<span><span class="va">ms</span> <span class="op">&lt;-</span> <span class="fu">streamfind</span><span class="fu">::</span><span class="va"><a href="../reference/MassSpecEngine.html">MassSpecEngine</a></span><span class="op">$</span><span class="fu">new</span><span class="op">(</span></span>
 <span>  metadata <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>name <span class="op">=</span> <span class="st">"Quantification of Bevacizumab"</span><span class="op">)</span>,</span>
 <span>  analyses <span class="op">=</span> <span class="va">files</span>,</span>
 <span>  centroid <span class="op">=</span> <span class="cn">TRUE</span>,</span>

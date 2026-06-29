@@ -1,5 +1,5 @@
 
-# R pkgs for StreamFind development
+# R pkgs for streamfind development
 # note: apt pkgs should be run beforehand, see notes_R_install
 
 ### CRAN pkgs -----
@@ -44,7 +44,7 @@ remotes::install_github("rickhelmus/patRoon",
   upgrade = "never", dependencies = TRUE
 )
 
-## Install local StreamFind  ##
+## Install local streamfind  ##
 #updates documentation and installs the package
 devtools::document()
 devtools::document()
@@ -54,5 +54,5 @@ devtools::install(
   build_vignettes = TRUE
 )
 
-print("StreamFind package installed:")
-print(require(StreamFind))
+print("streamfind package installed:")
+print(require(streamfind))

@@ -11,8 +11,8 @@ format:
       margin-width: 300px
       gutter-width: 1.5rem
     other-links:
-      - text: StreamFind
-        href: https://odea-project.github.io/StreamFind/
+      - text: streamfind
+        href: https://odea-project.github.io/streamfind/
         icon: github
     html-math-method: katex
     theme: journal
@@ -58,14 +58,14 @@ library(DT)
 library(magrittr)
 library(ggplot2)
 library(plotly)
-library(StreamFind)
+library(streamfind)
 ```
 
 ```{r}
 #| include: false
 
-ms_files <- StreamFindData::get_ms_file_paths()[10:27]
-db <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+ms_files <- streamfindData::get_ms_file_paths()[10:27]
+db <- streamfindData::get_ms_tof_spiked_chemicals_with_ms2()
 cols <- c("name", "formula", "mass", "rt", "fragments", "tag")
 db <- db[, cols, with = FALSE]
 dbis <- db[grepl("IS", db$tag), ]

@@ -22,7 +22,7 @@
 #' - Support for HDF5 compression and chunking
 #' - Proper cleanup functions for test files
 #' 
-#' @author StreamFind Development Team
+#' @author streamfind Development Team
 #' @date 2024
 
 # Load required libraries
@@ -106,7 +106,7 @@ test_hdf5_write_performance_api <- function(
     # Call the C++ HDF5 mixed function (available via load_all)
     # Check if we have access to the C++ function
     if (exists("test_hdf5_mixed_performance", envir = .GlobalEnv) || 
-        exists("test_hdf5_mixed_performance", envir = asNamespace("StreamFind"))) {
+        exists("test_hdf5_mixed_performance", envir = asNamespace("streamfind"))) {
       # Try to call the C++ function directly
       cpp_result <- do.call("test_hdf5_mixed_performance", list(data_list, file_name, enable_compression, enable_chunking))
     } else {
@@ -202,7 +202,7 @@ test_hdf5_read_performance_api <- function(file_name, group_name = "mixed_data")
     # Call the C++ HDF5 mixed read function (available via load_all)
     # Check if we have access to the C++ function
     if (exists("test_hdf5_mixed_read_performance", envir = .GlobalEnv) || 
-        exists("test_hdf5_mixed_read_performance", envir = asNamespace("StreamFind"))) {
+        exists("test_hdf5_mixed_read_performance", envir = asNamespace("streamfind"))) {
       # Try to call the C++ function directly
       cpp_result <- do.call("test_hdf5_mixed_read_performance", list(file_name, group_name))
     } else {

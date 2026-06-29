@@ -13,7 +13,7 @@
 #' 
 StatisticMethod_PrepareData_autoscale <- S7::new_class("StatisticMethod_PrepareData_autoscale",
   parent = S7::new_S3_class("ProcessingStep"),
-  package = "StreamFind",
+  package = "streamfind",
   
   constructor = function(center = TRUE, scale = TRUE) {
     
@@ -27,7 +27,7 @@ StatisticMethod_PrepareData_autoscale <- S7::new_class("StatisticMethod_PrepareD
           scale = scale
         ),
         number_permitted = 1,
-        version = as.character(packageVersion("StreamFind")),
+        version = as.character(packageVersion("streamfind")),
         software = "mdatools",
         developer = "Sergey Kucheryavskiy",
         contact = "svk@bio.aau.dk",

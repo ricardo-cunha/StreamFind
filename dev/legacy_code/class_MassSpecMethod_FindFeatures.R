@@ -316,15 +316,15 @@
 #' @return A `MassSpecMethod_FindFeatures_xcms3_centwave` object.
 #'
 #' @references
-#' \insertRef{patroon01}{StreamFind}
+#' \insertRef{patroon01}{streamfind}
 #'
-#' \insertRef{patroon02}{StreamFind}
+#' \insertRef{patroon02}{streamfind}
 #'
-#' \insertRef{xcms01}{StreamFind}
+#' \insertRef{xcms01}{streamfind}
 #'
-#' \insertRef{xcms02}{StreamFind}
+#' \insertRef{xcms02}{streamfind}
 #'
-#' \insertRef{xcms03}{StreamFind}
+#' \insertRef{xcms03}{streamfind}
 #'
 #' @export
 #'
@@ -364,7 +364,7 @@ MassSpecMethod_FindFeatures_xcms3_centwave <- function(
       extendLengthMSW = as.logical(extendLengthMSW)
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "xcms",
     developer = "Ralf Tautenhahn, Johannes Rainer",
     contact = "rtautenh@ipb-halle.de",
@@ -452,15 +452,15 @@ run.MassSpecMethod_FindFeatures_xcms3_centwave <- function(x, engine = NULL) {
 #' @return A `MassSpecMethod_FindFeatures_xcms3_matchedfilter` object.
 #'
 #' @references
-#' \insertRef{patroon01}{StreamFind}
+#' \insertRef{patroon01}{streamfind}
 #'
-#' \insertRef{patroon02}{StreamFind}
+#' \insertRef{patroon02}{streamfind}
 #'
-#' \insertRef{xcms01}{StreamFind}
+#' \insertRef{xcms01}{streamfind}
 #'
-#' \insertRef{xcms02}{StreamFind}
+#' \insertRef{xcms02}{streamfind}
 #'
-#' \insertRef{xcms03}{StreamFind}
+#' \insertRef{xcms03}{streamfind}
 #'
 #' @export
 #'
@@ -498,7 +498,7 @@ MassSpecMethod_FindFeatures_xcms3_matchedfilter <- function(
       index = as.logical(index)
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "xcms",
     developer = "Ralf Tautenhahn, Johannes Rainer",
     contact = "rtautenh@ipb-halle.de",
@@ -613,11 +613,11 @@ run.MassSpecMethod_FindFeatures_xcms3_matchedfilter <- function(
 #' @return A `MassSpecMethod_FindFeatures_openms` object.
 #'
 #' @references
-#' \insertRef{patroon01}{StreamFind}
+#' \insertRef{patroon01}{streamfind}
 #'
-#' \insertRef{patroon02}{StreamFind}
+#' \insertRef{patroon02}{streamfind}
 #'
-#' \insertRef{openms01}{StreamFind}
+#' \insertRef{openms01}{streamfind}
 #'
 #' @export
 #'
@@ -677,7 +677,7 @@ MassSpecMethod_FindFeatures_openms <- function(
       verbose = verbose
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "openms",
     developer = "Oliver Kohlbacher",
     contact = "oliver.kohlbacher@uni-tuebingen.de",
@@ -757,11 +757,11 @@ run.MassSpecMethod_FindFeatures_openms <- function(x, engine = NULL) {
 #' @return A `MassSpecMethod_FindFeatures_kpic2` object.
 #'
 #' @references
-#' \insertRef{patroon01}{StreamFind}
+#' \insertRef{patroon01}{streamfind}
 #'
-#' \insertRef{patroon02}{StreamFind}
+#' \insertRef{patroon02}{streamfind}
 #'
-#' \insertRef{kpic01}{StreamFind}
+#' \insertRef{kpic01}{streamfind}
 #'
 #' @export
 #'
@@ -791,7 +791,7 @@ MassSpecMethod_FindFeatures_kpic2 <- function(
       alpha = alpha
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "kpic2",
     developer = "Hongchao Ji",
     contact = "ji.hongchao@foxmail.com",
@@ -858,7 +858,7 @@ MassSpecMethod_FindFeatures_qalgorithms <- function(ppm = 5) {
     output_class = "MassSpecResults_NonTargetAnalysis",
     parameters = list(ppm = ppm),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "qAlgorithms",
     developer = "Gerrit Renner",
     contact = "gerrit.renner@uni-due.de",
@@ -894,7 +894,7 @@ run.MassSpecMethod_FindFeatures_qalgorithms <- function(x, engine = NULL) {
 # Native ------
 
 #' @title MassSpecMethod_FindFeatures_native class
-#' @description Native StreamFind method for finding features (i.e., chromatographic peaks) in liquid chromatography coupled to high resolution mass spectrometry files.
+#' @description Native streamfind method for finding features (i.e., chromatographic peaks) in liquid chromatography coupled to high resolution mass spectrometry files.
 #' @param rtWindows data.frame with rtmin and rtmax columns for retention time windows for data inclusion.
 #' @param resolution_profile integer(3) vector defining mass resolution at 100, 400, and 1000 Da for calculating m/z clustering thresholds via linear model.
 #' @param minSNR numeric(1) minimum signal-to-noise ratio for considering a trace and chromatographic peak.
@@ -935,11 +935,11 @@ MassSpecMethod_FindFeatures_native <- function(
       debug_mz = as.numeric(debug_mz)
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {

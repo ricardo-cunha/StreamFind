@@ -1,4 +1,4 @@
-Package: StreamFind
+Package: streamfind
 Title: Flexible Workflow Assembler for Advanced Data Analysis
 Version: 0.2.0
 Author: Ricardo Cunha [cre, aut, fnd] (<https://orcid.org/0000-0002-6791-0119>)
@@ -7,10 +7,10 @@ Authors@R: c(
         person("Ricardo", "Cunha", email="cunha@iuta.de", role=c("cre", "aut", "fnd"), comment = c(ORCID = "0000-0002-6791-0119")),
         person("Walter", "Laurito", email="laurito@fzi.de", role = "ctb")
     )
-Description: The package StreamFind is a flexible R package designed to support the assembly and execution of standardized workflows for advanced data analysis. Originally developed within the project “Flexible Data Analysis and Workflow Designer to Identify Chemicals in the Water Cycle”, funded by the German Federal Ministry of Education and Research (BMBF), StreamFind offers a modular platform capable of handling diverse data types, including mass spectrometry, spectroscopy, and other structured datasets. The package promotes the use of advanced analysis techniques — such as non-target screening (NTS), statistical modeling, and retrospective data evaluation — in both research and routine quality control workflows. With its standardized approach to data processing, comprehensive documentation, and an integrated graphical user interface, StreamFind is designed to support scientists and technical staff across a wide range of disciplines, from environmental monitoring to pharmaceutical quality assurance.
+Description: The package streamfind is a flexible R package designed to support the assembly and execution of standardized workflows for advanced data analysis. Originally developed within the project “Flexible Data Analysis and Workflow Designer to Identify Chemicals in the Water Cycle”, funded by the German Federal Ministry of Education and Research (BMBF), streamfind offers a modular platform capable of handling diverse data types, including mass spectrometry, spectroscopy, and other structured datasets. The package promotes the use of advanced analysis techniques — such as non-target screening (NTS), statistical modeling, and retrospective data evaluation — in both research and routine quality control workflows. With its standardized approach to data processing, comprehensive documentation, and an integrated graphical user interface, streamfind is designed to support scientists and technical staff across a wide range of disciplines, from environmental monitoring to pharmaceutical quality assurance.
 License: MIT + file LICENSE
-URL: https://github.com/odea-project/StreamFind, https://odea-project.github.io/StreamFind/
-BugReports: https://github.com/odea-project/StreamFind/issues
+URL: https://github.com/odea-project/streamfind, https://odea-project.github.io/streamfind/
+BugReports: https://github.com/odea-project/streamfind/issues
 Depends: R (>= 4.3.0)
 Imports:
     R6,

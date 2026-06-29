@@ -2,7 +2,7 @@
 # NonTargetAnalysisResults ----
 #' @title Results class child for Non-target Analysis Workflows for Mass Spectrometry Data
 #'
-#' @description The `NonTargetAnalysisResults` class is a child of the [StreamFind::Results] class and is used to store results from non-target analysis (NTA) workflows for mass spectrometry data ("MassSpec").
+#' @description The `NonTargetAnalysisResults` class is a child of the [streamfind::Results] class and is used to store results from non-target analysis (NTA) workflows for mass spectrometry data ("MassSpec").
 #'
 #' @param analyses_info A data frame containing information about the analyses.
 #' @param spectra_headers A list of data frames containing information about the spectra headers.
@@ -33,7 +33,7 @@
 #'
 NonTargetAnalysisResults <- S7::new_class(
   name = "NonTargetAnalysisResults",
-  package = "StreamFind",
+  package = "streamfind",
   parent = S7::new_S3_class("Results"),
   properties = list(
     # MARK: analyses_info
@@ -439,11 +439,11 @@ NonTargetAnalysisResults <- S7::new_class(
     feature_list = list()
   ) {
     S7::new_object(
-      StreamFind::Results(),
+      streamfind::Results(),
       dataType = "MassSpec",
       name = "NonTargetAnalysisResults",
-      software = "StreamFind",
-      version = as.character(packageVersion("StreamFind")),
+      software = "streamfind",
+      version = as.character(packageVersion("streamfind")),
       analyses_info = analyses_info,
       spectra_headers = spectra_headers,
       feature_list = feature_list
@@ -455,7 +455,7 @@ NonTargetAnalysisResults <- S7::new_class(
   validator = function(self) {
     checkmate::assert_choice(self@dataType, "MassSpec")
     checkmate::assert_true(self@name == "NonTargetAnalysisResults")
-    checkmate::assert_true(self@software == "StreamFind")
+    checkmate::assert_true(self@software == "streamfind")
     checkmate::assert_character(self@version, len = 1)
     if (length(self@has_features) > 0) {
       checkmate::assert_true(identical(
@@ -542,7 +542,7 @@ S7::method(names, NonTargetAnalysisResults) <- function(x) {
 ## `[` -----
 #' @export
 #' @noRd
-`[.StreamFind::NonTargetAnalysisResults` <- function(x, i, j) {
+`[.streamfind::NonTargetAnalysisResults` <- function(x, i, j) {
   if (!x@has_features) {
     warning("No features found to subset!")
     return(x)
@@ -606,7 +606,7 @@ S7::method(names, NonTargetAnalysisResults) <- function(x) {
 ## `[[` -----
 #' @export
 #' @noRd
-`[[.StreamFind::NonTargetAnalysisResults` <- function(x, value) {
+`[[.streamfind::NonTargetAnalysisResults` <- function(x, value) {
   if (!missing(value)) {
     if (!x@has_groups) {
       warning("No feature groups found to subset!")
@@ -703,7 +703,7 @@ S7::method(plot_features_count, NonTargetAnalysisResults) <- function(
 
   info <- info[order(info$analysis), ]
 
-  colors_tag <- StreamFind:::.get_colors(info$analysis)
+  colors_tag <- streamfind:::.get_colors(info$analysis)
 
   if (is.null(yLab)) {
     yLab <- "Number of features"
@@ -1236,7 +1236,7 @@ S7::method(map_features_intensity, NonTargetAnalysisResults) <- function(
     color = ~var,
     type = "scatter",
     mode = "markers",
-    colors = StreamFind:::.get_colors(unique(fts$var)),
+    colors = streamfind:::.get_colors(unique(fts$var)),
     text = ~hT,
     hoverinfo = "text"
   ) %>%
@@ -7069,7 +7069,7 @@ S7::method(report, NonTargetAnalysisResults) <- function(
   name = NULL,
   data = NULL
 ) {
-  if (!is(NonTargetAnalysisResults, "StreamFind::NonTargetAnalysisResults")) {
+  if (!is(NonTargetAnalysisResults, "streamfind::NonTargetAnalysisResults")) {
     warning(
       "NonTargetAnalysisResults object is not of class NonTargetAnalysisResults! Not done."
     )

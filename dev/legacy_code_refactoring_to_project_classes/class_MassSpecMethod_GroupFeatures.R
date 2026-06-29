@@ -2,7 +2,7 @@
 # Native ------
 
 #' @title MassSpecMethod_GroupFeatures_native class
-#' @description Native StreamFind method for grouping features across samples by aligning retention times and matching mass values.
+#' @description Native streamfind method for grouping features across samples by aligning retention times and matching mass values.
 #' @param method Character. Method for retention time alignment: "internal_standards" uses internal standards for RT correction (requires internal standards to be present), "obi_warp" uses Dynamic Time Warping alignment. Default: "internal_standards".
 #' @param rtDeviation Numeric. Retention time tolerance in seconds for grouping features. Default: 5.
 #' @param ppm Numeric. Mass tolerance in parts-per-million for grouping features. Default: 10.
@@ -32,11 +32,11 @@ MassSpecMethod_GroupFeatures_native <- function(
     input_class = "MassSpecResults_NonTargetAnalysis",
     output_class = "MassSpecResults_NonTargetAnalysis",
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_,
     parameters = list(
       method = as.character(method),

@@ -9,8 +9,8 @@ articles:
   articles/demo_nts: demo_nts.html
   articles/developer_guide: developer_guide.html
   articles/general_guide: general_guide.html
-  StreamFind: StreamFind.html
+  streamfind: streamfind.html
 last_built: 2025-09-29T13:28Z
 urls:
-  reference: https://odea-project.github.io/StreamFind/reference
-  article: https://odea-project.github.io/StreamFind/articles
+  reference: https://odea-project.github.io/streamfind/reference
+  article: https://odea-project.github.io/streamfind/articles

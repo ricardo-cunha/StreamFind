@@ -393,7 +393,7 @@ extern "C"
     }
     if (!parsed)
     {
-      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY,
+      copy_text(out->error, streamfind_OB_ERROR_CAPACITY,
                 parse_error.empty() ? std::string("No valid structure source available.") : parse_error);
       return 0;
     }
@@ -402,28 +402,28 @@ extern "C"
     const std::string canonical_smiles = write_molecule(mol, "can", error);
     if (!error.empty())
     {
-      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY, error);
+      copy_text(out->error, streamfind_OB_ERROR_CAPACITY, error);
       return 0;
     }
 
     const std::string normalized_inchi = write_molecule(mol, "inchi", error);
     if (!error.empty())
     {
-      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY, error);
+      copy_text(out->error, streamfind_OB_ERROR_CAPACITY, error);
       return 0;
     }
 
     const std::string inchikey = write_molecule(mol, "inchikey", error);
     if (!error.empty())
     {
-      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY, error);
+      copy_text(out->error, streamfind_OB_ERROR_CAPACITY, error);
       return 0;
     }
 
-    copy_text(out->canonical_smiles, STREAMFIND_OB_SMILES_CAPACITY, canonical_smiles);
-    copy_text(out->inchi, STREAMFIND_OB_INCHI_CAPACITY, normalized_inchi);
-    copy_text(out->inchikey, STREAMFIND_OB_INCHIKEY_CAPACITY, inchikey);
-    copy_text(out->formula, STREAMFIND_OB_FORMULA_CAPACITY, normalize_formula(mol.GetFormula()));
+    copy_text(out->canonical_smiles, streamfind_OB_SMILES_CAPACITY, canonical_smiles);
+    copy_text(out->inchi, streamfind_OB_INCHI_CAPACITY, normalized_inchi);
+    copy_text(out->inchikey, streamfind_OB_INCHIKEY_CAPACITY, inchikey);
+    copy_text(out->formula, streamfind_OB_FORMULA_CAPACITY, normalize_formula(mol.GetFormula()));
     out->exact_mass = mol.GetExactMass();
 
     if (OpenBabel::OBDescriptor *logp = OpenBabel::OBDescriptor::FindType("logP"))
@@ -457,20 +457,20 @@ extern "C"
     OpenBabel::OBConversion conv;
     if (!conv.SetInFormat("mol"))
     {
-      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY,
+      copy_text(out->error, streamfind_OB_ERROR_CAPACITY,
                 "Open Babel format unavailable: mol");
       return 0;
     }
     if (!conv.ReadFile(&mol, file_path))
     {
-      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY,
+      copy_text(out->error, streamfind_OB_ERROR_CAPACITY,
                 "Open Babel could not read file");
       return 0;
     }
 
     if (mol.NumAtoms() == 0)
     {
-      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY,
+      copy_text(out->error, streamfind_OB_ERROR_CAPACITY,
                 "No atoms in molecule");
       return 0;
     }
@@ -479,28 +479,28 @@ extern "C"
     const std::string canonical_smiles = write_molecule(mol, "can", error);
     if (!error.empty())
     {
-      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY, error);
+      copy_text(out->error, streamfind_OB_ERROR_CAPACITY, error);
       return 0;
     }
 
     const std::string normalized_inchi = write_molecule(mol, "inchi", error);
     if (!error.empty())
     {
-      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY, error);
+      copy_text(out->error, streamfind_OB_ERROR_CAPACITY, error);
       return 0;
     }
 
     const std::string inchikey = write_molecule(mol, "inchikey", error);
     if (!error.empty())
     {
-      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY, error);
+      copy_text(out->error, streamfind_OB_ERROR_CAPACITY, error);
       return 0;
     }
 
-    copy_text(out->canonical_smiles, STREAMFIND_OB_SMILES_CAPACITY, canonical_smiles);
-    copy_text(out->inchi, STREAMFIND_OB_INCHI_CAPACITY, normalized_inchi);
-    copy_text(out->inchikey, STREAMFIND_OB_INCHIKEY_CAPACITY, inchikey);
-    copy_text(out->formula, STREAMFIND_OB_FORMULA_CAPACITY, normalize_formula(mol.GetFormula()));
+    copy_text(out->canonical_smiles, streamfind_OB_SMILES_CAPACITY, canonical_smiles);
+    copy_text(out->inchi, streamfind_OB_INCHI_CAPACITY, normalized_inchi);
+    copy_text(out->inchikey, streamfind_OB_INCHIKEY_CAPACITY, inchikey);
+    copy_text(out->formula, streamfind_OB_FORMULA_CAPACITY, normalize_formula(mol.GetFormula()));
     out->exact_mass = mol.GetExactMass();
 
     if (OpenBabel::OBDescriptor *logp = OpenBabel::OBDescriptor::FindType("logP"))
@@ -535,7 +535,7 @@ extern "C"
         double target_mass,
         streamfind_ob_formula_result *out)
     {
-      if (out->count >= STREAMFIND_OB_FORMULA_MAX_RESULTS)
+      if (out->count >= streamfind_OB_FORMULA_MAX_RESULTS)
         return;
 
       std::string formula;
@@ -574,8 +574,8 @@ extern "C"
       const double error_ppm = (error_da / target_mass) * 1e6;
 
       std::strncpy(out->formulas[out->count], formula.c_str(),
-                   STREAMFIND_OB_FORMULA_STR_SIZE - 1);
-      out->formulas[out->count][STREAMFIND_OB_FORMULA_STR_SIZE - 1] = '\0';
+                   streamfind_OB_FORMULA_STR_SIZE - 1);
+      out->formulas[out->count][streamfind_OB_FORMULA_STR_SIZE - 1] = '\0';
       out->masses[out->count] = formula_mass;
       out->errors[out->count] = error_ppm;
       out->count++;
@@ -591,7 +591,7 @@ extern "C"
         double target_mass,
         streamfind_ob_formula_result *out)
     {
-      if (out->count >= STREAMFIND_OB_FORMULA_MAX_RESULTS)
+      if (out->count >= streamfind_OB_FORMULA_MAX_RESULTS)
         return false;
 
       if (depth == static_cast<int>(elements.size()))
@@ -717,10 +717,10 @@ extern "C"
         {
           std::swap(out->errors[j], out->errors[j - 1]);
           std::swap(out->masses[j], out->masses[j - 1]);
-          char tmp[STREAMFIND_OB_FORMULA_STR_SIZE];
-          std::strncpy(tmp, out->formulas[j], STREAMFIND_OB_FORMULA_STR_SIZE);
-          std::strncpy(out->formulas[j], out->formulas[j - 1], STREAMFIND_OB_FORMULA_STR_SIZE);
-          std::strncpy(out->formulas[j - 1], tmp, STREAMFIND_OB_FORMULA_STR_SIZE);
+          char tmp[streamfind_OB_FORMULA_STR_SIZE];
+          std::strncpy(tmp, out->formulas[j], streamfind_OB_FORMULA_STR_SIZE);
+          std::strncpy(out->formulas[j], out->formulas[j - 1], streamfind_OB_FORMULA_STR_SIZE);
+          std::strncpy(out->formulas[j - 1], tmp, streamfind_OB_FORMULA_STR_SIZE);
         }
       }
     }
@@ -858,7 +858,7 @@ extern "C"
     }
     if (!parsed)
     {
-      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY,
+      copy_text(out->error, streamfind_OB_ERROR_CAPACITY,
                 parse_error.empty() ? std::string("No valid structure source available.") : parse_error);
       return 0;
     }
@@ -866,7 +866,7 @@ extern "C"
     OpenBabel::OBConversion conv;
     if (!conv.SetOutFormat("svg"))
     {
-      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY, "Open Babel format unavailable: svg");
+      copy_text(out->error, streamfind_OB_ERROR_CAPACITY, "Open Babel format unavailable: svg");
       return 0;
     }
 
@@ -877,12 +877,12 @@ extern "C"
     std::string svg = trim_copy(conv.WriteString(&mol, true));
     if (svg.empty())
     {
-      copy_text(out->error, STREAMFIND_OB_ERROR_CAPACITY, "Open Babel could not write svg");
+      copy_text(out->error, streamfind_OB_ERROR_CAPACITY, "Open Babel could not write svg");
       return 0;
     }
 
     svg = normalize_svg_output(svg, width_px, height_px);
-    copy_text(out->svg, STREAMFIND_OB_SVG_CAPACITY, svg);
+    copy_text(out->svg, streamfind_OB_SVG_CAPACITY, svg);
     out->ok = 1;
     return 1;
   }

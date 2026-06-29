@@ -54,7 +54,7 @@ RUN R -e "remotes::install_github('rickhelmus/patRoonExt')"
 RUN R -e "remotes::install_github('rickhelmus/patRoonInst')"
 RUN R -e "patRoonInst::install()"
 RUN R -e "BiocManager::install('odea-project/StreamFindData', dependencies = TRUE)"
-RUN R -e "BiocManager::install('odea-project/StreamFind', dependencies = TRUE)"
+RUN R -e "BiocManager::install('odea-project/streamfind', dependencies = TRUE)"
 
 # Added directly to dockerfile to avoid missing file at startup
 # Copy the start.sh script to the container
@@ -71,7 +71,7 @@ echo '3) Run Both Shiny App and RStudio Server'; \
 read -p 'Enter the number: ' option; \
 if [ \"$option\" == \"1\" ]; then \
     echo 'Starting Shiny App...'; \
-    R -e \"library(StreamFind); run_app(options = list(port=3838, host='0.0.0.0'))\"; \
+    R -e \"library(streamfind); run_app(options = list(port=3838, host='0.0.0.0'))\"; \
 elif [ \"$option\" == \"2\" ]; then \
     echo 'Starting RStudio Server...'; \
     rstudio-server start; \
@@ -80,7 +80,7 @@ elif [ \"$option\" == \"2\" ]; then \
 elif [ \"$option\" == \"3\" ]; then \
     echo 'Starting both Shiny App and RStudio Server...'; \
     rstudio-server start & \
-    R -e \"library(StreamFind); run_app(options = list(port=3838, host='0.0.0.0'))\" & \
+    R -e \"library(streamfind); run_app(options = list(port=3838, host='0.0.0.0'))\" & \
     wait; \
 else \
     echo 'Invalid option. Please select 1, 2, or 3.'; \

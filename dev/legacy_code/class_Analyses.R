@@ -132,7 +132,7 @@ read.Analyses <- function(x, file) {
     }
   } else if (grepl(".rds", file)) {
     res <- readRDS(file)
-    if (is(res, "StreamFind::Analyses")) {
+    if (is(res, "streamfind::Analyses")) {
       return(res)
     }
   }

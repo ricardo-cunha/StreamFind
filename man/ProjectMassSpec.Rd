@@ -11,7 +11,7 @@ Internal R6 child of \code{Project} exposing shared Mass Spec tables and native 
 }
 \keyword{internal}
 \section{Super class}{
-\code{\link[StreamFind:Project]{StreamFind::Project}} -> \code{ProjectMassSpec}
+\code{\link[streamfind:Project]{streamfind::Project}} -> \code{ProjectMassSpec}
 }
 \section{Methods}{
 \subsection{Public methods}{
@@ -55,27 +55,27 @@ Internal R6 child of \code{Project} exposing shared Mass Spec tables and native 
 \if{html}{\out{
 <details><summary>Inherited methods</summary>
 <ul>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="available_processing_methods"><a href='../../StreamFind/html/Project.html#method-Project-available_processing_methods'><code>StreamFind::Project$available_processing_methods()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="close"><a href='../../StreamFind/html/Project.html#method-Project-close'><code>StreamFind::Project$close()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="copy"><a href='../../StreamFind/html/Project.html#method-Project-copy'><code>StreamFind::Project$copy()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="delete_cache"><a href='../../StreamFind/html/Project.html#method-Project-delete_cache'><code>StreamFind::Project$delete_cache()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_audit"><a href='../../StreamFind/html/Project.html#method-Project-get_audit'><code>StreamFind::Project$get_audit()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_cache"><a href='../../StreamFind/html/Project.html#method-Project-get_cache'><code>StreamFind::Project$get_cache()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_cache_size"><a href='../../StreamFind/html/Project.html#method-Project-get_cache_size'><code>StreamFind::Project$get_cache_size()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_db"><a href='../../StreamFind/html/Project.html#method-Project-get_db'><code>StreamFind::Project$get_db()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_domain"><a href='../../StreamFind/html/Project.html#method-Project-get_domain'><code>StreamFind::Project$get_domain()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_metadata"><a href='../../StreamFind/html/Project.html#method-Project-get_metadata'><code>StreamFind::Project$get_metadata()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_project_id"><a href='../../StreamFind/html/Project.html#method-Project-get_project_id'><code>StreamFind::Project$get_project_id()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_ptr"><a href='../../StreamFind/html/Project.html#method-Project-get_ptr'><code>StreamFind::Project$get_ptr()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="get_workflow"><a href='../../StreamFind/html/Project.html#method-Project-get_workflow'><code>StreamFind::Project$get_workflow()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="list_tables"><a href='../../StreamFind/html/Project.html#method-Project-list_tables'><code>StreamFind::Project$list_tables()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="report_quarto"><a href='../../StreamFind/html/Project.html#method-Project-report_quarto'><code>StreamFind::Project$report_quarto()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_app"><a href='../../StreamFind/html/Project.html#method-Project-run_app'><code>StreamFind::Project$run_app()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_method"><a href='../../StreamFind/html/Project.html#method-Project-run_method'><code>StreamFind::Project$run_method()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="run_workflow"><a href='../../StreamFind/html/Project.html#method-Project-run_workflow'><code>StreamFind::Project$run_workflow()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="set_metadata"><a href='../../StreamFind/html/Project.html#method-Project-set_metadata'><code>StreamFind::Project$set_metadata()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="set_workflow"><a href='../../StreamFind/html/Project.html#method-Project-set_workflow'><code>StreamFind::Project$set_workflow()</code></a></span></li>
-<li><span class="pkg-link" data-pkg="StreamFind" data-topic="Project" data-id="validate"><a href='../../StreamFind/html/Project.html#method-Project-validate'><code>StreamFind::Project$validate()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="available_processing_methods"><a href='../../streamfind/html/Project.html#method-Project-available_processing_methods'><code>streamfind::Project$available_processing_methods()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="close"><a href='../../streamfind/html/Project.html#method-Project-close'><code>streamfind::Project$close()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="copy"><a href='../../streamfind/html/Project.html#method-Project-copy'><code>streamfind::Project$copy()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="delete_cache"><a href='../../streamfind/html/Project.html#method-Project-delete_cache'><code>streamfind::Project$delete_cache()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="get_audit"><a href='../../streamfind/html/Project.html#method-Project-get_audit'><code>streamfind::Project$get_audit()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="get_cache"><a href='../../streamfind/html/Project.html#method-Project-get_cache'><code>streamfind::Project$get_cache()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="get_cache_size"><a href='../../streamfind/html/Project.html#method-Project-get_cache_size'><code>streamfind::Project$get_cache_size()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="get_db"><a href='../../streamfind/html/Project.html#method-Project-get_db'><code>streamfind::Project$get_db()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="get_domain"><a href='../../streamfind/html/Project.html#method-Project-get_domain'><code>streamfind::Project$get_domain()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="get_metadata"><a href='../../streamfind/html/Project.html#method-Project-get_metadata'><code>streamfind::Project$get_metadata()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="get_project_id"><a href='../../streamfind/html/Project.html#method-Project-get_project_id'><code>streamfind::Project$get_project_id()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="get_ptr"><a href='../../streamfind/html/Project.html#method-Project-get_ptr'><code>streamfind::Project$get_ptr()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="get_workflow"><a href='../../streamfind/html/Project.html#method-Project-get_workflow'><code>streamfind::Project$get_workflow()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="list_tables"><a href='../../streamfind/html/Project.html#method-Project-list_tables'><code>streamfind::Project$list_tables()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="report_quarto"><a href='../../streamfind/html/Project.html#method-Project-report_quarto'><code>streamfind::Project$report_quarto()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="run_app"><a href='../../streamfind/html/Project.html#method-Project-run_app'><code>streamfind::Project$run_app()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="run_method"><a href='../../streamfind/html/Project.html#method-Project-run_method'><code>streamfind::Project$run_method()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="run_workflow"><a href='../../streamfind/html/Project.html#method-Project-run_workflow'><code>streamfind::Project$run_workflow()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="set_metadata"><a href='../../streamfind/html/Project.html#method-Project-set_metadata'><code>streamfind::Project$set_metadata()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="set_workflow"><a href='../../streamfind/html/Project.html#method-Project-set_workflow'><code>streamfind::Project$set_workflow()</code></a></span></li>
+<li><span class="pkg-link" data-pkg="streamfind" data-topic="Project" data-id="validate"><a href='../../streamfind/html/Project.html#method-Project-validate'><code>streamfind::Project$validate()</code></a></span></li>
 </ul>
 </details>
 }}

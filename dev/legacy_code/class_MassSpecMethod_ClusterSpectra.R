@@ -1,4 +1,4 @@
-#' @title MassSpecMethod_ClusterSpectra_StreamFind Class
+#' @title MassSpecMethod_ClusterSpectra_streamfind Class
 #'
 #' @description Clusters spectra based on a variable (i.e. column name).
 #'
@@ -7,11 +7,11 @@
 #' @param presence Numeric (length 1) with the minimum presence of traces in a cluster to be
 #' considered.
 #'
-#' @return A MassSpecMethod_ClusterSpectra_StreamFind object.
+#' @return A MassSpecMethod_ClusterSpectra_streamfind object.
 #'
 #' @export
 #'
-MassSpecMethod_ClusterSpectra_StreamFind <- function(
+MassSpecMethod_ClusterSpectra_streamfind <- function(
   val = "mz",
   clustVal = 0.001,
   presence = 0.1
@@ -20,34 +20,34 @@ MassSpecMethod_ClusterSpectra_StreamFind <- function(
     type = "MassSpec",
     method = "ClusterSpectra",
     required = "LoadSpectra",
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     parameters = list(
       val = as.character(val),
       clustVal = as.numeric(clustVal),
       presence = as.numeric(presence)
     ),
     number_permitted = 1,
-    version = as.character(utils::packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(utils::packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid MassSpecMethod_ClusterSpectra_StreamFind object!")
+    stop("Invalid MassSpecMethod_ClusterSpectra_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
 #'
-validate_object.MassSpecMethod_ClusterSpectra_StreamFind <- function(x) {
+validate_object.MassSpecMethod_ClusterSpectra_streamfind <- function(x) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_choice(x$method, "ClusterSpectra")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_character(x$parameters$val, min.len = 1)
   checkmate::assert_number(x$parameters$clustVal)
   checkmate::assert_number(x$parameters$presence)
@@ -57,7 +57,7 @@ validate_object.MassSpecMethod_ClusterSpectra_StreamFind <- function(x) {
 
 #' @export
 #' @noRd
-run.MassSpecMethod_ClusterSpectra_StreamFind <- function(x, engine = NULL) {
+run.MassSpecMethod_ClusterSpectra_streamfind <- function(x, engine = NULL) {
   if (!is(engine, "MassSpecEngine")) {
     warning("Engine is not a MassSpecEngine object!")
     return(FALSE)

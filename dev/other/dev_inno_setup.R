@@ -1,10 +1,10 @@
-# StreamFind RInno Setup
-# This script creates a Windows installer for the StreamFind Shiny application
+# streamfind RInno Setup
+# This script creates a Windows installer for the streamfind Shiny application
 # using the RInno package
 
 library(RInno)
 
-# Function to create StreamFind app installer
+# Function to create streamfind app installer
 create_streamfind_app <- function() {
   
   # Required packages from DESCRIPTION (excluding the ones mentioned to exclude)
@@ -51,7 +51,7 @@ create_streamfind_app <- function() {
   )
 
   remote_packages <- c(
-    "odea-project/StreamFind@dev_s3_check"
+    "odea-project/streamfind@dev_s3_check"
   )
 
   # Temporarily increase timeout for large package downloads
@@ -72,7 +72,7 @@ create_streamfind_app <- function() {
   )
 
   RInno::create_app(
-    app_name = "StreamFind",
+    app_name = "streamfind",
     app_dir = "inst/app",
     dir_out = "RInno_installer",
     pkgs = required_packages,
@@ -95,7 +95,7 @@ create_streamfind_app <- function() {
     nativefier_opts = c()
   )
 
-  cat("StreamFind installer created successfully!\n")
+  cat("streamfind installer created successfully!\n")
   cat("Directory:", file.path(getwd(), app_dir), "\n")
   cat("Next steps:\n")
   cat("1. Review the generated files in the app directory\n")
@@ -105,7 +105,7 @@ create_streamfind_app <- function() {
 
 # Main function to setup everything
 setup_streamfind_installer <- function() {
-  cat("Setting up StreamFind installer...\n")
+  cat("Setting up streamfind installer...\n")
 
   # Create the installer (app directory already prepared)
   create_streamfind_app()

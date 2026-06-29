@@ -326,7 +326,7 @@ namespace project
         }
       }
 
-    /** Open and manage a single DuckDB-backed StreamFind project. */
+    /** Open and manage a single DuckDB-backed streamfind project. */
     class PROJECT
     {
     public:

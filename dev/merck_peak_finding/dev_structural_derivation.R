@@ -5,7 +5,7 @@ library(DT)
 library(magrittr)
 library(ggplot2)
 library(plotly)
-library(StreamFind)
+library(streamfind)
 
 # devtools::load_all()
 

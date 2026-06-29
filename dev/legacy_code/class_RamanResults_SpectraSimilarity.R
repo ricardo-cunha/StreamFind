@@ -8,8 +8,8 @@ RamanResults_SpectraSimilarity <- function(data = list()) {
     list(
       type = "Raman",
       name = "RamanResults_SpectraSimilarity",
-      software = "StreamFind",
-      version = as.character(packageVersion("StreamFind")),
+      software = "streamfind",
+      version = as.character(packageVersion("streamfind")),
       data = data
     ),
     class = c("RamanResults_SpectraSimilarity", "Results")
@@ -28,7 +28,7 @@ RamanResults_SpectraSimilarity <- function(data = list()) {
 validate_object.RamanResults_SpectraSimilarity = function(x) {
   checkmate::assert_true(identical(class(x), c("RamanResults_SpectraSimilarity", "Results")))
   checkmate::assert_true(x$name == "RamanResults_SpectraSimilarity")
-  checkmate::assert_true(x$software == "StreamFind")
+  checkmate::assert_true(x$software == "streamfind")
   checkmate::assert_list(x$data)
   if (length(x$data) > 0) {
     lapply(x$data, checkmate::assert_data_table)

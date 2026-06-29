@@ -1,4 +1,4 @@
-library(StreamFind)
+library(streamfind)
 library(data.table)
 
 project_db <- file.path("dev", "dev_duckdb", "data_nta.duckdb")
@@ -10,9 +10,9 @@ suspects <- fread(file.path("dev", "dev_duckdb", "suspects_with_ms2_template.csv
 
 transformation_products <- fread(file.path("dev", "dev_duckdb", "transformation_products_template_v2.csv"))
 
-ms_files <- StreamFindData::get_mass_spec_wastewater_files()
+ms_files <- streamfindData::get_mass_spec_wastewater_files()
 
-internal_standards <- StreamFindData::get_mass_spec_wastewater_internal_standards_csv()
+internal_standards <- streamfindData::get_mass_spec_wastewater_internal_standards_csv()
 internal_standards <- data.table::fread(internal_standards)
 internal_standards <- internal_standards[!is.na(rt), ]
 

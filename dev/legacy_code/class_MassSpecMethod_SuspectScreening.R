@@ -1,4 +1,4 @@
-#' @title MassSpecMethod_SuspectScreening_StreamFind Class
+#' @title MassSpecMethod_SuspectScreening_streamfind Class
 #' @description Processing method for suspect screening using a data.frame with target compounds.
 #' @param database A data.frame with at least the columns name and mass, indicating the name and neutral monoisotopic mass of the suspect targets.
 #' @template arg-ms-ppm
@@ -8,10 +8,10 @@
 #' @template arg-ms-minFragments
 #' @param minCusiness Numeric length 1 with the minimum cusiness value of the experimental and database fragments for a feature to be considered a suspect.
 #' @template arg-ms-filtered
-#' @return A `MassSpecMethod_SuspectScreening_StreamFind` object.
+#' @return A `MassSpecMethod_SuspectScreening_streamfind` object.
 #' @export
 #'
-MassSpecMethod_SuspectScreening_StreamFind <- function(
+MassSpecMethod_SuspectScreening_streamfind <- function(
   database = data.table::data.table(
     name = character(),
     formula = character(),
@@ -29,7 +29,7 @@ MassSpecMethod_SuspectScreening_StreamFind <- function(
     type = "MassSpec",
     method = "SuspectScreening",
     required = "FindFeatures",
-    algorithm = "StreamFind",
+    algorithm = "streamfind",
     input_class = "MassSpecResults_NonTargetAnalysis",
     output_class = "MassSpecResults_NonTargetAnalysis",
     parameters = list(
@@ -43,26 +43,26 @@ MassSpecMethod_SuspectScreening_StreamFind <- function(
       "filtered" = as.logical(filtered)
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
     return(x)
   } else {
-    stop("Invalid MassSpecMethod_SuspectScreening_StreamFind object!")
+    stop("Invalid MassSpecMethod_SuspectScreening_streamfind object!")
   }
 }
 
 #' @export
 #' @noRd
-validate_object.MassSpecMethod_SuspectScreening_StreamFind <- function(x) {
+validate_object.MassSpecMethod_SuspectScreening_streamfind <- function(x) {
   checkmate::assert_choice(x$type, "MassSpec")
   checkmate::assert_choice(x$method, "SuspectScreening")
-  checkmate::assert_choice(x$algorithm, "StreamFind")
+  checkmate::assert_choice(x$algorithm, "streamfind")
   checkmate::assert_number(x$parameters$ppm)
   checkmate::assert_number(x$parameters$sec)
   checkmate::assert_number(x$parameters$ppmMS2)
@@ -81,7 +81,7 @@ validate_object.MassSpecMethod_SuspectScreening_StreamFind <- function(x) {
 
 #' @export
 #' @noRd
-run.MassSpecMethod_SuspectScreening_StreamFind <- function(x, engine = NULL) {
+run.MassSpecMethod_SuspectScreening_streamfind <- function(x, engine = NULL) {
   if (!is(engine, "MassSpecEngine")) {
     warning("Engine is not a MassSpecEngine object!")
     return(FALSE)
@@ -211,7 +211,7 @@ MassSpecMethod_SuspectScreening_forident <- function(
       "name" = name
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "forident",
     developer = "Sylvia Grosse, Thomas Letzel",
     contact = "support@for-ident.org",
@@ -418,9 +418,9 @@ run.MassSpecMethod_SuspectScreening_forident <- function(x, engine = NULL) {
 #' @template arg-ms-filtered
 #' @return A `MassSpecMethod_SuspectScreening_patRoon` object.
 #' @references
-#' \insertRef{patroon01}{StreamFind}
+#' \insertRef{patroon01}{streamfind}
 #'
-#' \insertRef{patroon02}{StreamFind}
+#' \insertRef{patroon02}{streamfind}
 #'
 #' @export
 #'
@@ -443,7 +443,7 @@ MassSpecMethod_SuspectScreening_patRoon <- function(
       "filtered" = as.logical(filtered)
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "patRoon",
     developer = "Rick Helmus",
     contact = "r.helmus@uva.nl",

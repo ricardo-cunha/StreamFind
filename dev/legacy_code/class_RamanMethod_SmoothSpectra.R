@@ -16,11 +16,11 @@ RamanMethod_SmoothSpectra_movingaverage <- function(windowSize = 5) {
     algorithm = "movingaverage",
     parameters = list(windowSize = windowSize),
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_
   )
   if (is.null(validate_object(x))) {
@@ -112,7 +112,7 @@ RamanMethod_SmoothSpectra_savgol <- function(fl = 11, forder = 4, dorder = 0) {
       dorder = dorder
     ),
     number_permitted = Inf,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "pracma",
     developer = "Hans W. Borchers",
     contact = NA_character_,

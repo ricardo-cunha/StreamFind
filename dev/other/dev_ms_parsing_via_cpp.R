@@ -2,7 +2,7 @@
 # resources --------------------------------------------------------------------
 
 ## files -----------------------------------------------------------------------
-all_files <- StreamFindData::get_ms_file_paths()
+all_files <- streamfindData::get_ms_file_paths()
 files <- all_files[grepl("mrm", all_files)]
 files <- all_files[1:3]
 files <- all_files[grepl("influent|blank", all_files)]
@@ -25,7 +25,7 @@ system2("C:/qAlgorithms/qAlgorithms.exe",
 
 
 ## databases -------------------------------------------------------------------
-db <- StreamFindData::get_ms_tof_spiked_chemicals()
+db <- streamfindData::get_ms_tof_spiked_chemicals()
 
 db_cols <- c("name", "mass", "rt")
 carbamazepin_d10 <- db[db$name %in% "Carbamazepin-D10", db_cols, with = FALSE]
@@ -81,7 +81,7 @@ cols <- c("name", "formula", "mass", "rt")
 # settings <- list(
 #   Method_find_features_xcms3_centwave(),
 #   Method_group_features_xcms3_peakdensity(),
-#   Method_filter_features_StreamFind(
+#   Method_filter_features_streamfind(
 #     minIntensity = 5000,
 #     minSnRatio = 20,
 #     maxGroupSd = 30,
@@ -89,8 +89,8 @@ cols <- c("name", "formula", "mass", "rt")
 #     minGroupAbundance = 3,
 #     excludeIsotopes = TRUE
 #   ),
-#   Method_load_features_ms1_StreamFind(),
-#   Method_load_features_ms2_StreamFind()
+#   Method_load_features_ms1_streamfind(),
+#   Method_load_features_ms2_streamfind()
 #   
 # )
 
@@ -172,7 +172,7 @@ ms$run_app()
 
 ms$plot_spectra_tic(levels = 1, colorBy = "polarities")
 
-rfiles <- StreamFindData::get_raman_file_paths()
+rfiles <- streamfindData::get_raman_file_paths()
 raman <- RamanEngine$new(files = rfiles)
 raman$save(paste0(getwd(), "/raman.sqlite"))
 raman$run_app()
@@ -376,10 +376,10 @@ ms <- MassSpecData$new(files = all_files[10:21],
   settings = list(
     find = settings_ff,
     group = settings_gf,
-    ms1ft = settingsMethod_load_features_ms1_StreamFind,
-    ms2ft = settingsMethod_load_features_ms2_StreamFind,
-    ms1gp = settingsMethod_load_groups_ms1_StreamFind,
-    ms2gp = settingsMethod_load_groups_ms2_StreamFind
+    ms1ft = settingsMethod_load_features_ms1_streamfind,
+    ms2ft = settingsMethod_load_features_ms2_streamfind,
+    ms1gp = settingsMethod_load_groups_ms1_streamfind,
+    ms2gp = settingsMethod_load_groups_ms2_streamfind
   )
 )
 
@@ -447,7 +447,7 @@ ms$get_number_analyses()
 
 # tests ------------------------------------------------------------------------
 
-all_files <- StreamFindData::get_ms_file_paths()
+all_files <- streamfindData::get_ms_file_paths()
 big_file_test <- "E:\\Dev_20230126_IonMobilityDataFirstTraining\\WorklistData-0001.mzML"
 big_file_test <- "E:\\20230126_DA_EDA_background_evaluation\\221118_DA-EDA_solid phase background_centrifuged\\mzml\\02_QC_pos-r001.mzML"
 big_file_test <- all_files[8]
@@ -521,7 +521,7 @@ unique(ms_chrom$get_chromatograms()$index)
 ms_chrom$has_loaded_chromatograms()
 ms_chrom$load_chromatograms()
 
-all_files <- StreamFindData::get_ms_file_paths()
+all_files <- streamfindData::get_ms_file_paths()
 
 rcpp_parse_spectra(all_files[1], index = c(1, 2))
 rcpp_parse_spectra(all_files[1], index = c(2, 1))

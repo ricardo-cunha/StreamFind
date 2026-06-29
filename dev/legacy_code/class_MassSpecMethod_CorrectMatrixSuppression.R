@@ -112,7 +112,7 @@
 #' @return A `MassSpecMethod_CorrectMatrixSuppression_TiChri` object.
 #'
 #' @references
-#' \insertRef{tisler01}{StreamFind}
+#' \insertRef{tisler01}{streamfind}
 #'
 #' @export
 #'
@@ -142,7 +142,7 @@ MassSpecMethod_CorrectMatrixSuppression_TiChri <- function(
       "istdN" = as.integer(istdN)
     ),
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
+    version = as.character(packageVersion("streamfind")),
     software = "TiChri",
     developer = "Selina Tisler",
     contact = "seti@plen.ku.dk",

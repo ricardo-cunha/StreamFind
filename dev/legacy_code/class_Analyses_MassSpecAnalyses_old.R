@@ -2,7 +2,7 @@
 # MassSpecAnalyses -----
 #' @title Mass Spectrometry Analyses
 #' 
-#' @description The `MassSpecAnalyses` class represents mass spectrometry (MS) raw data files and holds results from processing MS data. It is a subclass of the [StreamFind::Analyses] class and provides methods to manage and inspect MS data. The `MassSpecAnalyses` class is built from a character vector of file paths to MS raw data files. The possible file formats are *mzML* and *mzXML*. If `msconvert` from \href{https://proteowizard.sourceforge.io/}{ProteoWizard} is installed and found via CLI (i.e., must be added to the environmental variables), the engine can also load vendor formats (i.e., Agilent MassHunter .d, Thermo Scientific RAW, Shimadzu LCD (except ITOF), Sciex WIFF/WIFF2) by direct conversion to *mzML*. Note that conversion of vendor formats is only possible under Windows OS.
+#' @description The `MassSpecAnalyses` class represents mass spectrometry (MS) raw data files and holds results from processing MS data. It is a subclass of the [streamfind::Analyses] class and provides methods to manage and inspect MS data. The `MassSpecAnalyses` class is built from a character vector of file paths to MS raw data files. The possible file formats are *mzML* and *mzXML*. If `msconvert` from \href{https://proteowizard.sourceforge.io/}{ProteoWizard} is installed and found via CLI (i.e., must be added to the environmental variables), the engine can also load vendor formats (i.e., Agilent MassHunter .d, Thermo Scientific RAW, Shimadzu LCD (except ITOF), Sciex WIFF/WIFF2) by direct conversion to *mzML*. Note that conversion of vendor formats is only possible under Windows OS.
 #' 
 #' @param files A character vector with the file paths of MS raw data files.
 #' @param centroid Logical (length 1). Set to `TRUE` to centroid data when converting from vendor formats to mzML.
@@ -43,17 +43,17 @@
 #' @slot Chromatograms (getter/setter) A list with the chromatograms results for each analysis.
 #' 
 #' @references
-#' \insertRef{pugixml01}{StreamFind}
+#' \insertRef{pugixml01}{streamfind}
 #' 
-#' \insertRef{proteo01}{StreamFind}
+#' \insertRef{proteo01}{streamfind}
 #' 
-#' \insertRef{proteo02}{StreamFind}
+#' \insertRef{proteo02}{streamfind}
 #' 
 #' @export
 #' 
 MassSpecAnalyses <- S7::new_class(
   name = "MassSpecAnalyses",
-  package = "StreamFind",
+  package = "streamfind",
   parent = Analyses,
   properties = list(
 
@@ -363,7 +363,7 @@ MassSpecAnalyses <- S7::new_class(
     chromatograms_raw = S7::new_property(
       S7::class_list,
       getter = function(self) {
-        StreamFind::Chromatograms(
+        streamfind::Chromatograms(
           lapply(self@analyses, function(x) {
             if (nrow(x$chromatograms) > 0) {
               x$chromatograms
@@ -424,7 +424,7 @@ MassSpecAnalyses <- S7::new_class(
         if (is.null(self@results[["NonTargetAnalysisResults"]])) {
           return(FALSE)
         }
-        if (!is(self@results[["NonTargetAnalysisResults"]], "StreamFind::NonTargetAnalysisResults")) {
+        if (!is(self@results[["NonTargetAnalysisResults"]], "streamfind::NonTargetAnalysisResults")) {
           return(FALSE)
         }
         TRUE
@@ -442,7 +442,7 @@ MassSpecAnalyses <- S7::new_class(
         if (is.null(self@results[["MassSpecSpectra"]])) {
           return(FALSE)
         }
-        if (!is(self@results[["MassSpecSpectra"]], "StreamFind::MassSpecSpectra")) {
+        if (!is(self@results[["MassSpecSpectra"]], "streamfind::MassSpecSpectra")) {
           return(FALSE)
         }
         TRUE
@@ -460,7 +460,7 @@ MassSpecAnalyses <- S7::new_class(
         if (is.null(self@results[["Chromatograms"]])) {
           return(FALSE)
         }
-        if (!is(self@results[["Chromatograms"]], "StreamFind::Chromatograms")) {
+        if (!is(self@results[["Chromatograms"]], "streamfind::Chromatograms")) {
           return(FALSE)
         }
         TRUE
@@ -475,12 +475,12 @@ MassSpecAnalyses <- S7::new_class(
         self@results[["NonTargetAnalysisResults"]]
       },
       setter = function(self, value) {
-        if (is(value, "StreamFind::NonTargetAnalysisResults")) {
+        if (is(value, "streamfind::NonTargetAnalysisResults")) {
           if (value@number_analyses > 0) {
             analyses_names <- unname(names(self))
             value_analyses_names <- sort(value@analyses_info$analysis)
             if (identical(analyses_names, value_analyses_names)) {
-              self@results[[gsub("StreamFind::", "", is(value)[1])]] <- value
+              self@results[[gsub("streamfind::", "", is(value)[1])]] <- value
             } else {
               # TODO check if some analyses are in engine and subset engine to match NonTargetAnalysisResults
               warning("Analysis names do not match! Not done.")
@@ -503,7 +503,7 @@ MassSpecAnalyses <- S7::new_class(
         self@results[["MassSpecSpectra"]]
       },
       setter = function(self, value) {
-        if (is(value, "StreamFind::MassSpecSpectra")) {
+        if (is(value, "streamfind::MassSpecSpectra")) {
           if (!value$is_averaged) {
             analyses_names <- unname(names(self))
             value_analyses_names <- names(value$spectra)
@@ -538,7 +538,7 @@ MassSpecAnalyses <- S7::new_class(
         self@results[["Chromatograms"]]
       },
       setter = function(self, value) {
-        if (is(value, "StreamFind::Chromatograms")) {
+        if (is(value, "streamfind::Chromatograms")) {
           if (!value$is_averaged) {
             analyses_names <- unname(names(self))
             value_analyses_names <- names(value$chromatograms)
@@ -658,7 +658,7 @@ S7::method(remove, MassSpecAnalyses) <- function(x, value) {
 # MARK: `[`
 #' @export
 #' @noRd
-`[.StreamFind::MassSpecAnalyses` <- function(x, i) {
+`[.streamfind::MassSpecAnalyses` <- function(x, i) {
   x@analyses <- x@analyses[i]
   if (x@has_results_nts) x@NonTargetAnalysisResults <- x@NonTargetAnalysisResults[i]
   if (x@has_results_spectra) x@Spectra <- x@Spectra[i]
@@ -669,7 +669,7 @@ S7::method(remove, MassSpecAnalyses) <- function(x, value) {
 # MARK: `[<-`
 #' @export
 #' @noRd
-`[<-.StreamFind::MassSpecAnalyses` <- function(x, i, value) {
+`[<-.streamfind::MassSpecAnalyses` <- function(x, i, value) {
   x <- add(x, value)
   x
 }
@@ -677,7 +677,7 @@ S7::method(remove, MassSpecAnalyses) <- function(x, value) {
 # MARK: `[[`
 #' @export
 #' @noRd
-`[[.StreamFind::MassSpecAnalyses` <- function(x, i) {
+`[[.streamfind::MassSpecAnalyses` <- function(x, i) {
   x@analyses <- x@analyses[i]
   if (x@has_results_nts) x@NonTargetAnalysisResults <- x@NonTargetAnalysisResults[i]
   if (x@has_results_spectra) x@Spectra <- x@Spectra[i]
@@ -688,7 +688,7 @@ S7::method(remove, MassSpecAnalyses) <- function(x, value) {
 # MARK: `[[<-`
 #' @export
 #' @noRd
-`[[<-.StreamFind::MassSpecAnalyses` <- function(x, i, value) {
+`[[<-.streamfind::MassSpecAnalyses` <- function(x, i, value) {
   x <- add(x, value)
   x
 }
@@ -716,7 +716,7 @@ S7::method(read, MassSpecAnalyses) <- function(x, file) {
     }
   } else if (grepl(".rds", file)) {
     res <- readRDS(file)
-    if (is(res, "StreamFind::MassSpecAnalyses")) {
+    if (is(res, "streamfind::MassSpecAnalyses")) {
       return(res)
     }
   }
@@ -1981,7 +1981,7 @@ S7::method(get_raw_chromatograms, MassSpecAnalyses) <- function(x,
       return(data.table::data.table())
     }
 
-    cache <- StreamFind:::.load_cache_sqlite("parsed_ms_chromatograms", z$file, idx)
+    cache <- streamfind:::.load_cache_sqlite("parsed_ms_chromatograms", z$file, idx)
 
     if (!is.null(cache$data)) {
       message("\U2139 Chromatograms loaded from cache!")
@@ -2004,7 +2004,7 @@ S7::method(get_raw_chromatograms, MassSpecAnalyses) <- function(x,
     if (!"replicate" %in% colnames(chrom)) chrom$replicate <- z$replicate
 
     if (!is.null(cache$hash)) {
-      StreamFind:::.save_cache_sqlite("parsed_ms_chromatograms", chrom, cache$hash)
+      streamfind:::.save_cache_sqlite("parsed_ms_chromatograms", chrom, cache$hash)
       message("\U1f5ab Parsed chromatograms cached!")
     }
 
@@ -2083,7 +2083,7 @@ S7::method(load_spectra, MassSpecAnalyses) <- function(x,
 
     spec <- spec[names(x)]
 
-    spec <- StreamFind::MassSpecSpectra(
+    spec <- streamfind::MassSpecSpectra(
       spec,
       replicates = x@replicates,
       is_averaged = FALSE
@@ -2126,7 +2126,7 @@ S7::method(load_chromatograms, MassSpecAnalyses) <- function(x,
     chroms$analysis <- NULL
     chroms$replicate <- NULL
     chroms <- split(chroms, split_vector)
-    chroms <- StreamFind::Chromatograms(
+    chroms <- streamfind::Chromatograms(
       chroms,
       replicates = x@replicates[names(chroms)],
       is_averaged = FALSE
@@ -2380,7 +2380,7 @@ S7::method(plot_matrix_suppression, MassSpecAnalyses) <- function(x,
 
         tryCatch(
           {
-            StreamFind::convert_ms_files(
+            streamfind::convert_ms_files(
               files = files_to_convert,
               outputFormat = "mzML",
               outputPath = NULL,

@@ -1,7 +1,7 @@
 # MARK: ConfigParameter
 # ConfigParameter -----
 #' @title ConfigParameter S3 Class
-#' @description The `ConfigParameter` S3 class represents a configuration parameter in StreamFind. The `ConfigParameter` is a list of at least two elements - `name` and `description`.
+#' @description The `ConfigParameter` S3 class represents a configuration parameter in streamfind. The `ConfigParameter` is a list of at least two elements - `name` and `description`.
 #' @param name Name of the parameter.
 #' @param description Description of the parameter.
 #' @export
@@ -32,9 +32,9 @@ validate_object.ConfigParameter <- function(x) {
 # Config -----
 #' @title Generic Configuration
 #' @description The `Config` S3 class represents a configuration object and is essentially a list of
-#' [StreamFind::ConfigParameter] class objects.
-#' @param parameters A list of [StreamFind::ConfigParameter] objects.
-#' @return A `Config` object as a list of [StreamFind::ConfigParameter] objects.
+#' [streamfind::ConfigParameter] class objects.
+#' @param parameters A list of [streamfind::ConfigParameter] objects.
+#' @return A `Config` object as a list of [streamfind::ConfigParameter] objects.
 #' @export
 #'
 Config <- function(parameters = list()) {
@@ -319,7 +319,7 @@ clear_cache.ConfigCache <- function(x, what = NULL, ...) {
 # MARK: EngineConfig
 ## EngineConfig -----
 #' @title Engine Configuration
-#' @description Class representing the engine configuration, inheriting from [StreamFind::Config].
+#' @description Class representing the engine configuration, inheriting from [streamfind::Config].
 #' @export
 #'
 EngineConfig <- function(parameters = list("ConfigCache" = ConfigCache())) {
@@ -340,7 +340,7 @@ EngineConfig <- function(parameters = list("ConfigCache" = ConfigCache())) {
 #' @title Configuration Parameter for Duration of Notifications
 #'
 #' @description Class representing a configuration for the duration of pop-up notifications in the
-#' app, inhiberiting from [StreamFind::ConfigParameter].
+#' app, inhiberiting from [streamfind::ConfigParameter].
 #'
 #' @param value Duration in seconds for pop-up notifications.
 #'
@@ -379,7 +379,7 @@ validate_object.ConfigDurationNotifications <- function(x) {
 #' @title Configuration Parameter for Extra Root Directories
 #'
 #' @description Class representing a configuration for extra root directories for file selection
-#' in the app, inheriting from [StreamFind::ConfigParameter].
+#' in the app, inheriting from [streamfind::ConfigParameter].
 #'
 #' @param value Character string representing extra root directories for file selection.
 #'
@@ -414,7 +414,7 @@ validate_object.ConfigExtraRoots <- function(x) {
 # MARK: AppConfig
 ## AppConfig -----
 #' @title App Configuration
-#' @description Class representing the app configuration, inheriting from [StreamFind::Config].
+#' @description Class representing the app configuration, inheriting from [streamfind::Config].
 #' @export
 #'
 AppConfig <- function() {

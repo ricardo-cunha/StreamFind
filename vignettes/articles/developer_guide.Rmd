@@ -18,7 +18,7 @@ knitr::opts_chunk$set(
 
 # Overview
 
-This article summarizes the current StreamFind package architecture after the
+This article summarizes the current streamfind package architecture after the
 transition from legacy analysis containers to persistent project classes. The
 main design goal is that the R API, the native C++ backend, and the Shiny app
 all operate on the same DuckDB-backed project state.
@@ -142,13 +142,13 @@ When adding or changing functionality, keep these layers aligned:
 # Minimal example: inspect the project registry
 
 ```{r}
-StreamFind::projects_overview()
+streamfind::projects_overview()
 ```
 
 # Minimal example: inspect available NTA methods
 
 ```{r}
-nta_methods <- StreamFind::projects_overview("ProjectNonTargetAnalysis")$processing_methods
+nta_methods <- streamfind::projects_overview("ProjectNonTargetAnalysis")$processing_methods
 head(nta_methods)
 ```
 

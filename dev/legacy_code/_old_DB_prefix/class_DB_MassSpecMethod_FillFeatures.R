@@ -1,5 +1,5 @@
 #' @title DB_MassSpecMethod_FillFeatures_native class
-#' @description Native StreamFind method for filling missing features across samples by identifying gaps in feature groups and performing recursive integration.
+#' @description Native streamfind method for filling missing features across samples by identifying gaps in feature groups and performing recursive integration.
 #' @param withinReplicate Logical. If TRUE, fills features only within replicates. Default: FALSE.
 #' @param filtered Logical. If TRUE, considers filtered features for gap filling. Default: FALSE.
 #' @param rtExpand Numeric. Retention time window expansion in seconds for EIC extraction. Default: 10.
@@ -36,11 +36,11 @@ DB_MassSpecMethod_FillFeatures_native <- function(
     input_class = "DB_MassSpecResults_NonTargetAnalysis",
     output_class = "DB_MassSpecResults_NonTargetAnalysis",
     number_permitted = 1,
-    version = as.character(packageVersion("StreamFind")),
-    software = "StreamFind",
+    version = as.character(packageVersion("streamfind")),
+    software = "streamfind",
     developer = "Ricardo Cunha",
     contact = "cunha@iuta.de",
-    link = "https://odea-project.github.io/StreamFind",
+    link = "https://odea-project.github.io/streamfind",
     doi = NA_character_,
     parameters = list(
       withinReplicate = as.logical(withinReplicate),

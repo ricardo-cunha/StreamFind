@@ -8,8 +8,8 @@ format:
       margin-width: 300px
       gutter-width: 1.5rem
     other-links:
-      - text: StreamFind
-        href: https://odea-project.github.io/StreamFind/
+      - text: streamfind
+        href: https://odea-project.github.io/streamfind/
         icon: github
     html-math-method: katex
     theme: journal
@@ -32,7 +32,7 @@ params:
 
 ```{r}
 #| include: false
-engine <- StreamFind::DB_MassSpecEngine$new(params$projectPath)
+engine <- streamfind::DB_MassSpecEngine$new(params$projectPath)
 ```
 
 ```{r}
@@ -50,7 +50,7 @@ quarto::write_yaml_metadata_block(
 ```{r}
 #| label: analyses-table
 
-StreamFind::info(engine$Analyses) |> DT::datatable(filter = "top", extensions = "Buttons")
+streamfind::info(engine$Analyses) |> DT::datatable(filter = "top", extensions = "Buttons")
 ```
 
 # Workflow
@@ -58,7 +58,7 @@ StreamFind::info(engine$Analyses) |> DT::datatable(filter = "top", extensions = 
 ```{r}
 #| label: workflow-display
 
-StreamFind::show(engine$Workflow)
+streamfind::show(engine$Workflow)
 ```
 
 # Quality Control

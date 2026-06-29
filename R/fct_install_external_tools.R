@@ -1,4 +1,4 @@
-# ── StreamFind External Tools ─────────────────────────────────────────────────
+# ── streamfind External Tools ─────────────────────────────────────────────────
 # Helper functions and user-facing API for managing external software (Java,
 # Boost, RDKit, LPSolve, MetFrag, CFM-ID, vcpkg) in ~/.streamfind/external/
 
@@ -53,12 +53,12 @@
 }
 
 .msg <- function(...) {
-  message("[StreamFind External Tools]  ", ...)
+  message("[streamfind External Tools]  ", ...)
 }
 
 # ── exported getters ─────────────────────────────────────────────────────────
 
-#' Path to the StreamFind home directory
+#' Path to the streamfind home directory
 #'
 #' Returns (and creates if needed) \code{~/.streamfind/}.
 #' @return The normalized path to \code{~/.streamfind/}.
@@ -283,8 +283,8 @@ check_external_tools <- function(verbose = TRUE) {
     ok <- isTRUE(condition)
     result[name] <<- ok
     if (verbose) {
-      if (ok) message("[StreamFind External Tools]  ", label, " found at: ", found_at)
-      else message("[StreamFind External Tools]  ", label, " not found.")
+      if (ok) message("[streamfind External Tools]  ", label, " found at: ", found_at)
+      else message("[streamfind External Tools]  ", label, " not found.")
     }
   }
 
@@ -793,7 +793,7 @@ install_miniforge <- function(quiet = TRUE) {
     .msg("Downloading Miniforge (~75 MB) ...")
     ok <- .download(url, tmp, quiet = quiet)
     if (!ok) { unlink(tmp); .msg("Failed to download Miniforge."); return(invisible(FALSE)) }
-    .msg("Installing Miniforge to default location (will move to StreamFind dir) ...")
+    .msg("Installing Miniforge to default location (will move to streamfind dir) ...")
     # Install to default location since NSIS /D= has inconsistent support
     status <- system(sprintf('"%s" /S /InstallationType=JustMe /RegisterPython=0', tmp),
                      ignore.stdout = quiet, ignore.stderr = quiet)

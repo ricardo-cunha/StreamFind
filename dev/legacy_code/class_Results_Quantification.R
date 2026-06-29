@@ -2,7 +2,7 @@
 #' @noRd
 Quantification <- S7::new_class(
   name = "Quantification",
-  package = "StreamFind",
+  package = "streamfind",
   parent = S7::new_S3_class("Results"),
   
   properties = list(
@@ -15,8 +15,8 @@ Quantification <- S7::new_class(
     S7::new_object(
       Results(), 
       name = "Quantification",
-      software = "StreamFind",
-      version = as.character(packageVersion("StreamFind")),
+      software = "streamfind",
+      version = as.character(packageVersion("streamfind")),
       compounds = compounds,
       models = models,
       quantities = quantities
@@ -25,7 +25,7 @@ Quantification <- S7::new_class(
   
   validator = function(self) {
     checkmate::assert_true(self@name == "Quantification")
-    checkmate::assert_true(self@software == "StreamFind")
+    checkmate::assert_true(self@software == "streamfind")
     checkmate::assert_character(self@compounds)
     checkmate::assert_list(self@models)
     checkmate::assert_list(self@quantities)

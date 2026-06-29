@@ -5,16 +5,16 @@ files <- list.files(path = path, pattern = ".d$|.mzML$", full.names = TRUE)
 
 # Quantification
 
-# ms <- StreamFind::MassSpecEngine$new(analyses = files, centroid = TRUE, levels = 1)
+# ms <- streamfind::MassSpecEngine$new(analyses = files, centroid = TRUE, levels = 1)
 # ms$analyses$blanks <- rep("Blank", length(ms$analyses))
-# run(MassSpecMethod_LoadChromatograms_StreamFind(chromatograms = "DAD1 A: Sig=214,4  Ref=off", rtmin = 250, rtmax = 400), engine = ms)
+# run(MassSpecMethod_LoadChromatograms_streamfind(chromatograms = "DAD1 A: Sig=214,4  Ref=off", rtmin = 250, rtmax = 400), engine = ms)
 # run(MassSpecMethod_SmoothChromatograms_movingaverage(windowSize = 3), engine = ms)
 # run(MassSpecMethod_CorrectChromatogramsBaseline_baseline_als(lambda = 5, p = 0.05, maxit = 10), engine = ms)
 # 
 # ms$plot_chromatograms_baseline(colorBy = "analyses+targets")
 # 
 # run(
-#   MassSpecMethod_IntegrateChromatograms_StreamFind(
+#   MassSpecMethod_IntegrateChromatograms_streamfind(
 #     merge = TRUE,
 #     closeByThreshold = 5,
 #     minPeakHeight = 10,
@@ -26,7 +26,7 @@ files <- list.files(path = path, pattern = ".d$|.mzML$", full.names = TRUE)
 #   engine = ms
 # )
 # 
-# run(MassSpecMethod_QuantifyChromatographicPeaks_StreamFind(), engine = ms)
+# run(MassSpecMethod_QuantifyChromatographicPeaks_streamfind(), engine = ms)
 # 
 # ms$plot_chromatograms_peaks(colorBy = "analyses+targets")
 # 
@@ -35,7 +35,7 @@ files <- list.files(path = path, pattern = ".d$|.mzML$", full.names = TRUE)
 
 # Identification
 
-ms2 <- StreamFind::MassSpecEngine$new(analyses = files[grepl("67_BVCZ|QC_BVCZ", files)], centroid = FALSE, levels = 1)
+ms2 <- streamfind::MassSpecEngine$new(analyses = files[grepl("67_BVCZ|QC_BVCZ", files)], centroid = FALSE, levels = 1)
 
 # ms2$plot_spectra_tic(downsize = 3)
 
@@ -58,7 +58,7 @@ ms2 <- StreamFind::MassSpecEngine$new(analyses = files[grepl("67_BVCZ|QC_BVCZ", 
 # )
 
 run(
-  MassSpecMethod_LoadSpectra_StreamFind(
+  MassSpecMethod_LoadSpectra_streamfind(
     mzmin = 2500, #2500,
     mzmax = 3700, #3700,
     rtmin = 346,
@@ -69,7 +69,7 @@ run(
 )
 
 run(
-  MassSpecMethod_ClusterSpectra_StreamFind(
+  MassSpecMethod_ClusterSpectra_streamfind(
     val = "mz",
     clustVal = 0.001,
     presence = 0.1
@@ -80,7 +80,7 @@ run(
 # #ms2$plot_spectra()
 
 run(
-  MassSpecMethod_CalculateSpectraCharges_StreamFind(
+  MassSpecMethod_CalculateSpectraCharges_streamfind(
     roundVal = 15,
     relLowCut = 0.2,
     absLowCut = 8000
@@ -90,7 +90,7 @@ run(
 
 #ms2$plot_spectra_charges()
 
-run(MassSpecMethod_DeconvoluteSpectra_StreamFind(clustVal = 0.001, window = 25),engine = ms2)
+run(MassSpecMethod_DeconvoluteSpectra_streamfind(clustVal = 0.001, window = 25),engine = ms2)
  
 run(
   MassSpecMethod_SmoothSpectra_movingaverage(
@@ -100,7 +100,7 @@ run(
 )
 
 run(
-  MassSpecMethod_FindSpectraMaxima_StreamFind(
+  MassSpecMethod_FindSpectraMaxima_streamfind(
     minWidth = 3,
     maxWidth = 45,
     minHeight = 10000
@@ -129,7 +129,7 @@ run(
 # ms2$plot_spectra()
 
 run(
-  MassSpecMethod_IntegrateSpectra_StreamFind(
+  MassSpecMethod_IntegrateSpectra_streamfind(
     merge = TRUE,
     closeByThreshold = 5,
     minPeakHeight = 4000,
@@ -149,7 +149,7 @@ run(
 
 # 
 # run(
-#   MassSpecMethod_CalculateSpectraCharges_StreamFind(
+#   MassSpecMethod_CalculateSpectraCharges_streamfind(
 #     roundVal = 15,
 #     relLowCut = 0.2,
 #     absLowCut = 8000

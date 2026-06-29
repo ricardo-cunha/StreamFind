@@ -44,7 +44,7 @@
 MassSpecMethod_LoadMSPeakLists_patRoon <- S7::new_class(
   name = "MassSpecMethod_LoadMSPeakLists_patRoon",
   parent = S7::new_S3_class("ProcessingStep"),
-  package = "StreamFind",
+  package = "streamfind",
   
   constructor = function(maxMSRtWindow = 5,
                          precursorMzWindow = 4,
@@ -74,7 +74,7 @@ MassSpecMethod_LoadMSPeakLists_patRoon <- S7::new_class(
           retainPrecursorMSMS = retainPrecursorMSMS
         ),
         number_permitted = 1,
-        version = as.character(packageVersion("StreamFind")),
+        version = as.character(packageVersion("streamfind")),
         software = "patRoon",
         developer = "Rick Helmus",
         contact = "r.helmus@uva.nl",
@@ -161,7 +161,7 @@ S7::method(run, MassSpecMethod_LoadMSPeakLists_patRoon) <- function(x, engine = 
   TRUE
 }
 
-#' MassSpecMethod_LoadMSPeakLists_StreamFind S7 class
+#' MassSpecMethod_LoadMSPeakLists_streamfind S7 class
 #'
 #' @description Settings for converting loaded MS2 and MS1 spectra into a `MSPeakLists` object from
 #' patRoon.
@@ -188,14 +188,14 @@ S7::method(run, MassSpecMethod_LoadMSPeakLists_patRoon) <- function(x, engine = 
 #' The latter method may reduces processing time and memory requirements,
 #' at the potential cost of reduced accuracy.
 #'
-#' @return A `MassSpecMethod_LoadMSPeakLists_StreamFind` object.
+#' @return A `MassSpecMethod_LoadMSPeakLists_streamfind` object.
 #'
 #' @export
 #'
-MassSpecMethod_LoadMSPeakLists_StreamFind <- S7::new_class(
-  name = "MassSpecMethod_LoadMSPeakLists_StreamFind",
+MassSpecMethod_LoadMSPeakLists_streamfind <- S7::new_class(
+  name = "MassSpecMethod_LoadMSPeakLists_streamfind",
   parent = S7::new_S3_class("ProcessingStep"),
-  package = "StreamFind",
+  package = "streamfind",
   
   constructor = function(clusterMzWindow = 0.005,
                          topMost = 100,
@@ -209,7 +209,7 @@ MassSpecMethod_LoadMSPeakLists_StreamFind <- S7::new_class(
         dataType = "MassSpec",
         method = "LoadMSPeakLists",
         required = c("FindFeatures", "GroupFeatures", "LoadFeaturesMS1", "LoadFeaturesMS2"),
-        algorithm = "StreamFind",
+        algorithm = "streamfind",
         parameters = list(
           clusterMzWindow = clusterMzWindow,
           topMost = topMost,
@@ -219,11 +219,11 @@ MassSpecMethod_LoadMSPeakLists_StreamFind <- S7::new_class(
           method = method
         ),
         number_permitted = 1,
-        version = as.character(packageVersion("StreamFind")),
-        software = "StreamFind",
+        version = as.character(packageVersion("streamfind")),
+        software = "streamfind",
         developer = "Ricardo Cunha",
         contact = "cunha@iuta.de",
-        link = "https://odea-project.github.io/StreamFind",
+        link = "https://odea-project.github.io/streamfind",
         doi = NA_character_
       )
     )
@@ -232,7 +232,7 @@ MassSpecMethod_LoadMSPeakLists_StreamFind <- S7::new_class(
   validator = function(self) {
     checkmate::assert_choice(self@dataType, "MassSpec")
     checkmate::assert_choice(self@method, "LoadMSPeakLists")
-    checkmate::assert_choice(self@algorithm, "StreamFind")
+    checkmate::assert_choice(self@algorithm, "streamfind")
     checkmate::assert_numeric(self@parameters$clusterMzWindow, len = 1)
     checkmate::assert_numeric(self@parameters$topMost, len = 1)
     checkmate::assert_numeric(self@parameters$minIntensityPre, len = 1)
@@ -245,7 +245,7 @@ MassSpecMethod_LoadMSPeakLists_StreamFind <- S7::new_class(
 
 #' @export
 #' @noRd
-S7::method(run, MassSpecMethod_LoadMSPeakLists_StreamFind) <- function(x, engine = NULL) {
+S7::method(run, MassSpecMethod_LoadMSPeakLists_streamfind) <- function(x, engine = NULL) {
   
   if (!is(engine, "MassSpecEngine")) {
     warning("Engine is not a MassSpecEngine object!")

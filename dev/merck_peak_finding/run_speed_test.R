@@ -2,7 +2,7 @@
 # This script runs the speed test and saves results to CSV files
 
 library(data.table)
-library(StreamFind)
+library(streamfind)
 
 # Speed test function
 run_speed_test <- function(ps, algorithm_name, iterations = 3, engine) {
@@ -77,7 +77,7 @@ cat("=== Speed Test Results ===\n")
 cat("Starting speed tests...\n")
 
 # Run speed tests
-results_native <- run_speed_test(ps_ff_sf, "Native (StreamFind)", iterations = 1, engine = engine)
+results_native <- run_speed_test(ps_ff_sf, "Native (streamfind)", iterations = 1, engine = engine)
 results_openms <- run_speed_test(ps_ff_openms, "OpenMS", iterations = 1, engine = engine)
 results_xcms <- run_speed_test(ps_ff_xcms, "XCMS3 CentWave", iterations = 1, engine = engine)
 
@@ -107,7 +107,7 @@ cat("\n=== Intensity Distribution Statistics ===\n")
 print(intensity_summary)
 
 # Save results to CSV files
-output_dir <- "C:\\Users\\apoli\\Documents\\github\\StreamFind\\dev\\merck_peak_finding"
+output_dir <- "C:\\Users\\apoli\\Documents\\github\\streamfind\\dev\\merck_peak_finding"
 
 cat("\nSaving results to CSV files...\n")
 fwrite(all_results, file.path(output_dir, "speed_test_all_results.csv"))

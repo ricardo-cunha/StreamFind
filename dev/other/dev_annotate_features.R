@@ -8,7 +8,7 @@ ex_files <- list.files(
   full.names = TRUE
 )
 
-db <- StreamFindData::get_ms_tof_spiked_chemicals()
+db <- streamfindData::get_ms_tof_spiked_chemicals()
 db_cols <- c("name", "formula", "mass", "rt")
 db <- db[, db_cols, with = FALSE]
 
@@ -84,7 +84,7 @@ orb_ffs_2 <- ProcessingStep(
 
 afs <- get_default_ProcessingStep(
   call = "annotate_features",
-  algorithm = "StreamFind"
+  algorithm = "streamfind"
 )
 
 afs$parameters$maxCharge <- 1
@@ -231,7 +231,7 @@ plotisotopes(pattern)
 # fig <- fig %>% plotly::add_trace(y = ~i4, name = 'M+4', mode = 'lines')
 #
 # fig <- fig %>% plotly::layout(
-#   title = "StreamFind annotate_features method",
+#   title = "streamfind annotate_features method",
 #   xaxis = list(title = "Number of <sup>13</sup>C"),
 #   yaxis = list(title = "Relative abundance"))
 #

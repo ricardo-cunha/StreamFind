@@ -19,9 +19,9 @@ knitr::opts_chunk$set(
 # Goal
 
 This article shows a complete non-target screening workflow built with the
-current StreamFind project framework. The example uses
+current streamfind project framework. The example uses
 `ProjectNonTargetAnalysis`, stores project state in DuckDB, and relies on demo
-mass-spectrometry files distributed through `StreamFindData`.
+mass-spectrometry files distributed through `streamfindData`.
 
 Compared with the legacy engine-based examples, the recommended pattern is now:
 
@@ -33,22 +33,22 @@ Compared with the legacy engine-based examples, the recommended pattern is now:
 
 # Requirements
 
-The examples below assume that `StreamFindData` is installed in addition to
-`StreamFind`.
+The examples below assume that `streamfindData` is installed in addition to
+`streamfind`.
 
 ```{r, eval = FALSE}
-install.packages("StreamFindData")
+install.packages("streamfindData")
 ```
 
 The workflow in this article uses the wastewater TOF demo files and the
 reference table of spiked chemicals with MS2 information shipped by
-`StreamFindData`.
+`streamfindData`.
 
 # Load packages
 
 ```{r, eval = FALSE}
-library(StreamFind)
-library(StreamFindData)
+library(streamfind)
+library(streamfindData)
 library(data.table)
 library(plotly)
 ```
@@ -59,7 +59,7 @@ First, collect the demo mzML files. Here the example keeps the wastewater
 analyses used in the development workflow.
 
 ```{r, eval = FALSE}
-ms_files <- StreamFindData::get_ms_file_paths()
+ms_files <- streamfindData::get_ms_file_paths()
 ms_files <- ms_files[grepl("ww_", ms_files)]
 
 ms_files
@@ -70,7 +70,7 @@ and general suspects. The exact columns used by the NTA methods are kept small
 on purpose.
 
 ```{r, eval = FALSE}
-reference_db <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+reference_db <- streamfindData::get_ms_tof_spiked_chemicals_with_ms2()
 
 reference_db <- data.table::as.data.table(reference_db)[
   ,
@@ -82,7 +82,7 @@ suspects <- reference_db[!grepl("IS", tag)]
 ```
 
 If you want to include MetFrag or transformation-product assignment, prepare
-their input tables separately. StreamFind also provides template exporters for
+their input tables separately. streamfind also provides template exporters for
 these reference tables.
 
 # Create the project
@@ -503,9 +503,9 @@ nta$run_app()
 
 # Summary
 
-This demo illustrates the full project-based NTS pattern in StreamFind:
+This demo illustrates the full project-based NTS pattern in streamfind:
 
-1. Use `StreamFindData` to get example files and reference tables.
+1. Use `streamfindData` to get example files and reference tables.
 2. Open a `ProjectNonTargetAnalysis` backed by DuckDB.
 3. Store replicate and blank metadata in the project.
 4. Build a workflow from `Method_NonTargetAnalysis_*()` steps.

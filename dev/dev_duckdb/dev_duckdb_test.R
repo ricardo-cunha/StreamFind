@@ -1,4 +1,4 @@
-db <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+db <- streamfindData::get_ms_tof_spiked_chemicals_with_ms2()
 db <- db[, c("name", "formula", "mass", "rt", "fragments", "tag"), with = FALSE]
 dbis <- db[grepl("IS", db$tag), ]
 dbsus <- db[!grepl("IS", db$tag), ]
@@ -16,7 +16,7 @@ dbsus <- db[!grepl("IS", db$tag), ]
 # MARK: EngineDB tests
 # EngineDB tests -----
 
-# Path to the StreamFind data folder (.sf). EngineDB will create/use main.duckdb inside it.
+# Path to the streamfind data folder (.sf). EngineDB will create/use main.duckdb inside it.
 sf_root <- file.path("dev", "dev_duckdb", "data")
 file.remove(list.files(sf_root, full.names = TRUE))
 fs::dir_delete(sf_root)
@@ -35,7 +35,7 @@ engine$Workflow
 # MassSpecAnalysesDB tests -----
 
 # sf_root <- file.path("dev", "dev_duckdb", "demo.sf")
-# ms_files <- StreamFindData::get_ms_file_paths()[1:3]
+# ms_files <- streamfindData::get_ms_file_paths()[1:3]
 # ms_db_path <- file.path(sf_root, "MassSpecAnalyses.duckdb")
 # ms_db_obj <- MassSpecAnalysesDB(db = ms_db_path, files = ms_files)
 # get_analysis_names(ms_db_obj)

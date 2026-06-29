@@ -12,11 +12,11 @@ MassSpecMethod_SmoothChromatograms_movingaverage <- function(windowSize = 5L) {
     input_class = "MassSpecResults_Chromatograms",
     output_class = "MassSpecResults_Chromatograms",
     number_permitted = 1,
-    version     = as.character(packageVersion("StreamFind")),
-    software    = "StreamFind",
+    version     = as.character(packageVersion("streamfind")),
+    software    = "streamfind",
     developer   = "Ricardo Cunha",
     contact     = "cunha@iuta.de",
-    link        = "https://odea-project.github.io/StreamFind",
+    link        = "https://odea-project.github.io/streamfind",
     doi         = NA_character_,
     parameters  = list(windowSize = as.integer(windowSize))
   )
@@ -65,11 +65,11 @@ MassSpecMethod_SmoothChromatograms_savgol <- function(fl = 11L, forder = 4L, dor
     input_class = "MassSpecResults_Chromatograms",
     output_class = "MassSpecResults_Chromatograms",
     number_permitted = 1,
-    version     = as.character(packageVersion("StreamFind")),
-    software    = "StreamFind",
+    version     = as.character(packageVersion("streamfind")),
+    software    = "streamfind",
     developer   = "Ricardo Cunha",
     contact     = "cunha@iuta.de",
-    link        = "https://odea-project.github.io/StreamFind",
+    link        = "https://odea-project.github.io/streamfind",
     doi         = NA_character_,
     parameters  = list(fl = as.integer(fl), forder = as.integer(forder), dorder = as.integer(dorder))
   )

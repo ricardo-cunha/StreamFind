@@ -238,7 +238,7 @@ plot_chromatograms.DB_MassSpecResults_Chromatograms <- function(
   interactive = TRUE,
   renderEngine = "webgl"
 ) {
-  chroms <- StreamFind::get_chromatograms(
+  chroms <- streamfind::get_chromatograms(
     x,
     analyses,
     chromatograms,

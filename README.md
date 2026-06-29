@@ -1,15 +1,14 @@
-
-<!-- README.md is generated from README.Rmd. Please edit that file -->
-
 <!-- badges: start -->
 
 [![Lifecycle:
 experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
 <!-- badges: end -->
 
-<img src="man/figures/readme_logos.png" alt="Logo" width="100%" style="display: block; margin: auto;" />
+<p align="center">
+  <img src="inst/app/www/streamfind.png" width="70%" />
+</p>
 
-StreamFind is a DuckDB-backed workflow framework for analytical data
+streamfind is a DuckDB-backed workflow framework for analytical data
 processing in R. The current package architecture is built around
 persistent `Project` child classes that hold data, workflow metadata,
 cached results, and audit state in one place.
@@ -28,7 +27,7 @@ of the same project state.
 
 ## Installation
 
-StreamFind requires R and a working C++17 toolchain. On Windows this
+streamfind requires R and a working C++17 toolchain. On Windows this
 generally means installing
 [RTools](https://cran.r-project.org/bin/windows/Rtools/). Some optional
 methods depend on external software such as Java, MetFrag, Python-based
@@ -41,18 +40,17 @@ options(timeout = 600)
 if (!requireNamespace("remotes", quietly = TRUE)) {
   install.packages("remotes")
 }
-remotes::install_github("odea-project/StreamFind")
+remotes::install_github("odea-project/streamfind")
 ```
 
-Supplementary example data and assets are available in the companion
-package
-[StreamFindData](https://github.com/odea-project/StreamFindData):
+Supplementary example data and assets are available in the companion package
+[streamfind.data](https://github.com/odea-project/streamfind.data):
 
 ``` r
 if (!requireNamespace("remotes", quietly = TRUE)) {
   install.packages("remotes")
 }
-remotes::install_github("odea-project/StreamFindData")
+remotes::install_github("odea-project/streamfind.data")
 ```
 
 ## Python / CogniFlow package
@@ -71,11 +69,11 @@ as a step package discovered through the framework contracts/runtime
 layer rather than as a standalone end-user Python API.
 
 It is exposed to Cogniflow through the `cogniflow.steps` entry-point
-mechanism and provides the StreamFind native step implementations
+mechanism and provides the streamfind native step implementations
 consumed by Cogniflow pipelines.
 
 The package builds the Cogniflow native step library from the
-shared StreamFind C++ core under `src/core/` and the CogniFlow adapter
+shared streamfind C++ core under `src/core/` and the CogniFlow adapter
 under `python/cf_streamfind/cpp/`.
 
 ## Framework overview
@@ -92,7 +90,7 @@ The typical workflow is:
 Example for non-target analysis:
 
 ``` r
-library(StreamFind)
+library(streamfind)
 
 nta <- open_ProjectNonTargetAnalysis(
   db = "streamfind.duckdb",
@@ -118,7 +116,7 @@ plot_features_count(nta)
 ## Non-target analysis
 
 `ProjectNonTargetAnalysis` is the most feature-rich project class
-currently exposed in StreamFind. It supports native workflow methods
+currently exposed in streamfind. It supports native workflow methods
 for:
 
 - feature finding
@@ -150,7 +148,7 @@ state without leaving the package data model.
 
 ## Docker container
 
-A Docker image is provided that bundles StreamFind, its R dependencies,
+A Docker image is provided that bundles streamfind, its R dependencies,
 code-server (VS Code in the browser), SSH access, and pre-installed
 external tools (Java, MetFrag). The app listens on port `3838`,
 code-server on `8080`, and SSH on `22`.
@@ -203,14 +201,14 @@ diagnostics.
 ### Custom mount roots
 
 By default the app scans `/host` for subdirectories. If you mount your
-data at different paths, set `STREAMFIND_HOST_ROOTS` to a
+data at different paths, set `streamfind_HOST_ROOTS` to a
 colon-separated list of directories:
 
 ``` bash
 docker run -d --name streamfind \
   -v /home/data:/workspace/my_data:rw \
   -v /mnt/archive:/archive/prod:ro \
-  -e STREAMFIND_HOST_ROOTS="/workspace:/archive" \
+  -e streamfind_HOST_ROOTS="/workspace:/archive" \
   -p 3838:3838 \
   streamfind
 ```
@@ -249,7 +247,7 @@ volume.
 docker logs streamfind -f
 
 # Run a one-off R command inside the container
-docker exec streamfind R -e 'library(StreamFind); rcpp_openbabel_structure_svg("CCO")'
+docker exec streamfind R -e 'library(streamfind); rcpp_openbabel_structure_svg("CCO")'
 
 # Open a shell
 docker exec -it streamfind bash
@@ -264,13 +262,13 @@ docker stop streamfind; docker rm streamfind
 |----------------|--------------|---------------------------------|
 | `SSH_PASSWORD`         | `streamfind`                 | SSH password for streamfind                  |
 | `CS_PASSWORD`          | `streamfind`                 | code-server web UI password                  |
-| `STREAMFIND_WORKSPACE` | `/host`                      | code-server workspace root (first subfolder is the IDE start dir) |
-| `STREAMFIND_HOST_ROOTS` | `/host`                     | Colon-separated list of directories to scan for user-mounted volumes |
+| `streamfind_WORKSPACE` | `/host`                      | code-server workspace root (first subfolder is the IDE start dir) |
+| `streamfind_HOST_ROOTS` | `/host`                     | Colon-separated list of directories to scan for user-mounted volumes |
 
 ## External dependencies
 
 Some workflows depend on third-party tools that are not bundled with
-StreamFind. For example:
+streamfind. For example:
 
 - MetFrag screening requires a MetFrag CL installation and Java
 - some chemistry features depend on `rcdk` and `rJava`
@@ -282,12 +280,12 @@ Method-level documentation describes these requirements where relevant.
 
 Reference documentation and articles are published at:
 
-- <https://odea-project.github.io/StreamFind/>
-- <https://odea-project.github.io/StreamFind/reference/index.html>
+- <https://odea-project.github.io/streamfind/>
+- <https://odea-project.github.io/streamfind/reference/index.html>
 
 ## Project background
 
-StreamFind is developed within the project “Flexible data analysis and
+streamfind is developed within the project “Flexible data analysis and
 workflow designer to identify chemicals in the water cycle” with
 contributions centred at IUTA and partner organisations. The package is
 under active development and the project-class framework is the primary

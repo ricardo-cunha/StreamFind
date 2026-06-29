@@ -1,11 +1,11 @@
 
-library(StreamFind)
+library(streamfind)
 #library(testthat)
 
 ### example files -------------------------------------------------------------
 
 # trimmed files
-all_fls <- StreamFindData::get_ms_file_paths()
+all_fls <- streamfindData::get_ms_file_paths()
 fls <- all_fls[10:21] #27
 fls <- fls[grepl("pos", fls)]
 files <- fls

@@ -147,7 +147,7 @@ merck2_db_ex <- rbindlist(lapply(merck2_ex, function(x) x$db))
 #   files_merck_ex_centroid[1:2]
 # )
 
-# db_all <- StreamFindData::get_ms_tof_spiked_chemicals()
+# db_all <- streamfindData::get_ms_tof_spiked_chemicals()
 # db_all <- db_all[grepl("S", db_all$tag), ]
 # cols <- c("name", "formula", "mass", "rt", "tag")
 # db_is <- db_all[db_all$tag %in% "IS", ]
@@ -161,7 +161,7 @@ merck2_db_ex <- rbindlist(lapply(merck2_ex, function(x) x$db))
 # db_with_mz <- data.table::copy(db)
 # db_with_mz$mz <- db_with_mz$mass + 1.007276
 # db_with_mz$mass <- NULL
-# db_with_ms2 <- StreamFindData::get_ms_tof_spiked_chemicals_with_ms2()
+# db_with_ms2 <- streamfindData::get_ms_tof_spiked_chemicals_with_ms2()
 # db_with_ms2 <- db_with_ms2[db_with_ms2$tag %in% "S", ]
 # db_with_ms2 <- db_with_ms2[, c("name", "formula", "mass", "SMILES", "rt", "polarity", "fragments"), with = FALSE]
 # db_with_ms2$polarity[db_with_ms2$polarity == 1] <- "positive"

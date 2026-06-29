@@ -2,7 +2,7 @@
 #' @noRd
 DataFrame <- S7::new_class(
   name = "DataFrame",
-  package = "StreamFind",
+  package = "streamfind",
   parent = S7::new_S3_class("Results"),
   properties = list(
     data = S7::new_property(S7::class_data.frame, default = data.frame())
@@ -14,15 +14,15 @@ DataFrame <- S7::new_class(
     S7::new_object(
       Results(),
       name = "DataFrame",
-      software = "StreamFind",
-      version = as.character(packageVersion("StreamFind")),
+      software = "streamfind",
+      version = as.character(packageVersion("streamfind")),
       data = as.data.frame(dt)
     )
   },
   
   validator = function(self) {
     checkmate::assert_true(self@name == "DataFrame")
-    checkmate::assert_true(self@software == "StreamFind")
+    checkmate::assert_true(self@software == "streamfind")
     checkmate::assert_data_frame(self@data)
     NULL
   }

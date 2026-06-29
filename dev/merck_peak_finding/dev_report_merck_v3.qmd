@@ -1,6 +1,6 @@
 ---
 title: "Report Peak Finding Merck V3"
-subtitle: "Integration in StreamFind and Structural Based Screening"
+subtitle: "Integration in streamfind and Structural Based Screening"
 author: "Ricardo Cunha"
 date: "`r format(Sys.time(), '%d %B, %Y')`"
 toc: true
@@ -12,8 +12,8 @@ format:
       margin-width: 300px
       gutter-width: 1.5rem
     other-links:
-      - text: StreamFind
-        href: https://odea-project.github.io/StreamFind/
+      - text: streamfind
+        href: https://odea-project.github.io/streamfind/
         icon: github
     html-math-method: katex
     theme: journal
@@ -63,7 +63,7 @@ library(DT)
 library(magrittr)
 library(ggplot2)
 library(plotly)
-library(StreamFind)
+library(streamfind)
 
 # devtools::load_all()
 
@@ -84,7 +84,7 @@ dir.create(project_dir, recursive = TRUE, showWarnings = FALSE)
 source(resources_file)
 ```
 
-# Integration in StreamFind
+# Integration in streamfind
 
 ## Project Setup
 

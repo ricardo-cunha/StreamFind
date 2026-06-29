@@ -1,4 +1,4 @@
-#' @title Generic DuckDB Methods for DB-backed StreamFind Objects
+#' @title Generic DuckDB Methods for DB-backed streamfind Objects
 #' @description Helper S3 methods for running SQL and retrieving tables/info for any object with a `$db` DuckDB field. Intended for use with objects like `Cache`, `Engine`, or ad-hoc lists with a DuckDB file reference.
 #' @details These methods work with *any* S3 object containing a valid `db` field (filename to a DuckDB file). They are exported and can be used directly on such objects.
 #' @section Table of Contents:
