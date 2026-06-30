@@ -49,3 +49,9 @@ src/core/external/openbabel/build/windows
 python/cf_streamfind/bin/*.dll
 python/cf_streamfind/bin/*.so
 python/cf_streamfind/bin/*.dylib
+
+# Windows-only runtime artifacts should not be copied into Linux Docker builds,
+# otherwise they overwrite the compiled package shared library during install.
+inst/libs/
+inst/libs/**
+

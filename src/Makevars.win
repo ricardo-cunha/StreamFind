@@ -1,15 +1,21 @@
 # Compile package sources with C++17 and OpenMP support.
 CXX_STD = CXX17
-PYTHON ?= python
-OPENBABEL_RELEASE_ARTIFACT_ONLY ?= 1
+.DEFAULT_GOAL := all
 
 OPENBABEL_ROOT = core/external/openbabel/openbabel-3-2-0
+OPENBABEL_DATA_ROOT = core/external/openbabel/openbabel-3-2-0/data
+
+OB_CXX_DEFINES = -DHAVE_ISFINITE=1 -D__USE_MINGW_ANSI_STDIO=1 -Dstreamfind_OPENBABEL_BUILD_DLL
+OB_C_DEFINES = -DHAVE_ISFINITE=1 -D__USE_MINGW_ANSI_STDIO=1
+
+include core/external/openbabel/Makevars.openbabel
+
 OPENBABEL_BUILD_ROOT = core/external/openbabel/build/windows
-OPENBABEL_STAMP = $(OPENBABEL_BUILD_ROOT)/.stamp
+OPENBABEL_RUNTIME_DLL = ../inst/libs/openbabel_streamfind.dll
 
 PKG_CPPFLAGS += -Icore -Icore/asm -Icore/external -Icore/json -Icore/mass_spec -Icore/nta -Icore/project
 PKG_CPPFLAGS += -Icore/external/simdutf -Icore/external/nlohmann -Icore/external/json-schema-validator/src -Icore/external/pugixml-1.14/src
-PKG_CPPFLAGS += -I$(OPENBABEL_ROOT)/include -I$(OPENBABEL_ROOT)/include/inchi -I$(OPENBABEL_ROOT)/src -I$(OPENBABEL_ROOT)/data -I$(OPENBABEL_ROOT)/src/formats/libinchi -DTARGET_API_LIB
+PKG_CPPFLAGS += -I$(OPENBABEL_ROOT)/include -I$(OPENBABEL_ROOT)/include/inchi -I$(OPENBABEL_ROOT)/src -I$(OPENBABEL_DATA_ROOT) -I$(OPENBABEL_ROOT)/src/formats/libinchi -DTARGET_API_LIB
 
 SOURCES = RcppExports.cpp
 SOURCES += $(filter-out RcppExports.cpp, $(wildcard *.cpp))
@@ -27,37 +33,46 @@ SOURCES := $(filter-out core/external/simdutf/simdutf.cpp core/external/simdutf/
 
 OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
 
-# Vendored runtime DLLs copied alongside streamfind.dll so they are found at
-# load time (LoadLibrary / implicit import resolution) after installation.
-.PHONY: copy_vendor_dlls
-copy_vendor_dlls: $(SHLIB)
+$(OPENBABEL_RUNTIME_DLL): $(OB_CXX_OBJECTS) $(OB_C_OBJECTS)
+	@mkdir -p "$(dir $@)"
+	$(CXX17) $(CXX17STD) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(CXX17FLAGS) -shared -o $@.tmp $^ -lz $(SHLIB_OPENMP_CXXFLAGS)
+	@mv -f $@.tmp $@
+	cp "core/external/duckdb/lib/windows-x64/duckdb.dll" "$(dir $@)"
+
+.PHONY: prepare_inst_resources
+prepare_inst_resources: $(OPENBABEL_RUNTIME_DLL)
+	@mkdir -p "../inst/extdata/openbabel"
+	@rm -rf "../inst/extdata/openbabel/data"
+	@cp -R "$(OPENBABEL_DATA_ROOT)" "../inst/extdata/openbabel/data"
+
+# During R CMD INSTALL (R_PACKAGE_DIR is set) also copy to the final destination.
+.PHONY: copy_installed_dlls
+copy_installed_dlls: $(SHLIB)
 	@if [ -n "$(R_PACKAGE_DIR)" ]; then \
 		dest="$(R_PACKAGE_DIR)/libs$(R_ARCH)"; \
 		mkdir -p "$$dest"; \
-		if [ -f "$(OPENBABEL_BUILD_ROOT)/bin/openbabel_streamfind.dll" ]; then \
-			cp "$(OPENBABEL_BUILD_ROOT)/bin/openbabel_streamfind.dll" "$$dest/"; \
-		fi; \
-		if [ -f "core/external/duckdb/windows/duckdb.dll" ]; then \
-			cp "core/external/duckdb/windows/duckdb.dll" "$$dest/"; \
-		fi; \
+		cp "$(OPENBABEL_RUNTIME_DLL)" "$$dest/"; \
+		cp "../inst/libs/duckdb.dll" "$$dest/"; \
 	fi
 
-all: $(SHLIB) copy_vendor_dlls
+# Only clean build artifacts during R CMD INSTALL; leave them for development.
+.PHONY: cleanup_openbabel_build
+cleanup_openbabel_build:
+	@if [ -n "$(R_PACKAGE_DIR)" ]; then \
+		rm -rf "core/external/openbabel/build"; \
+	fi
 
-$(OBJECTS): $(OPENBABEL_STAMP)
+all: prepare_inst_resources $(SHLIB) copy_installed_dlls cleanup_openbabel_build
 
-%.o: %.cpp $(OPENBABEL_STAMP)
+$(SHLIB): $(OPENBABEL_RUNTIME_DLL)
+
+%.o: %.cpp
 	@mkdir -p "$(dir $@)"
 	$(CXX17) $(CXX17STD) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(CXX17FLAGS) $(CXX17PICFLAGS) -c $< -o $@
-
-FORCE:
-
-$(OPENBABEL_STAMP): FORCE ../tools/build_openbabel.py ../tools/openbabel_sources/openbabel_cpp.txt ../tools/openbabel_sources/inchi_c.txt ../src/core/external/openbabel/inchi-iupac-1.07.5/src/ichilnct.c
-	"$(PYTHON)" ../tools/build_openbabel.py --repo-root .. --platform windows --cc "$(CC)" --cxx "$(CXX17)" --ar "$(AR)" --cflag=-D__USE_MINGW_ANSI_STDIO=1 --cflag=-O2 --cflag=-w --cxxflag="$(CXX17STD)" --cxxflag=-D__USE_MINGW_ANSI_STDIO=1 --cxxflag=-O2 --cxxflag=-w $(if $(filter 1 TRUE true yes YES,$(OPENBABEL_RELEASE_ARTIFACT_ONLY)),--release-artifact-only,)
 
 PKG_CXXFLAGS += $(SHLIB_OPENMP_CXXFLAGS) -D__USE_MINGW_ANSI_STDIO
 PKG_LIBS += $(SHLIB_OPENMP_CXXFLAGS) -lz
 
 # Link against the vendored DuckDB build.
-PKG_CPPFLAGS += -Icore/external/duckdb/windows/
-PKG_LIBS += -Lcore/external/duckdb/windows/ -lduckdb
+PKG_CPPFLAGS += -Icore/external/duckdb/include
+PKG_LIBS += -Lcore/external/duckdb/lib/windows-x64/ -lduckdb

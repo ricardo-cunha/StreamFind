@@ -36,7 +36,10 @@ as.Method(value)
 
 \item{doi}{Reference DOI.}
 
-\item{parameters}{Named list of parameter default values.}
+\item{parameters}{Named list of parameter default values. Parameter values
+must be \code{character}, \code{numeric}, \code{integer}, \code{logical}, or \code{data.table}
+objects. Named lists are only accepted as containers for nested parameter
+groups when every nested value also matches one of those types.}
 
 \item{value}{A list representation of a method metadata object.}
 }

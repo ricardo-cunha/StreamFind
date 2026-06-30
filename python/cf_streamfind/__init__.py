@@ -1,3 +1,7 @@
 """Generated CogniFlow step package (cf.streamfind)."""
 
-__all__ = ["steps"]
+from .external_tools import check_external_tools, configure_bundled_runtime
+
+configure_bundled_runtime()
+
+__all__ = ["steps", "check_external_tools", "configure_bundled_runtime"]

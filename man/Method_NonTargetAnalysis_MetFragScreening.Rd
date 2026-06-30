@@ -5,7 +5,6 @@
 \title{Method_NonTargetAnalysis_MetFragScreening}
 \usage{
 Method_NonTargetAnalysis_MetFragScreening(
-  metfrag_path = "",
   database_type = "PubChem",
   database_path = "",
   analyses = character(),
@@ -22,20 +21,15 @@ Method_NonTargetAnalysis_MetFragScreening(
   number_threads = 1L,
   use_smiles = TRUE,
   filtered = FALSE,
-  java_path = "java",
   run_dir = "",
-  debug = FALSE,
-  extra_params = list()
+  debug = FALSE
 )
 }
 \arguments{
-\item{metfrag_path}{Character(1) path to the MetFrag executable or JAR.}
-
 \item{database_type}{Character(1) MetFrag candidate-source type. Supported
 options are \code{"KEGG"}, \code{"PubChem"}, \code{"ExtendedPubChem"},
-\code{"ChemSpiderRest"}, \code{"LocalSDF"}, \code{"LocalPSV"}, and \code{"LocalCSV"}.
-Local database types require \code{database_path}; \code{"ChemSpiderRest"} also
-requires a \code{ChemSpiderToken} entry in \code{extra_params}.}
+\code{"LocalSDF"}, \code{"LocalPSV"}, and \code{"LocalCSV"}.
+Local database types require \code{database_path}.}
 
 \item{database_path}{Character(1) path to the local database file used by
 \code{"LocalSDF"}, \code{"LocalPSV"}, or \code{"LocalCSV"}.}
@@ -81,8 +75,7 @@ Official options include \code{"UnconnectedCompoundFilter"},
 Some of these require additional MetFrag settings, for example
 \code{FilterMinimumElements}, \code{FilterMaximumElements},
 \code{FilterSmartsInclusionList}, \code{FilterSmartsExclusionList},
-\code{FilterIncludedElements}, or \code{FilterExcludedElements}, which can be passed
-via \code{extra_params}.}
+\code{FilterIncludedElements}, or \code{FilterExcludedElements}.}
 
 \item{post_processing_candidate_filter}{Character vector of MetFrag
 post-processing candidate filters applied after fragmentation and scoring.
@@ -101,15 +94,11 @@ structures using SMILES instead of InChI.}
 \item{filtered}{Logical(1) whether to include filtered features in the
 search.}
 
-\item{java_path}{Character(1) path to the Java executable.}
-
 \item{run_dir}{Character(1) output directory for MetFrag run files. When
 empty, a timestamped directory under \verb{./log/metfrag/} is created
 automatically, for example \verb{./log/metfrag/run_20260527_153045/}.}
 
 \item{debug}{Logical(1) whether to keep debug output.}
-
-\item{extra_params}{Named list of additional MetFrag parameters.}
 }
 \value{
 A \code{Method} object of class \code{Method_NonTargetAnalysis_MetFragScreening}.

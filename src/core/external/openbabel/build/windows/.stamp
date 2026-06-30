@@ -1,5 +1,0 @@
-{
-  "platform": "windows",
-  "release_artifact_only": true,
-  "openbabel_runtime": "src\\core\\external\\openbabel\\build\\windows\\bin\\openbabel_streamfind.dll"
-}

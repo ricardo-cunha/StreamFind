@@ -18,6 +18,8 @@ pak::pkg_install("odea-project/streamfind@dev_filesystem", upgrade = FALSE, depe
 
 pak::pkg_install("ricardo-cunha/streamfind@dev_1.0", upgrade = FALSE, dependencies = TRUE)
 
+pak::pkg_install("ricardo-cunha/streamfind.data", upgrade = FALSE, dependencies = TRUE)
+
 pak::pkg_install(".")
 
 

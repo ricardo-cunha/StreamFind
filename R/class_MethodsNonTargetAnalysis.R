@@ -36,7 +36,6 @@
   "KEGG",
   "PubChem",
   "ExtendedPubChem",
-  "ChemSpiderRest",
   "LocalSDF",
   "LocalPSV",
   "LocalCSV"
@@ -1598,12 +1597,10 @@ run.Method_NonTargetAnalysis_FilterFeaturesMS2 <- function(x, proj, ...) {
 #'   data to MetFrag, queries the selected candidate database, and ranks
 #'   structure hypotheses using in silico fragmentation, extending simple
 #'   suspect matching with fragment-informed annotation.
-#' @param metfrag_path Character(1) path to the MetFrag executable or JAR.
 #' @param database_type Character(1) MetFrag candidate-source type. Supported
 #'   options are `"KEGG"`, `"PubChem"`, `"ExtendedPubChem"`,
-#'   `"ChemSpiderRest"`, `"LocalSDF"`, `"LocalPSV"`, and `"LocalCSV"`.
-#'   Local database types require `database_path`; `"ChemSpiderRest"` also
-#'   requires a `ChemSpiderToken` entry in `extra_params`.
+#'   `"LocalSDF"`, `"LocalPSV"`, and `"LocalCSV"`.
+#'   Local database types require `database_path`.
 #' @param database_path Character(1) path to the local database file used by
 #'   `"LocalSDF"`, `"LocalPSV"`, or `"LocalCSV"`.
 #' @param analyses Optional character vector restricting screening to selected
@@ -1639,8 +1636,7 @@ run.Method_NonTargetAnalysis_FilterFeaturesMS2 <- function(x, proj, ...) {
 #'   Some of these require additional MetFrag settings, for example
 #'   `FilterMinimumElements`, `FilterMaximumElements`,
 #'   `FilterSmartsInclusionList`, `FilterSmartsExclusionList`,
-#'   `FilterIncludedElements`, or `FilterExcludedElements`, which can be passed
-#'   via `extra_params`.
+#'   `FilterIncludedElements`, or `FilterExcludedElements`.
 #' @param post_processing_candidate_filter Character vector of MetFrag
 #'   post-processing candidate filters applied after fragmentation and scoring.
 #'   The official documented option is `"InChIKeyFilter"`, which collapses
@@ -1653,16 +1649,13 @@ run.Method_NonTargetAnalysis_FilterFeaturesMS2 <- function(x, proj, ...) {
 #'   structures using SMILES instead of InChI.
 #' @param filtered Logical(1) whether to include filtered features in the
 #'   search.
-#' @param java_path Character(1) path to the Java executable.
 #' @param run_dir Character(1) output directory for MetFrag run files. When
 #'   empty, a timestamped directory under `./log/metfrag/` is created
 #'   automatically, for example `./log/metfrag/run_20260527_153045/`.
 #' @param debug Logical(1) whether to keep debug output.
-#' @param extra_params Named list of additional MetFrag parameters.
 #' @return A `Method` object of class `Method_NonTargetAnalysis_MetFragScreening`.
 #' @export
 Method_NonTargetAnalysis_MetFragScreening <- function(
-    metfrag_path = "",
     database_type = "PubChem",
     database_path = "",
     analyses = character(),
@@ -1679,10 +1672,8 @@ Method_NonTargetAnalysis_MetFragScreening <- function(
     number_threads = 1L,
     use_smiles = TRUE,
     filtered = FALSE,
-    java_path = "java",
     run_dir = "",
-    debug = FALSE,
-    extra_params = list()) {
+    debug = FALSE) {
   database_type <- .normalize_metfrag_database_type(database_type)
   x <- Method(
     method = "MetFragScreening",
@@ -1694,7 +1685,6 @@ Method_NonTargetAnalysis_MetFragScreening <- function(
     link = "https://ipb-halle.github.io/MetFrag/projects/metfragcl/",
     doi = "https://doi.org/10.1186/s13321-016-0115-9",
     parameters = list(
-      metfrag_path = as.character(metfrag_path),
       database_type = as.character(database_type),
       database_path = as.character(database_path),
       analyses = as.character(analyses),
@@ -1711,10 +1701,8 @@ Method_NonTargetAnalysis_MetFragScreening <- function(
       number_threads = as.integer(number_threads),
       use_smiles = as.logical(use_smiles),
       filtered = as.logical(filtered),
-      java_path = as.character(java_path),
       run_dir = as.character(run_dir),
-      debug = as.logical(debug),
-      extra_params = extra_params
+      debug = as.logical(debug)
     )
   )
   validate_object(x)
@@ -1729,7 +1717,6 @@ validate_object.Method_NonTargetAnalysis_MetFragScreening <- function(x, ...) {
   checkmate::assert_choice(x$method, "MetFragScreening")
   checkmate::assert_choice(x$owner_class, "ProjectNonTargetAnalysis")
   checkmate::assert_true(identical(x$number_permitted, Inf))
-  checkmate::assert_character(x$parameters$metfrag_path, len = 1, any.missing = FALSE)
   checkmate::assert_choice(x$parameters$database_type, .metfrag_database_types)
   checkmate::assert_character(x$parameters$database_path, len = 1, any.missing = FALSE)
   checkmate::assert_character(x$parameters$analyses, any.missing = FALSE)
@@ -1747,10 +1734,8 @@ validate_object.Method_NonTargetAnalysis_MetFragScreening <- function(x, ...) {
   checkmate::assert_integerish(x$parameters$number_threads, len = 1, lower = 1)
   checkmate::assert_logical(x$parameters$use_smiles, len = 1)
   checkmate::assert_logical(x$parameters$filtered, len = 1)
-  checkmate::assert_character(x$parameters$java_path, len = 1, any.missing = FALSE)
   checkmate::assert_character(x$parameters$run_dir, len = 1, any.missing = FALSE)
   checkmate::assert_logical(x$parameters$debug, len = 1)
-  checkmate::assert_list(x$parameters$extra_params, names = "named")
   if (x$parameters$database_type %in% c("LocalSDF", "LocalPSV", "LocalCSV")) {
     if (!nzchar(x$parameters$database_path)) {
       stop(
@@ -1768,16 +1753,6 @@ validate_object.Method_NonTargetAnalysis_MetFragScreening <- function(x, ...) {
       )
     }
   }
-  if (identical(x$parameters$database_type, "ChemSpiderRest")) {
-    has_token <- "ChemSpiderToken" %in% names(x$parameters$extra_params) &&
-      nzchar(as.character(x$parameters$extra_params[["ChemSpiderToken"]]))
-    if (!has_token) {
-      stop(
-        "`database_type = \"ChemSpiderRest\"` requires `extra_params[['ChemSpiderToken']]`.",
-        call. = FALSE
-      )
-    }
-  }
   invisible(NULL)
 }
 
@@ -1788,23 +1763,23 @@ run.Method_NonTargetAnalysis_MetFragScreening <- function(x, proj, ...) {
   validate_object(x)
   checkmate::assert_class(proj, "ProjectNonTargetAnalysis")
   p <- x$parameters
-  if (!nzchar(p$metfrag_path)) {
-    stop("`metfrag_path` is empty. Provide the path to MetFragCL.jar ",
-         "(or a native MetFragCL executable).", call. = FALSE)
+  metfrag_path <- get_metfrag_path()
+  if (is.na(metfrag_path)) {
+    stop(
+      "MetFrag CL was not found. Run `install_external_tools()` or `install_metfrag()` first.",
+      call. = FALSE
+    )
   }
-  if (!file.exists(p$metfrag_path)) {
-    stop("MetFrag executable not found at 'metfrag_path': ",
-         p$metfrag_path, call. = FALSE)
-  }
-  is_jar <- grepl("\\.jar$", tolower(p$metfrag_path))
-  if (is_jar && !nzchar(p$java_path)) {
-    stop("`metfrag_path` points to a .jar file but `java_path` is empty. ",
-         "Set java_path to 'java' (system PATH) or the full path to java.exe.",
-         call. = FALSE)
+  java_path <- get_java_path()
+  if (is.na(java_path)) {
+    stop(
+      "Java was not found. Run `install_external_tools()` or `install_java()` first.",
+      call. = FALSE
+    )
   }
   success <- rcpp_project_nta_metfrag_screening(
     nta_xptr = proj$get_nts_ptr(),
-    metfrag_path = as.character(p$metfrag_path),
+    metfrag_path = as.character(metfrag_path),
     database_type = as.character(p$database_type),
     database_path = as.character(p$database_path),
     analyses = as.character(p$analyses),
@@ -1821,9 +1796,9 @@ run.Method_NonTargetAnalysis_MetFragScreening <- function(x, proj, ...) {
     number_threads = as.integer(p$number_threads),
     use_smiles = isTRUE(p$use_smiles),
     filtered = isTRUE(p$filtered),
-    java_path = as.character(p$java_path),
+    java_path = as.character(java_path),
     run_dir = as.character(p$run_dir),
-    extra_params = p$extra_params
+    extra_params = NULL
   )
   .run_nta_method(success, proj, "MetFrag screening did not complete successfully.")
 }

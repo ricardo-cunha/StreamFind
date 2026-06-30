@@ -1,46 +1,61 @@
 # Compile package sources with C++17 and OpenMP support.
 CXX_STD = CXX17
-PYTHON ?= python3
-OPENBABEL_RELEASE_ARTIFACT_ONLY ?= 1
+.DEFAULT_GOAL := all
 
 OPENBABEL_ROOT = core/external/openbabel/openbabel-3-2-0
+OPENBABEL_DATA_ROOT = core/external/openbabel/openbabel-3-2-0/data
+
+include core/external/openbabel/Makevars.openbabel
+
 OPENBABEL_BUILD_ROOT = core/external/openbabel/build/linux
-OPENBABEL_STAMP = $(OPENBABEL_BUILD_ROOT)/.stamp
 OPENBABEL_OPEN_LIB = $(OPENBABEL_BUILD_ROOT)/lib/libopenbabel_streamfind.a
 OPENBABEL_INCHI_LIB = $(OPENBABEL_BUILD_ROOT)/lib/libinchi_streamfind.a
 
 PKG_CPPFLAGS += -Icore -Icore/asm -Icore/external -Icore/json -Icore/mass_spec -Icore/nta -Icore/project
 PKG_CPPFLAGS += -Icore/external/simdutf -Icore/external/nlohmann -Icore/external/json-schema-validator/src -Icore/external/pugixml-1.14/src
-PKG_CPPFLAGS += -I$(OPENBABEL_ROOT)/include -I$(OPENBABEL_ROOT)/include/inchi -I$(OPENBABEL_ROOT)/src -I$(OPENBABEL_ROOT)/data -I$(OPENBABEL_ROOT)/src/formats/libinchi -DTARGET_API_LIB
+PKG_CPPFLAGS += -I$(OPENBABEL_ROOT)/include -I$(OPENBABEL_ROOT)/include/inchi -I$(OPENBABEL_ROOT)/src -I$(OPENBABEL_DATA_ROOT) -I$(OPENBABEL_ROOT)/src/formats/libinchi -DTARGET_API_LIB
 
-SOURCES = RcppExports.cpp
-SOURCES += $(filter-out RcppExports.cpp, $(wildcard *.cpp))
-SOURCES += core/external/simdutf_wrapper.cpp
-SOURCES += core/external/openbabel_adapter.cpp
-SOURCES += $(wildcard core/external/json-schema-validator/src/*.cpp)
-SOURCES += $(wildcard core/json/*.cpp)
-SOURCES += $(wildcard core/asm/*.cpp)
-SOURCES += $(wildcard core/project/*.cpp)
-SOURCES += $(wildcard core/nta/*.cpp)
-SOURCES += $(wildcard core/mass_spec/*.cpp)
+override SOURCES = RcppExports.cpp
+override SOURCES += $(filter-out RcppExports.cpp, $(wildcard *.cpp))
+override SOURCES += core/external/simdutf_wrapper.cpp
+override SOURCES += core/external/openbabel_adapter.cpp
+override SOURCES += $(wildcard core/external/json-schema-validator/src/*.cpp)
+override SOURCES += $(wildcard core/json/*.cpp)
+override SOURCES += $(wildcard core/asm/*.cpp)
+override SOURCES += $(wildcard core/project/*.cpp)
+override SOURCES += $(wildcard core/nta/*.cpp)
+override SOURCES += $(wildcard core/mass_spec/*.cpp)
 
 # Keep simdutf compiled through the wrapper rather than as raw source files.
-SOURCES := $(filter-out core/external/simdutf/simdutf.cpp core/external/simdutf/amalgamation_demo.cpp, $(SOURCES))
+override SOURCES := $(filter-out core/external/simdutf/simdutf.cpp core/external/simdutf/amalgamation_demo.cpp, $(SOURCES))
 
-OBJECTS = $(patsubst %.cpp,%.o,$(SOURCES))
+override OBJECTS := $(patsubst %.cpp,%.o,$(SOURCES))
 
-all: $(SHLIB)
-
-$(OBJECTS): $(OPENBABEL_STAMP)
-
-%.o: %.cpp $(OPENBABEL_STAMP)
+$(OPENBABEL_OPEN_LIB): $(OB_CXX_OBJECTS)
 	@mkdir -p "$(dir $@)"
-	$(CXX17) $(CXX17STD) $(ALL_CPPFLAGS) $(ALL_CXXFLAGS) $(CXX17FLAGS) $(CXX17PICFLAGS) -c $< -o $@
+	$(AR) rcs $@ $^
 
-FORCE:
+$(OPENBABEL_INCHI_LIB): $(OB_C_OBJECTS)
+	@mkdir -p "$(dir $@)"
+	$(AR) rcs $@ $^
 
-$(OPENBABEL_STAMP): FORCE ../tools/build_openbabel.py ../tools/openbabel_sources/openbabel_cpp.txt ../tools/openbabel_sources/inchi_c.txt ../src/core/external/openbabel/inchi-iupac-1.07.5/src/ichilnct.c
-	"$(PYTHON)" ../tools/build_openbabel.py --repo-root .. --platform linux --cc "$(CC)" --cxx "$(CXX17)" --ar "$(AR)" --cflag="$(CPICFLAGS)" --cflag=-O2 --cflag=-w --cxxflag="$(CXX17STD)" --cxxflag="$(CPICFLAGS)" --cxxflag=-O2 --cxxflag=-w $(if $(filter 1 TRUE true yes YES,$(OPENBABEL_RELEASE_ARTIFACT_ONLY)),--release-artifact-only,)
+.PHONY: prepare_inst_resources
+prepare_inst_resources: $(OPENBABEL_OPEN_LIB) $(OPENBABEL_INCHI_LIB)
+	@mkdir -p "../inst/extdata/openbabel"
+	@rm -rf "../inst/extdata/openbabel/data"
+	@cp -R "$(OPENBABEL_DATA_ROOT)" "../inst/extdata/openbabel/data"
+
+.PHONY: cleanup_openbabel_build
+cleanup_openbabel_build:
+	@if [ -n "$(R_PACKAGE_DIR)" ]; then \
+		rm -rf "core/external/openbabel/build"; \
+	fi
+
+# Let R's standard shlib.mk keep ownership of the actual .so link command.
+# We only add the vendored OpenBabel/InChI archives as extra prerequisites.
+$(SHLIB): $(OPENBABEL_OPEN_LIB) $(OPENBABEL_INCHI_LIB)
+
+all: prepare_inst_resources $(SHLIB) cleanup_openbabel_build
 
 PKG_CXXFLAGS += $(SHLIB_OPENMP_CXXFLAGS)
 PKG_LIBS += $(SHLIB_OPENMP_CXXFLAGS)
@@ -52,5 +67,5 @@ PKG_LIBS += -Wl,--whole-archive $(OPENBABEL_OPEN_LIB) -Wl,--no-whole-archive
 PKG_LIBS += $(OPENBABEL_INCHI_LIB) -lz
 
 # Link against the vendored DuckDB build.
-PKG_CPPFLAGS += -Icore/external/duckdb/linux/
-PKG_LIBS += -Lcore/external/duckdb/linux/ -lduckdb
+PKG_CPPFLAGS += -Icore/external/duckdb/include
+PKG_LIBS += core/external/duckdb/lib/linux-x64/libduckdb_static.a

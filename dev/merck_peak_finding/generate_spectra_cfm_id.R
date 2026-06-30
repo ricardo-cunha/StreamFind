@@ -1,7 +1,7 @@
 #' Predict CFM-ID fragmentation spectra for a SMILES
 #'
 #' Runs \code{cfm-predict} inside the Docker-based CFM-ID installation
-#' (\code{\link{install_cfmid_docker}}) and returns both the predicted
+#' (\code{\link{install_cfm_id_docker}}) and returns both the predicted
 #' spectra and the fragment structures (as SMILES).
 #'
 #' @param smiles A SMILES string for the molecule of interest.

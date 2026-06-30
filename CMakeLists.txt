@@ -14,11 +14,144 @@ endif()
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+include(${CMAKE_CURRENT_SOURCE_DIR}/src/core/cmake/ExternalDependencies.cmake)
+streamfind_configure_duckdb(${CMAKE_CURRENT_SOURCE_DIR})
+
 # -----------------------------------------------------------------------------
 # Locate CogniFlow contract headers
 # -----------------------------------------------------------------------------
-include(${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake/cf_contracts_include.cmake)
-include(${CMAKE_CURRENT_SOURCE_DIR}/tools/cmake/streamfind_openbabel.cmake)
+if(NOT DEFINED Python3_EXECUTABLE OR Python3_EXECUTABLE STREQUAL "")
+  find_package(Python3 REQUIRED COMPONENTS Interpreter)
+endif()
+
+if(NOT DEFINED CF_CONTRACTS_INCLUDE OR CF_CONTRACTS_INCLUDE STREQUAL "")
+  execute_process(
+    COMMAND ${Python3_EXECUTABLE} -c "import cf_package_contracts as c; p = getattr(c, 'cf_contracts_include_path', lambda: '')(); print(p if p else '')"
+    OUTPUT_VARIABLE _CF_PY_INCLUDE
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+    ERROR_QUIET
+  )
+  if(NOT _CF_PY_INCLUDE STREQUAL "" AND EXISTS "${_CF_PY_INCLUDE}/cf_step_abi.h")
+    set(CF_CONTRACTS_INCLUDE "${_CF_PY_INCLUDE}")
+  endif()
+endif()
+
+if(NOT DEFINED CF_CONTRACTS_INCLUDE OR CF_CONTRACTS_INCLUDE STREQUAL "")
+  message(FATAL_ERROR "cf_package_contracts include path not found. Install cf-package-contracts.")
+endif()
+
+if(NOT EXISTS "${CF_CONTRACTS_INCLUDE}/cf_step_abi.h")
+  message(FATAL_ERROR "cf_step_abi.h not found in '${CF_CONTRACTS_INCLUDE}'")
+endif()
+
+function(streamfind_enable_openbabel target repo_root)
+  set(_sf_ob_root "${repo_root}/src/core/external/openbabel/openbabel-3-2-0")
+  set(_sf_ob_data "${_sf_ob_root}/data")
+  set(_sf_manifests "${repo_root}/src/core/external/openbabel/build_manifest")
+  set(_sf_inchi_upstream "${repo_root}/src/core/external/openbabel/inchi-iupac-1.07.5")
+  set(_sf_inchi_base "${repo_root}/src/core/external/openbabel/INCHI_BASE")
+
+  set(_sf_ob_includes
+    ${_sf_ob_root}/include
+    ${_sf_ob_root}/include/inchi
+    ${_sf_ob_root}/src
+    ${_sf_ob_data}
+    ${_sf_ob_root}/src/formats/libinchi
+    ${_sf_inchi_upstream}/src
+    ${_sf_inchi_base}/src
+  )
+
+  file(STRINGS "${_sf_manifests}/openbabel_cpp.txt" _sf_ob_cpp_entries)
+  foreach(_sf_entry ${_sf_ob_cpp_entries})
+    list(APPEND _sf_ob_cpp_sources ${repo_root}/${_sf_entry})
+  endforeach()
+  list(APPEND _sf_ob_cpp_sources ${repo_root}/src/core/external/openbabel/openbabel_c_api.cpp)
+
+  file(STRINGS "${_sf_manifests}/inchi_c.txt" _sf_ob_c_entries)
+  foreach(_sf_entry ${_sf_ob_c_entries})
+    if(_sf_entry MATCHES "\\*")
+      file(GLOB _sf_globbed ${repo_root}/${_sf_entry})
+      list(APPEND _sf_ob_c_sources ${_sf_globbed})
+    else()
+      list(APPEND _sf_ob_c_sources ${repo_root}/${_sf_entry})
+    endif()
+  endforeach()
+
+  set(_sf_ob_c_flags -w -O2)
+  set(_sf_ob_cxx_flags -w -O2 -std=c++17)
+  if(WIN32)
+    list(APPEND _sf_ob_c_flags -DHAVE_ISFINITE=1 -D__USE_MINGW_ANSI_STDIO=1)
+    list(APPEND _sf_ob_cxx_flags -DHAVE_ISFINITE=1 -D__USE_MINGW_ANSI_STDIO=1)
+  else()
+    list(APPEND _sf_ob_c_flags -fPIC)
+    list(APPEND _sf_ob_cxx_flags -fPIC)
+  endif()
+
+  if(WIN32)
+    add_library(streamfind_openbabel SHARED ${_sf_ob_cpp_sources} ${_sf_ob_c_sources})
+    target_compile_definitions(streamfind_openbabel PRIVATE
+      streamfind_OPENBABEL_BUILD_DLL
+      TARGET_API_LIB
+    )
+    set_target_properties(streamfind_openbabel PROPERTIES
+      OUTPUT_NAME openbabel_streamfind
+      CXX_STANDARD 17
+      CXX_STANDARD_REQUIRED ON
+    )
+    target_compile_options(streamfind_openbabel PRIVATE
+      $<$<COMPILE_LANGUAGE:CXX>:${_sf_ob_cxx_flags}>
+      $<$<COMPILE_LANGUAGE:C>:${_sf_ob_c_flags}>
+    )
+    target_include_directories(streamfind_openbabel PRIVATE ${_sf_ob_includes})
+
+    add_custom_command(TARGET streamfind_openbabel POST_BUILD
+      COMMAND ${CMAKE_COMMAND} -E make_directory $<TARGET_FILE_DIR:${target}>
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:streamfind_openbabel>
+        $<TARGET_FILE_DIR:${target}>
+      COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_FILE:streamfind_openbabel>
+        ${repo_root}/python/cf_streamfind/libs/openbabel_streamfind.dll
+      COMMAND ${CMAKE_COMMAND} -E copy_directory
+        ${_sf_ob_data}
+        ${repo_root}/python/cf_streamfind/resources/openbabel/data
+    )
+
+    target_include_directories(${target} PRIVATE ${_sf_ob_includes})
+    target_include_directories(${target} PRIVATE ${repo_root}/src/core/external/openbabel)
+    add_dependencies(${target} streamfind_openbabel)
+  else()
+    add_library(streamfind_openbabel STATIC ${_sf_ob_cpp_sources})
+    add_library(streamfind_inchi STATIC ${_sf_ob_c_sources})
+
+    set_target_properties(streamfind_openbabel PROPERTIES
+      CXX_STANDARD 17
+      CXX_STANDARD_REQUIRED ON
+      POSITION_INDEPENDENT_CODE ON
+    )
+    set_target_properties(streamfind_inchi PROPERTIES
+      POSITION_INDEPENDENT_CODE ON
+    )
+    target_compile_definitions(streamfind_openbabel PRIVATE TARGET_API_LIB)
+    target_compile_definitions(streamfind_inchi PRIVATE TARGET_API_LIB)
+    target_compile_options(streamfind_openbabel PRIVATE
+      $<$<COMPILE_LANGUAGE:CXX>:${_sf_ob_cxx_flags}>
+    )
+    target_compile_options(streamfind_inchi PRIVATE ${_sf_ob_c_flags})
+    target_include_directories(streamfind_openbabel PRIVATE ${_sf_ob_includes})
+    target_include_directories(streamfind_inchi PRIVATE ${_sf_ob_includes})
+
+    target_link_libraries(${target} PRIVATE
+      -Wl,--whole-archive
+      $<TARGET_FILE:streamfind_openbabel>
+      -Wl,--no-whole-archive
+      streamfind_inchi
+    )
+    target_include_directories(${target} PRIVATE ${_sf_ob_includes})
+    target_include_directories(${target} PRIVATE ${repo_root}/src/core/external/openbabel)
+    add_dependencies(${target} streamfind_openbabel streamfind_inchi)
+  endif()
+endfunction()
 
 # -----------------------------------------------------------------------------
 # Vendored zlib for Python/native builds
@@ -108,17 +241,6 @@ set(streamfind_CORE_SOURCES
 # -----------------------------------------------------------------------------
 # Vendored DuckDB
 # -----------------------------------------------------------------------------
-if(WIN32)
-  set(CF_streamfind_DUCKDB_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/windows)
-  set(CF_streamfind_DUCKDB_LIB ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/windows/duckdb.lib)
-  set(CF_streamfind_DUCKDB_RUNTIME_DLL ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/windows/duckdb.dll)
-elseif(APPLE)
-  message(FATAL_ERROR "Vendored DuckDB linkage is not configured for macOS yet.")
-else()
-  set(CF_streamfind_DUCKDB_INCLUDE ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/linux)
-  set(CF_streamfind_DUCKDB_LIB ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/duckdb/linux/libduckdb_static.a)
-endif()
-
 add_library(cf_streamfind_steps SHARED
   ${CMAKE_CURRENT_SOURCE_DIR}/python/cf_streamfind/cpp/steps.cpp
   ${streamfind_CORE_SOURCES}
@@ -141,11 +263,11 @@ target_include_directories(cf_streamfind_steps PRIVATE
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/mass_spec
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/nta
   ${CMAKE_CURRENT_SOURCE_DIR}/src/core/project
-  ${CF_streamfind_DUCKDB_INCLUDE}
+  ${STREAMFIND_DUCKDB_INCLUDE_DIR}
 )
 
 streamfind_enable_openbabel(cf_streamfind_steps ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(cf_streamfind_steps PRIVATE ${CF_streamfind_DUCKDB_LIB})
+target_link_libraries(cf_streamfind_steps PRIVATE streamfind_duckdb)
 
 target_link_libraries(cf_streamfind_steps PRIVATE streamfind::zlib)
 target_compile_definitions(cf_streamfind_steps PRIVATE CF_streamfind_HAS_ZLIB=1)
@@ -189,8 +311,8 @@ set(CF_streamfind_RUNTIME_DLLS)
 if(WIN32)
   if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/inst/libs/x64/duckdb.dll")
     list(APPEND CF_streamfind_RUNTIME_DLLS ${CMAKE_CURRENT_SOURCE_DIR}/inst/libs/x64/duckdb.dll)
-  elseif(EXISTS "${CF_streamfind_DUCKDB_RUNTIME_DLL}")
-    list(APPEND CF_streamfind_RUNTIME_DLLS ${CF_streamfind_DUCKDB_RUNTIME_DLL})
+  elseif(EXISTS "${STREAMFIND_DUCKDB_RUNTIME_LIBRARY}")
+    list(APPEND CF_streamfind_RUNTIME_DLLS ${STREAMFIND_DUCKDB_RUNTIME_LIBRARY})
   endif()
 endif()
 
@@ -208,8 +330,25 @@ install(DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/cf_streamfind/bin/
         PATTERN "*.so"
         PATTERN "*.dylib")
 
+if(EXISTS "${STREAMFIND_DUCKDB_RUNTIME_LIBRARY}")
+  install(FILES ${STREAMFIND_DUCKDB_RUNTIME_LIBRARY}
+          DESTINATION cf_streamfind/libs)
+elseif(EXISTS "${STREAMFIND_DUCKDB_LIBRARY}")
+  install(FILES ${STREAMFIND_DUCKDB_LIBRARY}
+          DESTINATION cf_streamfind/libs)
+endif()
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/python/cf_streamfind/resources/
+        DESTINATION cf_streamfind/resources)
+
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/src/core/external/openbabel/openbabel-3-2-0/data/
+        DESTINATION cf_streamfind/resources/openbabel/data)
+
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/python/cf_streamfind/steps.nq
         DESTINATION cf_streamfind)
 
 install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/python/cf_streamfind/__init__.py
+        DESTINATION cf_streamfind)
+
+install(FILES ${CMAKE_CURRENT_SOURCE_DIR}/python/cf_streamfind/external_tools.py
         DESTINATION cf_streamfind)

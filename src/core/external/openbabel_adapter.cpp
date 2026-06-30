@@ -97,12 +97,16 @@ namespace sf::obabel
     const std::wstring dll_dir_root = parent_directory(dll_dir_grandparent);
     const std::wstring dll_dir_top = parent_directory(dll_dir_root);
 
+    wchar_t env_buffer[32767];
+    const DWORD env_size = GetEnvironmentVariableW(L"STREAMFIND_OPENBABEL_DATA", env_buffer, 32767);
+    const std::wstring env_data = env_size > 0 ? std::wstring(env_buffer, env_size) : L"";
+    const std::wstring module_parent = parent_directory(module_dir);
+
     const std::vector<std::wstring> candidates = {
-        dll_dir + L"\\openbabel-3-2-0\\data",
-        dll_dir_grandparent.empty() ? L"" : dll_dir_grandparent + L"\\openbabel-3-2-0\\data",
-        dll_dir_root.empty() ? L"" : dll_dir_root + L"\\openbabel-3-2-0\\data",
-        dll_dir_top.empty() ? L"" : dll_dir_top + L"\\openbabel-3-2-0\\data",
-        module_dir + L"\\core\\external\\openbabel\\openbabel-3-2-0\\data",
+        env_data,
+        dll_dir + L"\\openbabel\\data",
+        module_parent.empty() ? L"" : module_parent + L"\\extdata\\openbabel\\data",
+        module_parent.empty() ? L"" : module_parent + L"\\core\\external\\openbabel\\openbabel-3-2-0\\data",
         cwd.empty() ? L"" : cwd + L"\\src\\core\\external\\openbabel\\openbabel-3-2-0\\data"};
 
     for (const auto &candidate : candidates)
@@ -171,11 +175,12 @@ namespace sf::obabel
 
     const std::wstring module_dir = parent_directory(std::wstring(module_path.data(), path_size));
     const std::wstring cwd = current_working_directory();
+    const std::wstring module_parent = parent_directory(module_dir);
     const std::vector<std::wstring> dll_candidates = {
         module_dir + L"\\openbabel_streamfind.dll",
+        module_parent.empty() ? L"" : module_parent + L"\\libs\\openbabel_streamfind.dll",
         module_dir + L"\\core\\external\\openbabel\\build\\windows\\bin\\openbabel_streamfind.dll",
-        cwd.empty() ? L"" : cwd + L"\\src\\core\\external\\openbabel\\build\\windows\\bin\\openbabel_streamfind.dll",
-        cwd.empty() ? L"" : cwd + L"\\inst\\libs\\x64\\openbabel_streamfind.dll"};
+        cwd.empty() ? L"" : cwd + L"\\src\\core\\external\\openbabel\\build\\windows\\bin\\openbabel_streamfind.dll"};
 
     std::wstring loaded_path;
     for (const auto &dll_path : dll_candidates)

@@ -10,12 +10,11 @@ suspects <- fread(file.path("dev", "dev_duckdb", "suspects_with_ms2_template.csv
 
 transformation_products <- fread(file.path("dev", "dev_duckdb", "transformation_products_template_v2.csv"))
 
-ms_files <- streamfindData::get_mass_spec_wastewater_files()
+ms_files <- streamfind.data::get_mass_spec_wastewater_files()
 
-internal_standards <- streamfindData::get_mass_spec_wastewater_internal_standards_csv()
+internal_standards <- streamfind.data::get_mass_spec_wastewater_internal_standards_csv()
 internal_standards <- data.table::fread(internal_standards)
 internal_standards <- internal_standards[!is.na(rt), ]
-
 
 nta <- open_ProjectNonTargetAnalysis(
   db = project_db,
@@ -24,7 +23,6 @@ nta <- open_ProjectNonTargetAnalysis(
 nta$run_app()
 
 run_app()
-
 
 nta <- open_ProjectNonTargetAnalysis(
   db = project_db,
@@ -171,8 +169,6 @@ workflow <- Workflow(list(
   #   filtered = TRUE
   # ),
   Method_NonTargetAnalysis_MetFragScreening(
-    # metfrag_path = "C:\\Users\\cunha\\Documents\\patRoon_deps\\MetFragCommandLine-2.5.0.jar",
-    metfrag_path = "C:\\Users\\apoli\\Documents\\MetFragCommandLine-2.6.11.jar",
     database_type = "LocalCSV",
     # database_path = file.path("dev", "dev_duckdb", "suspects_template_V2.csv"),
     database_path = file.path("dev", "dev_duckdb", "transformation_products_template_v2.csv"),
@@ -189,10 +185,8 @@ workflow <- Workflow(list(
     number_threads = 1L,
     use_smiles = TRUE,
     filtered = FALSE,
-    java_path = "C:\\Users\\apoli\\.cogniflow\\tools\\java\\current\\bin\\java.exe",
     run_dir = "",
-    debug = TRUE,
-    extra_params = list()
+    debug = TRUE
   ),
   Method_NonTargetAnalysis_AssignTransformationProducts(
     transformation_products = transformation_products,

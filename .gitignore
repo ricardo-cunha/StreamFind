@@ -25,7 +25,6 @@
 *.so
 *.dll
 *.dylib
-!src/core/external/duckdb/windows/duckdb.dll
 *.pyd
 *.obj
 *.a
@@ -52,15 +51,32 @@
 __pycache__/
 *.py[cod]
 .pytest_cache/
+build/external-tools-report.json
 
 # Python package runtime native output ----------------------------------------
 python/cf_streamfind/bin/
+python/cf_streamfind/libs/
+python/cf_streamfind/resources/openbabel/data/
 
 # CMake / scikit-build --------------------------------------------------------
 CMakeCache.txt
 CMakeFiles/
 cmake-build-*/
 _skbuild/
+
+# R package generated resource/runtime output ----------------------------------
+inst/extdata/openbabel/
+inst/libs/*.dll
+inst/libs/*.so
+inst/libs/*.dylib
+inst/libs/x64/*.dll
+
+# Vendored OpenBabel build output ---------------------------------------------
+src/core/external/openbabel/build/
+src/core/external/openbabel/build/windows/.stamp
+src/core/external/openbabel/build/windows/bin/
+src/core/external/openbabel/build/windows/lib/
+src/core/external/openbabel/build/windows/obj/
 
 # Specific folders to exclude -----------------------------------------------------------
 /dev/dev_duckdb/data_nts

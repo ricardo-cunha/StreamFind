@@ -8,7 +8,10 @@
 #' @param contact Developer contact.
 #' @param link Reference link.
 #' @param doi Reference DOI.
-#' @param parameters Named list of parameter default values.
+#' @param parameters Named list of parameter default values. Parameter values
+#'   must be `character`, `numeric`, `integer`, `logical`, or `data.table`
+#'   objects. Named lists are only accepted as containers for nested parameter
+#'   groups when every nested value also matches one of those types.
 #' @return A `Method` object.
 #' @export
 Method <- function(
@@ -86,6 +89,26 @@ Method <- function(
   stats::setNames(lapply(value, .normalize_method_parameter), names(value))
 }
 
+#' @noRd
+.method_parameter_is_valid <- function(value) {
+  if (data.table::is.data.table(value)) {
+    return(TRUE)
+  }
+  if (is.character(value) || is.numeric(value) || is.integer(value) || is.logical(value)) {
+    return(TRUE)
+  }
+  if (!is.list(value)) {
+    return(FALSE)
+  }
+  if (length(value) == 0L) {
+    return(TRUE)
+  }
+  if (is.null(names(value)) || any(!nzchar(names(value)))) {
+    return(FALSE)
+  }
+  all(vapply(value, .method_parameter_is_valid, logical(1)))
+}
+
 #' @export
 #' @noRd
 validate_object.Method <- function(x, ...) {
@@ -98,6 +121,14 @@ validate_object.Method <- function(x, ...) {
   checkmate::assert_character(x$link, len = 1, null.ok = FALSE)
   checkmate::assert_character(x$doi, len = 1, null.ok = FALSE)
   checkmate::assert_list(x$parameters, names = "named")
+  invalid_parameters <- names(x$parameters)[!vapply(x$parameters, .method_parameter_is_valid, logical(1))]
+  if (length(invalid_parameters) > 0L) {
+    stop(
+      "Method parameters must be character, numeric, integer, logical, or data.table values. ",
+      "Invalid parameter(s): ", paste(invalid_parameters, collapse = ", "),
+      call. = FALSE
+    )
+  }
   invisible(NULL)
 }
 

@@ -42,4 +42,4 @@ package-dir = { "" = "python" }
 where = ["python"]
 
 [tool.setuptools.package-data]
-cf_streamfind = ["steps.nq", "bin/*", "data/*"]
+cf_streamfind = ["steps.nq", "bin/*", "libs/*", "resources/openbabel/data/*"]

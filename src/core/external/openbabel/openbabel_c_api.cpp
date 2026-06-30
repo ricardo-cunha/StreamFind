@@ -103,12 +103,14 @@ namespace
       const std::wstring source_file = widen_path(__FILE__);
       const std::wstring source_dir = parent_directory(source_file);
       const std::wstring source_root = parent_directory(source_dir);
+      wchar_t env_buffer[32767];
+      const DWORD env_size = GetEnvironmentVariableW(L"STREAMFIND_OPENBABEL_DATA", env_buffer, 32767);
+      const std::wstring env_data = env_size > 0 ? std::wstring(env_buffer, env_size) : L"";
 
       const std::vector<std::wstring> candidates = {
-          module_dir + L"\\openbabel-3-2-0\\data",
-          parent2.empty() ? L"" : parent2 + L"\\openbabel-3-2-0\\data",
-          parent3.empty() ? L"" : parent3 + L"\\openbabel-3-2-0\\data",
-          parent4.empty() ? L"" : parent4 + L"\\openbabel-3-2-0\\data",
+          env_data,
+          parent1.empty() ? L"" : parent1 + L"\\extdata\\openbabel\\data",
+          parent1.empty() ? L"" : parent1 + L"\\core\\external\\openbabel\\openbabel-3-2-0\\data",
           source_root.empty() ? L"" : source_root + L"\\openbabel-3-2-0\\data",
           cwd.empty() ? L"" : cwd + L"\\src\\core\\external\\openbabel\\openbabel-3-2-0\\data"};
 
@@ -143,12 +145,12 @@ namespace
     const std::wstring source_dir = parent_directory(source_file);
     const std::wstring source_root = parent_directory(source_dir);
     const char *env = std::getenv("BABEL_DATADIR");
+    const char *env_streamfind = std::getenv("STREAMFIND_OPENBABEL_DATA");
 
     const std::vector<std::wstring> candidates = {
-        module_dir + L"\\openbabel-3-2-0\\data",
-        parent2.empty() ? L"" : parent2 + L"\\openbabel-3-2-0\\data",
-        parent3.empty() ? L"" : parent3 + L"\\openbabel-3-2-0\\data",
-        parent4.empty() ? L"" : parent4 + L"\\openbabel-3-2-0\\data",
+        env_streamfind != nullptr ? widen_path(env_streamfind) : L"",
+        parent1.empty() ? L"" : parent1 + L"\\extdata\\openbabel\\data",
+        parent1.empty() ? L"" : parent1 + L"\\core\\external\\openbabel\\openbabel-3-2-0\\data",
         source_root.empty() ? L"" : source_root + L"\\openbabel-3-2-0\\data",
         cwd.empty() ? L"" : cwd + L"\\src\\core\\external\\openbabel\\openbabel-3-2-0\\data"};
 
@@ -156,6 +158,7 @@ namespace
     oss << "module_path=" << narrow_path(module_path) << "\n";
     oss << "cwd=" << narrow_path(cwd) << "\n";
     oss << "__FILE__=" << __FILE__ << "\n";
+    oss << "env.STREAMFIND_OPENBABEL_DATA=" << (env_streamfind != nullptr ? env_streamfind : "<unset>") << "\n";
     oss << "env.BABEL_DATADIR=" << (env != nullptr ? env : "<unset>") << "\n";
     oss << "ensure_openbabel_data_dir=" << (ensure_openbabel_data_dir() ? "ok" : "failed") << "\n";
     env = std::getenv("BABEL_DATADIR");

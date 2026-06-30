@@ -4,8 +4,11 @@ include CMakeLists.txt
 include pyproject.toml
 recursive-include python/cf_streamfind *.py *.nq
 recursive-include python/cf_streamfind/cpp *.cpp *.hpp *.h CMakeLists.txt
+recursive-include python/cf_streamfind/resources *
 recursive-include src/core *.cpp *.hpp *.h *.c *.cc *.hh *.ipp
+recursive-include resources *
 recursive-include cmake *.cmake
+recursive-include tools *.py *.txt *.cmake
 exclude python/cf_streamfind/bin/*.dll
 exclude python/cf_streamfind/bin/*.so
 exclude python/cf_streamfind/bin/*.dylib

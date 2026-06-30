@@ -1,8 +1,9 @@
 .onLoad <- function(libname, pkgname) {
   ext_dir <- .streamfind_ext_dir()
   found_any <- FALSE
+  .sf_configure_native_runtime()
 
-  # Java — prepend ~/.streamfind/external/java/jdk-*/bin/ to PATH
+  # Java — prepend ~/.streamfind/tools/java/jdk-*/bin/ to PATH
   java_dirs <- list.files(file.path(ext_dir, "java"), pattern = "^jdk", full.names = TRUE)
   if (length(java_dirs) > 0) {
     java_bin <- file.path(java_dirs[1], "bin")
@@ -35,7 +36,7 @@
     found_any <- TRUE
   }
 
-  # CFM-ID — prepend ~/.streamfind/external/cfm-id/bin/ to PATH
+  # CFM-ID — prepend ~/.streamfind/tools/cfm-id/bin/ to PATH
   cfm_bin <- file.path(ext_dir, "cfm-id", "bin")
   if (dir.exists(cfm_bin)) {
     .path_prepend(cfm_bin)
@@ -61,7 +62,7 @@
   if (!found_any && interactive() && !dir.exists(ext_dir)) {
     packageStartupMessage(
       "streamfind external tools not found. ",
-      "Run install_external_tools() to download and set up Java and CFM-ID."
+      "Run install_external_tools() to download and set up Java and MetFrag."
     )
   }
 }
@@ -75,9 +76,9 @@
 
 .streamfind_ext_dir <- function() {
   if (.Platform$OS.type == "windows") {
-    file.path(Sys.getenv("USERPROFILE"), ".streamfind", "external")
+    file.path(Sys.getenv("USERPROFILE"), ".streamfind", "tools")
   } else {
-    path.expand("~/.streamfind/external")
+    path.expand("~/.streamfind/tools")
   }
 }
 
