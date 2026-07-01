@@ -22,7 +22,7 @@ nta <- open_ProjectNonTargetAnalysis(
 )
 nta$run_app()
 
-run_app()
+# run_app()
 
 nta <- open_ProjectNonTargetAnalysis(
   db = project_db,
@@ -169,9 +169,9 @@ workflow <- Workflow(list(
   #   filtered = TRUE
   # ),
   Method_NonTargetAnalysis_MetFragScreening(
-    database_type = "LocalCSV",
-    # database_path = file.path("dev", "dev_duckdb", "suspects_template_V2.csv"),
-    database_path = file.path("dev", "dev_duckdb", "transformation_products_template_v2.csv"),
+    database_type = "Local",
+    # database = data.table::fread(file.path("dev", "dev_duckdb", "suspects_template_V2.csv")),
+    database = data.table::fread(file.path("dev", "dev_duckdb", "transformation_products_template_v2.csv")),
     ppm = 10,
     sec = 15,
     ppmMS2 = 10,
@@ -185,7 +185,6 @@ workflow <- Workflow(list(
     number_threads = 1L,
     use_smiles = TRUE,
     filtered = FALSE,
-    run_dir = "",
     debug = TRUE
   ),
   Method_NonTargetAnalysis_AssignTransformationProducts(
@@ -198,8 +197,6 @@ workflow <- Workflow(list(
 set_workflow(nta, workflow)
 
 show(nta$get_workflow())
-
-
 
 nta$run_workflow()
 

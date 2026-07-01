@@ -14,10 +14,141 @@
 #include "nta/nta.h"
 
 using namespace Rcpp;
+namespace fs = std::filesystem;
 
 // MARK: ns nta_rcpp
 namespace nta_rcpp
 {
+  std::string csv_escape(const std::string &value)
+  {
+    if (value.find_first_of(",\"\n\r") == std::string::npos)
+      return value;
+    std::string escaped;
+    escaped.reserve(value.size() + 2);
+    escaped.push_back('"');
+    for (char ch : value)
+    {
+      if (ch == '"')
+        escaped.push_back('"');
+      escaped.push_back(ch);
+    }
+    escaped.push_back('"');
+    return escaped;
+  }
+
+  std::string ascii_lower(std::string value)
+  {
+    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char ch) {
+      return static_cast<char>(std::tolower(ch));
+    });
+    return value;
+  }
+
+  std::string find_column_name(const Rcpp::DataFrame &database, const std::vector<std::string> &aliases)
+  {
+    Rcpp::CharacterVector names = database.names();
+    for (const auto &alias : aliases)
+    {
+      const std::string needle = ascii_lower(alias);
+      for (R_xlen_t i = 0; i < names.size(); ++i)
+      {
+        if (names[i] == NA_STRING)
+          continue;
+        if (ascii_lower(Rcpp::as<std::string>(names[i])) == needle)
+          return Rcpp::as<std::string>(names[i]);
+      }
+    }
+    return std::string();
+  }
+
+  SEXP column_sexp(const Rcpp::DataFrame &database, const std::string &name)
+  {
+    SEXP col = database[name];
+    if (TYPEOF(col) == VECSXP)
+    {
+      Rcpp::List tmp(col);
+      if (tmp.size() > 0)
+      {
+        col = tmp[0];
+      }
+    }
+    return col;
+  }
+
+  Rcpp::CharacterVector character_column(const Rcpp::DataFrame &database, const std::vector<std::string> &aliases)
+  {
+    std::string name = find_column_name(database, aliases);
+    if (name.empty())
+      return Rcpp::CharacterVector();
+    return Rcpp::as<Rcpp::CharacterVector>(column_sexp(database, name));
+  }
+
+  Rcpp::NumericVector numeric_column(const Rcpp::DataFrame &database, const std::vector<std::string> &aliases)
+  {
+    std::string name = find_column_name(database, aliases);
+    if (name.empty())
+      return Rcpp::NumericVector();
+    return Rcpp::as<Rcpp::NumericVector>(column_sexp(database, name));
+  }
+
+  std::string write_local_metfrag_database(Rcpp::DataFrame database, const std::string &run_dir)
+  {
+    const R_xlen_t n = database.nrows();
+    if (n <= 0)
+    {
+      Rcpp::stop("Local MetFrag database must contain at least one row.");
+    }
+
+    Rcpp::CharacterVector name_col = character_column(database, {"name", "Name", "Identifier", "identifier", "id", "database_id", "databaseid"});
+    Rcpp::CharacterVector formula_col = character_column(database, {"formula", "Formula", "MolecularFormula", "molecularformula"});
+    Rcpp::NumericVector mass_col = numeric_column(database, {"mass", "Mass", "MonoisotopicMass", "monoisotopicmass"});
+    Rcpp::NumericVector rt_col = numeric_column(database, {"rt", "RT", "retention_time", "RetentionTime"});
+    Rcpp::CharacterVector smiles_col = character_column(database, {"SMILES", "smiles", "Smiles"});
+    Rcpp::CharacterVector inchi_col = character_column(database, {"InChI", "inchi", "Inchi"});
+    Rcpp::CharacterVector inchikey_col = character_column(database, {"InChIKey", "inchikey", "Inchikey"});
+    Rcpp::NumericVector xlogp_col = numeric_column(database, {"xLogP", "xlogp", "XLogP", "XLogP3", "logp", "LogP"});
+
+    if (name_col.size() == 0 || formula_col.size() == 0 || mass_col.size() == 0 || rt_col.size() == 0 ||
+        smiles_col.size() == 0 || inchi_col.size() == 0 || inchikey_col.size() == 0 || xlogp_col.size() == 0)
+    {
+      Rcpp::stop("Local MetFrag database must include required columns (or recognized aliases) for name, formula, mass, rt, SMILES, InChI, InChIKey, and xLogP.");
+    }
+    std::string out_path = (fs::path(run_dir) / "metfrag_local_database.csv").string();
+    std::ofstream out(out_path);
+    if (!out.is_open())
+    {
+      Rcpp::stop("Cannot write local MetFrag database to: %s", out_path);
+    }
+
+    out << "name,formula,mass,rt,SMILES,InChI,InChIKey,xLogP\n";
+    for (R_xlen_t i = 0; i < n; ++i)
+    {
+      if (i > 0) out << '\n';
+      auto write_char = [&](const Rcpp::CharacterVector &col) {
+        if (Rcpp::CharacterVector::is_na(col[i])) return std::string();
+        return Rcpp::as<std::string>(col[i]);
+      };
+      auto write_num = [&](const Rcpp::NumericVector &col) {
+        if (Rcpp::NumericVector::is_na(col[i])) return std::string();
+        std::ostringstream oss;
+        oss << std::fixed << std::setprecision(10) << static_cast<double>(col[i]);
+        return oss.str();
+      };
+
+      out
+        << csv_escape(write_char(name_col)) << ','
+        << csv_escape(write_char(formula_col)) << ','
+        << csv_escape(write_num(mass_col)) << ','
+        << csv_escape(write_num(rt_col)) << ','
+        << csv_escape(write_char(smiles_col)) << ','
+        << csv_escape(write_char(inchi_col)) << ','
+        << csv_escape(write_char(inchikey_col)) << ','
+        << csv_escape(write_num(xlogp_col));
+    }
+
+    return out_path;
+  }
+
   template <typename Fn>
   inline auto project_call(Fn &&fn)
   {
@@ -2191,6 +2322,7 @@ bool rcpp_project_nta_metfrag_screening(
     std::string metfrag_path,
     std::string database_type = "PubChem",
     std::string database_path = "",
+    SEXP database = R_NilValue,
     Rcpp::CharacterVector analyses = Rcpp::CharacterVector::create(""),
     double ppm = 5.0,
     double sec = 10.0,
@@ -2248,6 +2380,17 @@ bool rcpp_project_nta_metfrag_screening(
   p.run_dir        = run_dir;
   p.extra_params   = extra_params_cpp;
   p.run_dir        = nta::metfrag_runner::resolve_run_dir(p);
+
+  if (p.database_type == "LocalCSV")
+  {
+    if (Rf_isNull(database))
+    {
+      Rcpp::stop("Local MetFrag screening requires a non-empty database data.table.");
+    }
+    fs::create_directories(p.run_dir);
+    Rcpp::DataFrame local_database(database);
+    p.database_path = nta_rcpp::write_local_metfrag_database(local_database, p.run_dir);
+  }
 
   return nta_rcpp::project_call([&]() {
       auto &nta_data = nta_rcpp::project_non_target_analysis_from_xptr(nta_xptr);

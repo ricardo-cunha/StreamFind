@@ -36,9 +36,7 @@
   "KEGG",
   "PubChem",
   "ExtendedPubChem",
-  "LocalSDF",
-  "LocalPSV",
-  "LocalCSV"
+  "Local"
 )
 
 #' @noRd
@@ -1598,11 +1596,14 @@ run.Method_NonTargetAnalysis_FilterFeaturesMS2 <- function(x, proj, ...) {
 #'   structure hypotheses using in silico fragmentation, extending simple
 #'   suspect matching with fragment-informed annotation.
 #' @param database_type Character(1) MetFrag candidate-source type. Supported
-#'   options are `"KEGG"`, `"PubChem"`, `"ExtendedPubChem"`,
-#'   `"LocalSDF"`, `"LocalPSV"`, and `"LocalCSV"`.
-#'   Local database types require `database_path`.
-#' @param database_path Character(1) path to the local database file used by
-#'   `"LocalSDF"`, `"LocalPSV"`, or `"LocalCSV"`.
+#'   options are `"KEGG"`, `"PubChem"`, `"ExtendedPubChem"`, and `"Local"`.
+#'   When `database_type = "Local"`, `database` must be a non-empty data.table
+#'   with the core suspect-screening columns used by `get_suspects_screening_csv()`.
+#' @param database Local candidate database as a data.table/data.frame. This is
+#'   only used when `database_type = "Local"`; in that case it must contain the
+#'   columns `name`, `formula`, `mass`, `rt`, `SMILES`, `InChI`, `InChIKey`,
+#'   and `xLogP`. Any MS2 columns are ignored for MetFrag because the fragments
+#'   are generated in silico.
 #' @param analyses Optional character vector restricting screening to selected
 #'   analyses.
 #' @param ppm Numeric(1) precursor mass tolerance in ppm used when querying
@@ -1621,8 +1622,7 @@ run.Method_NonTargetAnalysis_FilterFeaturesMS2 <- function(x, proj, ...) {
 #'   `"SmartsSubstructureExclusionScore"`, and `"SuspectListScore"`. MetFrag CL
 #'   also supports database-dependent scoring terms, for example
 #'   `"PubChemNumberPatents"` and `"PubChemNumberPubMedReferences"` with
-#'   `"ExtendedPubChem"`, and additional numeric columns or tags from local
-#'   `LocalCSV`, `LocalPSV`, or `LocalSDF` databases.
+#'   `"ExtendedPubChem"`.
 #' @param score_weights Numeric vector of MetFrag score weights. Must match the
 #'   length and order of `score_types`; MetFrag combines the weighted scores
 #'   into the final candidate ranking.
@@ -1649,15 +1649,12 @@ run.Method_NonTargetAnalysis_FilterFeaturesMS2 <- function(x, proj, ...) {
 #'   structures using SMILES instead of InChI.
 #' @param filtered Logical(1) whether to include filtered features in the
 #'   search.
-#' @param run_dir Character(1) output directory for MetFrag run files. When
-#'   empty, a timestamped directory under `./log/metfrag/` is created
-#'   automatically, for example `./log/metfrag/run_20260527_153045/`.
 #' @param debug Logical(1) whether to keep debug output.
 #' @return A `Method` object of class `Method_NonTargetAnalysis_MetFragScreening`.
 #' @export
 Method_NonTargetAnalysis_MetFragScreening <- function(
     database_type = "PubChem",
-    database_path = "",
+    database = data.table::data.table(),
     analyses = character(),
     ppm = 5,
     sec = 10,
@@ -1672,7 +1669,6 @@ Method_NonTargetAnalysis_MetFragScreening <- function(
     number_threads = 1L,
     use_smiles = TRUE,
     filtered = FALSE,
-    run_dir = "",
     debug = FALSE) {
   database_type <- .normalize_metfrag_database_type(database_type)
   x <- Method(
@@ -1686,7 +1682,7 @@ Method_NonTargetAnalysis_MetFragScreening <- function(
     doi = "https://doi.org/10.1186/s13321-016-0115-9",
     parameters = list(
       database_type = as.character(database_type),
-      database_path = as.character(database_path),
+      database = data.table::as.data.table(database),
       analyses = as.character(analyses),
       ppm = as.numeric(ppm),
       sec = as.numeric(sec),
@@ -1701,7 +1697,6 @@ Method_NonTargetAnalysis_MetFragScreening <- function(
       number_threads = as.integer(number_threads),
       use_smiles = as.logical(use_smiles),
       filtered = as.logical(filtered),
-      run_dir = as.character(run_dir),
       debug = as.logical(debug)
     )
   )
@@ -1718,7 +1713,7 @@ validate_object.Method_NonTargetAnalysis_MetFragScreening <- function(x, ...) {
   checkmate::assert_choice(x$owner_class, "ProjectNonTargetAnalysis")
   checkmate::assert_true(identical(x$number_permitted, Inf))
   checkmate::assert_choice(x$parameters$database_type, .metfrag_database_types)
-  checkmate::assert_character(x$parameters$database_path, len = 1, any.missing = FALSE)
+  checkmate::assert_data_frame(x$parameters$database)
   checkmate::assert_character(x$parameters$analyses, any.missing = FALSE)
   checkmate::assert_number(x$parameters$ppm, lower = 0, finite = TRUE)
   checkmate::assert_number(x$parameters$sec, lower = 0, finite = TRUE)
@@ -1734,24 +1729,25 @@ validate_object.Method_NonTargetAnalysis_MetFragScreening <- function(x, ...) {
   checkmate::assert_integerish(x$parameters$number_threads, len = 1, lower = 1)
   checkmate::assert_logical(x$parameters$use_smiles, len = 1)
   checkmate::assert_logical(x$parameters$filtered, len = 1)
-  checkmate::assert_character(x$parameters$run_dir, len = 1, any.missing = FALSE)
   checkmate::assert_logical(x$parameters$debug, len = 1)
-  if (x$parameters$database_type %in% c("LocalSDF", "LocalPSV", "LocalCSV")) {
-    if (!nzchar(x$parameters$database_path)) {
-      stop(
-        "`database_path` must be provided for `database_type = \"",
-        x$parameters$database_type,
-        "\"`.",
-        call. = FALSE
-      )
-    }
-    if (!file.exists(x$parameters$database_path)) {
-      stop(
-        "MetFrag local database file does not exist: ",
-        x$parameters$database_path,
-        call. = FALSE
-      )
-    }
+  if (identical(x$parameters$database_type, "Local")) {
+    database <- data.table::as.data.table(x$parameters$database)
+    checkmate::assert_true(nrow(database) > 0)
+    checkmate::assert_true(all(c("name", "formula", "mass", "rt", "SMILES", "InChI", "InChIKey", "xLogP") %in% names(database)))
+    checkmate::assert_character(database$name, any.missing = FALSE)
+    checkmate::assert_character(database$formula, any.missing = FALSE)
+    mass <- database$mass
+    rt <- database$rt
+    xlogp <- database$xLogP
+    if (is.list(mass)) mass <- unlist(mass, recursive = FALSE, use.names = FALSE)
+    if (is.list(rt)) rt <- unlist(rt, recursive = FALSE, use.names = FALSE)
+    if (is.list(xlogp)) xlogp <- unlist(xlogp, recursive = FALSE, use.names = FALSE)
+    checkmate::assert_numeric(mass, any.missing = TRUE)
+    checkmate::assert_numeric(rt, any.missing = TRUE)
+    checkmate::assert_character(database$SMILES, any.missing = FALSE)
+    checkmate::assert_character(database$InChI, any.missing = FALSE)
+    checkmate::assert_character(database$InChIKey, any.missing = FALSE)
+    checkmate::assert_numeric(xlogp, any.missing = TRUE)
   }
   invisible(NULL)
 }
@@ -1777,11 +1773,16 @@ run.Method_NonTargetAnalysis_MetFragScreening <- function(x, proj, ...) {
       call. = FALSE
     )
   }
+  database_type <- as.character(p$database_type)
+  database <- data.table::as.data.table(p$database)
+  if (identical(database_type, "Local")) {
+    database_type <- "LocalCSV"
+  }
   success <- rcpp_project_nta_metfrag_screening(
     nta_xptr = proj$get_nts_ptr(),
     metfrag_path = as.character(metfrag_path),
-    database_type = as.character(p$database_type),
-    database_path = as.character(p$database_path),
+    database_type = database_type,
+    database = database,
     analyses = as.character(p$analyses),
     ppm = as.numeric(p$ppm),
     sec = as.numeric(p$sec),
@@ -1797,7 +1798,6 @@ run.Method_NonTargetAnalysis_MetFragScreening <- function(x, proj, ...) {
     use_smiles = isTRUE(p$use_smiles),
     filtered = isTRUE(p$filtered),
     java_path = as.character(java_path),
-    run_dir = as.character(p$run_dir),
     extra_params = NULL
   )
   .run_nta_method(success, proj, "MetFrag screening did not complete successfully.")

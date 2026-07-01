@@ -178,8 +178,9 @@ namespace sf::obabel
     const std::wstring module_parent = parent_directory(module_dir);
     const std::vector<std::wstring> dll_candidates = {
         module_dir + L"\\openbabel_streamfind.dll",
-        module_parent.empty() ? L"" : module_parent + L"\\libs\\openbabel_streamfind.dll",
+        module_parent.empty() ? L"" : module_parent + L"\\openbabel_streamfind.dll",
         module_dir + L"\\core\\external\\openbabel\\build\\windows\\bin\\openbabel_streamfind.dll",
+        cwd.empty() ? L"" : cwd + L"\\inst\\libs\\openbabel_streamfind.dll",
         cwd.empty() ? L"" : cwd + L"\\src\\core\\external\\openbabel\\build\\windows\\bin\\openbabel_streamfind.dll"};
 
     std::wstring loaded_path;

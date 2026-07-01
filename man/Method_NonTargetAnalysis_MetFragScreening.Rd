@@ -6,7 +6,7 @@
 \usage{
 Method_NonTargetAnalysis_MetFragScreening(
   database_type = "PubChem",
-  database_path = "",
+  database = data.table::data.table(),
   analyses = character(),
   ppm = 5,
   sec = 10,
@@ -21,18 +21,20 @@ Method_NonTargetAnalysis_MetFragScreening(
   number_threads = 1L,
   use_smiles = TRUE,
   filtered = FALSE,
-  run_dir = "",
   debug = FALSE
 )
 }
 \arguments{
 \item{database_type}{Character(1) MetFrag candidate-source type. Supported
-options are \code{"KEGG"}, \code{"PubChem"}, \code{"ExtendedPubChem"},
-\code{"LocalSDF"}, \code{"LocalPSV"}, and \code{"LocalCSV"}.
-Local database types require \code{database_path}.}
+options are \code{"KEGG"}, \code{"PubChem"}, \code{"ExtendedPubChem"}, and \code{"Local"}.
+When \code{database_type = "Local"}, \code{database} must be a non-empty data.table
+with the core suspect-screening columns used by \code{get_suspects_screening_csv()}.}
 
-\item{database_path}{Character(1) path to the local database file used by
-\code{"LocalSDF"}, \code{"LocalPSV"}, or \code{"LocalCSV"}.}
+\item{database}{Local candidate database as a data.table/data.frame. This is
+only used when \code{database_type = "Local"}; in that case it must contain the
+columns \code{name}, \code{formula}, \code{mass}, \code{rt}, \code{SMILES}, \code{InChI}, \code{InChIKey},
+and \code{xLogP}. Any MS2 columns are ignored for MetFrag because the fragments
+are generated in silico.}
 
 \item{analyses}{Optional character vector restricting screening to selected
 analyses.}
@@ -58,8 +60,7 @@ feature.}
 \code{"SmartsSubstructureExclusionScore"}, and \code{"SuspectListScore"}. MetFrag CL
 also supports database-dependent scoring terms, for example
 \code{"PubChemNumberPatents"} and \code{"PubChemNumberPubMedReferences"} with
-\code{"ExtendedPubChem"}, and additional numeric columns or tags from local
-\code{LocalCSV}, \code{LocalPSV}, or \code{LocalSDF} databases.}
+\code{"ExtendedPubChem"}.}
 
 \item{score_weights}{Numeric vector of MetFrag score weights. Must match the
 length and order of \code{score_types}; MetFrag combines the weighted scores
@@ -93,10 +94,6 @@ structures using SMILES instead of InChI.}
 
 \item{filtered}{Logical(1) whether to include filtered features in the
 search.}
-
-\item{run_dir}{Character(1) output directory for MetFrag run files. When
-empty, a timestamped directory under \verb{./log/metfrag/} is created
-automatically, for example \verb{./log/metfrag/run_20260527_153045/}.}
 
 \item{debug}{Logical(1) whether to keep debug output.}
 }
