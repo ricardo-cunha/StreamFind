@@ -439,6 +439,16 @@ namespace mass_spec_rcpp
     NumericVector pre_mz(rows.size());
     NumericVector pre_ce(rows.size());
     NumericVector pro_mz(rows.size());
+    CharacterVector signal_type(rows.size());
+    CharacterVector chromatogram_type(rows.size());
+    CharacterVector detector(rows.size());
+    CharacterVector channel(rows.size());
+    CharacterVector units(rows.size());
+    NumericVector wavelength_nm(rows.size());
+    NumericVector interval_ms(rows.size());
+    NumericVector start_time(rows.size());
+    NumericVector end_time(rows.size());
+    NumericVector intensity_multiplier(rows.size());
     for (std::size_t i = 0; i < rows.size(); ++i)
     {
       project_id[i] = rows[i].project_id;
@@ -453,6 +463,31 @@ namespace mass_spec_rcpp
       pre_mz[i] = rows[i].precursor_mz;
       pre_ce[i] = rows[i].activation_ce;
       pro_mz[i] = rows[i].product_mz;
+      if (rows[i].signal_type.empty())
+        signal_type[i] = CharacterVector::get_na();
+      else
+        signal_type[i] = rows[i].signal_type;
+      if (rows[i].chromatogram_type.empty())
+        chromatogram_type[i] = CharacterVector::get_na();
+      else
+        chromatogram_type[i] = rows[i].chromatogram_type;
+      if (rows[i].detector.empty())
+        detector[i] = CharacterVector::get_na();
+      else
+        detector[i] = rows[i].detector;
+      if (rows[i].channel.empty())
+        channel[i] = CharacterVector::get_na();
+      else
+        channel[i] = rows[i].channel;
+      if (rows[i].units.empty())
+        units[i] = CharacterVector::get_na();
+      else
+        units[i] = rows[i].units;
+      wavelength_nm[i] = rows[i].wavelength_nm;
+      interval_ms[i] = rows[i].interval_ms;
+      start_time[i] = rows[i].start_time;
+      end_time[i] = rows[i].end_time;
+      intensity_multiplier[i] = rows[i].intensity_multiplier;
     }
     return DataFrame::create(Named("project_id") = project_id,
                              Named("analysis") = analysis,
@@ -462,7 +497,17 @@ namespace mass_spec_rcpp
                              Named("polarity") = polarity,
                              Named("pre_mz") = pre_mz,
                              Named("pre_ce") = pre_ce,
-                             Named("pro_mz") = pro_mz);
+                             Named("pro_mz") = pro_mz,
+                             Named("signal_type") = signal_type,
+                             Named("chromatogram_type") = chromatogram_type,
+                             Named("detector") = detector,
+                             Named("channel") = channel,
+                             Named("units") = units,
+                             Named("wavelength_nm") = wavelength_nm,
+                             Named("interval_ms") = interval_ms,
+                             Named("start_time") = start_time,
+                             Named("end_time") = end_time,
+                             Named("intensity_multiplier") = intensity_multiplier);
   }
 
   DataFrame ms_spectra_tic_rows_to_df(const std::vector<mass_spec::api::MS_SPECTRA_TIC_ROW> &rows)

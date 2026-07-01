@@ -296,6 +296,16 @@ namespace mass_spec
       double precursor_mz = 0.0;
       double activation_ce = 0.0;
       double product_mz = 0.0;
+      std::string signal_type;
+      std::string chromatogram_type;
+      std::string detector;
+      std::string channel;
+      std::string units;
+      double wavelength_nm = 0.0;
+      double interval_ms = 0.0;
+      double start_time = 0.0;
+      double end_time = 0.0;
+      double intensity_multiplier = 1.0;
     };
 
     struct MS_ANALYSES_TABLE
@@ -371,6 +381,16 @@ namespace mass_spec
       std::vector<double> precursor_mz;
       std::vector<double> activation_ce;
       std::vector<double> product_mz;
+      std::vector<std::string> signal_type;
+      std::vector<std::string> chromatogram_type;
+      std::vector<std::string> detector;
+      std::vector<std::string> channel;
+      std::vector<std::string> units;
+      std::vector<double> wavelength_nm;
+      std::vector<double> interval_ms;
+      std::vector<double> start_time;
+      std::vector<double> end_time;
+      std::vector<double> intensity_multiplier;
 
       int size() const { return static_cast<int>(index.size()); }
 

@@ -54,6 +54,7 @@ nta$set_blank_names(c(
 
 print(nta)
 nta$get_domain()
+nts$get_analyses()
 nta$list_tables()
 info(nta)
 

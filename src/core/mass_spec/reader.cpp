@@ -6,6 +6,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <cstdlib>
 #include <fstream>
 #include <limits>
 #include <filesystem>
@@ -13,6 +14,7 @@
 #include <stdexcept>
 #include <array>
 #include <string_view>
+#include <sstream>
 #include <zlib.h>
 
 namespace mass_spec
@@ -323,6 +325,293 @@ namespace mass_spec
       }
 
     } // namespace utils
+
+    namespace text_chromatogram
+    {
+      struct Block
+      {
+        int index = 0;
+        std::string id;
+        std::string signal_type;
+        std::string chromatogram_type;
+        std::string detector;
+        std::string channel;
+        std::string units;
+        int polarity = 0;
+        float precursor_mz = std::numeric_limits<float>::quiet_NaN();
+        float activation_ce = std::numeric_limits<float>::quiet_NaN();
+        float product_mz = std::numeric_limits<float>::quiet_NaN();
+        float wavelength_nm = std::numeric_limits<float>::quiet_NaN();
+        float interval_ms = std::numeric_limits<float>::quiet_NaN();
+        float start_time = std::numeric_limits<float>::quiet_NaN();
+        float end_time = std::numeric_limits<float>::quiet_NaN();
+        float intensity_multiplier = 1.0f;
+        std::vector<float> time;
+        std::vector<float> intensity;
+      };
+
+      std::string trim(const std::string &value)
+      {
+        const auto begin = std::find_if_not(value.begin(), value.end(), [](unsigned char c)
+                                            { return std::isspace(c); });
+        const auto end = std::find_if_not(value.rbegin(), value.rend(), [](unsigned char c)
+                                          { return std::isspace(c); })
+                             .base();
+        return begin < end ? std::string(begin, end) : std::string();
+      }
+
+      std::vector<std::string> split_tab(const std::string &line)
+      {
+        std::vector<std::string> out;
+        std::string item;
+        std::stringstream ss(line);
+        while (std::getline(ss, item, '\t'))
+        {
+          out.push_back(trim(item));
+        }
+        return out;
+      }
+
+      std::vector<std::string> split_numeric_line(const std::string &line)
+      {
+        std::string normalized = line;
+        for (char &c : normalized)
+        {
+          if (c == ',' || c == ';' || c == '\t')
+          {
+            c = ' ';
+          }
+        }
+        std::vector<std::string> out;
+        std::string item;
+        std::stringstream ss(normalized);
+        while (ss >> item)
+        {
+          out.push_back(item);
+        }
+        return out;
+      }
+
+      bool parse_float(const std::string &value, float &out)
+      {
+        const std::string trimmed = trim(value);
+        if (trimmed.empty())
+        {
+          return false;
+        }
+        char *end = nullptr;
+        out = std::strtof(trimmed.c_str(), &end);
+        return end != trimmed.c_str();
+      }
+
+      float parse_float_or_nan(const std::string &value)
+      {
+        float out = std::numeric_limits<float>::quiet_NaN();
+        parse_float(value, out);
+        return out;
+      }
+
+      std::string lowercase(std::string value)
+      {
+        std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c)
+                       { return static_cast<char>(std::tolower(c)); });
+        return value;
+      }
+
+      bool starts_section(const std::string &line)
+      {
+        const std::string value = trim(line);
+        return !value.empty() && value.front() == '[';
+      }
+
+      int parse_polarity(const std::string &label)
+      {
+        if (label.find("E+") != std::string::npos)
+        {
+          return 1;
+        }
+        if (label.find("E-") != std::string::npos)
+        {
+          return -1;
+        }
+        return 0;
+      }
+
+      std::string classify_ms_trace(const std::string &label)
+      {
+        const std::string lower = lowercase(label);
+        if (lower.find("tic") != std::string::npos)
+        {
+          return "TIC";
+        }
+        if (label.find('>') != std::string::npos)
+        {
+          return "MRM";
+        }
+        if (lower.find("xic") != std::string::npos)
+        {
+          return "XIC";
+        }
+        return "MS Chromatogram";
+      }
+
+      void parse_transition(const std::string &label, float &precursor_mz, float &product_mz)
+      {
+        const std::size_t arrow = label.find('>');
+        if (arrow == std::string::npos)
+        {
+          return;
+        }
+        std::size_t left = arrow;
+        while (left > 0 && (std::isdigit(static_cast<unsigned char>(label[left - 1])) || label[left - 1] == '.'))
+        {
+          --left;
+        }
+        std::size_t right = arrow + 1;
+        while (right < label.size() && !(std::isdigit(static_cast<unsigned char>(label[right])) || label[right] == '.'))
+        {
+          ++right;
+        }
+        std::size_t right_end = right;
+        while (right_end < label.size() && (std::isdigit(static_cast<unsigned char>(label[right_end])) || label[right_end] == '.'))
+        {
+          ++right_end;
+        }
+        if (left < arrow)
+        {
+          precursor_mz = parse_float_or_nan(label.substr(left, arrow - left));
+        }
+        if (right < right_end)
+        {
+          product_mz = parse_float_or_nan(label.substr(right, right_end - right));
+        }
+      }
+
+      std::vector<int> resolve_indices(std::vector<int> indices, std::size_t size)
+      {
+        if (indices.empty())
+        {
+          indices.resize(size);
+          std::iota(indices.begin(), indices.end(), 0);
+        }
+        return indices;
+      }
+
+      float min_time(const std::vector<Block> &blocks)
+      {
+        float out = std::numeric_limits<float>::max();
+        for (const auto &block : blocks)
+        {
+          for (float value : block.time)
+          {
+            if (value < out)
+            {
+              out = value;
+            }
+          }
+        }
+        return out == std::numeric_limits<float>::max() ? 0.0f : out;
+      }
+
+      float max_time(const std::vector<Block> &blocks)
+      {
+        float out = 0.0f;
+        for (const auto &block : blocks)
+        {
+          for (float value : block.time)
+          {
+            if (value > out)
+            {
+              out = value;
+            }
+          }
+        }
+        return out;
+      }
+
+      MS_CHROMATOGRAMS_HEADERS make_headers(const std::vector<Block> &blocks, std::vector<int> indices)
+      {
+        indices = resolve_indices(std::move(indices), blocks.size());
+        MS_CHROMATOGRAMS_HEADERS out;
+        out.resize_all(static_cast<int>(indices.size()));
+        int j = 0;
+        for (int i : indices)
+        {
+          if (i < 0 || static_cast<std::size_t>(i) >= blocks.size())
+          {
+            continue;
+          }
+          const auto &block = blocks[static_cast<std::size_t>(i)];
+          out.index[j] = block.index;
+          out.id[j] = block.id;
+          out.array_length[j] = static_cast<int>(std::min(block.time.size(), block.intensity.size()));
+          out.polarity[j] = block.polarity;
+          out.precursor_mz[j] = block.precursor_mz;
+          out.activation_ce[j] = block.activation_ce;
+          out.product_mz[j] = block.product_mz;
+          out.signal_type[j] = block.signal_type;
+          out.chromatogram_type[j] = block.chromatogram_type;
+          out.detector[j] = block.detector;
+          out.channel[j] = block.channel;
+          out.units[j] = block.units;
+          out.wavelength_nm[j] = block.wavelength_nm;
+          out.interval_ms[j] = block.interval_ms;
+          out.start_time[j] = block.start_time;
+          out.end_time[j] = block.end_time;
+          out.intensity_multiplier[j] = block.intensity_multiplier;
+          ++j;
+        }
+        return out;
+      }
+
+      std::vector<std::vector<std::vector<float>>> make_arrays(const std::vector<Block> &blocks, std::vector<int> indices)
+      {
+        indices = resolve_indices(std::move(indices), blocks.size());
+        std::vector<std::vector<std::vector<float>>> out;
+        out.reserve(indices.size());
+        for (int i : indices)
+        {
+          if (i < 0 || static_cast<std::size_t>(i) >= blocks.size())
+          {
+            continue;
+          }
+          const auto &block = blocks[static_cast<std::size_t>(i)];
+          out.push_back({block.time, block.intensity});
+        }
+        return out;
+      }
+
+      MS_SUMMARY make_summary(const std::string &file_path, const std::string &format, const std::vector<Block> &blocks)
+      {
+        MS_SUMMARY out{};
+        out.file_name = std::filesystem::path(file_path).filename().string();
+        out.file_path = file_path;
+        out.file_dir = std::filesystem::path(file_path).parent_path().string();
+        out.file_extension = std::filesystem::path(file_path).extension().string();
+        out.number_spectra = 0;
+        out.number_chromatograms = static_cast<int>(blocks.size());
+        out.number_spectra_binary_arrays = 0;
+        out.format = format;
+        out.type = "chromatogram";
+        out.min_mz = 0.0f;
+        out.max_mz = 0.0f;
+        out.start_rt = min_time(blocks);
+        out.end_rt = max_time(blocks);
+        out.has_ion_mobility = false;
+        return out;
+      }
+
+      std::vector<float> empty_float(std::vector<int> indices)
+      {
+        return std::vector<float>(indices.size(), 0.0f);
+      }
+
+      std::vector<int> empty_int(std::vector<int> indices)
+      {
+        return std::vector<int>(indices.size(), 0);
+      }
+
+    } // namespace text_chromatogram
 
     namespace mzxml
     {
@@ -1587,6 +1876,11 @@ namespace mass_spec
           h.precursor_mz[j] = 0.0f;
           h.activation_ce[j] = 0.0f;
           h.product_mz[j] = 0.0f;
+          h.signal_type[j] = "MS";
+          h.chromatogram_type[j] = h.id[j].find("TIC") != std::string::npos ? "TIC" : "MS Chromatogram";
+          h.detector[j] = "MS";
+          h.channel[j] = h.id[j];
+          h.units[j] = "counts";
           ++j;
         }
         return h;
@@ -1606,16 +1900,451 @@ namespace mass_spec
 
     } // namespace mzml
 
+    namespace shimadzu_txt
+    {
+      struct Impl
+      {
+        std::string file_path;
+        std::vector<text_chromatogram::Block> blocks;
+      };
+
+      void parse_lc_name(text_chromatogram::Block &block)
+      {
+        const std::size_t dash = block.id.find('-');
+        if (dash != std::string::npos)
+        {
+          block.detector = text_chromatogram::trim(block.id.substr(0, dash));
+          block.channel = text_chromatogram::trim(block.id.substr(dash + 1));
+        }
+        else
+        {
+          block.detector = block.id;
+          block.channel = block.id;
+        }
+      }
+
+      void finalize_lc_block(text_chromatogram::Block &block)
+      {
+        if (std::isnan(block.start_time) && !block.time.empty())
+        {
+          block.start_time = block.time.front();
+        }
+        if (std::isnan(block.end_time) && !block.time.empty())
+        {
+          block.end_time = block.time.back();
+        }
+        if (std::isnan(block.interval_ms) && block.time.size() > 1)
+        {
+          block.interval_ms = (block.time[1] - block.time[0]) * 60000.0f;
+        }
+        parse_lc_name(block);
+        const std::string lower_id = text_chromatogram::lowercase(block.id);
+        if (!std::isnan(block.wavelength_nm) || lower_id.find("detector") != std::string::npos)
+        {
+          block.signal_type = "UV";
+          block.chromatogram_type = "UV Trace";
+        }
+        else
+        {
+          block.signal_type = "Analog";
+          block.chromatogram_type = "Analog Trace";
+        }
+      }
+
+      void finalize_lc_status_block(text_chromatogram::Block &block)
+      {
+        if (std::isnan(block.start_time) && !block.time.empty())
+        {
+          block.start_time = block.time.front();
+        }
+        if (std::isnan(block.end_time) && !block.time.empty())
+        {
+          block.end_time = block.time.back();
+        }
+        if (std::isnan(block.interval_ms) && block.time.size() > 1)
+        {
+          block.interval_ms = (block.time[1] - block.time[0]) * 60000.0f;
+        }
+        block.signal_type = "LC Status";
+        block.chromatogram_type = "Status Trace";
+        block.detector = "LC Status";
+        block.channel = block.id;
+      }
+
+      void parse_metadata(text_chromatogram::Block &block, const std::string &line)
+      {
+        const auto parts = text_chromatogram::split_tab(line);
+        if (parts.size() < 2)
+        {
+          return;
+        }
+        const std::string key = text_chromatogram::lowercase(parts[0]);
+        if (key == "interval(msec)")
+        {
+          block.interval_ms = text_chromatogram::parse_float_or_nan(parts[1]);
+        }
+        else if (key == "start time(min)")
+        {
+          block.start_time = text_chromatogram::parse_float_or_nan(parts[1]);
+        }
+        else if (key == "end time(min)")
+        {
+          block.end_time = text_chromatogram::parse_float_or_nan(parts[1]);
+        }
+        else if (key == "intensity units")
+        {
+          block.units = parts[1];
+        }
+        else if (key == "intensity multiplier")
+        {
+          float multiplier = 1.0f;
+          if (text_chromatogram::parse_float(parts[1], multiplier))
+          {
+            block.intensity_multiplier = multiplier;
+          }
+        }
+        else if (key == "wavelength(nm)")
+        {
+          block.wavelength_nm = text_chromatogram::parse_float_or_nan(parts[1]);
+        }
+      }
+
+      std::vector<text_chromatogram::Block> parse_file(const std::string &file_path)
+      {
+        std::ifstream input(file_path);
+        if (!input)
+        {
+          throw std::runtime_error("Failed to open Shimadzu TXT file: " + file_path);
+        }
+        std::vector<std::string> lines;
+        std::string line;
+        while (std::getline(input, line))
+        {
+          lines.push_back(line);
+        }
+
+        std::vector<text_chromatogram::Block> blocks;
+        for (std::size_t i = 0; i < lines.size(); ++i)
+        {
+          const std::string current = text_chromatogram::trim(lines[i]);
+          const bool is_lc = current.rfind("[LC Chromatogram(", 0) == 0;
+          const bool is_lc_status = current.rfind("[LC Status Trace(", 0) == 0;
+          const bool is_ms = current == "[MS Chromatogram]";
+          if (!is_lc && !is_lc_status && !is_ms)
+          {
+            continue;
+          }
+
+          text_chromatogram::Block block;
+          block.index = static_cast<int>(blocks.size());
+          if (is_lc || is_lc_status)
+          {
+            const std::size_t begin = current.find('(');
+            const std::size_t end = current.rfind(')');
+            block.id = begin != std::string::npos && end != std::string::npos && end > begin ? current.substr(begin + 1, end - begin - 1) : current;
+          }
+          else
+          {
+            block.signal_type = "MS";
+            block.detector = "MS";
+            block.units = "counts";
+          }
+
+          bool in_data = false;
+          for (++i; i < lines.size(); ++i)
+          {
+            const std::string row = text_chromatogram::trim(lines[i]);
+            if (row.empty())
+            {
+              continue;
+            }
+            if (text_chromatogram::starts_section(row))
+            {
+              --i;
+              break;
+            }
+            const std::string lower = text_chromatogram::lowercase(row);
+            if (!in_data && lower.rfind("r.time", 0) == 0)
+            {
+              in_data = true;
+              continue;
+            }
+            if (!in_data)
+            {
+              if (is_ms)
+              {
+                const auto parts = text_chromatogram::split_tab(row);
+                if (parts.size() >= 2 && text_chromatogram::lowercase(parts[0]) == "m/z")
+                {
+                  block.id = parts[1];
+                  block.channel = block.id;
+                  block.polarity = text_chromatogram::parse_polarity(block.id);
+                  block.chromatogram_type = text_chromatogram::classify_ms_trace(block.id);
+                  text_chromatogram::parse_transition(block.id, block.precursor_mz, block.product_mz);
+                }
+              }
+              parse_metadata(block, row);
+              continue;
+            }
+
+            const auto values = text_chromatogram::split_numeric_line(row);
+            if (values.size() < 2)
+            {
+              continue;
+            }
+            float rt = 0.0f;
+            float intensity = 0.0f;
+            if (text_chromatogram::parse_float(values[0], rt) && text_chromatogram::parse_float(values[1], intensity))
+            {
+              block.time.push_back(rt);
+              block.intensity.push_back((is_lc || is_lc_status) ? intensity * block.intensity_multiplier : intensity);
+            }
+          }
+
+          if (is_lc)
+          {
+            finalize_lc_block(block);
+          }
+          else if (is_lc_status)
+          {
+            finalize_lc_status_block(block);
+          }
+          else
+          {
+            if (block.id.empty())
+            {
+              block.id = "MS Chromatogram";
+              block.channel = block.id;
+              block.chromatogram_type = "MS Chromatogram";
+            }
+            if (std::isnan(block.start_time) && !block.time.empty())
+            {
+              block.start_time = block.time.front();
+            }
+            if (std::isnan(block.end_time) && !block.time.empty())
+            {
+              block.end_time = block.time.back();
+            }
+          }
+          if (!block.time.empty() && !block.intensity.empty())
+          {
+            blocks.push_back(std::move(block));
+          }
+        }
+        return blocks;
+      }
+
+      Reader::Reader(const std::string &file) : MS_READER(file), pimpl(std::make_unique<Impl>())
+      {
+        pimpl->file_path = file;
+        pimpl->blocks = parse_file(file);
+      }
+      Reader::~Reader() = default;
+      int Reader::get_number_spectra() { return 0; }
+      int Reader::get_number_chromatograms() { return static_cast<int>(pimpl->blocks.size()); }
+      int Reader::get_number_spectra_binary_arrays() { return 0; }
+      std::string Reader::get_format() { return "ShimadzuTXT"; }
+      std::string Reader::get_type() { return "chromatogram"; }
+      std::string Reader::get_time_stamp() { return {}; }
+      std::vector<int> Reader::get_polarity() { return {}; }
+      std::vector<int> Reader::get_mode() { return {}; }
+      std::vector<int> Reader::get_level() { return {}; }
+      std::vector<int> Reader::get_configuration() { return {}; }
+      float Reader::get_min_mz() { return 0.0f; }
+      float Reader::get_max_mz() { return 0.0f; }
+      float Reader::get_start_rt() { return text_chromatogram::min_time(pimpl->blocks); }
+      float Reader::get_end_rt() { return text_chromatogram::max_time(pimpl->blocks); }
+      bool Reader::has_ion_mobility() { return false; }
+      MS_SUMMARY Reader::get_summary() { return text_chromatogram::make_summary(pimpl->file_path, "ShimadzuTXT", pimpl->blocks); }
+      std::vector<int> Reader::get_spectra_index(std::vector<int> indices) { return text_chromatogram::empty_int(indices); }
+      std::vector<int> Reader::get_spectra_scan_number(std::vector<int> indices) { return text_chromatogram::empty_int(indices); }
+      std::vector<int> Reader::get_spectra_array_length(std::vector<int> indices) { return text_chromatogram::empty_int(indices); }
+      std::vector<int> Reader::get_spectra_level(std::vector<int> indices) { return text_chromatogram::empty_int(indices); }
+      std::vector<int> Reader::get_spectra_configuration(std::vector<int> indices) { return text_chromatogram::empty_int(indices); }
+      std::vector<int> Reader::get_spectra_mode(std::vector<int> indices) { return text_chromatogram::empty_int(indices); }
+      std::vector<int> Reader::get_spectra_polarity(std::vector<int> indices) { return text_chromatogram::empty_int(indices); }
+      std::vector<float> Reader::get_spectra_lowmz(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_highmz(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_bpmz(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_bpint(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_tic(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_rt(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_mobility(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<int> Reader::get_spectra_precursor_scan(std::vector<int> indices) { return text_chromatogram::empty_int(indices); }
+      std::vector<float> Reader::get_spectra_precursor_mz(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_precursor_window_mz(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_precursor_window_mzlow(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_precursor_window_mzhigh(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_collision_energy(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      MS_SPECTRA_HEADERS Reader::get_spectra_headers(std::vector<int>, bool) { return {}; }
+      MS_CHROMATOGRAMS_HEADERS Reader::get_chromatograms_headers(std::vector<int> indices) { return text_chromatogram::make_headers(pimpl->blocks, std::move(indices)); }
+      std::vector<std::vector<std::vector<float>>> Reader::get_spectra(std::vector<int>) { return {}; }
+      std::vector<std::vector<std::vector<float>>> Reader::get_chromatograms(std::vector<int> indices) { return text_chromatogram::make_arrays(pimpl->blocks, std::move(indices)); }
+      std::vector<std::vector<std::string>> Reader::get_software() { return {}; }
+      std::vector<std::vector<std::string>> Reader::get_hardware() { return {}; }
+      MS_SPECTRUM Reader::get_spectrum(const int &) { return {}; }
+
+    } // namespace shimadzu_txt
+
+    namespace asc
+    {
+      struct Impl
+      {
+        std::string file_path;
+        std::vector<text_chromatogram::Block> blocks;
+      };
+
+      std::vector<text_chromatogram::Block> parse_file(const std::string &file_path)
+      {
+        std::ifstream input(file_path);
+        if (!input)
+        {
+          throw std::runtime_error("Failed to open ASC chromatogram file: " + file_path);
+        }
+        text_chromatogram::Block block;
+        block.index = 0;
+        block.id = std::filesystem::path(file_path).stem().string();
+        block.signal_type = "Unknown";
+        block.chromatogram_type = "Chromatogram";
+        block.intensity_multiplier = 1.0f;
+        std::string line;
+        while (std::getline(input, line))
+        {
+          const std::string row = text_chromatogram::trim(line);
+          if (row.empty() || row.front() == '#' || row.front() == '[')
+          {
+            continue;
+          }
+          if (!(std::isdigit(static_cast<unsigned char>(row.front())) || row.front() == '-' || row.front() == '+' || row.front() == '.'))
+          {
+            continue;
+          }
+          const auto values = text_chromatogram::split_numeric_line(row);
+          if (values.size() < 2)
+          {
+            continue;
+          }
+          float rt = 0.0f;
+          float intensity = 0.0f;
+          if (text_chromatogram::parse_float(values[0], rt) && text_chromatogram::parse_float(values[1], intensity))
+          {
+            block.time.push_back(rt);
+            block.intensity.push_back(intensity);
+          }
+        }
+        if (!block.time.empty())
+        {
+          block.start_time = block.time.front();
+          block.end_time = block.time.back();
+          if (block.time.size() > 1)
+          {
+            block.interval_ms = (block.time[1] - block.time[0]) * 60000.0f;
+          }
+          return {std::move(block)};
+        }
+        return {};
+      }
+
+      Reader::Reader(const std::string &file) : MS_READER(file), pimpl(std::make_unique<Impl>())
+      {
+        pimpl->file_path = file;
+        pimpl->blocks = parse_file(file);
+      }
+      Reader::~Reader() = default;
+      int Reader::get_number_spectra() { return 0; }
+      int Reader::get_number_chromatograms() { return static_cast<int>(pimpl->blocks.size()); }
+      int Reader::get_number_spectra_binary_arrays() { return 0; }
+      std::string Reader::get_format() { return "ASC"; }
+      std::string Reader::get_type() { return "chromatogram"; }
+      std::string Reader::get_time_stamp() { return {}; }
+      std::vector<int> Reader::get_polarity() { return {}; }
+      std::vector<int> Reader::get_mode() { return {}; }
+      std::vector<int> Reader::get_level() { return {}; }
+      std::vector<int> Reader::get_configuration() { return {}; }
+      float Reader::get_min_mz() { return 0.0f; }
+      float Reader::get_max_mz() { return 0.0f; }
+      float Reader::get_start_rt() { return text_chromatogram::min_time(pimpl->blocks); }
+      float Reader::get_end_rt() { return text_chromatogram::max_time(pimpl->blocks); }
+      bool Reader::has_ion_mobility() { return false; }
+      MS_SUMMARY Reader::get_summary() { return text_chromatogram::make_summary(pimpl->file_path, "ASC", pimpl->blocks); }
+      std::vector<int> Reader::get_spectra_index(std::vector<int> indices) { return text_chromatogram::empty_int(indices); }
+      std::vector<int> Reader::get_spectra_scan_number(std::vector<int> indices) { return text_chromatogram::empty_int(indices); }
+      std::vector<int> Reader::get_spectra_array_length(std::vector<int> indices) { return text_chromatogram::empty_int(indices); }
+      std::vector<int> Reader::get_spectra_level(std::vector<int> indices) { return text_chromatogram::empty_int(indices); }
+      std::vector<int> Reader::get_spectra_configuration(std::vector<int> indices) { return text_chromatogram::empty_int(indices); }
+      std::vector<int> Reader::get_spectra_mode(std::vector<int> indices) { return text_chromatogram::empty_int(indices); }
+      std::vector<int> Reader::get_spectra_polarity(std::vector<int> indices) { return text_chromatogram::empty_int(indices); }
+      std::vector<float> Reader::get_spectra_lowmz(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_highmz(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_bpmz(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_bpint(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_tic(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_rt(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_mobility(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<int> Reader::get_spectra_precursor_scan(std::vector<int> indices) { return text_chromatogram::empty_int(indices); }
+      std::vector<float> Reader::get_spectra_precursor_mz(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_precursor_window_mz(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_precursor_window_mzlow(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_precursor_window_mzhigh(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      std::vector<float> Reader::get_spectra_collision_energy(std::vector<int> indices) { return text_chromatogram::empty_float(indices); }
+      MS_SPECTRA_HEADERS Reader::get_spectra_headers(std::vector<int>, bool) { return {}; }
+      MS_CHROMATOGRAMS_HEADERS Reader::get_chromatograms_headers(std::vector<int> indices) { return text_chromatogram::make_headers(pimpl->blocks, std::move(indices)); }
+      std::vector<std::vector<std::vector<float>>> Reader::get_spectra(std::vector<int>) { return {}; }
+      std::vector<std::vector<std::vector<float>>> Reader::get_chromatograms(std::vector<int> indices) { return text_chromatogram::make_arrays(pimpl->blocks, std::move(indices)); }
+      std::vector<std::vector<std::string>> Reader::get_software() { return {}; }
+      std::vector<std::vector<std::string>> Reader::get_hardware() { return {}; }
+      MS_SPECTRUM Reader::get_spectrum(const int &) { return {}; }
+
+    } // namespace asc
+
+    namespace shimadzu_lcd
+    {
+      Reader::Reader(const std::string &file) : MS_READER(file)
+      {
+        throw std::runtime_error("Shimadzu LCD detected, but native LCD chromatogram decoding is not implemented yet. Export to TXT or ASC for now.");
+      }
+    } // namespace shimadzu_lcd
+
     std::string detect_format(const std::string &file_path)
     {
       std::string lower = file_path;
       std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c)
                      { return static_cast<char>(std::tolower(c)); });
 
-      if (lower.find(".mzml") != std::string::npos)
+      if (lower.size() >= 5 && lower.substr(lower.size() - 5) == ".mzml")
         return "mzML";
-      if (lower.find(".mzxml") != std::string::npos)
+      if (lower.size() >= 6 && lower.substr(lower.size() - 6) == ".mzxml")
         return "mzXML";
+
+      if (lower.size() >= 4 && lower.substr(lower.size() - 4) == ".lcd")
+      {
+        std::ifstream file(file_path, std::ios::binary);
+        unsigned char signature[8] = {0};
+        file.read(reinterpret_cast<char *>(signature), 8);
+        const unsigned char ole_signature[8] = {0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1};
+        if (file.gcount() == 8 && std::equal(std::begin(signature), std::end(signature), std::begin(ole_signature)))
+        {
+          return "ShimadzuLCD";
+        }
+      }
+
+      if (lower.size() >= 4 && lower.substr(lower.size() - 4) == ".txt")
+      {
+        std::ifstream file(file_path);
+        std::string contents;
+        contents.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+        if (contents.find("[LC Chromatogram(") != std::string::npos ||
+            contents.find("[LC Status Trace(") != std::string::npos ||
+            contents.find("[MS Chromatogram]") != std::string::npos)
+        {
+          return "ShimadzuTXT";
+        }
+      }
+
+      if (lower.size() >= 4 && lower.substr(lower.size() - 4) == ".asc")
+      {
+        return "ASC";
+      }
 
       std::ifstream file(file_path);
       std::string line;
@@ -1637,6 +2366,12 @@ namespace mass_spec
         return std::make_unique<mzml::Reader>(file_path);
       if (format == "mzXML")
         return std::make_unique<mzxml::Reader>(file_path);
+      if (format == "ShimadzuTXT")
+        return std::make_unique<shimadzu_txt::Reader>(file_path);
+      if (format == "ASC")
+        return std::make_unique<asc::Reader>(file_path);
+      if (format == "ShimadzuLCD")
+        throw std::runtime_error("Shimadzu LCD detected, but native LCD chromatogram decoding is not implemented yet. Export to TXT or ASC for now.");
       throw std::runtime_error("Unsupported file format: " + format);
     }
 
@@ -1652,6 +2387,12 @@ namespace mass_spec
       format_case = 0;
       if (format == "mzXML")
         format_case = 1;
+      else if (format == "ShimadzuTXT")
+        format_case = 2;
+      else if (format == "ASC")
+        format_case = 3;
+      else if (format == "ShimadzuLCD")
+        format_case = 4;
       ms = create_reader(file);
     }
 
