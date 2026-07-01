@@ -10,6 +10,218 @@
 - Example data can be found in dev\dev_reader\example_files
 - R scripts for tests with the example files and creation of showcases can be created in dev\dev_reader
 
+Yes — update the plan to explicitly treat `dev/dev_reader` as the **fixture + script workspace**.
+
+## Add this to `.ai/expent_reader_plan.md`
+
+````md
+## Added fixture-driven implementation rules
+
+Use `dev/dev_reader/` as the local development workspace for reader testing.
+
+Expected files:
+
+- `260115_ADC.txt`
+- `260115_ADC.lcd`
+- `karl.txt`
+- `karl.lcd`
+- `karl.mzML`
+
+Do not place these files under `tests/testthat/` unless they are small enough and allowed for repository distribution. Use `dev/dev_reader/` for larger/private/vendor examples.
+
+## Reader fixture types
+
+### 1. `260115_ADC.txt`
+
+Shimadzu LCsolution UV/AD chromatogram export.
+
+Expected parser behavior:
+
+- Detect as `ShimadzuTXT`
+- Parse `[LC Chromatogram(...)]` blocks
+- Support detector/channel naming such as `Detector A-Ch1` and `AD1`
+- Parse:
+  - `Interval(msec)`
+  - `# of Points`
+  - `Start Time(min)`
+  - `End Time(min)`
+  - `Intensity Units`
+  - `Intensity Multiplier`
+  - optional `Wavelength(nm)`
+- Return chromatograms as two arrays:
+  - time in minutes
+  - scaled intensity
+
+The example contains LC-UV metadata such as `# of Detectors`, detector IDs/names, and LC chromatogram sections. :contentReference[oaicite:0]{index=0}
+
+### 2. `karl.txt`
+
+Shimadzu LabSolutions LC-MS export.
+
+Expected parser behavior:
+
+- Detect as `ShimadzuTXT`
+- Parse `[MS Chromatogram]` blocks, not only `[LC Chromatogram(...)]`
+- Support MS chromatogram headers such as:
+  - `m/z 1-1MS(E+) TIC`
+  - `m/z 4-6MS(E+)m/z 268.2000>116.1000`
+- Parse:
+  - `# of Points`
+  - `Start Time(min)`
+  - `End Time(min)`
+  - `R.Time(min)`
+  - `Absolute Intensity`
+  - `Relative Intensity`
+- Store `Absolute Intensity` as the main intensity array.
+- Ignore or optionally store `Relative Intensity` later.
+
+The `karl.txt` fixture has LabSolutions 5.109 metadata, three detectors `AD1`, `AD2`, and `MS`, plus many `[MS Chromatogram]` sections. :contentReference[oaicite:1]{index=1}
+
+### 3. `karl.mzML`
+
+Use as the reference mzML for comparison.
+
+Expected use:
+
+- Confirm existing mzML reader still works.
+- Compare number of chromatograms and selected TIC/MRM traces against `karl.txt` where possible.
+- Do not require exact one-to-one equivalence in the first implementation because exported TXT may contain processed/export-selected traces.
+
+### 4. `.lcd` files
+
+Initial behavior:
+
+- Detect OLE Compound File signature.
+- Return format as `ShimadzuLCD`.
+- Throw a clear message for native LCD decoding until the decoder is implemented:
+
+```text
+Shimadzu LCD detected, but native LCD chromatogram decoding is not implemented yet. Export to TXT or ASC for now.
+````
+
+Do not silently return empty data.
+
+## Parser extension required
+
+The TXT reader must support two Shimadzu export block families:
+
+1. LC detector chromatograms:
+
+```text
+[LC Chromatogram(Detector A-Ch1)]
+R.Time (min)    Intensity
+```
+
+2. MS chromatograms:
+
+```text
+[MS Chromatogram]
+m/z    1-1MS(E+) TIC
+R.Time(min)    Absolute Intensity    Relative Intensity
+```
+
+## Header mapping
+
+Set `MS_CHROMATOGRAMS_HEADERS` as follows:
+
+### LC UV/AD blocks
+
+```text
+signal_type = "UV" or "Analog"
+chromatogram_type = "UV Trace" or "Analog Trace"
+detector = parsed detector name
+channel = parsed channel
+units = parsed Intensity Units
+wavelength_nm = parsed Wavelength(nm), otherwise NA
+intensity_multiplier = parsed multiplier, otherwise 1
+```
+
+### MS blocks
+
+```text
+signal_type = "MS"
+chromatogram_type = "TIC", "MRM", "XIC", or "MS Chromatogram"
+detector = "MS"
+channel = parsed trace label
+units = "counts"
+wavelength_nm = NA
+intensity_multiplier = 1
+precursor_mz / product_mz = parse from transition when available
+polarity = parse from E+ or E- when available
+```
+
+## Required dev scripts
+
+Add these scripts under `dev/dev_reader/`:
+
+```text
+inspect_reader.R
+compare_txt_mzml.R
+inspect_lcd_signature.R
+```
+
+### `inspect_reader.R`
+
+Should run:
+
+```r
+files <- c(
+  "260115_ADC.txt",
+  "260115_ADC.lcd",
+  "karl.txt",
+  "karl.lcd",
+  "karl.mzML"
+)
+
+for (f in files) {
+  message("Reading: ", f)
+  # create reader / MS_FILE
+  # print format, type, number_spectra, number_chromatograms
+  # print chromatogram headers
+}
+```
+
+### `compare_txt_mzml.R`
+
+Use only for `karl.txt` and `karl.mzML`.
+
+Compare:
+
+* detected format
+* number of chromatograms
+* first 5 chromatogram headers
+* TIC-like traces if present
+* retention time ranges
+
+### `inspect_lcd_signature.R`
+
+Check only:
+
+* file exists
+* first 8 bytes match `D0 CF 11 E0 A1 B1 1A E1`
+* reader detects `ShimadzuLCD`
+* reader throws expected unsupported-native-decoding message
+
+## Acceptance criteria
+
+The agent is done when:
+
+1. Existing mzML/mzXML tests still pass.
+2. `260115_ADC.txt` reads as chromatogram-only data.
+3. `karl.txt` reads MS chromatogram blocks.
+4. `karl.mzML` still reads through the existing mzML backend.
+5. `.lcd` files are detected and fail with a clear explicit message.
+6. `ProjectMassSpec` accepts TXT/ASC/mzML/mzXML files.
+7. `ProjectMassSpecChromatograms` can receive chromatograms from both:
+
+   * LC UV/AD TXT exports
+   * MS TXT/mzML chromatograms
+
+```
+
+The key addition is that `karl.txt` is **not just another UV TXT**; it is a LabSolutions **MS chromatogram export**, so the TXT reader must parse both `[LC Chromatogram(...)]` and `[MS Chromatogram]` block styles.
+```
+
 ## Refactor plan for the agent
 
 Goal: extend `src/core/mass_spec/reader.h` and `reader.cpp` so the existing `MS_FILE` / `MS_READER` system can read:
