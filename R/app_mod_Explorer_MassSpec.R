@@ -221,15 +221,15 @@
     )
 
     group_by_chromatograms <- c(
-      "id",
+      "chromatogram_id",
       "analysis",
       "replicate",
       "polarity",
-      "id+polarity",
+      "chromatogram_id+polarity",
       "analysis+polarity",
       "replicate+polarity",
-      "id+analysis",
-      "id+replicate"
+      "chromatogram_id+analysis",
+      "chromatogram_id+replicate"
     )
 
     selected_analysis_names <- function(selected_rows) {

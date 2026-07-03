@@ -496,7 +496,7 @@ spectra) to 1 (i.e., must be present in all spectra) for traces during clusterin
 
 \item{showText}{Logical (length 1), set to \code{TRUE} to show the text annotations.}
 
-\item{chromatograms}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
+\item{chromatograms}{A character or integer vector with the chromatogram_id or the index of the chromatograms.}
 
 \item{analysis}{Character scalar with the analysis name.}
 }

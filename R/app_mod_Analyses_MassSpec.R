@@ -81,6 +81,7 @@
             searching = TRUE,
             processing = TRUE,
             scrollY = "calc(100vh - var(--sf-topbar-height) - var(--sf-pad-10) - 38px - 69px - var(--sf-dt-chrome))",
+            scrollX = TRUE,
             scrollCollapse = TRUE,
             paging = FALSE,
             dom = "Bfrt",

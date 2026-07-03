@@ -3,11 +3,39 @@
 \name{ProjectMassSpecChromatogramsS3}
 \alias{ProjectMassSpecChromatogramsS3}
 \alias{get_chromatograms_headers.ProjectMassSpecChromatograms}
+\alias{get_chromatograms.ProjectMassSpecChromatograms}
+\alias{plot_chromatograms.ProjectMassSpecChromatograms}
 \alias{print.ProjectMassSpecChromatograms}
 \alias{show.ProjectMassSpecChromatograms}
 \title{ProjectMassSpecChromatograms S3 Methods}
 \usage{
 \method{get_chromatograms_headers}{ProjectMassSpecChromatograms}(x, analyses = NULL)
+
+\method{get_chromatograms}{ProjectMassSpecChromatograms}(
+  x,
+  analyses = NULL,
+  chromatograms = NULL,
+  rtmin = 0,
+  rtmax = 0,
+  minIntensity = NULL
+)
+
+\method{plot_chromatograms}{ProjectMassSpecChromatograms}(
+  x,
+  analyses = NULL,
+  chromatograms = NULL,
+  rtmin = 0,
+  rtmax = 0,
+  minIntensity = NULL,
+  downsize = NULL,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colorPalette = NULL,
+  darkMode = FALSE
+)
 
 \method{print}{ProjectMassSpecChromatograms}(x, ...)
 
@@ -29,6 +57,10 @@ methods and expose the chromatogram-specific package generics.
 \section{Functions}{
 \itemize{
 \item \code{get_chromatograms_headers(ProjectMassSpecChromatograms)}: Return chromatogram headers for selected analyses.
+
+\item \code{get_chromatograms(ProjectMassSpecChromatograms)}: Return loaded chromatograms from the MS_CHROMATOGRAMS table.
+
+\item \code{plot_chromatograms(ProjectMassSpecChromatograms)}: Plot chromatograms from the MS_CHROMATOGRAMS table.
 
 \item \code{print(ProjectMassSpecChromatograms)}: Print a short summary.
 

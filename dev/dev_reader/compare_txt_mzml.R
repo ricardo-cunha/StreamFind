@@ -5,7 +5,9 @@ devtools::load_all()
 example_dir <- file.path("dev", "dev_reader", "example_files")
 karl_txt <- file.path(example_dir, "karl.txt")
 karl_mzml <- file.path(example_dir, "karl.mzML")
-adc_txt <- file.path("dev/dev_reader/example_files", "260115_ADC.txt")
+karl_lcd <- file.path(example_dir, "karl.lcd")
+adc_txt <- file.path("dev/dev_reader/example_files", "260115_ADC_angepasst.txt")
+adc_lcd <- file.path("dev/dev_reader/example_files", "260115_ADC_angepasst.lcd")
 
 stopifnot(file.exists(karl_txt), file.exists(karl_mzml))
 
@@ -15,15 +17,36 @@ make_project <- function(file, project_id) {
 
 txt <- make_project(karl_txt, "karl_txt_compare")
 mzml <- make_project(karl_mzml, "karl_mzml_compare")
-acd <- make_project(adc_txt, "karl_mzml_compare")
+lcd <- make_project(karl_lcd, "karl_lcd_compare")
+acd_txt <- make_project(adc_txt, "karl_mzml_compare")
+acd_lcd <- make_project(adc_txt, "acd_lcd_compare")
 
-# plot_raw_chromatograms(txt, groupBy = "id")
-plot_raw_chromatograms(mzml, groupBy = "id")
 
-plot_raw_chromatograms(acd, groupBy = "id")
+head(get_chromatograms_headers(lcd)[30:40, ])
 
+plot_raw_chromatograms(txt, groupBy = "chromatogram_id")
+plot_raw_chromatograms(mzml, groupBy = "chromatogram_id")
+
+plot_raw_chromatograms(lcd, groupBy = "chromatogram_id")
+
+plot_raw_chromatograms(acd_txt, groupBy = "chromatogram_id")
+plot_raw_chromatograms(acd_lcd, groupBy = "chromatogram_id")
+
+get_raw_chromatograms(txt, groupBy = "chromatogram_id")
+get_raw_chromatograms(mzml, groupBy = "chromatogram_id")
+
+head(get_raw_chromatograms(lcd, groupBy = "chromatogram_id"))
+
+get_raw_chromatograms(acd_txt, groupBy = "chromatogram_id")
+get_raw_chromatograms(acd_lcd, groupBy = "chromatogram_id")
+
+
+plot_spectra_tic(lcd, levels = 2)
 
 spec <- get_raw_spectra(mzml, mz = 176.2, levels = 2, allTraces = FALSE)
+plot(spec$rt[spec$mz > 150], spec$intensity[spec$mz > 150], type = "l")
+
+spec <- get_raw_spectra(lcd, mz = 176.2, levels = 2, allTraces = FALSE)
 plot(spec$rt[spec$mz > 150], spec$intensity[spec$mz > 150], type = "l")
 
 txt_analysis <- txt$get_analyses()

@@ -290,7 +290,7 @@ namespace mass_spec
     {
       std::string analysis;
       int index = 0;
-      std::string id;
+      std::string chromatogram_id;
       int array_length = 0;
       int polarity = 0;
       double precursor_mz = 0.0;
@@ -375,7 +375,7 @@ namespace mass_spec
       std::vector<std::string> project_id;
       std::vector<std::string> analysis;
       std::vector<int> index;
-      std::vector<std::string> id;
+      std::vector<std::string> chromatogram_id;
       std::vector<int> array_length;
       std::vector<int> polarity;
       std::vector<double> precursor_mz;

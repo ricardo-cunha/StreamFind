@@ -61,6 +61,14 @@ rcpp_decode_string <- function(base64_encoded) {
     .Call(`_streamfind_rcpp_decode_string`, base64_encoded)
 }
 
+rcpp_lcd_list_streams <- function(file_path) {
+    .Call(`_streamfind_rcpp_lcd_list_streams`, file_path)
+}
+
+rcpp_lcd_inspect_stream <- function(file_path, stream_path, max_bytes = 128L) {
+    .Call(`_streamfind_rcpp_lcd_inspect_stream`, file_path, stream_path, max_bytes)
+}
+
 rcpp_project_mass_spec_new <- function(project_xptr, file_paths, replicates, blanks) {
     .Call(`_streamfind_rcpp_project_mass_spec_new`, project_xptr, file_paths, replicates, blanks)
 }
@@ -143,6 +151,18 @@ rcpp_project_mass_spec_spectra_new <- function(project_xptr, file_paths, replica
 
 rcpp_project_mass_spec_chromatograms_new <- function(project_xptr, file_paths, replicates, blanks) {
     .Call(`_streamfind_rcpp_project_mass_spec_chromatograms_new`, project_xptr, file_paths, replicates, blanks)
+}
+
+rcpp_project_mass_spec_chromatograms_load <- function(chromatograms_xptr, analyses, chromatogramIdRegex, ignoreCase, invert) {
+    .Call(`_streamfind_rcpp_project_mass_spec_chromatograms_load`, chromatograms_xptr, analyses, chromatogramIdRegex, ignoreCase, invert)
+}
+
+rcpp_project_mass_spec_chromatograms_filter_rt <- function(chromatograms_xptr, analyses, rtmin, rtmax) {
+    .Call(`_streamfind_rcpp_project_mass_spec_chromatograms_filter_rt`, chromatograms_xptr, analyses, rtmin, rtmax)
+}
+
+rcpp_project_mass_spec_chromatograms_get_chromatograms <- function(chromatograms_xptr, analyses) {
+    .Call(`_streamfind_rcpp_project_mass_spec_chromatograms_get_chromatograms`, chromatograms_xptr, analyses)
 }
 
 rcpp_project_non_target_analysis_new <- function(project_xptr) {

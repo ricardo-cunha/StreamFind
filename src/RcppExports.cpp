@@ -176,6 +176,30 @@ BEGIN_RCPP
     return rcpp_result_gen;
 END_RCPP
 }
+// rcpp_lcd_list_streams
+DataFrame rcpp_lcd_list_streams(std::string file_path);
+RcppExport SEXP _streamfind_rcpp_lcd_list_streams(SEXP file_pathSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_lcd_list_streams(file_path));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_lcd_inspect_stream
+DataFrame rcpp_lcd_inspect_stream(std::string file_path, std::string stream_path, int max_bytes);
+RcppExport SEXP _streamfind_rcpp_lcd_inspect_stream(SEXP file_pathSEXP, SEXP stream_pathSEXP, SEXP max_bytesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< std::string >::type file_path(file_pathSEXP);
+    Rcpp::traits::input_parameter< std::string >::type stream_path(stream_pathSEXP);
+    Rcpp::traits::input_parameter< int >::type max_bytes(max_bytesSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_lcd_inspect_stream(file_path, stream_path, max_bytes));
+    return rcpp_result_gen;
+END_RCPP
+}
 // rcpp_project_mass_spec_new
 SEXP rcpp_project_mass_spec_new(SEXP project_xptr, CharacterVector file_paths, CharacterVector replicates, CharacterVector blanks);
 RcppExport SEXP _streamfind_rcpp_project_mass_spec_new(SEXP project_xptrSEXP, SEXP file_pathsSEXP, SEXP replicatesSEXP, SEXP blanksSEXP) {
@@ -471,6 +495,47 @@ BEGIN_RCPP
     Rcpp::traits::input_parameter< CharacterVector >::type replicates(replicatesSEXP);
     Rcpp::traits::input_parameter< CharacterVector >::type blanks(blanksSEXP);
     rcpp_result_gen = Rcpp::wrap(rcpp_project_mass_spec_chromatograms_new(project_xptr, file_paths, replicates, blanks));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_project_mass_spec_chromatograms_load
+bool rcpp_project_mass_spec_chromatograms_load(SEXP chromatograms_xptr, std::vector<std::string> analyses, std::vector<std::string> chromatogramIdRegex, bool ignoreCase, bool invert);
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_chromatograms_load(SEXP chromatograms_xptrSEXP, SEXP analysesSEXP, SEXP chromatogramIdRegexSEXP, SEXP ignoreCaseSEXP, SEXP invertSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type chromatograms_xptr(chromatograms_xptrSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type analyses(analysesSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type chromatogramIdRegex(chromatogramIdRegexSEXP);
+    Rcpp::traits::input_parameter< bool >::type ignoreCase(ignoreCaseSEXP);
+    Rcpp::traits::input_parameter< bool >::type invert(invertSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_project_mass_spec_chromatograms_load(chromatograms_xptr, analyses, chromatogramIdRegex, ignoreCase, invert));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_project_mass_spec_chromatograms_filter_rt
+bool rcpp_project_mass_spec_chromatograms_filter_rt(SEXP chromatograms_xptr, std::vector<std::string> analyses, double rtmin, double rtmax);
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_chromatograms_filter_rt(SEXP chromatograms_xptrSEXP, SEXP analysesSEXP, SEXP rtminSEXP, SEXP rtmaxSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type chromatograms_xptr(chromatograms_xptrSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type analyses(analysesSEXP);
+    Rcpp::traits::input_parameter< double >::type rtmin(rtminSEXP);
+    Rcpp::traits::input_parameter< double >::type rtmax(rtmaxSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_project_mass_spec_chromatograms_filter_rt(chromatograms_xptr, analyses, rtmin, rtmax));
+    return rcpp_result_gen;
+END_RCPP
+}
+// rcpp_project_mass_spec_chromatograms_get_chromatograms
+DataFrame rcpp_project_mass_spec_chromatograms_get_chromatograms(SEXP chromatograms_xptr, std::vector<std::string> analyses);
+RcppExport SEXP _streamfind_rcpp_project_mass_spec_chromatograms_get_chromatograms(SEXP chromatograms_xptrSEXP, SEXP analysesSEXP) {
+BEGIN_RCPP
+    Rcpp::RObject rcpp_result_gen;
+    Rcpp::RNGScope rcpp_rngScope_gen;
+    Rcpp::traits::input_parameter< SEXP >::type chromatograms_xptr(chromatograms_xptrSEXP);
+    Rcpp::traits::input_parameter< std::vector<std::string> >::type analyses(analysesSEXP);
+    rcpp_result_gen = Rcpp::wrap(rcpp_project_mass_spec_chromatograms_get_chromatograms(chromatograms_xptr, analyses));
     return rcpp_result_gen;
 END_RCPP
 }
@@ -1188,6 +1253,8 @@ static const R_CallMethodDef CallEntries[] = {
     {"_streamfind_rcpp_project_get_cache", (DL_FUNC) &_streamfind_rcpp_project_get_cache, 1},
     {"_streamfind_rcpp_project_delete_cache", (DL_FUNC) &_streamfind_rcpp_project_delete_cache, 2},
     {"_streamfind_rcpp_decode_string", (DL_FUNC) &_streamfind_rcpp_decode_string, 1},
+    {"_streamfind_rcpp_lcd_list_streams", (DL_FUNC) &_streamfind_rcpp_lcd_list_streams, 1},
+    {"_streamfind_rcpp_lcd_inspect_stream", (DL_FUNC) &_streamfind_rcpp_lcd_inspect_stream, 3},
     {"_streamfind_rcpp_project_mass_spec_new", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_new, 4},
     {"_streamfind_rcpp_project_mass_spec_import_files", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_import_files, 4},
     {"_streamfind_rcpp_project_mass_spec_remove_analysis", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_remove_analysis, 2},
@@ -1209,6 +1276,9 @@ static const R_CallMethodDef CallEntries[] = {
     {"_streamfind_rcpp_project_mass_spec_get_raw_chromatograms", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_get_raw_chromatograms, 3},
     {"_streamfind_rcpp_project_mass_spec_spectra_new", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_spectra_new, 4},
     {"_streamfind_rcpp_project_mass_spec_chromatograms_new", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_chromatograms_new, 4},
+    {"_streamfind_rcpp_project_mass_spec_chromatograms_load", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_chromatograms_load, 5},
+    {"_streamfind_rcpp_project_mass_spec_chromatograms_filter_rt", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_chromatograms_filter_rt, 4},
+    {"_streamfind_rcpp_project_mass_spec_chromatograms_get_chromatograms", (DL_FUNC) &_streamfind_rcpp_project_mass_spec_chromatograms_get_chromatograms, 2},
     {"_streamfind_rcpp_project_non_target_analysis_new", (DL_FUNC) &_streamfind_rcpp_project_non_target_analysis_new, 1},
     {"_streamfind_rcpp_project_non_target_analysis_get_features", (DL_FUNC) &_streamfind_rcpp_project_non_target_analysis_get_features, 13},
     {"_streamfind_rcpp_project_non_target_analysis_get_features_count", (DL_FUNC) &_streamfind_rcpp_project_non_target_analysis_get_features_count, 3},

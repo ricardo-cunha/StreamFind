@@ -17,6 +17,8 @@ R6 child of \code{ProjectMassSpec} exposing the chromatogram-focused MassSpec in
 \item \href{#method-ProjectMassSpecChromatograms-get_mass_spec_chromatograms_ptr}{\code{ProjectMassSpecChromatograms$get_mass_spec_chromatograms_ptr()}}
 \item \href{#method-ProjectMassSpecChromatograms-available_processing_methods}{\code{ProjectMassSpecChromatograms$available_processing_methods()}}
 \item \href{#method-ProjectMassSpecChromatograms-get_chromatograms_headers}{\code{ProjectMassSpecChromatograms$get_chromatograms_headers()}}
+\item \href{#method-ProjectMassSpecChromatograms-get_chromatograms}{\code{ProjectMassSpecChromatograms$get_chromatograms()}}
+\item \href{#method-ProjectMassSpecChromatograms-plot_chromatograms}{\code{ProjectMassSpecChromatograms$plot_chromatograms()}}
 \item \href{#method-ProjectMassSpecChromatograms-print}{\code{ProjectMassSpecChromatograms$print()}}
 \item \href{#method-ProjectMassSpecChromatograms-show}{\code{ProjectMassSpecChromatograms$show()}}
 }
@@ -145,6 +147,94 @@ Return chromatogram headers for selected analyses.
 \describe{
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectMassSpecChromatograms-get_chromatograms"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectMassSpecChromatograms-get_chromatograms}{}}}
+\subsection{Method \code{get_chromatograms()}}{
+Return loaded chromatograms from the MS_CHROMATOGRAMS table.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpecChromatograms$get_chromatograms(
+  analyses = NULL,
+  chromatograms = NULL,
+  rtmin = 0,
+  rtmax = 0,
+  minIntensity = NULL
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{chromatograms}}{A character or integer vector with the chromatogram_id or the index of the chromatograms.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
+}
+\if{html}{\out{</div>}}
+}
+}
+\if{html}{\out{<hr>}}
+\if{html}{\out{<a id="method-ProjectMassSpecChromatograms-plot_chromatograms"></a>}}
+\if{latex}{\out{\hypertarget{method-ProjectMassSpecChromatograms-plot_chromatograms}{}}}
+\subsection{Method \code{plot_chromatograms()}}{
+Plot chromatograms from the MS_CHROMATOGRAMS table.
+\subsection{Usage}{
+\if{html}{\out{<div class="r">}}\preformatted{ProjectMassSpecChromatograms$plot_chromatograms(
+  analyses = NULL,
+  chromatograms = NULL,
+  rtmin = 0,
+  rtmax = 0,
+  minIntensity = NULL,
+  downsize = NULL,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colorPalette = NULL,
+  darkMode = FALSE
+)}\if{html}{\out{</div>}}
+}
+
+\subsection{Arguments}{
+\if{html}{\out{<div class="arguments">}}
+\describe{
+\item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
+object.}
+
+\item{\code{chromatograms}}{A character or integer vector with the chromatogram_id or the index of the chromatograms.}
+
+\item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
+
+\item{\code{rtmax}}{Numeric (length 1) with the maximum retention time.}
+
+\item{\code{minIntensity}}{Numeric (length 1) with the minimum intensity.}
+
+\item{\code{downsize}}{An integer of length one to downsize the TIC plot. The default is 1.}
+
+\item{\code{xLab}}{X axis label for the plot.}
+
+\item{\code{yLab}}{Y axis label for the plot.}
+
+\item{\code{title}}{Plot title.}
+
+\item{\code{groupBy}}{Column to use for color grouping (default: "analysis").}
+
+\item{\code{interactive}}{Logical, use plotly if TRUE, ggplot2 if FALSE.}
+
+\item{\code{colorPalette}}{Optional vector of colors for the plot; if not provided, an internal function is used.}
+
+\item{\code{darkMode}}{Logical, use dark-mode friendly plot colors and axis styling when \code{TRUE}.}
 }
 \if{html}{\out{</div>}}
 }

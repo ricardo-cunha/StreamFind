@@ -467,7 +467,7 @@ object.}
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
-\item{\code{chromatograms}}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
+\item{\code{chromatograms}}{A character or integer vector with the chromatogram_id or the index of the chromatograms.}
 
 \item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
 
@@ -541,7 +541,7 @@ object.}
 \item{\code{analyses}}{Character or numeric vector with names or indexes of analyses in the \code{Analyses}
 object.}
 
-\item{\code{chromatograms}}{A character or integer vector with the ID (i.e. name) or the index of the chromatograms.}
+\item{\code{chromatograms}}{A character or integer vector with the chromatogram_id or the index of the chromatograms.}
 
 \item{\code{rtmin}}{Numeric (length 1) with the minimum retention time.}
 

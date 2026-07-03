@@ -1258,7 +1258,7 @@ namespace mass_spec
       out.project_id.assign(count, project_id);
       out.analysis.assign(count, analysis_name);
       out.index.assign(headers.index.begin(), headers.index.end());
-      out.id.assign(headers.id.begin(), headers.id.end());
+      out.chromatogram_id.assign(headers.chromatogram_id.begin(), headers.chromatogram_id.end());
       out.array_length.assign(headers.array_length.begin(), headers.array_length.end());
       out.polarity.assign(headers.polarity.begin(), headers.polarity.end());
       out.precursor_mz.assign(headers.precursor_mz.begin(), headers.precursor_mz.end());
@@ -1416,7 +1416,7 @@ namespace mass_spec
         check_append_state(duckdb_append_varchar(appender, chromatograms_headers.project_id[i].c_str()), appender, "append MS_CHROMATOGRAMS_HEADERS project_id");
         check_append_state(duckdb_append_varchar(appender, chromatograms_headers.analysis[i].c_str()), appender, "append MS_CHROMATOGRAMS_HEADERS analysis");
         check_append_state(duckdb_append_int32(appender, chromatograms_headers.index[i]), appender, "append MS_CHROMATOGRAMS_HEADERS index");
-        append_optional_varchar(appender, chromatograms_headers.id[i], "append MS_CHROMATOGRAMS_HEADERS id");
+        append_optional_varchar(appender, chromatograms_headers.chromatogram_id[i], "append MS_CHROMATOGRAMS_HEADERS chromatogram_id");
         check_append_state(duckdb_append_int32(appender, chromatograms_headers.array_length[i]), appender, "append MS_CHROMATOGRAMS_HEADERS array_length");
         check_append_state(duckdb_append_int32(appender, chromatograms_headers.polarity[i]), appender, "append MS_CHROMATOGRAMS_HEADERS polarity");
         check_append_state(duckdb_append_double(appender, chromatograms_headers.precursor_mz[i]), appender, "append MS_CHROMATOGRAMS_HEADERS precursor_mz");
@@ -1499,7 +1499,7 @@ namespace mass_spec
       value.project_id = project::db::result_varchar(&result, 0, row);
       value.analysis = project::db::result_varchar(&result, 1, row);
       value.index = duckdb_value_int32(&result, 2, row);
-      value.id = project::db::result_varchar(&result, 3, row);
+      value.chromatogram_id = project::db::result_varchar(&result, 3, row);
       value.array_length = duckdb_value_int32(&result, 4, row);
       value.polarity = duckdb_value_int32(&result, 5, row);
       value.precursor_mz = duckdb_value_double(&result, 6, row);
@@ -1646,7 +1646,7 @@ namespace mass_spec
       project::cache::write_vector(out, project_id);
       project::cache::write_vector(out, analysis);
       project::cache::write_vector(out, index);
-      project::cache::write_vector(out, id);
+      project::cache::write_vector(out, chromatogram_id);
       project::cache::write_vector(out, array_length);
       project::cache::write_vector(out, polarity);
       project::cache::write_vector(out, precursor_mz);
@@ -1672,7 +1672,7 @@ namespace mass_spec
       project::cache::read_vector(reader, value.project_id);
       project::cache::read_vector(reader, value.analysis);
       project::cache::read_vector(reader, value.index);
-      project::cache::read_vector(reader, value.id);
+      project::cache::read_vector(reader, value.chromatogram_id);
       project::cache::read_vector(reader, value.array_length);
       project::cache::read_vector(reader, value.polarity);
       project::cache::read_vector(reader, value.precursor_mz);
@@ -1719,7 +1719,7 @@ namespace mass_spec
                            "CREATE TABLE IF NOT EXISTS MS_SPECTRA_HEADERS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, index INTEGER NOT NULL, scan INTEGER, array_length INTEGER, level INTEGER, mode INTEGER, polarity INTEGER, configuration INTEGER, lowmz DOUBLE, highmz DOUBLE, bpmz DOUBLE, bpint DOUBLE, tic DOUBLE, rt DOUBLE, mobility DOUBLE, window_mz DOUBLE, window_mzlow DOUBLE, window_mzhigh DOUBLE, precursor_mz DOUBLE, precursor_intensity DOUBLE, precursor_charge INTEGER, activation_ce DOUBLE, PRIMARY KEY(project_id, analysis, index))",
                            "create MS_SPECTRA_HEADERS table");
       project::db::run_sql(guard.get(),
-                           "CREATE TABLE IF NOT EXISTS MS_CHROMATOGRAMS_HEADERS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, index INTEGER NOT NULL, id VARCHAR, array_length INTEGER, polarity INTEGER, precursor_mz DOUBLE, activation_ce DOUBLE, product_mz DOUBLE, signal_type VARCHAR, chromatogram_type VARCHAR, detector VARCHAR, channel VARCHAR, units VARCHAR, wavelength_nm DOUBLE, interval_ms DOUBLE, start_time DOUBLE, end_time DOUBLE, intensity_multiplier DOUBLE, PRIMARY KEY(project_id, analysis, index))",
+                           "CREATE TABLE IF NOT EXISTS MS_CHROMATOGRAMS_HEADERS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, index INTEGER NOT NULL, chromatogram_id VARCHAR, array_length INTEGER, polarity INTEGER, precursor_mz DOUBLE, activation_ce DOUBLE, product_mz DOUBLE, signal_type VARCHAR, chromatogram_type VARCHAR, detector VARCHAR, channel VARCHAR, units VARCHAR, wavelength_nm DOUBLE, interval_ms DOUBLE, start_time DOUBLE, end_time DOUBLE, intensity_multiplier DOUBLE, PRIMARY KEY(project_id, analysis, index))",
                            "create MS_CHROMATOGRAMS_HEADERS table");
     }
 
@@ -1728,7 +1728,7 @@ namespace mass_spec
       auto guard = connect_checked(ctx);
       project::db::validate_columns(guard.get(), analyses_table_name(), {{"project_id", "VARCHAR", true}, {"analysis", "VARCHAR", true}, {"replicate", "VARCHAR", false}, {"blank", "VARCHAR", false}, {"file_name", "VARCHAR", false}, {"file_path", "VARCHAR", true}, {"file_dir", "VARCHAR", false}, {"file_extension", "VARCHAR", false}, {"format", "VARCHAR", false}, {"type", "VARCHAR", false}, {"time_stamp", "VARCHAR", false}, {"number_spectra", "INTEGER", false}, {"number_chromatograms", "INTEGER", false}, {"number_spectra_binary_arrays", "INTEGER", false}, {"min_mz", "DOUBLE", false}, {"max_mz", "DOUBLE", false}, {"start_rt", "DOUBLE", false}, {"end_rt", "DOUBLE", false}, {"has_ion_mobility", "BOOLEAN", false}, {"concentration", "DOUBLE", false}, {"created_at", "TIMESTAMP", false}});
       project::db::validate_columns(guard.get(), spectra_headers_table_name(), {{"project_id", "VARCHAR", true}, {"analysis", "VARCHAR", true}, {"index", "INTEGER", true}, {"scan", "INTEGER", false}, {"array_length", "INTEGER", false}, {"level", "INTEGER", false}, {"mode", "INTEGER", false}, {"polarity", "INTEGER", false}, {"configuration", "INTEGER", false}, {"lowmz", "DOUBLE", false}, {"highmz", "DOUBLE", false}, {"bpmz", "DOUBLE", false}, {"bpint", "DOUBLE", false}, {"tic", "DOUBLE", false}, {"rt", "DOUBLE", false}, {"mobility", "DOUBLE", false}, {"window_mz", "DOUBLE", false}, {"window_mzlow", "DOUBLE", false}, {"window_mzhigh", "DOUBLE", false}, {"precursor_mz", "DOUBLE", false}, {"precursor_intensity", "DOUBLE", false}, {"precursor_charge", "INTEGER", false}, {"activation_ce", "DOUBLE", false}});
-      project::db::validate_columns(guard.get(), chromatograms_headers_table_name(), {{"project_id", "VARCHAR", true}, {"analysis", "VARCHAR", true}, {"index", "INTEGER", true}, {"id", "VARCHAR", false}, {"array_length", "INTEGER", false}, {"polarity", "INTEGER", false}, {"precursor_mz", "DOUBLE", false}, {"activation_ce", "DOUBLE", false}, {"product_mz", "DOUBLE", false}, {"signal_type", "VARCHAR", false}, {"chromatogram_type", "VARCHAR", false}, {"detector", "VARCHAR", false}, {"channel", "VARCHAR", false}, {"units", "VARCHAR", false}, {"wavelength_nm", "DOUBLE", false}, {"interval_ms", "DOUBLE", false}, {"start_time", "DOUBLE", false}, {"end_time", "DOUBLE", false}, {"intensity_multiplier", "DOUBLE", false}});
+      project::db::validate_columns(guard.get(), chromatograms_headers_table_name(), {{"project_id", "VARCHAR", true}, {"analysis", "VARCHAR", true}, {"index", "INTEGER", true}, {"chromatogram_id", "VARCHAR", false}, {"array_length", "INTEGER", false}, {"polarity", "INTEGER", false}, {"precursor_mz", "DOUBLE", false}, {"activation_ce", "DOUBLE", false}, {"product_mz", "DOUBLE", false}, {"signal_type", "VARCHAR", false}, {"chromatogram_type", "VARCHAR", false}, {"detector", "VARCHAR", false}, {"channel", "VARCHAR", false}, {"units", "VARCHAR", false}, {"wavelength_nm", "DOUBLE", false}, {"interval_ms", "DOUBLE", false}, {"start_time", "DOUBLE", false}, {"end_time", "DOUBLE", false}, {"intensity_multiplier", "DOUBLE", false}});
     }
 
     void PROJECT_MASS_SPEC::import_files(const std::vector<std::string> &file_paths,
@@ -2165,7 +2165,7 @@ namespace mass_spec
       auto guard = connect_checked(ctx_);
       std::vector<MS_CHROMATOGRAM_HEADER_ROW> out;
       const auto selected_analyses = spectra::sanitize_analyses(analyses);
-      std::string sql = "SELECT project_id, analysis, index, id, array_length, polarity, precursor_mz, activation_ce, product_mz, signal_type, chromatogram_type, detector, channel, units, wavelength_nm, interval_ms, start_time, end_time, intensity_multiplier FROM MS_CHROMATOGRAMS_HEADERS WHERE project_id = ?";
+      std::string sql = "SELECT project_id, analysis, index, chromatogram_id, array_length, polarity, precursor_mz, activation_ce, product_mz, signal_type, chromatogram_type, detector, channel, units, wavelength_nm, interval_ms, start_time, end_time, intensity_multiplier FROM MS_CHROMATOGRAMS_HEADERS WHERE project_id = ?";
       if (!selected_analyses.empty())
       {
         sql += " AND analysis IN (";
@@ -2255,7 +2255,7 @@ namespace mass_spec
       out.project_id.reserve(rows.size());
       out.analysis.reserve(rows.size());
       out.index.reserve(rows.size());
-      out.id.reserve(rows.size());
+      out.chromatogram_id.reserve(rows.size());
       out.array_length.reserve(rows.size());
       out.polarity.reserve(rows.size());
       out.precursor_mz.reserve(rows.size());
@@ -2276,7 +2276,7 @@ namespace mass_spec
         out.project_id.push_back(row.project_id);
         out.analysis.push_back(row.analysis);
         out.index.push_back(row.index);
-        out.id.push_back(row.id);
+        out.chromatogram_id.push_back(row.chromatogram_id);
         out.array_length.push_back(row.array_length);
         out.polarity.push_back(row.polarity);
         out.precursor_mz.push_back(row.precursor_mz);

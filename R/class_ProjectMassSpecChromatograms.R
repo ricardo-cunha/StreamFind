@@ -17,6 +17,7 @@
 #' @template arg-ProjectMassSpec-plot-groupBy
 #' @template arg-ProjectMassSpec-plot-interactive
 #' @template arg-ProjectMassSpec-plot-colorPalette
+#' @template arg-ProjectMassSpec-darkMode
 #' @template arg-Project-ellipsis
 #' @keywords internal
 #' @export
@@ -90,6 +91,69 @@ ProjectMassSpecChromatograms <- R6::R6Class(
       data.table::setcolorder(hd, c("analysis", "replicate"))
       hd
     },
+    #' @description Return loaded chromatograms from the MS_CHROMATOGRAMS table.
+    get_chromatograms = function(analyses = NULL, chromatograms = NULL, rtmin = 0, rtmax = 0, minIntensity = NULL) {
+      analyses_info <- data.table::as.data.table(self$get_analyses())
+      all_names <- analyses_info$analysis
+      sel_names <- .resolve_analyses_selection(analyses, all_names)
+      chrom_dt <- data.table::as.data.table(
+        rcpp_project_mass_spec_chromatograms_get_chromatograms(
+          chromatograms_xptr = self$get_mass_spec_chromatograms_ptr(),
+          analyses = sel_names
+        )
+      )
+      if (nrow(chrom_dt) == 0) {
+        return(data.table::data.table())
+      }
+      if (is.character(chromatograms) && length(chromatograms) > 0) {
+        chrom_dt <- chrom_dt[chrom_dt$chromatogram_id %in% chromatograms, ]
+      }
+      if (is.numeric(minIntensity)) {
+        chrom_dt <- chrom_dt[chrom_dt$intensity > minIntensity, ]
+      }
+      if (is.numeric(rtmin) && is.numeric(rtmax) && rtmax > 0) {
+        chrom_dt <- chrom_dt[chrom_dt$rt >= rtmin & chrom_dt$rt <= rtmax]
+      }
+      replicates <- analyses_info$replicate
+      names(replicates) <- analyses_info$analysis
+      chrom_dt$replicate <- replicates[chrom_dt$analysis]
+      if ("project_id" %in% colnames(chrom_dt)) {
+        chrom_dt[, project_id := NULL]
+      }
+      data.table::setcolorder(chrom_dt, c("analysis", "replicate"))
+      chrom_dt
+    },
+    #' @description Plot chromatograms from the MS_CHROMATOGRAMS table.
+    plot_chromatograms = function(analyses = NULL,
+                                  chromatograms = NULL,
+                                  rtmin = 0,
+                                  rtmax = 0,
+                                  minIntensity = NULL,
+                                  downsize = NULL,
+                                  xLab = NULL,
+                                  yLab = NULL,
+                                  title = NULL,
+                                  groupBy = "analysis",
+                                  interactive = TRUE,
+                                  colorPalette = NULL,
+                                  darkMode = FALSE) {
+      plot_chromatograms.ProjectMassSpecChromatograms(
+        self,
+        analyses = analyses,
+        chromatograms = chromatograms,
+        rtmin = rtmin,
+        rtmax = rtmax,
+        minIntensity = minIntensity,
+        downsize = downsize,
+        xLab = xLab,
+        yLab = yLab,
+        title = title,
+        groupBy = groupBy,
+        interactive = interactive,
+        colorPalette = colorPalette,
+        darkMode = darkMode
+      )
+    },
     #' @description Print a short summary.
     print = function(...) {
       print.ProjectMassSpecChromatograms(self, ...)
@@ -116,6 +180,67 @@ NULL
 get_chromatograms_headers.ProjectMassSpecChromatograms <- function(x, analyses = NULL) {
   checkmate::assert_class(x, "ProjectMassSpecChromatograms")
   x$get_chromatograms_headers(analyses = analyses)
+}
+
+#' @describeIn ProjectMassSpecChromatogramsS3 Return loaded chromatograms from the MS_CHROMATOGRAMS table.
+#' @export
+get_chromatograms.ProjectMassSpecChromatograms <- function(x, analyses = NULL, chromatograms = NULL, rtmin = 0, rtmax = 0, minIntensity = NULL) {
+  checkmate::assert_class(x, "ProjectMassSpecChromatograms")
+  x$get_chromatograms(analyses = analyses, chromatograms = chromatograms, rtmin = rtmin, rtmax = rtmax, minIntensity = minIntensity)
+}
+
+#' @describeIn ProjectMassSpecChromatogramsS3 Plot chromatograms from the MS_CHROMATOGRAMS table.
+#' @export
+plot_chromatograms.ProjectMassSpecChromatograms <- function(
+  x,
+  analyses = NULL,
+  chromatograms = NULL,
+  rtmin = 0,
+  rtmax = 0,
+  minIntensity = NULL,
+  downsize = NULL,
+  xLab = NULL,
+  yLab = NULL,
+  title = NULL,
+  groupBy = "analysis",
+  interactive = TRUE,
+  colorPalette = NULL,
+  darkMode = FALSE
+) {
+  checkmate::assert_class(x, "ProjectMassSpecChromatograms")
+  chrom <- get_chromatograms.ProjectMassSpecChromatograms(x, analyses, chromatograms, rtmin, rtmax, minIntensity)
+  if (nrow(chrom) == 0) {
+    message("\U2717 No chromatogram data found for plotting!")
+    return(NULL)
+  }
+  if (!is.null(downsize) && downsize > 0 && nrow(chrom) > downsize) {
+    chrom <- data.table::as.data.table(chrom)
+    chrom$rt <- floor(chrom$rt / downsize) * downsize
+    chrom <- chrom[, lapply(.SD, function(col) {
+      if (is.numeric(col)) {
+        mean(col, na.rm = TRUE)
+      } else if (is.character(col)) {
+        col[1]
+      } else {
+        col[1]
+      }
+    }), by = .(rt, analysis, chromatogram_id)]
+  }
+  if (is.null(xLab)) xLab <- "Retention time / seconds"
+  if (is.null(yLab)) yLab <- "Intensity / counts"
+  .plot_lines_tabular_data(
+    data = chrom,
+    xvar = "rt",
+    yvar = "intensity",
+    groupBy = groupBy,
+    basicGroupBy = c("analysis", "chromatogram_id"),
+    interactive = interactive,
+    title = title,
+    xLab = xLab,
+    yLab = yLab,
+    colorPalette = colorPalette,
+    darkMode = darkMode
+  )
 }
 
 #' @describeIn ProjectMassSpecChromatogramsS3 Print a short summary.

@@ -112,6 +112,7 @@ Collate:
     'class_ProjectMassSpec.R'
     'class_ProjectMassSpecSpectra.R'
     'class_ProjectMassSpecChromatograms.R'
+    'class_MethodsMassSpecChromatograms.R'
     'class_ProjectNonTargetAnalysis.R'
     'class_MethodsNonTargetAnalysis.R'
     'app_config.R'

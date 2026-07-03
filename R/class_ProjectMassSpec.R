@@ -397,15 +397,15 @@ ProjectMassSpec <- R6::R6Class(
                                     mz = NULL,
                                     rt = NULL,
                                     mobility = NULL,
-                                    ppm = 20,
-                                    sec = 60,
-                                    millisec = 5,
-                                    id = NULL,
-                                    downsize = NULL,
-                                    xLab = NULL,
-                                    yLab = NULL,
-                                    title = NULL,
-                                    groupBy = c("analysis", "id"),
+                                     ppm = 20,
+                                     sec = 60,
+                                     millisec = 5,
+                                     id = NULL,
+                                     downsize = NULL,
+                                     xLab = NULL,
+                                     yLab = NULL,
+                                     title = NULL,
+                                     groupBy = c("analysis", "id"),
                                     interactive = TRUE,
                                     colorPalette = NULL,
                                     darkMode = FALSE) {
@@ -2037,7 +2037,7 @@ get_raw_chromatograms.ProjectMassSpec <- function(
   if (is.numeric(chromatograms)) {
     chrom_hd <- chrom_hd[as.integer(chrom_hd$index) == as.integer(chromatograms), ]
   } else if (is.character(chromatograms)) {
-    chrom_hd <- chrom_hd[chrom_hd$id %in% chromatograms, ]
+    chrom_hd <- chrom_hd[chrom_hd$chromatogram_id %in% chromatograms, ]
   }
   if (nrow(chrom_hd) == 0) {
     message("\U2717 No chromatograms found for the specified IDs/indices!")
@@ -2104,7 +2104,7 @@ plot_raw_chromatograms.ProjectMassSpec <- function(
       } else {
         col[1]
       }
-    }), by = .(rt, analysis, id)]
+    }), by = .(rt, analysis, chromatogram_id)]
   }
   if (is.null(xLab)) xLab <- "Retention time / seconds"
   if (is.null(yLab)) yLab <- "Intensity / counts"
@@ -2113,7 +2113,7 @@ plot_raw_chromatograms.ProjectMassSpec <- function(
     xvar = "rt",
     yvar = "intensity",
     groupBy = groupBy,
-    basicGroupBy = c("analysis", "id"),
+    basicGroupBy = c("analysis", "chromatogram_id"),
     interactive = interactive,
     title = title,
     xLab = xLab,

@@ -2,6 +2,7 @@
 
 #include "mass_spec/reader.h"
 #include "mass_spec/mass_spec.h"
+#include "mass_spec/processing.h"
 #include "project/project.h"
 
 using namespace Rcpp;
@@ -433,7 +434,7 @@ namespace mass_spec_rcpp
     CharacterVector project_id(rows.size());
     CharacterVector analysis(rows.size());
     IntegerVector index(rows.size());
-    CharacterVector id(rows.size());
+    CharacterVector chromatogram_id(rows.size());
     IntegerVector array_length(rows.size());
     IntegerVector polarity(rows.size());
     NumericVector pre_mz(rows.size());
@@ -454,10 +455,10 @@ namespace mass_spec_rcpp
       project_id[i] = rows[i].project_id;
       analysis[i] = rows[i].analysis;
       index[i] = rows[i].index;
-      if (rows[i].id.empty())
-        id[i] = CharacterVector::get_na();
+      if (rows[i].chromatogram_id.empty())
+        chromatogram_id[i] = CharacterVector::get_na();
       else
-        id[i] = rows[i].id;
+        chromatogram_id[i] = rows[i].chromatogram_id;
       array_length[i] = rows[i].array_length;
       polarity[i] = rows[i].polarity;
       pre_mz[i] = rows[i].precursor_mz;
@@ -492,7 +493,7 @@ namespace mass_spec_rcpp
     return DataFrame::create(Named("project_id") = project_id,
                              Named("analysis") = analysis,
                              Named("index") = index,
-                             Named("id") = id,
+                             Named("chromatogram_id") = chromatogram_id,
                              Named("array_length") = array_length,
                              Named("polarity") = polarity,
                              Named("pre_mz") = pre_mz,
@@ -702,13 +703,13 @@ namespace mass_spec_rcpp
           replicate_col[row] = replicate;
         }
         index_col[row] = headers[i].index;
-        if (headers[i].id.empty())
+        if (headers[i].chromatogram_id.empty())
         {
           id_col[row] = CharacterVector::get_na();
         }
         else
         {
-          id_col[row] = headers[i].id;
+          id_col[row] = headers[i].chromatogram_id;
         }
         polarity_col[row] = headers[i].polarity;
         pre_mz_col[row] = headers[i].precursor_mz;
@@ -723,7 +724,7 @@ namespace mass_spec_rcpp
     return DataFrame::create(Named("analysis") = analysis_col,
                              Named("replicate") = replicate_col,
                              Named("index") = index_col,
-                             Named("id") = id_col,
+                             Named("chromatogram_id") = id_col,
                              Named("polarity") = polarity_col,
                              Named("pre_mz") = pre_mz_col,
                              Named("pre_ce") = pre_ce_col,
@@ -1017,6 +1018,121 @@ namespace mass_spec_rcpp
 }
 
 // MARK: PROJECT MASS SPEC EXPORTS
+
+// [[Rcpp::export]]
+DataFrame rcpp_lcd_list_streams(std::string file_path)
+{
+  return project_rcpp::project_call([&]()
+                                    {
+        const auto streams = mass_spec::reader::ole::list_streams(file_path);
+        CharacterVector path(streams.size());
+        CharacterVector normalized_path(streams.size());
+        NumericVector size(streams.size());
+        LogicalVector is_mini_stream(streams.size());
+        LogicalVector is_chromatogram_candidate(streams.size());
+        for (std::size_t i = 0; i < streams.size(); ++i)
+        {
+          path[i] = streams[i].path;
+          normalized_path[i] = streams[i].normalized_path;
+          size[i] = static_cast<double>(streams[i].size);
+          is_mini_stream[i] = streams[i].is_mini_stream;
+          const std::string lower = streams[i].normalized_path;
+          const bool raw_data = lower.find("lc raw data") != std::string::npos ||
+                                lower.find("lss raw data") != std::string::npos ||
+                                lower.find("tlm raw data") != std::string::npos;
+          is_chromatogram_candidate[i] = raw_data &&
+                                         (lower.find("chromatogram") != std::string::npos ||
+                                          lower.find("chromato") != std::string::npos ||
+                                          lower.find("statuslog") != std::string::npos ||
+                                          lower.find("status curve") != std::string::npos ||
+                                          lower.find("tic data") != std::string::npos ||
+                                          lower.find("trace") != std::string::npos);
+        }
+        return DataFrame::create(Named("path") = path,
+                                 Named("normalized_path") = normalized_path,
+                                 Named("size") = size,
+                                 Named("is_mini_stream") = is_mini_stream,
+                                 Named("is_chromatogram_candidate") = is_chromatogram_candidate); });
+}
+
+// [[Rcpp::export]]
+DataFrame rcpp_lcd_inspect_stream(std::string file_path, std::string stream_path, int max_bytes = 128)
+{
+  return project_rcpp::project_call([&]()
+                                    {
+        if (max_bytes < 0)
+          max_bytes = 0;
+        const auto bytes = mass_spec::reader::ole::read_stream(file_path, stream_path);
+        const std::size_t n = std::min<std::size_t>(bytes.size(), static_cast<std::size_t>(max_bytes));
+
+        IntegerVector offset(n);
+        CharacterVector hex(n);
+        IntegerVector u8(n);
+        IntegerVector u16_le(n);
+        NumericVector u32_le(n);
+        NumericVector f32_le(n);
+
+        auto byte_hex = [](std::uint8_t value)
+        {
+          const char digits[] = "0123456789ABCDEF";
+          std::string out(2, '0');
+          out[0] = digits[(value >> 4) & 0x0F];
+          out[1] = digits[value & 0x0F];
+          return out;
+        };
+
+        auto read_u16 = [&](std::size_t i) -> int
+        {
+          if (i + 2 > bytes.size())
+            return NA_INTEGER;
+          return static_cast<int>(bytes[i]) |
+                 (static_cast<int>(bytes[i + 1]) << 8);
+        };
+
+        auto read_u32 = [&](std::size_t i) -> double
+        {
+          if (i + 4 > bytes.size())
+            return NA_REAL;
+          const std::uint32_t value = static_cast<std::uint32_t>(bytes[i]) |
+                                      (static_cast<std::uint32_t>(bytes[i + 1]) << 8) |
+                                      (static_cast<std::uint32_t>(bytes[i + 2]) << 16) |
+                                      (static_cast<std::uint32_t>(bytes[i + 3]) << 24);
+          return static_cast<double>(value);
+        };
+
+        auto read_f32 = [&](std::size_t i) -> double
+        {
+          if (i + 4 > bytes.size())
+            return NA_REAL;
+          std::uint32_t word = static_cast<std::uint32_t>(bytes[i]) |
+                               (static_cast<std::uint32_t>(bytes[i + 1]) << 8) |
+                               (static_cast<std::uint32_t>(bytes[i + 2]) << 16) |
+                               (static_cast<std::uint32_t>(bytes[i + 3]) << 24);
+          float value = 0.0f;
+          std::memcpy(&value, &word, sizeof(float));
+          return static_cast<double>(value);
+        };
+
+        for (std::size_t i = 0; i < n; ++i)
+        {
+          offset[i] = static_cast<int>(i);
+          hex[i] = byte_hex(bytes[i]);
+          u8[i] = static_cast<int>(bytes[i]);
+          u16_le[i] = read_u16(i);
+          u32_le[i] = read_u32(i);
+          f32_le[i] = read_f32(i);
+        }
+
+        DataFrame out = DataFrame::create(Named("offset") = offset,
+                                          Named("hex") = hex,
+                                          Named("u8") = u8,
+                                          Named("u16_le") = u16_le,
+                                          Named("u32_le") = u32_le,
+                                          Named("f32_le") = f32_le);
+        out.attr("stream_size") = static_cast<double>(bytes.size());
+        out.attr("stream_path") = stream_path;
+        return out; });
+}
 
 // [[Rcpp::export]]
 SEXP rcpp_project_mass_spec_new(SEXP project_xptr,
@@ -1397,4 +1513,73 @@ SEXP rcpp_project_mass_spec_chromatograms_new(SEXP project_xptr,
         Rcpp::XPtr<mass_spec::PROJECT_MASS_SPEC_CHROMATOGRAMS> out(ptr, true);
         out.attr("class") = "streamfindProjectMassSpecChromatograms";
         return SEXP(out); });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_mass_spec_chromatograms_load(SEXP chromatograms_xptr,
+                                               std::vector<std::string> analyses,
+                                               std::vector<std::string> chromatogramIdRegex,
+                                               bool ignoreCase,
+                                               bool invert)
+{
+  return project::api::project_call([&]()
+                                    {
+    auto &chroms = mass_spec_rcpp::project_mass_spec_chromatograms_from_xptr(chromatograms_xptr);
+    mass_spec::processing::LOAD_CHROMATOGRAMS_REQUEST req;
+    req.analyses = analyses;
+    req.chromatogram_id_regex = chromatogramIdRegex;
+    req.ignore_case = ignoreCase;
+    req.invert = invert;
+    return mass_spec::processing::load_chromatograms(chroms, req); });
+}
+
+// [[Rcpp::export]]
+bool rcpp_project_mass_spec_chromatograms_filter_rt(SEXP chromatograms_xptr,
+                                                    std::vector<std::string> analyses,
+                                                    double rtmin,
+                                                    double rtmax)
+{
+  return project::api::project_call([&]()
+                                    {
+    auto &chroms = mass_spec_rcpp::project_mass_spec_chromatograms_from_xptr(chromatograms_xptr);
+    mass_spec::processing::FILTER_CHROMATOGRAMS_RT_REQUEST req;
+    req.analyses = analyses;
+    req.rtmin = rtmin;
+    req.rtmax = rtmax;
+    return mass_spec::processing::filter_chromatograms_retention_time(chroms, req); });
+}
+
+// [[Rcpp::export]]
+DataFrame rcpp_project_mass_spec_chromatograms_get_chromatograms(SEXP chromatograms_xptr,
+                                                          std::vector<std::string> analyses)
+{
+  return project::api::project_call([&]()
+                                    {
+    auto &chroms = mass_spec_rcpp::project_mass_spec_chromatograms_from_xptr(chromatograms_xptr);
+    const auto rows = mass_spec::processing::get_chromatograms(chroms, analyses);
+    Rcpp::CharacterVector project_id(rows.size());
+    Rcpp::CharacterVector analysis(rows.size());
+    Rcpp::CharacterVector chromatogram_id(rows.size());
+    Rcpp::NumericVector rt(rows.size());
+    Rcpp::NumericVector raw_intensity(rows.size());
+    Rcpp::NumericVector baseline(rows.size());
+    Rcpp::NumericVector intensity(rows.size());
+    for (std::size_t i = 0; i < rows.size(); ++i)
+    {
+      project_id[i] = rows[i].project_id;
+      analysis[i] = rows[i].analysis;
+      chromatogram_id[i] = rows[i].chromatogram_id;
+      rt[i] = rows[i].rt;
+      raw_intensity[i] = rows[i].raw_intensity;
+      baseline[i] = rows[i].baseline;
+      intensity[i] = rows[i].intensity;
+    }
+    return Rcpp::DataFrame::create(
+        Rcpp::Named("project_id") = project_id,
+        Rcpp::Named("analysis") = analysis,
+        Rcpp::Named("chromatogram_id") = chromatogram_id,
+        Rcpp::Named("rt") = rt,
+        Rcpp::Named("raw_intensity") = raw_intensity,
+        Rcpp::Named("baseline") = baseline,
+        Rcpp::Named("intensity") = intensity); });
 }

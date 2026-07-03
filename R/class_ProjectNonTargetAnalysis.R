@@ -597,15 +597,11 @@ info.ProjectNonTargetAnalysis <- function(x, ...) {
     return(data.table::data.table())
   }
   counts <- get_features_count(x, filtered = FALSE)
-  data.table::data.table(
-    analysis = analyses_info$analysis,
-    replicate = analyses_info$replicate,
-    blank = analyses_info$blank,
-    polarity = analyses_info$polarity,
-    features = counts$features[match(analyses_info$analysis, counts$analysis)],
-    filtered = counts$filtered[match(analyses_info$analysis, counts$analysis)],
-    feature_groups = counts$groups[match(analyses_info$analysis, counts$analysis)]
-  )
+  idx <- match(analyses_info$analysis, counts$analysis)
+  analyses_info[, features := counts$features[idx]]
+  analyses_info[, filtered := counts$filtered[idx]]
+  analyses_info[, feature_groups := counts$groups[idx]][]
+  analyses_info
 }
 
 #' @describeIn ProjectNonTargetAnalysisS3 Print a short summary.
