@@ -29,6 +29,9 @@
 *.obj
 *.a
 *.lib
+
+# Vendored DuckDB build output ---------------------------------------------
+!src/core/external/duckdb/lib/**
 *.html
 # Ignore CSVs everywhere except in the dev/ folder
 *.csv

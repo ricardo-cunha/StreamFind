@@ -62,13 +62,27 @@ nta <- open_ProjectNonTargetAnalysis(
 #   elements = c("C:1-100", "N:0-10", "O:0-10")
 # )
 
+
+source("dev/merck_peak_finding/generate_spectra_cfm_id.R")
+env <- check_cfm_id_docker_env()       # NULL | list(daemon, image_present, docker_path)
+cfmpred("CC(=O)OC", "[M+H]+")         # pulls image on demand if not present
+
 suspects <- data.table::fread(file.path("dev", "merck_peak_finding", "data", "ACC1_28203_suspects.csv"))
 source("dev/merck_peak_finding/generate_spectra_cfm_id.R")
-res <- cfm_predict(smiles = suspects$SMILES)
+suspects$SMILES
+res <- cfmpred(suspects$SMILES, "[M+H]+", verbose = TRUE)
+
+source("dev/merck_peak_finding/generate_spectra_cfm_id.R")
+flatten_cfmpred(res)
 
 str(res)
 
-res[[1]][1:2, ]
+names(res[[1]])
+
+res[[1]]$spectra
+res[[1]]$fragments
+res[[1]]$adduct
+res[[1]]$parent_smiles
 
 res$fragments[res$fragments$id %in% res$spectra$fragment_ids[[1]], ]
 
