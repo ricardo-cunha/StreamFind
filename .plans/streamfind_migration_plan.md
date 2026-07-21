@@ -259,6 +259,35 @@ streamfind/
 │   │   └── CMakeLists.txt
 │   └── tools/
 │
+├── rust/
+│   ├── Cargo.toml                 # workspace manifest
+│   ├── crates/
+│   │   ├── core/
+│   │   │   ├── Cargo.toml         # streamfind-rust-core library
+│   │   │   └── src/
+│   │   │       ├── lib.rs         # generic Project framework
+│   │   │       ├── project.rs     # storage, methods, workflows, types
+│   │   │       ├── chemistry.rs   # ChemistryBackend contract
+│   │   │       ├── openbabel.rs   # OpenBabel-backed adapter
+│   │   │       └── api.rs         # stable generic API facade
+│   │   ├── mass-spec/
+│   │   │   ├── Cargo.toml         # streamfind-rust-mass-spec
+│   │   │   └── src/
+│   │   │       ├── lib.rs
+│   │   │       ├── chromatograms.rs
+│   │   │       ├── spectra.rs
+│   │   │       └── nta.rs
+│   │   └── raman/
+│   │   │    ├── Cargo.toml
+│   │   │    └── src/lib.rs
+│   ├   └── cli/
+│   │        ├── Cargo.toml             # streamfind-rust-cli binary
+│   │        └── src/
+│   │             └── main.rs
+│   ├── tests/                    # workspace integration/conformance tests
+│   ├── benches/                  # parity and performance benchmarks
+│   └── Cargo.lock
+│
 ├── python/
 │   ├── pyproject.toml
 │   ├── CMakeLists.txt
@@ -1983,6 +2012,24 @@ Build the existing native code independently from R.
 - Add native tests.
 - Add CMake dependency targets.
 - Add install rules.
+- Initialize `rust/` as a Cargo workspace with `crates/core` and `crates/cli`.
+  The core package is `streamfind-rust-core`; the binary package is
+  `streamfind-rust-cli`.
+- Implement shared Rust values, errors, storage, methods, workflows, and the
+  Project aggregate together in `project.rs`, mirroring the C++ Project
+  boundary without linking to `streamfind-core`.
+- Implement the Rust project identity, metadata, create/open/close lifecycle,
+  DuckDB connection ownership, schema creation, and schema validation.
+- Bundle or link the same approved vendor inputs used by `streamfind-core`, but
+  keep Rust storage and ownership in Rust rather than wrapping C++ classes.
+- Add Rust unit and integration tests for the same project/database fixtures.
+- Define shared JSON fixtures and database fixtures that both implementations
+  must consume and produce.
+- Define the DuckDB schema, type mappings, timestamps, JSON encodings, workflow
+  format, cache format, and audit format as a backend-neutral persistence
+  contract. A project saved by C++ must be loadable by Rust, and a project
+  saved by Rust must be loadable by C++, without conversion or backend-specific
+  database copies.
 
 ### Phase 2 foundation report
 
@@ -2033,6 +2080,9 @@ Keep in Rcpp:
 - Core tests run without R.
 - A native C++ test can create a project, import data, execute at least one workflow, and read results.
 - Current R bindings can link to the new library.
+- `cargo test --manifest-path rust/Cargo.toml` passes for the Rust base project.
+- C++ and Rust create/open/validate the same baseline project schema and agree
+  on the public JSON representation.
 
 ---
 
@@ -2056,6 +2106,15 @@ Stabilize core contracts before building language bindings.
 - Introduce structured results.
 - Add versioned public API documentation.
 - Add compatibility tests.
+- Implement the matching Rust storage repository boundary for DuckDB access.
+- Implement Rust `ParameterDefinition`, recursive type descriptors, typed table
+  parameters, parameter validation, method definitions, method registry, and
+  workflow validation.
+- Implement Rust cache reuse, audit trail events, execution provenance,
+  structured results, cancellation, and progress contracts with the same JSON
+  and schema semantics as C++.
+- Add cross-language conformance tests for method metadata, workflow JSON,
+  cache keys, audit events, validation failures, and execution results.
 
 ### Exit criteria
 
@@ -2065,6 +2124,10 @@ Stabilize core contracts before building language bindings.
 - Cache outcomes and execution provenance are persisted in project-owned
   infrastructure; server job state remains outside the core.
 - Progress and cancellation work in native tests.
+- Rust tests exercise the same registry, workflow, cache, and audit scenarios.
+- C++ and Rust pass the shared contract/conformance fixtures.
+- A project created and saved by C++ can be opened and continued by Rust, and a
+  project created and saved by Rust can be opened and continued by C++.
 
 ---
 
@@ -2089,6 +2152,10 @@ Create the public Python SDK.
 - Add unit and integration tests.
 - Build local wheels.
 - Add editable development installation.
+- Keep the Rust crate independently buildable and testable while Python bindings
+  are added; do not make Rust depend on the Python package or C++ library.
+- Python binds and uses `streamfind-core` (C++) for this migration. It does not
+  select or load `streamfind-rust` yet.
 
 ### Exit criteria
 
@@ -2191,6 +2258,8 @@ Create a modern GUI using the FastAPI contract.
 - Add error boundaries.
 - Add tests.
 - Add production build.
+- The frontend continues to use the FastAPI/Python service path backed by
+  `streamfind-core` (C++). It does not call or select `streamfind-rust` yet.
 
 ### Exit criteria
 
@@ -2218,6 +2287,8 @@ Complete migration of the existing R package away from owning the native impleme
 - Publish binaries.
 - Evaluate selective `reticulate` use.
 - Keep Quarto and scientific reporting support.
+- Keep R bindings implementation-neutral so the same R contract can be backed
+  by the C++ core. Rust is tested independently and is not used by R yet.
 
 ### Exit criteria
 
@@ -2285,6 +2356,144 @@ Prepare the new architecture for stable releases.
 
 ---
 
+## Phase 11 — C++/Rust parity and performance verification
+
+### Objective
+
+Verify that `streamfind-core` and `streamfind-rust` implement the same supported
+workflow semantics and compare their performance on identical workloads.
+
+Python, R, FastAPI, and the frontend continue to use the C++ core during this
+phase. The Rust implementation is invoked directly by Rust tests, Rust CLI
+commands, or a dedicated benchmark harness; it is not introduced as a backend
+replacement for those interfaces.
+
+### Tasks
+
+- Freeze versioned benchmark fixtures containing the DuckDB database, input
+  files, project metadata, workflow JSON, method parameters, and expected
+  outputs.
+- Run identical workflows through C++ and Rust from clean project copies.
+- Compare schema, metadata, workflow versions, cache keys, cache hit/miss
+  behaviour, audit events, execution status, and result values.
+- Test cross-backend reopening in both directions: C++-created databases must
+  load and execute in Rust, and Rust-created databases must load and execute in
+  C++, including existing workflow, cache, and audit rows.
+- Define floating-point and ordering tolerances before collecting results.
+- Measure cold and warm runs, wall time, CPU time, peak memory, database size,
+  cache size, and throughput for each workflow step.
+- Include vendor initialization and repeated cached execution separately.
+- Run both implementations with the same OS, input data, build mode, thread
+  settings, and hardware/storage conditions.
+- Publish machine-readable benchmark results with environment metadata.
+- Record unsupported Rust domains or methods explicitly rather than silently
+  omitting them from comparisons.
+
+### Exit criteria
+
+- C++ and Rust pass the shared project/workflow conformance suite.
+- Both produce equivalent approved outputs within documented tolerances.
+- Saved DuckDB projects are bidirectionally interoperable between C++ and Rust.
+- Performance results are reproducible and independently auditable.
+- Python, R, FastAPI, and the frontend still use the C++ core path unchanged.
+
+---
+
+## Rust vendor replacement strategy
+
+The Rust implementation must not copy the C++ vendor tree or link to
+`streamfind-core` as an implementation shortcut. It should use Rust crates
+where they provide equivalent behaviour, and isolate unavoidable native
+chemistry dependencies behind Rust traits and small FFI modules.
+
+### Rust module dependency direction
+
+Keep the package modular without creating separate crates for components that
+are only used by the Project backend:
+
+```text
+project.rs
+    ├── storage
+    ├── methods
+    ├── workflows
+    └── types
+
+streamfind-rust-core
+    └── chemistry -> openbabel
+
+streamfind-rust-core
+    ├── streamfind-rust-mass-spec
+    │       ├── chromatograms
+    │       ├── spectra
+    │       └── nta
+    └── streamfind-rust-raman
+
+streamfind-rust-core + domain crates
+    └── streamfind-rust-cli
+```
+
+`project.rs` mirrors the C++ `project.hpp/project.cpp` boundary and owns
+backend-neutral values, errors, SQL/DuckDB access, method metadata and
+registration, workflow validation, cache, audit, and the generic Project
+aggregate. Domain crates extend core through registered domain methods and
+domain-owned tables; they do not alter generic core tables. `chemistry.rs`
+owns the chemistry backend contract, while `openbabel.rs` owns its adapter.
+`lib.rs` exports the stable core API. The CLI composes core and selected domain
+crates and must not issue SQL directly.
+
+### Initial Rust dependencies
+
+| C++ core vendor | Rust implementation | Role and policy |
+|---|---|---|
+| DuckDB | `duckdb` crate | Use Rust bindings while retaining DuckDB as the shared, interoperable project database format. Do not replace DuckDB with a different database. |
+| nlohmann/json | `serde` and `serde_json` | Pure-Rust JSON values, serialization, method schemas, workflows, metadata, and API payloads. |
+| zlib | `flate2` with the `miniz_oxide` backend | Prefer the pure-Rust backend for ordinary compression/decompression. Use a native backend only when a required format or performance test proves necessary. |
+| simdutf | `simdutf8` or standard UTF-8 validation | Use `simdutf8` only for measured UTF-8 validation hotspots; otherwise use Rust's standard library. |
+| json-schema-validator | `jsonschema` | Use for JSON Schema validation if the required draft and error semantics match the core contract. |
+| pugixml | `quick-xml`, `roxmltree`, or `molio` | Choose per reader: streaming XML, read-only XML trees, or chemistry file formats. Add only when a migrated reader needs it. |
+
+### Chemistry dependencies
+
+Use the `openbabel` Rust crate first for chemistry parity. It provides Rust
+bindings to OpenBabel and preserves the current OpenBabel behaviour for format
+handling, molecule conversion, and chemistry operations without copying the
+C++ adapter implementation into the Rust crate. Keep the binding behind a
+Rust-owned `ChemistryBackend` interface and keep OpenBabel runtime data
+configuration explicit.
+
+Evaluate `rdkit-sys` later as an optional alternative backend for capabilities
+where RDKit is materially stronger, such as fingerprints, substructure
+search, descriptors, reactions, and conformers. It is also an FFI binding to
+native RDKit, not a pure-Rust replacement, and must not become a silent change
+to the C++/Rust result contract.
+
+Do not replace OpenBabel with an unvalidated pure-Rust chemistry crate during
+the initial parity work. New pure-Rust projects may be tested behind the same
+backend interface, but they must match approved C++ outputs for formulas,
+canonical structures, identifiers, descriptors, fingerprints, and query
+results before becoming the default.
+
+### Rust dependency rules
+
+- Rust and C++ use the same DuckDB schema, JSON encodings, workflow format,
+  cache format, and audit format.
+- Rust dependencies must be recorded in `rust/Cargo.toml` with license and
+  native-build requirements reviewed.
+- A crate that wraps C/C++ is not described as a pure-Rust replacement.
+- Chemistry backend selection is explicit and versioned in conformance and
+  benchmark results.
+- Python, R, FastAPI, and the frontend continue using the C++ core; this Rust
+  strategy applies only to `streamfind-rust` until a deliberate backend
+  migration is approved.
+
+### Reference
+
+- [Cheminformatics in Rust in 2025-2026](https://dev.to/kent-tokyo/cheminformatics-in-rust-in-2025-2026-what-exists-what-doesnt-and-why-e3h)
+- [`openbabel` Rust crate](https://crates.io/crates/openbabel)
+- [`rdkit-sys` Rust crate](https://crates.io/crates/rdkit-sys)
+
+---
+
 ## Authoritative implementation sequence
 
 ### Foundation 0 — Baseline, contracts, and move manifest
@@ -2322,6 +2531,10 @@ creation/validation, and the existing C++ table-creation/targeted-alter
 behaviour.  Establish the public C++
 project API and the storage boundary before any MassSpec or NTA types are
 introduced.  Migrate SQL currently embedded in Rcpp into this layer.
+In parallel, implement the equivalent base project and DuckDB kernel in the
+`streamfind-rust-core` crate under `rust/crates/core`; it must use the same
+schema fixtures but must not link against or wrap the C++ Project
+implementation.
 
 **Exit criteria:** a C++ test creates, reopens, validates, migrates, and
 transacts against a project database without R, Python, or domain modules.
@@ -2335,6 +2548,10 @@ execution provenance, structured results, cancellation, and progress events.  Ke
 domain algorithms out of this sub-phase.  Define the complete executable
 operation catalogue and its versioned export in this sub-phase.  Rcpp contains only conversion,
 external pointer lifecycle, callbacks, and exception mapping.
+Implement the same shared contracts in Rust, including parameter/type JSON,
+workflow JSON, method registration, cache keys, and audit events, and run both
+versions against shared conformance fixtures. Python, R, FastAPI, and the
+frontend continue to use the C++ contracts and bindings at this stage.
 
 **Exit criteria:** native tests can register a test method, validate and execute
 the project workflow, persist a result/cache entry and audit provenance, and observe cancellation/progress using only
@@ -2364,6 +2581,10 @@ capabilities rather than project subclasses.  Bind the resulting public
 operations through Python, CLI, FastAPI, the matching frontend plugins, and the
 R wrapper in `bindings/r`.  Use database and result comparisons against the
 Phase 0 fixtures.
+Implement the same MassSpec tables, readers, query contracts, and first
+workflow independently in `streamfind-rust-mass-spec`. Both implementations must consume
+the same source data and produce conformance-comparable metadata, cache, audit,
+workflow, and result fixtures.
 
 **Exit criteria:** the first vertical slice in Section 22 works end to end
 through C++, R, Python/CLI, and FastAPI, with no MassSpec SQL or domain logic
@@ -2377,6 +2598,10 @@ annotation, suspect/transformation-product workflows, and external-tool
 adapters.  Define NTA as a capability that explicitly requires MassSpec.  Each
 operation is registered through the shared workflow contract and made available
 consistently in R, Python/CLI, FastAPI, and the NTA frontend plugin.
+Implement each migrated NTA operation in the `streamfind-rust-mass-spec`
+crate's `nta` module in the same dependency order.
+Rust methods must not call the C++ NTA implementation; differences are found
+through conformance tests rather than hidden behind adapters.
 
 **Exit criteria:** representative NTA workflows reproduce approved baseline
 outputs and all new operations have native, binding, and regression coverage.
@@ -2388,6 +2613,9 @@ tools one coherent feature family at a time.  Each family follows the same
 order: native implementation and schema migration; public API; CLI/API;
 R-binding compatibility; integration and regression tests.  A family may not
 bypass the shared project, storage, workflow, cache, execution, or result contracts.
+Every migrated family receives a parallel Rust implementation or an explicit
+documented Rust deferral. A family is not parity-complete until its Rust
+implementation passes the same contract and representative-output tests.
 
 ### Delivery 6 — Interfaces, integrations, and frontend parity
 

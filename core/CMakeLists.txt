@@ -4,7 +4,9 @@ include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/streamfind_dependencies.cmake)
 streamfind_configure_dependencies(${CMAKE_CURRENT_SOURCE_DIR}/external)
 
 set(STREAMFIND_CORE_SOURCES
-    src/api/version.cpp
+    src/version.cpp
+    src/api.cpp
+    src/project.cpp
 )
 
 if(STREAMFIND_BUILD_SHARED)
@@ -36,6 +38,7 @@ target_include_directories(streamfind_core
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/external>
 )
 
 if(STREAMFIND_BUILD_SHARED)

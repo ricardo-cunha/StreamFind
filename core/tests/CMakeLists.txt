@@ -19,6 +19,10 @@ target_compile_definitions(streamfind_core_tests PRIVATE
 
 add_test(NAME streamfind_core_tests COMMAND streamfind_core_tests)
 
+add_executable(streamfind_project_tests unit/project_smoke.cpp)
+target_link_libraries(streamfind_project_tests PRIVATE streamfind::core)
+add_test(NAME streamfind_project_tests COMMAND streamfind_project_tests)
+
 add_executable(streamfind_vendor_tests unit/vendor_smoke.cpp)
 target_link_libraries(streamfind_vendor_tests PRIVATE
     streamfind::duckdb
@@ -39,6 +43,11 @@ set_tests_properties(streamfind_vendor_tests PROPERTIES
 )
 
 if(WIN32)
+    add_custom_command(TARGET streamfind_project_tests POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:streamfind::duckdb>"
+            "$<TARGET_FILE_DIR:streamfind_project_tests>"
+    )
     add_custom_command(TARGET streamfind_vendor_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
             "$<TARGET_FILE:streamfind::duckdb>"
