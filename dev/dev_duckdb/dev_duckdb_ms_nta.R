@@ -20,6 +20,7 @@ nta <- open_ProjectNonTargetAnalysis(
   db = project_db,
   project_id = project_id
 )
+
 nta$run_app()
 
 # run_app()
@@ -200,9 +201,6 @@ set_workflow(nta, workflow)
 show(nta$get_workflow())
 
 nta$run_workflow()
-
-
-
 
 delete_cache(nta, name = "NTA_FEATURES_CACHE")
 delete_cache(nta, name = "NTA_INTERNAL_STANDARDS_CACHE")
