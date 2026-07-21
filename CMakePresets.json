@@ -8,12 +8,15 @@
   "configurePresets": [
     {
       "name": "default",
-      "displayName": "Default Phase 1 configuration",
+      "displayName": "Default standalone core configuration",
       "generator": "Visual Studio 18 2026",
       "architecture": "x64",
       "binaryDir": "${sourceDir}/build/cmake/default",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Debug",
+        "STREAMFIND_BUILD_CORE": "ON",
+        "STREAMFIND_BUILD_TESTS": "ON",
+        "STREAMFIND_BUILD_SHARED": "OFF",
         "STREAMFIND_BUILD_CF_STREAMFIND": "OFF"
       }
     }

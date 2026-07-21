@@ -1,0 +1,93 @@
+cmake_minimum_required(VERSION 3.20)
+
+include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/streamfind_dependencies.cmake)
+streamfind_configure_dependencies(${CMAKE_CURRENT_SOURCE_DIR}/external)
+
+set(STREAMFIND_CORE_SOURCES
+    src/api/version.cpp
+)
+
+if(STREAMFIND_BUILD_SHARED)
+    add_library(streamfind_core SHARED ${STREAMFIND_CORE_SOURCES})
+    target_compile_definitions(streamfind_core PRIVATE STREAMFIND_CORE_BUILDING_SHARED)
+else()
+    add_library(streamfind_core STATIC ${STREAMFIND_CORE_SOURCES})
+endif()
+
+add_library(streamfind::core ALIAS streamfind_core)
+
+set_target_properties(streamfind_core PROPERTIES
+    CXX_STANDARD 20
+    CXX_STANDARD_REQUIRED ON
+    CXX_EXTENSIONS OFF
+    EXPORT_NAME core
+)
+
+target_compile_features(streamfind_core PUBLIC cxx_std_20)
+
+target_link_libraries(streamfind_core
+    PUBLIC
+        streamfind::duckdb
+        streamfind::openbabel
+        streamfind::zlib
+)
+
+target_include_directories(streamfind_core
+    PUBLIC
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+        $<INSTALL_INTERFACE:include>
+)
+
+if(STREAMFIND_BUILD_SHARED)
+    target_compile_definitions(streamfind_core INTERFACE STREAMFIND_CORE_USING_SHARED)
+endif()
+
+install(
+    TARGETS streamfind_core
+    EXPORT streamfind-core-targets
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+)
+
+install(
+    TARGETS streamfind_inchi streamfind_openbabel streamfind_zlib
+    EXPORT streamfind-core-targets
+    ARCHIVE DESTINATION lib
+    LIBRARY DESTINATION lib
+    RUNTIME DESTINATION bin
+)
+
+install(
+    DIRECTORY include/
+    DESTINATION include
+)
+
+install(
+    EXPORT streamfind-core-targets
+    FILE streamfind-core-targets.cmake
+    NAMESPACE streamfind::
+    DESTINATION lib/cmake/streamfind
+)
+
+if(STREAMFIND_DUCKDB_RUNTIME AND EXISTS "${STREAMFIND_DUCKDB_RUNTIME}")
+    if(WIN32)
+        install(FILES "${STREAMFIND_DUCKDB_RUNTIME}" DESTINATION bin)
+    else()
+        install(FILES "${STREAMFIND_DUCKDB_RUNTIME}" DESTINATION lib)
+    endif()
+endif()
+
+if(STREAMFIND_DUCKDB_IMPORT_LIBRARY AND EXISTS "${STREAMFIND_DUCKDB_IMPORT_LIBRARY}")
+    install(FILES "${STREAMFIND_DUCKDB_IMPORT_LIBRARY}" DESTINATION lib)
+endif()
+
+install(
+    DIRECTORY "${STREAMFIND_OPENBABEL_DATA_DIR}/"
+    DESTINATION share/streamfind/openbabel/data
+)
+
+if(STREAMFIND_BUILD_TESTS)
+    enable_testing()
+    add_subdirectory(tests)
+endif()

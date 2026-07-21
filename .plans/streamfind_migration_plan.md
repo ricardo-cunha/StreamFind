@@ -1984,6 +1984,25 @@ Build the existing native code independently from R.
 - Add CMake dependency targets.
 - Add install rules.
 
+### Phase 2 foundation report
+
+Phase 2 was initiated with an API-first standalone core foundation rather than
+copying `bindings/r/src/core`. The repository now contains a R-free
+`streamfind::core` CMake target with public headers under
+`core/include/streamfind`, implementation sources under `core/src`, native
+tests under `core/tests`, C++20 settings, Windows export macros, and CMake
+install/export rules.
+
+The foundation currently exposes only the version API and smoke test. Project,
+DuckDB, workflow, reader, and processing APIs will be designed and migrated in
+subsequent Phase 2 work instead of being frozen from the old R-oriented code.
+
+Validation passed with Visual Studio/MSVC:
+
+- `cmake --preset default`
+- `cmake --build --preset default --config Debug`
+- `ctest --test-dir build/cmake/default -C Debug --output-on-failure`
+
 ### Functionality to migrate from Rcpp
 
 Move into the core when found:

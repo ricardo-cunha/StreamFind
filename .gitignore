@@ -18,6 +18,7 @@ _skbuild/
 **/*.dylib
 **/*.pyd
 **/*.egg-info/
+/core/external/openbabel/build/
 
 # Python tooling ----------------------------------------------------------------
 **/__pycache__/
