@@ -12,10 +12,10 @@ Main repository:
 
 ## Build
 
-Build the image from the repository root:
+Build the image from the R package root:
 
 ```powershell
-docker build -t streamfind .
+docker build -t streamfind bindings/r
 ```
 
 ## Services
@@ -113,22 +113,22 @@ docker run -d ^
 
 ### Use the helper script
 
-This repository includes a PowerShell helper that mounts fixed NTFS drives automatically:
+This package includes a PowerShell helper that mounts fixed NTFS drives automatically:
 
 ```powershell
-.\dev\run_docker.ps1
+.\bindings\r\dev\run_docker.ps1
 ```
 
 Interactive mode:
 
 ```powershell
-.\dev\run_docker.ps1 -Interactive
+.\bindings\r\dev\run_docker.ps1 -Interactive
 ```
 
 Custom password:
 
 ```powershell
-.\dev\run_docker.ps1 -Password mypass
+.\bindings\r\dev\run_docker.ps1 -Password mypass
 ```
 
 ## Working In code-server

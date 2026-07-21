@@ -12,7 +12,7 @@ version = "0.1.1"
 description = "CogniFlow package with processing steps based on the streamfind native algorithms."
 readme = "README.md"
 requires-python = ">=3.10"
-license = { file = "LICENSE.md" }
+license = { text = "GPL-3" }
 authors = [
   { name = "IUTA" },
 ]
@@ -30,16 +30,16 @@ test = [
 minimum-version = "0.10"
 
 [tool.scikit-build.wheel]
-packages = ["python/cf_streamfind"]
+packages = ["src/cf_streamfind"]
 
 [tool.scikit-build.experimental]
 wheels = true
 
 [tool.setuptools]
-package-dir = { "" = "python" }
+package-dir = { "" = "src" }
 
 [tool.setuptools.packages.find]
-where = ["python"]
+where = ["src"]
 
 [tool.setuptools.package-data]
 cf_streamfind = ["steps.nq", "bin/*", "libs/*", "resources/openbabel/data/*"]

@@ -2,7 +2,7 @@
 <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/GeneratedPlugin> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://schema.org/SoftwareApplication> .
 <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/GeneratedPlugin> <http://www.w3.org/2004/02/skos/core#prefLabel> "cf_streamfind" .
 <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/GeneratedPlugin> <http://www.w3.org/2004/02/skos/core#definition> "Generated plugin artifact for the streamfind CogniFlow package." .
-<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/GeneratedPlugin> <https://cogniflow.odea-project.org/cf#artifactPath> "python/cf_streamfind/cpp" .
+<https://cogniflow.odea-project.org/cf#generated/cf/streamfind/GeneratedPlugin> <https://cogniflow.odea-project.org/cf#artifactPath> "src/cf_streamfind/cpp" .
 <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/GeneratedPlugin> <https://cogniflow.odea-project.org/cf#pluginApiVersion> "1" .
 <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/GeneratedPlugin> <https://cogniflow.odea-project.org/cf#pluginDataAbi> "Data-v1" .
 <https://cogniflow.odea-project.org/cf#generated/cf/streamfind/GeneratedPlugin> <https://cogniflow.odea-project.org/cf#pluginListSymbol> "cf_list_steps" .

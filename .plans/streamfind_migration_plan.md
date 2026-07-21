@@ -1876,6 +1876,32 @@ Create an authoritative inventory of the current implementation before moving co
 - Critical current behaviours have regression tests.
 - No source movement begins before the inventory is complete.
 
+### Phase 0 completion report
+
+Phase 0 was completed using the agreed focused scope. The authoritative
+baseline is recorded in:
+
+- `.plans/streamfind_migration_plan/current-architecture.md`
+- `.plans/streamfind_migration_plan/native-inventory.md`
+
+The documents cover the current repository shape, native subsystem ownership,
+Rcpp/native boundaries, DuckDB table ownership, readers, processing methods,
+external dependencies, build inputs, representative fixtures, and baseline
+checks. The complete root `dev/` tree, including development assets and legacy
+code storage, is classified as part of the R package and is scheduled to move
+to `bindings/r/dev/` with the package.
+
+No source files were moved or refactored during Phase 0. The R package remains
+intact at the repository root for preservation during the Phase 1 relocation.
+Separate exhaustive Rcpp and database-schema documents were not created; their
+required extraction and ownership information is included in the two baseline
+documents because the R package will be moved atomically and retained until
+replacement functionality is complete.
+
+The remaining regression-test expansion, compatibility matrix execution, and
+golden-output capture are implementation follow-ups and must be completed as
+part of the relevant migration work before feature parity is claimed.
+
 ---
 
 ## Phase 1 — Establish the monorepo structure and relocate package boundaries
@@ -1921,6 +1947,18 @@ implementation.
   `integrations/cf-streamfind`.
 - Empty or minimal new components can be discovered and built.
 - Repository naming and ownership are documented.
+
+### Phase 1 completion report
+
+Phase 1 is complete. The full R package, including `dev/`, legacy code,
+development assets, and Docker files, now lives under `bindings/r`, which is the
+package root. The Cogniflow integration now lives under
+`integrations/cf-streamfind/src/cf_streamfind`; it remains intentionally
+unbuildable until its missing dependencies and planned refactor are addressed.
+
+Root CMake/preset entry points, monorepo placeholders, package-relative paths,
+and split ignore rules were added. `devtools::load_all()` succeeds from
+`bindings/r`, and the Visual Studio/MSVC CMake preset configures successfully.
 
 ---
 
