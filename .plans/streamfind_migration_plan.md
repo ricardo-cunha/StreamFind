@@ -1863,10 +1863,10 @@ Create an authoritative inventory of the current implementation before moving co
 
 ### Deliverables
 
-- `docs/migration/current-architecture.md`
-- `docs/migration/native-inventory.md`
-- `docs/migration/rcpp-logic-inventory.md`
-- `docs/migration/database-schema.md`
+- `.plans/streamfind_migration_plan/current-architecture.md`
+- `.plans/streamfind_migration_plan/native-inventory.md`
+- `.plans/streamfind_migration_plan/rcpp-logic-inventory.md`
+- `.plans/streamfind_migration_plan/database-schema.md`
 - baseline test fixtures
 - compatibility matrix
 
