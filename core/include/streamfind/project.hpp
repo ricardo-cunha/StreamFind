@@ -4,6 +4,8 @@
 #include <functional>
 #include <limits>
 #include <memory>
+#include <atomic>
+#include <functional>
 #include <optional>
 #include <cstdint>
 #include <stdexcept>
@@ -209,8 +211,8 @@ public:
     void register_method(Method method);
     /** @brief Find a method by id, or return nullptr. */
     const Method *find(const std::string &id) const noexcept;
-    /** @brief Return metadata for all registered methods. */
-    std::vector<MethodDefinition> list() const;
+    /** @brief Return metadata for registered methods, optionally filtered by domain. */
+    std::vector<MethodDefinition> list(const std::string &domain = {}) const;
 
 private:
     std::vector<Method> methods_;
@@ -261,6 +263,35 @@ enum class STREAMFIND_CORE_API ErrorCode {
     DatabaseError,
     WorkflowValidation,
     MethodExecution,
+    ProjectClosed,
+    Cancelled,
+};
+
+/** @brief Cooperative cancellation state for long-running operations. */
+class STREAMFIND_CORE_API CancellationToken {
+public:
+    /** @brief Request cancellation. */
+    void cancel() noexcept;
+    /** @brief Return whether cancellation was requested. */
+    bool is_cancelled() const noexcept;
+private:
+    std::atomic<bool> cancelled_{false};
+};
+
+/** @brief Progress snapshot emitted during execution. */
+struct STREAMFIND_CORE_API ProgressEvent {
+    std::string operation;
+    std::size_t completed{0};
+    std::size_t total{0};
+};
+
+using ProgressCallback = std::function<void(const ProgressEvent &)>;
+
+/** @brief Stable result envelope for workflow execution. */
+struct STREAMFIND_CORE_API ExecutionResult {
+    Json results{Json::array()};
+    bool cancelled{false};
+    Json to_json() const;
 };
 
 /** @brief Typed exception raised by the streamfind core API. */
@@ -348,13 +379,7 @@ public:
     const ProjectInfo &info() const;
     /** @brief Return a copy of the project metadata. */
     Json get_metadata() const;
-    /** @brief Return the backing DuckDB path. */
-    const std::filesystem::path &database_path() const noexcept;
-    /** @brief Return the backing DuckDB path. */
     const std::filesystem::path &get_database_path() const noexcept;
-    /** @brief Return the logical project id. */
-    const std::string &id() const noexcept;
-    /** @brief Return the logical project id. */
     const std::string &get_project_id() const noexcept;
     /** @brief Replace project metadata. */
     void set_metadata(Json metadata);
@@ -362,11 +387,6 @@ public:
     std::string get_domain() const;
     /** @brief Validate the project schema and persisted row state. */
     void validate() const;
-    /** @brief Load the persisted workflow. */
-    Workflow workflow() const;
-    /** @brief Validate and persist a new workflow version. */
-    void update_workflow(Workflow workflow, const MethodRegistry &registry = methods());
-    /** @brief Return the persisted workflow. */
     Workflow get_workflow() const;
     /** @brief Persist a workflow using the supplied method registry. */
     void set_workflow(Workflow workflow, const MethodRegistry &registry = methods());
@@ -376,27 +396,23 @@ public:
     std::vector<std::string> list_tables() const;
 
     /** @brief Return all cache entries for this project. */
-    std::vector<CacheEntry> cache() const;
-    /** @brief Return all cache entries for this project. */
     std::vector<CacheEntry> get_cache() const;
     /** @brief Return the number of cache entries for this project. */
     std::size_t get_cache_size() const;
     /** @brief Find a cache entry by deterministic hash. */
-    std::optional<CacheEntry> cache_get(const std::string &hash) const;
+    std::optional<CacheEntry> get_cache_entry(const std::string &hash) const;
     /** @brief Insert or replace a JSON value in the project cache. */
-    void cache_put(std::string name, std::string description,
+    void set_cache(std::string name, std::string description,
                    std::string hash, const Json &value);
-    /** @brief Clear all cache entries or entries with a matching name. */
-    void clear_cache(const std::optional<std::string> &name = std::nullopt);
     /** @brief Delete all cache entries for this project. */
     void delete_cache();
-    /** @brief Return processing and cache audit events in time order. */
-    std::vector<AuditEntry> audit_trail() const;
     /** @brief Return processing and cache audit events in time order. */
     std::vector<AuditEntry> get_audit_trail() const;
 
     /** @brief Execute the persisted workflow using a method registry. */
-    Json execute(const MethodRegistry &registry = methods());
+    ExecutionResult run_workflow(const MethodRegistry &registry = methods(),
+                                 CancellationToken *cancellation = nullptr,
+                                 ProgressCallback progress = {});
     /** @brief Execute one registered method with supplied parameters. */
     Json run_method(const std::string &method_id, const Json &parameters,
                     const MethodRegistry &registry = methods());

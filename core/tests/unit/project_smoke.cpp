@@ -65,15 +65,15 @@ int run() {
     workflow.name = "smoke";
     workflow.domain = "test";
     workflow.steps.push_back({"test.echo", streamfind::ParameterValues{streamfind::Json{{"value", "hello"}}}});
-    project.update_workflow(workflow);
+    project.set_workflow(workflow);
 
-    const auto first = project.execute(registry);
+    const auto first = project.run_workflow(registry).results;
     if (first.size() != 1 || first[0]["value"] != "hello" || project.get_cache().size() != 1) {
         std::cerr << "first execution failed\n";
         return 1;
     }
 
-    const auto second = project.execute(registry);
+    const auto second = project.run_workflow(registry).results;
     if (second != first || project.get_audit_trail().size() < 3) {
         std::cerr << "cached execution failed\n";
         return 1;
@@ -92,7 +92,7 @@ int run() {
         return 1;
     }
     const auto metadata = streamfind::api::run(
-        streamfind::api::ProjectCommand::metadata_get,
+        streamfind::api::ProjectCommand::get_metadata,
         {{"database_path", path.string()}, {"project_id", "smoke"}});
     if (metadata.at("owner") != "test") {
         std::cerr << "metadata API failed\n";
@@ -100,7 +100,7 @@ int run() {
     }
     if (streamfind::api::run(streamfind::api::ProjectCommand::validate,
                              {{"database_path", path.string()}, {"project_id", "smoke"}}).at("valid") != true ||
-        streamfind::api::run(streamfind::api::ProjectCommand::cache_size,
+        streamfind::api::run(streamfind::api::ProjectCommand::get_cache_size,
                              {{"database_path", path.string()}, {"project_id", "smoke"}}) != 0) {
         std::cerr << "project validation API failed\n";
         return 1;

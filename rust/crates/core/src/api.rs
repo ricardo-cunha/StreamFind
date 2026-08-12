@@ -48,7 +48,7 @@ pub fn create(request: &Json) -> Result<Json> {
     )
 }
 
-pub fn metadata_get(request: &Json) -> Result<Json> {
+pub fn get_metadata(request: &Json) -> Result<Json> {
     Ok(Project::open(options(request, true)?)?.get_metadata())
 }
 
@@ -57,17 +57,17 @@ pub fn validate(request: &Json) -> Result<Json> {
     Ok(json!({"valid": true}))
 }
 
-pub fn domain_get(request: &Json) -> Result<Json> {
+pub fn get_domain(request: &Json) -> Result<Json> {
     Ok(json!(Project::open(options(request, true)?)?.get_domain()))
 }
 
-pub fn workflow_get(request: &Json) -> Result<Json> {
+pub fn get_workflow(request: &Json) -> Result<Json> {
     Ok(Project::open(options(request, true)?)?
         .get_workflow()?
         .to_json())
 }
 
-pub fn workflow_validate(request: &Json, registry: &crate::MethodRegistry) -> Result<Json> {
+pub fn validate_workflow(request: &Json, registry: &crate::MethodRegistry) -> Result<Json> {
     let workflow = crate::Workflow::from_json(
         request
             .get("workflow")
@@ -77,7 +77,7 @@ pub fn workflow_validate(request: &Json, registry: &crate::MethodRegistry) -> Re
     Ok(json!({"valid": true, "workflow": workflow.to_json()}))
 }
 
-pub fn workflow_set(request: &Json, registry: &crate::MethodRegistry) -> Result<Json> {
+pub fn set_workflow(request: &Json, registry: &crate::MethodRegistry) -> Result<Json> {
     let workflow = crate::Workflow::from_json(
         request
             .get("workflow")
@@ -88,11 +88,26 @@ pub fn workflow_set(request: &Json, registry: &crate::MethodRegistry) -> Result<
     Ok(project.get_workflow()?.to_json())
 }
 
-pub fn method_list(registry: &crate::MethodRegistry) -> Json {
-    json!(registry.list())
+pub fn run_workflow(request: &Json, registry: &crate::MethodRegistry) -> Result<Json> {
+    let workflow = match request.get("workflow") {
+        Some(value) => crate::Workflow::from_json(value)?,
+        None => Project::open(options(request, true)?)?.get_workflow()?,
+    };
+    let mut project = Project::open(options(request, false)?)?;
+    Ok(project
+        .run_workflow(&workflow, registry, None, None)?
+        .to_json())
 }
 
-pub fn method_execute(request: &Json, registry: &crate::MethodRegistry) -> Result<Json> {
+pub fn get_available_methods(request: &Json, registry: &crate::MethodRegistry) -> Result<Json> {
+    let domain = request
+        .get("domain")
+        .and_then(Json::as_str)
+        .ok_or_else(|| Error::new(ErrorCode::InvalidArgument, "missing domain"))?;
+    Ok(json!(registry.list(domain)))
+}
+
+pub fn run_method(request: &Json, registry: &crate::MethodRegistry) -> Result<Json> {
     let method = request
         .get("method")
         .and_then(Json::as_str)
@@ -127,7 +142,10 @@ pub fn copy(request: &Json) -> Result<Json> {
         create_if_missing: false,
         read_only: false,
     })?;
-    let destination_path = destination.database_path().to_string_lossy().into_owned();
+    let destination_path = destination
+        .get_database_path()
+        .to_string_lossy()
+        .into_owned();
     let destination_id = destination.get_project_id().to_owned();
     drop(destination);
     describe(&json!({
@@ -136,7 +154,7 @@ pub fn copy(request: &Json) -> Result<Json> {
     }))
 }
 
-pub fn cache_size(request: &Json) -> Result<Json> {
+pub fn get_cache_size(request: &Json) -> Result<Json> {
     Ok(json!(
         Project::open(options(request, true)?)?.get_cache_size()?
     ))
@@ -147,7 +165,7 @@ pub fn close(request: &Json) -> Result<Json> {
     Ok(json!({"closed": true}))
 }
 
-pub fn metadata_set(request: &Json) -> Result<Json> {
+pub fn set_metadata(request: &Json) -> Result<Json> {
     let metadata = request
         .get("metadata")
         .cloned()
@@ -157,17 +175,17 @@ pub fn metadata_set(request: &Json) -> Result<Json> {
     Ok(project.get_metadata())
 }
 
-pub fn cache_get(request: &Json) -> Result<Json> {
+pub fn get_cache(request: &Json) -> Result<Json> {
     Ok(json!(Project::open(options(request, true)?)?.get_cache()?))
 }
 
-pub fn cache_delete(request: &Json) -> Result<Json> {
+pub fn delete_cache(request: &Json) -> Result<Json> {
     let mut project = Project::open(options(request, false)?)?;
     project.delete_cache()?;
     Ok(json!({"deleted": true}))
 }
 
-pub fn audit_get(request: &Json) -> Result<Json> {
+pub fn get_audit_trail(request: &Json) -> Result<Json> {
     Ok(json!(
         Project::open(options(request, true)?)?.get_audit_trail()?
     ))

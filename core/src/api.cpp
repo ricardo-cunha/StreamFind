@@ -28,21 +28,21 @@ Json descriptor(const Project &project) {
     const auto &info = project.info();
     return {
         {"id", info.id},
-        {"database_path", project.database_path().string()},
+        {"database_path", project.get_database_path().string()},
         {"domain", info.domain},
         {"metadata", info.metadata},
         {"schema_version", info.schema_version},
         {"framework_version", info.framework_version},
         {"created_at", info.created_at},
-        {"workflow", project.workflow().to_json()},
+        {"workflow", project.get_workflow().to_json()},
         {"tables", project.list_tables()},
-        {"cache_size", project.cache().size()}
+        {"cache_size", project.get_cache_size()}
     };
 }
 
 Json cache_entries(const Project &project) {
     Json output = Json::array();
-    for (const auto &entry : project.cache()) {
+    for (const auto &entry : project.get_cache()) {
         output.push_back({{"name", entry.name}, {"description", entry.description},
                           {"hash", entry.hash}, {"created_at", entry.created_at},
                           {"size", entry.data.size()}});
@@ -52,7 +52,7 @@ Json cache_entries(const Project &project) {
 
 Json audit_entries(const Project &project) {
     Json output = Json::array();
-    for (const auto &entry : project.audit_trail()) {
+    for (const auto &entry : project.get_audit_trail()) {
         output.push_back({{"operation_type", entry.operation_type},
                           {"object_type", entry.object_type},
                           {"details", entry.details}, {"created_at", entry.created_at}});
@@ -60,9 +60,9 @@ Json audit_entries(const Project &project) {
     return output;
 }
 
-Json method_entries(const MethodRegistry &registry) {
+Json method_entries(const MethodRegistry &registry, const std::string &domain) {
     Json output = Json::array();
-    for (const auto &definition : registry.list()) {
+    for (const auto &definition : registry.list(domain)) {
         if (const auto *method = registry.find(definition.id)) output.push_back(method->to_json());
     }
     return output;
@@ -73,21 +73,21 @@ Json method_entries(const MethodRegistry &registry) {
 ProjectCommand command_from_string(std::string_view name) {
     if (name == "create") return ProjectCommand::create;
     if (name == "describe") return ProjectCommand::describe;
-    if (name == "workflow_get") return ProjectCommand::workflow_get;
-    if (name == "workflow_set") return ProjectCommand::workflow_set;
-    if (name == "workflow_validate") return ProjectCommand::workflow_validate;
+    if (name == "get_workflow") return ProjectCommand::get_workflow;
+    if (name == "set_workflow") return ProjectCommand::set_workflow;
+    if (name == "validate_workflow") return ProjectCommand::validate_workflow;
     if (name == "validate") return ProjectCommand::validate;
-    if (name == "domain_get") return ProjectCommand::domain_get;
-    if (name == "method_list") return ProjectCommand::method_list;
-    if (name == "method_execute") return ProjectCommand::method_execute;
+    if (name == "get_domain") return ProjectCommand::get_domain;
+    if (name == "get_available_methods") return ProjectCommand::get_available_methods;
+    if (name == "run_method") return ProjectCommand::run_method;
     if (name == "copy") return ProjectCommand::copy;
-    if (name == "execute") return ProjectCommand::execute;
-    if (name == "metadata_get") return ProjectCommand::metadata_get;
-    if (name == "metadata_set") return ProjectCommand::metadata_set;
-    if (name == "cache_get") return ProjectCommand::cache_get;
-    if (name == "cache_delete") return ProjectCommand::cache_delete;
-    if (name == "cache_size") return ProjectCommand::cache_size;
-    if (name == "audit_get") return ProjectCommand::audit_get;
+    if (name == "run_workflow") return ProjectCommand::run_workflow;
+    if (name == "get_metadata") return ProjectCommand::get_metadata;
+    if (name == "set_metadata") return ProjectCommand::set_metadata;
+    if (name == "get_cache") return ProjectCommand::get_cache;
+    if (name == "delete_cache") return ProjectCommand::delete_cache;
+    if (name == "get_cache_size") return ProjectCommand::get_cache_size;
+    if (name == "get_audit_trail") return ProjectCommand::get_audit_trail;
     if (name == "close") return ProjectCommand::close;
     throw Error(ErrorCode::InvalidArgument, "Unknown Project command: " + std::string(name));
 }
@@ -102,11 +102,11 @@ Json run(ProjectCommand command, const Json &request, const MethodRegistry &regi
     }
     case ProjectCommand::describe:
         return detail::descriptor(Project::open(detail::options_from_request(request, true)));
-    case ProjectCommand::workflow_get: {
+    case ProjectCommand::get_workflow: {
         auto project = Project::open(detail::options_from_request(request, true));
-        return project.workflow().to_json();
+        return project.get_workflow().to_json();
     }
-    case ProjectCommand::workflow_validate: {
+    case ProjectCommand::validate_workflow: {
         if (!request.contains("workflow")) throw Error(ErrorCode::InvalidArgument, "Request requires workflow");
         const auto workflow = Workflow::from_json(request.at("workflow"));
         workflow.validate(registry);
@@ -117,11 +117,11 @@ Json run(ProjectCommand command, const Json &request, const MethodRegistry &regi
         project.validate();
         return {{"valid", true}};
     }
-    case ProjectCommand::domain_get:
+    case ProjectCommand::get_domain:
         return Project::open(detail::options_from_request(request, true)).get_domain();
-    case ProjectCommand::method_list:
-        return detail::method_entries(registry);
-    case ProjectCommand::method_execute: {
+    case ProjectCommand::get_available_methods:
+        return detail::method_entries(registry, request.value("domain", ""));
+    case ProjectCommand::run_method: {
         if (!request.contains("method")) throw Error(ErrorCode::InvalidArgument, "Request requires method");
         auto project = Project::open(detail::options_from_request(request));
         return project.run_method(request.at("method").get<std::string>(), request.value("parameters", Json::object()), registry);
@@ -137,36 +137,36 @@ Json run(ProjectCommand command, const Json &request, const MethodRegistry &regi
         auto destination = source.copy(destination_options);
         return detail::descriptor(destination);
     }
-    case ProjectCommand::workflow_set: {
+    case ProjectCommand::set_workflow: {
         if (!request.contains("workflow")) throw Error(ErrorCode::InvalidArgument, "Request requires workflow");
         auto project = Project::open(detail::options_from_request(request));
         auto workflow = Workflow::from_json(request.at("workflow"));
         workflow.validate(registry);
-        project.update_workflow(std::move(workflow), registry);
-        return project.workflow().to_json();
+        project.set_workflow(std::move(workflow), registry);
+        return project.get_workflow().to_json();
     }
-    case ProjectCommand::execute: {
+    case ProjectCommand::run_workflow: {
         auto project = Project::open(detail::options_from_request(request));
-        return {{"results", project.execute(registry)}, {"workflow", project.workflow().to_json()}};
+        return {{"result", project.run_workflow(registry).to_json()}, {"workflow", project.get_workflow().to_json()}};
     }
-    case ProjectCommand::metadata_get:
+    case ProjectCommand::get_metadata:
         return Project::open(detail::options_from_request(request, true)).get_metadata();
-    case ProjectCommand::metadata_set: {
+    case ProjectCommand::set_metadata: {
         if (!request.contains("metadata")) throw Error(ErrorCode::InvalidArgument, "Request requires metadata");
         auto project = Project::open(detail::options_from_request(request));
         project.set_metadata(request.at("metadata"));
         return project.get_metadata();
     }
-    case ProjectCommand::cache_get:
+    case ProjectCommand::get_cache:
         return detail::cache_entries(Project::open(detail::options_from_request(request, true)));
-    case ProjectCommand::cache_delete: {
+    case ProjectCommand::delete_cache: {
         auto project = Project::open(detail::options_from_request(request));
         project.delete_cache();
         return Json{{"deleted", true}};
     }
-    case ProjectCommand::cache_size:
+    case ProjectCommand::get_cache_size:
         return Project::open(detail::options_from_request(request, true)).get_cache_size();
-    case ProjectCommand::audit_get:
+    case ProjectCommand::get_audit_trail:
         return detail::audit_entries(Project::open(detail::options_from_request(request, true)));
     case ProjectCommand::close: {
         auto project = Project::open(detail::options_from_request(request, true));

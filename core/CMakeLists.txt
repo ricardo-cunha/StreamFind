@@ -7,6 +7,7 @@ set(STREAMFIND_CORE_SOURCES
     src/version.cpp
     src/api.cpp
     src/project.cpp
+    src/mcp.cpp
 )
 
 if(STREAMFIND_BUILD_SHARED)
@@ -93,4 +94,14 @@ install(
 if(STREAMFIND_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+endif()
+
+add_executable(streamfind_mcp tools/mcp.cpp)
+target_link_libraries(streamfind_mcp PRIVATE streamfind::core)
+if(WIN32)
+    add_custom_command(TARGET streamfind_mcp POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "$<TARGET_FILE:streamfind::duckdb>"
+            "$<TARGET_FILE_DIR:streamfind_mcp>"
+    )
 endif()

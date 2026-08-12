@@ -27,7 +27,7 @@ fn project_round_trips_metadata_and_schema() {
     project.set_metadata(json!({"owner": "rust-test"})).unwrap();
     assert_eq!(project.get_metadata()["owner"], "rust-test");
     project
-        .cache_put("test", "test cache", "hash", &json!({"value": 42}))
+        .set_cache("test", "test cache", "hash", &json!({"value": 42}))
         .unwrap();
     assert_eq!(project.get_cache().unwrap().len(), 1);
     assert!(!project.get_audit_trail().unwrap().is_empty());
@@ -59,7 +59,7 @@ fn project_round_trips_metadata_and_schema() {
     assert_eq!(reopened.info().metadata["owner"], "rust-test");
     drop(reopened);
     assert_eq!(
-        api::metadata_get(&json!({
+        api::get_metadata(&json!({
             "database_path": path.to_string_lossy(),
             "project_id": "rust-test"
         }))
@@ -74,7 +74,7 @@ fn project_round_trips_metadata_and_schema() {
         .as_bool()
         .unwrap());
     assert_eq!(
-        api::cache_size(&json!({
+        api::get_cache_size(&json!({
             "database_path": path.to_string_lossy(),
             "project_id": "rust-test"
         }))

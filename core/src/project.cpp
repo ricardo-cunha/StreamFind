@@ -169,17 +169,6 @@ std::string now_string() {
     return "current";
 }
 
-} // namespace detail
-
-using namespace detail;
-
-Error::Error(ErrorCode code, std::string message)
-    : std::runtime_error(std::move(message)), code_(code) {}
-
-ErrorCode Error::code() const noexcept { return code_; }
-
-namespace detail {
-
 const char *parameter_type_name(ParameterType type) {
     switch (type) {
     case ParameterType::string: return "string";
@@ -218,6 +207,20 @@ bool parameter_type_matches(ParameterType type, const Json &value) {
 }
 
 } // namespace detail
+
+using namespace detail;
+
+Error::Error(ErrorCode code, std::string message)
+    : std::runtime_error(std::move(message)), code_(code) {}
+
+ErrorCode Error::code() const noexcept { return code_; }
+
+void CancellationToken::cancel() noexcept { cancelled_.store(true); }
+bool CancellationToken::is_cancelled() const noexcept { return cancelled_.load(); }
+
+Json ExecutionResult::to_json() const {
+    return {{"results", results}, {"cancelled", cancelled}};
+}
 
 Json TableColumnDefinition::to_json() const {
     return {{"name", name}, {"description", description},
@@ -529,10 +532,12 @@ const Method *MethodRegistry::find(const std::string &id) const noexcept {
     return it == methods_.end() ? nullptr : &*it;
 }
 
-std::vector<MethodDefinition> MethodRegistry::list() const {
+std::vector<MethodDefinition> MethodRegistry::list(const std::string &domain) const {
     std::vector<MethodDefinition> output;
     output.reserve(methods_.size());
-    for (const auto &method : methods_) output.push_back(method.definition());
+    for (const auto &method : methods_) {
+        if (domain.empty() || method.definition().domain == domain) output.push_back(method.definition());
+    }
     return output;
 }
 
@@ -746,10 +751,8 @@ Json Project::get_metadata() const {
     return impl_->info.metadata;
 }
 
-const std::filesystem::path &Project::database_path() const noexcept { return impl_->options.database_path; }
-const std::filesystem::path &Project::get_database_path() const noexcept { return database_path(); }
-const std::string &Project::id() const noexcept { return impl_->options.project_id; }
-const std::string &Project::get_project_id() const noexcept { return id(); }
+const std::filesystem::path &Project::get_database_path() const noexcept { return impl_->options.database_path; }
+const std::string &Project::get_project_id() const noexcept { return impl_->options.project_id; }
 
 std::string Project::get_domain() const {
     std::lock_guard lock(impl_->mutex);
@@ -762,7 +765,7 @@ void Project::validate() const {
     ensure_active(*impl_);
     Connection connection(*impl_);
     query(connection.get(), "SELECT project_id, domain, metadata, workflow, schema_version, framework_version FROM PROJECT LIMIT 0", "validate PROJECT schema");
-    read_info(connection.get(), id());
+    read_info(connection.get(), get_project_id());
     query(connection.get(), "SELECT project_id, name, description, hash, data, created_at FROM CACHE LIMIT 0", "validate CACHE schema");
     query(connection.get(), "SELECT project_id, operation_type, object_type, operation_details, created_at FROM AUDIT_TRAIL LIMIT 0", "validate AUDIT_TRAIL schema");
 }
@@ -773,44 +776,38 @@ void Project::set_metadata(Json metadata) {
     if (impl_->options.read_only) throw Error(ErrorCode::InvalidArgument, "Project is read-only");
     Connection connection(*impl_);
     prepared(connection.get(), "UPDATE PROJECT SET metadata = ? WHERE project_id = ?", "update metadata",
-             [&](Statement statement) { bind_text(statement, 1, json_text(metadata)); bind_text(statement, 2, id()); },
+             [&](Statement statement) { bind_text(statement, 1, json_text(metadata)); bind_text(statement, 2, get_project_id()); },
              [](duckdb_result &) {});
-    audit(connection.get(), id(), "update", "metadata", metadata);
+    audit(connection.get(), get_project_id(), "update", "metadata", metadata);
     impl_->info.metadata = std::move(metadata);
 }
 
-Workflow Project::get_workflow() const { return workflow(); }
-
-void Project::set_workflow(Workflow workflow_value, const MethodRegistry &registry) {
-    update_workflow(std::move(workflow_value), registry);
-}
-
 Project Project::copy(const ProjectOptions &options) const {
-    const auto workflow_value = workflow();
+    const auto workflow_value = get_workflow();
     ProjectOptions destination_options = options;
     destination_options.domain = impl_->info.domain;
     Project destination = Project::create(destination_options);
     destination.set_metadata(impl_->info.metadata);
-    destination.update_workflow(workflow_value);
-    for (const auto &entry : cache()) {
-        destination.cache_put(entry.name, entry.description, entry.hash,
+    destination.set_workflow(workflow_value);
+    for (const auto &entry : get_cache()) {
+        destination.set_cache(entry.name, entry.description, entry.hash,
                               parse_json(std::string(entry.data.begin(), entry.data.end()), "cache entry"));
     }
     return destination;
 }
 
-Workflow Project::workflow() const {
+Workflow Project::get_workflow() const {
     std::lock_guard lock(impl_->mutex); ensure_active(*impl_);
     Connection connection(*impl_);
     Json value;
     prepared(connection.get(), "SELECT workflow FROM PROJECT WHERE project_id = ?", "read workflow",
-             [&](Statement statement) { bind_text(statement, 1, id()); },
+             [&](Statement statement) { bind_text(statement, 1, get_project_id()); },
              [&](duckdb_result &result) { if (duckdb_row_count(&result)) value = parse_json(value_string(result, 0, 0), "workflow"); });
     return Workflow::from_json(value);
 }
 
-void Project::update_workflow(Workflow workflow_value, const MethodRegistry &registry) {
-    const Workflow previous = workflow();
+void Project::set_workflow(Workflow workflow_value, const MethodRegistry &registry) {
+    const Workflow previous = get_workflow();
     workflow_value.version = std::max(workflow_value.version, previous.version + 1);
     workflow_value.domain = workflow_value.domain.empty() ? impl_->info.domain : workflow_value.domain;
     workflow_value.validate(registry);
@@ -818,9 +815,9 @@ void Project::update_workflow(Workflow workflow_value, const MethodRegistry &reg
     if (impl_->options.read_only) throw Error(ErrorCode::InvalidArgument, "Project is read-only");
     Connection connection(*impl_);
     prepared(connection.get(), "UPDATE PROJECT SET workflow = ? WHERE project_id = ?", "update workflow",
-             [&](Statement statement) { bind_text(statement, 1, json_text(workflow_value.to_json())); bind_text(statement, 2, id()); },
+             [&](Statement statement) { bind_text(statement, 1, json_text(workflow_value.to_json())); bind_text(statement, 2, get_project_id()); },
              [](duckdb_result &) {});
-    audit(connection.get(), id(), "update", "workflow", workflow_value.to_json());
+    audit(connection.get(), get_project_id(), "update", "workflow", workflow_value.to_json());
 }
 
 std::vector<std::string> Project::list_tables() const {
@@ -837,11 +834,11 @@ std::vector<std::string> Project::list_tables() const {
     return output;
 }
 
-std::vector<CacheEntry> Project::cache() const {
+std::vector<CacheEntry> Project::get_cache() const {
     std::lock_guard lock(impl_->mutex); ensure_active(*impl_); Connection connection(*impl_);
     std::vector<CacheEntry> output;
     prepared(connection.get(), "SELECT name, description, hash, data, created_at FROM CACHE WHERE project_id = ? ORDER BY created_at DESC", "read cache",
-             [&](Statement statement) { bind_text(statement, 1, id()); },
+             [&](Statement statement) { bind_text(statement, 1, get_project_id()); },
              [&](duckdb_result &result) {
                  for (idx_t row = 0; row < duckdb_row_count(&result); ++row) {
                      CacheEntry entry{value_string(result, 0, row), value_string(result, 1, row), value_string(result, 2, row), {}, value_string(result, 4, row)};
@@ -854,98 +851,99 @@ std::vector<CacheEntry> Project::cache() const {
     return output;
 }
 
-std::vector<CacheEntry> Project::get_cache() const { return cache(); }
-std::size_t Project::get_cache_size() const { return cache().size(); }
+std::size_t Project::get_cache_size() const { return get_cache().size(); }
 
-std::optional<CacheEntry> Project::cache_get(const std::string &hash) const {
-    for (auto &entry : cache()) if (entry.hash == hash) return entry;
+std::optional<CacheEntry> Project::get_cache_entry(const std::string &hash) const {
+    for (auto &entry : get_cache()) if (entry.hash == hash) return entry;
     return std::nullopt;
 }
 
-void Project::cache_put(std::string name, std::string description, std::string hash, const Json &value) {
+void Project::set_cache(std::string name, std::string description, std::string hash, const Json &value) {
     std::lock_guard lock(impl_->mutex); ensure_active(*impl_);
     if (impl_->options.read_only) throw Error(ErrorCode::InvalidArgument, "Project is read-only");
     const std::string payload = json_text(value);
     Connection connection(*impl_);
     prepared(connection.get(), "INSERT INTO CACHE (project_id, name, description, hash, data) VALUES (?, ?, ?, ?, ?) ON CONFLICT(project_id, hash) DO UPDATE SET name = excluded.name, description = excluded.description, data = excluded.data",
              "write cache",
-             [&](Statement statement) { bind_text(statement, 1, id()); bind_text(statement, 2, name); bind_text(statement, 3, description); bind_text(statement, 4, hash); duckdb_bind_blob(statement, 5, payload.data(), payload.size()); },
+              [&](Statement statement) { bind_text(statement, 1, get_project_id()); bind_text(statement, 2, name); bind_text(statement, 3, description); bind_text(statement, 4, hash); duckdb_bind_blob(statement, 5, payload.data(), payload.size()); },
              [](duckdb_result &) {});
 }
 
-void Project::clear_cache(const std::optional<std::string> &name) {
+void Project::delete_cache() {
     std::lock_guard lock(impl_->mutex); ensure_active(*impl_);
     if (impl_->options.read_only) throw Error(ErrorCode::InvalidArgument, "Project is read-only");
     Connection connection(*impl_);
-    if (name) prepared(connection.get(), "DELETE FROM CACHE WHERE project_id = ? AND name = ?", "clear cache",
-                       [&](Statement statement) { bind_text(statement, 1, id()); bind_text(statement, 2, *name); }, [](duckdb_result &) {});
-    else prepared(connection.get(), "DELETE FROM CACHE WHERE project_id = ?", "clear cache",
-                  [&](Statement statement) { bind_text(statement, 1, id()); }, [](duckdb_result &) {});
-    audit(connection.get(), id(), "clear", "cache", name ? Json{{"name", *name}} : Json::object());
+    prepared(connection.get(), "DELETE FROM CACHE WHERE project_id = ?", "delete cache",
+             [&](Statement statement) { bind_text(statement, 1, get_project_id()); }, [](duckdb_result &) {});
+    audit(connection.get(), get_project_id(), "delete", "cache", Json::object());
 }
 
-void Project::delete_cache() { clear_cache(); }
-
-std::vector<AuditEntry> Project::audit_trail() const {
+std::vector<AuditEntry> Project::get_audit_trail() const {
     std::lock_guard lock(impl_->mutex); ensure_active(*impl_); Connection connection(*impl_);
     std::vector<AuditEntry> output;
     prepared(connection.get(), "SELECT operation_type, object_type, operation_details, created_at FROM AUDIT_TRAIL WHERE project_id = ? ORDER BY created_at ASC", "read audit trail",
-             [&](Statement statement) { bind_text(statement, 1, id()); },
+              [&](Statement statement) { bind_text(statement, 1, get_project_id()); },
              [&](duckdb_result &result) { for (idx_t row = 0; row < duckdb_row_count(&result); ++row) output.push_back({value_string(result, 0, row), value_string(result, 1, row), parse_json(value_string(result, 2, row), "audit details"), value_string(result, 3, row)}); });
     return output;
 }
 
-std::vector<AuditEntry> Project::get_audit_trail() const { return audit_trail(); }
-
-Json Project::execute(const MethodRegistry &registry) {
-    Workflow current = workflow(); current.validate(registry);
+ExecutionResult Project::run_workflow(const MethodRegistry &registry, CancellationToken *cancellation, ProgressCallback progress) {
+    Workflow current = get_workflow(); current.validate(registry);
     Json results = Json::array();
+    std::size_t completed = 0;
     for (const auto &step : current.steps) {
+        if (cancellation && cancellation->is_cancelled()) return {results, true};
         const Method *method = registry.find(step.method);
         const Json parameters = method->resolve_parameters(step.parameters.values);
         const auto &definition = method->definition();
-        const std::string key = hash_text(id() + "\n" + definition.id + "\n" + definition.version + "\n" + parameters.dump());
+    const std::string key = hash_text(get_project_id() + "\n" + definition.id + "\n" + definition.version + "\n" + parameters.dump());
         if (definition.cacheable) {
-            if (auto cached = cache_get(key)) {
+            if (auto cached = get_cache_entry(key)) {
                 const Json result = parse_json(std::string(cached->data.begin(), cached->data.end()), "cached result");
                 results.push_back(result);
                 std::lock_guard lock(impl_->mutex); Connection connection(*impl_);
-                audit(connection.get(), id(), "cache_hit", "workflow_step", Json{{"method", definition.id}, {"cache_key", key}});
+                audit(connection.get(), get_project_id(), "cache_hit", "workflow_step", Json{{"method", definition.id}, {"cache_key", key}});
                 continue;
             }
             std::lock_guard lock(impl_->mutex); Connection connection(*impl_);
-            audit(connection.get(), id(), "cache_miss", "workflow_step", Json{{"method", definition.id}, {"cache_key", key}});
+            audit(connection.get(), get_project_id(), "cache_miss", "workflow_step", Json{{"method", definition.id}, {"cache_key", key}});
         }
         {
             std::lock_guard lock(impl_->mutex); ensure_active(*impl_); Connection connection(*impl_);
-            audit(connection.get(), id(), "start", "workflow_step", Json{{"method", definition.id}, {"cache_key", key}, {"parameters", parameters}});
+            audit(connection.get(), get_project_id(), "start", "workflow_step", Json{{"method", definition.id}, {"cache_key", key}, {"parameters", parameters}});
         }
         try {
             Json result = method->run(*this, parameters);
             results.push_back(result);
-            if (definition.cacheable) cache_put(definition.id, "workflow result", key, result);
-            std::lock_guard lock(impl_->mutex); Connection connection(*impl_); audit(connection.get(), id(), "complete", "workflow_step", Json{{"method", definition.id}, {"cache_key", key}});
+             if (definition.cacheable) set_cache(definition.id, "workflow result", key, result);
+            if (progress) progress({"workflow", ++completed, current.steps.size()});
+            std::lock_guard lock(impl_->mutex); Connection connection(*impl_); audit(connection.get(), get_project_id(), "complete", "workflow_step", Json{{"method", definition.id}, {"cache_key", key}});
         } catch (const std::exception &error) {
-            std::lock_guard lock(impl_->mutex); Connection connection(*impl_); audit(connection.get(), id(), "failed", "workflow_step", Json{{"method", definition.id}, {"error", error.what()}});
+            std::lock_guard lock(impl_->mutex); Connection connection(*impl_); audit(connection.get(), get_project_id(), "failed", "workflow_step", Json{{"method", definition.id}, {"error", error.what()}});
             throw;
         }
     }
-    return results;
+    return {results, false};
 }
 
 Json Project::run_method(const std::string &method_id, const Json &parameters,
                          const MethodRegistry &registry) {
     const Method *method = registry.find(method_id);
     if (!method) throw Error(ErrorCode::WorkflowValidation, "Unknown method: " + method_id);
+    Workflow workflow = get_workflow();
+    workflow.domain = workflow.domain.empty() ? get_domain() : workflow.domain;
+    workflow.steps.push_back({method_id, ParameterValues::from_json(parameters)});
+    workflow.validate(registry);
+    set_workflow(workflow, registry);
     const Json resolved = method->resolve_parameters(parameters);
     {
         std::lock_guard lock(impl_->mutex); ensure_active(*impl_); Connection connection(*impl_);
-        audit(connection.get(), id(), "start", "method", Json{{"method", method_id}, {"parameters", resolved}});
+        audit(connection.get(), get_project_id(), "start", "method", Json{{"method", method_id}, {"parameters", resolved}});
     }
     const Json result = method->run(*this, resolved);
     {
         std::lock_guard lock(impl_->mutex); Connection connection(*impl_);
-        audit(connection.get(), id(), "complete", "method", Json{{"method", method_id}});
+        audit(connection.get(), get_project_id(), "complete", "method", Json{{"method", method_id}});
     }
     return result;
 }

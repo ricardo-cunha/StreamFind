@@ -376,6 +376,10 @@ streamfind/
 │       ├── src/
 │       │   └── cf_streamfind/
 │       └── tests/
+
+├── mcp/
+│   ├── README.md
+│   └── tests/
 │
 ├── docker/
 │   ├── server.Dockerfile
@@ -2237,11 +2241,14 @@ Expose streamfind as an application service.
 
 ---
 
-## Phase 7 — Build the React frontend
+## Phase 7 — Build the React and Rust Frontends
 
 ### Objective
 
-Create a modern GUI using the FastAPI contract.
+Create the graphical interfaces in parallel. React uses the FastAPI/Python
+service path, while the Rust `egui` frontend uses `streamfind-rust-core`
+directly. Both interfaces expose the same supported project and workflow
+capabilities without sharing implementation dependencies.
 
 ### Tasks
 
@@ -2261,12 +2268,42 @@ Create a modern GUI using the FastAPI contract.
 - The frontend continues to use the FastAPI/Python service path backed by
   `streamfind-core` (C++). It does not call or select `streamfind-rust` yet.
 
+### Rust `egui` frontend
+
+Develop `rust/crates/frontend` in parallel with the React application:
+
+- Use `eframe` and `egui` for the desktop application.
+- Keep application composition in `app.rs` and project/workflow state in
+  `project.rs` and `workflow.rs`.
+- Put reusable visual elements under `components/`.
+- Call `streamfind-rust-core::api` and the typed Rust Project API; do not access
+  DuckDB directly from the GUI.
+- Do not depend on React, Python, FastAPI, or the C++ core.
+- Mirror the React project shell, metadata, workflow, execution, cache, audit,
+  validation, and error-handling behavior wherever Rust capabilities exist.
+- Keep tests under `rust/crates/frontend/tests/`.
+- Add desktop packaging and clean-machine launch checks after the first GUI
+  vertical slice.
+
+### Parallel Development Rules
+
+- Define parity by capability and user flow, not shared UI or transport code.
+- React consumes the FastAPI contract; Rust `egui` consumes the typed Rust API.
+- Both frontends surface validation errors, cancellation, progress, results,
+  cache state, and audit information consistently.
+- Record capability gaps explicitly and do not claim frontend parity until both
+  supported interfaces cover them.
+
 ### Exit criteria
 
 - Core end-user workflows can be completed without Shiny.
-- Processing-job status and failures are visible.
-- Workflow validation errors are actionable.
-- Large tables and plots remain responsive.
+- Processing-job status and failures are visible in React and Rust `egui`.
+- Workflow validation errors are actionable in both interfaces.
+- Large tables and plots remain responsive in both interfaces.
+- The Rust `egui` frontend builds and launches independently of Python and
+  FastAPI.
+- Supported project and workflow flows have a documented React/Rust parity
+  matrix.
 
 ---
 
@@ -2571,6 +2608,36 @@ operation from Platform 2B before MassSpec functionality is added.
 **Exit criteria:** a binary-wheel install supports the base project API and
 CLI without R; API contract tests exercise the same operations through FastAPI;
 neither the CLI nor the server accesses DuckDB or `_core` directly.
+
+### MCP interface baseline
+
+Add MCP adapters after the generic C++ and Rust APIs are stable. MCP is a
+transport/interface layer, not a replacement for either Project API.
+
+- Implement a C++ stdio MCP server that delegates to the canonical C++ JSON API.
+- Implement a dedicated Rust `mcp` crate and stdio server that delegates to
+  `streamfind-rust-core`.
+- Support MCP `initialize`, `tools/list`, and `tools/call` first.
+- Expose project creation, description, validation, metadata, domain, workflow,
+  method, cache, audit, copy, and execution operations as MCP tools.
+- Use the same tool names, argument schemas, result envelopes, and structured
+  errors in both implementations.
+- Keep transport parsing, JSON-RPC handling, and MCP serialization outside the
+  Project/storage layers.
+- Map MCP cancellation and progress notifications to the core cancellation and
+  progress contracts.
+- Do not expose arbitrary SQL or unrestricted filesystem access as tools.
+- Add shared MCP protocol fixtures and C++/Rust tool-catalogue conformance tests.
+
+MCP clients connect to either implementation independently:
+
+```text
+MCP client -> C++ MCP stdio server -> streamfind::api -> C++ Project
+MCP client -> Rust MCP stdio server -> streamfind-rust-core -> Rust Project
+```
+
+The Rust `egui` frontend is not required to use MCP; it calls the typed Rust
+core API directly. MCP is intended for agent/tool consumers and automation.
 
 ### Domain 3 — MassSpec project
 

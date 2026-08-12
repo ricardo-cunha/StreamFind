@@ -23,6 +23,13 @@ add_executable(streamfind_project_tests unit/project_smoke.cpp)
 target_link_libraries(streamfind_project_tests PRIVATE streamfind::core)
 add_test(NAME streamfind_project_tests COMMAND streamfind_project_tests)
 
+add_executable(streamfind_conformance_tests unit/conformance.cpp)
+target_link_libraries(streamfind_conformance_tests PRIVATE streamfind::core)
+target_compile_definitions(streamfind_conformance_tests PRIVATE
+    STREAMFIND_CONFORMANCE_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/fixtures/project_conformance.json"
+)
+add_test(NAME streamfind_conformance_tests COMMAND streamfind_conformance_tests)
+
 add_executable(streamfind_vendor_tests unit/vendor_smoke.cpp)
 target_link_libraries(streamfind_vendor_tests PRIVATE
     streamfind::duckdb

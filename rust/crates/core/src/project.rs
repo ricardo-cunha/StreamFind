@@ -14,9 +14,11 @@ pub enum ErrorCode {
     ProjectNotFound,
     ProjectAlreadyExists,
     SchemaMismatch,
-    Database,
+    DatabaseError,
     WorkflowValidation,
     MethodExecution,
+    ProjectClosed,
+    Cancelled,
 }
 
 #[derive(Debug)]
@@ -44,11 +46,50 @@ impl std::error::Error for Error {}
 
 impl From<duckdb::Error> for Error {
     fn from(error: duckdb::Error) -> Self {
-        Self::new(ErrorCode::Database, error.to_string())
+        Self::new(ErrorCode::DatabaseError, error.to_string())
     }
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
+
+/// Cooperative cancellation state for long-running operations.
+#[derive(Default)]
+pub struct CancellationToken {
+    cancelled: std::sync::atomic::AtomicBool,
+}
+
+impl CancellationToken {
+    pub fn cancel(&self) {
+        self.cancelled
+            .store(true, std::sync::atomic::Ordering::Relaxed);
+    }
+    pub fn is_cancelled(&self) -> bool {
+        self.cancelled.load(std::sync::atomic::Ordering::Relaxed)
+    }
+}
+
+/// Progress snapshot emitted during workflow execution.
+#[derive(Debug, Clone)]
+pub struct ProgressEvent {
+    pub operation: String,
+    pub completed: usize,
+    pub total: usize,
+}
+
+/// Stable result envelope for workflow execution.
+#[derive(Debug, Clone, Serialize)]
+pub struct ExecutionResult {
+    pub results: Json,
+    pub cancelled: bool,
+}
+
+impl ExecutionResult {
+    pub fn to_json(&self) -> Json {
+        json!({"results": self.results, "cancelled": self.cancelled})
+    }
+}
+
+pub type ProgressCallback = Box<dyn Fn(&ProgressEvent) + Send + Sync>;
 
 fn cache_key(project_id: &str, method: &str, parameters: &Json) -> String {
     let mut hash: u64 = 1469598103934665603;
@@ -429,6 +470,8 @@ pub struct Method {
     pub domain: String,
     pub parameters: ParameterSchema,
     pub cacheable: bool,
+    pub required_methods: Vec<String>,
+    pub max_occurrences: usize,
     executor: MethodExecutor,
     validator: Option<MethodValidator>,
 }
@@ -440,6 +483,8 @@ impl Method {
             "name": self.name,
             "description": self.description,
             "domain": self.domain,
+            "required": self.required_methods,
+            "number_permitted": self.max_occurrences,
             "parameters": self.parameters.definitions.iter().map(|definition| json!({
                 "name": definition.name,
                 "description": definition.description,
@@ -482,8 +527,12 @@ impl MethodRegistry {
             )
         })
     }
-    pub fn list(&self) -> Vec<Json> {
-        self.methods.values().map(Method::to_json).collect()
+    pub fn list(&self, domain: &str) -> Vec<Json> {
+        self.methods
+            .values()
+            .filter(|method| domain.is_empty() || method.domain == domain)
+            .map(Method::to_json)
+            .collect()
     }
 }
 
@@ -544,6 +593,7 @@ impl Workflow {
     }
     pub fn validate(&self, registry: &MethodRegistry) -> Result<()> {
         let mut prior = Vec::new();
+        let mut counts = HashMap::new();
         for step in &self.steps {
             let method = registry.get(&step.method)?;
             if !self.domain.is_empty() && !method.domain.is_empty() && self.domain != method.domain
@@ -551,6 +601,22 @@ impl Workflow {
                 return Err(Error::new(
                     ErrorCode::WorkflowValidation,
                     "workflow domain mismatch",
+                ));
+            }
+            for required in &method.required_methods {
+                if !prior.contains(required) {
+                    return Err(Error::new(
+                        ErrorCode::WorkflowValidation,
+                        format!("required method is not earlier in workflow: {required}"),
+                    ));
+                }
+            }
+            let count = counts.entry(step.method.clone()).or_insert(0);
+            *count += 1;
+            if method.max_occurrences > 0 && *count > method.max_occurrences {
+                return Err(Error::new(
+                    ErrorCode::WorkflowValidation,
+                    format!("method occurs too many times: {}", step.method),
                 ));
             }
             method.resolve(&step.parameters)?;
@@ -596,7 +662,7 @@ impl Project {
         if let Some(parent) = options.database_path.parent() {
             if !parent.as_os_str().is_empty() {
                 fs::create_dir_all(parent)
-                    .map_err(|error| Error::new(ErrorCode::Database, error.to_string()))?;
+                    .map_err(|error| Error::new(ErrorCode::DatabaseError, error.to_string()))?;
             }
         }
         let connection = Connection::open(&options.database_path)?;
@@ -649,14 +715,11 @@ impl Project {
     pub fn get_metadata(&self) -> Json {
         self.info.metadata.clone()
     }
-    pub fn database_path(&self) -> &Path {
+    pub fn get_database_path(&self) -> &Path {
         &self.options.database_path
     }
-    pub fn get_database_path(&self) -> &Path {
-        self.database_path()
-    }
     pub fn get_project_id(&self) -> &str {
-        self.id()
+        &self.options.project_id
     }
     pub fn get_domain(&self) -> String {
         self.info.domain.clone()
@@ -671,7 +734,7 @@ impl Project {
                 ));
             }
         }
-        self.workflow()?;
+        self.get_workflow()?;
         Ok(())
     }
     pub fn list_tables(&self) -> Result<Vec<String>> {
@@ -683,18 +746,15 @@ impl Project {
     pub fn set_metadata(&mut self, metadata: Json) -> Result<()> {
         self.connection.execute(
             "UPDATE PROJECT SET metadata = ?1 WHERE project_id = ?2",
-            params![metadata.to_string(), self.id()],
+            params![metadata.to_string(), self.get_project_id()],
         )?;
         self.info.metadata = metadata;
         Ok(())
     }
-    pub fn id(&self) -> &str {
-        &self.options.project_id
-    }
-    pub fn workflow(&self) -> Result<Workflow> {
+    pub fn get_workflow(&self) -> Result<Workflow> {
         let text: String = self.connection.query_row(
             "SELECT workflow FROM PROJECT WHERE project_id = ?1",
-            params![self.id()],
+            params![self.get_project_id()],
             |row| row.get(0),
         )?;
         Workflow::from_json(
@@ -702,47 +762,41 @@ impl Project {
                 .map_err(|error| Error::new(ErrorCode::SchemaMismatch, error.to_string()))?,
         )
     }
-    pub fn update_workflow(
+    pub fn set_workflow(
         &mut self,
         mut workflow: Workflow,
         registry: &MethodRegistry,
     ) -> Result<()> {
-        let previous = self.workflow()?;
+        let previous = self.get_workflow()?;
         workflow.version = workflow.version.max(previous.version + 1);
         workflow.validate(registry)?;
         self.connection.execute(
             "UPDATE PROJECT SET workflow = ?1 WHERE project_id = ?2",
-            params![workflow.to_json().to_string(), self.id()],
+            params![workflow.to_json().to_string(), self.get_project_id()],
         )?;
         Ok(())
     }
-    pub fn get_workflow(&self) -> Result<Workflow> {
-        self.workflow()
-    }
-    pub fn set_workflow(&mut self, workflow: Workflow, registry: &MethodRegistry) -> Result<()> {
-        self.update_workflow(workflow, registry)
-    }
     pub fn copy(&self, options: ProjectOptions) -> Result<Self> {
-        let workflow = self.workflow()?.to_json();
+        let workflow = self.get_workflow()?.to_json();
         let mut destination_options = options;
         destination_options.domain = self.info.domain.clone();
         let mut destination = Self::create(destination_options)?;
         destination.set_metadata(self.info.metadata.clone())?;
         destination.connection.execute(
             "UPDATE PROJECT SET workflow = ?1 WHERE project_id = ?2",
-            params![workflow.to_string(), destination.id()],
+            params![workflow.to_string(), destination.get_project_id()],
         )?;
-        for entry in self.cache()? {
+        for entry in self.get_cache()? {
             let value = serde_json::from_slice(&entry.data)
                 .map_err(|error| Error::new(ErrorCode::SchemaMismatch, error.to_string()))?;
-            destination.cache_put(&entry.name, &entry.description, &entry.hash, &value)?;
+            destination.set_cache(&entry.name, &entry.description, &entry.hash, &value)?;
         }
         Ok(destination)
     }
-    pub fn cache(&self) -> Result<Vec<CacheEntry>> {
+    pub fn get_cache(&self) -> Result<Vec<CacheEntry>> {
         let mut statement = self.connection.prepare("SELECT name, description, hash, data, CAST(created_at AS VARCHAR) FROM CACHE WHERE project_id = ?1 ORDER BY created_at DESC")?;
         let rows = statement
-            .query_map(params![self.id()], |row| {
+            .query_map(params![self.get_project_id()], |row| {
                 Ok(CacheEntry {
                     name: row.get(0)?,
                     description: row.get(1)?,
@@ -754,41 +808,33 @@ impl Project {
             .collect::<std::result::Result<Vec<_>, _>>()?;
         Ok(rows)
     }
-    /// Returns all cache entries for this project.
-    pub fn get_cache(&self) -> Result<Vec<CacheEntry>> {
-        self.cache()
-    }
     pub fn get_cache_size(&self) -> Result<usize> {
         Ok(self.get_cache()?.len())
     }
-    pub fn cache_get(&self, hash: &str) -> Result<Option<CacheEntry>> {
-        Ok(self.connection.query_row("SELECT name, description, hash, data, CAST(created_at AS VARCHAR) FROM CACHE WHERE project_id = ?1 AND hash = ?2", params![self.id(), hash], |row| Ok(CacheEntry { name: row.get(0)?, description: row.get(1)?, hash: row.get(2)?, data: row.get(3)?, created_at: row.get(4)? })).optional()?)
+    pub fn get_cache_entry(&self, hash: &str) -> Result<Option<CacheEntry>> {
+        Ok(self.connection.query_row("SELECT name, description, hash, data, CAST(created_at AS VARCHAR) FROM CACHE WHERE project_id = ?1 AND hash = ?2", params![self.get_project_id(), hash], |row| Ok(CacheEntry { name: row.get(0)?, description: row.get(1)?, hash: row.get(2)?, data: row.get(3)?, created_at: row.get(4)? })).optional()?)
     }
-    pub fn cache_put(
+    pub fn set_cache(
         &mut self,
         name: &str,
         description: &str,
         hash: &str,
         value: &Json,
     ) -> Result<()> {
-        self.connection.execute("INSERT INTO CACHE (project_id, name, description, hash, data) VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT(project_id, hash) DO UPDATE SET name = excluded.name, description = excluded.description, data = excluded.data", params![self.id(), name, description, hash, value.to_string().into_bytes()])?;
+        self.connection.execute("INSERT INTO CACHE (project_id, name, description, hash, data) VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT(project_id, hash) DO UPDATE SET name = excluded.name, description = excluded.description, data = excluded.data", params![self.get_project_id(), name, description, hash, value.to_string().into_bytes()])?;
         Ok(())
     }
-    pub fn clear_cache(&mut self) -> Result<()> {
+    pub fn delete_cache(&mut self) -> Result<()> {
         self.connection.execute(
             "DELETE FROM CACHE WHERE project_id = ?1",
-            params![self.id()],
+            params![self.get_project_id()],
         )?;
-        self.audit("clear", "cache", json!({}))
+        self.audit("delete", "cache", json!({}))
     }
-    /// Deletes all cache entries for this project.
-    pub fn delete_cache(&mut self) -> Result<()> {
-        self.clear_cache()
-    }
-    pub fn audit_trail(&self) -> Result<Vec<AuditEntry>> {
+    pub fn get_audit_trail(&self) -> Result<Vec<AuditEntry>> {
         let mut statement = self.connection.prepare("SELECT operation_type, object_type, COALESCE(operation_details, '{}'), CAST(created_at AS VARCHAR) FROM AUDIT_TRAIL WHERE project_id = ?1 ORDER BY created_at ASC")?;
         let rows = statement
-            .query_map(params![self.id()], |row| {
+            .query_map(params![self.get_project_id()], |row| {
                 Ok(AuditEntry {
                     operation_type: row.get(0)?,
                     object_type: row.get(1)?,
@@ -800,10 +846,6 @@ impl Project {
             .collect::<std::result::Result<Vec<_>, _>>()?;
         Ok(rows)
     }
-    /// Returns audit events in chronological order.
-    pub fn get_audit_trail(&self) -> Result<Vec<AuditEntry>> {
-        self.audit_trail()
-    }
     pub fn run_method(
         &mut self,
         method_id: &str,
@@ -811,6 +853,17 @@ impl Project {
         registry: &MethodRegistry,
     ) -> Result<Json> {
         let method = registry.get(method_id)?;
+        let mut workflow = self.get_workflow()?;
+        workflow.domain = if workflow.domain.is_empty() {
+            self.get_domain()
+        } else {
+            workflow.domain
+        };
+        workflow.steps.push(WorkflowStep {
+            method: method_id.into(),
+            parameters: parameters.clone(),
+        });
+        self.set_workflow(workflow, registry)?;
         let resolved = method.resolve(parameters)?;
         self.audit(
             "start",
@@ -822,15 +875,27 @@ impl Project {
         Ok(result)
     }
     pub fn close(self) {}
-    pub fn execute(&mut self, workflow: &Workflow, registry: &MethodRegistry) -> Result<Json> {
+    pub fn run_workflow(
+        &mut self,
+        workflow: &Workflow,
+        registry: &MethodRegistry,
+        cancellation: Option<&CancellationToken>,
+        progress: Option<&dyn Fn(&ProgressEvent)>,
+    ) -> Result<ExecutionResult> {
         workflow.validate(registry)?;
         let mut results = Vec::new();
-        for step in &workflow.steps {
+        for (index, step) in workflow.steps.iter().enumerate() {
+            if cancellation.is_some_and(CancellationToken::is_cancelled) {
+                return Ok(ExecutionResult {
+                    results: Json::Array(results),
+                    cancelled: true,
+                });
+            }
             let method = registry.get(&step.method)?;
             let parameters = method.resolve(&step.parameters)?;
-            let key = cache_key(self.id(), &method.id, &parameters);
+            let key = cache_key(self.get_project_id(), &method.id, &parameters);
             if method.cacheable {
-                if let Some(entry) = self.cache_get(&key)? {
+                if let Some(entry) = self.get_cache_entry(&key)? {
                     results.push(serde_json::from_slice(&entry.data).map_err(|error| {
                         Error::new(ErrorCode::SchemaMismatch, error.to_string())
                     })?);
@@ -850,22 +915,32 @@ impl Project {
             self.audit("start", "workflow_step", json!({"method": method.id}))?;
             let result = method.run(self, &parameters)?;
             if method.cacheable {
-                self.cache_put(&method.id, "workflow result", &key, &result)?;
+                self.set_cache(&method.id, "workflow result", &key, &result)?;
             }
             results.push(result);
+            if let Some(progress) = progress {
+                progress(&ProgressEvent {
+                    operation: "workflow".into(),
+                    completed: index + 1,
+                    total: workflow.steps.len(),
+                });
+            }
             self.audit(
                 "complete",
                 "workflow_step",
                 json!({"method": method.id, "cache_key": key}),
             )?;
         }
-        Ok(Json::Array(results))
+        Ok(ExecutionResult {
+            results: Json::Array(results),
+            cancelled: false,
+        })
     }
     fn audit(&self, operation: &str, object: &str, details: Json) -> Result<()> {
         if self.options.read_only {
             return Ok(());
         }
-        self.connection.execute("INSERT INTO AUDIT_TRAIL (project_id, operation_type, object_type, operation_details) VALUES (?1, ?2, ?3, ?4)", params![self.id(), operation, object, details.to_string()])?;
+        self.connection.execute("INSERT INTO AUDIT_TRAIL (project_id, operation_type, object_type, operation_details) VALUES (?1, ?2, ?3, ?4)", params![self.get_project_id(), operation, object, details.to_string()])?;
         Ok(())
     }
 }
