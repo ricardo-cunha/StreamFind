@@ -1,0 +1,29 @@
+@prefix sfcore: <https://streamfind.dev/catalogue/core#> .
+@prefix sf: <https://streamfind.dev/vocabulary#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+{
+	sfcore:mass_spec
+		a sf:Domain ;
+		skos:prefLabel "mass_spec" ;
+		skos:definition "Mass spectrometry project domain." .
+
+	sfcore:massSpecAddAnalyses
+		a sf:Operation ;
+		sf:operationId "mass_spec.add_analyses" ;
+		sf:availableInDomain sfcore:mass_spec ;
+		skos:prefLabel "Add mass spectrometry analyses" ;
+		skos:definition "Add mass spectrometry analysis files to a project." ;
+		sf:toolName "add_analyses" ;
+		sf:hasParameter sfcore:analyses ;
+		sf:extensions "mzml,mzxml,lcd,asc,.d,.D" .
+
+	sfcore:massSpecRemoveAnalyses
+		a sf:Operation ;
+		sf:operationId "mass_spec.remove_analyses" ;
+		sf:availableInDomain sfcore:mass_spec ;
+		skos:prefLabel "Remove mass spectrometry analyses" ;
+		skos:definition "Remove mass spectrometry analysis files from a project." ;
+		sf:toolName "remove_analyses" ;
+		sf:hasParameter sfcore:analysisNames .
+}

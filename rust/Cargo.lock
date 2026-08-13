@@ -1783,10 +1783,35 @@ name = "streamfind-rust-external"
 version = "0.1.0"
 
 [[package]]
+name = "streamfind-rust-mass-spec"
+version = "0.1.0"
+dependencies = [
+ "serde_json",
+ "streamfind-rust-core",
+]
+
+[[package]]
 name = "streamfind-rust-mcp"
 version = "0.1.0"
 dependencies = [
  "serde_json",
+ "streamfind-rust-core",
+ "streamfind-rust-mass-spec",
+ "streamfind-rust-raman",
+ "streamfind-rust-sensors",
+]
+
+[[package]]
+name = "streamfind-rust-raman"
+version = "0.1.0"
+dependencies = [
+ "streamfind-rust-core",
+]
+
+[[package]]
+name = "streamfind-rust-sensors"
+version = "0.1.0"
+dependencies = [
  "streamfind-rust-core",
 ]
 

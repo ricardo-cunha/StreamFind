@@ -541,6 +541,35 @@ std::vector<MethodDefinition> MethodRegistry::list(const std::string &domain) co
     return output;
 }
 
+Operation::Operation(OperationDefinition definition, OperationExecutor executor)
+    : definition_(std::move(definition)), executor_(std::move(executor)) {
+    if (definition_.id.empty()) throw Error(ErrorCode::InvalidArgument, "Operation id must not be empty");
+}
+const OperationDefinition &Operation::definition() const noexcept { return definition_; }
+Json Operation::to_json() const {
+    return {{"id", definition_.id}, {"name", definition_.name}, {"description", definition_.description}, {"domain", definition_.domain}, {"parameters", definition_.parameters.to_json()}};
+}
+Json Operation::resolve_parameters(const Json &value) const { return definition_.parameters.resolve_and_validate(value); }
+Json Operation::run(Project &project, const Json &value) const {
+    if (!executor_) throw Error(ErrorCode::MethodExecution, "Operation has no implementation: " + definition_.id);
+    try { return executor_(project, resolve_parameters(value)); }
+    catch (const Error &) { throw; }
+    catch (const std::exception &error) { throw Error(ErrorCode::MethodExecution, definition_.id + ": " + error.what()); }
+}
+void OperationRegistry::register_operation(Operation operation) {
+    if (find(operation.definition().id)) throw Error(ErrorCode::InvalidArgument, "Operation already registered: " + operation.definition().id);
+    operations_.push_back(std::move(operation));
+}
+const Operation *OperationRegistry::find(const std::string &id) const noexcept {
+    const auto it = std::find_if(operations_.begin(), operations_.end(), [&](const Operation &operation) { return operation.definition().id == id; });
+    return it == operations_.end() ? nullptr : &*it;
+}
+std::vector<OperationDefinition> OperationRegistry::list(const std::string &domain) const {
+    std::vector<OperationDefinition> output;
+    for (const auto &operation : operations_) if (domain.empty() || operation.definition().domain == domain) output.push_back(operation.definition());
+    return output;
+}
+
 MethodRegistry &methods() {
     static MethodRegistry registry;
     return registry;
@@ -834,6 +863,43 @@ std::vector<std::string> Project::list_tables() const {
     return output;
 }
 
+void Project::execute_sql(const std::string &sql) const {
+    std::lock_guard lock(impl_->mutex);
+    ensure_active(*impl_);
+    Connection connection(*impl_);
+    query(connection.get(), sql, "execute project SQL");
+}
+
+Json Project::query_json(const std::string &sql) const {
+    std::lock_guard lock(impl_->mutex);
+    ensure_active(*impl_);
+    Connection connection(*impl_);
+    Json rows = Json::array();
+    duckdb_result result;
+    if (duckdb_query(connection.get(), sql.c_str(), &result) == DuckDBError) {
+        const std::string message = duckdb_result_error(&result) ? duckdb_result_error(&result) : "query failed";
+        duckdb_destroy_result(&result);
+        throw Error(ErrorCode::DatabaseError, message);
+    }
+    const auto columns = duckdb_column_count(&result);
+    const auto count = duckdb_row_count(&result);
+    for (idx_t row = 0; row < count; ++row) {
+        Json object = Json::object();
+        for (idx_t column = 0; column < columns; ++column) {
+            const auto name = duckdb_column_name(&result, column);
+            if (duckdb_value_is_null(&result, column, row)) object[name] = nullptr;
+            else {
+                char *value = duckdb_value_varchar(&result, column, row);
+                object[name] = value ? value : "";
+                if (value) duckdb_free(value);
+            }
+        }
+        rows.push_back(std::move(object));
+    }
+    duckdb_destroy_result(&result);
+    return rows;
+}
+
 std::vector<CacheEntry> Project::get_cache() const {
     std::lock_guard lock(impl_->mutex); ensure_active(*impl_); Connection connection(*impl_);
     std::vector<CacheEntry> output;
@@ -945,6 +1011,16 @@ Json Project::run_method(const std::string &method_id, const Json &parameters,
         std::lock_guard lock(impl_->mutex); Connection connection(*impl_);
         audit(connection.get(), get_project_id(), "complete", "method", Json{{"method", method_id}});
     }
+    return result;
+}
+
+Json Project::run_operation(const std::string &operation_id, const Json &parameters,
+                            const OperationRegistry &registry) const {
+    const Operation *operation = registry.find(operation_id);
+    if (!operation) throw Error(ErrorCode::InvalidArgument, "Unknown operation: " + operation_id);
+    const Json result = operation->run(const_cast<Project &>(*this), parameters);
+    std::lock_guard lock(impl_->mutex); ensure_active(*impl_); Connection connection(*impl_);
+    audit(connection.get(), get_project_id(), "complete", "operation", Json{{"operation", operation_id}});
     return result;
 }
 

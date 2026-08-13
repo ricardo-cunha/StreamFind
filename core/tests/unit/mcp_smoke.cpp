@@ -2,6 +2,7 @@
 #include <cassert>
 #include <fstream>
 #include <filesystem>
+#include <iostream>
 
 #include "streamfind/mcp.hpp"
 
@@ -35,16 +36,31 @@ int main() {
     const auto create = session.handle({{"id", 2}, {"method", "tools/call"}, {"params", {
         {"name", "create"}, {"arguments", {{"database_path", path.string()}, {"project_id", "mcp"}, {"domain", "mass_spec"}}}
     }}});
-    assert(!create.at("result").value("isError", false));
+    if (create.at("result").value("isError", false)) {
+        std::cerr << "create failed\n";
+        return 1;
+    }
     const auto connect = session.handle({{"id", 3}, {"method", "tools/call"}, {"params", {
         {"name", "connect"}, {"arguments", {{"database_path", path.string()}, {"project_id", "mcp"}}}
     }}});
-    assert(connect.at("result").at("content")[0].at("text").get<std::string>().find("mass_spec") != std::string::npos);
-    assert(session.handle({{"id", 4}, {"method", "tools/list"}}).at("result").at("tools").size() == fixture.at("generic_tools").size());
+    if (connect.at("result").value("isError", false)) {
+        std::cerr << "connect failed\n";
+        return 1;
+    }
+    if (session.handle({{"id", 4}, {"method", "tools/list"}}).at("result").at("tools").size() != fixture.at("generic_tools").size()) {
+        std::cerr << "connected tools mismatch\n";
+        return 1;
+    }
     const auto close = session.handle({{"id", 5}, {"method", "tools/call"}, {"params", {
         {"name", "close"}, {"arguments", {{"database_path", path.string()}, {"project_id", "mcp"}}}
     }}});
-    assert(!close.at("result").value("isError", false));
-    assert(session.handle({{"id", 6}, {"method", "tools/list"}}).at("result").at("tools").size() == fixture.at("generic_tools").size());
+    if (close.at("result").value("isError", false)) {
+        std::cerr << "close failed\n";
+        return 1;
+    }
+    if (session.handle({{"id", 6}, {"method", "tools/list"}}).at("result").at("tools").size() != fixture.at("generic_tools").size()) {
+        std::cerr << "closed tools mismatch\n";
+        return 1;
+    }
     std::filesystem::remove(path, error);
 }

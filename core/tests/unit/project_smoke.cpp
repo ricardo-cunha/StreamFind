@@ -55,6 +55,12 @@ int run() {
     std::filesystem::remove(path, error);
 
     auto project = streamfind::Project::create({path, "smoke", std::nullopt, false, false, "test"});
+    project.execute_sql("CREATE TABLE SQL_BOUNDARY (value VARCHAR)");
+    project.execute_sql("INSERT INTO SQL_BOUNDARY VALUES ('ok')");
+    if (project.query_json("SELECT value FROM SQL_BOUNDARY") != streamfind::Json::array({{{"value", "ok"}}})) {
+        std::cerr << "SQL boundary failed\n";
+        return 1;
+    }
     project.set_metadata({{"owner", "test"}});
     if (project.get_metadata().at("owner") != "test") {
         std::cerr << "metadata getter failed\n";

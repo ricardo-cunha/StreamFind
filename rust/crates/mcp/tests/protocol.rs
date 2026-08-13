@@ -1,5 +1,5 @@
 use serde_json::json;
-use streamfind_rust_core::MethodRegistry;
+use streamfind_rust_core::{MethodRegistry, OperationRegistry};
 
 fn catalogue_fixture() -> serde_json::Value {
     serde_json::from_str(include_str!(
@@ -41,7 +41,8 @@ fn supports_initialize_and_tool_listing() {
 #[test]
 fn session_hides_domain_methods_until_connected() {
     let registry = MethodRegistry::default();
-    let mut session = streamfind_rust_mcp::Session::new(&registry);
+    let operations = OperationRegistry::default();
+    let mut session = streamfind_rust_mcp::Session::new(&registry, &operations);
     let tools = session.handle(&json!({"id": 1, "method": "tools/list"}));
     assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 19);
 }
@@ -68,7 +69,8 @@ fn advertised_tools_match_shared_fixture() {
 #[test]
 fn session_lifecycle_rebinds_catalogue() {
     let registry = MethodRegistry::default();
-    let mut session = streamfind_rust_mcp::Session::new(&registry);
+    let operations = OperationRegistry::default();
+    let mut session = streamfind_rust_mcp::Session::new(&registry, &operations);
     let path = std::env::temp_dir().join("streamfind-rust-mcp-lifecycle.duckdb");
     let _ = std::fs::remove_file(&path);
     let call = |session: &mut streamfind_rust_mcp::Session<'_>, id, name, arguments| {

@@ -43,8 +43,9 @@ The ontology is declarative. It contains no executable analytical logic.
               ▼                         ▼
      streamfind-core C++          streamfind Rust
      independent backend          independent backend
-              │                         │
-       MethodRegistry              MethodRegistry
+               │                         │
+        MethodRegistry              MethodRegistry
+        OperationRegistry            OperationRegistry
               │                         │
               └────────────┬────────────┘
                            ▼
@@ -112,6 +113,20 @@ sf:Method
       mass_spec.load_chromatograms
       raman.add_analyses
       sensors.load_measurements
+
+sf:Operation
+    direct project/domain capability, not a workflow step
+    examples:
+      mass_spec.add_analyses
+      mass_spec.remove_analyses
+      mass_spec.get_analyses_info
+      mass_spec.plot_chromatogram
+
+Methods and operations have separate registries and execution paths. `Method`
+instances are the only units allowed in `WorkflowStep` and `run_method`.
+`Operation` instances are called directly through `run_operation`, are exposed
+as MCP tools, and never modify the workflow. Data access, import/export, and
+plotting capabilities therefore cannot accidentally become processing steps.
 ```
 
 Every public capability has one canonical semantic identifier. Transports and language interfaces map to it; they do not create another domain contract.
@@ -438,7 +453,7 @@ not required:
 
 ## Roadmap
 
-### 1. Finish the semantic projection and generic MCP contract — **Next**
+### 1. Finish the semantic projection and generic MCP contract — **Complete**
 
 The generic semantic/MCP baseline already exists. The remaining work should simplify consumption rather than add another abstraction layer.
 
@@ -456,11 +471,14 @@ The generic semantic/MCP baseline already exists. The remaining work should simp
    - MCP names are unique within a connected domain.
 6. Keep MCP lifecycle conformance covering initialize, connect, pre/post-connect tools, calls, errors, close, cancellation, and progress.
 
-**Exit condition:** one semantic source and one generated projection drive both MCP catalogues; neither backend maintains a duplicate public metadata catalogue.
+**Exit condition:** one semantic source and one generated projection drive both MCP catalogues; neither backend maintains a duplicate public metadata catalogue. Complete in this branch; Phase 1.5 is the next implementation phase.
 
-### 1.5. Stabilise domain composition and registry-driven MCP — **Next**
+### 1.5. Stabilise domain composition and registry-driven MCP — **Active**
 
-This phase proves that domains can expand without expanding MCP maintenance.
+This phase proves that domains can expand without expanding MCP maintenance. The
+composition skeleton is now present for `mass_spec`, `raman`, and `sensors` in
+both backends; no analytical methods are exposed yet because no domain method
+contract has been approved for implementation.
 
 #### A. Stabilise the registry
 

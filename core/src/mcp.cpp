@@ -1,10 +1,15 @@
 #include "streamfind/mcp.hpp"
 #include "streamfind/api.hpp"
-#include "streamfind/mcp_metadata.hpp"
+#include "streamfind/generated_metadata.hpp"
 #include <algorithm>
 #include <array>
 
 namespace streamfind::mcp {
+
+const OperationRegistry &operations() {
+    static const OperationRegistry registry;
+    return registry;
+}
 
 namespace detail {
 Json tool(const char *name, const char *description, Json properties, Json required) {
@@ -27,7 +32,7 @@ const char *command(const std::string &name) {
 }
 }
 
-Session::Session(const MethodRegistry &registry) : registry_(registry) {}
+Session::Session(const MethodRegistry &registry, const OperationRegistry &operations) : registry_(registry), operations_(operations) {}
 
 Json Session::handle(const Json &request) {
     const auto id = request.value("id", Json(nullptr));
@@ -36,6 +41,16 @@ Json Session::handle(const Json &request) {
     if (method == "tools/list") {
         auto catalogue = detail::tools();
         for (const auto &definition : registry_.list(domain_)) {
+            if (domain_.empty()) break;
+            Json properties = Json::object();
+            std::vector<std::string> required;
+            for (const auto &parameter : definition.parameters.definitions) {
+                properties[parameter.name] = parameter.type.to_json();
+                if (parameter.required && parameter.default_value.is_null()) required.push_back(parameter.name);
+            }
+            catalogue.push_back(detail::tool(definition.id.c_str(), definition.description.c_str(), properties, required));
+        }
+        for (const auto &definition : operations_.list(domain_)) {
             if (domain_.empty()) break;
             Json properties = Json::object();
             std::vector<std::string> required;
@@ -62,6 +77,17 @@ Json Session::handle(const Json &request) {
     }
     const auto command = detail::command(name);
     const auto dynamic = registry_.find(name);
+    const auto operation = operations_.find(name);
+    if (!command && operation && !domain_.empty() && operation->definition().domain == domain_) {
+        if (project_.empty()) return {{"jsonrpc", "2.0"}, {"id", id}, {"error", {{"code", -32000}, {"message", "No project connected"}}}};
+        const auto arguments = request.at("params").value("arguments", Json::object());
+        try {
+            ProjectOptions options{project_.at("database_path").get<std::string>(), project_.at("project_id").get<std::string>(), {}, false, true, domain_};
+            auto project = Project::open(options);
+            const Json result = project.run_operation(name, arguments, operations_);
+            return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"content", Json::array({{{"type", "text"}, {"text", result.dump()}}})}}}};
+        } catch (const Error &error) { return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"isError", true}, {"content", Json::array({{{"type", "text"}, {"text", error.what()}}})}}}}; }
+    }
     if (!command && dynamic && !domain_.empty() && dynamic->definition().domain == domain_) {
         if (project_.empty()) return {{"jsonrpc", "2.0"}, {"id", id}, {"error", {{"code", -32000}, {"message", "No project connected"}}}};
         Json arguments = project_;

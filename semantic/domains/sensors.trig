@@ -1,0 +1,10 @@
+@prefix sfcore: <https://streamfind.dev/catalogue/core#> .
+@prefix sf: <https://streamfind.dev/vocabulary#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+{
+	sfcore:sensors
+		a sf:Domain ;
+		skos:prefLabel "sensors" ;
+		skos:definition "Sensor data project domain." .
+}

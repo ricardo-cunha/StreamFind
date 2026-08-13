@@ -30,6 +30,13 @@ target_compile_definitions(streamfind_mcp_tests PRIVATE
 )
 add_test(NAME streamfind_mcp_tests COMMAND streamfind_mcp_tests)
 
+add_executable(streamfind_domain_tests unit/domain_smoke.cpp)
+target_link_libraries(streamfind_domain_tests PRIVATE streamfind::core streamfind_mass_spec streamfind_raman streamfind_sensors)
+target_compile_definitions(streamfind_domain_tests PRIVATE
+    STREAMFIND_MASS_SPEC_DATA_ROOT="${STREAMFIND_DATA_ROOT}/inst/extdata/data/mass_spec"
+)
+add_test(NAME streamfind_domain_tests COMMAND streamfind_domain_tests)
+
 add_executable(streamfind_conformance_tests unit/conformance.cpp)
 target_link_libraries(streamfind_conformance_tests PRIVATE streamfind::core)
 target_compile_definitions(streamfind_conformance_tests PRIVATE

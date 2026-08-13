@@ -86,6 +86,8 @@ if(STREAMFIND_DUCKDB_IMPORT_LIBRARY AND EXISTS "${STREAMFIND_DUCKDB_IMPORT_LIBRA
     install(FILES "${STREAMFIND_DUCKDB_IMPORT_LIBRARY}" DESTINATION lib)
 endif()
 
+add_subdirectory(domains)
+
 install(
     DIRECTORY "${STREAMFIND_OPENBABEL_DATA_DIR}/"
     DESTINATION share/streamfind/openbabel/data
@@ -97,7 +99,7 @@ if(STREAMFIND_BUILD_TESTS)
 endif()
 
 add_executable(streamfind_mcp tools/mcp.cpp)
-target_link_libraries(streamfind_mcp PRIVATE streamfind::core)
+target_link_libraries(streamfind_mcp PRIVATE streamfind::core streamfind_mass_spec streamfind_raman streamfind_sensors)
 if(WIN32)
     add_custom_command(TARGET streamfind_mcp POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different

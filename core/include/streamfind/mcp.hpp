@@ -5,13 +5,16 @@
 
 namespace streamfind::mcp {
 
+STREAMFIND_CORE_API const OperationRegistry &operations();
+
 class STREAMFIND_CORE_API Session {
 public:
-    explicit Session(const MethodRegistry &registry = methods());
+    explicit Session(const MethodRegistry &registry = methods(), const OperationRegistry &operations = mcp::operations());
     Json handle(const Json &request);
 
 private:
     const MethodRegistry &registry_;
+    const OperationRegistry &operations_;
     Json project_{Json::object()};
     std::string domain_;
 };

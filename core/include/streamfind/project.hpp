@@ -218,6 +218,33 @@ private:
     std::vector<Method> methods_;
 };
 
+struct STREAMFIND_CORE_API OperationDefinition {
+    std::string id, name, description, domain;
+    ParameterSchema parameters;
+};
+using OperationExecutor = std::function<Json(Project &, const Json &)>;
+
+class STREAMFIND_CORE_API Operation {
+public:
+    Operation(OperationDefinition definition, OperationExecutor executor = {});
+    const OperationDefinition &definition() const noexcept;
+    Json to_json() const;
+    Json resolve_parameters(const Json &value) const;
+    Json run(Project &project, const Json &value) const;
+private:
+    OperationDefinition definition_;
+    OperationExecutor executor_;
+};
+
+class STREAMFIND_CORE_API OperationRegistry {
+public:
+    void register_operation(Operation operation);
+    const Operation *find(const std::string &id) const noexcept;
+    std::vector<OperationDefinition> list(const std::string &domain = {}) const;
+private:
+    std::vector<Operation> operations_;
+};
+
 /** @brief Return the process-wide default method registry. */
 STREAMFIND_CORE_API MethodRegistry &methods();
 
@@ -394,6 +421,10 @@ public:
     Project copy(const ProjectOptions &options) const;
     /** @brief List tables visible in the project database. */
     std::vector<std::string> list_tables() const;
+    /** @brief Execute domain-owned SQL using the Project database connection. */
+    void execute_sql(const std::string &sql) const;
+    /** @brief Execute a query and return rows as JSON objects keyed by column name. */
+    Json query_json(const std::string &sql) const;
 
     /** @brief Return all cache entries for this project. */
     std::vector<CacheEntry> get_cache() const;
@@ -416,6 +447,8 @@ public:
     /** @brief Execute one registered method with supplied parameters. */
     Json run_method(const std::string &method_id, const Json &parameters,
                     const MethodRegistry &registry = methods());
+    Json run_operation(const std::string &operation_id, const Json &parameters,
+                       const OperationRegistry &registry) const;
     /** @brief Mark the Project closed; subsequent operations fail. */
     void close() noexcept;
 

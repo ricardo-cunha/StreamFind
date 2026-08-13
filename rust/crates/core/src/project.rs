@@ -477,6 +477,28 @@ pub struct Method {
 }
 
 impl Method {
+    pub fn new(
+        id: impl Into<String>,
+        name: impl Into<String>,
+        description: impl Into<String>,
+        domain: impl Into<String>,
+        parameters: ParameterSchema,
+        executor: MethodExecutor,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            name: name.into(),
+            description: description.into(),
+            domain: domain.into(),
+            parameters,
+            cacheable: false,
+            required_methods: Vec::new(),
+            max_occurrences: 0,
+            executor,
+            validator: None,
+        }
+    }
+
     pub fn to_json(&self) -> Json {
         json!({
             "id": self.id,
@@ -510,6 +532,34 @@ impl Method {
 #[derive(Default)]
 pub struct MethodRegistry {
     methods: HashMap<String, Method>,
+}
+
+pub type OperationExecutor = Box<dyn Fn(&mut Project, &Json) -> Result<Json> + Send + Sync>;
+
+pub struct Operation {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub domain: String,
+    pub parameters: ParameterSchema,
+    executor: OperationExecutor,
+}
+
+impl Operation {
+    pub fn new(id: impl Into<String>, name: impl Into<String>, description: impl Into<String>, domain: impl Into<String>, parameters: ParameterSchema, executor: OperationExecutor) -> Self {
+        Self { id: id.into(), name: name.into(), description: description.into(), domain: domain.into(), parameters, executor }
+    }
+    pub fn to_json(&self) -> Json { json!({"id": self.id, "name": self.name, "description": self.description, "domain": self.domain, "parameters": self.parameters.definitions.iter().map(|d| json!({"name": d.name, "description": d.description, "type": d.kind.to_json(), "default": d.default, "required": d.required})).collect::<Vec<_>>()}) }
+    pub fn run(&self, project: &mut Project, values: &Json) -> Result<Json> { (self.executor)(project, &self.parameters.resolve(values)?) }
+}
+
+#[derive(Default)]
+pub struct OperationRegistry { operations: HashMap<String, Operation> }
+
+impl OperationRegistry {
+    pub fn register(&mut self, operation: Operation) -> Result<()> { if self.operations.insert(operation.id.clone(), operation).is_some() { return Err(Error::new(ErrorCode::InvalidArgument, "duplicate operation")); } Ok(()) }
+    pub fn get(&self, id: &str) -> Result<&Operation> { self.operations.get(id).ok_or_else(|| Error::new(ErrorCode::InvalidArgument, format!("unknown operation: {id}"))) }
+    pub fn list(&self, domain: &str) -> Vec<Json> { self.operations.values().filter(|o| domain.is_empty() || o.domain == domain).map(Operation::to_json).collect() }
 }
 
 impl MethodRegistry {
@@ -646,7 +696,6 @@ pub struct AuditEntry {
 /// DuckDB-backed project and its workflow state.
 pub struct Project {
     options: ProjectOptions,
-    connection: Connection,
     info: ProjectInfo,
 }
 
@@ -665,8 +714,7 @@ impl Project {
                     .map_err(|error| Error::new(ErrorCode::DatabaseError, error.to_string()))?;
             }
         }
-        let connection = Connection::open(&options.database_path)?;
-        let project = Self::initialize(options, connection)?;
+        let project = Self::initialize(options)?;
         project.audit("create", "project", json!({}))?;
         Ok(project)
     }
@@ -682,14 +730,12 @@ impl Project {
                 "database does not exist",
             ));
         }
-        let connection = Connection::open(&options.database_path)?;
-        Self::initialize(options, connection)
+        Self::initialize(options)
     }
 
-    fn initialize(options: ProjectOptions, connection: Connection) -> Result<Self> {
+    fn initialize(options: ProjectOptions) -> Result<Self> {
         let mut project = Self {
             options,
-            connection,
             info: ProjectInfo {
                 id: String::new(),
                 domain: String::new(),
@@ -699,13 +745,42 @@ impl Project {
                 created_at: String::new(),
             },
         };
+        let connection = project.connection()?;
         if !project.options.read_only {
-            project.connection.execute_batch("CREATE TABLE IF NOT EXISTS PROJECT (project_id VARCHAR NOT NULL PRIMARY KEY, domain VARCHAR, metadata JSON, workflow JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, schema_version INTEGER NOT NULL DEFAULT 1, framework_version VARCHAR NOT NULL DEFAULT '0.1.0'); CREATE TABLE IF NOT EXISTS CACHE (project_id VARCHAR NOT NULL, name VARCHAR NOT NULL, description VARCHAR NOT NULL, hash VARCHAR NOT NULL, data BLOB NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, hash)); CREATE TABLE IF NOT EXISTS AUDIT_TRAIL (project_id VARCHAR NOT NULL, operation_type VARCHAR NOT NULL, object_type VARCHAR NOT NULL, operation_details JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);")?;
-            project.connection.execute("INSERT INTO PROJECT (project_id, domain, metadata, workflow) VALUES (?1, ?2, '{}', '{\"name\":\"\",\"version\":1,\"domain\":\"\",\"steps\":[]}') ON CONFLICT(project_id) DO NOTHING", params![project.options.project_id, project.options.domain])?;
+            connection.execute_batch("CREATE TABLE IF NOT EXISTS PROJECT (project_id VARCHAR NOT NULL PRIMARY KEY, domain VARCHAR, metadata JSON, workflow JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, schema_version INTEGER NOT NULL DEFAULT 1, framework_version VARCHAR NOT NULL DEFAULT '0.1.0'); CREATE TABLE IF NOT EXISTS CACHE (project_id VARCHAR NOT NULL, name VARCHAR NOT NULL, description VARCHAR NOT NULL, hash VARCHAR NOT NULL, data BLOB NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, hash)); CREATE TABLE IF NOT EXISTS AUDIT_TRAIL (project_id VARCHAR NOT NULL, operation_type VARCHAR NOT NULL, object_type VARCHAR NOT NULL, operation_details JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);")?;
+            connection.execute("INSERT INTO PROJECT (project_id, domain, metadata, workflow) VALUES (?1, ?2, '{}', '{\"name\":\"\",\"version\":1,\"domain\":\"\",\"steps\":[]}') ON CONFLICT(project_id) DO NOTHING", params![project.options.project_id, project.options.domain])?;
         }
-        let row = project.connection.query_row("SELECT project_id, COALESCE(domain, ''), COALESCE(metadata, '{}'), schema_version, framework_version, CAST(created_at AS VARCHAR) FROM PROJECT WHERE project_id = ?1", params![project.options.project_id], |row| Ok(ProjectInfo { id: row.get(0)?, domain: row.get(1)?, metadata: serde_json::from_str(&row.get::<_, String>(2)?).unwrap_or_else(|_| json!({})), schema_version: row.get(3)?, framework_version: row.get(4)?, created_at: row.get(5)? }))?;
+        let row = connection.query_row("SELECT project_id, COALESCE(domain, ''), COALESCE(metadata, '{}'), schema_version, framework_version, CAST(created_at AS VARCHAR) FROM PROJECT WHERE project_id = ?1", params![project.options.project_id], |row| Ok(ProjectInfo { id: row.get(0)?, domain: row.get(1)?, metadata: serde_json::from_str(&row.get::<_, String>(2)?).unwrap_or_else(|_| json!({})), schema_version: row.get(3)?, framework_version: row.get(4)?, created_at: row.get(5)? }))?;
         project.info = row;
         Ok(project)
+    }
+
+    fn connection(&self) -> Result<Connection> {
+        Ok(Connection::open(&self.options.database_path)?)
+    }
+
+    pub fn execute_sql(&self, sql: &str) -> Result<()> {
+        if self.options.read_only { return Err(Error::new(ErrorCode::InvalidArgument, "project is read-only")); }
+        self.connection()?.execute_batch(sql)?;
+        Ok(())
+    }
+
+    pub fn query_json(&self, sql: &str) -> Result<Json> {
+        let connection = self.connection()?;
+        let mut statement = connection.prepare(sql)?;
+        let columns = statement.column_count();
+        let names: Vec<String> = (0..columns).map(|i| statement.column_name(i).map(String::clone).unwrap_or_default()).collect();
+        let mut rows = statement.query([])?;
+        let mut output = Vec::new();
+        while let Some(row) = rows.next()? {
+            let mut object = serde_json::Map::new();
+            for (i, name) in names.iter().enumerate() {
+                let value: Option<String> = row.get(i)?;
+                object.insert(name.clone(), value.map(Json::String).unwrap_or(Json::Null));
+            }
+            output.push(Json::Object(object));
+        }
+        Ok(Json::Array(output))
     }
 
     pub fn info(&self) -> &ProjectInfo {
@@ -738,13 +813,14 @@ impl Project {
         Ok(())
     }
     pub fn list_tables(&self) -> Result<Vec<String>> {
-        let mut statement = self.connection.prepare("SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' ORDER BY table_name")?;
+        let connection = self.connection()?;
+        let mut statement = connection.prepare("SELECT table_name FROM information_schema.tables WHERE table_schema = 'main' ORDER BY table_name")?;
         Ok(statement
             .query_map([], |row| row.get(0))?
             .collect::<std::result::Result<Vec<String>, _>>()?)
     }
     pub fn set_metadata(&mut self, metadata: Json) -> Result<()> {
-        self.connection.execute(
+        self.connection()?.execute(
             "UPDATE PROJECT SET metadata = ?1 WHERE project_id = ?2",
             params![metadata.to_string(), self.get_project_id()],
         )?;
@@ -752,7 +828,7 @@ impl Project {
         Ok(())
     }
     pub fn get_workflow(&self) -> Result<Workflow> {
-        let text: String = self.connection.query_row(
+        let text: String = self.connection()?.query_row(
             "SELECT workflow FROM PROJECT WHERE project_id = ?1",
             params![self.get_project_id()],
             |row| row.get(0),
@@ -770,7 +846,7 @@ impl Project {
         let previous = self.get_workflow()?;
         workflow.version = workflow.version.max(previous.version + 1);
         workflow.validate(registry)?;
-        self.connection.execute(
+        self.connection()?.execute(
             "UPDATE PROJECT SET workflow = ?1 WHERE project_id = ?2",
             params![workflow.to_json().to_string(), self.get_project_id()],
         )?;
@@ -782,7 +858,7 @@ impl Project {
         destination_options.domain = self.info.domain.clone();
         let mut destination = Self::create(destination_options)?;
         destination.set_metadata(self.info.metadata.clone())?;
-        destination.connection.execute(
+        destination.connection()?.execute(
             "UPDATE PROJECT SET workflow = ?1 WHERE project_id = ?2",
             params![workflow.to_string(), destination.get_project_id()],
         )?;
@@ -794,7 +870,8 @@ impl Project {
         Ok(destination)
     }
     pub fn get_cache(&self) -> Result<Vec<CacheEntry>> {
-        let mut statement = self.connection.prepare("SELECT name, description, hash, data, CAST(created_at AS VARCHAR) FROM CACHE WHERE project_id = ?1 ORDER BY created_at DESC")?;
+        let connection = self.connection()?;
+        let mut statement = connection.prepare("SELECT name, description, hash, data, CAST(created_at AS VARCHAR) FROM CACHE WHERE project_id = ?1 ORDER BY created_at DESC")?;
         let rows = statement
             .query_map(params![self.get_project_id()], |row| {
                 Ok(CacheEntry {
@@ -812,7 +889,7 @@ impl Project {
         Ok(self.get_cache()?.len())
     }
     pub fn get_cache_entry(&self, hash: &str) -> Result<Option<CacheEntry>> {
-        Ok(self.connection.query_row("SELECT name, description, hash, data, CAST(created_at AS VARCHAR) FROM CACHE WHERE project_id = ?1 AND hash = ?2", params![self.get_project_id(), hash], |row| Ok(CacheEntry { name: row.get(0)?, description: row.get(1)?, hash: row.get(2)?, data: row.get(3)?, created_at: row.get(4)? })).optional()?)
+        Ok(self.connection()?.query_row("SELECT name, description, hash, data, CAST(created_at AS VARCHAR) FROM CACHE WHERE project_id = ?1 AND hash = ?2", params![self.get_project_id(), hash], |row| Ok(CacheEntry { name: row.get(0)?, description: row.get(1)?, hash: row.get(2)?, data: row.get(3)?, created_at: row.get(4)? })).optional()?)
     }
     pub fn set_cache(
         &mut self,
@@ -821,18 +898,19 @@ impl Project {
         hash: &str,
         value: &Json,
     ) -> Result<()> {
-        self.connection.execute("INSERT INTO CACHE (project_id, name, description, hash, data) VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT(project_id, hash) DO UPDATE SET name = excluded.name, description = excluded.description, data = excluded.data", params![self.get_project_id(), name, description, hash, value.to_string().into_bytes()])?;
+        self.connection()?.execute("INSERT INTO CACHE (project_id, name, description, hash, data) VALUES (?1, ?2, ?3, ?4, ?5) ON CONFLICT(project_id, hash) DO UPDATE SET name = excluded.name, description = excluded.description, data = excluded.data", params![self.get_project_id(), name, description, hash, value.to_string().into_bytes()])?;
         Ok(())
     }
     pub fn delete_cache(&mut self) -> Result<()> {
-        self.connection.execute(
+        self.connection()?.execute(
             "DELETE FROM CACHE WHERE project_id = ?1",
             params![self.get_project_id()],
         )?;
         self.audit("delete", "cache", json!({}))
     }
     pub fn get_audit_trail(&self) -> Result<Vec<AuditEntry>> {
-        let mut statement = self.connection.prepare("SELECT operation_type, object_type, COALESCE(operation_details, '{}'), CAST(created_at AS VARCHAR) FROM AUDIT_TRAIL WHERE project_id = ?1 ORDER BY created_at ASC")?;
+        let connection = self.connection()?;
+        let mut statement = connection.prepare("SELECT operation_type, object_type, COALESCE(operation_details, '{}'), CAST(created_at AS VARCHAR) FROM AUDIT_TRAIL WHERE project_id = ?1 ORDER BY created_at ASC")?;
         let rows = statement
             .query_map(params![self.get_project_id()], |row| {
                 Ok(AuditEntry {
@@ -873,6 +951,10 @@ impl Project {
         let result = method.run(self, &resolved)?;
         self.audit("complete", "method", json!({"method": method_id}))?;
         Ok(result)
+    }
+    pub fn run_operation(&mut self, operation_id: &str, parameters: &Json, registry: &OperationRegistry) -> Result<Json> {
+        let operation = registry.get(operation_id)?;
+        operation.run(self, parameters)
     }
     pub fn close(self) {}
     pub fn run_workflow(
@@ -940,7 +1022,7 @@ impl Project {
         if self.options.read_only {
             return Ok(());
         }
-        self.connection.execute("INSERT INTO AUDIT_TRAIL (project_id, operation_type, object_type, operation_details) VALUES (?1, ?2, ?3, ?4)", params![self.get_project_id(), operation, object, details.to_string()])?;
+        self.connection()?.execute("INSERT INTO AUDIT_TRAIL (project_id, operation_type, object_type, operation_details) VALUES (?1, ?2, ?3, ?4)", params![self.get_project_id(), operation, object, details.to_string()])?;
         Ok(())
     }
 }

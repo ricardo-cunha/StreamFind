@@ -1,9 +1,13 @@
 use std::io::{self, BufRead, Write};
-use streamfind_rust_core::MethodRegistry;
+use streamfind_rust_core::{MethodRegistry, OperationRegistry};
 
 fn main() {
-    let registry = MethodRegistry::default();
-    let mut session = streamfind_rust_mcp::Session::new(&registry);
+    let mut registry = MethodRegistry::default();
+    let mut operations = OperationRegistry::default();
+    streamfind_rust_mass_spec::register_operations(&mut operations).unwrap();
+    streamfind_rust_raman::register_methods(&mut registry).unwrap();
+    streamfind_rust_sensors::register_methods(&mut registry).unwrap();
+    let mut session = streamfind_rust_mcp::Session::new(&registry, &operations);
     for line in io::stdin().lock().lines() {
         let response = match line {
             Ok(line) => session.handle(&serde_json::from_str(&line).unwrap_or_default()),

@@ -1,0 +1,1085 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "kind": "operation",
+      "canonical_id": "close",
+      "domain": "streamfind",
+      "label": "Close a project handle",
+      "definition": "Close the project handle used by an operation.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "close",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "connect",
+      "domain": "streamfind",
+      "label": "Connect an MCP session to a project",
+      "definition": "Open a project and bind its immutable domain to an MCP session.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "connect",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "copy",
+      "domain": "streamfind",
+      "label": "Copy a project",
+      "definition": "Copy a project to another database and project identifier.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "copy",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            },
+            "destination_database_path": {
+              "type": "string"
+            },
+            "destination_project_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id",
+            "destination_database_path",
+            "destination_project_id"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "destination_database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "destination_project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "create",
+      "domain": "streamfind",
+      "label": "Create a project",
+      "definition": "Create a persisted project with an immutable domain.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "create",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            },
+            "domain": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id",
+            "domain"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "domain",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "delete_cache",
+      "domain": "streamfind",
+      "label": "Delete project cache",
+      "definition": "Delete all cache entries stored for a project.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "delete_cache",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "describe",
+      "domain": "streamfind",
+      "label": "Describe a project",
+      "definition": "Read a project's identity and persisted metadata.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "describe",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "get_audit_trail",
+      "domain": "streamfind",
+      "label": "Read project audit events",
+      "definition": "Return audit events recorded for a project.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "get_audit_trail",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "get_available_methods",
+      "domain": "streamfind",
+      "label": "List methods registered for a domain",
+      "definition": "Return workflow methods registered for a domain.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "get_available_methods",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "domain": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "domain"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "domain",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "get_cache",
+      "domain": "streamfind",
+      "label": "Read project cache",
+      "definition": "Return cache entries stored for a project.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "get_cache",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "get_cache_size",
+      "domain": "streamfind",
+      "label": "Read project cache size",
+      "definition": "Return the number of cache entries stored for a project.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "get_cache_size",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "get_domain",
+      "domain": "streamfind",
+      "label": "Read the project domain",
+      "definition": "Read the immutable domain assigned to a project.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "get_domain",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "get_metadata",
+      "domain": "streamfind",
+      "label": "Read project metadata",
+      "definition": "Return the metadata stored for a project.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "get_metadata",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "get_workflow",
+      "domain": "streamfind",
+      "label": "Read the project workflow",
+      "definition": "Return the persisted workflow for a project.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "get_workflow",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.add_analyses",
+      "domain": "mass_spec",
+      "label": "Add mass spectrometry analyses",
+      "definition": "Add mass spectrometry analysis files to a project.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "add_analyses",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analyses": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  },
+                  "replicate_name": {
+                    "type": "string"
+                  },
+                  "blank_name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          },
+          "required": [
+            "analyses"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analyses",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "analysisFile",
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.remove_analyses",
+      "domain": "mass_spec",
+      "label": "Remove mass spectrometry analyses",
+      "definition": "Remove mass spectrometry analysis files from a project.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "remove_analyses",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array"
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "method",
+      "canonical_id": "raman.add_analyses",
+      "domain": "raman",
+      "label": "Add Raman analyses",
+      "definition": "Add Raman analysis files to a project.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "add_analyses",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analyses": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "path": {
+                    "type": "string"
+                  },
+                  "replicate_name": {
+                    "type": "string"
+                  },
+                  "blank_name": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "path"
+                ]
+              }
+            }
+          },
+          "required": [
+            "analyses"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analyses",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "analysisFile",
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "method",
+      "canonical_id": "raman.remove_analyses",
+      "domain": "raman",
+      "label": "Remove Raman analyses",
+      "definition": "Remove Raman analysis files from a project.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "remove_analyses",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array"
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "run_method",
+      "domain": "streamfind",
+      "label": "Append and run a workflow method",
+      "definition": "Append a method to a project's workflow, validate it, and execute it.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "run_method",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            },
+            "method": {
+              "type": "string"
+            },
+            "parameters": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id",
+            "method"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "method",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "parameters",
+          "type": "object",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "run_workflow",
+      "domain": "streamfind",
+      "label": "Run the project workflow",
+      "definition": "Execute the persisted workflow for a project.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "run_workflow",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "set_metadata",
+      "domain": "streamfind",
+      "label": "Set project metadata",
+      "definition": "Replace the metadata stored for a project.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "set_metadata",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id",
+            "metadata"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "metadata",
+          "type": "object",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "set_workflow",
+      "domain": "streamfind",
+      "label": "Set the project workflow",
+      "definition": "Validate and persist a project's workflow.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "set_workflow",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            },
+            "workflow": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id",
+            "workflow"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "workflow",
+          "type": "object",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "validate",
+      "domain": "streamfind",
+      "label": "Validate a project",
+      "definition": "Validate a project's schema and persisted state.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "validate",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string"
+            },
+            "project_id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "validate_workflow",
+      "domain": "streamfind",
+      "label": "Validate a workflow",
+      "definition": "Validate workflow methods, ordering, domains, and parameters.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "validate_workflow",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "workflow": {
+              "type": "object"
+            }
+          },
+          "required": [
+            "workflow"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "workflow",
+          "type": "object",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": []
+        }
+      ]
+    }
+  ]
+}

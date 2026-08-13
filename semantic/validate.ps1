@@ -6,8 +6,9 @@ $catalogue = Join-Path $PSScriptRoot 'streamfind.trig'
 $vocabulary = Join-Path $PSScriptRoot 'vocabulary.ttl'
 $shapes = Join-Path $PSScriptRoot 'shapes.trig'
 $manifest = Join-Path $PSScriptRoot 'fixtures\manifest.json'
+$projection = Join-Path $PSScriptRoot 'generated\catalogue.json'
 
-foreach ($path in @($catalogue, $vocabulary, $shapes, $manifest)) {
+foreach ($path in @($catalogue, $vocabulary, $shapes, $manifest, $projection)) {
     if (-not (Test-Path -LiteralPath $path)) {
         throw "Missing semantic catalogue file: $path"
     }
@@ -37,6 +38,10 @@ if (-not (Test-Path -LiteralPath $fixture)) {
 & $python (Join-Path $PSScriptRoot 'validate_semantic.py')
 if ($LASTEXITCODE -ne 0) {
     throw 'RDF/TriG and SHACL validation failed'
+}
+& $python (Join-Path $PSScriptRoot 'generate_projection.py') --check
+if ($LASTEXITCODE -ne 0) {
+    throw 'Generated semantic projection is stale'
 }
 
 Write-Output 'semantic catalogue validation passed'

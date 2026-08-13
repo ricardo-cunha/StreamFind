@@ -269,4 +269,26 @@
 		skos:prefLabel "Project conformance fixture" ;
 		skos:definition "Shared JSON fixture consumed by the C++ and Rust project tests." ;
 		sf:fixturePath "core/tests/fixtures/project_conformance.json" .
+
+	sfcore:analyses
+		a sf:Parameter ;
+		skos:prefLabel "Analyses" ;
+		skos:definition "Array of analysis file records. Each record contains a path and may contain replicate_name and blank_name." ;
+		sf:type "array" ;
+		sf:required true ;
+		sf:items sfcore:analysisFile .
+
+	sfcore:analysisFile
+		a sf:Parameter ;
+		skos:prefLabel "Analysis file" ;
+		skos:definition "One analysis file and optional replicate and blank labels." ;
+		sf:type "object" ;
+		sf:required true .
+
+	sfcore:analysisNames
+		a sf:Parameter ;
+		skos:prefLabel "Analysis names" ;
+		skos:definition "Array of analysis file names without filename extensions." ;
+		sf:type "array" ;
+		sf:required true .
 }

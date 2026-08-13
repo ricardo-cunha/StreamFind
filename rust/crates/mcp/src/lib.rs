@@ -1,20 +1,22 @@
 //! Minimal MCP JSON-RPC adapter for the Rust Streamfind core.
 
 use serde_json::{json, Value};
-use streamfind_rust_core::{api, MethodRegistry};
+use streamfind_rust_core::{api, MethodRegistry, OperationRegistry, Project, ProjectOptions};
 
 mod generated_metadata;
 
 pub struct Session<'a> {
     registry: &'a MethodRegistry,
+    operations: &'a OperationRegistry,
     project: Option<Value>,
     domain: String,
 }
 
 impl<'a> Session<'a> {
-    pub fn new(registry: &'a MethodRegistry) -> Self {
+    pub fn new(registry: &'a MethodRegistry, operations: &'a OperationRegistry) -> Self {
         Self {
             registry,
+            operations,
             project: None,
             domain: String::new(),
         }
@@ -53,6 +55,7 @@ impl<'a> Session<'a> {
                         .collect::<Vec<_>>();
                     catalogue.push(json!({"name": definition["id"], "description": definition["description"], "inputSchema": {"type": "object", "properties": properties, "required": required}}));
                 }
+                for definition in self.operations.list(&self.domain) { catalogue.push(json!({"name": definition["id"], "description": definition["description"], "inputSchema": {"type": "object", "properties": {}, "required": []}})); }
             }
             return json!({"jsonrpc":"2.0","id":id,"result":{"tools":catalogue}});
         }
@@ -94,6 +97,15 @@ impl<'a> Session<'a> {
                     Ok(value) => response(id, value),
                     Err(error) => error_response(id, error.to_string()),
                 };
+            }
+            if self.operations.list(&self.domain).iter().any(|tool| tool["id"] == name) {
+                let project = self.project.as_ref().ok_or_else(|| "No project connected".to_string());
+                let result = project.and_then(|args| {
+                    let options = ProjectOptions { database_path: args["database_path"].as_str().unwrap_or_default().into(), project_id: args["project_id"].as_str().unwrap_or_default().into(), domain: self.domain.clone(), create_if_missing: false, read_only: false };
+                    let mut project = Project::open(options).map_err(|e| e.to_string())?;
+                    project.run_operation(name, params.get("arguments").unwrap_or(&json!({})), self.operations).map_err(|e| e.to_string())
+                });
+                return match result { Ok(value) => response(id, value), Err(error) => error_response(id, error) };
             }
             if name == "close" {
                 let result = handle(request, self.registry);

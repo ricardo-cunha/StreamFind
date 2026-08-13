@@ -101,6 +101,21 @@ sf:type
 	skos:prefLabel "type" ;
 	skos:definition "Backend-neutral input type of a parameter." .
 
+sf:constraints
+	a rdf:Property ;
+	skos:prefLabel "constraints" ;
+	skos:definition "Machine-readable restrictions on a parameter value." .
+
+sf:items
+	a rdf:Property ;
+	skos:prefLabel "items" ;
+	skos:definition "Schema of the items contained in an array parameter." .
+
+sf:extensions
+	a rdf:Property ;
+	skos:prefLabel "extensions" ;
+	skos:definition "Comma-separated file extensions accepted by a domain method." .
+
 sf:mapsTo
 	a rdf:Property ;
 	rdfs:range sf:Operation ;
