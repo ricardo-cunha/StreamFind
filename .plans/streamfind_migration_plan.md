@@ -127,12 +127,12 @@ streamfind-core (C++).
 | C++ backend | **Complete foundation** | Standalone C++20 `core/` with CMake, public `Project` and JSON APIs, DuckDB persistence, workflow, cache, audit, cancellation, progress, MCP support, install rules, and native tests. | Extend by coherent capability slices; do not recreate the generic project kernel. |
 | Rust backend | **Complete foundation** | `rust/` is a Cargo workspace with `core`, `cli`, `external`, and `mcp` crates. Its README states that it is independent from C++. | Preserve independent implementation and modular-crate boundaries. |
 | Shared semantic contract | **Partial** | C++ and Rust already share `PROJECT`, `CACHE`, and `AUDIT_TRAIL` persistence; JSON/workflow/cache/audit/error/cancellation/progress conventions; and the `project_conformance.json` fixture exercised by both backends. | Promote the shared public model into a backend-neutral semantic catalogue and make it the documented source for verification, validation, usage, and conformance. |
-| C++/Rust MCP | **Partial** | C++ exposes MCP source and the Rust workspace has an MCP crate. | Map common tools to canonical ontology operations/methods; derive or validate shared tool documentation and parameter/result/error metadata from the semantic catalogue; validate tool behaviour with the same fixtures. |
+| C++/Rust MCP | **Partial** | Both stdio servers implement `initialize`, `tools/list`, `tools/call`, `project_connect`, generic project tools, and per-session domain filtering. `project_connect` binds the immutable project domain; `project_close` clears the binding; registered domain methods are advertised and dispatched against the connected project. Rust MCP protocol tests cover the session foundation; C++ currently has build coverage but needs matching focused MCP tests. | Replace the duplicated hand-written catalogues with one semantic source or generated/validated metadata; add cross-backend catalogue and lifecycle conformance tests; handle remaining MCP protocol details consistently. |
 | R binding | **Complete relocation / Deferred alignment** | The complete R package, native sources, tests, vignettes, and package assets are under `bindings/r/`. | Keep it functional as-is. Do not refactor, redirect, or add transition helpers until the C++/Python and Rust domain implementations are complete. |
 | Cogniflow integration | **Complete relocation / Deferred alignment** | `integrations/cf-streamfind/` exists as the integration boundary. | Keep it at its present boundary until final alignment, after the C++/Python and Rust domain implementations are complete. |
-| Python distribution | **Next** | `python/` is currently a reserved placeholder. | Build one distributable C++-backed Python package, including CLI, FastAPI, and frontend integration. |
+| Python distribution | **Future** | `python/` is currently a reserved placeholder. | Start only after the semantic catalogue and shared MCP contract are established; build one distributable C++-backed Python package, including CLI, FastAPI, and frontend integration. |
 | Standalone `server/` and `frontend/` roots | **Legacy placeholders** | Each currently contains only a README. | Absorb their responsibilities into `python/`; remove the placeholder roots in the same relocation change. |
-| Domain capabilities | **Future** | The generic backend layer is present; a completed end-to-end MassSpec or NTA replacement slice is not yet established here. | Add each externally visible capability to the semantic catalogue first, then implement and test it independently in C++ and Rust where it is shared. |
+| Domain capabilities | **Future** | The generic backend layer and registry hooks are present; no completed end-to-end MassSpec or NTA replacement slice is established here. | Add each externally visible capability to the semantic catalogue first, then register and implement it independently in the relevant C++ and Rust domain crates/modules. |
 
 ## Target repository shape
 
@@ -266,11 +266,20 @@ For MCP mappings, this rule additionally means that shared tool descriptions and
 
 ## Roadmap
 
-### 1. Establish the semantic StreamFind contract catalogue — **Next**
+### 1. Establish the semantic StreamFind contract catalogue — **Next / current work**
 
 The purpose of this phase is to convert the compatibility that already exists between C++ and Rust into one simple, documented, backend-neutral semantic catalogue that can also drive conformance testing and user/developer documentation.
 
-1. Create `semantic/` with a compact initial structure:
+#### Immediate execution order
+
+- Inventory the currently exposed generic operations and MCP tools from the C++ and Rust implementations; record intentional differences as issues, not silent drift.
+- Create the minimal `semantic/` catalogue for the generic Project contract, MCP mappings, domains, methods, parameter metadata, and stable error identifiers.
+- Add a small validator or test fixture reader that checks required declarations and canonical identifiers. Prefer repository scripts and existing language tooling over a new runtime dependency.
+- Add one shared MCP catalogue fixture and compare C++ and Rust `tools/list` output after normalizing ordering and backend-specific server metadata.
+- Add a session lifecycle fixture covering `initialize`, `project_connect`, pre-connect `tools/list`, post-connect domain filtering, domain-method dispatch, and `project_close`.
+- Only after these checks pass, start the first domain slice and the Python distribution work.
+
+1. Create `semantic/` with a compact initial structure. Do not add a generator, RDF runtime, or SHACL dependency until a concrete validation need requires it:
 
    ```text
    semantic/
@@ -304,7 +313,7 @@ The purpose of this phase is to convert the compatibility that already exists be
    - declared parameters where relevant;
    - result/error semantics sufficient for verification and testing.
 
-6. Move or reference the existing `project_conformance.json` fixture from the semantic catalogue and preserve both C++ and Rust tests. Add shared fixtures incrementally for workflow, cache, audit, errors, cancellation, progress, and later domain methods.
+6. Reference the existing `project_conformance.json` fixture from the semantic catalogue without moving it until both consumers use the new path. Preserve both C++ and Rust tests. Add shared fixtures incrementally for workflow, cache, audit, errors, cancellation, progress, and later domain methods.
 
 7. Keep small JSON input/expected-result examples directly in semantic fixture metadata when convenient. Store larger DuckDB files, chromatograms, spectra, or analytical datasets under `semantic/fixtures/` and reference them from TriG rather than embedding large payloads in RDF.
 
@@ -321,19 +330,19 @@ The purpose of this phase is to convert the compatibility that already exists be
 
 9. Add common MCP mappings to the same ontology catalogue. Represent the common MCP tool name and its mapping to the canonical `sf:Operation` or `sf:Method`, while keeping MCP as a transport mapping rather than a second domain definition.
 
-10. Update **both MCP servers** to use the semantic catalogue as the shared source for MCP-facing documentation and contract metadata:
+10. Harmonise **both MCP servers** from the semantic catalogue as the shared source for MCP-facing documentation and contract metadata:
 
     - C++ `core/tools/` and Rust `rust/crates/mcp/` must derive or validate common MCP tool names, labels/descriptions, parameter names/types/required status, result semantics, and shared error descriptions from the same semantic declarations;
     - the two MCP implementations must not maintain parallel hand-written descriptions for capabilities already documented in `semantic/`;
     - backend-specific code continues to own tool dispatch, execution, transport handling, cancellation/progress integration, and backend-specific diagnostics;
     - add conformance tests that compare each MCP server's advertised tool catalogue against the ontology and shared fixtures, including tool presence, canonical mapping, arguments, descriptions, result/error envelopes, and common examples;
-    - where practical, generate MCP tool metadata directly from the ontology; where runtime generation would add unnecessary complexity, generate it at build time or validate static metadata against the ontology. The semantic declaration remains authoritative in all cases.
+     - start with a small build/test-time validator rather than runtime ontology loading; generate MCP metadata only if the validator demonstrates that static duplication is costly. The semantic declaration remains authoritative in all cases.
 
 11. Keep transport definitions subordinate to the canonical capability. A FastAPI endpoint such as `GET /projects/{id}/workflow` or an MCP tool such as `streamfind_get_workflow` maps to `sf:GetWorkflow`; it does not create a second domain contract.
 
-**Exit condition:** every currently shared public generic capability has one canonical semantic declaration, useful human-readable documentation, and at least one backend-neutral conformance fixture where behaviour must be harmonised. C++ and Rust tests both validate the relevant implementations against the same catalogue. The C++ and Rust MCP servers expose common tool documentation and metadata derived from or validated against that catalogue, with no duplicate authoritative MCP documentation for shared capabilities. New public shared capabilities cannot be considered complete without the same semantic declaration and conformance coverage.
+**Exit condition:** `semantic/` exists with the initial vocabulary, declarations, fixtures, and validation instructions; both backends consume or validate the same canonical identifiers; C++ and Rust MCP tests compare the common tool names/schemas and session lifecycle; pre-connect catalogues contain only generic tools; post-connect catalogues contain only methods for the connected domain; `project_close` clears the session in both implementations. New public shared capabilities cannot be considered complete without the same semantic declaration and conformance coverage.
 
-### 2. Build the consolidated Python distribution — **Next**
+### 2. Build the consolidated Python distribution — **Future / after Section 1**
 
 1. Establish `python/pyproject.toml`, `python/CMakeLists.txt`, and `python/cpp/` using scikit-build-core and pybind11.
 2. Keep `streamfind._core` private and minimal: bind stable, coarse-grained C++ services and release the GIL for long native operations.
@@ -346,7 +355,7 @@ The purpose of this phase is to convert the compatibility that already exists be
 
 **Exit condition:** an installed wheel can create and inspect a generic C++-backed project through the public Python API, CLI, and FastAPI, with no public consumer importing `_core` or opening DuckDB directly, and the externally visible operations map to the semantic StreamFind catalogue.
 
-### 3. Deliver domain capabilities in paired, independent slices — **Future**
+### 3. Deliver domain capabilities in paired, independent slices — **Future / after the first semantic slice**
 
 Start with one vertical MassSpec slice:
 
