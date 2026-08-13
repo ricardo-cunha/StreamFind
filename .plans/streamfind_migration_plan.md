@@ -1,6 +1,6 @@
 # streamfind Living Implementation Roadmap
 
-**Branch:** `dev_refactoring`
+**Branch:** `dev_refactoring`  
 **Purpose:** keep the refactor plan aligned with the implementation that exists today. This is a roadmap for unfinished work, not a record of superseded greenfield tasks.
 
 ## Status legend
@@ -12,53 +12,89 @@
 | **Next** | The shortest unblocked implementation work. |
 | **Future** | Deliberately sequenced after the current foundation. |
 
-## Architecture: semantic contract first, independent backends
+## Architecture: semantic catalogue, independent backends, generic interfaces
 
-The centre of the architecture is the **streamfind semantic contract catalogue**, not either backend. The catalogue is a backend-neutral ontology that documents the concepts and externally visible capabilities that define streamfind interoperability.
+The centre of the architecture is the **streamfind semantic catalogue**, not either backend and not MCP. The catalogue documents the externally visible concepts and capabilities that define streamfind interoperability.
 
-The semantic catalogue is stored primarily as TriG and uses:
+The semantic catalogue uses:
 
-- **SKOS** for concepts, labels, definitions, broader/narrower relationships, and documentation;
-- a small **streamfind vocabulary** for operational relationships such as domains, public operations, workflow methods, parameters, result/error semantics, fixtures, and interface mappings;
-- **SHACL** only where useful to validate that required semantic declarations are complete and consistent;
-- backend-neutral **fixtures** referenced by the ontology and consumed by C++ and Rust conformance tests.
+- **TriG** as the primary authoring format;
+- **SKOS** for concepts, labels, definitions, and broader/narrower relationships;
+- a small **streamfind vocabulary** for domains, public operations, workflow methods, parameters, results, errors, fixtures, and interface mappings;
+- **SHACL** only for completeness and consistency checks;
+- backend-neutral **fixtures** for C++/Rust conformance;
+- one generated **semantic projection** for consumers that do not need to parse RDF directly.
 
-The ontology describes what a streamfind capability means. It does not contain executable business logic and must not become a third backend or framework.
+The ontology is declarative. It contains no executable analytical logic.
 
 ```text
-                    streamfind semantic catalogue
-              SKOS concepts • sf:Operation • sf:Method
-       domains • parameters • results • errors • fixtures • mappings
-                             TriG + SHACL
-                                  │
-                 ┌────────────────┴────────────────┐
-                 │                                 │
-                 ▼                                 ▼
-       streamfind-core (C++)              streamfind Rust
-       independent C++ backend            independent Rust backend
-                 │                                 │
-    ┌────────────┼────────────┐        ┌───────────┼─────────────┐
-    │            │            │        │           │             │
- Python         CLI       C++ MCP      CLI         MCP        external
- distribution                                      server/apps
-    │
-    ├── FastAPI module
-    └── React/TypeScript build integration
+                     semantic/*.trig
+       concepts • domains • operations • methods • parameters
+          results • errors • documentation • fixtures • mappings
+                           │
+                    validate with SHACL
+                           │
+                           ▼
+            generated semantic projection
+        deterministic, backend-neutral catalogue
+                           │
+              ┌────────────┴────────────┐
+              │                         │
+              ▼                         ▼
+     streamfind-core C++          streamfind Rust
+     independent backend          independent backend
+              │                         │
+       MethodRegistry              MethodRegistry
+              │                         │
+              └────────────┬────────────┘
+                           ▼
+                  generic MCP adapters
+               catalogue + registry join
 ```
 
-The C++ and Rust backends must implement the same semantic contract where a capability is shared, but **Rust must never link to, wrap, or call the C++ backend**. Differences are exposed by conformance tests and resolved either in the semantic contract or in the implementation; they are not hidden behind an adapter.
+Rust must never link to, wrap, or call the C++ backend. Shared behaviour is established by semantic declarations and conformance fixtures, not by a shared native implementation.
 
-The C++ ecosystem is the only native backend for the consolidated Python distribution. Python, FastAPI, the React frontend, the R binding, and Cogniflow do not select or abstract over a Rust backend unless a separate architecture decision explicitly introduces that capability.
+The C++ ecosystem remains the native backend for the consolidated Python distribution.
 
-### Canonical semantic model
+## Core design principle for expansion
 
-The ontology distinguishes generic backend operations from workflow/domain methods.
+Adding a new method must not require editing MCP-specific dispatch tables, descriptions, argument schemas, or documentation in multiple places.
+
+A domain method has exactly two authored parts per backend ecosystem:
+
+1. **semantic declaration** — what the method is;
+2. **backend executor registration** — how that backend executes it.
+
+Everything else is derived generically.
+
+```text
+New method
+   │
+   ├── semantic/domains/<domain>.trig
+   │     ID, label, definition, parameters, results, errors, MCP exposure
+   │
+   ├── C++ implementation + registry.register(method_id, executor)
+   │
+   └── Rust implementation + registry.register(method_id, executor)
+
+No method-specific MCP code.
+No duplicate descriptions.
+No duplicate parameter catalogue.
+No per-method switch statement in MCP.
+```
+
+The same rule applies to generic `sf:Operation` capabilities where practical.
+
+## Canonical semantic model
+
+The ontology distinguishes generic project operations from workflow/domain methods.
 
 ```text
 sf:Operation
     generic public streamfind capability
     examples:
       create
+      connect
       validate
       get_metadata
       set_metadata
@@ -67,470 +103,517 @@ sf:Operation
       get_cache
       get_audit_trail
       run_method
+      close
 
 sf:Method
-    workflow-executable capability available under a domain
+    workflow-executable capability owned by one domain
     examples:
+      mass_spec.add_analyses
       mass_spec.load_chromatograms
-      mass_spec.filter_retention_time
+      raman.add_analyses
+      sensors.load_measurements
 ```
 
-A public capability has one canonical semantic identifier. Language bindings and transports map to that identifier instead of defining their own domain contract.
+Every public capability has one canonical semantic identifier. Transports and language interfaces map to it; they do not create another domain contract.
 
 ```text
                          sf:GetWorkflow
                               │
-          ┌───────────────────┼────────────────────┐
-          │                   │                    │
-          ▼                   ▼                    ▼
- C++ Project::get_workflow  Rust API       Python/FastAPI/MCP mapping
+          ┌───────────────────┼──────────────────────┐
+          │                   │                      │
+          ▼                   ▼                      ▼
+ C++ Project API          Rust Project API     Python/CLI/FastAPI/MCP
 ```
 
-FastAPI routes, CLI commands, MCP tools, React actions, R wrappers, and Cogniflow operations are therefore **interface mappings to canonical streamfind operations or methods**, not independent domain definitions.
-
-For MCP specifically, the semantic catalogue is also the canonical source for shared tool documentation. Tool labels, descriptions, parameter metadata, result semantics, and shared error descriptions are authored once in `semantic/` and projected into or validated against both the C++ and Rust MCP tool catalogues. Backend MCP code owns dispatch and execution only; it must not maintain a second hand-written documentation catalogue for the same capability.
-
-### C++ ecosystem
-
-```text
-React + TypeScript source
-          │ build
-          ▼
-python/frontend/ built assets ──► streamfind.server (FastAPI)
-                                      │ service layer
-                                      ▼
-                            streamfind.core public Python API
-                                      │ private pybind11 boundary
-                                      ▼
-                              streamfind._core / C++ core
-                                      │
-                       DuckDB • readers • methods • results
-```
-
-### Rust ecosystem
-
-```text
-streamfind-rust-core ──► streamfind-rust-cli
-          │
-          ├──────────────► streamfind-rust-mcp
-          ├──────────────► streamfind-rust-external
-          └──────────────► future streamfind-rust-server / apps crates
-
-Each crate uses Rust-owned APIs and dependencies. None depends on
-streamfind-core (C++).
-```
+For MCP, the semantic catalogue is the authoritative source for tool-facing labels, descriptions, parameter metadata, result semantics, shared errors, and examples. MCP code owns protocol handling, session state, registry lookup, execution, cancellation/progress, and backend-specific diagnostics only.
 
 ## Current implementation status
 
 | Area | Status | Evidence in this branch | Roadmap implication |
 | --- | --- | --- | --- |
-| C++ backend | **Complete foundation** | Standalone C++20 `core/` with CMake, public `Project` and JSON APIs, DuckDB persistence, workflow, cache, audit, cancellation, progress, MCP support, install rules, and native tests. | Extend by coherent capability slices; do not recreate the generic project kernel. |
-| Rust backend | **Complete foundation** | `rust/` is a Cargo workspace with `core`, `cli`, `external`, and `mcp` crates. Its README states that it is independent from C++. | Preserve independent implementation and modular-crate boundaries. |
-| Shared semantic contract | **Partial / Phase 1 baseline complete** | `semantic/` contains the `sfcore:` vocabulary/catalogue, SKOS metadata, SHACL shapes, result/error declarations, fixture manifest, MCP catalogue/lifecycle/operation fixtures, and real RDF/TriG plus SHACL validation through the repository `.venv`. C++ and Rust tests compare advertised generic tools, execute session lifecycle coverage, and validate backend operation identifiers. | Extend the catalogue and conformance fixtures as new shared capabilities and domain methods are introduced. |
-| C++/Rust MCP | **Partial** | Both stdio servers implement `initialize`, `tools/list`, `tools/call`, canonical operation-named tools, `connect`, generic project tools, and per-session domain filtering. `connect` binds the immutable project domain; `close` clears the binding; registered domain methods are advertised and dispatched against the connected project. MCP metadata is generated from `semantic/streamfind.trig` into embedded C++ and Rust source. | Extend generated metadata and lifecycle/domain conformance as new shared capabilities are added; keep dispatch implementation-specific. |
-| R binding | **Complete relocation / Deferred alignment** | The complete R package, native sources, tests, vignettes, and package assets are under `bindings/r/`. | Keep it functional as-is. Do not refactor, redirect, or add transition helpers until the C++/Python and Rust domain implementations are complete. |
-| Cogniflow integration | **Complete relocation / Deferred alignment** | `integrations/cf-streamfind/` exists as the integration boundary. | Keep it at its present boundary until final alignment, after the C++/Python and Rust domain implementations are complete. |
-| Python distribution | **Future** | `python/` is currently a reserved placeholder. | Start only after the semantic catalogue and shared MCP contract are established; build one distributable C++-backed Python package, including CLI, FastAPI, and frontend integration. |
-| Standalone `server/` and `frontend/` roots | **Legacy placeholders** | Each currently contains only a README. | Absorb their responsibilities into `python/`; remove the placeholder roots in the same relocation change. |
-| Domain capabilities | **Future** | The generic backend layer and registry hooks are present; no completed end-to-end MassSpec or NTA replacement slice is established here. | Add each externally visible capability to the semantic catalogue first, then register and implement it independently in the relevant C++ and Rust domain crates/modules. |
+| C++ backend | **Complete foundation** | Standalone C++20 `core/` with CMake, Project/JSON APIs, DuckDB persistence, workflow, cache, audit, cancellation, progress, MCP support, install rules, and tests. | Extend through domain modules; do not recreate the generic project kernel. |
+| Rust backend | **Complete foundation** | `rust/` Cargo workspace with `core`, `cli`, `external`, and `mcp` crates; independent from C++. | Preserve independent implementation and modular crates. |
+| Semantic catalogue | **Partial / baseline complete** | `semantic/` contains vocabulary/catalogue, SKOS metadata, SHACL, results/errors, fixtures, MCP catalogue/lifecycle fixtures, and validation. | Simplify its consumption through one normalized semantic projection and extend it incrementally. |
+| C++/Rust MCP | **Partial** | Both stdio servers support initialization, tools listing/calling, connection lifecycle, generic operations, domain filtering, registered domain methods, and generated semantic metadata. | Remove method-specific MCP maintenance by making MCP entirely registry/catalogue driven. |
+| Domain composition | **Partial** | Registry hooks and connected-project domain filtering exist. | Formalize one minimal DomainModule/registration contract and prove it with real domain modules only as capabilities are migrated. |
+| R binding | **Complete relocation / deferred alignment** | Complete R package is under `bindings/r/`. | Keep functional as-is until new backends/domain paths are mature. |
+| Cogniflow integration | **Complete relocation / deferred alignment** | Integration boundary exists under `integrations/cf-streamfind/`. | Align only after the public Python path is stable. |
+| Python distribution | **Future** | `python/` remains reserved. | Build after semantic/registry/MCP contracts are stable. |
+| Domain capabilities | **Future** | Generic backend and registry infrastructure exist, but no full migrated domain slice is complete. | Migrate one real capability slice at a time. |
 
 ## Target repository shape
 
-This is the intended shape after the next consolidation. Paths marked `[next]` do not yet exist; it is not a claim that they are implemented.
-
 ```text
 streamfind/
-├── semantic/                          # [next] backend-neutral semantic contract catalogue
-│   ├── streamfind.trig                # concepts, operations, methods, domains, parameters
-│   ├── vocabulary.ttl                 # small streamfind vocabulary
-│   ├── shapes.trig                    # SHACL completeness/consistency rules
+├── semantic/
+│   ├── streamfind.trig                  # generic concepts and operations
+│   ├── vocabulary.ttl                   # small sf vocabulary
+│   ├── shapes.trig                      # SHACL validation
+│   ├── domains/
+│   │   ├── mass_spec.trig
+│   │   ├── raman.trig
+│   │   └── sensors.trig
 │   ├── fixtures/
 │   │   ├── project/
 │   │   ├── workflow/
 │   │   ├── mass_spec/
-│   │   └── ...
+│   │   ├── raman/
+│   │   └── sensors/
+│   ├── generated/
+│   │   └── catalogue.json               # generated; never hand edited
 │   └── README.md
 │
-├── core/                              # independent C++ backend
+├── core/
 │   ├── include/streamfind/
 │   ├── src/
-│   └── domains/                        # [phase 1.5] C++ domain libraries
-│       ├── mass_spec/
-│       ├── raman/
-│       └── sensors/
+│   ├── domains/
+│   │   ├── mass_spec/
+│   │   ├── raman/
+│   │   └── sensors/
 │   ├── external/
 │   ├── tests/
-│   └── tools/                         # C++ MCP executable
+│   └── tools/                           # generic C++ MCP executable
 │
-├── python/                            # one C++-backed Python distribution [next]
+├── python/
 │   ├── pyproject.toml
 │   ├── CMakeLists.txt
-│   ├── cpp/                           # pybind11 implementation
-│   ├── frontend/                      # React + TypeScript source
+│   ├── cpp/
+│   ├── frontend/                        # React/TypeScript source
 │   ├── src/streamfind/
-│   │   ├── _core/                     # private compiled extension
-│   │   ├── core/                      # public high-level Python API
+│   │   ├── _core/
+│   │   ├── core/
 │   │   ├── cli/
-│   │   ├── server/                    # FastAPI application and service layer
-│   │   └── frontend/                  # built, packaged web assets
+│   │   ├── server/
+│   │   └── frontend/                    # built web assets
 │   └── tests/
 │
-├── rust/                              # independent Rust workspace
+├── rust/
 │   ├── Cargo.toml
 │   ├── crates/
 │   │   ├── core/
 │   │   ├── cli/
-│   │   ├── mcp/
+│   │   ├── mcp/                         # generic Rust MCP adapter
 │   │   ├── external/
-│   │   ├── mass-spec/                  # [phase 1.5] domain crate
-│   │   ├── raman/                      # [phase 1.5] domain crate
-│   │   └── sensors/                    # [phase 1.5] domain crate
-│   │   ├── server/                    # [future]
-│   │   └── apps/                      # [future]
+│   │   ├── mass-spec/
+│   │   ├── raman/
+│   │   ├── sensors/
+│   │   ├── server/                      # future
+│   │   └── apps/                        # future
 │   └── tests/
 │
 ├── bindings/
-│   └── r/                             # retained and unchanged during active development
-│
+│   └── r/
 ├── integrations/
-│   └── cf-streamfind/                 # Cogniflow integration
-│
+│   └── cf-streamfind/
 ├── docs/
 ├── dev/
 └── .plans/
 ```
 
-The top-level `server/` and `frontend/` placeholders are intentionally absent from the target tree. Their source moves to `python/frontend/`, their runtime code to `python/src/streamfind/server/`, and built frontend assets to `python/src/streamfind/frontend/`.
+`semantic/generated/catalogue.json` is a build/test artefact derived from the TriG catalogue. It is not another source of truth. If committed for packaging convenience, CI must prove that regeneration produces no diff.
 
 ## Ownership and non-negotiable boundaries
 
-### `semantic/` — streamfind semantic contract catalogue
+### `semantic/` — authoritative public metadata
 
-- Own the backend-neutral definitions of externally visible streamfind concepts and capabilities.
-- Use SKOS for concepts, labels, definitions, and conceptual relationships.
-- Use a small streamfind vocabulary for operational relationships such as `sf:Operation`, `sf:Method`, `sf:Domain`, `sf:Parameter`, `sf:Fixture`, `sf:appliesTo`, `sf:availableInDomain`, `sf:hasParameter`, `sf:returns`, `sf:errorCode`, `sf:operationId`, and fixture/interface mappings where required.
-- Use TriG as the primary authoring format. Named graphs may separate concepts, generic operations, domain methods, fixtures, and mappings when this improves clarity.
-- Use SHACL only to validate semantic completeness and consistency, for example requiring each public `sf:Operation` or `sf:Method` to have a canonical identifier, label, definition, applicable domain/target, parameters where relevant, and result/error semantics.
-- Document every externally visible Project function, generic operation, domain Method, parameter, result/error contract, and shared transport mapping needed for verification or usage.
-- Own the shared MCP-facing documentation metadata for canonical capabilities: tool labels/descriptions, parameter documentation, result semantics, shared error descriptions, and stable MCP mappings where applicable. MCP backends may add implementation-specific runtime details only when those details are not part of the shared public contract.
-- Require new public capabilities to reference a canonical ontology declaration before they are considered complete.
-- Keep small fixtures directly in or alongside the semantic catalogue when practical. Reference larger analytical fixtures by repository path rather than embedding large datasets in RDF.
-- Keep the ontology declarative. Do not place executable business logic, backend-specific classes, HTTP handlers, UI state, or language-specific implementation code in `semantic/`.
-- Until `semantic/` is created, the existing shared fixture remains the operative conformance source. Moving it must preserve both C++ and Rust test coverage.
+- Own canonical IDs, domains, labels, definitions, parameters, results, shared errors, fixtures, and interface mappings.
+- Use one qualified ID for every domain method: `<domain>.<method>`.
+- Keep generic operations and domain methods semantically distinct.
+- Use SKOS parent concepts only for documentation/grouping; never infer implementation inheritance from SKOS hierarchy.
+- Keep large analytical data outside RDF and reference fixture paths from TriG.
+- Keep semantic declarations declarative and backend-neutral.
+- New public methods are incomplete without semantic declaration and validation.
 
-### `core/` — C++
+### Semantic projection — one generator, many consumers
 
-- Own C++ project lifecycle, DuckDB, native readers/algorithms, workflow execution, results, and C++ JSON/MCP entry points.
-- Build without R, Python, pybind11, FastAPI, Node.js, or React.
-- Provide the native API consumed by the Python private extension; it does not embed Python, FastAPI, React, Cogniflow, or R conversion code.
-- Map every externally visible generic operation and domain Method to the canonical semantic identifier declared in `semantic/`.
-- Run conformance tests against the shared semantic catalogue and fixtures for every supported shared capability.
-- The C++ MCP server must derive or validate shared tool names, descriptions, parameter metadata, result semantics, and error documentation from `semantic/`; C++ MCP code keeps only dispatch/execution logic and implementation-specific runtime handling.
-- Domain libraries under `core/domains/` own domain-specific methods, readers, persistence extensions, results, and executors. The generic core must not include domain headers or depend on domain implementations.
-- Each domain library exposes one registration entry point, such as `streamfind::mass_spec::register_methods(MethodRegistry &)`, and registers qualified method IDs such as `mass_spec.add_analyses`.
-- The C++ MCP executable or another application assembles the registry by explicitly registering the domains it ships. Loading a domain must not mutate the generic core's global API contract.
+To avoid maintaining separate C++ and Rust semantic generators, use one small repository tool to compile the TriG catalogue into a normalized projection such as `semantic/generated/catalogue.json`.
 
-### `rust/` — Rust
+The projection contains only data needed by native/interface consumers, for example:
 
-- Own the independent Rust project, persistence, workflow, algorithms, Rust CLI, MCP, external-tool integration, and future Rust server/apps.
-- Use Rust-owned APIs and dependencies. Rust may use appropriately isolated native libraries where needed, but it must not depend on `streamfind-core` or C++ project APIs.
-- Map every externally visible generic operation and shared domain Method to the same canonical semantic identifier used by C++.
-- Implement shared capabilities independently and prove compatibility by consuming the same semantic catalogue and fixtures.
-- The Rust MCP server must derive or validate shared tool names, descriptions, parameter metadata, result semantics, and error documentation from `semantic/`; Rust MCP code keeps only dispatch/execution logic and implementation-specific runtime handling.
-- Domain crates under `rust/crates/` own domain-specific methods, readers, persistence extensions, results, and executors. `streamfind-rust-core` must not depend on domain crates.
-- Each domain crate exposes one registration entry point, such as `streamfind_mass_spec::register_methods(&mut MethodRegistry)`, and registers qualified method IDs such as `mass_spec.add_analyses`.
-- The Rust MCP binary or another application explicitly composes the domain crates it ships. Domain crates remain independently testable and do not call C++ or other domain crates.
+```json
+{
+  "domains": {
+    "mass_spec": {
+      "methods": {
+        "mass_spec.add_analyses": {
+          "label": "Add analyses",
+          "description": "...",
+          "parameters": [],
+          "result": "...",
+          "errors": [],
+          "mcp": {"enabled": true, "name": "add_analyses"}
+        }
+      }
+    }
+  }
+}
+```
+
+Rules:
+
+- TriG remains authoritative.
+- The projection is deterministic and generated in one place.
+- C++ and Rust must not implement separate RDF interpretation logic.
+- Both MCP servers consume/embed the same projection shape.
+- Generation happens at development/build/package time, not on every MCP request.
+- CI validates TriG + SHACL, regenerates the projection, and detects stale generated output.
+
+### Minimal MethodRegistry contract
+
+The registry is an **execution registry**, not a second metadata catalogue.
+
+Each registry entry should contain only what is required for execution and backend diagnostics:
+
+```text
+canonical method ID
+executor/callable
+optional backend capability flags needed for execution
+```
+
+Do not duplicate in the registry:
+
+```text
+label
+human description
+parameter descriptions
+MCP input schema
+result documentation
+shared error documentation
+```
+
+Those come from the semantic projection.
+
+The registry must support only a small stable API, conceptually:
+
+```text
+register(method_id, executor)
+has(method_id)
+list_ids(domain)
+invoke(method_id, context, parameters)
+```
+
+Avoid domain-specific registry subclasses and avoid adding new registry APIs for individual domains.
+
+### Domain module contract
+
+A domain is a separately owned implementation module, not a special case in the generic core or MCP server.
+
+Each C++ domain library exposes one stable registration entry point, conceptually:
+
+```cpp
+void register_methods(streamfind::MethodRegistry& registry);
+```
+
+Each Rust domain crate exposes the equivalent:
+
+```rust
+pub fn register_methods(registry: &mut MethodRegistry) -> Result<()>;
+```
+
+A domain module:
+
+- implements its readers, persistence extensions, methods, and results;
+- registers executors by canonical qualified method ID;
+- does not provide MCP descriptions or schemas;
+- does not alter the generic Project API;
+- does not depend on other domains unless an explicit cross-domain architecture is approved;
+- is independently testable.
+
+### Application composition
+
+Domain discovery at runtime is **not required** for the initial architecture. Avoid a plugin ABI/dynamic-library loader until there is a concrete distribution need for third-party domain plugins.
+
+For now, applications explicitly compose the domains they ship:
+
+```text
+C++ MCP executable
+  register mass_spec
+  register raman
+  register sensors
+
+Rust MCP executable
+  register mass-spec crate
+  register raman crate
+  register sensors crate
+```
+
+This is deliberately one small composition point per application, not one MCP edit per method.
+
+Adding the tenth MassSpec method therefore does not change the MCP executable. Adding a completely new domain requires only adding the domain module to the application composition once.
+
+### Generic MCP adapter
+
+Both MCP implementations follow the same generic algorithm:
+
+```text
+initialize
+   │
+   ▼
+load/embed semantic projection
+   │
+   ▼
+compose MethodRegistry
+   │
+   ▼
+connect(project)
+   │
+   ├── read immutable project domain
+   │
+   ▼
+tools/list
+   │
+   ├── generic operations
+   └── intersection of:
+         semantic methods for connected domain
+         AND
+         registered executable method IDs
+   │
+   ▼
+tools/call
+   │
+   ├── resolve advertised MCP name -> canonical method ID from projection
+   ├── validate parameters using projected contract
+   └── registry.invoke(canonical method ID, ...)
+```
+
+The **intersection rule** is important: a semantic declaration alone must not advertise an unavailable executable, and a registered executor without a semantic declaration must fail validation/build tests rather than become an undocumented tool.
+
+The MCP servers must not contain per-domain or per-method `if`, `switch`, or match branches for normal method discovery/dispatch.
 
 ### Domain and method identity rules
 
-- Generic operations use their canonical IDs directly as MCP names: `create`, `connect`, `get_workflow`, and so on.
-- Domain methods always use a qualified canonical ID: `<domain>.<method>`, for example `mass_spec.add_analyses` and `raman.add_analyses`.
-- Two domains may expose the same local method name, but their qualified IDs, semantic resources, parameter schemas, results, errors, and implementations remain distinct.
-- After `connect`, MCP may display the local name (`add_analyses`) because the session has exactly one immutable domain. Workflow persistence and registry lookup always use the qualified ID.
-- Before `connect`, MCP exposes generic tools only. After `connect`, MCP adds methods whose `domain` matches the connected project exactly. A method from another domain must not be callable by name or ID.
-- A domain-specific method is not complete until its semantic declaration, registry registration, MCP metadata, parameter validation, executor behavior, and at least one domain fixture exist. Placeholder methods may advertise the interface but must return an explicit unsupported error rather than silently succeed.
-- `mass_spec` and `raman` may both define `add_analyses`, `remove_analyses`, and `get_analyses_info`; these are separate methods with domain-specific behavior behind a shared conceptual SKOS parent where useful.
-- `sensors` is an independent starting domain and must not inherit MassSpec or Raman methods merely because it uses the same project kernel.
+- Generic operations retain canonical generic IDs.
+- Domain methods always use `<domain>.<method>` internally and in workflows.
+- The connected project has one immutable domain.
+- MCP may expose a shorter local tool name after connection if unambiguous, but resolution must immediately map back to the canonical qualified ID.
+- A domain method from another domain must never be callable in the current session.
+- Same local names across domains are allowed because canonical IDs are qualified.
+- Cross-domain SKOS parents are documentation concepts only.
+- Do not create placeholder analytical methods merely to populate a domain. Add methods when their public contract is actually agreed.
+- Do not advertise unsupported placeholder methods in normal MCP catalogues. If a capability is intentionally declared before implementation, mark it explicitly as non-executable in semantics and exclude it from the registry/catalogue intersection.
 
-### `python/` — consolidated C++ distribution
+### C++ backend
 
-- Own the package build, private `_core` pybind11 extension, public Python API, CLI, FastAPI service layer, React/TypeScript source, and packaged frontend assets.
-- Public Python code, CLI commands, FastAPI routes, and integrations use `streamfind.core`, never `_core` directly.
-- FastAPI routes call a Python service layer. Long workflows run outside request handlers and report structured job/progress state.
-- The frontend calls the FastAPI/OpenAPI contract only; it never opens DuckDB or calls native bindings.
-- Python functions, CLI commands, and FastAPI endpoints map to canonical semantic operations/methods; they do not define a competing streamfind domain contract.
-- The semantic catalogue may be used to generate or enrich documentation and operation metadata, but runtime business logic must remain in the backend/application layers.
+- Keep `streamfind_core` domain-neutral.
+- Domain libraries depend on the generic core; the generic core never depends on domains.
+- C++ MCP consumes the semantic projection generically and dispatches through `MethodRegistry`.
+- No hand-written MCP description/schema duplicates are allowed for semantic capabilities.
 
-### `bindings/r` and `integrations/`
+### Rust backend
 
-- `bindings/r` remains an installable, functional R package as it is. During active C++/Python and Rust development, do not refactor it, redirect it to the C++ core, or add compatibility/migration helpers.
-- `integrations/cf-streamfind` remains at its current boundary until final alignment. When that work is intentionally started, it translates Cogniflow contracts to the public Python API and must not compile C++, include C++ headers, link native runtimes, access DuckDB, or import `_core`.
-- Final R and Cogniflow alignment must reference the same canonical semantic operations/methods rather than inventing parallel identifiers.
+- Keep `streamfind-rust-core` domain-neutral.
+- Domain crates depend on Rust core; Rust core never depends on domain crates.
+- Rust MCP consumes the same semantic projection shape and dispatches through its `MethodRegistry`.
+- Rust remains independent from C++.
 
-### Public capability documentation rule
+### Python distribution
 
-Any newly added externally visible endpoint, function, Project operation, workflow Method, CLI command, MCP tool, or integration capability must map to a canonical ontology declaration.
+- Own pybind11, public Python API, CLI, FastAPI service layer, React source, and packaged frontend assets.
+- Public Python code uses the high-level `streamfind.core` API, not `_core` directly.
+- Python/CLI/FastAPI mappings reuse semantic labels/descriptions and canonical IDs where useful.
+- The frontend communicates only with FastAPI/OpenAPI.
 
-A new public capability is incomplete until the semantic catalogue contains enough information to support:
+### Public capability rule
 
-- **documentation** — what the concept/capability is and when it is used;
-- **verification** — which canonical identifier and domain/target it belongs to;
-- **validation** — required parameters, result/error semantics, and SHACL completeness where applicable;
-- **usage** — stable operation/method names and interface mappings;
-- **harmonisation testing** — one or more shared fixtures that can be consumed by C++ and Rust when the capability is common to both backends.
+Any externally visible Project operation, Method, CLI command, MCP tool, endpoint, or integration capability must map to a canonical semantic declaration.
 
-For MCP mappings, this rule additionally means that shared tool descriptions and parameter/result/error documentation are maintained in the semantic catalogue, not duplicated separately in `core/tools/` and `rust/crates/mcp/`.
+For a domain Method, the minimal change set is:
 
-### Legacy-free development rule
+```text
+required once:
+  semantic declaration
+  fixture(s)
 
-- Do not create legacy fallbacks, compatibility shims, forwarding modules/packages, dual execution paths, duplicate source trees, transitional adapters, or migration helpers during the development phase.
-- Do not retain an old interface or build path because a target implementation is incomplete; complete the target boundary instead.
-- Keep relocations atomic: after a completed move, there is one owning implementation path.
-- A compatibility or data-migration mechanism is allowed only for an explicitly approved, separately scoped released-version transition, with a removal date and dedicated tests. Never add one speculatively.
+required per implementing backend:
+  executor implementation
+  one registry registration
+  backend tests
+
+not required:
+  MCP description edits
+  MCP schema edits
+  MCP dispatch branches
+  duplicated method metadata
+```
 
 ## Roadmap
 
-### 1. Establish the semantic streamfind contract catalogue — **Next / current work**
+### 1. Finish the semantic projection and generic MCP contract — **Next**
 
-The purpose of this phase is to convert the compatibility that already exists between C++ and Rust into one simple, documented, backend-neutral semantic catalogue that can also drive conformance testing and user/developer documentation.
+The generic semantic/MCP baseline already exists. The remaining work should simplify consumption rather than add another abstraction layer.
 
-#### Immediate execution order
+1. Consolidate semantic extraction into **one** deterministic generator that produces `semantic/generated/catalogue.json` (or an equivalently simple backend-neutral projection).
+2. Remove the need for separate hand-authored/generated semantic metadata models in C++ and Rust; both backends consume/embed the same projection format.
+3. Ensure the projection includes only public metadata needed by consumers: domain, canonical ID, label/definition, parameters, result/errors, executable/exposure flags, MCP mapping, and fixture references where useful.
+4. Keep generic operations and domain methods in the same projection format but as distinct semantic types.
+5. Add CI checks:
+   - RDF/TriG parsing;
+   - SHACL validation;
+   - duplicate canonical IDs;
+   - invalid/unqualified domain method IDs;
+   - stale generated projection;
+   - fixture references exist;
+   - MCP names are unique within a connected domain.
+6. Keep MCP lifecycle conformance covering initialize, connect, pre/post-connect tools, calls, errors, close, cancellation, and progress.
 
-- Inventory the currently exposed generic operations and MCP tools from the C++ and Rust implementations; record intentional differences as issues, not silent drift.
-- Create the minimal `semantic/` catalogue for the generic Project contract, MCP mappings, domains, methods, parameter metadata, and stable error identifiers.
-- Add a small validator or test fixture reader that checks required declarations and canonical identifiers. Prefer repository scripts and existing language tooling over a new runtime dependency.
-- Add one shared MCP catalogue fixture and compare C++ and Rust `tools/list` output after normalizing ordering and backend-specific server metadata.
-- Add a session lifecycle fixture covering `initialize`, `project_connect`, pre-connect `tools/list`, post-connect domain filtering, domain-method dispatch, and `project_close`.
-- Only after these checks pass, start the first domain slice and the Python distribution work.
+**Exit condition:** one semantic source and one generated projection drive both MCP catalogues; neither backend maintains a duplicate public metadata catalogue.
 
-1. Create `semantic/` with a compact initial structure. Do not add a generator, RDF runtime, or SHACL dependency until a concrete validation need requires it:
+### 1.5. Stabilise domain composition and registry-driven MCP — **Next**
 
-   ```text
-   semantic/
-   ├── streamfind.trig
-   ├── vocabulary.ttl
-   ├── shapes.trig
-   ├── fixtures/
-   │   ├── project/
-   │   ├── workflow/
-   │   └── mass_spec/
-   └── README.md
-   ```
+This phase proves that domains can expand without expanding MCP maintenance.
 
-2. Define the initial SKOS concept scheme and small streamfind vocabulary. At minimum, represent:
+#### A. Stabilise the registry
 
-   - `Project` and other externally visible core concepts;
-   - analytical domains such as `MassSpec`;
-   - generic public `sf:Operation` concepts such as `create`, `validate`, `get_metadata`, `set_metadata`, `get_workflow`, `set_workflow`, `get_cache`, `get_audit_trail`, and `run_method`;
-   - workflow/domain `sf:Method` concepts such as future MassSpec processing methods;
-   - parameters, result semantics, error codes, fixtures, and interface mappings needed for validation and usage.
+1. Reduce `MethodRegistry` to the minimal execution API: register, list IDs by domain, lookup/invoke, duplicate rejection.
+2. Ensure a registration supplies the canonical method ID and executor, not a second description/schema object.
+3. Add tests proving:
+   - duplicate IDs fail;
+   - malformed/unqualified domain IDs fail;
+   - listing by domain is exact;
+   - invocation is by canonical qualified ID.
 
-3. Use canonical identifiers consistently. For example, a generic `get_workflow` operation and a domain method such as `mass_spec.load_chromatograms` each have one ontology identifier that is reused by C++, Rust, Python, CLI, MCP, FastAPI, R, and Cogniflow mappings where applicable.
+#### B. Stabilise domain modules
 
-4. Add concise labels and definitions for every externally visible capability. The ontology must be useful as documentation, not only as machine metadata.
+1. Create a domain library/crate only when that domain has an agreed capability to implement. Do not create empty or fake method catalogues merely to prove extensibility.
+2. Each domain has one `register_methods` entry point.
+3. The application composition root registers each shipped domain exactly once.
+4. Adding methods inside an already composed domain must require no changes to MCP/application composition.
+5. Add one small real or test-only registry fixture per starting domain to prove filtering if the analytical migration is not ready yet; do not expose fake production tools.
 
-5. Add SHACL shapes that validate semantic completeness without overengineering the model. Typical rules include requiring each public operation/method to have:
+#### C. Make MCP completely generic for domain methods
 
-   - one canonical operation/method identifier;
-   - a preferred label and definition;
-   - an applicable Project target or domain;
-   - declared parameters where relevant;
-   - result/error semantics sufficient for verification and testing.
-
-6. Reference the existing `project_conformance.json` fixture from the semantic catalogue without moving it until both consumers use the new path. Preserve both C++ and Rust tests. Add shared fixtures incrementally for workflow, cache, audit, errors, cancellation, progress, and later domain methods.
-
-7. Keep small JSON input/expected-result examples directly in semantic fixture metadata when convenient. Store larger DuckDB files, chromatograms, spectra, or analytical datasets under `semantic/fixtures/` and reference them from TriG rather than embedding large payloads in RDF.
-
-8. Update C++ and Rust conformance tests so both backends consume the same semantic declarations and fixtures. Tests should verify, as applicable:
-
-   - canonical operation/method identifiers;
-   - target/domain assignment;
-   - parameter names, types, and required/optional status;
-   - expected result and error behaviour;
-   - persistence compatibility;
-   - cross-open behaviour for C++-created and Rust-created projects;
-   - audit/cache/workflow harmonisation;
-   - cancellation and progress semantics.
-
-9. Add common MCP mappings to the same ontology catalogue. Represent the common MCP tool name and its mapping to the canonical `sf:Operation` or `sf:Method`, while keeping MCP as a transport mapping rather than a second domain definition.
-
-10. Harmonise **both MCP servers** from the semantic catalogue as the shared source for MCP-facing documentation and contract metadata:
-
-    - C++ `core/tools/` and Rust `rust/crates/mcp/` must derive or validate common MCP tool names, labels/descriptions, parameter names/types/required status, result semantics, and shared error descriptions from the same semantic declarations;
-    - the two MCP implementations must not maintain parallel hand-written descriptions for capabilities already documented in `semantic/`;
-    - backend-specific code continues to own tool dispatch, execution, transport handling, cancellation/progress integration, and backend-specific diagnostics;
-    - add conformance tests that compare each MCP server's advertised tool catalogue against the ontology and shared fixtures, including tool presence, canonical mapping, arguments, descriptions, result/error envelopes, and common examples;
-     - start with a small build/test-time validator rather than runtime ontology loading; generate MCP metadata only if the validator demonstrates that static duplication is costly. The semantic declaration remains authoritative in all cases.
-
-11. Keep transport definitions subordinate to the canonical capability. A FastAPI endpoint such as `GET /projects/{id}/workflow` or an MCP tool such as `streamfind_get_workflow` maps to `sf:GetWorkflow`; it does not create a second domain contract.
-
-**Exit condition:** `semantic/` exists with the initial `sfcore:` vocabulary, SKOS declarations, SHACL shapes, fixtures, and validation instructions; both backends consume or validate the same canonical identifiers; C++ and Rust MCP tests compare the common tool names and required arguments; pre-connect catalogues contain only generic tools; post-connect catalogues contain only methods for the connected domain; `project_close` clears the session in both implementations. This baseline is complete. New public shared capabilities cannot be considered complete without the same semantic declaration and conformance coverage.
-
-### 1.5. Establish domain composition and dynamic MCP registration — **Next**
-
-This phase proves the domain architecture without implementing analytical behavior. The three starting domains are `mass_spec`, `raman`, and `sensors`. The placeholders must be real libraries/crates with registration APIs, qualified method identities, semantic declarations, generated metadata, and tests; their executors may return an explicit `Unsupported` error.
-
-#### Semantic structure
-
-1. Add domain catalogue files:
+1. At `tools/list`, take the connected project domain and compute:
 
    ```text
-   semantic/domains/
-   ├── mass_spec.trig
-   ├── raman.trig
-   └── sensors.trig
+   semantic methods for domain
+             ∩
+   registered executable IDs
    ```
 
-2. Declare `mass_spec` and `raman` methods separately, even when their local names match:
+2. Build MCP tool metadata entirely from the semantic projection.
+3. Resolve calls generically from MCP mapping to canonical ID and call `registry.invoke`.
+4. Remove or forbid per-domain/per-method MCP dispatch branches for normal domain methods.
+5. Add a conformance test that introduces a small test method through semantics + registry and proves it appears and executes **without editing MCP source**.
+6. Run the same test pattern in C++ and Rust.
 
-   ```text
-   mass_spec.add_analyses
-   mass_spec.remove_analyses
-   mass_spec.get_analyses_info
+#### D. New-domain maintenance test
 
-   raman.add_analyses
-   raman.remove_analyses
-   raman.get_analyses_info
-   ```
+Add a repository-level test/example documenting the exact steps for a future domain, for example `imaging`:
 
-3. Declare initial `sensors` domain identity and a minimal placeholder method set only where the interface is already agreed. Do not invent analytical methods to fill the catalogue.
-4. Give every method a domain, qualified method ID, SKOS label/definition, parameter schema, result/error semantics, and MCP mapping. Use a shared SKOS parent concept for cross-domain concepts such as `sf:AddAnalyses`, but never reuse a method resource or implementation between domains by accident.
-5. Extend the generator and SHACL validation to read domain files and reject duplicate qualified IDs, missing domains, unqualified method IDs, or MCP mappings without a matching domain.
+```text
+1. semantic/domains/imaging.trig
+2. core/domains/imaging/ OR rust/crates/imaging/
+3. implement executors
+4. register methods inside the domain module
+5. add the domain module once to the application composition
+6. add fixtures/tests
+```
 
-#### C++ composition
+No MCP tool definition or dispatch file may need editing.
 
-1. Create independent placeholder libraries under:
-
-   ```text
-   core/domains/mass_spec/
-   core/domains/raman/
-   core/domains/sensors/
-   ```
-
-2. Each library exposes a single registration function and depends only on the generic C++ core:
-
-   ```cpp
-   void register_methods(streamfind::MethodRegistry &registry);
-   ```
-
-3. Register qualified methods with `domain` set to the matching domain. Placeholder executors return the stable unsupported error; they must not write fake analysis data.
-4. Compose all three libraries in the C++ MCP executable and domain tests. Keep `streamfind_core` domain-neutral.
-5. Add CMake targets and tests proving that registration is explicit, duplicate IDs are rejected, and `registry.list(domain)` returns only the requested domain.
-
-#### Rust composition
-
-1. Create independent workspace crates:
-
-   ```text
-   rust/crates/mass-spec/
-   rust/crates/raman/
-   rust/crates/sensors/
-   ```
-
-2. Each crate depends on `streamfind-rust-core` and exposes:
-
-   ```rust
-   pub fn register_methods(registry: &mut MethodRegistry) -> Result<()>;
-   ```
-
-3. Register the same qualified method IDs and explicit unsupported placeholder executors. Do not make the generic core depend on these crates.
-4. Compose all three crates in `streamfind-rust-mcp` and add domain filtering/dispatch tests against temporary projects.
-5. Keep the C++ and Rust implementations independent. Shared behavior is proved through semantic declarations and fixtures, not a shared native wrapper.
-
-#### MCP behavior
-
-1. Before `connect`, advertise only the generated generic catalogue.
-2. After connecting to a `mass_spec` project, advertise generic tools plus `add_analyses`, `remove_analyses`, and `get_analyses_info` mapped to the qualified MassSpec IDs, plus any registered MassSpec workflow methods.
-3. After connecting to a `raman` project, advertise the Raman implementations of the same local names, never the MassSpec methods.
-4. After connecting to a `sensors` project, advertise only sensor-domain methods.
-5. Calling a method from another domain returns a stable domain mismatch/unknown-method error.
-6. `close` removes the domain-specific tools from the session catalogue.
-
-#### Exit condition
-
-All three domain libraries/crates build independently; all three register methods through the same minimal interface; C++ and Rust MCP servers dynamically advertise the correct methods for MassSpec, Raman, and Sensors projects; same-named methods have distinct qualified IDs and metadata; placeholder execution fails explicitly and consistently; generic core crates/libraries do not depend on domain implementations; and shared semantic/registration/lifecycle tests pass.
+**Exit condition:** adding a method to an existing domain requires semantic declaration + executor registration only; adding a new domain requires one semantic domain file, one backend domain module, and one composition entry per shipping application. Both MCP servers discover/document/dispatch its methods generically.
 
 ### 2. Build the consolidated Python distribution — **Future / after Section 1.5**
 
 1. Establish `python/pyproject.toml`, `python/CMakeLists.txt`, and `python/cpp/` using scikit-build-core and pybind11.
-2. Keep `streamfind._core` private and minimal: bind stable, coarse-grained C++ services and release the GIL for long native operations.
-3. Implement `streamfind.core` as the typed, Pythonic public API with exception mapping, resource lifecycle, and progress adapters.
-4. Add `streamfind.cli` for generic project create, describe, validate, workflow, cache, audit, and execution operations.
-5. Add `streamfind.server` with Pydantic schemas, a service layer, health/project/workflow/job/result endpoints, and job/progress handling.
-6. Move the React/TypeScript source into `python/frontend/`; package its build output in `streamfind/frontend/`.
-7. Remove the top-level `server/` and `frontend/` placeholders only after their contents have been relocated.
-8. Map each public Python function, CLI command, and FastAPI endpoint to the canonical ontology operation/method. Reuse ontology labels/definitions where practical for generated or developer-facing documentation rather than maintaining duplicate descriptions.
+2. Keep `streamfind._core` private and minimal.
+3. Implement `streamfind.core` as the typed public Python API.
+4. Add `streamfind.cli` for generic project and workflow operations.
+5. Add `streamfind.server` with Pydantic schemas, service layer, project/workflow/job/result endpoints, and progress handling.
+6. Move React/TypeScript source to `python/frontend/` and package build output with the Python distribution.
+7. Remove legacy top-level `server/` and `frontend/` placeholders after relocation.
+8. Reuse semantic metadata for developer-facing method/API documentation where practical; do not introduce a second method catalogue in Python.
 
-**Exit condition:** an installed wheel can create and inspect a generic C++-backed project through the public Python API, CLI, and FastAPI, with no public consumer importing `_core` or opening DuckDB directly, and the externally visible operations map to the semantic streamfind catalogue.
+**Exit condition:** an installed wheel can operate a generic C++-backed project through Python API, CLI, and FastAPI without consumers accessing `_core` or DuckDB directly.
 
-### 3. Deliver domain capabilities in paired, independent slices — **Future / after Section 1.5**
+### 3. Deliver real domain capabilities in independent vertical slices — **Future**
 
-Start with one vertical MassSpec slice:
+Start with one MassSpec capability that provides real value end to end.
 
 ```text
-Semantic catalogue: define domain concept + Method + parameters + fixture
-
-C++:  create project → import representative input → persist → run Method → result
-Rust: independently implement the same slice → run the same semantic fixtures
-
-C++ interfaces: Python API/CLI → FastAPI → React
+semantic declaration + fixture
+          │
+     ┌────┴────┐
+     ▼         ▼
+   C++       Rust
+ executor   executor
+     │         │
+ registry    registry
+     └────┬────┘
+          ▼
+ generic MCP exposure
 ```
 
-For every shared domain capability:
+For each shared domain capability:
 
-1. add or update its ontology concept, canonical Method identifier, domain, parameters, result/error semantics, and representative fixture;
-2. validate the semantic declaration with SHACL where applicable;
-3. implement and test C++ behaviour against the shared fixture;
-4. independently implement and test Rust behaviour against the same fixture;
-5. compare persisted data, workflow/audit/cache records, results, errors, cancellation, and progress semantics where relevant;
-6. expose the C++ slice through Python, CLI, server, and frontend where required, mapping each interface to the same canonical Method;
-7. when the Method is exposed through MCP, add its MCP mapping and documentation once to `semantic/`, then verify that both C++ and Rust MCP servers expose compatible tool metadata from the same declaration.
+1. define/update the semantic Method, parameters, result/error semantics, exposure flags, and fixture;
+2. implement C++ behaviour and register its executor;
+3. independently implement Rust behaviour and register its executor;
+4. run the same conformance fixtures;
+5. compare persistence, workflow, audit/cache, results, errors, cancellation, and progress where applicable;
+6. expose the C++ capability through Python/FastAPI/frontend where required;
+7. do **not** edit MCP-specific method code unless the MCP protocol adapter itself changes.
 
-Migrate NTA only after the first MassSpec slice is stable. Continue NTA in workflow dependency order: data/feature loading, processing, filtering, components, annotation, and external-tool adapters. Add Rust domain crates when a capability is large enough to justify one; do not put a parallel C++ wrapper behind a Rust crate.
+Migrate NTA only after a stable MassSpec vertical slice. Continue in workflow dependency order.
 
-**Exit condition:** the required C++/Python and independent Rust implementations, including their domain-specific capabilities, have completed their semantic conformance and interface matrices. Only then may final R and Cogniflow alignment start.
+**Exit condition:** real domain methods can be added repeatedly without growing generic MCP code or duplicating semantic metadata.
 
-### 4. Distribute and harden the C++/Python and Rust paths — **Future**
+### 4. Distribution, CI, and documentation hardening — **Future**
 
-- C++: install/export packages, runtime dependencies, static/shared CI, and clean-system tests.
-- Python: cross-platform wheel builds, native-runtime repair/audit, CLI/API/frontend package tests, and source-build documentation.
-- Rust: workspace CI, crate versioning, external-tool diagnostics, independent MCP testing, and future server/apps release boundaries.
-- Semantic/shared: ontology validation, fixture integrity, cross-backend conformance, schema upgrade, concurrent-writer/failure, performance, and version-compatibility test matrices.
-- MCP: test that C++ and Rust publish compatible common tool catalogues and that shared MCP documentation remains traceable to the semantic declarations rather than backend-local copies.
-- Documentation: use ontology concepts, labels, definitions, operation/method metadata, and interface mappings to support generated or semi-generated API/method/MCP documentation where useful.
-
-**Exit condition:** the full C++/Python and Rust paths are supported independently, including the completed domain capabilities and release-quality semantic/conformance coverage.
+- C++: install/export packages, runtime dependencies, static/shared CI, clean-system tests.
+- Python: cross-platform wheels, native-runtime repair/audit, package/frontend tests.
+- Rust: workspace CI, crate versioning, external-tool diagnostics, server/apps release boundaries.
+- Semantic: catalogue versioning, SHACL, fixture integrity, projection regeneration, documentation generation.
+- MCP: common lifecycle/domain conformance and proof that tool catalogues remain semantic/registry driven.
+- Documentation: generate or semi-generate method/domain/MCP references from the semantic catalogue rather than maintaining parallel hand-written inventories.
 
 ### 5. Align R and Cogniflow with the completed public C++ path — **Future, final phase**
 
-This phase begins only after Sections 1–4 are complete. Until then, `bindings/r` remains functional as-is and `integrations/cf-streamfind` is not refactored for the new Python path.
+1. Preserve R regression fixtures before changing Rcpp-backed behaviour.
+2. Replace duplicated R generic/domain logic only after equivalent C++ capabilities exist.
+3. Map R public operations/methods to canonical semantic identifiers.
+4. Update Cogniflow to consume the installed public `streamfind` Python package and canonical semantic catalogue.
+5. Ensure R and Cogniflow do not access private bindings or DuckDB directly.
+6. Remove obsolete transition code only after regression/conformance coverage passes.
 
-1. Record the supported R workflows and retain regression fixtures before changing Rcpp-backed behaviour.
-2. Replace R-owned duplicated generic/domain logic only after the equivalent completed C++ capability exists. Retain R-specific conversion, ergonomics, and reporting.
-3. Map R public operations and methods to the canonical semantic identifiers where they represent the same streamfind capability.
-4. Update Cogniflow to use the installed public `streamfind` package and the canonical semantic operation/method catalogue.
-5. Add integration tests proving R and Cogniflow do not access private bindings, native build steps, or DuckDB directly.
-6. Remove only explicitly identified obsolete R/Cogniflow code after the replacement passes its full regression and semantic conformance suite. Do not add legacy fallbacks or migration helpers.
+## Definition of done for a domain method
 
-**Exit condition:** R and Cogniflow are thin, tested adapters over the completed public C++/Python path and map shared capabilities to the same semantic streamfind catalogue, with no transition scaffolding added during the development phase.
+A domain method is complete only when:
 
-## Definition of done for a shared capability
-
-A capability is complete only when:
-
-- it has one canonical semantic declaration in `semantic/`;
-- its SKOS label/definition and streamfind operation/method metadata are sufficient for documentation and usage;
-- its parameters, result/error semantics, target/domain, and relevant interface mappings are declared;
-- the semantic declaration passes SHACL completeness/consistency validation where applicable;
-- at least one backend-neutral fixture exists when harmonised behaviour must be tested;
-- C++ and Rust implementations are independently tested against the relevant shared fixtures when the capability is common to both backends;
-- neither implementation calls or wraps the other;
-- the C++ ecosystem exposes it through the public Python API when user-facing;
-- CLI, FastAPI, React, R, MCP, and Cogniflow support is added only where required and maps to the canonical capability rather than bypassing the public boundary;
-- MCP-exposed shared capabilities obtain their authoritative tool descriptions, parameter/result/error documentation, and canonical mappings from `semantic/`, with C++ and Rust MCP catalogues generated from or validated against the same declarations;
-- persistence compatibility, structured errors, cancellation, progress, and representative results are tested where applicable;
+- one canonical qualified semantic ID exists;
+- label, definition, domain, parameters, results, shared errors, and exposure mappings are documented in TriG;
+- SHACL/semantic validation passes;
+- representative fixture coverage exists;
+- each implementing backend provides an independently tested executor registered under the same canonical ID;
+- registry and semantic projection agree that the method exists;
+- C++/Rust shared behaviour is tested where harmonisation is required;
+- MCP exposure, documentation, parameter validation, and dispatch occur generically without method-specific MCP code;
+- user-facing Python/API/UI mappings are added where required;
 - packaging and documentation are updated.
 
-## Deliberately removed from this roadmap
+## Maintenance acceptance criteria
 
-The previous plan's completed relocation/bootstrap work, standalone top-level server/frontend target, C++-as-the-only-authoritative-backend model, JSON-schema-heavy `contracts/` hierarchy, and initial-agent task list are obsolete. They are not retained as pending tasks. Historical detail belongs in commits and `.plans/completed/`, not in the active implementation roadmap.
+The architecture should be considered successful only if these remain true as streamfind grows:
+
+- **Add method to existing domain:** no generic core or MCP source changes.
+- **Add domain:** one domain semantic file + one domain implementation module + one application composition entry per backend/application that ships it.
+- **Change documentation:** edit semantic catalogue once; C++/Rust MCP documentation follows after regeneration.
+- **Change parameter contract:** edit semantic declaration and backend executor validation/tests; no duplicate MCP schema edits.
+- **Add backend:** consume the same semantic projection and implement the same minimal registry contract.
+- **No ontology runtime requirement:** deployed native backends may embed/package the generated projection rather than run an RDF stack.
+- **No hidden drift:** CI rejects registered methods without semantics and semantic executable methods without a matching registered implementation in tested distributions.
+
+## Deliberately avoided
+
+The roadmap intentionally avoids:
+
+- runtime RDF parsing in every backend;
+- separate C++ and Rust ontology models/generators;
+- method-specific MCP switch statements;
+- duplicated descriptions and parameter schemas;
+- generic-core dependencies on domain modules;
+- dynamic shared-library/plugin ABI complexity before there is a real third-party plugin requirement;
+- placeholder production methods used only to demonstrate extensibility;
+- a second metadata registry competing with `semantic/`.
+
+Historical bootstrap and superseded architecture detail belongs in commits and `.plans/completed/`, not in this active roadmap.
