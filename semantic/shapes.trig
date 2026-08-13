@@ -1,0 +1,85 @@
+@prefix sfcore: <https://streamfind.dev/catalogue/core#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix sf: <https://streamfind.dev/vocabulary#> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+{
+	sfcore:SemanticEntryShape
+		a sh:NodeShape ;
+		sh:targetClass sf:Operation, sf:Method, sf:Domain, sf:Project, sf:Workflow, sf:Parameter, sf:Fixture, sf:Result, sf:Error ;
+		sh:property [
+			sh:path skos:prefLabel ;
+			sh:minCount 1 ;
+			sh:datatype xsd:string
+		] ;
+		sh:property [
+			sh:path skos:definition ;
+			sh:minCount 1 ;
+			sh:datatype xsd:string
+		] .
+
+	sfcore:OperationShape
+		a sh:NodeShape ;
+		sh:targetClass sf:Operation ;
+		sh:property [
+			sh:path sf:operationId ;
+			sh:minCount 1 ;
+			sh:maxCount 1 ;
+			sh:datatype xsd:string
+		] ;
+		sh:property [
+			sh:path sf:toolName ;
+			sh:minCount 1 ;
+			sh:maxCount 1 ;
+			sh:datatype xsd:string
+		] .
+
+	sfcore:MethodShape
+		a sh:NodeShape ;
+		sh:targetClass sf:Method ;
+		sh:property [
+			sh:path sf:methodId ;
+			sh:minCount 1 ;
+			sh:maxCount 1 ;
+			sh:datatype xsd:string
+		] .
+
+	sfcore:ParameterShape
+		a sh:NodeShape ;
+		sh:targetClass sf:Parameter ;
+		sh:property [
+			sh:path sf:type ;
+			sh:minCount 1 ;
+			sh:maxCount 1 ;
+			sh:datatype xsd:string
+		] ;
+		sh:property [
+			sh:path sf:required ;
+			sh:minCount 1 ;
+			sh:maxCount 1 ;
+			sh:datatype xsd:boolean
+		] .
+
+	sfcore:FixtureShape
+		a sh:NodeShape ;
+		sh:targetClass sf:Fixture ;
+		sh:property [
+			sh:path sf:fixturePath ;
+			sh:minCount 1 ;
+			sh:maxCount 1 ;
+			sh:datatype xsd:string
+		] .
+
+	sfcore:ErrorShape
+		a sh:NodeShape ;
+		sh:targetClass sf:Error ;
+		sh:property [
+			sh:path sf:errorCode ;
+			sh:minCount 1 ;
+			sh:maxCount 1 ;
+			sh:datatype xsd:string
+		] .
+}

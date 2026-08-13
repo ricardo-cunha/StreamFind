@@ -1,5 +1,8 @@
 #include "streamfind/mcp.hpp"
 #include "streamfind/api.hpp"
+#include "streamfind/mcp_metadata.hpp"
+#include <algorithm>
+#include <array>
 
 namespace streamfind::mcp {
 
@@ -10,52 +13,17 @@ Json tool(const char *name, const char *description, Json properties, Json requi
 }
 
 Json tools() {
-    const Json project = {{"type", "string"}};
-    const Json metadata = {{"type", "object"}};
-    const Json workflow = {{"type", "object"}};
-    return Json::array({
-        tool("project_create", "Create a project", {{"database_path", project}, {"project_id", project}, {"domain", project}}, {"database_path", "project_id", "domain"}),
-        tool("project_connect", "Connect this MCP session to a project", {{"database_path", project}, {"project_id", project}}, {"database_path", "project_id"}),
-        tool("project_describe", "Describe a project", {{"database_path", project}, {"project_id", project}}, {"database_path", "project_id"}),
-        tool("project_validate", "Validate a project", {{"database_path", project}, {"project_id", project}}, {"database_path", "project_id"}),
-        tool("project_get_domain", "Read the project domain", {{"database_path", project}, {"project_id", project}}, {"database_path", "project_id"}),
-        tool("project_get_metadata", "Read project metadata", {{"database_path", project}, {"project_id", project}}, {"database_path", "project_id"}),
-        tool("project_set_metadata", "Set project metadata", {{"database_path", project}, {"project_id", project}, {"metadata", metadata}}, {"database_path", "project_id", "metadata"}),
-        tool("project_get_workflow", "Read the project workflow", {{"database_path", project}, {"project_id", project}}, {"database_path", "project_id"}),
-        tool("project_set_workflow", "Set the project workflow", {{"database_path", project}, {"project_id", project}, {"workflow", workflow}}, {"database_path", "project_id", "workflow"}),
-        tool("project_validate_workflow", "Validate a workflow", {{"workflow", workflow}}, {"workflow"}),
-        tool("project_run_workflow", "Run the project workflow", {{"database_path", project}, {"project_id", project}}, {"database_path", "project_id"}),
-        tool("project_get_cache", "Read project cache", {{"database_path", project}, {"project_id", project}}, {"database_path", "project_id"}),
-        tool("project_get_cache_size", "Read project cache size", {{"database_path", project}, {"project_id", project}}, {"database_path", "project_id"}),
-        tool("project_delete_cache", "Delete project cache", {{"database_path", project}, {"project_id", project}}, {"database_path", "project_id"}),
-        tool("project_get_audit_trail", "Read project audit events", {{"database_path", project}, {"project_id", project}}, {"database_path", "project_id"}),
-        tool("get_available_methods", "List methods registered for a domain", {{"domain", { {"type", "string"} }}}, {"domain"}),
-        tool("project_run_method", "Append and run a workflow method", {{"database_path", project}, {"project_id", project}, {"method", project}, {"parameters", Json{{"type", "object"}}}}, {"database_path", "project_id", "method"}),
-        tool("project_copy", "Copy a project", {{"database_path", project}, {"project_id", project}, {"destination_database_path", project}, {"destination_project_id", project}}, {"database_path", "project_id", "destination_database_path", "destination_project_id"}),
-        tool("project_close", "Close a project handle", {{"database_path", project}, {"project_id", project}}, {"database_path", "project_id"}),
-    });
+    return Json::parse(generated::tools);
 }
 
 const char *command(const std::string &name) {
-    if (name == "project_create") return "create";
-    if (name == "project_describe") return "describe";
-    if (name == "project_validate") return "validate";
-    if (name == "project_get_domain") return "get_domain";
-    if (name == "project_get_metadata") return "get_metadata";
-    if (name == "project_set_metadata") return "set_metadata";
-    if (name == "project_get_workflow") return "get_workflow";
-    if (name == "project_set_workflow") return "set_workflow";
-    if (name == "project_validate_workflow") return "validate_workflow";
-    if (name == "project_run_workflow") return "run_workflow";
-    if (name == "project_get_cache") return "get_cache";
-    if (name == "project_get_cache_size") return "get_cache_size";
-    if (name == "project_delete_cache") return "delete_cache";
-    if (name == "project_get_audit_trail") return "get_audit_trail";
-    if (name == "get_available_methods") return "get_available_methods";
-    if (name == "project_run_method") return "run_method";
-    if (name == "project_copy") return "copy";
-    if (name == "project_close") return "close";
-    return nullptr;
+    static const std::array<std::string, 18> commands = {
+        "create", "describe", "validate", "get_domain", "get_metadata",
+        "set_metadata", "get_workflow", "set_workflow", "validate_workflow",
+        "run_workflow", "get_cache", "get_cache_size", "delete_cache",
+        "get_audit_trail", "get_available_methods", "run_method", "copy", "close"
+    };
+    return std::find(commands.begin(), commands.end(), name) == commands.end() ? nullptr : name.c_str();
 }
 }
 
@@ -81,7 +49,7 @@ Json Session::handle(const Json &request) {
     }
     if (method != "tools/call") return {{"jsonrpc", "2.0"}, {"id", id}, {"error", {{"code", -32601}, {"message", "Unsupported MCP method"}}}};
     const auto name = request.at("params").value("name", "");
-    if (name == "project_connect") {
+    if (name == "connect") {
         try {
             const auto arguments = request.at("params").value("arguments", Json::object());
             const auto domain = api::run(api::ProjectCommand::get_domain, arguments, registry_).get<std::string>();
@@ -109,7 +77,7 @@ Json Session::handle(const Json &request) {
     if (!command) return {{"jsonrpc", "2.0"}, {"id", id}, {"error", {{"code", -32602}, {"message", "Unknown MCP tool"}}}};
     try {
         const Json result = api::run(api::command_from_string(command), request.at("params").value("arguments", Json::object()), registry_);
-        if (name == "project_close") {
+        if (name == "close") {
             project_ = Json::object();
             domain_.clear();
         }

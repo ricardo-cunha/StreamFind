@@ -3,6 +3,8 @@
 use serde_json::{json, Value};
 use streamfind_rust_core::{api, MethodRegistry};
 
+mod generated_metadata;
+
 pub struct Session<'a> {
     registry: &'a MethodRegistry,
     project: Option<Value>,
@@ -60,7 +62,7 @@ impl<'a> Session<'a> {
                 .get("name")
                 .and_then(Value::as_str)
                 .unwrap_or_default();
-            if name == "project_connect" {
+            if name == "connect" {
                 let args = params.get("arguments").unwrap_or(&Value::Null);
                 return match api::get_domain(args) {
                     Ok(domain) => {
@@ -93,7 +95,7 @@ impl<'a> Session<'a> {
                     Err(error) => error_response(id, error.to_string()),
                 };
             }
-            if name == "project_close" {
+            if name == "close" {
                 let result = handle(request, self.registry);
                 if result["result"]["isError"] != true {
                     self.project = None;
@@ -107,79 +109,7 @@ impl<'a> Session<'a> {
 }
 
 pub fn tools() -> Value {
-    let project = json!({"type": "string"});
-    let metadata = json!({"type": "object"});
-    let workflow = json!({"type": "object"});
-    let base = json!({"database_path": project, "project_id": project});
-    let required = ["database_path", "project_id"];
-    [
-        ("project_create", "Create a project"),
-        ("project_connect", "Connect this MCP session to a project"),
-        ("project_describe", "Describe a project"),
-        ("project_validate", "Validate a project"),
-        ("project_get_domain", "Read the project domain"),
-        ("project_get_metadata", "Read project metadata"),
-        ("project_set_metadata", "Set project metadata"),
-        ("project_get_workflow", "Read the project workflow"),
-        ("project_set_workflow", "Set the project workflow"),
-        ("project_validate_workflow", "Validate a workflow"),
-        ("project_run_workflow", "Run the project workflow"),
-        ("project_get_cache", "Read project cache"),
-        ("project_get_cache_size", "Read project cache size"),
-        ("project_delete_cache", "Delete project cache"),
-        ("project_get_audit_trail", "Read project audit events"),
-        (
-            "get_available_methods",
-            "List methods registered for a domain",
-        ),
-        ("project_run_method", "Append and run a workflow method"),
-        ("project_copy", "Copy a project"),
-        ("project_close", "Close a project handle"),
-    ]
-    .iter()
-    .map(|(name, description)| {
-        let mut properties = base.clone();
-        let mut required = required.to_vec();
-        match *name {
-            "project_validate_workflow" => {
-                properties = json!({"workflow": workflow});
-                required = vec!["workflow"];
-            }
-            "project_create" => {
-                properties["domain"] = project.clone();
-                required.push("domain");
-            }
-            "project_set_metadata" => {
-                properties["metadata"] = metadata.clone();
-                required.push("metadata");
-            }
-            "project_set_workflow" => {
-                properties["workflow"] = workflow.clone();
-                required.push("workflow");
-            }
-            "get_available_methods" => {
-                properties = json!({"domain": project});
-                required = vec!["domain"];
-            }
-            "project_run_method" => {
-                properties["method"] = project.clone();
-                properties["parameters"] = json!({"type": "object"});
-                required.push("method");
-            }
-            "project_copy" => {
-                properties["destination_database_path"] = project.clone();
-                properties["destination_project_id"] = project.clone();
-                required.extend(["destination_database_path", "destination_project_id"]);
-            }
-            _ => {}
-        }
-        json!({
-            "name": name,
-            "description": description,
-            "inputSchema": {"type": "object", "properties": properties, "required": required}
-        })
-    })
-    .collect()
+    serde_json::from_str(generated_metadata::TOOLS).expect("generated MCP metadata is valid JSON")
 }
 
 pub fn handle(request: &Value, _registry: &MethodRegistry) -> Value {
@@ -204,24 +134,24 @@ pub fn handle(request: &Value, _registry: &MethodRegistry) -> Value {
         .unwrap_or_default();
     let args = params.get("arguments").unwrap_or(&Value::Null);
     let result = match name {
-        "project_create" => api::create(args),
-        "project_describe" => api::describe(args),
-        "project_validate" => api::validate(args),
-        "project_get_domain" => api::get_domain(args),
-        "project_get_metadata" => api::get_metadata(args),
-        "project_set_metadata" => api::set_metadata(args),
-        "project_get_workflow" => api::get_workflow(args),
-        "project_set_workflow" => api::set_workflow(args, _registry),
-        "project_validate_workflow" => api::validate_workflow(args, _registry),
-        "project_run_workflow" => api::run_workflow(args, _registry),
-        "project_get_cache" => api::get_cache(args),
-        "project_get_cache_size" => api::get_cache_size(args),
-        "project_delete_cache" => api::delete_cache(args),
-        "project_get_audit_trail" => api::get_audit_trail(args),
+        "create" => api::create(args),
+        "describe" => api::describe(args),
+        "validate" => api::validate(args),
+        "get_domain" => api::get_domain(args),
+        "get_metadata" => api::get_metadata(args),
+        "set_metadata" => api::set_metadata(args),
+        "get_workflow" => api::get_workflow(args),
+        "set_workflow" => api::set_workflow(args, _registry),
+        "validate_workflow" => api::validate_workflow(args, _registry),
+        "run_workflow" => api::run_workflow(args, _registry),
+        "get_cache" => api::get_cache(args),
+        "get_cache_size" => api::get_cache_size(args),
+        "delete_cache" => api::delete_cache(args),
+        "get_audit_trail" => api::get_audit_trail(args),
         "get_available_methods" => api::get_available_methods(args, _registry),
-        "project_run_method" => api::run_method(args, _registry),
-        "project_copy" => api::copy(args),
-        "project_close" => api::close(args),
+        "run_method" => api::run_method(args, _registry),
+        "copy" => api::copy(args),
+        "close" => api::close(args),
         _ => {
             return json!({"jsonrpc":"2.0","id":id,"error":{"code":-32602,"message":"Unknown MCP tool"}})
         }

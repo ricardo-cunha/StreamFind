@@ -1,0 +1,141 @@
+@prefix sf: <https://streamfind.dev/vocabulary#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+sf:Operation
+	a rdfs:Class ;
+	rdfs:subClassOf skos:Concept ;
+	skos:prefLabel "Operation" ;
+	skos:definition "A generic public capability exposed by streamfind." .
+
+sf:Method
+	a rdfs:Class ;
+	rdfs:subClassOf skos:Concept ;
+	skos:prefLabel "Method" ;
+	skos:definition "A workflow-executable capability available under a domain." .
+
+sf:Domain
+	a rdfs:Class ;
+	rdfs:subClassOf skos:Concept ;
+	skos:prefLabel "Domain" ;
+	skos:definition "A stable namespace that groups compatible streamfind methods." .
+
+sf:Project
+	a rdfs:Class ;
+	rdfs:subClassOf skos:Concept ;
+	skos:prefLabel "Project" ;
+	skos:definition "A persisted streamfind workspace with an immutable domain." .
+
+sf:Workflow
+	a rdfs:Class ;
+	rdfs:subClassOf skos:Concept ;
+	skos:prefLabel "Workflow" ;
+	skos:definition "An ordered, versioned set of methods executed for a project." .
+
+sf:Parameter
+	a rdfs:Class ;
+	rdfs:subClassOf skos:Concept ;
+	skos:prefLabel "Parameter" ;
+	skos:definition "A named input accepted by an operation or workflow method." .
+
+sf:Fixture
+	a rdfs:Class ;
+	rdfs:subClassOf skos:Concept ;
+	skos:prefLabel "Fixture" ;
+	skos:definition "A backend-neutral example used to verify a semantic contract." .
+
+sf:Result
+	a rdfs:Class ;
+	rdfs:subClassOf skos:Concept ;
+	skos:prefLabel "Result" ;
+	skos:definition "The structured value returned by a streamfind capability." .
+
+sf:Error
+	a rdfs:Class ;
+	rdfs:subClassOf skos:Concept ;
+	skos:prefLabel "Error" ;
+	skos:definition "A stable failure category returned by a streamfind capability." .
+
+sf:operationId
+	a rdf:Property ;
+	rdfs:domain sf:Operation ;
+	rdfs:range rdfs:Literal ;
+	skos:prefLabel "operation identifier" ;
+	skos:definition "Stable identifier of a generic operation." .
+
+sf:methodId
+	a rdf:Property ;
+	rdfs:domain sf:Method ;
+	rdfs:range rdfs:Literal ;
+	skos:prefLabel "method identifier" ;
+	skos:definition "Stable identifier of a workflow method." .
+
+sf:toolName
+	a rdf:Property ;
+	rdfs:range rdfs:Literal ;
+	skos:prefLabel "tool name" ;
+	skos:definition "Name used to expose a capability through a tool interface." .
+
+sf:availableInDomain
+	a rdf:Property ;
+	rdfs:range sf:Domain ;
+	skos:prefLabel "available in domain" ;
+	skos:definition "Associates a capability with a compatible domain." .
+
+sf:hasParameter
+	a rdf:Property ;
+	rdfs:range sf:Parameter ;
+	skos:prefLabel "has parameter" ;
+	skos:definition "Associates a capability with an accepted parameter." .
+
+sf:required
+	a rdf:Property ;
+	rdfs:range rdfs:Literal ;
+	skos:prefLabel "required" ;
+	skos:definition "Indicates whether a parameter must be supplied." .
+
+sf:type
+	a rdf:Property ;
+	rdfs:range rdfs:Literal ;
+	skos:prefLabel "type" ;
+	skos:definition "Backend-neutral input type of a parameter." .
+
+sf:mapsTo
+	a rdf:Property ;
+	rdfs:range sf:Operation ;
+	skos:prefLabel "maps to" ;
+	skos:definition "Associates an interface capability with its canonical operation." .
+
+sf:fixturePath
+	a rdf:Property ;
+	rdfs:domain sf:Fixture ;
+	rdfs:range rdfs:Literal ;
+	skos:prefLabel "fixture path" ;
+	skos:definition "Repository path of the fixture data." .
+
+sf:hasWorkflow
+	a rdf:Property ;
+	rdfs:domain sf:Project ;
+	rdfs:range sf:Workflow ;
+	skos:prefLabel "has workflow" ;
+	skos:definition "Associates a project with its persisted workflow." .
+
+sf:returns
+	a rdf:Property ;
+	rdfs:range sf:Result ;
+	skos:prefLabel "returns" ;
+	skos:definition "Associates a capability with its result semantics." .
+
+sf:hasError
+	a rdf:Property ;
+	rdfs:range sf:Error ;
+	skos:prefLabel "has error" ;
+	skos:definition "Associates a capability with a stable error category." .
+
+sf:errorCode
+	a rdf:Property ;
+	rdfs:domain sf:Error ;
+	rdfs:range rdfs:Literal ;
+	skos:prefLabel "error code" ;
+	skos:definition "Stable machine-readable error identifier." .

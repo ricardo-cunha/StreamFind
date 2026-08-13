@@ -23,6 +23,13 @@ add_executable(streamfind_project_tests unit/project_smoke.cpp)
 target_link_libraries(streamfind_project_tests PRIVATE streamfind::core)
 add_test(NAME streamfind_project_tests COMMAND streamfind_project_tests)
 
+add_executable(streamfind_mcp_tests unit/mcp_smoke.cpp)
+target_link_libraries(streamfind_mcp_tests PRIVATE streamfind::core)
+target_compile_definitions(streamfind_mcp_tests PRIVATE
+    STREAMFIND_MCP_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/../../semantic/fixtures/mcp_catalogue.json"
+)
+add_test(NAME streamfind_mcp_tests COMMAND streamfind_mcp_tests)
+
 add_executable(streamfind_conformance_tests unit/conformance.cpp)
 target_link_libraries(streamfind_conformance_tests PRIVATE streamfind::core)
 target_compile_definitions(streamfind_conformance_tests PRIVATE
