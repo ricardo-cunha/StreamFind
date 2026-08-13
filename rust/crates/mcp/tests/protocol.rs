@@ -30,3 +30,11 @@ fn supports_initialize_and_tool_listing() {
         .iter()
         .any(|value| value == "metadata"));
 }
+
+#[test]
+fn session_hides_domain_methods_until_connected() {
+    let registry = MethodRegistry::default();
+    let mut session = streamfind_rust_mcp::Session::new(&registry);
+    let tools = session.handle(&json!({"id": 1, "method": "tools/list"}));
+    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 19);
+}

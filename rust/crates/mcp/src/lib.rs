@@ -26,29 +26,31 @@ impl<'a> Session<'a> {
             .unwrap_or_default();
         if method == "tools/list" {
             let mut catalogue = tools().as_array().cloned().unwrap_or_default();
-            for definition in self.registry.list(&self.domain) {
-                let parameters = definition["parameters"]
-                    .as_array()
-                    .cloned()
-                    .unwrap_or_default();
-                let properties =
-                    parameters
-                        .iter()
-                        .fold(serde_json::Map::new(), |mut properties, parameter| {
+            if !self.domain.is_empty() {
+                for definition in self.registry.list(&self.domain) {
+                    let parameters = definition["parameters"]
+                        .as_array()
+                        .cloned()
+                        .unwrap_or_default();
+                    let properties = parameters.iter().fold(
+                        serde_json::Map::new(),
+                        |mut properties, parameter| {
                             if let Some(name) = parameter["name"].as_str() {
                                 properties.insert(name.into(), parameter["type"].clone());
                             }
                             properties
-                        });
-                let required = parameters
-                    .iter()
-                    .filter_map(|p| {
-                        (p["required"].as_bool() == Some(true))
-                            .then(|| p["name"].as_str())
-                            .flatten()
-                    })
-                    .collect::<Vec<_>>();
-                catalogue.push(json!({"name": definition["id"], "description": definition["description"], "inputSchema": {"type": "object", "properties": properties, "required": required}}));
+                        },
+                    );
+                    let required = parameters
+                        .iter()
+                        .filter_map(|p| {
+                            (p["required"].as_bool() == Some(true))
+                                .then(|| p["name"].as_str())
+                                .flatten()
+                        })
+                        .collect::<Vec<_>>();
+                    catalogue.push(json!({"name": definition["id"], "description": definition["description"], "inputSchema": {"type": "object", "properties": properties, "required": required}}));
+                }
             }
             return json!({"jsonrpc":"2.0","id":id,"result":{"tools":catalogue}});
         }
@@ -90,6 +92,14 @@ impl<'a> Session<'a> {
                     Ok(value) => response(id, value),
                     Err(error) => error_response(id, error.to_string()),
                 };
+            }
+            if name == "project_close" {
+                let result = handle(request, self.registry);
+                if result["result"]["isError"] != true {
+                    self.project = None;
+                    self.domain.clear();
+                }
+                return result;
             }
         }
         handle(request, self.registry)

@@ -68,6 +68,7 @@ Json Session::handle(const Json &request) {
     if (method == "tools/list") {
         auto catalogue = detail::tools();
         for (const auto &definition : registry_.list(domain_)) {
+            if (domain_.empty()) break;
             Json properties = Json::object();
             std::vector<std::string> required;
             for (const auto &parameter : definition.parameters.definitions) {
@@ -81,14 +82,19 @@ Json Session::handle(const Json &request) {
     if (method != "tools/call") return {{"jsonrpc", "2.0"}, {"id", id}, {"error", {{"code", -32601}, {"message", "Unsupported MCP method"}}}};
     const auto name = request.at("params").value("name", "");
     if (name == "project_connect") {
-        const auto arguments = request.at("params").value("arguments", Json::object());
-        domain_ = api::run(api::ProjectCommand::get_domain, arguments, registry_).get<std::string>();
-        project_ = arguments;
-        return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"content", Json::array({{{"type", "text"}, {"text", Json{{{"domain", domain_}}}.dump()}}})}}}};
+        try {
+            const auto arguments = request.at("params").value("arguments", Json::object());
+            const auto domain = api::run(api::ProjectCommand::get_domain, arguments, registry_).get<std::string>();
+            domain_ = domain;
+            project_ = arguments;
+            return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"content", Json::array({{{"type", "text"}, {"text", Json{{{"domain", domain_}}}.dump()}}})}}}};
+        } catch (const Error &error) {
+            return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"isError", true}, {"content", Json::array({{{"type", "text"}, {"text", error.what()}}})}}}};
+        }
     }
     const auto command = detail::command(name);
     const auto dynamic = registry_.find(name);
-    if (!command && dynamic) {
+    if (!command && dynamic && !domain_.empty() && dynamic->definition().domain == domain_) {
         if (project_.empty()) return {{"jsonrpc", "2.0"}, {"id", id}, {"error", {{"code", -32000}, {"message", "No project connected"}}}};
         Json arguments = project_;
         arguments["method"] = name;
@@ -103,6 +109,10 @@ Json Session::handle(const Json &request) {
     if (!command) return {{"jsonrpc", "2.0"}, {"id", id}, {"error", {{"code", -32602}, {"message", "Unknown MCP tool"}}}};
     try {
         const Json result = api::run(api::command_from_string(command), request.at("params").value("arguments", Json::object()), registry_);
+        if (name == "project_close") {
+            project_ = Json::object();
+            domain_.clear();
+        }
         return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"content", Json::array({{{"type", "text"}, {"text", result.dump()}}})}}}};
     } catch (const Error &error) {
         return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"isError", true}, {"content", Json::array({{{"type", "text"}, {"text", error.what()}}})}}}};
