@@ -88,6 +88,8 @@ A public capability has one canonical semantic identifier. Language bindings and
 
 FastAPI routes, CLI commands, MCP tools, React actions, R wrappers, and Cogniflow operations are therefore **interface mappings to canonical StreamFind operations or methods**, not independent domain definitions.
 
+For MCP specifically, the semantic catalogue is also the canonical source for shared tool documentation. Tool labels, descriptions, parameter metadata, result semantics, and shared error descriptions are authored once in `semantic/` and projected into or validated against both the C++ and Rust MCP tool catalogues. Backend MCP code owns dispatch and execution only; it must not maintain a second hand-written documentation catalogue for the same capability.
+
 ### C++ ecosystem
 
 ```text
@@ -125,7 +127,7 @@ streamfind-core (C++).
 | C++ backend | **Complete foundation** | Standalone C++20 `core/` with CMake, public `Project` and JSON APIs, DuckDB persistence, workflow, cache, audit, cancellation, progress, MCP support, install rules, and native tests. | Extend by coherent capability slices; do not recreate the generic project kernel. |
 | Rust backend | **Complete foundation** | `rust/` is a Cargo workspace with `core`, `cli`, `external`, and `mcp` crates. Its README states that it is independent from C++. | Preserve independent implementation and modular-crate boundaries. |
 | Shared semantic contract | **Partial** | C++ and Rust already share `PROJECT`, `CACHE`, and `AUDIT_TRAIL` persistence; JSON/workflow/cache/audit/error/cancellation/progress conventions; and the `project_conformance.json` fixture exercised by both backends. | Promote the shared public model into a backend-neutral semantic catalogue and make it the documented source for verification, validation, usage, and conformance. |
-| C++/Rust MCP | **Partial** | C++ exposes MCP source and the Rust workspace has an MCP crate. | Map common tools to canonical ontology operations/methods and validate tool catalogues, arguments, results, errors, and fixtures against the same semantic declarations. |
+| C++/Rust MCP | **Partial** | C++ exposes MCP source and the Rust workspace has an MCP crate. | Map common tools to canonical ontology operations/methods; derive or validate shared tool documentation and parameter/result/error metadata from the semantic catalogue; validate tool behaviour with the same fixtures. |
 | R binding | **Complete relocation / Deferred alignment** | The complete R package, native sources, tests, vignettes, and package assets are under `bindings/r/`. | Keep it functional as-is. Do not refactor, redirect, or add transition helpers until the C++/Python and Rust domain implementations are complete. |
 | Cogniflow integration | **Complete relocation / Deferred alignment** | `integrations/cf-streamfind/` exists as the integration boundary. | Keep it at its present boundary until final alignment, after the C++/Python and Rust domain implementations are complete. |
 | Python distribution | **Next** | `python/` is currently a reserved placeholder. | Build one distributable C++-backed Python package, including CLI, FastAPI, and frontend integration. |
@@ -203,6 +205,7 @@ The top-level `server/` and `frontend/` placeholders are intentionally absent fr
 - Use TriG as the primary authoring format. Named graphs may separate concepts, generic operations, domain methods, fixtures, and mappings when this improves clarity.
 - Use SHACL only to validate semantic completeness and consistency, for example requiring each public `sf:Operation` or `sf:Method` to have a canonical identifier, label, definition, applicable domain/target, parameters where relevant, and result/error semantics.
 - Document every externally visible Project function, generic operation, domain Method, parameter, result/error contract, and shared transport mapping needed for verification or usage.
+- Own the shared MCP-facing documentation metadata for canonical capabilities: tool labels/descriptions, parameter documentation, result semantics, shared error descriptions, and stable MCP mappings where applicable. MCP backends may add implementation-specific runtime details only when those details are not part of the shared public contract.
 - Require new public capabilities to reference a canonical ontology declaration before they are considered complete.
 - Keep small fixtures directly in or alongside the semantic catalogue when practical. Reference larger analytical fixtures by repository path rather than embedding large datasets in RDF.
 - Keep the ontology declarative. Do not place executable business logic, backend-specific classes, HTTP handlers, UI state, or language-specific implementation code in `semantic/`.
@@ -215,6 +218,7 @@ The top-level `server/` and `frontend/` placeholders are intentionally absent fr
 - Provide the native API consumed by the Python private extension; it does not embed Python, FastAPI, React, Cogniflow, or R conversion code.
 - Map every externally visible generic operation and domain Method to the canonical semantic identifier declared in `semantic/`.
 - Run conformance tests against the shared semantic catalogue and fixtures for every supported shared capability.
+- The C++ MCP server must derive or validate shared tool names, descriptions, parameter metadata, result semantics, and error documentation from `semantic/`; C++ MCP code keeps only dispatch/execution logic and implementation-specific runtime handling.
 
 ### `rust/` — Rust
 
@@ -222,6 +226,7 @@ The top-level `server/` and `frontend/` placeholders are intentionally absent fr
 - Use Rust-owned APIs and dependencies. Rust may use appropriately isolated native libraries where needed, but it must not depend on `streamfind-core` or C++ project APIs.
 - Map every externally visible generic operation and shared domain Method to the same canonical semantic identifier used by C++.
 - Implement shared capabilities independently and prove compatibility by consuming the same semantic catalogue and fixtures.
+- The Rust MCP server must derive or validate shared tool names, descriptions, parameter metadata, result semantics, and error documentation from `semantic/`; Rust MCP code keeps only dispatch/execution logic and implementation-specific runtime handling.
 
 ### `python/` — consolidated C++ distribution
 
@@ -249,6 +254,8 @@ A new public capability is incomplete until the semantic catalogue contains enou
 - **validation** — required parameters, result/error semantics, and SHACL completeness where applicable;
 - **usage** — stable operation/method names and interface mappings;
 - **harmonisation testing** — one or more shared fixtures that can be consumed by C++ and Rust when the capability is common to both backends.
+
+For MCP mappings, this rule additionally means that shared tool descriptions and parameter/result/error documentation are maintained in the semantic catalogue, not duplicated separately in `core/tools/` and `rust/crates/mcp/`.
 
 ### Legacy-free development rule
 
@@ -312,11 +319,19 @@ The purpose of this phase is to convert the compatibility that already exists be
    - audit/cache/workflow harmonisation;
    - cancellation and progress semantics.
 
-9. Add common MCP mappings to the same ontology catalogue. The C++ and Rust MCP implementations must map shared tools to the same canonical operation/method identifiers and validate compatible argument/result/error behaviour using shared fixtures.
+9. Add common MCP mappings to the same ontology catalogue. Represent the common MCP tool name and its mapping to the canonical `sf:Operation` or `sf:Method`, while keeping MCP as a transport mapping rather than a second domain definition.
 
-10. Keep transport definitions subordinate to the canonical capability. A FastAPI endpoint such as `GET /projects/{id}/workflow` or an MCP tool such as `streamfind_get_workflow` maps to `sf:GetWorkflow`; it does not create a second domain contract.
+10. Update **both MCP servers** to use the semantic catalogue as the shared source for MCP-facing documentation and contract metadata:
 
-**Exit condition:** every currently shared public generic capability has one canonical semantic declaration, useful human-readable documentation, and at least one backend-neutral conformance fixture where behaviour must be harmonised. C++ and Rust tests both validate the relevant implementations against the same catalogue. New public shared capabilities cannot be considered complete without the same semantic declaration and conformance coverage.
+    - C++ `core/tools/` and Rust `rust/crates/mcp/` must derive or validate common MCP tool names, labels/descriptions, parameter names/types/required status, result semantics, and shared error descriptions from the same semantic declarations;
+    - the two MCP implementations must not maintain parallel hand-written descriptions for capabilities already documented in `semantic/`;
+    - backend-specific code continues to own tool dispatch, execution, transport handling, cancellation/progress integration, and backend-specific diagnostics;
+    - add conformance tests that compare each MCP server's advertised tool catalogue against the ontology and shared fixtures, including tool presence, canonical mapping, arguments, descriptions, result/error envelopes, and common examples;
+    - where practical, generate MCP tool metadata directly from the ontology; where runtime generation would add unnecessary complexity, generate it at build time or validate static metadata against the ontology. The semantic declaration remains authoritative in all cases.
+
+11. Keep transport definitions subordinate to the canonical capability. A FastAPI endpoint such as `GET /projects/{id}/workflow` or an MCP tool such as `streamfind_get_workflow` maps to `sf:GetWorkflow`; it does not create a second domain contract.
+
+**Exit condition:** every currently shared public generic capability has one canonical semantic declaration, useful human-readable documentation, and at least one backend-neutral conformance fixture where behaviour must be harmonised. C++ and Rust tests both validate the relevant implementations against the same catalogue. The C++ and Rust MCP servers expose common tool documentation and metadata derived from or validated against that catalogue, with no duplicate authoritative MCP documentation for shared capabilities. New public shared capabilities cannot be considered complete without the same semantic declaration and conformance coverage.
 
 ### 2. Build the consolidated Python distribution — **Next**
 
@@ -351,7 +366,8 @@ For every shared domain capability:
 3. implement and test C++ behaviour against the shared fixture;
 4. independently implement and test Rust behaviour against the same fixture;
 5. compare persisted data, workflow/audit/cache records, results, errors, cancellation, and progress semantics where relevant;
-6. expose the C++ slice through Python, CLI, server, and frontend where required, mapping each interface to the same canonical Method.
+6. expose the C++ slice through Python, CLI, server, and frontend where required, mapping each interface to the same canonical Method;
+7. when the Method is exposed through MCP, add its MCP mapping and documentation once to `semantic/`, then verify that both C++ and Rust MCP servers expose compatible tool metadata from the same declaration.
 
 Migrate NTA only after the first MassSpec slice is stable. Continue NTA in workflow dependency order: data/feature loading, processing, filtering, components, annotation, and external-tool adapters. Add Rust domain crates when a capability is large enough to justify one; do not put a parallel C++ wrapper behind a Rust crate.
 
@@ -363,7 +379,8 @@ Migrate NTA only after the first MassSpec slice is stable. Continue NTA in workf
 - Python: cross-platform wheel builds, native-runtime repair/audit, CLI/API/frontend package tests, and source-build documentation.
 - Rust: workspace CI, crate versioning, external-tool diagnostics, independent MCP testing, and future server/apps release boundaries.
 - Semantic/shared: ontology validation, fixture integrity, cross-backend conformance, schema upgrade, concurrent-writer/failure, performance, and version-compatibility test matrices.
-- Documentation: use ontology concepts, labels, definitions, operation/method metadata, and interface mappings to support generated or semi-generated API/method documentation where useful.
+- MCP: test that C++ and Rust publish compatible common tool catalogues and that shared MCP documentation remains traceable to the semantic declarations rather than backend-local copies.
+- Documentation: use ontology concepts, labels, definitions, operation/method metadata, and interface mappings to support generated or semi-generated API/method/MCP documentation where useful.
 
 **Exit condition:** the full C++/Python and Rust paths are supported independently, including the completed domain capabilities and release-quality semantic/conformance coverage.
 
@@ -393,6 +410,7 @@ A capability is complete only when:
 - neither implementation calls or wraps the other;
 - the C++ ecosystem exposes it through the public Python API when user-facing;
 - CLI, FastAPI, React, R, MCP, and Cogniflow support is added only where required and maps to the canonical capability rather than bypassing the public boundary;
+- MCP-exposed shared capabilities obtain their authoritative tool descriptions, parameter/result/error documentation, and canonical mappings from `semantic/`, with C++ and Rust MCP catalogues generated from or validated against the same declarations;
 - persistence compatibility, structured errors, cancellation, progress, and representative results are tested where applicable;
 - packaging and documentation are updated.
 
