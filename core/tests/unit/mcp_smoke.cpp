@@ -5,6 +5,7 @@
 #include <iostream>
 
 #include "streamfind/mcp.hpp"
+#include "streamfind/mass_spec/register.hpp"
 
 #ifndef STREAMFIND_MCP_FIXTURE
 #error STREAMFIND_MCP_FIXTURE is required
@@ -32,7 +33,10 @@ int main() {
     const auto path = std::filesystem::temp_directory_path() / "streamfind-mcp-lifecycle.duckdb";
     std::error_code error;
     std::filesystem::remove(path, error);
-    streamfind::mcp::Session session;
+    streamfind::MethodRegistry registry;
+    streamfind::OperationRegistry operations;
+    streamfind::mass_spec::register_operations(operations);
+    streamfind::mcp::Session session(registry, operations);
     const auto create = session.handle({{"id", 2}, {"method", "tools/call"}, {"params", {
         {"name", "create"}, {"arguments", {{"database_path", path.string()}, {"project_id", "mcp"}, {"domain", "mass_spec"}}}
     }}});
@@ -47,18 +51,26 @@ int main() {
         std::cerr << "connect failed\n";
         return 1;
     }
-    if (session.handle({{"id", 4}, {"method", "tools/list"}}).at("result").at("tools").size() != fixture.at("generic_tools").size()) {
+    if (session.handle({{"id", 4}, {"method", "tools/list"}}).at("result").at("tools").size() != fixture.at("generic_tools").size() + 3) {
         std::cerr << "connected tools mismatch\n";
         return 1;
     }
-    const auto close = session.handle({{"id", 5}, {"method", "tools/call"}, {"params", {
+    const auto info = session.handle({{"id", 5}, {"method", "tools/call"}, {"params", {
+        {"name", "mass_spec.get_analyses_info"}, {"arguments", streamfind::Json::object()}
+    }}});
+    if (info.at("result").value("isError", false) ||
+        streamfind::Json::parse(info.at("result").at("content").at(0).at("text").get<std::string>()).size() != 0) {
+        std::cerr << "mass_spec.get_analyses_info failed\n";
+        return 1;
+    }
+    const auto close = session.handle({{"id", 6}, {"method", "tools/call"}, {"params", {
         {"name", "close"}, {"arguments", {{"database_path", path.string()}, {"project_id", "mcp"}}}
     }}});
     if (close.at("result").value("isError", false)) {
         std::cerr << "close failed\n";
         return 1;
     }
-    if (session.handle({{"id", 6}, {"method", "tools/list"}}).at("result").at("tools").size() != fixture.at("generic_tools").size()) {
+    if (session.handle({{"id", 7}, {"method", "tools/list"}}).at("result").at("tools").size() != fixture.at("generic_tools").size()) {
         std::cerr << "closed tools mismatch\n";
         return 1;
     }

@@ -2,7 +2,6 @@
 @prefix sf: <https://streamfind.dev/vocabulary#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
-{
 	sfcore:raman
 		a sf:Domain ;
 		skos:prefLabel "raman" ;
@@ -26,4 +25,6 @@
 		skos:definition "Remove Raman analysis files from a project." ;
 		sf:toolName "remove_analyses" ;
 		sf:hasParameter sfcore:analysisNames .
-}
+
+	sfcore:ramanAddAnalyses sf:returns sfcore:success .
+	sfcore:ramanRemoveAnalyses sf:returns sfcore:success .

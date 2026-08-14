@@ -1,0 +1,45 @@
+@prefix sfcore: <https://streamfind.dev/catalogue/core#> .
+@prefix sf: <https://streamfind.dev/vocabulary#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+sfcore:massSpecAddAnalysesResult
+    a sf:Result ;
+    skos:prefLabel "Added mass spectrometry analyses" ;
+    skos:definition "Array of analysis records persisted by add_analyses." ;
+    sf:resultType "array" ;
+    sf:items sfcore:massSpecAnalysisRecord .
+
+sfcore:massSpecRemoveAnalysesResult
+    a sf:Result ;
+    skos:prefLabel "Removed mass spectrometry analyses" ;
+    skos:definition "Array of analysis names removed from the project." ;
+    sf:resultType "array" ;
+    sf:items sfcore:analysisNameResult .
+
+sfcore:massSpecGetAnalysesInfoResult
+    a sf:Result ;
+    skos:prefLabel "Mass spectrometry analysis information" ;
+    skos:definition "Array of persisted mass spectrometry analysis metadata records." ;
+    sf:resultType "array" ;
+    sf:items sfcore:massSpecAnalysisInfoRecord .
+
+sfcore:massSpecAnalysisRecord
+    a sf:Result ;
+    skos:prefLabel "Mass spectrometry analysis record" ;
+    skos:definition "Identifier and source information returned after adding an analysis." ;
+    sf:resultType "object" ;
+    sf:hasResultProperty sfcore:analysisNameColumn, sfcore:filePathColumn, sfcore:replicateNameColumn, sfcore:blankNameColumn .
+
+sfcore:massSpecAnalysisInfoRecord
+    a sf:Result ;
+    skos:prefLabel "Mass spectrometry analysis information record" ;
+    skos:definition "Persisted analysis summary returned by get_analyses_info." ;
+    sf:resultType "object" ;
+    sf:hasResultProperty sfcore:analysisNameColumn, sfcore:replicateNameColumn, sfcore:blankNameColumn, sfcore:filePathColumn, sfcore:formatColumn, sfcore:numberSpectraColumn, sfcore:numberChromatogramsColumn .
+
+sfcore:analysisNameResult
+    a sf:Column ;
+    skos:prefLabel "Analysis name result" ;
+    skos:definition "Analysis name returned by a MassSpec operation." ;
+    sf:columnName "analysis" ;
+    sf:type "string" .

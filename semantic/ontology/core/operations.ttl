@@ -1,0 +1,254 @@
+@prefix sfcore: <https://streamfind.dev/catalogue/core#> .
+@prefix sf: <https://streamfind.dev/vocabulary#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+    sfcore:streamfind
+        a sf:Domain ;
+        skos:inScheme sfcore:scheme ;
+        skos:prefLabel "streamfind" ;
+        skos:definition "Generic streamfind project contract." .
+
+    sfcore:create
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "create" ;
+        skos:prefLabel "Create a project" ;
+        skos:definition "Create a persisted project with an immutable domain." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "create" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId, sfcore:domain ;
+        sf:returns sfcore:projectDescriptorResult ;
+        sf:writes sfcore:projectTable, sfcore:cacheTable, sfcore:auditTrailTable ;
+        sf:mutatesProject true .
+
+    sfcore:describe
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "describe" ;
+        skos:prefLabel "Describe a project" ;
+        skos:definition "Read a project's identity and persisted metadata." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "describe" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId ;
+        sf:returns sfcore:projectDescriptorResult ;
+        sf:reads sfcore:projectTable, sfcore:cacheTable ;
+        sf:mutatesProject false .
+
+    sfcore:validate
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "validate" ;
+        skos:prefLabel "Validate a project" ;
+        skos:definition "Validate a project's schema and persisted state." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "validate" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId ;
+        sf:returns sfcore:validProjectResult ;
+        sf:reads sfcore:projectTable, sfcore:cacheTable, sfcore:auditTrailTable ;
+        sf:mutatesProject false .
+
+    sfcore:getDomain
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "get_domain" ;
+        skos:prefLabel "Read the project domain" ;
+        skos:definition "Read the immutable domain assigned to a project." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "get_domain" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId ;
+        sf:returns sfcore:domainResult ;
+        sf:reads sfcore:projectTable ;
+        sf:mutatesProject false .
+
+    sfcore:getMetadata
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "get_metadata" ;
+        skos:prefLabel "Read project metadata" ;
+        skos:definition "Return the metadata stored for a project." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "get_metadata" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId ;
+        sf:returns sfcore:metadataResult ;
+        sf:reads sfcore:projectTable ;
+        sf:mutatesProject false .
+
+    sfcore:setMetadata
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "set_metadata" ;
+        skos:prefLabel "Set project metadata" ;
+        skos:definition "Replace the metadata stored for a project." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "set_metadata" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId, sfcore:metadata ;
+        sf:returns sfcore:metadataResult ;
+        sf:writes sfcore:projectTable, sfcore:auditTrailTable ;
+        sf:mutatesProject true .
+
+    sfcore:getWorkflow
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "get_workflow" ;
+        skos:prefLabel "Read the project workflow" ;
+        skos:definition "Return the persisted workflow for a project." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "get_workflow" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId ;
+        sf:returns sfcore:workflowResult ;
+        sf:reads sfcore:projectTable ;
+        sf:mutatesProject false .
+
+    sfcore:setWorkflow
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "set_workflow" ;
+        skos:prefLabel "Set the project workflow" ;
+        skos:definition "Validate and persist a project's workflow." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "set_workflow" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId, sfcore:workflow ;
+        sf:returns sfcore:workflowResult ;
+        sf:writes sfcore:projectTable, sfcore:auditTrailTable ;
+        sf:mutatesProject true .
+
+    sfcore:validateWorkflow
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "validate_workflow" ;
+        skos:prefLabel "Validate a workflow" ;
+        skos:definition "Validate workflow methods, ordering, domains, and parameters." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "validate_workflow" ;
+        sf:hasParameter sfcore:workflow ;
+        sf:returns sfcore:workflowValidationResult ;
+        sf:mutatesProject false .
+
+    sfcore:runWorkflow
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "run_workflow" ;
+        skos:prefLabel "Run the project workflow" ;
+        skos:definition "Execute the persisted workflow for a project." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "run_workflow" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId ;
+        sf:returns sfcore:workflowExecutionResult ;
+        sf:reads sfcore:projectTable, sfcore:cacheTable ;
+        sf:writes sfcore:projectTable, sfcore:cacheTable, sfcore:auditTrailTable ;
+        sf:mutatesProject true .
+
+    sfcore:getCache
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "get_cache" ;
+        skos:prefLabel "Read project cache" ;
+        skos:definition "Return cache entries stored for a project." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "get_cache" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId ;
+        sf:returns sfcore:cacheEntriesResult ;
+        sf:reads sfcore:cacheTable ;
+        sf:mutatesProject false .
+
+    sfcore:getCacheSize
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "get_cache_size" ;
+        skos:prefLabel "Read project cache size" ;
+        skos:definition "Return the number of cache entries stored for a project." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "get_cache_size" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId ;
+        sf:returns sfcore:cacheSizeResult ;
+        sf:reads sfcore:cacheTable ;
+        sf:mutatesProject false .
+
+    sfcore:deleteCache
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "delete_cache" ;
+        skos:prefLabel "Delete project cache" ;
+        skos:definition "Delete all cache entries stored for a project." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "delete_cache" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId ;
+        sf:returns sfcore:success ;
+        sf:writes sfcore:cacheTable, sfcore:auditTrailTable ;
+        sf:mutatesProject true .
+
+    sfcore:getAuditTrail
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "get_audit_trail" ;
+        skos:prefLabel "Read project audit events" ;
+        skos:definition "Return audit events recorded for a project." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "get_audit_trail" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId ;
+        sf:returns sfcore:auditEntriesResult ;
+        sf:reads sfcore:auditTrailTable ;
+        sf:mutatesProject false .
+
+    sfcore:getAvailableMethods
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "get_available_methods" ;
+        skos:prefLabel "List methods registered for a domain" ;
+        skos:definition "Return workflow methods registered for a domain." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "get_available_methods" ;
+        sf:hasParameter sfcore:domain ;
+        sf:returns sfcore:methodsResult ;
+        sf:mutatesProject false .
+
+    sfcore:runMethod
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "run_method" ;
+        skos:prefLabel "Append and run a workflow method" ;
+        skos:definition "Append a method to a project's workflow, validate it, and execute it." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "run_method" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId, sfcore:method, sfcore:parameters ;
+        sf:returns sfcore:workflowExecutionResult ;
+        sf:reads sfcore:projectTable ;
+        sf:writes sfcore:projectTable, sfcore:auditTrailTable ;
+        sf:mutatesProject true .
+
+    sfcore:copy
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "copy" ;
+        skos:prefLabel "Copy a project" ;
+        skos:definition "Copy a project to another database and project identifier." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "copy" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId, sfcore:destinationDatabasePath, sfcore:destinationProjectId ;
+        sf:returns sfcore:projectDescriptorResult ;
+        sf:writes sfcore:projectTable, sfcore:cacheTable, sfcore:auditTrailTable ;
+        sf:mutatesProject true .
+
+    sfcore:close
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "close" ;
+        skos:prefLabel "Close a project handle" ;
+        skos:definition "Close the project handle used by an operation." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "close" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId ;
+        sf:returns sfcore:success ;
+        sf:mutatesProject true .
+
+    sfcore:connect
+        a sf:Operation ;
+        skos:inScheme sfcore:scheme ;
+        sf:operationId "connect" ;
+        skos:prefLabel "Connect an MCP session to a project" ;
+        skos:definition "Open a project and bind its immutable domain to an MCP session." ;
+        sf:availableInDomain sfcore:streamfind ;
+        sf:toolName "connect" ;
+        sf:hasParameter sfcore:databasePath, sfcore:projectId ;
+        sf:returns sfcore:success ;
+        sf:mutatesProject false .

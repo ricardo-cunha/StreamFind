@@ -14,7 +14,7 @@ Validation uses the repository-local `.venv` with `rdflib` and `pyshacl`:
 ```
 
 Regenerate the semantic projection and embedded MCP metadata after changing
-`streamfind.trig`:
+`ontology/`:
 
 ```powershell
 & .\.venv\Scripts\python.exe .\semantic\generate_projection.py
@@ -27,9 +27,9 @@ not read `semantic/` at runtime.
 Initial work:
 
 - Define the vocabulary in `vocabulary.ttl`.
-- Declare shared operations and methods in `streamfind.trig`.
-- Declare domain identities and later methods in `domains/*.trig`.
+- Declare shared operations, parameters, results, tables, and errors in `ontology/core/*.ttl`.
+- Declare domain identities and capabilities in `ontology/domains/<domain>/*.ttl`.
 - Enforce mandatory SKOS labels and definitions with the basic shapes in
-  `shapes.trig`.
+  `ontology/shapes.ttl`.
 - Keep shared JSON fixtures under `fixtures/` and reference existing fixtures
   before moving them.

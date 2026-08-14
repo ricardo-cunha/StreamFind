@@ -20,6 +20,14 @@ inline constexpr char tools[] = R"JSON(
         "database_path",
         "project_id"
       ]
+    },
+    "outputSchema": {
+      "type": "object"
+    },
+    "effects": {
+      "mutates_project": true,
+      "reads": [],
+      "writes": []
     }
   },
   {
@@ -39,6 +47,14 @@ inline constexpr char tools[] = R"JSON(
         "database_path",
         "project_id"
       ]
+    },
+    "outputSchema": {
+      "type": "object"
+    },
+    "effects": {
+      "mutates_project": false,
+      "reads": [],
+      "writes": []
     }
   },
   {
@@ -66,6 +82,50 @@ inline constexpr char tools[] = R"JSON(
         "destination_database_path",
         "destination_project_id"
       ]
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "database_path": {
+          "type": "string"
+        },
+        "domain": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "schema_version": {
+          "type": "integer"
+        },
+        "framework_version": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "workflow": {
+          "type": "object"
+        },
+        "tables": {
+          "type": "array"
+        },
+        "cache_size": {
+          "type": "integer"
+        }
+      }
+    },
+    "effects": {
+      "mutates_project": true,
+      "reads": [],
+      "writes": [
+        "PROJECT",
+        "CACHE",
+        "AUDIT_TRAIL"
+      ]
     }
   },
   {
@@ -89,6 +149,50 @@ inline constexpr char tools[] = R"JSON(
         "project_id",
         "domain"
       ]
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "database_path": {
+          "type": "string"
+        },
+        "domain": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "schema_version": {
+          "type": "integer"
+        },
+        "framework_version": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "workflow": {
+          "type": "object"
+        },
+        "tables": {
+          "type": "array"
+        },
+        "cache_size": {
+          "type": "integer"
+        }
+      }
+    },
+    "effects": {
+      "mutates_project": true,
+      "reads": [],
+      "writes": [
+        "PROJECT",
+        "CACHE",
+        "AUDIT_TRAIL"
+      ]
     }
   },
   {
@@ -107,6 +211,17 @@ inline constexpr char tools[] = R"JSON(
       "required": [
         "database_path",
         "project_id"
+      ]
+    },
+    "outputSchema": {
+      "type": "object"
+    },
+    "effects": {
+      "mutates_project": true,
+      "reads": [],
+      "writes": [
+        "CACHE",
+        "AUDIT_TRAIL"
       ]
     }
   },
@@ -127,6 +242,49 @@ inline constexpr char tools[] = R"JSON(
         "database_path",
         "project_id"
       ]
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "database_path": {
+          "type": "string"
+        },
+        "domain": {
+          "type": "string"
+        },
+        "metadata": {
+          "type": "object"
+        },
+        "schema_version": {
+          "type": "integer"
+        },
+        "framework_version": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string"
+        },
+        "workflow": {
+          "type": "object"
+        },
+        "tables": {
+          "type": "array"
+        },
+        "cache_size": {
+          "type": "integer"
+        }
+      }
+    },
+    "effects": {
+      "mutates_project": false,
+      "reads": [
+        "PROJECT",
+        "CACHE"
+      ],
+      "writes": []
     }
   },
   {
@@ -146,6 +304,33 @@ inline constexpr char tools[] = R"JSON(
         "database_path",
         "project_id"
       ]
+    },
+    "outputSchema": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "operation_type": {
+            "type": "string"
+          },
+          "object_type": {
+            "type": "string"
+          },
+          "details": {
+            "type": "object"
+          },
+          "created_at": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "effects": {
+      "mutates_project": false,
+      "reads": [
+        "AUDIT_TRAIL"
+      ],
+      "writes": []
     }
   },
   {
@@ -161,6 +346,17 @@ inline constexpr char tools[] = R"JSON(
       "required": [
         "domain"
       ]
+    },
+    "outputSchema": {
+      "type": "array",
+      "items": {
+        "type": "object"
+      }
+    },
+    "effects": {
+      "mutates_project": false,
+      "reads": [],
+      "writes": []
     }
   },
   {
@@ -180,6 +376,36 @@ inline constexpr char tools[] = R"JSON(
         "database_path",
         "project_id"
       ]
+    },
+    "outputSchema": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "name": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "hash": {
+            "type": "string"
+          },
+          "created_at": {
+            "type": "string"
+          },
+          "size": {
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "effects": {
+      "mutates_project": false,
+      "reads": [
+        "CACHE"
+      ],
+      "writes": []
     }
   },
   {
@@ -199,6 +425,16 @@ inline constexpr char tools[] = R"JSON(
         "database_path",
         "project_id"
       ]
+    },
+    "outputSchema": {
+      "type": "integer"
+    },
+    "effects": {
+      "mutates_project": false,
+      "reads": [
+        "CACHE"
+      ],
+      "writes": []
     }
   },
   {
@@ -218,6 +454,16 @@ inline constexpr char tools[] = R"JSON(
         "database_path",
         "project_id"
       ]
+    },
+    "outputSchema": {
+      "type": "string"
+    },
+    "effects": {
+      "mutates_project": false,
+      "reads": [
+        "PROJECT"
+      ],
+      "writes": []
     }
   },
   {
@@ -237,6 +483,16 @@ inline constexpr char tools[] = R"JSON(
         "database_path",
         "project_id"
       ]
+    },
+    "outputSchema": {
+      "type": "object"
+    },
+    "effects": {
+      "mutates_project": false,
+      "reads": [
+        "PROJECT"
+      ],
+      "writes": []
     }
   },
   {
@@ -256,6 +512,16 @@ inline constexpr char tools[] = R"JSON(
         "database_path",
         "project_id"
       ]
+    },
+    "outputSchema": {
+      "type": "object"
+    },
+    "effects": {
+      "mutates_project": false,
+      "reads": [
+        "PROJECT"
+      ],
+      "writes": []
     }
   },
   {
@@ -282,6 +548,19 @@ inline constexpr char tools[] = R"JSON(
         "project_id",
         "method"
       ]
+    },
+    "outputSchema": {
+      "type": "object"
+    },
+    "effects": {
+      "mutates_project": true,
+      "reads": [
+        "PROJECT"
+      ],
+      "writes": [
+        "PROJECT",
+        "AUDIT_TRAIL"
+      ]
     }
   },
   {
@@ -300,6 +579,21 @@ inline constexpr char tools[] = R"JSON(
       "required": [
         "database_path",
         "project_id"
+      ]
+    },
+    "outputSchema": {
+      "type": "object"
+    },
+    "effects": {
+      "mutates_project": true,
+      "reads": [
+        "PROJECT",
+        "CACHE"
+      ],
+      "writes": [
+        "PROJECT",
+        "CACHE",
+        "AUDIT_TRAIL"
       ]
     }
   },
@@ -324,6 +618,17 @@ inline constexpr char tools[] = R"JSON(
         "project_id",
         "metadata"
       ]
+    },
+    "outputSchema": {
+      "type": "object"
+    },
+    "effects": {
+      "mutates_project": true,
+      "reads": [],
+      "writes": [
+        "PROJECT",
+        "AUDIT_TRAIL"
+      ]
     }
   },
   {
@@ -347,6 +652,17 @@ inline constexpr char tools[] = R"JSON(
         "project_id",
         "workflow"
       ]
+    },
+    "outputSchema": {
+      "type": "object"
+    },
+    "effects": {
+      "mutates_project": true,
+      "reads": [],
+      "writes": [
+        "PROJECT",
+        "AUDIT_TRAIL"
+      ]
     }
   },
   {
@@ -366,6 +682,23 @@ inline constexpr char tools[] = R"JSON(
         "database_path",
         "project_id"
       ]
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "valid": {
+          "type": "boolean"
+        }
+      }
+    },
+    "effects": {
+      "mutates_project": false,
+      "reads": [
+        "PROJECT",
+        "CACHE",
+        "AUDIT_TRAIL"
+      ],
+      "writes": []
     }
   },
   {
@@ -381,6 +714,22 @@ inline constexpr char tools[] = R"JSON(
       "required": [
         "workflow"
       ]
+    },
+    "outputSchema": {
+      "type": "object",
+      "properties": {
+        "valid": {
+          "type": "boolean"
+        },
+        "workflow": {
+          "type": "object"
+        }
+      }
+    },
+    "effects": {
+      "mutates_project": false,
+      "reads": [],
+      "writes": []
     }
   }
 ]

@@ -1,0 +1,100 @@
+@prefix sfcore: <https://streamfind.dev/catalogue/core#> .
+@prefix sf: <https://streamfind.dev/vocabulary#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+    sfcore:databasePath
+        a sf:Parameter ;
+        skos:inScheme sfcore:scheme ;
+        skos:prefLabel "Database path" ;
+        skos:definition "Filesystem path of the DuckDB project database." ;
+        sf:type "string" ;
+        sf:required true .
+
+    sfcore:projectId
+        a sf:Parameter ;
+        skos:inScheme sfcore:scheme ;
+        skos:prefLabel "Project identifier" ;
+        skos:definition "Logical project identifier within the database." ;
+        sf:type "string" ;
+        sf:required true .
+
+    sfcore:domain
+        a sf:Parameter ;
+        skos:inScheme sfcore:scheme ;
+        skos:prefLabel "Project domain" ;
+        skos:definition "Immutable domain assigned to a project." ;
+        sf:type "string" ;
+        sf:required true .
+
+    sfcore:metadata
+        a sf:Parameter ;
+        skos:inScheme sfcore:scheme ;
+        skos:prefLabel "Project metadata" ;
+        skos:definition "JSON object containing project-owned metadata." ;
+        sf:type "object" ;
+        sf:required true .
+
+    sfcore:workflow
+        a sf:Parameter ;
+        skos:inScheme sfcore:scheme ;
+        skos:prefLabel "Workflow" ;
+        skos:definition "Versioned ordered workflow definition." ;
+        sf:type "object" ;
+        sf:required true .
+
+    sfcore:method
+        a sf:Parameter ;
+        skos:inScheme sfcore:scheme ;
+        skos:prefLabel "Method identifier" ;
+        skos:definition "Stable identifier of a registered workflow method." ;
+        sf:type "string" ;
+        sf:required true .
+
+    sfcore:parameters
+        a sf:Parameter ;
+        skos:inScheme sfcore:scheme ;
+        skos:prefLabel "Method parameters" ;
+        skos:definition "JSON object containing method-specific parameter values." ;
+        sf:type "object" ;
+        sf:required false .
+
+    sfcore:destinationDatabasePath
+        a sf:Parameter ;
+        skos:inScheme sfcore:scheme ;
+        skos:prefLabel "Destination database path" ;
+        skos:definition "Filesystem path for the copied DuckDB project database." ;
+        sf:type "string" ;
+        sf:required true .
+
+    sfcore:destinationProjectId
+        a sf:Parameter ;
+        skos:inScheme sfcore:scheme ;
+        skos:prefLabel "Destination project identifier" ;
+        skos:definition "Logical identifier for the copied project." ;
+        sf:type "string" ;
+        sf:required true .
+
+    sfcore:analyses
+        a sf:Parameter ;
+        skos:inScheme sfcore:scheme ;
+        skos:prefLabel "Analyses" ;
+        skos:definition "Array of analysis file records. Each record contains a path and may contain replicate_name and blank_name." ;
+        sf:type "array" ;
+        sf:required true ;
+        sf:items sfcore:analysisFile .
+
+    sfcore:analysisFile
+        a sf:Parameter ;
+        skos:inScheme sfcore:scheme ;
+        skos:prefLabel "Analysis file" ;
+        skos:definition "One analysis file and optional replicate and blank labels." ;
+        sf:type "object" ;
+        sf:required true .
+
+    sfcore:analysisNames
+        a sf:Parameter ;
+        skos:inScheme sfcore:scheme ;
+        skos:prefLabel "Analysis names" ;
+        skos:definition "Array of analysis file names without filename extensions." ;
+        sf:type "array" ;
+        sf:required true .

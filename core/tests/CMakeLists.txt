@@ -24,7 +24,7 @@ target_link_libraries(streamfind_project_tests PRIVATE streamfind::core)
 add_test(NAME streamfind_project_tests COMMAND streamfind_project_tests)
 
 add_executable(streamfind_mcp_tests unit/mcp_smoke.cpp)
-target_link_libraries(streamfind_mcp_tests PRIVATE streamfind::core)
+target_link_libraries(streamfind_mcp_tests PRIVATE streamfind::core streamfind_mass_spec)
 target_compile_definitions(streamfind_mcp_tests PRIVATE
     STREAMFIND_MCP_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/../../tests/fixtures/mcp/generic_mcp_catalogue.json"
 )

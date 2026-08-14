@@ -18,7 +18,7 @@ The centre of the architecture is the **streamfind semantic catalogue**, not eit
 
 The semantic catalogue uses:
 
-- **TriG** as the primary authoring format;
+- **Turtle (`.ttl`)** as the primary authoring format;
 - **SKOS** for concepts, labels, definitions, and broader/narrower relationships;
 - a small **streamfind vocabulary** for domains, public operations, workflow methods, parameters, results, errors, fixture references, and interface mappings;
 - **SHACL** only for completeness and consistency checks;
@@ -27,8 +27,39 @@ The semantic catalogue uses:
 
 The ontology is declarative. It contains no executable analytical logic.
 
+### Semantic source structure
+
+The authoritative semantic source is split into readable Turtle files under
+`semantic/ontology/`:
+
 ```text
-                     semantic/*.trig
+semantic/ontology/
+├── vocabulary.ttl                 # streamfind vocabulary
+├── shapes.ttl                     # SHACL completeness constraints
+├── core/
+│   ├── scheme.ttl
+│   ├── parameters.ttl
+│   ├── operations.ttl
+│   ├── results.ttl
+│   ├── errors.ttl
+│   └── tables.ttl
+└── domains/
+    ├── mass_spec/
+    │   ├── domain.ttl
+    │   ├── operations.ttl
+    │   ├── results.ttl
+    │   └── tables.ttl
+    ├── raman/raman.ttl
+    └── sensors/sensors.ttl
+```
+
+All `.ttl` files are parsed recursively as Turtle. `semantic/generated/catalogue.json`
+is generated from these files and is not hand-authored. `a` is retained as the
+Turtle shorthand for `rdf:type`, and prefixed names are preferred over expanded
+IRIs.
+
+```text
+                     semantic/ontology/**/*.ttl
        concepts • domains • operations • methods • parameters
           results • errors • documentation • fixtures • mappings
                            │
@@ -71,7 +102,7 @@ Everything else is derived generically.
 ```text
 New method
    │
-   ├── semantic/domains/<domain>.trig
+   ├── semantic/ontology/domains/<domain>/*.ttl
    │     ID, label, definition, parameters, results, errors, MCP exposure
    │
    ├── C++ implementation + registry.register(method_id, executor)
@@ -149,25 +180,34 @@ For MCP, the semantic catalogue is the authoritative source for tool-facing labe
 | C++ backend | **Complete foundation** | Standalone C++20 `core/` with CMake, Project/JSON APIs, DuckDB persistence, workflow, cache, audit, cancellation, progress, MCP support, install rules, and tests. | Extend through domain modules; do not recreate the generic project kernel. |
 | Rust backend | **Complete foundation** | `rust/` Cargo workspace with `core`, `cli`, `external`, and `mcp` crates; independent from C++. | Preserve independent implementation and modular crates. |
 | Semantic catalogue | **Partial / baseline complete** | `semantic/` contains vocabulary/catalogue, SKOS metadata, SHACL, results/errors, and validation; shared semantic and MCP fixtures live under `tests/fixtures/`. | Simplify its consumption through one normalized semantic projection and extend it incrementally. |
-| C++/Rust MCP | **Partial** | Both stdio servers support initialization, tools listing/calling, connection lifecycle, generic operations, domain filtering, registered domain methods, and generated semantic metadata. | Remove method-specific MCP maintenance by making MCP entirely registry/catalogue driven. |
+| C++/Rust MCP | **Partial** | Both stdio servers support initialization, tools listing/calling, connection lifecycle, generic operations, domain filtering, registered domain methods, and generated semantic metadata. MCP tests now call `mass_spec.get_analyses_info` through both adapters and verify a JSON result. | Remove method-specific MCP maintenance by making MCP entirely registry/catalogue driven. |
 | Domain composition | **Partial** | Registry hooks and connected-project domain filtering exist. | Formalize one minimal DomainModule/registration contract and prove it with real domain modules only as capabilities are migrated. |
 | R binding | **Complete relocation / deferred alignment** | Complete R package is under `bindings/r/`. | Keep functional as-is until new backends/domain paths are mature. |
 | Cogniflow integration | **Complete relocation / deferred alignment** | Integration boundary exists under `integrations/cf-streamfind/`. | Align only after the public Python path is stable. |
 | Python distribution | **Future** | `bindings/python/` remains reserved. | Build after semantic/registry/MCP contracts are stable. |
-| Domain capabilities | **Partial** | MassSpec has a tested C++ direct-operation slice (`add_analyses`, `remove_analyses`, `get_analyses_info`) with Rust operation registration still pending real persistence. Raman and sensors remain composition scaffolding. | Complete one real cross-backend domain slice at a time. |
+| Domain capabilities | **Partial** | MassSpec has a tested C++ direct-operation slice (`add_analyses`, `remove_analyses`, `get_analyses_info`). Rust registers the same operations and exposes `get_analyses_info` through MCP, but its executor still returns an empty placeholder result pending real persistence. Raman and sensors remain composition scaffolding. | Complete one real cross-backend domain slice at a time. |
+
+### MCP result-info verification
+
+`mass_spec.get_analyses_info` is available through the connected-project MCP
+session in both backends. The C++ MCP smoke test registers the MassSpec
+operations, calls the operation through `tools/call`, and passes with an empty
+JSON array for a new project. The Rust MCP protocol test performs the same
+connected-session call and checks the JSON result. Both MCP test suites pass.
 
 ## Target repository shape
 
 ```text
 streamfind/
 ├── semantic/
-│   ├── streamfind.trig                  # generic concepts and operations
-│   ├── vocabulary.ttl                   # small sf vocabulary
-│   ├── shapes.trig                      # SHACL validation
-│   ├── domains/
-│   │   ├── mass_spec.trig
-│   │   ├── raman.trig
-│   │   └── sensors.trig
+│   ├── ontology/
+│   │   ├── vocabulary.ttl               # small sf vocabulary
+│   │   ├── shapes.ttl                   # SHACL validation
+│   │   ├── core/                         # generic operations, results, tables
+│   │   └── domains/                      # one folder per domain
+│   │       ├── mass_spec/
+│   │       ├── raman/
+│   │       └── sensors/
 │   ├── generated/
 │   │   └── catalogue.json               # generated; never hand edited
 │   └── README.md
@@ -224,7 +264,7 @@ streamfind/
 └── .plans/
 ```
 
-`semantic/generated/catalogue.json` is a build/test artefact derived from the TriG catalogue. It is not another source of truth. If committed for packaging convenience, CI must prove that regeneration produces no diff.
+`semantic/generated/catalogue.json` is a build/test artefact derived from the Turtle catalogue. It is not another source of truth. If committed for packaging convenience, CI must prove that regeneration produces no diff.
 
 ## Ownership and non-negotiable boundaries
 
@@ -240,7 +280,7 @@ streamfind/
 
 ### Semantic projection — one generator, many consumers
 
-To avoid maintaining separate C++ and Rust semantic generators, use one small repository tool to compile the TriG catalogue into a normalized projection such as `semantic/generated/catalogue.json`.
+To avoid maintaining separate C++ and Rust semantic generators, use one small repository tool to compile the Turtle catalogue into a normalized projection such as `semantic/generated/catalogue.json`.
 
 The projection contains only data needed by native/interface consumers, for example:
 
@@ -265,12 +305,12 @@ The projection contains only data needed by native/interface consumers, for exam
 
 Rules:
 
-- TriG remains authoritative.
+- Turtle remains authoritative.
 - The projection is deterministic and generated in one place.
 - C++ and Rust must not implement separate RDF interpretation logic.
 - Both MCP servers consume/embed the same projection shape.
 - Generation happens at development/build/package time, not on every MCP request.
-- CI validates TriG + SHACL, regenerates the projection, and detects stale generated output.
+- CI validates Turtle + SHACL, regenerates the projection, and detects stale generated output.
 
 ### Minimal MethodRegistry and OperationRegistry contracts
 
@@ -466,7 +506,7 @@ The generic semantic/MCP baseline already exists. The remaining work should simp
 3. Ensure the projection includes only public metadata needed by consumers: domain, canonical ID, label/definition, parameters, result/errors, executable/exposure flags, MCP mapping, and fixture references where useful.
 4. Keep generic operations and domain methods in the same projection format but as distinct semantic types.
 5. Add CI checks:
-   - RDF/TriG parsing;
+   - RDF/Turtle parsing;
    - SHACL validation;
    - duplicate canonical IDs;
    - invalid/unqualified domain method IDs;
@@ -523,7 +563,7 @@ add/remove/info path is tested, while Rust persistence remains pending.
 Add a repository-level test/example documenting the exact steps for a future domain, for example `imaging`:
 
 ```text
-1. semantic/domains/imaging.trig
+1. semantic/ontology/domains/imaging/*.ttl
 2. core/domains/imaging/ OR rust/crates/imaging/
 3. implement executors
 4. register methods inside the domain module
@@ -604,7 +644,7 @@ A domain Method or Operation is complete only when:
 
 - one canonical qualified semantic ID exists;
 - its semantic type is explicit: `sf:Method` for workflow processing or `sf:Operation` for direct Project/MCP access;
-- label, definition, domain, parameters, results, shared errors, and exposure mappings are documented in TriG;
+- label, definition, domain, parameters, results, shared errors, and exposure mappings are documented in Turtle;
 - SHACL/semantic validation passes;
 - representative fixture coverage exists;
 - each implementing backend provides an independently tested executor in the matching registry under the same canonical ID;

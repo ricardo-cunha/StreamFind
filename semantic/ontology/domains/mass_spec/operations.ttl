@@ -1,0 +1,39 @@
+@prefix sfcore: <https://streamfind.dev/catalogue/core#> .
+@prefix sf: <https://streamfind.dev/vocabulary#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+sfcore:massSpecAddAnalyses
+    a sf:Operation ;
+    sf:operationId "mass_spec.add_analyses" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Add mass spectrometry analyses" ;
+    skos:definition "Read mass spectrometry files and persist their analysis metadata in the project." ;
+    sf:toolName "add_analyses" ;
+    sf:hasParameter sfcore:analyses ;
+    sf:returns sfcore:massSpecAddAnalysesResult ;
+    sf:writes sfcore:massSpecAnalysesTable ;
+    sf:mutatesProject true ;
+    sf:extensions "mzml,mzxml,lcd,asc,.d,.D" .
+
+sfcore:massSpecRemoveAnalyses
+    a sf:Operation ;
+    sf:operationId "mass_spec.remove_analyses" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Remove mass spectrometry analyses" ;
+    skos:definition "Remove persisted mass spectrometry analyses by analysis name." ;
+    sf:toolName "remove_analyses" ;
+    sf:hasParameter sfcore:analysisNames ;
+    sf:returns sfcore:massSpecRemoveAnalysesResult ;
+    sf:writes sfcore:massSpecAnalysesTable ;
+    sf:mutatesProject true .
+
+sfcore:massSpecGetAnalysesInfo
+    a sf:Operation ;
+    sf:operationId "mass_spec.get_analyses_info" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Get mass spectrometry analysis information" ;
+    skos:definition "Return persisted mass spectrometry analysis metadata from the project." ;
+    sf:toolName "get_analyses_info" ;
+    sf:returns sfcore:massSpecGetAnalysesInfoResult ;
+    sf:reads sfcore:massSpecAnalysesTable ;
+    sf:mutatesProject false .

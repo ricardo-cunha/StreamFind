@@ -82,7 +82,7 @@ Json Session::handle(const Json &request) {
         if (project_.empty()) return {{"jsonrpc", "2.0"}, {"id", id}, {"error", {{"code", -32000}, {"message", "No project connected"}}}};
         const auto arguments = request.at("params").value("arguments", Json::object());
         try {
-            ProjectOptions options{project_.at("database_path").get<std::string>(), project_.at("project_id").get<std::string>(), {}, false, true, domain_};
+            ProjectOptions options{project_.at("database_path").get<std::string>(), project_.at("project_id").get<std::string>(), {}, false, false, domain_};
             auto project = Project::open(options);
             const Json result = project.run_operation(name, arguments, operations_);
             return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"content", Json::array({{{"type", "text"}, {"text", result.dump()}}})}}}};

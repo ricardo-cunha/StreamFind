@@ -69,7 +69,8 @@ fn advertised_tools_match_shared_fixture() {
 #[test]
 fn session_lifecycle_rebinds_catalogue() {
     let registry = MethodRegistry::default();
-    let operations = OperationRegistry::default();
+    let mut operations = OperationRegistry::default();
+    streamfind_rust_mass_spec::register_operations(&mut operations).unwrap();
     let mut session = streamfind_rust_mcp::Session::new(&registry, &operations);
     let path = std::env::temp_dir().join("streamfind-rust-mcp-lifecycle.duckdb");
     let _ = std::fs::remove_file(&path);
@@ -99,12 +100,26 @@ fn session_lifecycle_rebinds_catalogue() {
             .as_array()
             .unwrap()
             .len(),
-        19
+        22
+    );
+    let info = call(
+        &mut session,
+        4,
+        "mass_spec.get_analyses_info",
+        json!({}),
+    );
+    assert_ne!(info["result"]["isError"], true);
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(
+            info["result"]["content"][0]["text"].as_str().unwrap()
+        )
+        .unwrap(),
+        json!([])
     );
     assert!(
         call(
             &mut session,
-            4,
+            5,
             "close",
             json!({"database_path": path, "project_id": "mcp"})
         )["result"]["isError"]

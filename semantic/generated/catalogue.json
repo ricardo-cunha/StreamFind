@@ -44,7 +44,18 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#success",
+        "schema": {
+          "type": "object"
+        }
+      },
+      "effects": {
+        "mutates_project": true,
+        "reads": [],
+        "writes": []
+      }
     },
     {
       "kind": "operation",
@@ -89,7 +100,18 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#success",
+        "schema": {
+          "type": "object"
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [],
+        "writes": []
+      }
     },
     {
       "kind": "operation",
@@ -158,7 +180,54 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#projectDescriptorResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "database_path": {
+              "type": "string"
+            },
+            "domain": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "object"
+            },
+            "schema_version": {
+              "type": "integer"
+            },
+            "framework_version": {
+              "type": "string"
+            },
+            "created_at": {
+              "type": "string"
+            },
+            "workflow": {
+              "type": "object"
+            },
+            "tables": {
+              "type": "array"
+            },
+            "cache_size": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": true,
+        "reads": [],
+        "writes": [
+          "PROJECT",
+          "CACHE",
+          "AUDIT_TRAIL"
+        ]
+      }
     },
     {
       "kind": "operation",
@@ -215,7 +284,54 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#projectDescriptorResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "database_path": {
+              "type": "string"
+            },
+            "domain": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "object"
+            },
+            "schema_version": {
+              "type": "integer"
+            },
+            "framework_version": {
+              "type": "string"
+            },
+            "created_at": {
+              "type": "string"
+            },
+            "workflow": {
+              "type": "object"
+            },
+            "tables": {
+              "type": "array"
+            },
+            "cache_size": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": true,
+        "reads": [],
+        "writes": [
+          "PROJECT",
+          "CACHE",
+          "AUDIT_TRAIL"
+        ]
+      }
     },
     {
       "kind": "operation",
@@ -260,7 +376,21 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#success",
+        "schema": {
+          "type": "object"
+        }
+      },
+      "effects": {
+        "mutates_project": true,
+        "reads": [],
+        "writes": [
+          "CACHE",
+          "AUDIT_TRAIL"
+        ]
+      }
     },
     {
       "kind": "operation",
@@ -305,7 +435,53 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#projectDescriptorResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            },
+            "database_path": {
+              "type": "string"
+            },
+            "domain": {
+              "type": "string"
+            },
+            "metadata": {
+              "type": "object"
+            },
+            "schema_version": {
+              "type": "integer"
+            },
+            "framework_version": {
+              "type": "string"
+            },
+            "created_at": {
+              "type": "string"
+            },
+            "workflow": {
+              "type": "object"
+            },
+            "tables": {
+              "type": "array"
+            },
+            "cache_size": {
+              "type": "integer"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "PROJECT",
+          "CACHE"
+        ],
+        "writes": []
+      }
     },
     {
       "kind": "operation",
@@ -350,7 +526,37 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#auditEntriesResult",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "operation_type": {
+                "type": "string"
+              },
+              "object_type": {
+                "type": "string"
+              },
+              "details": {
+                "type": "object"
+              },
+              "created_at": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "AUDIT_TRAIL"
+        ],
+        "writes": []
+      }
     },
     {
       "kind": "operation",
@@ -383,7 +589,21 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#methodsResult",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object"
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [],
+        "writes": []
+      }
     },
     {
       "kind": "operation",
@@ -428,7 +648,40 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#cacheEntriesResult",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "description": {
+                "type": "string"
+              },
+              "hash": {
+                "type": "string"
+              },
+              "created_at": {
+                "type": "string"
+              },
+              "size": {
+                "type": "integer"
+              }
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "CACHE"
+        ],
+        "writes": []
+      }
     },
     {
       "kind": "operation",
@@ -473,7 +726,20 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#cacheSizeResult",
+        "schema": {
+          "type": "integer"
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "CACHE"
+        ],
+        "writes": []
+      }
     },
     {
       "kind": "operation",
@@ -518,7 +784,20 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#domainResult",
+        "schema": {
+          "type": "string"
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "PROJECT"
+        ],
+        "writes": []
+      }
     },
     {
       "kind": "operation",
@@ -563,7 +842,20 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#metadataResult",
+        "schema": {
+          "type": "object"
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "PROJECT"
+        ],
+        "writes": []
+      }
     },
     {
       "kind": "operation",
@@ -608,14 +900,27 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#workflowResult",
+        "schema": {
+          "type": "object"
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "PROJECT"
+        ],
+        "writes": []
+      }
     },
     {
-      "kind": "method",
+      "kind": "operation",
       "canonical_id": "mass_spec.add_analyses",
       "domain": "mass_spec",
       "label": "Add mass spectrometry analyses",
-      "definition": "Add mass spectrometry analysis files to a project.",
+      "definition": "Read mass spectrometry files and persist their analysis metadata in the project.",
       "executable": true,
       "exposed": true,
       "mcp": {
@@ -658,14 +963,101 @@
           "items": "analysisFile",
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#massSpecAddAnalysesResult",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "analysis": {
+                "type": "VARCHAR"
+              },
+              "file_path": {
+                "type": "VARCHAR"
+              },
+              "replicate": {
+                "type": "VARCHAR"
+              },
+              "blank": {
+                "type": "VARCHAR"
+              }
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": true,
+        "reads": [],
+        "writes": [
+          "MASS_SPEC_ANALYSES"
+        ]
+      }
     },
     {
-      "kind": "method",
+      "kind": "operation",
+      "canonical_id": "mass_spec.get_analyses_info",
+      "domain": "mass_spec",
+      "label": "Get mass spectrometry analysis information",
+      "definition": "Return persisted mass spectrometry analysis metadata from the project.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "get_analyses_info",
+        "input_schema": {
+          "type": "object",
+          "properties": {},
+          "required": []
+        }
+      },
+      "parameters": [],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#massSpecGetAnalysesInfoResult",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "analysis": {
+                "type": "VARCHAR"
+              },
+              "replicate": {
+                "type": "VARCHAR"
+              },
+              "blank": {
+                "type": "VARCHAR"
+              },
+              "file_path": {
+                "type": "VARCHAR"
+              },
+              "format": {
+                "type": "VARCHAR"
+              },
+              "number_spectra": {
+                "type": "INTEGER"
+              },
+              "number_chromatograms": {
+                "type": "INTEGER"
+              }
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_ANALYSES"
+        ],
+        "writes": []
+      }
+    },
+    {
+      "kind": "operation",
       "canonical_id": "mass_spec.remove_analyses",
       "domain": "mass_spec",
       "label": "Remove mass spectrometry analyses",
-      "definition": "Remove mass spectrometry analysis files from a project.",
+      "definition": "Remove persisted mass spectrometry analyses by analysis name.",
       "executable": true,
       "exposed": true,
       "mcp": {
@@ -691,7 +1083,23 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#massSpecRemoveAnalysesResult",
+        "schema": {
+          "type": "array",
+          "items": {
+            "type": "None"
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": true,
+        "reads": [],
+        "writes": [
+          "MASS_SPEC_ANALYSES"
+        ]
+      }
     },
     {
       "kind": "method",
@@ -741,7 +1149,18 @@
           "items": "analysisFile",
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#success",
+        "schema": {
+          "type": "object"
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [],
+        "writes": []
+      }
     },
     {
       "kind": "method",
@@ -774,7 +1193,18 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#success",
+        "schema": {
+          "type": "object"
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [],
+        "writes": []
+      }
     },
     {
       "kind": "operation",
@@ -842,7 +1272,23 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#workflowExecutionResult",
+        "schema": {
+          "type": "object"
+        }
+      },
+      "effects": {
+        "mutates_project": true,
+        "reads": [
+          "PROJECT"
+        ],
+        "writes": [
+          "PROJECT",
+          "AUDIT_TRAIL"
+        ]
+      }
     },
     {
       "kind": "operation",
@@ -887,7 +1333,25 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#workflowExecutionResult",
+        "schema": {
+          "type": "object"
+        }
+      },
+      "effects": {
+        "mutates_project": true,
+        "reads": [
+          "PROJECT",
+          "CACHE"
+        ],
+        "writes": [
+          "PROJECT",
+          "CACHE",
+          "AUDIT_TRAIL"
+        ]
+      }
     },
     {
       "kind": "operation",
@@ -944,7 +1408,21 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#metadataResult",
+        "schema": {
+          "type": "object"
+        }
+      },
+      "effects": {
+        "mutates_project": true,
+        "reads": [],
+        "writes": [
+          "PROJECT",
+          "AUDIT_TRAIL"
+        ]
+      }
     },
     {
       "kind": "operation",
@@ -1001,7 +1479,21 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#workflowResult",
+        "schema": {
+          "type": "object"
+        }
+      },
+      "effects": {
+        "mutates_project": true,
+        "reads": [],
+        "writes": [
+          "PROJECT",
+          "AUDIT_TRAIL"
+        ]
+      }
     },
     {
       "kind": "operation",
@@ -1046,7 +1538,27 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#validProjectResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "valid": {
+              "type": "boolean"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "PROJECT",
+          "CACHE",
+          "AUDIT_TRAIL"
+        ],
+        "writes": []
+      }
     },
     {
       "kind": "operation",
@@ -1079,7 +1591,26 @@
           "items": null,
           "extensions": []
         }
-      ]
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#workflowValidationResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "valid": {
+              "type": "boolean"
+            },
+            "workflow": {
+              "type": "object"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [],
+        "writes": []
+      }
     }
   ]
 }

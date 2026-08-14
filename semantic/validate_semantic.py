@@ -10,15 +10,16 @@ ROOT = Path(__file__).parent
 SF = Namespace("https://streamfind.dev/vocabulary#")
 
 vocabulary = Graph()
-vocabulary.parse(ROOT / "vocabulary.ttl", format="turtle")
+vocabulary.parse(ROOT / "ontology" / "vocabulary.ttl", format="turtle")
 
 catalogue = Dataset()
-catalogue.parse(ROOT / "streamfind.trig", format="trig")
-for domain_path in sorted((ROOT / "domains").glob("*.trig")):
-    catalogue.parse(domain_path, format="trig")
+for core_path in sorted((ROOT / "ontology" / "core").glob("*.ttl")):
+    catalogue.parse(core_path, format="turtle")
+for domain_path in sorted((ROOT / "ontology" / "domains").rglob("*.ttl")):
+    catalogue.parse(domain_path, format="turtle")
 
 shapes = Dataset()
-shapes.parse(ROOT / "shapes.trig", format="trig")
+shapes.parse(ROOT / "ontology" / "shapes.ttl", format="turtle")
 
 conforms, _, report = validate(
     catalogue,
@@ -30,10 +31,12 @@ conforms, _, report = validate(
 if not conforms:
     raise SystemExit(report)
 
-expected = json.loads((ROOT / "fixtures" / "operations.json").read_text())["canonical_ids"]
+fixtures = ROOT.parent / "tests" / "fixtures"
+expected = json.loads((fixtures / "semantic" / "operations.json").read_text())["canonical_ids"]
 declared = sorted(
     str(value)
-    for subject, value in catalogue.subject_objects(SF.operationId)
+    for graph in catalogue.graphs()
+    for subject, value in graph.subject_objects(SF.operationId)
     if str(value) != "connect"
 )
 if declared != sorted(expected):
@@ -50,14 +53,15 @@ for entry in projection["entries"]:
         raise SystemExit(f"unqualified domain method ID: {entry['canonical_id']}")
 
 
-manifest = json.loads((ROOT / "fixtures" / "manifest.json").read_text())
+manifest_path = fixtures / "semantic" / "manifest.json"
+manifest = json.loads(manifest_path.read_text())
 for fixture in manifest["fixtures"]:
-    path = ROOT / "fixtures" / fixture["path"] if not fixture["path"].startswith("../") else ROOT / "fixtures" / fixture["path"]
-    if not path.resolve().exists():
+    path = (manifest_path.parent / fixture["path"]).resolve()
+    if not path.exists():
         raise SystemExit(f"missing fixture reference: {fixture['path']}")
 
-cpp_source = (ROOT.parent / "core" / "src" / "api.cpp").read_text()
-rust_source = (ROOT.parent / "rust" / "crates" / "core" / "src" / "api.rs").read_text()
+cpp_source = "\n".join(path.read_text() for path in [ROOT.parent / "core" / "src" / "api.cpp", ROOT.parent / "core" / "domains" / "mass_spec" / "src" / "register.cpp"])
+rust_source = "\n".join(path.read_text() for path in [ROOT.parent / "rust" / "crates" / "core" / "src" / "api.rs", ROOT.parent / "rust" / "crates" / "mass-spec" / "src" / "lib.rs"])
 for source_name, source in (("C++", cpp_source), ("Rust", rust_source)):
     missing = [identifier for identifier in expected if identifier not in source]
     if missing:
