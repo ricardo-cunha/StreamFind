@@ -1,0 +1,61 @@
+site_name: streamfind
+site_description: >-
+  streamfind is a DuckDB-backed workflow framework for analytical data
+  processing, spanning a semantic catalogue, independent C++ and Rust
+  backends, and language bindings.
+site_url: https://ricardo-cunha.github.io/streamfind/
+repo_url: https://github.com/ricardo-cunha/streamfind
+edit_uri: edit/dev_refactoring/docs/
+
+theme:
+  name: material
+  logo: assets/streamfind.png
+  favicon: assets/streamfind.png
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: indigo
+      accent: indigo
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  features:
+    - navigation.sections
+    - navigation.top
+    - content.code.copy
+
+extra_css:
+  - stylesheets/extra.css
+
+markdown_extensions:
+  - admonition
+  - toc:
+      permalink: true
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+plugins:
+  - search
+
+nav:
+  - Home: index.md
+  - Architecture: architecture.md
+  - Components:
+      - Semantic catalogue: components/semantic.md
+      - C++ core: components/core-cpp.md
+      - Rust backend: components/rust.md
+      - R package: components/bindings-r.md
+      - Python binding (future): components/bindings-python.md
+      - Cogniflow integration (deferred): components/cf-streamfind.md
+  - Quickstart:
+      - C++ MCP server: quickstart/cpp-mcp.md
+      - Rust MCP server: quickstart/rust-mcp.md
+  - Testing: testing.md

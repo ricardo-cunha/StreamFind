@@ -4,6 +4,7 @@
 /cmake-build-*/
 /core/build/
 /integrations/cf-streamfind/build/
+/site/
 **/CMakeCache.txt
 **/CMakeFiles/
 **/.ninja_deps
