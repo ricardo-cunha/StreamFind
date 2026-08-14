@@ -1,8 +1,0 @@
-{
-  "canonical_ids": [
-    "create", "describe", "get_workflow", "set_workflow",
-    "validate_workflow", "validate", "get_domain", "get_available_methods",
-    "run_method", "copy", "run_workflow", "get_metadata", "set_metadata",
-    "get_cache", "delete_cache", "get_cache_size", "get_audit_trail", "close"
-  ]
-}

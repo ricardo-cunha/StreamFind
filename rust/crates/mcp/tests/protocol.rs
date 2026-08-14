@@ -3,7 +3,7 @@ use streamfind_rust_core::{MethodRegistry, OperationRegistry};
 
 fn catalogue_fixture() -> serde_json::Value {
     serde_json::from_str(include_str!(
-        "../../../../semantic/fixtures/mcp_catalogue.json"
+        "../../../../tests/fixtures/mcp/generic_mcp_catalogue.json"
     ))
     .unwrap()
 }

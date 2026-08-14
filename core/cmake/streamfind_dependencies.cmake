@@ -12,10 +12,10 @@ function(streamfind_detect_platform out_var)
     set(${out_var} "${_platform}" PARENT_SCOPE)
 endfunction()
 
-function(streamfind_configure_duckdb external_root)
+function(streamfind_configure_duckdb vendor_root)
     streamfind_detect_platform(_platform)
 
-    set(_root "${external_root}/duckdb")
+    set(_root "${vendor_root}/duckdb")
     set(_include "${_root}/include")
 
     if(NOT EXISTS "${_include}/duckdb.h")
@@ -76,8 +76,8 @@ function(streamfind_configure_duckdb external_root)
     set(STREAMFIND_PLATFORM_TAG "${_platform}" PARENT_SCOPE)
 endfunction()
 
-function(streamfind_add_openbabel external_root)
-    set(_root "${external_root}/openbabel")
+function(streamfind_add_openbabel vendor_root)
+    set(_root "${vendor_root}/openbabel")
     set(_ob_root "${_root}/openbabel-3-2-0")
     set(_inchi_root "${_root}/inchi-iupac-1.07.5")
     set(_inchi_base "${_root}/INCHI_BASE")
@@ -153,20 +153,20 @@ function(streamfind_add_openbabel external_root)
     set(STREAMFIND_OPENBABEL_DATA_DIR "${_ob_root}/data" PARENT_SCOPE)
 endfunction()
 
-function(streamfind_configure_dependencies external_root)
-    set(_external_root "${external_root}")
-    streamfind_configure_duckdb("${_external_root}")
-    streamfind_add_openbabel("${_external_root}")
+function(streamfind_configure_dependencies vendor_root)
+    set(_vendor_root "${vendor_root}")
+    streamfind_configure_duckdb("${_vendor_root}")
+    streamfind_add_openbabel("${_vendor_root}")
 
     if(NOT TARGET streamfind::zlib)
         add_subdirectory(
-            "${_external_root}/zlib/zlib-develop"
+            "${_vendor_root}/zlib/zlib-develop"
             "${CMAKE_BINARY_DIR}/streamfind-vendored-zlib"
             EXCLUDE_FROM_ALL
         )
     endif()
 
-    set(STREAMFIND_EXTERNAL_DIR "${_external_root}" PARENT_SCOPE)
+    set(STREAMFIND_VENDOR_DIR "${_vendor_root}" PARENT_SCOPE)
     set(STREAMFIND_DUCKDB_RUNTIME "${STREAMFIND_DUCKDB_RUNTIME}" PARENT_SCOPE)
     set(STREAMFIND_DUCKDB_IMPORT_LIBRARY "${STREAMFIND_DUCKDB_IMPORT_LIBRARY}" PARENT_SCOPE)
     set(STREAMFIND_DUCKDB_INCLUDE_DIR "${STREAMFIND_DUCKDB_INCLUDE_DIR}" PARENT_SCOPE)

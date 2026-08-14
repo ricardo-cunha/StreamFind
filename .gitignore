@@ -2,6 +2,8 @@
 /build/
 /dist/
 /cmake-build-*/
+/core/build/
+/integrations/cf-streamfind/build/
 **/CMakeCache.txt
 **/CMakeFiles/
 **/.ninja_deps
@@ -18,7 +20,7 @@ _skbuild/
 **/*.dylib
 **/*.pyd
 **/*.egg-info/
-/core/external/openbabel/build/
+/core/vendor/openbabel/build/
 
 # Python tooling ----------------------------------------------------------------
 **/__pycache__/

@@ -103,4 +103,4 @@ execution, closed projects, and cancellation.
 
 The C++ core uses the shared `PROJECT`, `CACHE`, and `AUDIT_TRAIL` DuckDB tables.
 Workflow, metadata, cache, audit, and result JSON are backend-neutral and are
-tested against the Rust implementation in `core/tests/fixtures`.
+tested against the Rust implementation using the shared fixtures in `tests/data`.

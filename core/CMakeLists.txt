@@ -1,7 +1,15 @@
 cmake_minimum_required(VERSION 3.20)
+project(streamfind_core LANGUAGES C CXX)
+
+option(STREAMFIND_BUILD_TESTS "Build native tests" ON)
+option(STREAMFIND_BUILD_SHARED "Build shared native libraries" OFF)
+
+if(STREAMFIND_BUILD_TESTS)
+    enable_testing()
+endif()
 
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/streamfind_dependencies.cmake)
-streamfind_configure_dependencies(${CMAKE_CURRENT_SOURCE_DIR}/external)
+streamfind_configure_dependencies(${CMAKE_CURRENT_SOURCE_DIR}/vendor)
 
 set(STREAMFIND_CORE_SOURCES
     src/version.cpp
@@ -39,7 +47,7 @@ target_include_directories(streamfind_core
     PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
         $<INSTALL_INTERFACE:include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/external>
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/vendor>
 )
 
 if(STREAMFIND_BUILD_SHARED)
@@ -98,7 +106,7 @@ if(STREAMFIND_BUILD_TESTS)
     add_subdirectory(tests)
 endif()
 
-add_executable(streamfind_mcp tools/mcp.cpp)
+add_executable(streamfind_mcp tools/streamfind-mcp.cpp)
 target_link_libraries(streamfind_mcp PRIVATE streamfind::core streamfind_mass_spec streamfind_raman streamfind_sensors)
 if(WIN32)
     add_custom_command(TARGET streamfind_mcp POST_BUILD

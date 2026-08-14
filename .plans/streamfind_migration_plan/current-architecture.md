@@ -50,11 +50,11 @@ integrations/cf-streamfind/src/cf_streamfind
     -> DuckDB, OpenBabel, zlib, and other vendored libraries
 ```
 
-The root CMake project currently exposes the optional
-`STREAMFIND_BUILD_CF_STREAMFIND` integration target. The integration target is
-`cf_streamfind_steps`; it is not a standalone `streamfind-core` library. CMake
-requires `cf-package-contracts` when that option is enabled and configures
-DuckDB from `bindings/r/src/core/external/duckdb`.
+The root CMake project builds the standalone core only. The `cf_streamfind_steps`
+integration is configured independently from `integrations/cf-streamfind` and
+has its own build directory. It is not a standalone `streamfind-core` library.
+CMake requires `cf-package-contracts` for that integration and its current
+legacy dependency path remains under `bindings/r/src/core/external/duckdb`.
 
 ## Native Ownership Baseline
 
@@ -180,7 +180,7 @@ R CMD check .
 R CMD build .
 devtools::test()
 Rscript -e "testthat::test_local()"
-cmake -S . -B build
+cmake -S core -B core/build
 cmake --build build
 ```
 
