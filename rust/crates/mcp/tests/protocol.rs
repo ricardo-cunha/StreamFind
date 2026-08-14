@@ -102,12 +102,7 @@ fn session_lifecycle_rebinds_catalogue() {
             .len(),
         22
     );
-    let info = call(
-        &mut session,
-        4,
-        "mass_spec.get_analyses_info",
-        json!({}),
-    );
+    let info = call(&mut session, 4, "mass_spec.get_analyses_info", json!({}));
     assert_ne!(info["result"]["isError"], true);
     assert_eq!(
         serde_json::from_str::<serde_json::Value>(

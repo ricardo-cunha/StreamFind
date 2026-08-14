@@ -1,4 +1,4 @@
-use duckdb::{params, Connection, OptionalExt};
+use duckdb::{params, types::Value as DuckValue, Config, Connection, OptionalExt};
 use serde::Serialize;
 use serde_json::{json, Value};
 use std::collections::HashMap;
@@ -98,6 +98,61 @@ fn cache_key(project_id: &str, method: &str, parameters: &Json) -> String {
         hash = hash.wrapping_mul(1099511628211);
     }
     format!("{hash:016x}")
+}
+
+fn duck_value_to_json(value: DuckValue) -> Json {
+    match value {
+        DuckValue::Null => Json::Null,
+        DuckValue::Boolean(value) => json!(value),
+        DuckValue::TinyInt(value) => json!(value),
+        DuckValue::SmallInt(value) => json!(value),
+        DuckValue::Int(value) => json!(value),
+        DuckValue::BigInt(value) => json!(value),
+        DuckValue::HugeInt(value) => json!(value.to_string()),
+        DuckValue::UTinyInt(value) => json!(value),
+        DuckValue::USmallInt(value) => json!(value),
+        DuckValue::UInt(value) => json!(value),
+        DuckValue::UBigInt(value) => json!(value),
+        DuckValue::Float(value) => json!(value),
+        DuckValue::Double(value) => json!(value),
+        DuckValue::Decimal(value) => value
+            .to_string()
+            .parse::<f64>()
+            .map(|value| json!(value))
+            .unwrap_or_else(|_| json!(value.to_string())),
+        DuckValue::Text(value) => Json::String(value),
+        DuckValue::Blob(value) => json!(value),
+        DuckValue::Timestamp(_, value) => json!(value),
+        DuckValue::Date32(value) => json!(value),
+        DuckValue::Time64(_, value) => json!(value),
+        DuckValue::Interval {
+            months,
+            days,
+            nanos,
+        } => json!({"months": months, "days": days, "nanos": nanos}),
+        DuckValue::List(values) | DuckValue::Array(values) => {
+            Json::Array(values.into_iter().map(duck_value_to_json).collect())
+        }
+        DuckValue::Enum(value) => Json::String(value),
+        DuckValue::Struct(values) => Json::Object(
+            values
+                .iter()
+                .map(|(name, value)| (name.clone(), duck_value_to_json(value.clone())))
+                .collect(),
+        ),
+        DuckValue::Map(values) => Json::Array(
+            values
+                .iter()
+                .map(|(key, value)| {
+                    json!([
+                        duck_value_to_json(key.clone()),
+                        duck_value_to_json(value.clone())
+                    ])
+                })
+                .collect(),
+        ),
+        DuckValue::Union(value) => duck_value_to_json(*value),
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -546,20 +601,65 @@ pub struct Operation {
 }
 
 impl Operation {
-    pub fn new(id: impl Into<String>, name: impl Into<String>, description: impl Into<String>, domain: impl Into<String>, parameters: ParameterSchema, executor: OperationExecutor) -> Self {
-        Self { id: id.into(), name: name.into(), description: description.into(), domain: domain.into(), parameters, executor }
+    pub fn new(
+        id: impl Into<String>,
+        name: impl Into<String>,
+        description: impl Into<String>,
+        domain: impl Into<String>,
+        parameters: ParameterSchema,
+        executor: OperationExecutor,
+    ) -> Self {
+        Self {
+            id: id.into(),
+            name: name.into(),
+            description: description.into(),
+            domain: domain.into(),
+            parameters,
+            executor,
+        }
     }
-    pub fn to_json(&self) -> Json { json!({"id": self.id, "name": self.name, "description": self.description, "domain": self.domain, "parameters": self.parameters.definitions.iter().map(|d| json!({"name": d.name, "description": d.description, "type": d.kind.to_json(), "default": d.default, "required": d.required})).collect::<Vec<_>>()}) }
-    pub fn run(&self, project: &mut Project, values: &Json) -> Result<Json> { (self.executor)(project, &self.parameters.resolve(values)?) }
+    pub fn to_json(&self) -> Json {
+        json!({"id": self.id, "name": self.name, "description": self.description, "domain": self.domain, "parameters": self.parameters.definitions.iter().map(|d| json!({"name": d.name, "description": d.description, "type": d.kind.to_json(), "default": d.default, "required": d.required})).collect::<Vec<_>>()})
+    }
+    pub fn run(&self, project: &mut Project, values: &Json) -> Result<Json> {
+        (self.executor)(project, &self.parameters.resolve(values)?)
+    }
 }
 
 #[derive(Default)]
-pub struct OperationRegistry { operations: HashMap<String, Operation> }
+pub struct OperationRegistry {
+    operations: HashMap<String, Operation>,
+}
 
 impl OperationRegistry {
-    pub fn register(&mut self, operation: Operation) -> Result<()> { if self.operations.insert(operation.id.clone(), operation).is_some() { return Err(Error::new(ErrorCode::InvalidArgument, "duplicate operation")); } Ok(()) }
-    pub fn get(&self, id: &str) -> Result<&Operation> { self.operations.get(id).ok_or_else(|| Error::new(ErrorCode::InvalidArgument, format!("unknown operation: {id}"))) }
-    pub fn list(&self, domain: &str) -> Vec<Json> { self.operations.values().filter(|o| domain.is_empty() || o.domain == domain).map(Operation::to_json).collect() }
+    pub fn register(&mut self, operation: Operation) -> Result<()> {
+        if self
+            .operations
+            .insert(operation.id.clone(), operation)
+            .is_some()
+        {
+            return Err(Error::new(
+                ErrorCode::InvalidArgument,
+                "duplicate operation",
+            ));
+        }
+        Ok(())
+    }
+    pub fn get(&self, id: &str) -> Result<&Operation> {
+        self.operations.get(id).ok_or_else(|| {
+            Error::new(
+                ErrorCode::InvalidArgument,
+                format!("unknown operation: {id}"),
+            )
+        })
+    }
+    pub fn list(&self, domain: &str) -> Vec<Json> {
+        self.operations
+            .values()
+            .filter(|o| domain.is_empty() || o.domain == domain)
+            .map(Operation::to_json)
+            .collect()
+    }
 }
 
 impl MethodRegistry {
@@ -756,27 +856,61 @@ impl Project {
     }
 
     fn connection(&self) -> Result<Connection> {
-        Ok(Connection::open(&self.options.database_path)?)
+        let extension_directory = self
+            .options
+            .database_path
+            .parent()
+            .unwrap_or_else(|| Path::new("."))
+            .join(".streamfind-duckdb-extensions")
+            .join(
+                self.options
+                    .database_path
+                    .file_name()
+                    .unwrap_or_else(|| std::ffi::OsStr::new("default")),
+            );
+        fs::create_dir_all(&extension_directory)
+            .map_err(|error| Error::new(ErrorCode::DatabaseError, error.to_string()))?;
+        let config = Config::default().with(
+            "extension_directory",
+            extension_directory.to_string_lossy().as_ref(),
+        )?;
+        Ok(Connection::open_with_flags(
+            &self.options.database_path,
+            config,
+        )?)
     }
 
     pub fn execute_sql(&self, sql: &str) -> Result<()> {
-        if self.options.read_only { return Err(Error::new(ErrorCode::InvalidArgument, "project is read-only")); }
+        if self.options.read_only {
+            return Err(Error::new(
+                ErrorCode::InvalidArgument,
+                "project is read-only",
+            ));
+        }
         self.connection()?.execute_batch(sql)?;
         Ok(())
     }
 
     pub fn query_json(&self, sql: &str) -> Result<Json> {
         let connection = self.connection()?;
+        let mut metadata_statement = connection.prepare(sql)?;
+        let _ = metadata_statement.query([])?;
+        let columns = metadata_statement.column_count();
+        let names: Vec<String> = (0..columns)
+            .map(|i| {
+                metadata_statement
+                    .column_name(i)
+                    .map(String::clone)
+                    .unwrap_or_default()
+            })
+            .collect();
         let mut statement = connection.prepare(sql)?;
-        let columns = statement.column_count();
-        let names: Vec<String> = (0..columns).map(|i| statement.column_name(i).map(String::clone).unwrap_or_default()).collect();
         let mut rows = statement.query([])?;
         let mut output = Vec::new();
         while let Some(row) = rows.next()? {
             let mut object = serde_json::Map::new();
             for (i, name) in names.iter().enumerate() {
-                let value: Option<String> = row.get(i)?;
-                object.insert(name.clone(), value.map(Json::String).unwrap_or(Json::Null));
+                object.insert(name.clone(), duck_value_to_json(row.get(i)?));
             }
             output.push(Json::Object(object));
         }
@@ -952,7 +1086,12 @@ impl Project {
         self.audit("complete", "method", json!({"method": method_id}))?;
         Ok(result)
     }
-    pub fn run_operation(&mut self, operation_id: &str, parameters: &Json, registry: &OperationRegistry) -> Result<Json> {
+    pub fn run_operation(
+        &mut self,
+        operation_id: &str,
+        parameters: &Json,
+        registry: &OperationRegistry,
+    ) -> Result<Json> {
         let operation = registry.get(operation_id)?;
         operation.run(self, parameters)
     }

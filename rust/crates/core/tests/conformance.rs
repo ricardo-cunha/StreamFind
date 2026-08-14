@@ -71,7 +71,19 @@ fn shared_fixture_round_trips_project_contract() {
 fn rust_schema_matches_shared_duckdb_contract() {
     let fixture = fixture();
     let path = database("streamfind-rust-schema-conformance.duckdb");
-    let connection = duckdb::Connection::open(&path).unwrap();
+    let extension_directory = path
+        .parent()
+        .unwrap()
+        .join(".streamfind-duckdb-extensions")
+        .join(path.file_name().unwrap());
+    fs::create_dir_all(&extension_directory).unwrap();
+    let config = duckdb::Config::default()
+        .with(
+            "extension_directory",
+            extension_directory.to_string_lossy().as_ref(),
+        )
+        .unwrap();
+    let connection = duckdb::Connection::open_with_flags(&path, config).unwrap();
     connection
         .execute_batch("CREATE TABLE PROJECT (project_id VARCHAR PRIMARY KEY, domain VARCHAR, metadata JSON, workflow JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, schema_version INTEGER NOT NULL DEFAULT 1, framework_version VARCHAR NOT NULL DEFAULT '0.1.0'); CREATE TABLE CACHE (project_id VARCHAR, name VARCHAR, description VARCHAR, hash VARCHAR, data BLOB, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, hash)); CREATE TABLE AUDIT_TRAIL (project_id VARCHAR, operation_type VARCHAR, object_type VARCHAR, operation_details JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);")
         .unwrap();
