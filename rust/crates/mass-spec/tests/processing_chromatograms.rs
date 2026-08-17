@@ -2,8 +2,8 @@ use serde_json::json;
 use std::{fs, path::Path};
 use streamfind_rust_core::{Project, ProjectOptions};
 use streamfind_rust_mass_spec::{
-    processing_chromatograms::{
-        filter_chromatograms_retention_time, get_raw_chromatograms, load_chromatograms,
+    processing_methods_chromatograms::{
+        filter_chromatograms_retention_time, load_chromatograms,
         FilterChromatogramsRetentionTimeRequest, LoadChromatogramsRequest,
     },
     reader::Reader,
@@ -102,11 +102,15 @@ fn reads_raw_chromatograms_from_file() {
             fixture().to_string_lossy().replace('\'', "''")
         ))
         .unwrap();
-    let rows = get_raw_chromatograms(
-        &mut project,
-        &json!({"analysis_names": ["karl"], "indices": [0]}),
-    )
-    .unwrap();
-    assert_eq!(rows.as_array().unwrap().len(), 695);
-    assert_eq!(rows[0]["chromatogram_id"], "TIC1");
+    let mut operations = streamfind_rust_core::OperationRegistry::default();
+    streamfind_rust_mass_spec::register_operations(&mut operations).unwrap();
+    let rows = project
+        .run_operation(
+            "mass_spec.get_raw_chromatograms",
+            &json!({"analysis_names": ["karl"], "indices": [0]}),
+            &operations,
+        )
+        .unwrap();
+    assert_eq!(rows["row_count"], 695);
+    assert_eq!(rows["columns"]["chromatogram_id"][0], "TIC1");
 }

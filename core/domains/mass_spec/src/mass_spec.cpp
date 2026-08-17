@@ -1,5 +1,5 @@
 #include "streamfind/mass_spec/mass_spec.hpp"
-#include "streamfind/mass_spec/processing_chromatograms.hpp"
+#include "streamfind/mass_spec/processing_methods_chromatograms.hpp"
 
 #include <algorithm>
 #include <cctype>
@@ -489,7 +489,51 @@ namespace streamfind::mass_spec
 
     Json Project::get_chromatograms(const Json &parameters)
     {
-        return processing::get_chromatograms(project_, parameters);
+        project_.execute_sql("CREATE TABLE IF NOT EXISTS MASS_SPEC_CHROMATOGRAMS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, chromatogram_id VARCHAR NOT NULL, rt DOUBLE NOT NULL, raw_intensity DOUBLE NOT NULL, baseline DOUBLE NOT NULL DEFAULT 0, intensity DOUBLE NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, chromatogram_id, rt))");
+        std::string query = "SELECT project_id, analysis, chromatogram_id, rt, raw_intensity, baseline, intensity FROM MASS_SPEC_CHROMATOGRAMS WHERE project_id = " + detail::sql(project_.get_project_id());
+        const auto wanted = detail::names(parameters, "analysis_names");
+        if (!wanted.empty()) {
+            query += " AND analysis IN (";
+            for (std::size_t i = 0; i < wanted.size(); ++i) query += (i ? "," : "") + detail::sql(wanted[i]);
+            query += ")";
+        }
+        query += " ORDER BY analysis, chromatogram_id, rt";
+        auto rows = project_.query_json(query);
+        for (auto &row : rows) {
+            row["rt"] = std::stod(row.at("rt").get<std::string>());
+            row["raw_intensity"] = std::stod(row.at("raw_intensity").get<std::string>());
+            row["baseline"] = std::stod(row.at("baseline").get<std::string>());
+            row["intensity"] = std::stod(row.at("intensity").get<std::string>());
+        }
+        return rows;
+    }
+
+    Json Project::get_raw_chromatograms(const Json &parameters)
+    {
+        std::vector<int> indices;
+        for (const auto &value : parameters.value("indices", Json::array())) indices.push_back(value.get<int>());
+        Json output = Json::array();
+        const auto wanted = detail::names(parameters, "analysis_names");
+        const auto rows = project_.query_json("SELECT analysis, file_path FROM MASS_SPEC_ANALYSES WHERE project_id = " + detail::sql(project_.get_project_id()) + " ORDER BY analysis");
+        for (const auto &row : rows) {
+            const auto analysis = row.at("analysis").get<std::string>();
+            if (!detail::selected(wanted, analysis)) continue;
+            ::mass_spec::reader::MASS_SPEC_FILE file(row.at("file_path").get<std::string>());
+            const auto headers = file.get_chromatograms_headers(indices);
+            const auto arrays = file.get_chromatograms(indices);
+            for (std::size_t i = 0; i < arrays.size() && i < headers.chromatogram_id.size(); ++i) {
+                if (arrays[i].size() < 2) continue;
+                const auto &times = arrays[i][0];
+                const auto &intensities = arrays[i][1];
+                const auto count = std::min(times.size(), intensities.size());
+                for (std::size_t j = 0; j < count; ++j)
+                    output.push_back({{"project_id", project_.get_project_id()}, {"analysis", analysis},
+                                      {"chromatogram_id", headers.chromatogram_id[i]}, {"rt", times[j]},
+                                      {"raw_intensity", intensities[j]}, {"baseline", 0.0},
+                                      {"intensity", intensities[j]}});
+            }
+        }
+        return output;
     }
 
 }

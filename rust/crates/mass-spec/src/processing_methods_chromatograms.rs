@@ -1,10 +1,8 @@
 use regex::Regex;
-use serde_json::{json, Value};
+use serde_json::Value;
 use streamfind_rust_core::{Error, ErrorCode, Project, Result};
 
 use crate::reader;
-
-const TABLE: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_CHROMATOGRAMS (project_id TEXT NOT NULL, analysis TEXT NOT NULL, chromatogram_id TEXT NOT NULL, rt DOUBLE NOT NULL, raw_intensity DOUBLE NOT NULL, baseline DOUBLE NOT NULL DEFAULT 0, intensity DOUBLE NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, chromatogram_id, rt))";
 
 #[derive(Debug, Clone, Default)]
 pub struct LoadChromatogramsRequest {
@@ -61,7 +59,7 @@ pub fn load_chromatograms(
     project: &mut Project,
     request: &LoadChromatogramsRequest,
 ) -> Result<bool> {
-    project.execute_sql(TABLE)?;
+    project.execute_sql(crate::CHROMATOGRAMS_SCHEMA)?;
     let patterns = request
         .chromatogram_id_regex
         .iter()
@@ -115,7 +113,7 @@ pub fn filter_chromatograms_retention_time(
     if request.rtmin >= request.rtmax {
         return Err(invalid("rtmin must be less than rtmax."));
     }
-    project.execute_sql(TABLE)?;
+    project.execute_sql(crate::CHROMATOGRAMS_SCHEMA)?;
     let analysis_filter = if request.analyses.is_empty() {
         String::new()
     } else {
@@ -151,88 +149,4 @@ pub fn filter_chromatograms_retention_time(
         project.execute_sql(&statements)?;
     }
     Ok(true)
-}
-
-pub fn get_chromatograms(project: &mut Project, parameters: &Value) -> Result<Value> {
-    project.execute_sql(TABLE)?;
-    let wanted = parameters
-        .get("analysis_names")
-        .and_then(Value::as_array)
-        .map(|values| {
-            values
-                .iter()
-                .filter_map(Value::as_str)
-                .map(str::to_owned)
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_default();
-    let filter = if wanted.is_empty() {
-        String::new()
-    } else {
-        format!(
-            " AND analysis IN ({})",
-            wanted
-                .iter()
-                .map(|value| sql(value))
-                .collect::<Vec<_>>()
-                .join(",")
-        )
-    };
-    project.query_json(&format!(
-        "SELECT project_id, analysis, chromatogram_id, rt, raw_intensity, baseline, intensity FROM MASS_SPEC_CHROMATOGRAMS WHERE project_id = {}{} ORDER BY analysis, chromatogram_id, rt",
-        sql(project.get_project_id()), filter
-    ))
-}
-
-pub fn get_raw_chromatograms(project: &mut Project, parameters: &Value) -> Result<Value> {
-    let wanted = parameters
-        .get("analysis_names")
-        .and_then(Value::as_array)
-        .map(|values| {
-            values
-                .iter()
-                .filter_map(Value::as_str)
-                .map(str::to_owned)
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_default();
-    let indices = parameters
-        .get("indices")
-        .and_then(Value::as_array)
-        .map(|values| {
-            values
-                .iter()
-                .filter_map(Value::as_u64)
-                .map(|value| value as usize)
-                .collect::<Vec<_>>()
-        })
-        .unwrap_or_default();
-    let mut output = Vec::new();
-    for (analysis, path) in analyses(project, &wanted)? {
-        let file = reader::Reader::open(path).map_err(|error| invalid(error.to_string()))?;
-        let selected = if indices.is_empty() {
-            (0..file.chromatograms().len()).collect::<Vec<_>>()
-        } else {
-            indices
-                .iter()
-                .copied()
-                .filter(|index| *index < file.chromatograms().len())
-                .collect()
-        };
-        for index in selected {
-            let chromatogram = &file.chromatograms()[index];
-            for (rt, intensity) in chromatogram.time.iter().zip(&chromatogram.intensity) {
-                output.push(json!({
-                    "project_id": project.get_project_id(),
-                    "analysis": analysis,
-                    "chromatogram_id": chromatogram.id,
-                    "rt": *rt as f64,
-                    "raw_intensity": *intensity as f64,
-                    "baseline": 0.0,
-                    "intensity": *intensity as f64,
-                }));
-            }
-        }
-    }
-    Ok(Value::Array(output))
 }

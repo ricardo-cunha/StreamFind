@@ -47,6 +47,7 @@ _skbuild/
 **/*.html
 /log/
 /cache/
+/tmp/
 
 # IDE and OS files --------------------------------------------------------------
 *.Rproj.user/

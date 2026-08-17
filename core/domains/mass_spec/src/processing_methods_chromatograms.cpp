@@ -1,4 +1,4 @@
-#include "streamfind/mass_spec/processing_chromatograms.hpp"
+#include "streamfind/mass_spec/processing_methods_chromatograms.hpp"
 
 #include "streamfind/mass_spec/reader.hpp"
 
@@ -101,49 +101,6 @@ Json filter_chromatograms_retention_time(streamfind::Project &project, const Jso
     }
     project.execute_sql("DELETE FROM MASS_SPEC_CHROMATOGRAMS WHERE project_id = " + detail::sql(project.get_project_id()) + filter);
     return detail::status("Chromatograms filtered by retention time.");
-}
-
-Json get_chromatograms(streamfind::Project &project, const Json &parameters) {
-    detail::ensure_table(project);
-    std::string query = "SELECT project_id, analysis, chromatogram_id, rt, raw_intensity, baseline, intensity FROM MASS_SPEC_CHROMATOGRAMS WHERE project_id = " + detail::sql(project.get_project_id());
-    const auto wanted = parameters.value("analysis_names", Json::array());
-    if (!wanted.empty()) {
-        query += " AND analysis IN (";
-        for (std::size_t i = 0; i < wanted.size(); ++i) query += (i ? "," : "") + detail::sql(wanted[i].get<std::string>());
-        query += ")";
-    }
-    query += " ORDER BY analysis, chromatogram_id, rt";
-    auto rows = project.query_json(query);
-    for (auto &row : rows) {
-        row["rt"] = std::stod(row.at("rt").get<std::string>());
-        row["raw_intensity"] = std::stod(row.at("raw_intensity").get<std::string>());
-        row["baseline"] = std::stod(row.at("baseline").get<std::string>());
-        row["intensity"] = std::stod(row.at("intensity").get<std::string>());
-    }
-    return rows;
-}
-
-Json get_raw_chromatograms(streamfind::Project &project, const Json &parameters) {
-    std::vector<int> indices;
-    for (const auto &value : parameters.value("indices", Json::array())) indices.push_back(value.get<int>());
-    Json output = Json::array();
-    for (const auto &[analysis, path] : detail::analyses(project, parameters)) {
-        ::mass_spec::reader::MASS_SPEC_FILE file(path);
-        const auto headers = file.get_chromatograms_headers(indices);
-        const auto arrays = file.get_chromatograms(indices);
-        for (std::size_t i = 0; i < arrays.size() && i < headers.chromatogram_id.size(); ++i) {
-            if (arrays[i].size() < 2) continue;
-            const auto &times = arrays[i][0];
-            const auto &intensities = arrays[i][1];
-            const auto count = std::min(times.size(), intensities.size());
-            for (std::size_t j = 0; j < count; ++j)
-                output.push_back({{"project_id", project.get_project_id()}, {"analysis", analysis},
-                                  {"chromatogram_id", headers.chromatogram_id[i]}, {"rt", times[j]},
-                                  {"raw_intensity", intensities[j]}, {"baseline", 0.0},
-                                  {"intensity", intensities[j]}});
-        }
-    }
-    return output;
 }
 
 }

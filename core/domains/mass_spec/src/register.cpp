@@ -1,6 +1,6 @@
 #include "streamfind/generated_metadata.hpp"
 #include "streamfind/mass_spec/mass_spec.hpp"
-#include "streamfind/mass_spec/processing_chromatograms.hpp"
+#include "streamfind/mass_spec/processing_methods_chromatograms.hpp"
 #include "streamfind/mass_spec/register.hpp"
 
 namespace streamfind::mass_spec {
@@ -88,7 +88,7 @@ void register_operations(OperationRegistry &registry) {
             else if (id == "mass_spec.get_raw_spectra_ms2") result = domain.get_raw_spectra_ms2(parameters);
             else if (id == "mass_spec.get_raw_spectra") result = domain.get_raw_spectra(parameters);
             else if (id == "mass_spec.get_chromatograms") result = domain.get_chromatograms(parameters);
-            else if (id == "mass_spec.get_raw_chromatograms") result = processing::get_raw_chromatograms(project, parameters);
+            else if (id == "mass_spec.get_raw_chromatograms") result = domain.get_raw_chromatograms(parameters);
             else result = domain.get_analyses_info(parameters);
             return result_schema.value("type", "") == "table" ? detail::columnar(std::move(result), result_schema) : result;
         }));

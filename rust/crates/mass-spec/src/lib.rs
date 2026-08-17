@@ -8,12 +8,13 @@ use streamfind_rust_core::{
 
 mod generated_metadata;
 
-pub mod processing_chromatograms;
+pub mod processing_methods_chromatograms;
 pub mod reader;
 
 const ANALYSES_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_ANALYSES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, replicate VARCHAR, blank VARCHAR, file_name VARCHAR, file_path VARCHAR NOT NULL, file_dir VARCHAR, file_extension VARCHAR, format VARCHAR, type VARCHAR, time_stamp VARCHAR, number_spectra INTEGER, number_chromatograms INTEGER, number_spectra_binary_arrays INTEGER, min_mz DOUBLE, max_mz DOUBLE, start_rt DOUBLE, end_rt DOUBLE, has_ion_mobility BOOLEAN, concentration DOUBLE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis))";
 const SPECTRA_HEADERS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_SPECTRA_HEADERS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, index INTEGER NOT NULL, scan INTEGER, array_length INTEGER, level INTEGER, mode INTEGER, polarity INTEGER, configuration INTEGER, lowmz DOUBLE, highmz DOUBLE, bpmz DOUBLE, bpint DOUBLE, tic DOUBLE, rt DOUBLE, mobility DOUBLE, window_mz DOUBLE, window_mzlow DOUBLE, window_mzhigh DOUBLE, precursor_mz DOUBLE, precursor_intensity DOUBLE, precursor_charge INTEGER, activation_ce DOUBLE, PRIMARY KEY(project_id, analysis, index))";
 const CHROMATOGRAMS_HEADERS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_CHROMATOGRAMS_HEADERS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, index INTEGER NOT NULL, chromatogram_id VARCHAR, array_length INTEGER, polarity INTEGER, precursor_mz DOUBLE, activation_ce DOUBLE, product_mz DOUBLE, signal_type VARCHAR, chromatogram_type VARCHAR, detector VARCHAR, channel VARCHAR, units VARCHAR, wavelength_nm DOUBLE, interval_ms DOUBLE, start_time DOUBLE, end_time DOUBLE, intensity_multiplier DOUBLE, PRIMARY KEY(project_id, analysis, index))";
+pub(crate) const CHROMATOGRAMS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_CHROMATOGRAMS (project_id TEXT NOT NULL, analysis TEXT NOT NULL, chromatogram_id TEXT NOT NULL, rt DOUBLE NOT NULL, raw_intensity DOUBLE NOT NULL, baseline DOUBLE NOT NULL DEFAULT 0, intensity DOUBLE NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, chromatogram_id, rt))";
 
 fn sql(value: &str) -> String {
     format!("'{}'", value.replace('\'', "''"))
@@ -591,7 +592,97 @@ fn merge_raw_spectra_rows(rows: Value, mz_clust: f64, presence: f64) -> Value {
 }
 
 fn get_chromatograms_impl(project: &mut Project, parameters: &Value) -> Result<Value> {
-    processing_chromatograms::get_chromatograms(project, parameters)
+    project.execute_sql(CHROMATOGRAMS_SCHEMA)?;
+    let wanted = parameters
+        .get("analysis_names")
+        .and_then(Value::as_array)
+        .map(|values| {
+            values
+                .iter()
+                .filter_map(Value::as_str)
+                .map(str::to_owned)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    let filter = if wanted.is_empty() {
+        String::new()
+    } else {
+        format!(
+            " AND analysis IN ({})",
+            wanted
+                .iter()
+                .map(|value| sql(value))
+                .collect::<Vec<_>>()
+                .join(",")
+        )
+    };
+    project.query_json(&format!(
+        "SELECT project_id, analysis, chromatogram_id, rt, raw_intensity, baseline, intensity FROM MASS_SPEC_CHROMATOGRAMS WHERE project_id = {}{} ORDER BY analysis, chromatogram_id, rt",
+        sql(project.get_project_id()), filter
+    ))
+}
+
+fn get_raw_chromatograms_impl(project: &mut Project, parameters: &Value) -> Result<Value> {
+    ensure_schema(project)?;
+    let wanted = parameters
+        .get("analysis_names")
+        .and_then(Value::as_array)
+        .map(|values| {
+            values
+                .iter()
+                .filter_map(Value::as_str)
+                .map(str::to_owned)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    let indices = parameters
+        .get("indices")
+        .and_then(Value::as_array)
+        .map(|values| {
+            values
+                .iter()
+                .filter_map(Value::as_u64)
+                .map(|value| value as usize)
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
+    let rows = project.query_json(&format!(
+        "SELECT analysis, file_path FROM MASS_SPEC_ANALYSES WHERE project_id = {} ORDER BY analysis",
+        sql(project.get_project_id())
+    ))?;
+    let mut output = Vec::new();
+    for row in rows.as_array().into_iter().flatten() {
+        let analysis = row["analysis"].as_str().unwrap_or_default();
+        if !wanted.is_empty() && !wanted.iter().any(|value| value == analysis) {
+            continue;
+        }
+        let file = reader::Reader::open(row["file_path"].as_str().unwrap_or_default())
+            .map_err(|error| Error::new(ErrorCode::InvalidArgument, error.to_string()))?;
+        let selected = if indices.is_empty() {
+            (0..file.chromatograms().len()).collect::<Vec<_>>()
+        } else {
+            indices
+                .iter()
+                .copied()
+                .filter(|index| *index < file.chromatograms().len())
+                .collect()
+        };
+        for index in selected {
+            let chromatogram = &file.chromatograms()[index];
+            for (rt, intensity) in chromatogram.time.iter().zip(&chromatogram.intensity) {
+                output.push(json!({
+                    "project_id": project.get_project_id(),
+                    "analysis": analysis,
+                    "chromatogram_id": chromatogram.id,
+                    "rt": *rt as f64,
+                    "raw_intensity": *intensity as f64,
+                    "baseline": 0.0,
+                    "intensity": *intensity as f64,
+                }));
+            }
+        }
+    }
+    Ok(Value::Array(output))
 }
 
 fn parameter_example(name: &str) -> Option<Value> {
@@ -918,7 +1009,7 @@ pub fn register_operations(registry: &mut OperationRegistry) -> Result<()> {
                             get_chromatograms_impl(project, parameters)
                         }
                         "mass_spec.get_raw_chromatograms" => {
-                            processing_chromatograms::get_raw_chromatograms(project, parameters)
+                            get_raw_chromatograms_impl(project, parameters)
                         }
                         _ => unreachable!(),
                     },
@@ -983,9 +1074,9 @@ pub fn register_methods(registry: &mut MethodRegistry) -> Result<()> {
             ontology_parameters(id),
             Box::new(move |project, parameters| {
                 if id == "mass_spec.load_chromatograms" {
-                    processing_chromatograms::load_chromatograms(
+                    processing_methods_chromatograms::load_chromatograms(
                         project,
-                        &processing_chromatograms::LoadChromatogramsRequest {
+                        &processing_methods_chromatograms::LoadChromatogramsRequest {
                             analyses: string_list(parameters, "analysis_names"),
                             chromatogram_id_regex: string_list(parameters, "chromatogram_id_regex"),
                             ignore_case: parameters
@@ -1000,9 +1091,9 @@ pub fn register_methods(registry: &mut MethodRegistry) -> Result<()> {
                     )
                     .map(|_| json!({"status": "finished", "info": "Chromatograms loaded."}))
                 } else {
-                    processing_chromatograms::filter_chromatograms_retention_time(
+                    processing_methods_chromatograms::filter_chromatograms_retention_time(
                         project,
-                        &processing_chromatograms::FilterChromatogramsRetentionTimeRequest {
+                        &processing_methods_chromatograms::FilterChromatogramsRetentionTimeRequest {
                             analyses: string_list(parameters, "analysis_names"),
                             rtmin: number(parameters.get("rt_min").unwrap_or(&Value::Null)) as f64,
                             rtmax: number(parameters.get("rt_max").unwrap_or(&Value::Null)) as f64,
