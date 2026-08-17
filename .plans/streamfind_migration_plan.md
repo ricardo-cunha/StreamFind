@@ -14,7 +14,13 @@
 
 ## Architecture: semantic catalogue, independent backends, generic interfaces
 
-The centre of the architecture is the **streamfind semantic catalogue**, not either backend and not MCP. The catalogue documents the externally visible concepts and capabilities that define streamfind interoperability.
+The implementation now has three permanent ownership boundaries:
+
+- `semantic/` owns the backend-neutral public contract;
+- `core/` owns the independent C++ implementation;
+- `rust/` owns the independent Rust implementation.
+
+`bindings/r/src/` is the functional former implementation and migration reference. It is not a future implementation location and must not receive new domain work during this migration. The centre of the architecture is the **streamfind semantic catalogue**, not either backend and not MCP. The catalogue documents the externally visible concepts and capabilities that define streamfind interoperability.
 
 The semantic catalogue uses:
 
@@ -177,23 +183,24 @@ For MCP, the semantic catalogue is the authoritative source for tool-facing labe
 
 | Area | Status | Evidence in this branch | Roadmap implication |
 | --- | --- | --- | --- |
-| C++ backend | **Complete foundation** | Standalone C++20 `core/` with CMake, Project/JSON APIs, DuckDB persistence, workflow, cache, audit, cancellation, progress, MCP support, install rules, and tests. | Extend through domain modules; do not recreate the generic project kernel. |
-| Rust backend | **Complete foundation** | `rust/` Cargo workspace with `core`, `cli`, `external`, and `mcp` crates; independent from C++. | Preserve independent implementation and modular crates. |
-| Semantic catalogue | **Partial / baseline complete** | `semantic/` contains vocabulary/catalogue, SKOS metadata, SHACL, results/errors, and validation; shared semantic and MCP fixtures live under `tests/fixtures/`. | Simplify its consumption through one normalized semantic projection and extend it incrementally. |
-| C++/Rust MCP | **Partial** | Both stdio servers support initialization, tools listing/calling, connection lifecycle, generic operations, domain filtering, registered domain methods, and generated semantic metadata. MCP tests now call `mass_spec.get_analyses_info` through both adapters and verify a JSON result. | Remove method-specific MCP maintenance by making MCP entirely registry/catalogue driven. |
-| Domain composition | **Partial** | Registry hooks and connected-project domain filtering exist. | Formalize one minimal DomainModule/registration contract and prove it with real domain modules only as capabilities are migrated. |
+| C++ backend | **Complete foundation / active implementation** | Standalone C++20 `core/` has Project/JSON APIs, DuckDB persistence, workflow, cache, audit, cancellation, progress, generic MCP, MassSpec reader and chromatogram processing, and MassSpec registry registration. | Put all new C++ operations and processing methods in `core/`; extend domain modules rather than the generic project kernel. |
+| Rust backend | **Complete foundation / active implementation** | `rust/` is an independent Cargo workspace with core, CLI, external, MCP, MassSpec, Raman, and sensors crates. MassSpec has reader, operations, and chromatogram processing. | Put all new Rust operations and processing methods in `rust/`; preserve independence from C++. |
+| Semantic catalogue | **Active implementation** | `semantic/` contains Turtle ontology sources, SHACL validation, deterministic projection generation, and generated metadata embedded by both MCP implementations. | Add or revise a semantic declaration, result/error contract, and fixture before registering each migrated capability. |
+| C++/Rust MCP | **Complete generic foundation** | Both stdio servers initialize, connect, list tools, call generic/domain capabilities, filter by connected domain, and consume generated semantic metadata. | Expose each migrated capability by semantic declaration plus backend registry registration; do not add capability-specific MCP dispatch. |
+| Domain composition | **Partial** | C++ and Rust compose MassSpec, Raman, and sensors registration points. MassSpec has real registered operations and two workflow methods; Raman and sensors are scaffolding. | Continue with real MassSpec and NTA capabilities, creating no placeholder production tools. |
 | R binding | **Complete relocation / deferred alignment** | Complete R package is under `bindings/r/`. | Keep functional as-is until new backends/domain paths are mature. |
 | Cogniflow integration | **Complete relocation / deferred alignment** | Integration boundary exists under `integrations/cf-streamfind/`. | Align only after the public Python path is stable. |
-| Python distribution | **Future** | `bindings/python/` remains reserved. | Build after semantic/registry/MCP contracts are stable. |
-| Domain capabilities | **Partial** | MassSpec has a tested C++ direct-operation slice (`add_analyses`, `remove_analyses`, `get_analyses_info`). Rust registers the same operations and exposes `get_analyses_info` through MCP, but its executor still returns an empty placeholder result pending real persistence. Raman and sensors remain composition scaffolding. | Complete one real cross-backend domain slice at a time. |
+| Frontend | **Future** | No frontend is part of the active implementation path. | Start only after the required migrated operations and processing methods are available through MCP. |
+| Domain capabilities | **Partial / active** | C++ and Rust both register MassSpec analysis management, metadata/query, spectra/chromatogram retrieval operations, plus `load_chromatograms` and `filter_chromatograms_retention_time` workflow methods. The former R package retains broader MassSpec and NTA processing, including feature detection, filtering, alignment, gap filling, annotation, suspect screening, and transformation-product assignment. | Migrate the remaining former R capabilities in dependency order as independently tested C++ and Rust implementations. |
 
-### MCP result-info verification
+### Current migration boundary
 
-`mass_spec.get_analyses_info` is available through the connected-project MCP
-session in both backends. The C++ MCP smoke test registers the MassSpec
-operations, calls the operation through `tools/call`, and passes with an empty
-JSON array for a new project. The Rust MCP protocol test performs the same
-connected-session call and checks the JSON result. Both MCP test suites pass.
+`bindings/r/src/core/mass_spec/` and `bindings/r/src/core/nta/` are the source
+inventory for remaining MassSpec and NTA behaviour. The Rcpp export files
+define the public operation inventory to assess; helper functions alone are
+not migration units. For every accepted capability, implement the target
+architecture directly in `semantic/`, `core/`, and `rust/`. Do not wrap, call,
+or redirect to the former R implementation.
 
 ## Target repository shape
 
@@ -497,128 +504,42 @@ not required:
 
 ## Roadmap
 
-### 1. Finish the semantic projection and generic MCP contract — **Complete**
+### 1. Migrate remaining former R capabilities — **Active**
 
-The generic semantic/MCP baseline already exists. The remaining work should simplify consumption rather than add another abstraction layer.
+The immediate goal is to move the remaining public operations and processing
+methods represented by `bindings/r/src/` into the target architecture. Work in
+workflow dependency order, beginning with MassSpec primitives required by NTA.
 
-1. Consolidate semantic extraction into **one** deterministic generator that produces `semantic/generated/catalogue.json` (or an equivalently simple backend-neutral projection).
-2. Remove the need for separate hand-authored/generated semantic metadata models in C++ and Rust; both backends consume/embed the same projection format.
-3. Ensure the projection includes only public metadata needed by consumers: domain, canonical ID, label/definition, parameters, result/errors, executable/exposure flags, MCP mapping, and fixture references where useful.
-4. Keep generic operations and domain methods in the same projection format but as distinct semantic types.
-5. Add CI checks:
-   - RDF/Turtle parsing;
-   - SHACL validation;
-   - duplicate canonical IDs;
-   - invalid/unqualified domain method IDs;
-   - stale generated projection;
-   - fixture references exist;
-   - MCP names are unique within a connected domain.
-6. Keep MCP lifecycle conformance covering initialize, connect, pre/post-connect tools, calls, errors, close, cancellation, and progress.
+1. Inventory the Rcpp-exported MassSpec and NTA public capabilities and map each to a canonical semantic ID, target type (`sf:Operation` or `sf:Method`), dependencies, input/output contract, and representative fixture.
+2. Treat the existing MassSpec analysis, spectra, chromatogram, and two chromatogram workflow methods as migrated baseline; close behavioural and fixture gaps before using them as NTA dependencies.
+3. Migrate the remaining MassSpec processing primitives required by NTA.
+4. Migrate NTA in dependency order: feature detection/deconvolution, blank subtraction and corrections, feature filtering, alignment and gap filling, componentization, annotation, suspect screening, MetFrag integration, and transformation-product assignment.
+5. For every capability, update `semantic/` first, implement it independently in `core/` and `rust/`, register it in the matching registry, and add backend and conformance tests.
+6. Keep R functional and unchanged except for necessary build repairs. Do not create wrappers, fallbacks, or dual execution paths.
 
-**Exit condition:** one semantic source and one generated projection drive both MCP catalogues; neither backend maintains a duplicate public metadata catalogue. Complete in this branch; Phase 1.5 is the next implementation phase.
+**Exit condition:** every accepted former R public operation and processing method has one semantic contract and independently tested C++ and Rust implementations, or is explicitly retired by a separate decision.
 
-### 1.5. Stabilise domain composition and registry-driven MCP — **Active**
+### 2. Expose migrated capabilities through MCP — **Active, per capability**
 
-This phase proves that domains can expand without expanding MCP maintenance. The
-composition skeleton is present for `mass_spec`, `raman`, and `sensors` in both
-backends. MassSpec direct Operations are registered in both backends; the C++
-add/remove/info path is tested, while Rust persistence remains pending.
+MCP is the interface layer immediately after each capability is implemented,
+not a separate reimplementation phase.
 
-#### A. Stabilise the registry
+1. Regenerate the semantic projection after each ontology change.
+2. Verify both MCP servers advertise only the intersection of semantic executable IDs and registered C++/Rust executors for the connected domain.
+3. Add a shared MCP fixture and one C++ and Rust protocol test for each migrated capability or tightly coupled processing slice.
+4. Verify parameter validation, result shape, errors, cancellation, and progress where applicable.
+5. Do not add a method-specific tool definition, description, schema, or dispatch branch.
 
-1. Keep `MethodRegistry` and `OperationRegistry` separate: Methods are workflow units; Operations are direct Project/MCP calls.
-2. Keep each registry to the minimal execution API: register, list IDs by domain, lookup/invoke, duplicate rejection.
-3. Add tests proving:
-   - duplicate IDs fail;
-   - malformed/unqualified domain IDs fail;
-   - listing by domain is exact;
-   - invocation is by canonical qualified ID.
+**Exit condition:** all migrated capabilities are callable and documented through both MCP implementations using only the semantic projection and registry registrations.
 
-#### B. Stabilise domain modules
+### 3. Develop the frontend — **Future, after required MCP coverage**
 
-1. Create a domain library/crate only when that domain has an agreed capability to implement. Do not create empty or fake method catalogues merely to prove extensibility.
-2. Each domain has matching `register_methods` and/or `register_operations` entry points for the capabilities it owns.
-3. The application composition root registers each shipped domain exactly once.
-4. Adding methods inside an already composed domain must require no changes to MCP/application composition.
-5. Add one small real or test-only registry fixture per starting domain to prove filtering if the analytical migration is not ready yet; do not expose fake production tools.
+1. Define the frontend's service boundary from the MCP-exposed contracts and generated semantic metadata; do not duplicate operation schemas or descriptions.
+2. Build the minimal application/API host needed to create projects, manage analyses, run methods, show progress, and inspect results.
+3. Implement the frontend against that public service boundary, never against DuckDB, C++, Rust internals, or `bindings/r`.
+4. Add end-to-end coverage for the migrated workflows users can execute from the frontend.
 
-#### C. Make MCP completely generic for domain Methods and Operations
-
-1. At `tools/list`, take the connected project domain and compute:
-
-   ```text
-    semantic Methods and Operations for domain
-             ∩
-   registered executable IDs
-   ```
-
-2. Build MCP tool metadata entirely from the semantic projection.
-3. Resolve calls generically from MCP mapping to a canonical ID and invoke the matching registry.
-4. Remove or forbid per-domain/per-method MCP dispatch branches for normal domain methods.
-5. Add conformance tests for both a workflow Method and a direct Operation, proving each appears and executes **without editing MCP source**.
-6. Run the same test pattern in C++ and Rust.
-
-#### D. New-domain maintenance test
-
-Add a repository-level test/example documenting the exact steps for a future domain, for example `imaging`:
-
-```text
-1. semantic/ontology/domains/imaging/*.ttl
-2. core/domains/imaging/ OR rust/crates/imaging/
-3. implement executors
-4. register methods inside the domain module
-5. add the domain module once to the application composition
-6. add fixtures/tests
-```
-
-No MCP tool definition or dispatch file may need editing.
-
-**Exit condition:** adding a method to an existing domain requires semantic declaration + executor registration only; adding a new domain requires one semantic domain file, one backend domain module, and one composition entry per shipping application. Both MCP servers discover/document/dispatch its methods generically.
-
-### 2. Build the consolidated Python distribution — **Future / after Section 1.5**
-
-1. Establish `bindings/python/pyproject.toml`, `bindings/python/CMakeLists.txt`, and `bindings/python/cpp/` using scikit-build-core and pybind11.
-2. Keep `streamfind._core` private and minimal.
-3. Implement `streamfind.core` as the typed public Python API.
-4. Add `streamfind.cli` for generic project and workflow operations.
-5. Add `streamfind.server` with Pydantic schemas, service layer, project/workflow/job/result endpoints, and progress handling.
-6. Keep React/TypeScript source in `bindings/python/frontend/` and package build output with the Python distribution.
-7. Remove legacy top-level `server/` and `frontend/` placeholders after relocation.
-8. Reuse semantic metadata for developer-facing method/API documentation where practical; do not introduce a second method catalogue in Python.
-
-**Exit condition:** an installed wheel can operate a generic C++-backed project through Python API, CLI, and FastAPI without consumers accessing `_core` or DuckDB directly.
-
-### 3. Deliver real domain capabilities in independent vertical slices — **Future**
-
-Start with one MassSpec capability that provides real value end to end.
-
-```text
-semantic declaration + fixture
-          │
-     ┌────┴────┐
-     ▼         ▼
-   C++       Rust
- executor   executor
-     │         │
- registry    registry
-     └────┬────┘
-          ▼
- generic MCP exposure
-```
-
-For each shared domain capability:
-
-1. define/update the semantic Method or Operation, parameters, result/error semantics, exposure flags, and fixture;
-2. implement C++ behaviour and register it in `MethodRegistry` or `OperationRegistry`;
-3. independently implement Rust behaviour and register it in the matching registry;
-4. run the same conformance fixtures;
-5. compare persistence, workflow, audit/cache, results, errors, cancellation, and progress where applicable;
-6. expose the C++ capability through Python/FastAPI/frontend where required;
-7. do **not** edit MCP-specific method code unless the MCP protocol adapter itself changes.
-
-Migrate NTA only after a stable MassSpec vertical slice. Continue in workflow dependency order.
-
-**Exit condition:** real domain methods can be added repeatedly without growing generic MCP code or duplicating semantic metadata.
+**Exit condition:** users can perform the selected migrated workflows through the frontend using the same public contracts exposed through MCP.
 
 ### 4. Distribution, CI, and documentation hardening — **Future**
 
@@ -629,7 +550,7 @@ Migrate NTA only after a stable MassSpec vertical slice. Continue in workflow de
 - MCP: common lifecycle/domain conformance and proof that tool catalogues remain semantic/registry driven.
 - Documentation: generate or semi-generate method/domain/MCP references from the semantic catalogue rather than maintaining parallel hand-written inventories.
 
-### 5. Align R and Cogniflow with the completed public C++ path — **Future, final phase**
+### 5. Align R and Cogniflow with the completed public path — **Future, final phase**
 
 1. Preserve R regression fixtures before changing Rcpp-backed behaviour.
 2. Replace duplicated R generic/domain logic only after equivalent C++ capabilities exist.
