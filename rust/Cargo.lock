@@ -1816,6 +1816,7 @@ dependencies = [
  "cfb",
  "flate2",
  "quick-xml",
+ "regex",
  "serde_json",
  "streamfind-rust-core",
 ]

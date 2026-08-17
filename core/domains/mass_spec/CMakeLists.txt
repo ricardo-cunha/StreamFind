@@ -2,6 +2,7 @@ add_library(streamfind_mass_spec STATIC
     src/register.cpp
     src/reader.cpp
     src/mass_spec.cpp
+    src/processing_chromatograms.cpp
     "${CMAKE_CURRENT_SOURCE_DIR}/../../vendor/simdutf/simdutf.cpp"
 )
 target_include_directories(streamfind_mass_spec PUBLIC include)

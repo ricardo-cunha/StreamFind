@@ -1,0 +1,41 @@
+@prefix sfcore: <https://streamfind.dev/catalogue/core#> .
+@prefix sfms: <https://streamfind.dev/catalogue/domains/mass_spec#> .
+@prefix sf: <https://streamfind.dev/vocabulary#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+sfms:loadChromatogramsMassSpecMethod
+    a sf:Method ;
+    sf:methodId "mass_spec.load_chromatograms" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Load chromatograms" ;
+    skos:definition "Load selected chromatograms from persisted mass spectrometry analyses into MASS_SPEC_CHROMATOGRAMS." ;
+    sf:hasParameter
+        sfcore:analysisNamesParameter,
+        sfms:chromatogramIdRegexParameter,
+        sfms:ignoreCaseParameter,
+        sfms:invertParameter ;
+    sf:hasProperty
+        sfcore:methodCacheableField,
+        sfcore:methodRequiredField,
+        sfcore:methodMaxOccurrencesField ;
+    sf:reads sfms:analysesTable ;
+    sf:writes sfms:chromatogramsTable ;
+    sf:returns sfcore:operationStatusResult .
+
+sfms:filterChromatogramsRetentionTimeMassSpecMethod
+    a sf:Method ;
+    sf:methodId "mass_spec.filter_chromatograms_retention_time" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Filter chromatograms by retention time" ;
+    skos:definition "Keep chromatogram rows whose retention time is within the inclusive minimum and maximum window." ;
+    sf:hasParameter
+        sfcore:analysisNamesParameter,
+        sfms:rtMinParameter,
+        sfms:rtMaxParameter ;
+    sf:hasProperty
+        sfcore:methodCacheableField,
+        sfcore:methodRequiredField,
+        sfcore:methodMaxOccurrencesField ;
+    sf:reads sfms:chromatogramsTable ;
+    sf:writes sfms:chromatogramsTable ;
+    sf:returns sfcore:operationStatusResult .

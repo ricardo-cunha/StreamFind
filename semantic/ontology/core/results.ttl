@@ -2,120 +2,115 @@
 @prefix sf: <https://streamfind.dev/vocabulary#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
-    sfcore:success
-        a sf:Result ;
-        skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Successful result" ;
-        skos:definition "A capability completed without a semantic error." ;
-        sf:resultType "object" .
+sfcore:operationStatusResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Operation status" ;
+    skos:definition "Whether an operation completed as requested and an informational message about the outcome." ;
+    sf:type "object" ;
+    sf:hasProperty
+        sfcore:statusField,
+        sfcore:infoField .
 
-    sfcore:projectDescriptorResult
-        a sf:Result ; skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Project descriptor" ;
-        skos:definition "Project identity, metadata, workflow, table list, and cache summary." ;
-        sf:resultType "object" ;
-        sf:hasResultProperty sfcore:projectIdResult, sfcore:databasePathResult, sfcore:domainResultColumn, sfcore:metadataResultColumn, sfcore:schemaVersionResult, sfcore:frameworkVersionResult, sfcore:createdAtResult, sfcore:workflowResultColumn, sfcore:tablesResult, sfcore:cacheSizeResultColumn .
+sfcore:projectDescriptorResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Project descriptor" ;
+    skos:definition "Project identity, metadata, workflow, table list, and cache summary." ;
+    sf:type "table" ;
+    sf:hasProperty
+        sfcore:projectIdColumn,
+        sfcore:projectDomainColumn,
+        sfcore:projectMetadataColumn,
+        sfcore:schemaVersionColumn,
+        sfcore:frameworkVersionColumn,
+        sfcore:createdAtColumn,
+        sfcore:projectWorkflowColumn .
 
-    sfcore:validProjectResult
-        a sf:Result ; skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Project validation result" ;
-        skos:definition "Boolean result indicating whether the project is valid." ;
-        sf:resultType "object" ;
-        sf:hasResultProperty sfcore:validResult .
+sfcore:validationResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Validation result" ;
+    skos:definition "Whether validation succeeded and an explanatory message." ;
+    sf:type "object" ;
+    sf:hasProperty
+        sfcore:validField,
+        sfcore:infoField .
 
-    sfcore:workflowValidationResult
-        a sf:Result ; skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Workflow validation result" ;
-        skos:definition "Validation status and the normalized workflow." ;
-        sf:resultType "object" ;
-        sf:hasResultProperty sfcore:validResult, sfcore:workflowResultColumn .
+sfcore:domainResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Project domain result" ;
+    skos:definition "The immutable domain assigned to the project." ;
+    sf:type "string" .
 
-    sfcore:domainResult
-        a sf:Result ; skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Project domain result" ;
-        skos:definition "The immutable domain assigned to the project." ;
-        sf:resultType "string" .
+sfcore:metadataResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Project metadata result" ;
+    skos:definition "The project metadata JSON object." ;
+    sf:type "table" ;
+    sf:hasProperty sfcore:projectMetadataColumn .
 
-    sfcore:metadataResult
-        a sf:Result ; skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Project metadata result" ;
-        skos:definition "The project metadata JSON object." ;
-        sf:resultType "object" .
+sfcore:workflowResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Workflow result" ;
+    skos:definition "The ordered workflow method objects." ;
+    sf:type "array" ;
+    sf:items sfcore:methodField .
 
-    sfcore:workflowResult
-        a sf:Result ; skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Workflow result" ;
-        skos:definition "The project's name, version, domain, and ordered workflow steps." ;
-        sf:resultType "object" .
+sfcore:cacheEntriesResult
+    a sf:Result ; skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Cache entries result" ;
+    skos:definition "The project's cache entries." ;
+    sf:type "array" ; sf:items sfcore:cacheEntryResult .
 
-    sfcore:cacheEntriesResult
-        a sf:Result ; skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Cache entries result" ;
-        skos:definition "The project's cache entries." ;
-        sf:resultType "array" ;
-        sf:items sfcore:cacheEntryResult .
+sfcore:cacheEntryResult
+    a sf:Result ; skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Cache entry" ;
+    skos:definition "One cached workflow result entry." ;
+    sf:type "object" ;
+    sf:hasProperty
+        sfcore:cacheNameColumn,
+        sfcore:cacheDescriptionColumn,
+        sfcore:cacheHashColumn,
+        sfcore:createdAtColumn .
 
-    sfcore:cacheEntryResult
-        a sf:Result ; skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Cache entry" ;
-        skos:definition "One cached workflow result entry." ;
-        sf:resultType "object" ;
-        sf:hasResultProperty sfcore:cacheNameResult, sfcore:cacheDescriptionResult, sfcore:cacheHashResult, sfcore:createdAtResult, sfcore:cacheSizeResult .
+sfcore:cacheSizeResult
+    a sf:Result ; skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Cache size result" ;
+    skos:definition "The number of cache entries." ; sf:type "integer" .
 
-    sfcore:cacheSizeResult
-        a sf:Result ; skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Cache size result" ;
-        skos:definition "The number of cache entries." ;
-        sf:resultType "integer" .
+sfcore:auditEntriesResult
+    a sf:Result ; skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Audit trail result" ;
+    skos:definition "The project's ordered audit events." ;
+    sf:type "array" ; sf:items sfcore:auditEntryResult .
 
-    sfcore:auditEntriesResult
-        a sf:Result ; skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Audit trail result" ;
-        skos:definition "The project's ordered audit events." ;
-        sf:resultType "array" ;
-        sf:items sfcore:auditEntryResult .
+sfcore:auditEntryResult
+    a sf:Result ; skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Audit entry" ;
+    skos:definition "One persisted project audit event." ;
+    sf:type "object" ;
+    sf:hasProperty
+        sfcore:operationTypeColumn,
+        sfcore:objectTypeColumn,
+        sfcore:operationDetailsColumn,
+        sfcore:createdAtColumn .
 
-    sfcore:auditEntryResult
-        a sf:Result ; skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Audit entry" ;
-        skos:definition "One persisted project audit event." ;
-        sf:resultType "object" ;
-        sf:hasResultProperty sfcore:operationTypeResult, sfcore:objectTypeResult, sfcore:operationDetailsResult, sfcore:createdAtResult .
+sfcore:methodsResult
+    a sf:Result ; skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Available methods result" ;
+    skos:definition "Definitions of workflow methods registered for a domain." ;
+    sf:type "array" ; sf:items sfcore:methodDefinitionResult .
 
-    sfcore:methodsResult
-        a sf:Result ; skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Available methods result" ;
-        skos:definition "Definitions of workflow methods registered for a domain." ;
-        sf:resultType "array" ;
-        sf:items sfcore:methodDefinitionResult .
+sfcore:methodDefinitionResult
+    a sf:Result ; skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Method definition" ;
+    skos:definition "One workflow method definition available to a domain." ; sf:type "object" .
 
-    sfcore:methodDefinitionResult
-        a sf:Result ; skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Method definition" ;
-        skos:definition "One workflow method definition available to a domain." ;
-        sf:resultType "object" .
-
-    sfcore:workflowExecutionResult
-        a sf:Result ; skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Workflow execution result" ;
-        skos:definition "Workflow results, cancellation state, and the persisted workflow." ;
-        sf:resultType "object" .
-
-    sfcore:projectIdResult a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Project ID" ; skos:definition "Project identifier in a descriptor." ; sf:columnName "id" ; sf:type "string" .
-    sfcore:databasePathResult a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Database path" ; skos:definition "Database path in a descriptor." ; sf:columnName "database_path" ; sf:type "string" .
-    sfcore:domainResultColumn a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Domain" ; skos:definition "Project domain in a descriptor." ; sf:columnName "domain" ; sf:type "string" .
-    sfcore:metadataResultColumn a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Metadata" ; skos:definition "Project metadata in a descriptor." ; sf:columnName "metadata" ; sf:type "object" .
-    sfcore:schemaVersionResult a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Schema version" ; skos:definition "Schema version in a descriptor." ; sf:columnName "schema_version" ; sf:type "integer" .
-    sfcore:frameworkVersionResult a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Framework version" ; skos:definition "Framework version in a descriptor." ; sf:columnName "framework_version" ; sf:type "string" .
-    sfcore:createdAtResult a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Created at" ; skos:definition "Creation timestamp in a descriptor." ; sf:columnName "created_at" ; sf:type "string" .
-    sfcore:tablesResult a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Tables" ; skos:definition "Project table names in a descriptor." ; sf:columnName "tables" ; sf:type "array" .
-    sfcore:workflowResultColumn a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Workflow" ; skos:definition "Workflow in a descriptor." ; sf:columnName "workflow" ; sf:type "object" .
-    sfcore:cacheSizeResultColumn a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Cache size" ; skos:definition "Cache entry count in a descriptor." ; sf:columnName "cache_size" ; sf:type "integer" .
-    sfcore:validResult a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Valid" ; skos:definition "Whether validation succeeded." ; sf:columnName "valid" ; sf:type "boolean" .
-    sfcore:cacheNameResult a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Cache name" ; skos:definition "Cache entry name." ; sf:columnName "name" ; sf:type "string" .
-    sfcore:cacheDescriptionResult a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Cache description" ; skos:definition "Cache entry description." ; sf:columnName "description" ; sf:type "string" .
-    sfcore:cacheHashResult a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Cache hash" ; skos:definition "Cache entry hash." ; sf:columnName "hash" ; sf:type "string" .
-    sfcore:cacheSizeResult a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Cache size" ; skos:definition "Number of cache entries." ; sf:columnName "size" ; sf:type "integer" .
-    sfcore:operationTypeResult a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Operation type" ; skos:definition "Audit operation category." ; sf:columnName "operation_type" ; sf:type "string" .
-    sfcore:objectTypeResult a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Object type" ; skos:definition "Audited object category." ; sf:columnName "object_type" ; sf:type "string" .
-    sfcore:operationDetailsResult a sf:Column ; skos:inScheme sfcore:scheme ; skos:prefLabel "Operation details" ; skos:definition "Audit details JSON." ; sf:columnName "details" ; sf:type "object" .
+sfcore:workflowExecutionResult
+    a sf:Result ; skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Workflow execution result" ;
+    skos:definition "Workflow results, cancellation state, and the persisted workflow." ; sf:type "object" .

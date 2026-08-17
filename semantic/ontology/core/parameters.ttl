@@ -2,99 +2,174 @@
 @prefix sf: <https://streamfind.dev/vocabulary#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
-    sfcore:databasePath
-        a sf:Parameter ;
-        skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Database path" ;
-        skos:definition "Filesystem path of the DuckDB project database." ;
-        sf:type "string" ;
-        sf:required true .
+sfcore:databasePathParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Database path" ;
+    skos:definition "Filesystem path of the DuckDB project database." ;
+    sf:type "string" ;
+    sf:required true ;
+    sf:example "/data/project.duckdb" .
 
-    sfcore:projectId
-        a sf:Parameter ;
-        skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Project identifier" ;
-        skos:definition "Logical project identifier within the database." ;
-        sf:type "string" ;
-        sf:required true .
+sfcore:projectIdParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Project identifier" ;
+    skos:definition "Logical project identifier within the database." ;
+    sf:type "string" ;
+    sf:required true ;
+    sf:example "demo" .
 
-    sfcore:domain
-        a sf:Parameter ;
-        skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Project domain" ;
-        skos:definition "Immutable domain assigned to a project." ;
-        sf:type "string" ;
-        sf:required true .
+sfcore:domainParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Project domain" ;
+    skos:definition "Immutable domain assigned to a project." ;
+    sf:type "string" ;
+    sf:required true ;
+    sf:example "mass_spec" .
 
-    sfcore:metadata
-        a sf:Parameter ;
-        skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Project metadata" ;
-        skos:definition "JSON object containing project-owned metadata." ;
-        sf:type "object" ;
-        sf:required true .
+sfcore:metadataParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Project metadata" ;
+    skos:definition "JSON object containing project-owned metadata." ;
+    sf:type "object" ;
+    sf:required true ;
+    sf:example "{}" .
 
-    sfcore:workflow
-        a sf:Parameter ;
-        skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Workflow" ;
-        skos:definition "Versioned ordered workflow definition." ;
-        sf:type "object" ;
-        sf:required true .
+sfcore:workflowParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Workflow" ;
+    skos:definition "Versioned ordered workflow definition." ;
+    sf:type "array" ;
+    sf:required true ;
+    sf:items sfcore:methodField ;
+    sf:example "[]" .
 
-    sfcore:method
-        a sf:Parameter ;
-        skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Method identifier" ;
-        skos:definition "Stable identifier of a registered workflow method." ;
-        sf:type "string" ;
-        sf:required true .
+sfcore:methodParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Method identifier" ;
+    skos:definition "Stable identifier of a registered workflow method." ;
+    sf:type "string" ;
+    sf:required true ;
+    sf:example "mass_spec.get_raw_spectra" .
 
-    sfcore:parameters
-        a sf:Parameter ;
-        skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Method parameters" ;
-        skos:definition "JSON object containing method-specific parameter values." ;
-        sf:type "object" ;
-        sf:required false .
+sfcore:parametersParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Method parameters" ;
+    skos:definition "JSON object containing method-specific parameter values." ;
+    sf:type "object" ;
+    sf:required false ;
+    sf:example "{}" .
 
-    sfcore:destinationDatabasePath
-        a sf:Parameter ;
-        skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Destination database path" ;
-        skos:definition "Filesystem path for the copied DuckDB project database." ;
-        sf:type "string" ;
-        sf:required true .
+sfcore:destinationDatabasePathParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Destination database path" ;
+    skos:definition "Filesystem path for the copied DuckDB project database." ;
+    sf:type "string" ;
+    sf:required true ;
+    sf:example "/data/copied.duckdb" .
 
-    sfcore:destinationProjectId
-        a sf:Parameter ;
-        skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Destination project identifier" ;
-        skos:definition "Logical identifier for the copied project." ;
-        sf:type "string" ;
-        sf:required true .
+sfcore:destinationProjectIdParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Destination project identifier" ;
+    skos:definition "Logical identifier for the copied project." ;
+    sf:type "string" ;
+    sf:required true ;
+    sf:example "copy" .
 
-    sfcore:analyses
-        a sf:Parameter ;
-        skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Analyses" ;
-        skos:definition "Array of analysis file records. Each record contains a path and may contain replicate_name and blank_name." ;
-        sf:type "array" ;
-        sf:required true ;
-        sf:items sfcore:analysisFile .
+sfcore:analysesParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Analyses" ;
+    skos:definition "Array of analysis file records." ;
+    sf:type "array" ;
+    sf:required true ;
+    sf:example "[{\"path\":\"data/sample.mzML\",\"replicate_name\":\"r1\"}]" ;
+    sf:items sfcore:analysisFileParameter .
 
-    sfcore:analysisFile
-        a sf:Parameter ;
-        skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Analysis file" ;
-        skos:definition "One analysis file and optional replicate and blank labels." ;
-        sf:type "object" ;
-        sf:required true .
+sfcore:analysisFileParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Analysis file" ;
+    skos:definition "One analysis file and optional replicate and blank labels." ;
+    sf:type "object" ;
+    sf:required true ;
+    sf:example "{\"path\":\"data/sample.mzML\",\"replicate_name\":\"r1\"}" ;
+    sf:hasProperty
+        sfcore:analysisFilePathField,
+        sfcore:analysisFileReplicateField,
+        sfcore:analysisFileBlankField .
 
-    sfcore:analysisNames
-        a sf:Parameter ;
-        skos:inScheme sfcore:scheme ;
-        skos:prefLabel "Analysis names" ;
-        skos:definition "Array of analysis file names without filename extensions." ;
-        sf:type "array" ;
-        sf:required true .
+sfcore:analysisNamesParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Analysis names" ;
+    skos:definition "Array of analysis file names without filename extensions." ;
+    sf:type "array" ;
+    sf:required true ;
+    sf:items sfcore:stringItemParameter ;
+    sf:example "[\"sample\",\"blank\"]" .
+
+sfcore:replicateNamesParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Replicate names" ;
+    skos:definition "Replicate labels ordered by analysis name." ;
+    sf:type "array" ;
+    sf:required true ;
+    sf:items sfcore:stringItemParameter ;
+    sf:example "[\"r1\",\"r2\"]" .
+
+sfcore:blankNamesParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Blank names" ;
+    skos:definition "Blank labels ordered by analysis name." ;
+    sf:type "array" ;
+    sf:required true ;
+    sf:items sfcore:stringItemParameter ;
+    sf:example "[\"blank\",\"blank\"]" .
+
+sfcore:concentrationsParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Concentrations" ;
+    skos:definition "Analysis concentrations ordered by analysis name." ;
+    sf:type "array" ;
+    sf:required true ;
+    sf:items sfcore:realItemParameter ;
+    sf:example "[1.0,2.0]" .
+
+sfcore:stringItemParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "String array item" ;
+    skos:definition "One string value in a string array parameter." ;
+    sf:type "string" ;
+    sf:required true ;
+    sf:example "sample" .
+
+sfcore:integerItemParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Integer array item" ;
+    skos:definition "One integer value in an integer array parameter." ;
+    sf:type "integer" ;
+    sf:required true ;
+    sf:example 1 .
+
+sfcore:realItemParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Real array item" ;
+    skos:definition "One real value in a real array parameter." ;
+    sf:type "real" ;
+    sf:required true ;
+    sf:example 1.0 .

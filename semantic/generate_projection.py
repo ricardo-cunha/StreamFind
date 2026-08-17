@@ -1,6 +1,7 @@
 import argparse
 import json
 import re
+from decimal import Decimal
 from pathlib import Path
 
 from rdflib import Dataset, Namespace, RDF
@@ -15,35 +16,96 @@ def wire_name(value):
     return re.sub(r"(?<!^)([A-Z])", r"_\1", value).lower()
 
 
+def resource_name(value):
+    value = value.rsplit("#", 1)[-1]
+    return value.removesuffix("Parameter")
+
+
+def json_value(value):
+    return float(value) if isinstance(value, Decimal) else value
+
+
 def projection():
     graph = Dataset()
     for path in sorted((ROOT / "ontology" / "core").glob("*.ttl")):
         graph.parse(path, format="turtle")
     for path in sorted((ROOT / "ontology" / "domains").rglob("*.ttl")):
         graph.parse(path, format="turtle")
+    def parameter_schema(parameter):
+        schema = {"type": str(graph.value(parameter, SF.type))}
+        example = graph.value(parameter, SF.example)
+        if example:
+            value = json_value(example.toPython())
+            if isinstance(value, str):
+                try:
+                    value = json.loads(value)
+                except json.JSONDecodeError:
+                    pass
+            schema["examples"] = [value]
+        item = graph.value(parameter, SF.items)
+        if item:
+            schema["items"] = parameter_schema(item)
+        properties = {}
+        required = []
+        for prop in graph.objects(parameter, SF.hasProperty):
+            name = str(graph.value(prop, SF.propertyName) or graph.value(prop, SF.columnName) or wire_name(str(prop).rsplit("#", 1)[-1]))
+            properties[name] = parameter_schema(prop)
+            required_value = graph.value(prop, SF.required)
+            if required_value and required_value.toPython():
+                required.append(name)
+        if properties:
+            schema["properties"] = properties
+            if required:
+                schema["required"] = required
+        return schema
+
     parameters = {
         parameter: {
-            "name": wire_name(str(parameter).rsplit("#", 1)[-1]),
+            "name": wire_name(resource_name(str(parameter))),
             "type": str(graph.value(parameter, SF.type)),
             "required": graph.value(parameter, SF.required).toPython(),
             "constraints": graph.value(parameter, SF.constraints).toPython() if graph.value(parameter, SF.constraints) else {},
-            "items": str(graph.value(parameter, SF.items)).rsplit("#", 1)[-1] if graph.value(parameter, SF.items) else None,
+            "items": resource_name(str(graph.value(parameter, SF.items))) if graph.value(parameter, SF.items) else None,
             "extensions": str(graph.value(parameter, SF.extensions)).split(",") if graph.value(parameter, SF.extensions) else [],
+            "schema": parameter_schema(parameter),
+            "example": parameter_schema(parameter).get("examples", [None])[0],
         }
         for parameter in graph.subjects(RDF.type, SF.Parameter)
     }
+    def result_type(result):
+        return str(graph.value(result, SF.type))
+
     def result_schema(result):
         if result is None:
             return {"type": "object"}
-        schema = {"type": str(graph.value(result, SF.resultType))}
+        schema = {"type": result_type(result)}
         item = graph.value(result, SF.items)
         if item:
             schema["items"] = result_schema(item)
         properties = {}
-        for prop in graph.objects(result, SF.hasResultProperty):
-            properties[str(graph.value(prop, SF.columnName))] = {"type": str(graph.value(prop, SF.type))}
+        for prop in graph.objects(result, SF.hasProperty):
+            column = column_schema(prop)
+            properties[str(graph.value(prop, SF.propertyName) or graph.value(prop, SF.columnName))] = (
+                {"type": "array", "items": column}
+                if schema["type"] == "table" else column
+            )
         if properties:
             schema["properties"] = properties
+        return schema
+
+    def column_schema(column):
+        schema = {"type": result_type(column)}
+        item = graph.value(column, SF.items)
+        if item:
+            schema["items"] = column_schema(item)
+        properties = {}
+        for prop in graph.objects(column, SF.hasProperty):
+            properties[str(graph.value(prop, SF.propertyName) or graph.value(prop, SF.columnName))] = column_schema(prop)
+        if properties:
+            schema["properties"] = properties
+        constraint = graph.value(column, SF.constraints)
+        if constraint:
+            schema["enum"] = str(constraint).split("|")
         return schema
     entries = []
     subjects = set(graph.subjects(SF.operationId, None)) | set(graph.subjects(SF.methodId, None))
@@ -55,7 +117,16 @@ def projection():
             kind = "method"
             canonical_id = str(method_id)
             domain = str(graph.value(operation, SF.availableInDomain)).rsplit("#", 1)[-1]
-        values = [parameters[parameter] for parameter in graph.objects(operation, SF.hasParameter)]
+        defaults_node = graph.value(operation, SF.defaults)
+        defaults = json.loads(str(defaults_node)) if defaults_node else {}
+        values = []
+        for parameter in graph.objects(operation, SF.hasParameter):
+            value = dict(parameters[parameter])
+            value["default"] = defaults.get(value["name"])
+            value["schema"] = dict(value["schema"])
+            if value["default"] is not None:
+                value["schema"]["default"] = value["default"]
+            values.append(value)
         result_node = graph.value(operation, SF.returns)
         mutates = graph.value(operation, SF.mutatesProject)
         effects = {
@@ -75,10 +146,7 @@ def projection():
                 "name": str(graph.value(operation, SF.toolName)),
                 "input_schema": {
                     "type": "object",
-                    "properties": {value["name"]: {
-                        "type": value["type"],
-                        **({"items": {"type": "object", "properties": {"path": {"type": "string"}, "replicate_name": {"type": "string"}, "blank_name": {"type": "string"}}, "required": ["path"]}} if value.get("items") else {})
-                    } for value in values},
+                    "properties": {value["name"]: value["schema"] for value in values},
                     "required": [value["name"] for value in values if value["required"]],
                 },
             },
@@ -106,9 +174,12 @@ def outputs(value):
         ROOT / "generated" / "catalogue.json": payload,
         ROOT.parent / "core" / "include" / "streamfind" / "generated_metadata.hpp":
             "#pragma once\n\nnamespace streamfind::mcp::generated {\ninline constexpr char tools[] = R\"JSON(\n"
-            + tools + ")JSON\";\n}\n",
+            + tools + ")JSON\";\ninline constexpr char catalogue[] = R\"JSON(\n"
+            + payload + ")JSON\";\n}\n",
         ROOT.parent / "rust" / "crates" / "mcp" / "src" / "generated_metadata.rs":
-            "pub const TOOLS: &str = r###\"\n" + tools + "\"###;\n",
+            "pub const TOOLS: &str = r###\"\n" + tools + "\"###;\npub const CATALOGUE: &str = r###\"\n" + payload + "\"###;\n",
+        ROOT.parent / "rust" / "crates" / "mass-spec" / "src" / "generated_metadata.rs":
+            "pub const CATALOGUE: &str = r###\"\n" + payload + "\"###;\n",
     }
 
 

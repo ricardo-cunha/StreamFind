@@ -93,14 +93,14 @@ int run() {
     const auto described = streamfind::api::run(
         streamfind::api::ProjectCommand::describe,
         {{"database_path", path.string()}, {"project_id", "smoke"}});
-    if (described.at("id") != "smoke") {
+    if (described.at("row_count") != 1 || described.at("columns").at("project_id").at(0) != "smoke") {
         std::cerr << "project API failed\n";
         return 1;
     }
     const auto metadata = streamfind::api::run(
         streamfind::api::ProjectCommand::get_metadata,
         {{"database_path", path.string()}, {"project_id", "smoke"}});
-    if (metadata.at("owner") != "test") {
+    if (streamfind::Json::parse(metadata.at("columns").at("metadata").at(0).get<std::string>()).at("owner") != "test") {
         std::cerr << "metadata API failed\n";
         return 1;
     }

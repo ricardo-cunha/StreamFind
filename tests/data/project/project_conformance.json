@@ -2,12 +2,7 @@
   "project_id": "conformance",
   "domain": "mass_spec",
   "metadata": {"owner": "conformance", "version": 1},
-  "workflow": {
-    "name": "conformance",
-    "version": 2,
-    "domain": "mass_spec",
-    "steps": []
-  },
+  "workflow": [],
   "cache": {
     "name": "fixture",
     "description": "shared conformance value",

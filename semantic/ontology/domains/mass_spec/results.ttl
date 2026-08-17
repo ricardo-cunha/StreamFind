@@ -1,45 +1,255 @@
 @prefix sfcore: <https://streamfind.dev/catalogue/core#> .
+@prefix sfms: <https://streamfind.dev/catalogue/domains/mass_spec#> .
 @prefix sf: <https://streamfind.dev/vocabulary#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
-sfcore:massSpecAddAnalysesResult
+sfms:addAnalysesResult
     a sf:Result ;
+    skos:inScheme sfcore:scheme ;
     skos:prefLabel "Added mass spectrometry analyses" ;
-    skos:definition "Array of analysis records persisted by add_analyses." ;
-    sf:resultType "array" ;
-    sf:items sfcore:massSpecAnalysisRecord .
+    skos:definition "Table of analysis records persisted by add_analyses." ;
+    sf:type "table" ;
+    sf:hasProperty
+        sfms:analysisNameColumn,
+        sfms:filePathColumn,
+        sfms:replicateNameColumn,
+        sfms:blankNameColumn .
 
-sfcore:massSpecRemoveAnalysesResult
+sfms:removeAnalysesResult
     a sf:Result ;
+    skos:inScheme sfcore:scheme ;
     skos:prefLabel "Removed mass spectrometry analyses" ;
     skos:definition "Array of analysis names removed from the project." ;
-    sf:resultType "array" ;
-    sf:items sfcore:analysisNameResult .
+    sf:type "array" ;
+    sf:items sfms:analysisNameColumn .
 
-sfcore:massSpecGetAnalysesInfoResult
+sfms:getAnalysesInfoResult
     a sf:Result ;
+    skos:inScheme sfcore:scheme ;
     skos:prefLabel "Mass spectrometry analysis information" ;
-    skos:definition "Array of persisted mass spectrometry analysis metadata records." ;
-    sf:resultType "array" ;
-    sf:items sfcore:massSpecAnalysisInfoRecord .
+    skos:definition "Table of persisted mass spectrometry analysis metadata." ;
+    sf:type "table" ;
+    sf:hasProperty
+        sfms:analysisNameColumn,
+        sfms:replicateNameColumn,
+        sfms:blankNameColumn,
+        sfms:filePathColumn,
+        sfms:formatColumn,
+        sfms:numberSpectraColumn,
+        sfms:numberChromatogramsColumn .
 
-sfcore:massSpecAnalysisRecord
+sfms:analysisNamesResult
     a sf:Result ;
-    skos:prefLabel "Mass spectrometry analysis record" ;
-    skos:definition "Identifier and source information returned after adding an analysis." ;
-    sf:resultType "object" ;
-    sf:hasResultProperty sfcore:analysisNameColumn, sfcore:filePathColumn, sfcore:replicateNameColumn, sfcore:blankNameColumn .
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry analysis names" ;
+    skos:definition "Analysis names ordered as stored in the analyses table." ;
+    sf:type "array" ;
+    sf:items sfms:analysisNameColumn .
 
-sfcore:massSpecAnalysisInfoRecord
+sfms:replicateNamesResult
     a sf:Result ;
-    skos:prefLabel "Mass spectrometry analysis information record" ;
-    skos:definition "Persisted analysis summary returned by get_analyses_info." ;
-    sf:resultType "object" ;
-    sf:hasResultProperty sfcore:analysisNameColumn, sfcore:replicateNameColumn, sfcore:blankNameColumn, sfcore:filePathColumn, sfcore:formatColumn, sfcore:numberSpectraColumn, sfcore:numberChromatogramsColumn .
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry replicate names" ;
+    skos:definition "Replicate names ordered as stored in the analyses table." ;
+    sf:type "array" ;
+    sf:items sfms:replicateNameColumn .
 
-sfcore:analysisNameResult
-    a sf:Column ;
-    skos:prefLabel "Analysis name result" ;
-    skos:definition "Analysis name returned by a MassSpec operation." ;
-    sf:columnName "analysis" ;
-    sf:type "string" .
+sfms:blankNamesResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry blank names" ;
+    skos:definition "Blank names ordered as stored in the analyses table." ;
+    sf:type "array" ;
+    sf:items sfms:blankNameColumn .
+
+sfms:concentrationsResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry concentrations" ;
+    skos:definition "Concentrations ordered as stored in the analyses table." ;
+    sf:type "array" ;
+    sf:items sfms:concentrationColumn .
+
+sfms:updatedResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Updated mass spectrometry analyses" ;
+    skos:definition "Number of analysis rows updated by a metadata operation." ;
+    sf:type "object" ;
+    sf:hasProperty sfms:updatedField .
+
+sfms:spectraHeadersResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry spectra headers" ;
+    skos:definition "Table of persisted spectra header records." ;
+    sf:type "table" ;
+    sf:hasProperty
+        sfms:analysisNameColumn,
+        sfms:indexColumn,
+        sfms:scanColumn,
+        sfms:arrayLengthColumn,
+        sfms:levelColumn,
+        sfms:modeColumn,
+        sfms:polarityColumn,
+        sfms:configurationColumn,
+        sfms:lowMzColumn,
+        sfms:highMzColumn,
+        sfms:bpMzColumn,
+        sfms:bpIntColumn,
+        sfms:ticColumn,
+        sfms:rtColumn,
+        sfms:mobilityColumn,
+        sfms:windowMzColumn,
+        sfms:windowMzLowColumn,
+        sfms:windowMzHighColumn,
+        sfms:precursorMzColumn,
+        sfms:precursorIntensityColumn,
+        sfms:precursorChargeColumn,
+        sfms:activationCeColumn .
+
+sfms:chromatogramsHeadersResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry chromatogram headers" ;
+    skos:definition "Table of persisted chromatogram header records." ;
+    sf:type "table" ;
+    sf:hasProperty
+        sfms:analysisNameColumn,
+        sfms:indexColumn,
+        sfms:chromatogramIdColumn,
+        sfms:arrayLengthColumn,
+        sfms:polarityColumn,
+        sfms:precursorMzColumn,
+        sfms:activationCeColumn,
+        sfms:productMzColumn,
+        sfms:signalTypeColumn,
+        sfms:chromatogramTypeColumn,
+        sfms:detectorColumn,
+        sfms:channelColumn,
+        sfms:unitsColumn,
+        sfms:wavelengthNmColumn,
+        sfms:intervalMsColumn,
+        sfms:startTimeColumn,
+        sfms:endTimeColumn,
+        sfms:intensityMultiplierColumn .
+
+sfms:ticResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry total ion current" ;
+    skos:definition "Table of filtered total ion current records." ;
+    sf:type "table" ;
+    sf:hasProperty
+        sfms:analysisNameColumn,
+        sfms:replicateNameColumn,
+        sfms:polarityColumn,
+        sfms:levelColumn,
+        sfms:rtColumn,
+        sfms:mobilityColumn,
+        sfms:ticColumn,
+        sfms:bpMzColumn,
+        sfms:bpIntColumn .
+
+sfms:spectraResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry raw spectra" ;
+    skos:definition "Table of independently targeted raw spectrum points." ;
+    sf:type "table" ;
+    sf:hasProperty
+        sfms:analysisNameColumn,
+        sfms:replicateNameColumn,
+        sfms:targetIdColumn,
+        sfms:idColumn,
+        sfms:polarityColumn,
+        sfms:levelColumn,
+        sfms:preMzColumn,
+        sfms:preMzLowColumn,
+        sfms:preMzHighColumn,
+        sfms:preCeColumn,
+        sfms:rtColumn,
+        sfms:mobilityColumn,
+        sfms:mzColumn,
+        sfms:intensityColumn .
+
+sfms:eicResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry extracted ion chromatograms" ;
+    skos:definition "Table of extracted ion chromatogram spectrum points." ;
+    sf:type "table" ;
+    sf:hasProperty
+        sfms:analysisNameColumn,
+        sfms:replicateNameColumn,
+        sfms:targetIdColumn,
+        sfms:idColumn,
+        sfms:polarityColumn,
+        sfms:levelColumn,
+        sfms:preMzColumn,
+        sfms:preMzLowColumn,
+        sfms:preMzHighColumn,
+        sfms:preCeColumn,
+        sfms:rtColumn,
+        sfms:mobilityColumn,
+        sfms:mzColumn,
+        sfms:intensityColumn .
+
+sfms:ms1Result
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry MS1 spectra" ;
+    skos:definition "Table of clustered and presence-filtered MS1 spectrum points." ;
+    sf:type "table" ;
+    sf:hasProperty
+        sfms:analysisNameColumn,
+        sfms:replicateNameColumn,
+        sfms:targetIdColumn,
+        sfms:idColumn,
+        sfms:polarityColumn,
+        sfms:levelColumn,
+        sfms:preMzColumn,
+        sfms:preMzLowColumn,
+        sfms:preMzHighColumn,
+        sfms:preCeColumn,
+        sfms:rtColumn,
+        sfms:mobilityColumn,
+        sfms:mzColumn,
+        sfms:intensityColumn .
+
+sfms:ms2Result
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry MS2 spectra" ;
+    skos:definition "Table of clustered and presence-filtered MS2 spectrum points." ;
+    sf:type "table" ;
+    sf:hasProperty
+        sfms:analysisNameColumn,
+        sfms:replicateNameColumn,
+        sfms:targetIdColumn,
+        sfms:idColumn,
+        sfms:polarityColumn,
+        sfms:levelColumn,
+        sfms:preMzColumn,
+        sfms:preMzLowColumn,
+        sfms:preMzHighColumn,
+        sfms:preCeColumn,
+        sfms:rtColumn,
+        sfms:mobilityColumn,
+        sfms:mzColumn,
+        sfms:intensityColumn .
+
+sfms:chromatogramsResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry chromatograms" ;
+    skos:definition "Table of persisted chromatogram point records." ;
+    sf:type "table" ;
+    sf:hasProperty
+        sfcore:projectIdColumn,
+        sfms:analysisNameColumn,
+        sfms:chromatogramIdColumn,
+        sfms:rtColumn,
+        sfms:rawIntensityColumn,
+        sfms:baselineColumn,
+        sfms:intensityColumn .

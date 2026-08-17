@@ -1,39 +1,329 @@
 @prefix sfcore: <https://streamfind.dev/catalogue/core#> .
+@prefix sfms: <https://streamfind.dev/catalogue/domains/mass_spec#> .
 @prefix sf: <https://streamfind.dev/vocabulary#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
-sfcore:massSpecAddAnalyses
+sfms:addAnalyses
     a sf:Operation ;
     sf:operationId "mass_spec.add_analyses" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Add mass spectrometry analyses" ;
     skos:definition "Read mass spectrometry files and persist their analysis metadata in the project." ;
-    sf:toolName "add_analyses" ;
-    sf:hasParameter sfcore:analyses ;
-    sf:returns sfcore:massSpecAddAnalysesResult ;
-    sf:writes sfcore:massSpecAnalysesTable ;
+     sf:toolName "add_analyses" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:analysesParameter ;
+    sf:returns sfms:addAnalysesResult ;
+    sf:writes sfms:analysesTable ;
     sf:mutatesProject true ;
     sf:extensions "mzml,mzxml,lcd,asc,.d,.D" .
 
-sfcore:massSpecRemoveAnalyses
+sfms:removeAnalyses
     a sf:Operation ;
     sf:operationId "mass_spec.remove_analyses" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Remove mass spectrometry analyses" ;
     skos:definition "Remove persisted mass spectrometry analyses by analysis name." ;
-    sf:toolName "remove_analyses" ;
-    sf:hasParameter sfcore:analysisNames ;
-    sf:returns sfcore:massSpecRemoveAnalysesResult ;
-    sf:writes sfcore:massSpecAnalysesTable ;
+     sf:toolName "remove_analyses" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:analysisNamesParameter ;
+    sf:returns sfms:removeAnalysesResult ;
+    sf:writes sfms:analysesTable ;
     sf:mutatesProject true .
 
-sfcore:massSpecGetAnalysesInfo
+sfms:getAnalysesInfo
     a sf:Operation ;
     sf:operationId "mass_spec.get_analyses_info" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Get mass spectrometry analysis information" ;
     skos:definition "Return persisted mass spectrometry analysis metadata from the project." ;
-    sf:toolName "get_analyses_info" ;
-    sf:returns sfcore:massSpecGetAnalysesInfoResult ;
-    sf:reads sfcore:massSpecAnalysesTable ;
+     sf:toolName "get_analyses_info" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter ;
+    sf:returns sfms:getAnalysesInfoResult ;
+    sf:reads sfms:analysesTable ;
+    sf:mutatesProject false .
+
+sfms:getAnalysisNames
+    a sf:Operation ;
+    sf:operationId "mass_spec.get_analysis_names" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Get mass spectrometry analysis names" ;
+    skos:definition "Read analysis names." ;
+     sf:toolName "get_analysis_names" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter ;
+    sf:returns sfms:analysisNamesResult ;
+    sf:reads sfms:analysesTable ;
+    sf:mutatesProject false .
+
+sfms:getReplicateNames
+    a sf:Operation ;
+    sf:operationId "mass_spec.get_replicate_names" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Get replicate names" ;
+    skos:definition "Read replicate labels." ;
+     sf:toolName "get_replicate_names" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter ;
+    sf:returns sfms:replicateNamesResult ;
+    sf:reads sfms:analysesTable ;
+    sf:mutatesProject false .
+
+sfms:getBlankNames
+    a sf:Operation ;
+    sf:operationId "mass_spec.get_blank_names" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Get blank names" ;
+    skos:definition "Read blank labels." ;
+     sf:toolName "get_blank_names" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter ;
+    sf:returns sfms:blankNamesResult ;
+    sf:reads sfms:analysesTable ;
+    sf:mutatesProject false .
+
+sfms:getConcentrations
+    a sf:Operation ;
+    sf:operationId "mass_spec.get_concentrations" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Get concentrations" ;
+    skos:definition "Read analysis concentrations." ;
+     sf:toolName "get_concentrations" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter ;
+    sf:returns sfms:concentrationsResult ;
+    sf:reads sfms:analysesTable ;
+    sf:mutatesProject false .
+
+sfms:setReplicateNames
+    a sf:Operation ;
+    sf:operationId "mass_spec.set_replicate_names" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Set replicate names" ;
+    skos:definition "Update replicate labels." ;
+     sf:toolName "set_replicate_names" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:replicateNamesParameter ;
+    sf:returns sfms:updatedResult ;
+    sf:writes sfms:analysesTable ;
+    sf:mutatesProject true .
+
+sfms:setBlankNames
+    a sf:Operation ;
+    sf:operationId "mass_spec.set_blank_names" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Set blank names" ;
+    skos:definition "Update blank labels." ;
+     sf:toolName "set_blank_names" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:blankNamesParameter ;
+    sf:returns sfms:updatedResult ;
+    sf:writes sfms:analysesTable ;
+    sf:mutatesProject true .
+
+sfms:setConcentrations
+    a sf:Operation ;
+    sf:operationId "mass_spec.set_concentrations" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Set concentrations" ;
+    skos:definition "Update analysis concentrations." ;
+     sf:toolName "set_concentrations" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:concentrationsParameter ;
+    sf:returns sfms:updatedResult ;
+    sf:writes sfms:analysesTable ;
+    sf:mutatesProject true .
+
+sfms:getSpectraHeaders
+    a sf:Operation ;
+    sf:operationId "mass_spec.get_spectra_headers" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Get spectra headers" ;
+    skos:definition "Read spectra header rows for selected analyses." ;
+     sf:toolName "get_spectra_headers" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:analysisNamesParameter ;
+    sf:defaults "{\"analysis_names\":[]}" ;
+    sf:returns sfms:spectraHeadersResult ;
+    sf:reads sfms:spectraHeadersTable ;
+    sf:mutatesProject false .
+
+sfms:getChromatogramsHeaders
+    a sf:Operation ;
+    sf:operationId "mass_spec.get_chromatograms_headers" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Get chromatogram headers" ;
+    skos:definition "Read chromatogram header rows for selected analyses." ;
+     sf:toolName "get_chromatograms_headers" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:analysisNamesParameter ;
+    sf:defaults "{\"analysis_names\":[]}" ;
+    sf:returns sfms:chromatogramsHeadersResult ;
+    sf:reads sfms:chromatogramsHeadersTable ;
+    sf:mutatesProject false .
+
+sfms:getSpectraTic
+    a sf:Operation ;
+    sf:operationId "mass_spec.get_spectra_tic" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Get spectra TIC" ;
+    skos:definition "Read total ion current rows with the shared mass-spec filters." ;
+     sf:toolName "get_spectra_tic" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:analysisNamesParameter,
+        sfms:levelsParameter,
+        sfms:rtMinParameter,
+        sfms:rtMaxParameter ;
+    sf:defaults "{\"analysis_names\":[],\"levels\":[]}" ;
+    sf:returns sfms:ticResult ;
+    sf:reads sfms:spectraHeadersTable ;
+    sf:mutatesProject false .
+
+sfms:getRawSpectra
+    a sf:Operation ;
+    sf:operationId "mass_spec.get_raw_spectra" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Get raw spectra" ;
+    skos:definition "Read raw spectrum points using independent target ranges and shared mass-spec filters." ;
+     sf:toolName "get_raw_spectra" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:analysisNamesParameter,
+        sfms:levelsParameter,
+        sfms:targetsParameter,
+        sfms:polarityParameter,
+        sfms:ppmParameter,
+        sfms:rtToleranceParameter,
+        sfms:chargeParameter ;
+    sf:defaults "{\"analysis_names\":[],\"levels\":[]}" ;
+    sf:returns sfms:spectraResult ;
+    sf:reads sfms:analysesTable ;
+    sf:mutatesProject false .
+
+sfms:getRawSpectraEic
+    a sf:Operation ;
+    sf:operationId "mass_spec.get_raw_spectra_eic" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Get extracted ion chromatograms" ;
+    skos:definition "Read MS1 raw points grouped as extracted ion chromatograms for independent target ranges." ;
+     sf:toolName "get_raw_spectra_eic" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:analysisNamesParameter,
+        sfms:levelsParameter,
+        sfms:targetsParameter,
+        sfms:polarityParameter,
+        sfms:ppmParameter,
+        sfms:rtToleranceParameter,
+        sfms:chargeParameter ;
+    sf:defaults "{\"analysis_names\":[],\"levels\":[]}" ;
+    sf:returns sfms:eicResult ;
+    sf:reads sfms:analysesTable ;
+    sf:mutatesProject false .
+
+sfms:getRawSpectraMs1
+    a sf:Operation ;
+    sf:operationId "mass_spec.get_raw_spectra_ms1" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Get MS1 spectra" ;
+    skos:definition "Read MS1 raw spectrum points using independent target ranges and shared filters." ;
+     sf:toolName "get_raw_spectra_ms1" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:analysisNamesParameter,
+        sfms:levelsParameter,
+        sfms:targetsParameter,
+        sfms:polarityParameter,
+        sfms:ppmParameter,
+        sfms:rtToleranceParameter,
+        sfms:chargeParameter,
+        sfms:mzClustParameter,
+        sfms:presenceParameter,
+        sfms:minIntensityMs1Parameter ;
+    sf:defaults "{\"analysis_names\":[],\"levels\":[],\"mz_clust\":0.003,\"presence\":0.8,\"min_intensity_ms1\":0.0}" ;
+    sf:returns sfms:ms1Result ;
+    sf:reads sfms:analysesTable ;
+    sf:mutatesProject false .
+
+sfms:getRawSpectraMs2
+    a sf:Operation ;
+    sf:operationId "mass_spec.get_raw_spectra_ms2" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Get MS2 spectra" ;
+    skos:definition "Read MS2 raw spectrum points using independent target ranges and shared filters." ;
+     sf:toolName "get_raw_spectra_ms2" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:analysisNamesParameter,
+        sfms:levelsParameter,
+        sfms:targetsParameter,
+        sfms:polarityParameter,
+        sfms:ppmParameter,
+        sfms:rtToleranceParameter,
+        sfms:chargeParameter,
+        sfms:isolationWindowParameter,
+        sfms:mzClustParameter,
+        sfms:presenceParameter,
+        sfms:minIntensityMs2Parameter ;
+    sf:defaults "{\"analysis_names\":[],\"levels\":[],\"isolation_window\":1.3,\"mz_clust\":0.005,\"presence\":0.0,\"min_intensity_ms2\":0.0}" ;
+    sf:returns sfms:ms2Result ;
+    sf:reads sfms:analysesTable ;
+    sf:mutatesProject false .
+
+sfms:getChromatograms
+    a sf:Operation ;
+    sf:operationId "mass_spec.get_chromatograms" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Get chromatograms" ;
+    skos:definition "Read chromatogram arrays for selected analyses and indices." ;
+     sf:toolName "get_chromatograms" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:analysisNamesParameter,
+        sfms:indicesParameter ;
+    sf:defaults "{\"analysis_names\":[],\"indices\":[]}" ;
+    sf:returns sfms:chromatogramsResult ;
+    sf:reads sfms:analysesTable ;
+    sf:mutatesProject false .
+
+sfms:getRawChromatograms
+    a sf:Operation ;
+    sf:operationId "mass_spec.get_raw_chromatograms" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Get raw chromatograms" ;
+    skos:definition "Read chromatogram point records directly from the selected mass spectrometry files." ;
+    sf:toolName "get_raw_chromatograms" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:analysisNamesParameter,
+        sfms:indicesParameter ;
+    sf:returns sfms:chromatogramsResult ;
+    sf:reads sfms:analysesTable ;
     sf:mutatesProject false .

@@ -22,6 +22,7 @@ pub fn register_methods(registry: &mut MethodRegistry) -> Result<()> {
                     kind: TypeDescriptor::scalar(ParameterType::Array),
                     default: None,
                     required: true,
+                    example: None,
                 }],
             },
             Box::new(|_, _| {

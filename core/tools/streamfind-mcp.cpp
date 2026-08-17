@@ -10,6 +10,7 @@ int main() {
     streamfind::MethodRegistry registry;
     streamfind::OperationRegistry operations;
     streamfind::mass_spec::register_operations(operations);
+    streamfind::mass_spec::register_methods(registry);
     streamfind::raman::register_methods(registry);
     streamfind::sensors::register_methods(registry);
     streamfind::mcp::Session session(registry, operations);

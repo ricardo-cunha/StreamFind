@@ -23,6 +23,10 @@ _skbuild/
 **/*.egg-info/
 /core/vendor/openbabel/build/
 
+# DuckDB runtime/import libraries are vendored for native builds ----------------
+!/core/vendor/duckdb/lib/
+!/core/vendor/duckdb/lib/**
+
 # Python tooling ----------------------------------------------------------------
 **/__pycache__/
 **/*.py[cod]

@@ -5,6 +5,7 @@ fn main() {
     let mut registry = MethodRegistry::default();
     let mut operations = OperationRegistry::default();
     streamfind_rust_mass_spec::register_operations(&mut operations).unwrap();
+    streamfind_rust_mass_spec::register_methods(&mut registry).unwrap();
     streamfind_rust_raman::register_methods(&mut registry).unwrap();
     streamfind_rust_sensors::register_methods(&mut registry).unwrap();
     let mut session = streamfind_rust_mcp::Session::new(&registry, &operations);

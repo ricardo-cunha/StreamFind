@@ -118,6 +118,8 @@ struct STREAMFIND_CORE_API ParameterDefinition {
     Json default_value{nullptr};
     /// Whether a value is required when no default exists.
     bool required{false};
+    /// Representative value shown in generated tool documentation.
+    Json example{nullptr};
     /// Machine-readable validation constraints.
     Json constraints{Json::object()};
     /// UI hints that do not affect execution semantics.
@@ -277,6 +279,8 @@ public:
     void validate(const MethodRegistry &registry) const;
     /** @brief Export the workflow definition as JSON. */
     Json to_json() const;
+    /** @brief Export ordered method metadata with configured parameter values. */
+    Json to_json(const MethodRegistry &registry) const;
     /** @brief Parse a workflow object or legacy ordered array from JSON. */
     static Workflow from_json(const Json &value);
 };

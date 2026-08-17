@@ -361,7 +361,7 @@ void TypeDescriptor::validate(const Json &value) const {
 Json ParameterDefinition::to_json() const {
     return {{"name", name}, {"description", description},
             {"type", type.to_json()}, {"default", default_value},
-            {"required", required}, {"constraints", constraints}, {"ui", ui}};
+            {"required", required}, {"example", example}, {"constraints", constraints}, {"ui", ui}};
 }
 
 ParameterDefinition ParameterDefinition::from_json(const Json &value) {
@@ -374,6 +374,7 @@ ParameterDefinition ParameterDefinition::from_json(const Json &value) {
     definition.type = TypeDescriptor::from_json(value.at("type"));
     definition.default_value = value.value("default", Json(nullptr));
     definition.required = value.value("required", false);
+    definition.example = value.value("example", Json(nullptr));
     definition.constraints = value.value("constraints", Json::object());
     definition.ui = value.value("ui", Json::object());
     return definition;
@@ -455,8 +456,8 @@ Json Method::to_json() const {
         {"id", definition_.id}, {"name", definition_.name},
         {"description", definition_.description},
         {"version", definition_.version}, {"domain", definition_.domain},
-        {"required", definition_.required_methods},
-        {"number_permitted", definition_.max_occurrences},
+        {"required_methods", definition_.required_methods},
+        {"max_occurrences", definition_.max_occurrences},
         {"developer", definition_.developer}, {"contact", definition_.contact},
         {"link", definition_.link}, {"doi", definition_.doi},
         {"parameters", definition_.parameters.to_json()},
@@ -474,8 +475,8 @@ MethodDefinition Method::definition_from_json(const Json &value) {
     definition.description = value.value("description", "");
     definition.version = value.value("version", "1");
     definition.domain = value.value("domain", "");
-    definition.required_methods = value.value("required", std::vector<std::string>{});
-    definition.max_occurrences = value.value("number_permitted", std::numeric_limits<double>::infinity());
+    definition.required_methods = value.value("required_methods", std::vector<std::string>{});
+    definition.max_occurrences = value.value("max_occurrences", std::numeric_limits<double>::infinity());
     definition.developer = value.value("developer", "");
     definition.contact = value.value("contact", "");
     definition.link = value.value("link", "");
@@ -580,11 +581,11 @@ Json WorkflowStep::to_json() const {
 }
 
 WorkflowStep WorkflowStep::from_json(const Json &value) {
-    if (!value.is_object() || !value.contains("method")) {
+    if (!value.is_object() || (!value.contains("method") && !value.contains("id"))) {
         throw Error(ErrorCode::WorkflowValidation, "Workflow step requires a method");
     }
     WorkflowStep step;
-    step.method = value.at("method").get<std::string>();
+    step.method = value.value("method", value.value("id", ""));
     step.parameters = ParameterValues::from_json(value.value("parameters", Json::object()));
     return step;
 }
@@ -619,8 +620,19 @@ void Workflow::validate(const MethodRegistry &registry) const {
 Json Workflow::to_json() const {
     Json serialized_steps = Json::array();
     for (const auto &step : steps) serialized_steps.push_back(step.to_json());
-    return {{"name", name}, {"version", version}, {"domain", domain},
-            {"steps", serialized_steps}};
+    return serialized_steps;
+}
+
+Json Workflow::to_json(const MethodRegistry &registry) const {
+    Json serialized = Json::array();
+    for (const auto &step : steps) {
+        const auto *method = registry.find(step.method);
+        if (!method) throw Error(ErrorCode::WorkflowValidation, "Unknown workflow method: " + step.method);
+        auto value = method->to_json();
+        value["parameters"] = step.parameters.to_json();
+        serialized.push_back(std::move(value));
+    }
+    return serialized;
 }
 
 Workflow Workflow::from_json(const Json &value) {
@@ -741,7 +753,7 @@ Project project_from_options(const ProjectOptions &options, bool creating) {
     }
     if (!options.read_only) {
         prepared(connection.get(),
-                 "INSERT INTO PROJECT (project_id, domain, metadata, workflow) VALUES (?, ?, '{}', '{\"steps\":[]}') ON CONFLICT(project_id) DO NOTHING",
+                  "INSERT INTO PROJECT (project_id, domain, metadata, workflow) VALUES (?, ?, '{}', '[]') ON CONFLICT(project_id) DO NOTHING",
                  "create PROJECT row",
                  [&](Statement statement) { bind_text(statement, 1, options.project_id); bind_text(statement, 2, options.domain); },
                  [](duckdb_result &) {});
@@ -801,6 +813,9 @@ void Project::validate() const {
 
 void Project::set_metadata(Json metadata) {
     if (!metadata.is_object()) throw Error(ErrorCode::InvalidArgument, "Project metadata must be an object");
+    for (const auto &[key, value] : metadata.items())
+        if (value.is_object() || value.is_array())
+            throw Error(ErrorCode::InvalidArgument, "Project metadata values must be scalar: " + key);
     std::lock_guard lock(impl_->mutex); ensure_active(*impl_);
     if (impl_->options.read_only) throw Error(ErrorCode::InvalidArgument, "Project is read-only");
     Connection connection(*impl_);
@@ -844,9 +859,9 @@ void Project::set_workflow(Workflow workflow_value, const MethodRegistry &regist
     if (impl_->options.read_only) throw Error(ErrorCode::InvalidArgument, "Project is read-only");
     Connection connection(*impl_);
     prepared(connection.get(), "UPDATE PROJECT SET workflow = ? WHERE project_id = ?", "update workflow",
-             [&](Statement statement) { bind_text(statement, 1, json_text(workflow_value.to_json())); bind_text(statement, 2, get_project_id()); },
+             [&](Statement statement) { bind_text(statement, 1, json_text(workflow_value.to_json(registry))); bind_text(statement, 2, get_project_id()); },
              [](duckdb_result &) {});
-    audit(connection.get(), get_project_id(), "update", "workflow", workflow_value.to_json());
+    audit(connection.get(), get_project_id(), "update", "workflow", workflow_value.to_json(registry));
 }
 
 std::vector<std::string> Project::list_tables() const {
@@ -1018,7 +1033,10 @@ Json Project::run_operation(const std::string &operation_id, const Json &paramet
                             const OperationRegistry &registry) const {
     const Operation *operation = registry.find(operation_id);
     if (!operation) throw Error(ErrorCode::InvalidArgument, "Unknown operation: " + operation_id);
-    const Json result = operation->run(const_cast<Project &>(*this), parameters);
+    Json input = parameters;
+    input["database_path"] = get_database_path().string();
+    input["project_id"] = get_project_id();
+    const Json result = operation->run(const_cast<Project &>(*this), input);
     std::lock_guard lock(impl_->mutex); ensure_active(*impl_); Connection connection(*impl_);
     audit(connection.get(), get_project_id(), "complete", "operation", Json{{"operation", operation_id}});
     return result;

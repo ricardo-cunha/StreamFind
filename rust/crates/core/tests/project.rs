@@ -59,10 +59,15 @@ fn project_round_trips_metadata_and_schema() {
     assert_eq!(reopened.info().metadata["owner"], "rust-test");
     drop(reopened);
     assert_eq!(
-        api::get_metadata(&json!({
-            "database_path": path.to_string_lossy(),
-            "project_id": "rust-test"
-        }))
+        serde_json::from_str::<serde_json::Value>(
+            api::get_metadata(&json!({
+                "database_path": path.to_string_lossy(),
+                "project_id": "rust-test"
+            }))
+            .unwrap()["columns"]["metadata"][0]
+                .as_str()
+                .unwrap(),
+        )
         .unwrap()["owner"],
         "rust-test"
     );

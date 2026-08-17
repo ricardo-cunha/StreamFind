@@ -467,6 +467,7 @@ pub struct ParameterDefinition {
     pub kind: TypeDescriptor,
     pub default: Option<Json>,
     pub required: bool,
+    pub example: Option<Json>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -560,14 +561,15 @@ impl Method {
             "name": self.name,
             "description": self.description,
             "domain": self.domain,
-            "required": self.required_methods,
-            "number_permitted": self.max_occurrences,
+            "required_methods": self.required_methods,
+            "max_occurrences": self.max_occurrences,
             "parameters": self.parameters.definitions.iter().map(|definition| json!({
                 "name": definition.name,
                 "description": definition.description,
                 "type": definition.kind.to_json(),
                 "default": definition.default,
                 "required": definition.required
+                ,"example": definition.example
             })).collect::<Vec<_>>(),
             "cacheable": self.cacheable
         })
@@ -609,6 +611,37 @@ impl Operation {
         parameters: ParameterSchema,
         executor: OperationExecutor,
     ) -> Self {
+        let mut parameters = parameters;
+        for (name, description, example) in [
+            (
+                "database_path",
+                "Filesystem path of the DuckDB project database.",
+                "/data/project.duckdb",
+            ),
+            (
+                "project_id",
+                "Logical project identifier within the database.",
+                "demo",
+            ),
+        ] {
+            if !parameters
+                .definitions
+                .iter()
+                .any(|definition| definition.name == name)
+            {
+                parameters.definitions.insert(
+                    0,
+                    ParameterDefinition {
+                        name: name.into(),
+                        description: description.into(),
+                        kind: TypeDescriptor::scalar(ParameterType::String),
+                        default: None,
+                        required: true,
+                        example: Some(json!(example)),
+                    },
+                );
+            }
+        }
         Self {
             id: id.into(),
             name: name.into(),
@@ -619,7 +652,7 @@ impl Operation {
         }
     }
     pub fn to_json(&self) -> Json {
-        json!({"id": self.id, "name": self.name, "description": self.description, "domain": self.domain, "parameters": self.parameters.definitions.iter().map(|d| json!({"name": d.name, "description": d.description, "type": d.kind.to_json(), "default": d.default, "required": d.required})).collect::<Vec<_>>()})
+        json!({"id": self.id, "name": self.name, "description": self.description, "domain": self.domain, "parameters": self.parameters.definitions.iter().map(|d| json!({"name": d.name, "description": d.description, "type": d.kind.to_json(), "default": d.default, "required": d.required, "example": d.example})).collect::<Vec<_>>()})
     }
     pub fn run(&self, project: &mut Project, values: &Json) -> Result<Json> {
         (self.executor)(project, &self.parameters.resolve(values)?)
@@ -690,6 +723,7 @@ impl MethodRegistry {
 pub struct WorkflowStep {
     pub method: String,
     pub parameters: Json,
+    pub metadata: Option<Json>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -702,9 +736,61 @@ pub struct Workflow {
 
 impl Workflow {
     pub fn to_json(&self) -> Json {
-        json!({"name": self.name, "version": self.version, "domain": self.domain, "steps": self.steps.iter().map(|step| json!({"method": step.method, "parameters": step.parameters})).collect::<Vec<_>>()})
+        json!(self
+            .steps
+            .iter()
+            .map(|step| {
+                let mut value = step
+                    .metadata
+                    .clone()
+                    .unwrap_or_else(|| json!({"id": step.method}));
+                value["parameters"] = step.parameters.clone();
+                value
+            })
+            .collect::<Vec<_>>())
+    }
+    pub fn to_json_with_registry(&self, registry: &MethodRegistry) -> Result<Json> {
+        Ok(Json::Array(
+            self.steps
+                .iter()
+                .map(|step| {
+                    let method = registry.get(&step.method)?;
+                    let mut value = step.metadata.clone().unwrap_or_else(|| method.to_json());
+                    value["parameters"] = step.parameters.clone();
+                    Ok(value)
+                })
+                .collect::<Result<Vec<_>>>()?,
+        ))
     }
     pub fn from_json(value: &Json) -> Result<Self> {
+        if let Some(items) = value.as_array() {
+            return Ok(Self {
+                steps: items
+                    .iter()
+                    .map(|item| {
+                        Ok(WorkflowStep {
+                            method: item
+                                .get("method")
+                                .or_else(|| item.get("id"))
+                                .and_then(Value::as_str)
+                                .ok_or_else(|| {
+                                    Error::new(
+                                        ErrorCode::WorkflowValidation,
+                                        "step requires method",
+                                    )
+                                })?
+                                .to_owned(),
+                            parameters: item
+                                .get("parameters")
+                                .cloned()
+                                .unwrap_or_else(|| json!({})),
+                            metadata: Some(item.clone()),
+                        })
+                    })
+                    .collect::<Result<Vec<_>>>()?,
+                ..Self::default()
+            });
+        }
         let object = value.as_object().ok_or_else(|| {
             Error::new(ErrorCode::WorkflowValidation, "workflow must be an object")
         })?;
@@ -723,6 +809,7 @@ impl Workflow {
                         })?
                         .to_owned(),
                     parameters: item.get("parameters").cloned().unwrap_or_else(|| json!({})),
+                    metadata: None,
                 })
             })
             .collect::<Result<Vec<_>>>()?;
@@ -848,7 +935,7 @@ impl Project {
         let connection = project.connection()?;
         if !project.options.read_only {
             connection.execute_batch("CREATE TABLE IF NOT EXISTS PROJECT (project_id VARCHAR NOT NULL PRIMARY KEY, domain VARCHAR, metadata JSON, workflow JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, schema_version INTEGER NOT NULL DEFAULT 1, framework_version VARCHAR NOT NULL DEFAULT '0.1.0'); CREATE TABLE IF NOT EXISTS CACHE (project_id VARCHAR NOT NULL, name VARCHAR NOT NULL, description VARCHAR NOT NULL, hash VARCHAR NOT NULL, data BLOB NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, hash)); CREATE TABLE IF NOT EXISTS AUDIT_TRAIL (project_id VARCHAR NOT NULL, operation_type VARCHAR NOT NULL, object_type VARCHAR NOT NULL, operation_details JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);")?;
-            connection.execute("INSERT INTO PROJECT (project_id, domain, metadata, workflow) VALUES (?1, ?2, '{}', '{\"name\":\"\",\"version\":1,\"domain\":\"\",\"steps\":[]}') ON CONFLICT(project_id) DO NOTHING", params![project.options.project_id, project.options.domain])?;
+            connection.execute("INSERT INTO PROJECT (project_id, domain, metadata, workflow) VALUES (?1, ?2, '{}', '[]') ON CONFLICT(project_id) DO NOTHING", params![project.options.project_id, project.options.domain])?;
         }
         let row = connection.query_row("SELECT project_id, COALESCE(domain, ''), COALESCE(metadata, '{}'), schema_version, framework_version, CAST(created_at AS VARCHAR) FROM PROJECT WHERE project_id = ?1", params![project.options.project_id], |row| Ok(ProjectInfo { id: row.get(0)?, domain: row.get(1)?, metadata: serde_json::from_str(&row.get::<_, String>(2)?).unwrap_or_else(|_| json!({})), schema_version: row.get(3)?, framework_version: row.get(4)?, created_at: row.get(5)? }))?;
         project.info = row;
@@ -954,6 +1041,23 @@ impl Project {
             .collect::<std::result::Result<Vec<String>, _>>()?)
     }
     pub fn set_metadata(&mut self, metadata: Json) -> Result<()> {
+        if !metadata.is_object() {
+            return Err(Error::new(
+                ErrorCode::InvalidArgument,
+                "project metadata must be an object",
+            ));
+        }
+        if metadata
+            .as_object()
+            .unwrap()
+            .values()
+            .any(|value| value.is_object() || value.is_array())
+        {
+            return Err(Error::new(
+                ErrorCode::InvalidArgument,
+                "project metadata values must be scalar",
+            ));
+        }
         self.connection()?.execute(
             "UPDATE PROJECT SET metadata = ?1 WHERE project_id = ?2",
             params![metadata.to_string(), self.get_project_id()],
@@ -982,7 +1086,10 @@ impl Project {
         workflow.validate(registry)?;
         self.connection()?.execute(
             "UPDATE PROJECT SET workflow = ?1 WHERE project_id = ?2",
-            params![workflow.to_json().to_string(), self.get_project_id()],
+            params![
+                workflow.to_json_with_registry(registry)?.to_string(),
+                self.get_project_id()
+            ],
         )?;
         Ok(())
     }
@@ -1074,6 +1181,7 @@ impl Project {
         workflow.steps.push(WorkflowStep {
             method: method_id.into(),
             parameters: parameters.clone(),
+            metadata: None,
         });
         self.set_workflow(workflow, registry)?;
         let resolved = method.resolve(parameters)?;
@@ -1093,7 +1201,10 @@ impl Project {
         registry: &OperationRegistry,
     ) -> Result<Json> {
         let operation = registry.get(operation_id)?;
-        operation.run(self, parameters)
+        let mut input = parameters.clone();
+        input["database_path"] = json!(self.get_database_path().to_string_lossy());
+        input["project_id"] = json!(self.info().id);
+        operation.run(self, &input)
     }
     pub fn close(self) {}
     pub fn run_workflow(

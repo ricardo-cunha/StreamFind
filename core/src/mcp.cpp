@@ -22,9 +22,9 @@ Json tools() {
 }
 
 const char *command(const std::string &name) {
-    static const std::array<std::string, 18> commands = {
+    static const std::array<std::string, 20> commands = {
         "create", "describe", "validate", "get_domain", "get_metadata",
-        "set_metadata", "get_workflow", "set_workflow", "validate_workflow",
+        "set_metadata", "get_workflow", "set_workflow", "add_method", "remove_method", "validate_workflow",
         "run_workflow", "get_cache", "get_cache_size", "delete_cache",
         "get_audit_trail", "get_available_methods", "run_method", "copy", "close"
     };
@@ -45,17 +45,22 @@ Json Session::handle(const Json &request) {
             Json properties = Json::object();
             std::vector<std::string> required;
             for (const auto &parameter : definition.parameters.definitions) {
-                properties[parameter.name] = parameter.type.to_json();
+                auto type = parameter.type.to_json();
+                if (type.value("type", "") == "real") type["type"] = "number";
+                if (!parameter.example.is_null()) type["examples"] = Json::array({parameter.example});
+                properties[parameter.name] = std::move(type);
                 if (parameter.required && parameter.default_value.is_null()) required.push_back(parameter.name);
             }
             catalogue.push_back(detail::tool(definition.id.c_str(), definition.description.c_str(), properties, required));
         }
         for (const auto &definition : operations_.list(domain_)) {
-            if (domain_.empty()) break;
             Json properties = Json::object();
             std::vector<std::string> required;
             for (const auto &parameter : definition.parameters.definitions) {
-                properties[parameter.name] = parameter.type.to_json();
+                auto type = parameter.type.to_json();
+                if (type.value("type", "") == "real") type["type"] = "number";
+                if (!parameter.example.is_null()) type["examples"] = Json::array({parameter.example});
+                properties[parameter.name] = std::move(type);
                 if (parameter.required && parameter.default_value.is_null()) required.push_back(parameter.name);
             }
             catalogue.push_back(detail::tool(definition.id.c_str(), definition.description.c_str(), properties, required));
@@ -70,7 +75,7 @@ Json Session::handle(const Json &request) {
             const auto domain = api::run(api::ProjectCommand::get_domain, arguments, registry_).get<std::string>();
             domain_ = domain;
             project_ = arguments;
-            return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"content", Json::array({{{"type", "text"}, {"text", Json{{{"domain", domain_}}}.dump()}}})}}}};
+            return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"content", Json::array({{{"type", "text"}, {"text", Json{{{"status", "finished"}, {"info", "Project connected successfully."}}}.dump()}}})}}}};
         } catch (const Error &error) {
             return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"isError", true}, {"content", Json::array({{{"type", "text"}, {"text", error.what()}}})}}}};
         }
@@ -78,11 +83,15 @@ Json Session::handle(const Json &request) {
     const auto command = detail::command(name);
     const auto dynamic = registry_.find(name);
     const auto operation = operations_.find(name);
-    if (!command && operation && !domain_.empty() && operation->definition().domain == domain_) {
-        if (project_.empty()) return {{"jsonrpc", "2.0"}, {"id", id}, {"error", {{"code", -32000}, {"message", "No project connected"}}}};
+    if (!command && operation) {
         const auto arguments = request.at("params").value("arguments", Json::object());
         try {
-            ProjectOptions options{project_.at("database_path").get<std::string>(), project_.at("project_id").get<std::string>(), {}, false, false, domain_};
+            if (!arguments.contains("database_path") || !arguments.contains("project_id")) {
+                throw Error(ErrorCode::InvalidArgument, "Domain operations require database_path and project_id");
+            }
+            ProjectOptions options{arguments.at("database_path").get<std::string>(),
+                                   arguments.at("project_id").get<std::string>(), {}, false, false,
+                                   operation->definition().domain};
             auto project = Project::open(options);
             const Json result = project.run_operation(name, arguments, operations_);
             return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"content", Json::array({{{"type", "text"}, {"text", result.dump()}}})}}}};

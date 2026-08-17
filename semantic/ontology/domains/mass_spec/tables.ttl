@@ -1,202 +1,107 @@
 @prefix sfcore: <https://streamfind.dev/catalogue/core#> .
+@prefix sfms: <https://streamfind.dev/catalogue/domains/mass_spec#> .
 @prefix sf: <https://streamfind.dev/vocabulary#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
+sfms:analysesTable
+    a sf:Table ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry analyses table" ;
+    skos:definition "Persisted summary and metadata for imported mass spectrometry analyses." ;
+    sf:tableName "MASS_SPEC_ANALYSES" ;
+    sf:hasColumn
+        sfcore:projectIdColumn,
+        sfms:analysisNameColumn,
+        sfms:replicateNameColumn,
+        sfms:blankNameColumn,
+        sfms:fileNameColumn,
+        sfms:filePathColumn,
+        sfms:fileDirColumn,
+        sfms:fileExtensionColumn,
+        sfms:formatColumn,
+        sfms:typeColumn,
+        sfms:timeStampColumn,
+        sfms:numberSpectraColumn,
+        sfms:numberChromatogramsColumn,
+        sfms:numberSpectraBinaryArraysColumn,
+        sfms:minMzColumn,
+        sfms:maxMzColumn,
+        sfms:startRtColumn,
+        sfms:endRtColumn,
+        sfms:hasIonMobilityColumn,
+        sfms:concentrationColumn,
+        sfcore:createdAtColumn .
 
-	sfcore:massSpecAnalysesTable
-		a sf:Table ;
-		skos:prefLabel "MassSpec analyses table" ;
-		skos:definition "Persisted summary and metadata for imported mass spectrometry analyses." ;
-		sf:tableName "MASS_SPEC_ANALYSES" ;
-		sf:hasColumn
-			sfcore:projectIdColumn,
-			sfcore:analysisNameColumn,
-			sfcore:replicateNameColumn,
-			sfcore:blankNameColumn,
-			sfcore:fileNameColumn,
-			sfcore:filePathColumn,
-			sfcore:fileDirColumn,
-			sfcore:fileExtensionColumn,
-			sfcore:formatColumn,
-			sfcore:numberSpectraColumn,
-			sfcore:numberChromatogramsColumn,
-			sfcore:numberSpectraBinaryArraysColumn,
-			sfcore:minMzColumn,
-			sfcore:maxMzColumn,
-			sfcore:startRtColumn,
-			sfcore:endRtColumn,
-			sfcore:hasIonMobilityColumn .
+sfms:spectraHeadersTable
+    a sf:Table ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry spectra headers table" ;
+    skos:definition "Persisted header metadata for spectra in a mass spectrometry analysis." ;
+    sf:tableName "MASS_SPEC_SPECTRA_HEADERS" ;
+    sf:hasColumn
+        sfcore:projectIdColumn,
+        sfms:analysisNameColumn,
+        sfms:indexColumn,
+        sfms:scanColumn,
+        sfms:arrayLengthColumn,
+        sfms:levelColumn,
+        sfms:modeColumn,
+        sfms:polarityColumn,
+        sfms:configurationColumn,
+        sfms:lowMzColumn,
+        sfms:highMzColumn,
+        sfms:bpMzColumn,
+        sfms:bpIntColumn,
+        sfms:ticColumn,
+        sfms:rtColumn,
+        sfms:mobilityColumn,
+        sfms:windowMzColumn,
+        sfms:windowMzLowColumn,
+        sfms:windowMzHighColumn,
+        sfms:precursorMzColumn,
+        sfms:precursorIntensityColumn,
+        sfms:precursorChargeColumn,
+        sfms:activationCeColumn .
 
-	sfcore:massSpecSpectraHeadersTable
-		a sf:Table ;
-		skos:prefLabel "MassSpec spectra headers table" ;
-		skos:definition "Persisted header metadata for spectra in a mass spectrometry analysis." ;
-		sf:tableName "MASS_SPEC_SPECTRA_HEADERS" ;
-		sf:hasColumn
-			sfcore:projectIdColumn,
-			sfcore:analysisNameColumn,
-			sfcore:indexColumn,
-			sfcore:scanColumn,
-			sfcore:arrayLengthColumn,
-			sfcore:levelColumn,
-			sfcore:modeColumn,
-			sfcore:polarityColumn,
-			sfcore:configurationColumn,
-			sfcore:lowMzColumn,
-			sfcore:highMzColumn,
-			sfcore:bpMzColumn,
-			sfcore:bpIntColumn,
-			sfcore:ticColumn,
-			sfcore:rtColumn,
-			sfcore:mobilityColumn,
-			sfcore:windowMzColumn,
-			sfcore:windowMzLowColumn,
-			sfcore:windowMzHighColumn,
-			sfcore:precursorMzColumn,
-			sfcore:precursorIntensityColumn,
-			sfcore:precursorChargeColumn,
-			sfcore:activationCeColumn .
+sfms:chromatogramsHeadersTable
+    a sf:Table ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry chromatograms headers table" ;
+    skos:definition "Persisted header metadata for chromatograms in a mass spectrometry analysis." ;
+    sf:tableName "MASS_SPEC_CHROMATOGRAMS_HEADERS" ;
+    sf:hasColumn
+        sfcore:projectIdColumn,
+        sfms:analysisNameColumn,
+        sfms:indexColumn,
+        sfms:chromatogramIdColumn,
+        sfms:arrayLengthColumn,
+        sfms:polarityColumn,
+        sfms:precursorMzColumn,
+        sfms:activationCeColumn,
+        sfms:productMzColumn,
+        sfms:signalTypeColumn,
+        sfms:chromatogramTypeColumn,
+        sfms:detectorColumn,
+        sfms:channelColumn,
+        sfms:unitsColumn,
+        sfms:wavelengthNmColumn,
+        sfms:intervalMsColumn,
+        sfms:startTimeColumn,
+        sfms:endTimeColumn,
+        sfms:intensityMultiplierColumn .
 
-	sfcore:massSpecChromatogramsHeadersTable
-		a sf:Table ;
-		skos:prefLabel "MassSpec chromatograms headers table" ;
-		skos:definition "Persisted header metadata for chromatograms in a mass spectrometry analysis." ;
-		sf:tableName "MASS_SPEC_CHROMATOGRAMS_HEADERS" ;
-		sf:hasColumn
-			sfcore:projectIdColumn,
-			sfcore:analysisNameColumn,
-			sfcore:indexColumn,
-			sfcore:chromatogramIdColumn,
-			sfcore:arrayLengthColumn,
-			sfcore:polarityColumn,
-			sfcore:precursorMzColumn,
-			sfcore:activationCeColumn,
-			sfcore:productMzColumn,
-			sfcore:signalTypeColumn,
-			sfcore:chromatogramTypeColumn,
-			sfcore:detectorColumn,
-			sfcore:channelColumn,
-			sfcore:unitsColumn,
-			sfcore:wavelengthNmColumn,
-			sfcore:intervalMsColumn,
-			sfcore:startTimeColumn,
-			sfcore:endTimeColumn,
-			sfcore:intensityMultiplierColumn .
-
-	sfcore:projectIdColumn
-		a sf:Column ; skos:prefLabel "Project ID" ; skos:definition "Project identifier." ;
-		sf:columnName "project_id" ; sf:type "VARCHAR" .
-	sfcore:analysisNameColumn
-		a sf:Column ; skos:prefLabel "Analysis" ; skos:definition "Analysis identifier." ;
-		sf:columnName "analysis" ; sf:type "VARCHAR" .
-	sfcore:replicateNameColumn
-		a sf:Column ; skos:prefLabel "Replicate" ; skos:definition "Optional replicate label." ;
-		sf:columnName "replicate" ; sf:type "VARCHAR" .
-	sfcore:blankNameColumn
-		a sf:Column ; skos:prefLabel "Blank" ; skos:definition "Optional blank label." ;
-		sf:columnName "blank" ; sf:type "VARCHAR" .
-	sfcore:fileNameColumn
-		a sf:Column ; skos:prefLabel "File name" ; skos:definition "Source file name." ;
-		sf:columnName "file_name" ; sf:type "VARCHAR" .
-	sfcore:filePathColumn
-		a sf:Column ; skos:prefLabel "File path" ; skos:definition "Source file path." ;
-		sf:columnName "file_path" ; sf:type "VARCHAR" .
-	sfcore:fileDirColumn
-		a sf:Column ; skos:prefLabel "File directory" ; skos:definition "Source file directory." ;
-		sf:columnName "file_dir" ; sf:type "VARCHAR" .
-	sfcore:fileExtensionColumn
-		a sf:Column ; skos:prefLabel "File extension" ; skos:definition "Source file extension." ;
-		sf:columnName "file_extension" ; sf:type "VARCHAR" .
-	sfcore:formatColumn
-		a sf:Column ; skos:prefLabel "Format" ; skos:definition "Detected source format." ;
-		sf:columnName "format" ; sf:type "VARCHAR" .
-	sfcore:numberSpectraColumn
-		a sf:Column ; skos:prefLabel "Number of spectra" ; skos:definition "Number of spectra." ;
-		sf:columnName "number_spectra" ; sf:type "INTEGER" .
-	sfcore:numberChromatogramsColumn
-		a sf:Column ; skos:prefLabel "Number of chromatograms" ; skos:definition "Number of chromatograms." ;
-		sf:columnName "number_chromatograms" ; sf:type "INTEGER" .
-	sfcore:numberSpectraBinaryArraysColumn
-		a sf:Column ; skos:prefLabel "Number of binary arrays" ; skos:definition "Number of binary spectrum arrays." ;
-		sf:columnName "number_spectra_binary_arrays" ; sf:type "INTEGER" .
-	sfcore:minMzColumn
-		a sf:Column ; skos:prefLabel "Minimum m/z" ; skos:definition "Minimum mass-to-charge value." ;
-		sf:columnName "min_mz" ; sf:type "DOUBLE" .
-	sfcore:maxMzColumn
-		a sf:Column ; skos:prefLabel "Maximum m/z" ; skos:definition "Maximum mass-to-charge value." ;
-		sf:columnName "max_mz" ; sf:type "DOUBLE" .
-	sfcore:startRtColumn
-		a sf:Column ; skos:prefLabel "Start retention time" ; skos:definition "Start retention time." ;
-		sf:columnName "start_rt" ; sf:type "DOUBLE" .
-	sfcore:endRtColumn
-		a sf:Column ; skos:prefLabel "End retention time" ; skos:definition "End retention time." ;
-		sf:columnName "end_rt" ; sf:type "DOUBLE" .
-	sfcore:hasIonMobilityColumn
-		a sf:Column ; skos:prefLabel "Has ion mobility" ; skos:definition "Whether ion mobility data exists." ;
-		sf:columnName "has_ion_mobility" ; sf:type "BOOLEAN" .
-	sfcore:indexColumn a sf:Column ; skos:prefLabel "Index" ; skos:definition "Header row index." ;
-		sf:columnName "index" ; sf:type "INTEGER" .
-	sfcore:scanColumn a sf:Column ; skos:prefLabel "Scan" ; skos:definition "Scan number." ;
-		sf:columnName "scan" ; sf:type "INTEGER" .
-	sfcore:arrayLengthColumn a sf:Column ; skos:prefLabel "Array length" ; skos:definition "Binary array length." ;
-		sf:columnName "array_length" ; sf:type "INTEGER" .
-	sfcore:levelColumn a sf:Column ; skos:prefLabel "Level" ; skos:definition "MS level." ;
-		sf:columnName "level" ; sf:type "INTEGER" .
-	sfcore:modeColumn a sf:Column ; skos:prefLabel "Mode" ; skos:definition "Acquisition mode." ;
-		sf:columnName "mode" ; sf:type "INTEGER" .
-	sfcore:polarityColumn a sf:Column ; skos:prefLabel "Polarity" ; skos:definition "Ion polarity." ;
-		sf:columnName "polarity" ; sf:type "INTEGER" .
-	sfcore:configurationColumn a sf:Column ; skos:prefLabel "Configuration" ; skos:definition "Instrument configuration." ;
-		sf:columnName "configuration" ; sf:type "INTEGER" .
-	sfcore:lowMzColumn a sf:Column ; skos:prefLabel "Low m/z" ; skos:definition "Low m/z bound." ;
-		sf:columnName "lowmz" ; sf:type "DOUBLE" .
-	sfcore:highMzColumn a sf:Column ; skos:prefLabel "High m/z" ; skos:definition "High m/z bound." ;
-		sf:columnName "highmz" ; sf:type "DOUBLE" .
-	sfcore:bpMzColumn a sf:Column ; skos:prefLabel "Base peak m/z" ; skos:definition "Base peak m/z." ;
-		sf:columnName "bpmz" ; sf:type "DOUBLE" .
-	sfcore:bpIntColumn a sf:Column ; skos:prefLabel "Base peak intensity" ; skos:definition "Base peak intensity." ;
-		sf:columnName "bpint" ; sf:type "DOUBLE" .
-	sfcore:ticColumn a sf:Column ; skos:prefLabel "TIC" ; skos:definition "Total ion current." ;
-		sf:columnName "tic" ; sf:type "DOUBLE" .
-	sfcore:rtColumn a sf:Column ; skos:prefLabel "Retention time" ; skos:definition "Retention time." ;
-		sf:columnName "rt" ; sf:type "DOUBLE" .
-	sfcore:mobilityColumn a sf:Column ; skos:prefLabel "Mobility" ; skos:definition "Ion mobility." ;
-		sf:columnName "mobility" ; sf:type "DOUBLE" .
-	sfcore:windowMzColumn a sf:Column ; skos:prefLabel "Window m/z" ; skos:definition "Isolation window center." ;
-		sf:columnName "window_mz" ; sf:type "DOUBLE" .
-	sfcore:windowMzLowColumn a sf:Column ; skos:prefLabel "Window low m/z" ; skos:definition "Isolation window lower bound." ;
-		sf:columnName "window_mzlow" ; sf:type "DOUBLE" .
-	sfcore:windowMzHighColumn a sf:Column ; skos:prefLabel "Window high m/z" ; skos:definition "Isolation window upper bound." ;
-		sf:columnName "window_mzhigh" ; sf:type "DOUBLE" .
-	sfcore:precursorMzColumn a sf:Column ; skos:prefLabel "Precursor m/z" ; skos:definition "Precursor m/z." ;
-		sf:columnName "precursor_mz" ; sf:type "DOUBLE" .
-	sfcore:precursorIntensityColumn a sf:Column ; skos:prefLabel "Precursor intensity" ; skos:definition "Precursor intensity." ;
-		sf:columnName "precursor_intensity" ; sf:type "DOUBLE" .
-	sfcore:precursorChargeColumn a sf:Column ; skos:prefLabel "Precursor charge" ; skos:definition "Precursor charge." ;
-		sf:columnName "precursor_charge" ; sf:type "INTEGER" .
-	sfcore:activationCeColumn a sf:Column ; skos:prefLabel "Activation energy" ; skos:definition "Activation collision energy." ;
-		sf:columnName "activation_ce" ; sf:type "DOUBLE" .
-	sfcore:chromatogramIdColumn a sf:Column ; skos:prefLabel "Chromatogram ID" ; skos:definition "Chromatogram identifier." ;
-		sf:columnName "chromatogram_id" ; sf:type "VARCHAR" .
-	sfcore:productMzColumn a sf:Column ; skos:prefLabel "Product m/z" ; skos:definition "Product m/z." ;
-		sf:columnName "product_mz" ; sf:type "DOUBLE" .
-	sfcore:signalTypeColumn a sf:Column ; skos:prefLabel "Signal type" ; skos:definition "Signal type." ;
-		sf:columnName "signal_type" ; sf:type "VARCHAR" .
-	sfcore:chromatogramTypeColumn a sf:Column ; skos:prefLabel "Chromatogram type" ; skos:definition "Chromatogram type." ;
-		sf:columnName "chromatogram_type" ; sf:type "VARCHAR" .
-	sfcore:detectorColumn a sf:Column ; skos:prefLabel "Detector" ; skos:definition "Detector name." ;
-		sf:columnName "detector" ; sf:type "VARCHAR" .
-	sfcore:channelColumn a sf:Column ; skos:prefLabel "Channel" ; skos:definition "Acquisition channel." ;
-		sf:columnName "channel" ; sf:type "VARCHAR" .
-	sfcore:unitsColumn a sf:Column ; skos:prefLabel "Units" ; skos:definition "Measurement units." ;
-		sf:columnName "units" ; sf:type "VARCHAR" .
-	sfcore:wavelengthNmColumn a sf:Column ; skos:prefLabel "Wavelength" ; skos:definition "Wavelength in nanometers." ;
-		sf:columnName "wavelength_nm" ; sf:type "DOUBLE" .
-	sfcore:intervalMsColumn a sf:Column ; skos:prefLabel "Interval" ; skos:definition "Interval in milliseconds." ;
-		sf:columnName "interval_ms" ; sf:type "DOUBLE" .
-	sfcore:startTimeColumn a sf:Column ; skos:prefLabel "Start time" ; skos:definition "Chromatogram start time." ;
-		sf:columnName "start_time" ; sf:type "DOUBLE" .
-	sfcore:endTimeColumn a sf:Column ; skos:prefLabel "End time" ; skos:definition "Chromatogram end time." ;
-		sf:columnName "end_time" ; sf:type "DOUBLE" .
-	sfcore:intensityMultiplierColumn a sf:Column ; skos:prefLabel "Intensity multiplier" ; skos:definition "Intensity multiplier." ;
-		sf:columnName "intensity_multiplier" ; sf:type "DOUBLE" .
+sfms:chromatogramsTable
+    a sf:Table ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry chromatograms table" ;
+    skos:definition "Persisted chromatogram points loaded and filtered for mass spectrometry analyses." ;
+    sf:tableName "MASS_SPEC_CHROMATOGRAMS" ;
+    sf:hasColumn
+        sfcore:projectIdColumn,
+        sfms:analysisNameColumn,
+        sfms:chromatogramIdColumn,
+        sfms:rtColumn,
+        sfms:rawIntensityColumn,
+        sfms:baselineColumn,
+        sfms:intensityColumn,
+        sfcore:createdAtColumn .

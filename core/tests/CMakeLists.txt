@@ -64,14 +64,18 @@ set_tests_properties(streamfind_vendor_tests PROPERTIES
 )
 
 if(WIN32)
-    add_custom_command(TARGET streamfind_project_tests POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<TARGET_FILE:streamfind::duckdb>"
-            "$<TARGET_FILE_DIR:streamfind_project_tests>"
+    foreach(_test_target IN ITEMS
+        streamfind_core_tests
+        streamfind_project_tests
+        streamfind_mcp_tests
+        streamfind_domain_tests
+        streamfind_conformance_tests
+        streamfind_vendor_tests
     )
-    add_custom_command(TARGET streamfind_vendor_tests POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<TARGET_FILE:streamfind::duckdb>"
-            "$<TARGET_FILE_DIR:streamfind_vendor_tests>"
-    )
+        add_custom_command(TARGET ${_test_target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:streamfind::duckdb>"
+                "$<TARGET_FILE_DIR:${_test_target}>"
+        )
+    endforeach()
 endif()

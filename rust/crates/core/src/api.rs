@@ -26,16 +26,36 @@ fn options(request: &Json, read_only: bool) -> Result<ProjectOptions> {
     })
 }
 
-pub fn describe(request: &Json) -> Result<Json> {
-    let project = Project::open(options(request, true)?)?;
-    Ok(json!({
-        "id": project.info().id,
+fn descriptor(project: &Project) -> Result<Json> {
+    let row = json!({
+        "project_id": project.info().id,
         "domain": project.info().domain,
-        "metadata": project.info().metadata,
+        "metadata": project.info().metadata.to_string(),
         "schema_version": project.info().schema_version,
         "framework_version": project.info().framework_version,
-        "created_at": project.info().created_at
-    }))
+        "created_at": project.info().created_at,
+        "workflow": project.get_workflow()?.to_json()
+    });
+    let columns = row
+        .as_object()
+        .unwrap()
+        .iter()
+        .map(|(name, value)| (name.clone(), json!([value])))
+        .collect::<serde_json::Map<_, _>>();
+    Ok(json!({"row_count": 1, "columns": columns}))
+}
+
+fn metadata_table(metadata: &Json) -> Json {
+    json!({"row_count": 1, "columns": {"metadata": [metadata.to_string()]}})
+}
+
+fn workflow_table(workflow: &crate::Workflow) -> Json {
+    workflow.to_json()
+}
+
+pub fn describe(request: &Json) -> Result<Json> {
+    let project = Project::open(options(request, true)?)?;
+    descriptor(&project)
 }
 
 pub fn create(request: &Json) -> Result<Json> {
@@ -43,18 +63,18 @@ pub fn create(request: &Json) -> Result<Json> {
     if let Some(metadata) = request.get("metadata") {
         project.set_metadata(metadata.clone())?;
     }
-    Ok(
-        json!({"id": project.info().id, "domain": project.info().domain, "metadata": project.info().metadata}),
-    )
+    descriptor(&project)
 }
 
 pub fn get_metadata(request: &Json) -> Result<Json> {
-    Ok(Project::open(options(request, true)?)?.get_metadata())
+    Ok(metadata_table(
+        &Project::open(options(request, true)?)?.get_metadata(),
+    ))
 }
 
 pub fn validate(request: &Json) -> Result<Json> {
     Project::open(options(request, true)?)?.validate()?;
-    Ok(json!({"valid": true}))
+    Ok(json!({"valid": true, "info": "Project validation finished successfully."}))
 }
 
 pub fn get_domain(request: &Json) -> Result<Json> {
@@ -62,9 +82,9 @@ pub fn get_domain(request: &Json) -> Result<Json> {
 }
 
 pub fn get_workflow(request: &Json) -> Result<Json> {
-    Ok(Project::open(options(request, true)?)?
-        .get_workflow()?
-        .to_json())
+    Ok(workflow_table(
+        &Project::open(options(request, true)?)?.get_workflow()?,
+    ))
 }
 
 pub fn validate_workflow(request: &Json, registry: &crate::MethodRegistry) -> Result<Json> {
@@ -74,7 +94,7 @@ pub fn validate_workflow(request: &Json, registry: &crate::MethodRegistry) -> Re
             .ok_or_else(|| Error::new(ErrorCode::InvalidArgument, "missing workflow"))?,
     )?;
     workflow.validate(registry)?;
-    Ok(json!({"valid": true, "workflow": workflow.to_json()}))
+    Ok(json!({"valid": true, "info": "Workflow validation finished successfully."}))
 }
 
 pub fn set_workflow(request: &Json, registry: &crate::MethodRegistry) -> Result<Json> {
@@ -85,7 +105,43 @@ pub fn set_workflow(request: &Json, registry: &crate::MethodRegistry) -> Result<
     )?;
     let mut project = Project::open(options(request, false)?)?;
     project.set_workflow(workflow, registry)?;
-    Ok(project.get_workflow()?.to_json())
+    Ok(workflow_table(&project.get_workflow()?))
+}
+
+pub fn add_method(request: &Json, registry: &crate::MethodRegistry) -> Result<Json> {
+    let method = request
+        .get("method")
+        .and_then(Json::as_str)
+        .ok_or_else(|| Error::new(ErrorCode::InvalidArgument, "missing method"))?;
+    let mut project = Project::open(options(request, false)?)?;
+    let mut workflow = project.get_workflow()?;
+    workflow.steps.push(crate::WorkflowStep {
+        method: method.into(),
+        parameters: request
+            .get("parameters")
+            .cloned()
+            .unwrap_or_else(|| json!({})),
+        metadata: None,
+    });
+    project.set_workflow(workflow, registry)?;
+    Ok(workflow_table(&project.get_workflow()?))
+}
+
+pub fn remove_method(request: &Json, registry: &crate::MethodRegistry) -> Result<Json> {
+    let method = request
+        .get("method")
+        .and_then(Json::as_str)
+        .ok_or_else(|| Error::new(ErrorCode::InvalidArgument, "missing method"))?;
+    let mut project = Project::open(options(request, false)?)?;
+    let mut workflow = project.get_workflow()?;
+    let index = workflow
+        .steps
+        .iter()
+        .position(|step| step.method == method)
+        .ok_or_else(|| Error::new(ErrorCode::InvalidArgument, "method is not in workflow"))?;
+    workflow.steps.remove(index);
+    project.set_workflow(workflow, registry)?;
+    Ok(workflow_table(&project.get_workflow()?))
 }
 
 pub fn run_workflow(request: &Json, registry: &crate::MethodRegistry) -> Result<Json> {
@@ -162,7 +218,7 @@ pub fn get_cache_size(request: &Json) -> Result<Json> {
 
 pub fn close(request: &Json) -> Result<Json> {
     Project::open(options(request, true)?)?.close();
-    Ok(json!({"closed": true}))
+    Ok(json!({"status": "finished", "info": "Project closed successfully."}))
 }
 
 pub fn set_metadata(request: &Json) -> Result<Json> {
@@ -172,7 +228,7 @@ pub fn set_metadata(request: &Json) -> Result<Json> {
         .ok_or_else(|| Error::new(ErrorCode::InvalidArgument, "missing metadata"))?;
     let mut project = Project::open(options(request, false)?)?;
     project.set_metadata(metadata)?;
-    Ok(project.get_metadata())
+    Ok(metadata_table(&project.get_metadata()))
 }
 
 pub fn get_cache(request: &Json) -> Result<Json> {
@@ -182,7 +238,7 @@ pub fn get_cache(request: &Json) -> Result<Json> {
 pub fn delete_cache(request: &Json) -> Result<Json> {
     let mut project = Project::open(options(request, false)?)?;
     project.delete_cache()?;
-    Ok(json!({"deleted": true}))
+    Ok(json!({"status": "finished", "info": "Cache deleted successfully."}))
 }
 
 pub fn get_audit_trail(request: &Json) -> Result<Json> {

@@ -51,15 +51,27 @@ int main() {
         std::cerr << "connect failed\n";
         return 1;
     }
-    if (session.handle({{"id", 4}, {"method", "tools/list"}}).at("result").at("tools").size() != fixture.at("generic_tools").size() + 3) {
+    const auto connected_tools = session.handle({{"id", 4}, {"method", "tools/list"}}).at("result").at("tools");
+    if (connected_tools.size() != fixture.at("generic_tools").size() + operations.list("mass_spec").size()) {
         std::cerr << "connected tools mismatch\n";
         return 1;
     }
+    const auto eic_tool = std::find_if(connected_tools.begin(), connected_tools.end(), [](const auto &tool) {
+        return tool.at("name") == "mass_spec.get_raw_spectra_eic";
+    });
+    if (eic_tool == connected_tools.end() || eic_tool->at("inputSchema").at("properties").at("targets").at("type") != "array" ||
+        eic_tool->at("inputSchema").at("properties").at("targets").at("items").at("type") != "object" ||
+        eic_tool->at("inputSchema").at("properties").at("rt_tolerance").at("type") != "number" ||
+        eic_tool->at("inputSchema").at("properties").at("targets").at("examples").empty() ||
+        eic_tool->at("inputSchema").at("properties").at("targets").at("examples")[0][0].at("id") != "caffeine") {
+        std::cerr << "mass-spec target schema mismatch\n";
+        return 1;
+    }
     const auto info = session.handle({{"id", 5}, {"method", "tools/call"}, {"params", {
-        {"name", "mass_spec.get_analyses_info"}, {"arguments", streamfind::Json::object()}
+        {"name", "mass_spec.get_analyses_info"}, {"arguments", {{"database_path", path.string()}, {"project_id", "mcp"}}}
     }}});
     if (info.at("result").value("isError", false) ||
-        streamfind::Json::parse(info.at("result").at("content").at(0).at("text").get<std::string>()).size() != 0) {
+        streamfind::Json::parse(info.at("result").at("content").at(0).at("text").get<std::string>()).at("row_count") != 0) {
         std::cerr << "mass_spec.get_analyses_info failed\n";
         return 1;
     }
@@ -70,7 +82,8 @@ int main() {
         std::cerr << "close failed\n";
         return 1;
     }
-    if (session.handle({{"id", 7}, {"method", "tools/list"}}).at("result").at("tools").size() != fixture.at("generic_tools").size()) {
+    if (session.handle({{"id", 7}, {"method", "tools/list"}}).at("result").at("tools").size() !=
+        fixture.at("generic_tools").size() + operations.list("mass_spec").size()) {
         std::cerr << "closed tools mismatch\n";
         return 1;
     }

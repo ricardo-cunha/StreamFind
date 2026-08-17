@@ -118,7 +118,7 @@ impl Reader {
         let bytes = fs::read(&path)?;
         let format = detect_format(&path, &bytes)?;
         let (spectra, chromatograms) = match format {
-            Format::MzMl => (parse_mzml(&bytes)?, Vec::new()),
+            Format::MzMl => (parse_mzml(&bytes)?, parse_mzml_chromatograms(&bytes)?),
             Format::MzXml => (parse_mzxml(&bytes)?, Vec::new()),
             Format::Asc => (Vec::new(), parse_asc(&bytes)),
             Format::ShimadzuLcd => parse_lcd(&path)?,
@@ -354,6 +354,81 @@ fn parse_mzml(bytes: &[u8]) -> Result<Vec<Spectrum>> {
                 if let Some(mut s) = current.take() {
                     finish_spectrum(&mut s);
                     out.push(s);
+                }
+            }
+            Event::Eof => break,
+            _ => {}
+        }
+        buf.clear();
+    }
+    Ok(out)
+}
+
+fn parse_mzml_chromatograms(bytes: &[u8]) -> Result<Vec<Chromatogram>> {
+    let mut xml = XmlReader::from_reader(bytes);
+    xml.config_mut().trim_text(false);
+    let mut buf = Vec::new();
+    let mut out = Vec::new();
+    let mut current: Option<Chromatogram> = None;
+    let mut array: Option<BinaryArray> = None;
+    let mut in_binary = false;
+    loop {
+        match xml.read_event_into(&mut buf)? {
+            Event::Start(e) if local(e.name().as_ref()) == b"chromatogram" => {
+                current = Some(Chromatogram {
+                    id: attr(&e, b"id").unwrap_or_default(),
+                    ..Default::default()
+                });
+            }
+            Event::Start(e) if local(e.name().as_ref()) == b"binaryDataArray" => {
+                array = Some(BinaryArray {
+                    precision: 32,
+                    ..Default::default()
+                });
+            }
+            Event::Start(e) if local(e.name().as_ref()) == b"binary" => in_binary = true,
+            Event::Text(e) if in_binary => {
+                if let Some(a) = array.as_mut() {
+                    a.encoded.push_str(&String::from_utf8_lossy(e.as_ref()));
+                }
+            }
+            Event::Empty(e) | Event::Start(e) if local(e.name().as_ref()) == b"cvParam" => {
+                let accession = attr(&e, b"accession").unwrap_or_default();
+                let name = attr(&e, b"name").unwrap_or_default().to_ascii_lowercase();
+                if let Some(a) = array.as_mut() {
+                    a.compressed = accession == "MS:1000574" || name.contains("zlib");
+                    a.precision = if accession == "MS:1000523" || name.contains("64-bit") {
+                        64
+                    } else {
+                        a.precision
+                    };
+                    a.mz = accession == "MS:1000595" || name.contains("time array");
+                    a.intensity = accession == "MS:1000515" || name.contains("intensity array");
+                } else if let Some(c) = current.as_mut() {
+                    if accession == "MS:1000235" || name.contains("total ion current") {
+                        c.signal_type = name.clone();
+                        c.chromatogram_type = "TIC".into();
+                    } else if name.contains("basepeak") || name.contains("base peak") {
+                        c.chromatogram_type = "BPC".into();
+                    }
+                }
+            }
+            Event::End(e) if local(e.name().as_ref()) == b"binary" => in_binary = false,
+            Event::End(e) if local(e.name().as_ref()) == b"binaryDataArray" => {
+                if let Some(a) = array.take() {
+                    if let Some(c) = current.as_mut() {
+                        let values = decode_array(&a)?;
+                        if a.mz {
+                            c.time = values;
+                        } else if a.intensity {
+                            c.intensity = values;
+                        }
+                    }
+                }
+            }
+            Event::End(e) if local(e.name().as_ref()) == b"chromatogram" => {
+                if let Some(c) = current.take() {
+                    out.push(c);
                 }
             }
             Event::Eof => break,

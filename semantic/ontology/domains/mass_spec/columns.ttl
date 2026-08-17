@@ -1,0 +1,562 @@
+@prefix sfcore: <https://streamfind.dev/catalogue/core#> .
+@prefix sfms: <https://streamfind.dev/catalogue/domains/mass_spec#> .
+@prefix sf: <https://streamfind.dev/vocabulary#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+sfms:analysisNameColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Analysis" ;
+    skos:definition "Analysis identifier." ;
+    sf:columnName "analysis" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:replicateNameColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Replicate" ;
+    skos:definition "Optional replicate label." ;
+    sf:columnName "replicate" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:blankNameColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Blank" ;
+    skos:definition "Optional blank label." ;
+    sf:columnName "blank" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:fileNameColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "File name" ;
+    skos:definition "Source file name." ;
+    sf:columnName "file_name" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:filePathColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "File path" ;
+    skos:definition "Source file path." ;
+    sf:columnName "file_path" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:fileDirColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "File directory" ;
+    skos:definition "Source file directory." ;
+    sf:columnName "file_dir" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:fileExtensionColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "File extension" ;
+    skos:definition "Source file extension." ;
+    sf:columnName "file_extension" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:formatColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Format" ;
+    skos:definition "Detected source format." ;
+    sf:columnName "format" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:typeColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Type" ;
+    skos:definition "Source data type." ;
+    sf:columnName "type" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:timeStampColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Time stamp" ;
+    skos:definition "Source acquisition timestamp." ;
+    sf:columnName "time_stamp" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:numberSpectraColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Number of spectra" ;
+    skos:definition "Number of spectra." ;
+    sf:columnName "number_spectra" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:numberChromatogramsColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Number of chromatograms" ;
+    skos:definition "Number of chromatograms." ;
+    sf:columnName "number_chromatograms" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:numberSpectraBinaryArraysColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Number of binary arrays" ;
+    skos:definition "Number of binary spectrum arrays." ;
+    sf:columnName "number_spectra_binary_arrays" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:minMzColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Minimum m/z" ;
+    skos:definition "Minimum mass-to-charge value." ;
+    sf:columnName "min_mz" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:maxMzColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Maximum m/z" ;
+    skos:definition "Maximum mass-to-charge value." ;
+    sf:columnName "max_mz" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:startRtColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Start retention time" ;
+    skos:definition "Start retention time." ;
+    sf:columnName "start_rt" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:endRtColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "End retention time" ;
+    skos:definition "End retention time." ;
+    sf:columnName "end_rt" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:hasIonMobilityColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Has ion mobility" ;
+    skos:definition "Whether ion mobility data exists." ;
+    sf:columnName "has_ion_mobility" ;
+    sf:type "boolean" ;
+    sf:storageType "BOOLEAN" .
+
+sfms:concentrationColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Concentration" ;
+    skos:definition "Analysis concentration." ;
+    sf:columnName "concentration" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:indexColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Index" ;
+    skos:definition "Header row index." ;
+    sf:columnName "index" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:scanColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Scan" ;
+    skos:definition "Scan number." ;
+    sf:columnName "scan" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:arrayLengthColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Array length" ;
+    skos:definition "Binary array length." ;
+    sf:columnName "array_length" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:levelColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Level" ;
+    skos:definition "MS level." ;
+    sf:columnName "level" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:modeColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mode" ;
+    skos:definition "Acquisition mode." ;
+    sf:columnName "mode" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:polarityColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Polarity" ;
+    skos:definition "Ion polarity." ;
+    sf:columnName "polarity" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:configurationColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Configuration" ;
+    skos:definition "Instrument configuration." ;
+    sf:columnName "configuration" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:lowMzColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Low m/z" ;
+    skos:definition "Low m/z bound." ;
+    sf:columnName "lowmz" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:highMzColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "High m/z" ;
+    skos:definition "High m/z bound." ;
+    sf:columnName "highmz" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:bpMzColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Base peak m/z" ;
+    skos:definition "Base peak m/z." ;
+    sf:columnName "bpmz" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:bpIntColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Base peak intensity" ;
+    skos:definition "Base peak intensity." ;
+    sf:columnName "bpint" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:ticColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "TIC" ;
+    skos:definition "Total ion current." ;
+    sf:columnName "tic" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:rtColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Retention time" ;
+    skos:definition "Retention time." ;
+    sf:columnName "rt" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:mobilityColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mobility" ;
+    skos:definition "Ion mobility." ;
+    sf:columnName "mobility" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:windowMzColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Window m/z" ;
+    skos:definition "Isolation window center." ;
+    sf:columnName "window_mz" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:windowMzLowColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Window low m/z" ;
+    skos:definition "Isolation window lower bound." ;
+    sf:columnName "window_mzlow" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:windowMzHighColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Window high m/z" ;
+    skos:definition "Isolation window upper bound." ;
+    sf:columnName "window_mzhigh" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:precursorMzColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Precursor m/z" ;
+    skos:definition "Precursor m/z." ;
+    sf:columnName "precursor_mz" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:precursorIntensityColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Precursor intensity" ;
+    skos:definition "Precursor intensity." ;
+    sf:columnName "precursor_intensity" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:precursorChargeColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Precursor charge" ;
+    skos:definition "Precursor charge." ;
+    sf:columnName "precursor_charge" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:activationCeColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Activation energy" ;
+    skos:definition "Activation collision energy." ;
+    sf:columnName "activation_ce" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:chromatogramIdColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Chromatogram ID" ;
+    skos:definition "Chromatogram identifier." ;
+    sf:columnName "chromatogram_id" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:productMzColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Product m/z" ;
+    skos:definition "Product m/z." ;
+    sf:columnName "product_mz" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:signalTypeColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Signal type" ;
+    skos:definition "Signal type." ;
+    sf:columnName "signal_type" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:chromatogramTypeColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Chromatogram type" ;
+    skos:definition "Chromatogram type." ;
+    sf:columnName "chromatogram_type" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:detectorColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Detector" ;
+    skos:definition "Detector name." ;
+    sf:columnName "detector" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:channelColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Channel" ;
+    skos:definition "Acquisition channel." ;
+    sf:columnName "channel" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:unitsColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Units" ;
+    skos:definition "Measurement units." ;
+    sf:columnName "units" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:wavelengthNmColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Wavelength" ;
+    skos:definition "Wavelength in nanometers." ;
+    sf:columnName "wavelength_nm" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:intervalMsColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Interval" ;
+    skos:definition "Interval in milliseconds." ;
+    sf:columnName "interval_ms" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:startTimeColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Start time" ;
+    skos:definition "Chromatogram start time." ;
+    sf:columnName "start_time" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:endTimeColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "End time" ;
+    skos:definition "Chromatogram end time." ;
+    sf:columnName "end_time" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:intensityMultiplierColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Intensity multiplier" ;
+    skos:definition "Intensity multiplier." ;
+    sf:columnName "intensity_multiplier" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:targetIdColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Target ID" ;
+    skos:definition "Target identifier returned with a result row." ;
+    sf:columnName "target_id" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:idColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Spectrum ID" ;
+    skos:definition "Stable spectrum identifier." ;
+    sf:columnName "id" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:preMzColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Precursor m/z" ;
+    skos:definition "Precursor m/z value." ;
+    sf:columnName "pre_mz" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:preMzLowColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Precursor low m/z" ;
+    skos:definition "Lower precursor isolation m/z value." ;
+    sf:columnName "pre_mzlow" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:preMzHighColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Precursor high m/z" ;
+    skos:definition "Upper precursor isolation m/z value." ;
+    sf:columnName "pre_mzhigh" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:preCeColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Precursor collision energy" ;
+    skos:definition "Precursor collision energy." ;
+    sf:columnName "pre_ce" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:mzColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Observed m/z" ;
+    skos:definition "Observed mass-to-charge value." ;
+    sf:columnName "mz" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:intensityColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Observed intensity" ;
+    skos:definition "Observed intensity." ;
+    sf:columnName "intensity" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:rawIntensityColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Raw intensity" ;
+    skos:definition "Original chromatogram intensity." ;
+    sf:columnName "raw_intensity" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:baselineColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Baseline" ;
+    skos:definition "Chromatogram baseline value." ;
+    sf:columnName "baseline" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .

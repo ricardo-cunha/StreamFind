@@ -9,6 +9,8 @@
     {"name": "set_metadata", "required": ["database_path", "project_id", "metadata"]},
     {"name": "get_workflow", "required": ["database_path", "project_id"]},
     {"name": "set_workflow", "required": ["database_path", "project_id", "workflow"]},
+    {"name": "add_method", "required": ["database_path", "project_id", "method"]},
+    {"name": "remove_method", "required": ["database_path", "project_id", "method"]},
     {"name": "validate_workflow", "required": ["workflow"]},
     {"name": "run_workflow", "required": ["database_path", "project_id"]},
     {"name": "get_cache", "required": ["database_path", "project_id"]},

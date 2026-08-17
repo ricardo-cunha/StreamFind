@@ -5,6 +5,17 @@ use streamfind_rust_core::{api, MethodRegistry, OperationRegistry, Project, Proj
 
 mod generated_metadata;
 
+fn json_schema_type(parameter: &Value) -> Value {
+    let mut schema = parameter["type"].clone();
+    if schema["type"] == "real" {
+        schema["type"] = json!("number");
+    }
+    if !parameter["example"].is_null() {
+        schema["examples"] = json!([parameter["example"].clone()]);
+    }
+    schema
+}
+
 pub struct Session<'a> {
     registry: &'a MethodRegistry,
     operations: &'a OperationRegistry,
@@ -40,7 +51,7 @@ impl<'a> Session<'a> {
                         serde_json::Map::new(),
                         |mut properties, parameter| {
                             if let Some(name) = parameter["name"].as_str() {
-                                properties.insert(name.into(), parameter["type"].clone());
+                                properties.insert(name.into(), json_schema_type(parameter));
                             }
                             properties
                         },
@@ -55,9 +66,30 @@ impl<'a> Session<'a> {
                         .collect::<Vec<_>>();
                     catalogue.push(json!({"name": definition["id"], "description": definition["description"], "inputSchema": {"type": "object", "properties": properties, "required": required}}));
                 }
-                for definition in self.operations.list(&self.domain) {
-                    catalogue.push(json!({"name": definition["id"], "description": definition["description"], "inputSchema": {"type": "object", "properties": {}, "required": []}}));
-                }
+            }
+            for definition in self.operations.list("") {
+                let parameters = definition["parameters"]
+                    .as_array()
+                    .cloned()
+                    .unwrap_or_default();
+                let properties =
+                    parameters
+                        .iter()
+                        .fold(serde_json::Map::new(), |mut properties, parameter| {
+                            if let Some(name) = parameter["name"].as_str() {
+                                properties.insert(name.into(), json_schema_type(parameter));
+                            }
+                            properties
+                        });
+                let required = parameters
+                    .iter()
+                    .filter_map(|parameter| {
+                        (parameter["required"].as_bool() == Some(true))
+                            .then(|| parameter["name"].as_str())
+                            .flatten()
+                    })
+                    .collect::<Vec<_>>();
+                catalogue.push(json!({"name": definition["id"], "description": definition["description"], "inputSchema": {"type": "object", "properties": properties, "required": required}}));
             }
             return json!({"jsonrpc":"2.0","id":id,"result":{"tools":catalogue}});
         }
@@ -73,7 +105,10 @@ impl<'a> Session<'a> {
                     Ok(domain) => {
                         self.domain = domain.as_str().unwrap_or_default().into();
                         self.project = Some(args.clone());
-                        response(id, json!({"domain": self.domain}))
+                        response(
+                            id,
+                            json!({"status": "finished", "info": "Project connected successfully."}),
+                        )
                     }
                     Err(error) => error_response(id, error.to_string()),
                 };
@@ -102,31 +137,37 @@ impl<'a> Session<'a> {
             }
             if self
                 .operations
-                .list(&self.domain)
+                .list("")
                 .iter()
                 .any(|tool| tool["id"] == name)
             {
-                let project = self
-                    .project
-                    .as_ref()
-                    .ok_or_else(|| "No project connected".to_string());
-                let result = project.and_then(|args| {
+                let result = (|| {
+                    let empty_args = json!({});
+                    let args = params.get("arguments").unwrap_or(&empty_args);
+                    let database_path = args["database_path"]
+                        .as_str()
+                        .ok_or_else(|| "missing database_path".to_string())?;
+                    let project_id = args["project_id"]
+                        .as_str()
+                        .ok_or_else(|| "missing project_id".to_string())?;
                     let options = ProjectOptions {
-                        database_path: args["database_path"].as_str().unwrap_or_default().into(),
-                        project_id: args["project_id"].as_str().unwrap_or_default().into(),
-                        domain: self.domain.clone(),
+                        database_path: database_path.into(),
+                        project_id: project_id.into(),
+                        domain: self
+                            .operations
+                            .list("")
+                            .into_iter()
+                            .find(|tool| tool["id"] == name)
+                            .and_then(|tool| tool["domain"].as_str().map(Into::into))
+                            .unwrap_or_default(),
                         create_if_missing: false,
                         read_only: false,
                     };
                     let mut project = Project::open(options).map_err(|e| e.to_string())?;
                     project
-                        .run_operation(
-                            name,
-                            params.get("arguments").unwrap_or(&json!({})),
-                            self.operations,
-                        )
+                        .run_operation(name, args, self.operations)
                         .map_err(|e| e.to_string())
-                });
+                })();
                 return match result {
                     Ok(value) => response(id, value),
                     Err(error) => error_response(id, error),
@@ -179,6 +220,8 @@ pub fn handle(request: &Value, _registry: &MethodRegistry) -> Value {
         "set_metadata" => api::set_metadata(args),
         "get_workflow" => api::get_workflow(args),
         "set_workflow" => api::set_workflow(args, _registry),
+        "add_method" => api::add_method(args, _registry),
+        "remove_method" => api::remove_method(args, _registry),
         "validate_workflow" => api::validate_workflow(args, _registry),
         "run_workflow" => api::run_workflow(args, _registry),
         "get_cache" => api::get_cache(args),

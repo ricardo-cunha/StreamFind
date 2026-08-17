@@ -2,13 +2,16 @@ use std::path::Path;
 
 use serde_json::{json, Value};
 use streamfind_rust_core::{
-    Error, ErrorCode, Operation, OperationRegistry, ParameterDefinition, ParameterSchema,
-    ParameterType, Project, Result, TypeDescriptor,
+    Error, ErrorCode, Method, MethodRegistry, Operation, OperationRegistry, ParameterDefinition,
+    ParameterSchema, ParameterType, Project, Result, TypeDescriptor,
 };
 
+mod generated_metadata;
+
+pub mod processing_chromatograms;
 pub mod reader;
 
-const ANALYSES_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_ANALYSES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, replicate VARCHAR, blank VARCHAR, file_name VARCHAR, file_path VARCHAR NOT NULL, file_dir VARCHAR, file_extension VARCHAR, format VARCHAR, number_spectra INTEGER, number_chromatograms INTEGER, number_spectra_binary_arrays INTEGER, min_mz DOUBLE, max_mz DOUBLE, start_rt DOUBLE, end_rt DOUBLE, has_ion_mobility BOOLEAN, PRIMARY KEY(project_id, analysis))";
+const ANALYSES_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_ANALYSES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, replicate VARCHAR, blank VARCHAR, file_name VARCHAR, file_path VARCHAR NOT NULL, file_dir VARCHAR, file_extension VARCHAR, format VARCHAR, type VARCHAR, time_stamp VARCHAR, number_spectra INTEGER, number_chromatograms INTEGER, number_spectra_binary_arrays INTEGER, min_mz DOUBLE, max_mz DOUBLE, start_rt DOUBLE, end_rt DOUBLE, has_ion_mobility BOOLEAN, concentration DOUBLE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis))";
 const SPECTRA_HEADERS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_SPECTRA_HEADERS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, index INTEGER NOT NULL, scan INTEGER, array_length INTEGER, level INTEGER, mode INTEGER, polarity INTEGER, configuration INTEGER, lowmz DOUBLE, highmz DOUBLE, bpmz DOUBLE, bpint DOUBLE, tic DOUBLE, rt DOUBLE, mobility DOUBLE, window_mz DOUBLE, window_mzlow DOUBLE, window_mzhigh DOUBLE, precursor_mz DOUBLE, precursor_intensity DOUBLE, precursor_charge INTEGER, activation_ce DOUBLE, PRIMARY KEY(project_id, analysis, index))";
 const CHROMATOGRAMS_HEADERS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_CHROMATOGRAMS_HEADERS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, index INTEGER NOT NULL, chromatogram_id VARCHAR, array_length INTEGER, polarity INTEGER, precursor_mz DOUBLE, activation_ce DOUBLE, product_mz DOUBLE, signal_type VARCHAR, chromatogram_type VARCHAR, detector VARCHAR, channel VARCHAR, units VARCHAR, wavelength_nm DOUBLE, interval_ms DOUBLE, start_time DOUBLE, end_time DOUBLE, intensity_multiplier DOUBLE, PRIMARY KEY(project_id, analysis, index))";
 
@@ -79,9 +82,9 @@ fn add_analyses(project: &mut Project, parameters: &Value) -> Result<Value> {
             .extension()
             .and_then(|value| value.to_str())
             .unwrap_or_default();
-        let query = format!("INSERT OR REPLACE INTO MASS_SPEC_ANALYSES VALUES ({},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{})", sql(project.get_project_id()), sql(analysis), sql(replicate), sql(blank), sql(file_name), sql(path_string), sql(file_dir.as_ref()), sql(extension), sql(format_name(summary.format)), summary.number_spectra, summary.number_chromatograms, summary.number_spectra_binary_arrays, summary.min_mz, summary.max_mz, summary.start_rt, summary.end_rt, summary.has_ion_mobility);
+        let query = format!("INSERT OR REPLACE INTO MASS_SPEC_ANALYSES (project_id, analysis, replicate, blank, file_name, file_path, file_dir, file_extension, format, type, time_stamp, number_spectra, number_chromatograms, number_spectra_binary_arrays, min_mz, max_mz, start_rt, end_rt, has_ion_mobility, concentration) VALUES ({},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},NULL)", sql(project.get_project_id()), sql(analysis), sql(replicate), sql(blank), sql(file_name), sql(path_string), sql(file_dir.as_ref()), sql(extension), sql(format_name(summary.format)), sql("MS"), sql(""), summary.number_spectra, summary.number_chromatograms, summary.number_spectra_binary_arrays, summary.min_mz, summary.max_mz, summary.start_rt, summary.end_rt, summary.has_ion_mobility);
         project.execute_sql(&query)?;
-        added.push(json!({"analysis": analysis, "file_path": path_string, "replicate_name": replicate, "blank_name": blank}));
+        added.push(json!({"analysis": analysis, "file_path": path_string, "replicate": replicate, "blank": blank}));
     }
     Ok(Value::Array(added))
 }
@@ -112,48 +115,903 @@ fn get_analyses_info(project: &Project) -> Result<Value> {
     project.query_json(&format!("SELECT analysis, replicate, blank, file_path, format, number_spectra, number_chromatograms FROM MASS_SPEC_ANALYSES WHERE project_id = {} ORDER BY analysis", sql(project.get_project_id())))
 }
 
+fn text(value: &Value) -> String {
+    value.as_str().unwrap_or_default().into()
+}
+fn number(value: &Value) -> f32 {
+    value.as_f64().unwrap_or(0.0) as f32
+}
+fn string_list(parameters: &Value, key: &str) -> Vec<String> {
+    parameters
+        .get(key)
+        .and_then(Value::as_array)
+        .map(|values| {
+            values
+                .iter()
+                .map(text)
+                .filter(|value| !value.is_empty())
+                .collect()
+        })
+        .unwrap_or_default()
+}
+fn int_list(parameters: &Value, key: &str) -> Vec<i32> {
+    parameters
+        .get(key)
+        .and_then(Value::as_array)
+        .map(|values| {
+            values
+                .iter()
+                .filter_map(Value::as_i64)
+                .map(|value| value as i32)
+                .collect()
+        })
+        .unwrap_or_default()
+}
+fn selected(names: &[String], analysis: &str) -> bool {
+    names.is_empty() || names.iter().any(|name| name == analysis)
+}
+fn in_range(value: f32, parameters: &Value, low: &str, high: &str) -> bool {
+    parameters
+        .get(low)
+        .map_or(true, |bound| value >= number(bound))
+        && parameters
+            .get(high)
+            .map_or(true, |bound| value <= number(bound))
+}
+
+#[derive(Debug, Clone)]
+pub struct TargetRange {
+    pub id: String,
+    pub analyses: Vec<String>,
+    pub polarities: Vec<i32>,
+    pub levels: Vec<i32>,
+    pub mz_min: f32,
+    pub mz_max: f32,
+    pub rt_min: f32,
+    pub rt_max: f32,
+}
+
+#[derive(Debug, Clone)]
+pub struct TargetQuery {
+    pub targets: Vec<TargetRange>,
+    pub ppm: f64,
+    pub rt_tolerance: f64,
+    pub charge: i32,
+}
+
+fn target_number(value: Option<&Value>) -> Option<f64> {
+    value.and_then(Value::as_f64)
+}
+
+fn normalize_targets(parameters: &Value) -> TargetQuery {
+    const PROTON: f64 = 1.007276;
+    let ppm = target_number(parameters.get("ppm")).unwrap_or(20.0);
+    let rt_tolerance = target_number(parameters.get("rt_tolerance")).unwrap_or(60.0);
+    let charge = target_number(parameters.get("charge"))
+        .unwrap_or(1.0)
+        .abs()
+        .max(1.0) as i32;
+    let source = parameters
+        .get("targets")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_else(|| vec![json!({})]);
+    let mut targets = Vec::new();
+    for source in &source {
+        let polarities = source
+            .get("polarity")
+            .or_else(|| parameters.get("polarity"))
+            .map(|value| {
+                if let Some(values) = value.as_array() {
+                    values
+                        .iter()
+                        .filter_map(Value::as_i64)
+                        .map(|v| v as i32)
+                        .collect()
+                } else {
+                    vec![value.as_i64().unwrap_or(0) as i32]
+                }
+            })
+            .unwrap_or_default();
+        let polarities = if polarities.is_empty() {
+            vec![0]
+        } else {
+            polarities
+        };
+        let analyses = source
+            .get("analyses")
+            .map(|value| {
+                if let Some(values) = value.as_array() {
+                    values
+                        .iter()
+                        .filter_map(Value::as_str)
+                        .map(str::to_owned)
+                        .collect()
+                } else {
+                    vec![text(value)]
+                }
+            })
+            .unwrap_or_else(|| string_list(parameters, "analysis_names"));
+        let levels = source
+            .get("levels")
+            .map(|value| {
+                if let Some(values) = value.as_array() {
+                    values
+                        .iter()
+                        .filter_map(Value::as_i64)
+                        .map(|v| v as i32)
+                        .collect()
+                } else {
+                    vec![value.as_i64().unwrap_or(0) as i32]
+                }
+            })
+            .unwrap_or_else(|| int_list(parameters, "levels"));
+        let polarity = polarities.first().copied().unwrap_or(0);
+        let mass = target_number(source.get("mass"));
+        let mass_min = target_number(source.get("mass_min"));
+        let mass_max = target_number(source.get("mass_max"));
+        let mut mz_min =
+            target_number(source.get("mz_min")).or_else(|| target_number(parameters.get("mz_min")));
+        let mut mz_max =
+            target_number(source.get("mz_max")).or_else(|| target_number(parameters.get("mz_max")));
+        let exact_mz = target_number(source.get("mz"));
+        let mass_based = mass.is_some() || mass_min.is_some() || mass_max.is_some();
+        if mz_min.is_none() && mz_max.is_none() {
+            if let Some(mz) = exact_mz {
+                mz_min = Some(mz);
+                mz_max = Some(mz);
+            }
+        }
+        if mz_min.is_none() && mz_max.is_none() && mass_based {
+            let sign = if polarity < 0 { -1.0 } else { 1.0 };
+            mz_min = mass_min
+                .or(mass)
+                .map(|value| value + sign * PROTON / charge as f64);
+            mz_max = mass_max
+                .or(mass)
+                .map(|value| value + sign * PROTON / charge as f64);
+        }
+        if let Some(mz) = mz_min.or(mz_max) {
+            let delta = mz * ppm / 1e6;
+            if (mass_based || exact_mz.is_some()) && mz_min == mz_max {
+                mz_min = Some(mz - delta);
+                mz_max = Some(mz + delta);
+            } else {
+                mz_min = Some(mz_min.unwrap_or(mz - delta));
+                mz_max = Some(mz_max.unwrap_or(mz + delta));
+            }
+        }
+        let isolation_window = target_number(parameters.get("isolation_window")).unwrap_or(0.0);
+        if isolation_window > 0.0 {
+            mz_min = Some(mz_min.unwrap_or(f64::NEG_INFINITY) - isolation_window / 2.0);
+            mz_max = Some(mz_max.unwrap_or(f64::INFINITY) + isolation_window / 2.0);
+        }
+        let rt = target_number(source.get("rt"));
+        let rt_min = target_number(source.get("rt_min"))
+            .or_else(|| target_number(parameters.get("rt_min")))
+            .or_else(|| rt.map(|v| v - rt_tolerance));
+        let rt_max = target_number(source.get("rt_max"))
+            .or_else(|| target_number(parameters.get("rt_max")))
+            .or_else(|| rt.map(|v| v + rt_tolerance));
+        targets.push(TargetRange {
+            id: source
+                .get("id")
+                .and_then(Value::as_str)
+                .unwrap_or("target")
+                .to_owned(),
+            analyses,
+            polarities,
+            levels,
+            mz_min: mz_min.unwrap_or(f32::NEG_INFINITY as f64) as f32,
+            mz_max: mz_max.unwrap_or(f32::INFINITY as f64) as f32,
+            rt_min: rt_min.unwrap_or(f32::NEG_INFINITY as f64) as f32,
+            rt_max: rt_max.unwrap_or(f32::INFINITY as f64) as f32,
+        });
+    }
+    TargetQuery {
+        targets,
+        ppm,
+        rt_tolerance,
+        charge,
+    }
+}
+
+fn target_matches(
+    target: &TargetRange,
+    analysis: &str,
+    polarity: i32,
+    level: i32,
+    rt: f32,
+    mz: f32,
+) -> bool {
+    (target.analyses.is_empty() || target.analyses.iter().any(|value| value == analysis))
+        && (target.polarities.contains(&0) || target.polarities.contains(&polarity))
+        && (target.levels.is_empty() || target.levels.contains(&level))
+        && mz >= target.mz_min
+        && mz <= target.mz_max
+        && rt >= target.rt_min
+        && rt <= target.rt_max
+}
+
+fn analysis_rows(project: &Project) -> Result<Value> {
+    project.query_json(&format!("SELECT analysis, file_path, COALESCE(replicate, '') AS replicate FROM MASS_SPEC_ANALYSES WHERE project_id = {} ORDER BY analysis", sql(project.get_project_id())))
+}
+
+fn update_values(
+    project: &mut Project,
+    parameters: &Value,
+    key: &str,
+    column: &str,
+    numeric: bool,
+) -> Result<Value> {
+    ensure_schema(project)?;
+    let rows = analysis_rows(project)?;
+    let values = parameters
+        .get(key)
+        .and_then(Value::as_array)
+        .ok_or_else(|| invalid(format!("{key} must be an array")))?;
+    if values.len() != rows.as_array().map_or(0, Vec::len) {
+        return Err(invalid(format!("{key} length must match analyses")));
+    }
+    for (row, value) in rows.as_array().unwrap().iter().zip(values) {
+        let expression = if numeric {
+            number(value).to_string()
+        } else {
+            sql(&text(value))
+        };
+        project.execute_sql(&format!("UPDATE MASS_SPEC_ANALYSES SET {column} = {expression} WHERE project_id = {} AND analysis = {}", sql(project.get_project_id()), sql(&text(&row["analysis"]))))?;
+    }
+    Ok(json!({"updated": values.len()}))
+}
+
+fn get_analysis_column(project: &Project, column: &str) -> Result<Value> {
+    ensure_schema(project)?;
+    let rows = project.query_json(&format!(
+        "SELECT {column} FROM MASS_SPEC_ANALYSES WHERE project_id = {} ORDER BY analysis",
+        sql(project.get_project_id())
+    ))?;
+    Ok(Value::Array(
+        rows.as_array()
+            .map(|rows| rows.iter().map(|row| row[column].clone()).collect())
+            .unwrap_or_default(),
+    ))
+}
+
+fn get_spectra_headers_impl(project: &mut Project, parameters: &Value) -> Result<Value> {
+    ensure_schema(project)?;
+    let wanted = string_list(parameters, "analysis_names");
+    let mut out = Vec::new();
+    for row in analysis_rows(project)?
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+    {
+        let analysis = text(&row["analysis"]);
+        if !selected(&wanted, &analysis) {
+            continue;
+        }
+        let reader =
+            reader::Reader::open(text(&row["file_path"])).map_err(|e| invalid(e.to_string()))?;
+        for spectrum in reader.spectra() {
+            out.push(json!({"analysis": analysis, "index": spectrum.index, "scan": spectrum.scan, "array_length": spectrum.array_length, "level": spectrum.level, "mode": 0, "polarity": spectrum.polarity, "configuration": 0, "lowmz": spectrum.low_mz, "highmz": spectrum.high_mz, "bpmz": spectrum.base_peak_mz, "bpint": spectrum.base_peak_intensity, "tic": spectrum.tic, "rt": spectrum.retention_time, "mobility": spectrum.mobility, "window_mz": 0.0, "window_mzlow": 0.0, "window_mzhigh": 0.0, "precursor_mz": spectrum.precursor_mz, "precursor_intensity": spectrum.precursor_intensity, "precursor_charge": spectrum.precursor_charge, "activation_ce": spectrum.collision_energy}));
+        }
+    }
+    Ok(Value::Array(out))
+}
+
+fn get_chromatograms_headers_impl(project: &mut Project, parameters: &Value) -> Result<Value> {
+    ensure_schema(project)?;
+    let wanted = string_list(parameters, "analysis_names");
+    let mut out = Vec::new();
+    for row in analysis_rows(project)?
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+    {
+        let analysis = text(&row["analysis"]);
+        if !selected(&wanted, &analysis) {
+            continue;
+        }
+        let reader =
+            reader::Reader::open(text(&row["file_path"])).map_err(|e| invalid(e.to_string()))?;
+        for (index, chromatogram) in reader.chromatograms().iter().enumerate() {
+            out.push(json!({"analysis": analysis, "index": index, "chromatogram_id": chromatogram.id, "array_length": chromatogram.time.len().min(chromatogram.intensity.len()), "polarity": chromatogram.polarity, "precursor_mz": 0.0, "activation_ce": 0.0, "product_mz": 0.0, "signal_type": chromatogram.signal_type, "chromatogram_type": chromatogram.chromatogram_type, "detector": chromatogram.detector, "channel": chromatogram.channel, "units": chromatogram.units, "wavelength_nm": 0.0, "interval_ms": chromatogram.interval_ms, "start_time": chromatogram.time.first().copied().unwrap_or(0.0), "end_time": chromatogram.time.last().copied().unwrap_or(0.0), "intensity_multiplier": 1.0}));
+        }
+    }
+    Ok(Value::Array(out))
+}
+
+fn get_spectra_tic_impl(project: &mut Project, parameters: &Value) -> Result<Value> {
+    let levels = int_list(parameters, "levels");
+    Ok(Value::Array(get_spectra_headers_impl(project, parameters)?.as_array().unwrap().iter().filter(|row| (levels.is_empty() || levels.contains(&(row["level"].as_i64().unwrap_or(0) as i32))) && in_range(number(&row["rt"]), parameters, "rt_min", "rt_max")).map(|row| json!({"analysis": row["analysis"], "replicate": "", "polarity": row["polarity"], "level": row["level"], "rt": row["rt"], "mobility": row["mobility"], "tic": row["tic"], "bpmz": row["bpmz"], "bpint": row["bpint"]})).collect()))
+}
+
+fn get_raw_spectra_impl(
+    project: &mut Project,
+    parameters: &Value,
+    forced_level: Option<i32>,
+) -> Result<Value> {
+    ensure_schema(project)?;
+    let query = normalize_targets(parameters);
+    let mut out = Vec::new();
+    for row in analysis_rows(project)?
+        .as_array()
+        .cloned()
+        .unwrap_or_default()
+    {
+        let analysis = text(&row["analysis"]);
+        let reader =
+            reader::Reader::open(text(&row["file_path"])).map_err(|e| invalid(e.to_string()))?;
+        for spectrum in reader.spectra() {
+            if forced_level.is_some() && forced_level != Some(spectrum.level) {
+                continue;
+            }
+            for (mz, intensity) in spectrum.mz.iter().zip(&spectrum.intensity) {
+                let minimum_intensity = if spectrum.level == 1 {
+                    target_number(parameters.get("min_intensity_ms1")).unwrap_or(0.0)
+                } else {
+                    target_number(parameters.get("min_intensity_ms2")).unwrap_or(0.0)
+                };
+                if (*intensity as f64) < minimum_intensity {
+                    continue;
+                }
+                let matches = query
+                    .targets
+                    .iter()
+                    .filter(|target| {
+                        target_matches(
+                            target,
+                            &analysis,
+                            spectrum.polarity,
+                            forced_level.unwrap_or(spectrum.level),
+                            spectrum.retention_time,
+                            *mz,
+                        )
+                    })
+                    .collect::<Vec<_>>();
+                for target in matches {
+                    out.push(json!({"analysis": analysis, "replicate": row["replicate"], "target_id": target.id, "id": format!("{}:{}", analysis, spectrum.index), "polarity": spectrum.polarity, "level": spectrum.level, "pre_mz": spectrum.precursor_mz, "pre_mzlow": 0.0, "pre_mzhigh": 0.0, "pre_ce": spectrum.collision_energy, "rt": spectrum.retention_time, "mobility": spectrum.mobility, "mz": mz, "intensity": intensity}));
+                }
+            }
+        }
+    }
+    Ok(Value::Array(out))
+}
+
+fn get_raw_spectra_eic_impl(project: &mut Project, parameters: &Value) -> Result<Value> {
+    let rows = get_raw_spectra_impl(project, parameters, Some(1))?;
+    let mut summaries: std::collections::BTreeMap<
+        (String, i32, String, String, u32),
+        (Value, f64, usize, f64),
+    > = std::collections::BTreeMap::new();
+    for row in rows.as_array().cloned().unwrap_or_default() {
+        let key = (
+            text(&row["analysis"]),
+            row["polarity"].as_i64().unwrap_or(0) as i32,
+            text(&row["target_id"]),
+            text(&row["id"]),
+            number(&row["rt"]).to_bits(),
+        );
+        let entry = summaries
+            .entry(key)
+            .or_insert_with(|| (row.clone(), 0.0, 0, 0.0));
+        entry.1 += number(&row["mz"]) as f64;
+        entry.2 += 1;
+        entry.3 += number(&row["mobility"]) as f64;
+        if number(&row["intensity"]) > number(&entry.0["intensity"]) {
+            entry.0["intensity"] = row["intensity"].clone();
+        }
+    }
+    Ok(Value::Array(
+        summaries
+            .into_values()
+            .map(|(mut row, mz_sum, count, mobility_sum)| {
+                row["level"] = json!(1);
+                row["mz"] = json!(mz_sum / count as f64);
+                row["mobility"] = json!(mobility_sum / count as f64);
+                row
+            })
+            .collect(),
+    ))
+}
+
+fn merge_raw_spectra_rows(rows: Value, mz_clust: f64, presence: f64) -> Value {
+    let mut groups: std::collections::BTreeMap<(String, String, i32), Vec<Value>> =
+        std::collections::BTreeMap::new();
+    for row in rows.as_array().cloned().unwrap_or_default() {
+        let key = (
+            text(&row["analysis"]),
+            text(&row["id"]),
+            row["polarity"].as_i64().unwrap_or(0) as i32,
+        );
+        groups.entry(key).or_default().push(row);
+    }
+    let tolerance = mz_clust.max(0.0);
+    let threshold = presence.clamp(0.0, 1.0);
+    let mut output = Vec::new();
+    for (_, mut values) in groups {
+        values.sort_by(|left, right| {
+            (number(&left["mz"]) as f64).total_cmp(&(number(&right["mz"]) as f64))
+        });
+        let all_rt = values
+            .iter()
+            .map(|row| number(&row["rt"]).to_bits())
+            .collect::<std::collections::BTreeSet<_>>();
+        let mut start = 0;
+        while start < values.len() {
+            let mut end = start + 1;
+            while end < values.len()
+                && (number(&values[end]["mz"]) as f64) - (number(&values[end - 1]["mz"]) as f64)
+                    <= tolerance
+            {
+                end += 1;
+            }
+            let cluster_rt = values[start..end]
+                .iter()
+                .map(|row| number(&row["rt"]).to_bits())
+                .collect::<std::collections::BTreeSet<_>>();
+            if threshold > 0.0
+                && !all_rt.is_empty()
+                && (cluster_rt.len() as f64) < threshold * (all_rt.len() as f64)
+            {
+                start = end;
+                continue;
+            }
+            let mut row = values[start].clone();
+            let mut intensity_sum = 0.0;
+            let mut weighted_mz = 0.0;
+            let mut rt_sum = 0.0;
+            let mut mobility_sum = 0.0;
+            let mut max_intensity: f64 = 0.0;
+            for value in &values[start..end] {
+                let intensity = number(&value["intensity"]) as f64;
+                intensity_sum += intensity;
+                weighted_mz += number(&value["mz"]) as f64 * intensity;
+                rt_sum += number(&value["rt"]) as f64;
+                mobility_sum += number(&value["mobility"]) as f64;
+                max_intensity = max_intensity.max(intensity);
+            }
+            if intensity_sum > 0.0 {
+                row["mz"] = json!(weighted_mz / intensity_sum);
+                row["intensity"] = json!(max_intensity);
+                row["rt"] = json!(rt_sum / (end - start) as f64);
+                row["mobility"] = json!(mobility_sum / (end - start) as f64);
+                output.push(row);
+            }
+            start = end;
+        }
+    }
+    output.sort_by(|left, right| {
+        text(&left["analysis"])
+            .cmp(&text(&right["analysis"]))
+            .then_with(|| text(&left["id"]).cmp(&text(&right["id"])))
+            .then_with(|| (number(&left["mz"]) as f64).total_cmp(&(number(&right["mz"]) as f64)))
+    });
+    Value::Array(output)
+}
+
+fn get_chromatograms_impl(project: &mut Project, parameters: &Value) -> Result<Value> {
+    processing_chromatograms::get_chromatograms(project, parameters)
+}
+
+fn parameter_example(name: &str) -> Option<Value> {
+    match name {
+        "analysis_names" => Some(json!(["sample-r001"])),
+        "levels" => Some(json!([1, 2])),
+        "targets" => {
+            Some(json!([{"id": "caffeine", "mass": 194.0804, "rt": 1020.0, "polarity": 1}]))
+        }
+        "indices" => Some(json!([0, 2])),
+        "polarity" => Some(json!(1)),
+        "ppm" => Some(json!(20.0)),
+        "rt_tolerance" => Some(json!(60.0)),
+        "charge" => Some(json!(1)),
+        "rt_min" => Some(json!(900.0)),
+        "rt_max" => Some(json!(1200.0)),
+        "mz_clust" => Some(json!(0.003)),
+        "presence" => Some(json!(0.8)),
+        "isolation_window" => Some(json!(1.3)),
+        "min_intensity_ms1" => Some(json!(1000.0)),
+        "min_intensity_ms2" => Some(json!(100.0)),
+        "analyses" => Some(json!([{"path": "data/sample.mzML", "replicate_name": "r1"}])),
+        "replicate_names" | "blank_names" => Some(json!(["r1"])),
+        "concentrations" => Some(json!([1.0])),
+        _ => None,
+    }
+}
+
+fn parameter(
+    name: &str,
+    description: &str,
+    kind: TypeDescriptor,
+    default: Option<Value>,
+) -> ParameterDefinition {
+    ParameterDefinition {
+        name: name.into(),
+        description: description.into(),
+        kind,
+        default,
+        required: false,
+        example: parameter_example(name),
+    }
+}
+
+fn ontology_entry(id: &str) -> Value {
+    serde_json::from_str::<Value>(generated_metadata::CATALOGUE).unwrap()["entries"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|entry| entry["canonical_id"] == id)
+        .cloned()
+        .unwrap_or_else(|| panic!("missing ontology operation: {id}"))
+}
+
+fn ontology_parameters(id: &str) -> ParameterSchema {
+    let entry = ontology_entry(id);
+    ParameterSchema {
+        definitions: entry["parameters"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|item| ParameterDefinition {
+                name: item["name"].as_str().unwrap().into(),
+                description: item["description"].as_str().unwrap_or_default().into(),
+                kind: TypeDescriptor::from_json(&item["schema"]).unwrap(),
+                default: (!item["default"].is_null()).then(|| item["default"].clone()),
+                required: item["required"].as_bool().unwrap_or(false),
+                example: (!item["example"].is_null()).then(|| item["example"].clone()),
+            })
+            .collect(),
+    }
+}
+
+fn ontology_description(id: &str) -> String {
+    ontology_entry(id)["definition"]
+        .as_str()
+        .unwrap_or_default()
+        .into()
+}
+
+fn ontology_result_schema(id: &str) -> Value {
+    ontology_entry(id)["result"]["schema"].clone()
+}
+
+fn table_result(id: &str, result: Result<Value>) -> Result<Value> {
+    let rows = result?;
+    let schema = ontology_result_schema(id);
+    if schema["type"] != "table" {
+        return Ok(rows);
+    }
+    let rows = rows
+        .as_array()
+        .ok_or_else(|| invalid("table result must be an array of rows"))?;
+    let mut columns = serde_json::Map::new();
+    if let Some(properties) = schema["properties"].as_object() {
+        for name in properties.keys() {
+            columns.insert(name.clone(), Value::Array(Vec::with_capacity(rows.len())));
+        }
+    }
+    for row in rows {
+        for (name, values) in &mut columns {
+            values
+                .as_array_mut()
+                .unwrap()
+                .push(row.get(name).cloned().unwrap_or(Value::Null));
+        }
+    }
+    Ok(json!({"row_count": rows.len(), "columns": columns}))
+}
+
+fn data_parameters(operation: &str) -> ParameterSchema {
+    return ontology_parameters(operation);
+    #[allow(unreachable_code)]
+    {
+        let mut definitions = vec![parameter(
+            "analysis_names",
+            "Optional analysis names",
+            TypeDescriptor::array(TypeDescriptor::scalar(ParameterType::String)),
+            Some(json!([])),
+        )];
+        if operation.ends_with("get_spectra_tic") {
+            definitions.extend([
+                parameter(
+                    "levels",
+                    "Optional MS levels",
+                    TypeDescriptor::array(TypeDescriptor::scalar(ParameterType::Integer)),
+                    Some(json!([])),
+                ),
+                parameter(
+                    "rt_min",
+                    "Minimum retention time",
+                    TypeDescriptor::scalar(ParameterType::Real),
+                    None,
+                ),
+                parameter(
+                    "rt_max",
+                    "Maximum retention time",
+                    TypeDescriptor::scalar(ParameterType::Real),
+                    None,
+                ),
+            ]);
+        } else if operation.ends_with("get_chromatograms")
+            && !operation.ends_with("get_chromatograms_headers")
+        {
+            definitions.push(parameter(
+                "indices",
+                "Optional zero-based row indices",
+                TypeDescriptor::array(TypeDescriptor::scalar(ParameterType::Integer)),
+                Some(json!([])),
+            ));
+        } else if operation.contains("get_raw_spectra") {
+            definitions.extend([
+                parameter(
+                    "levels",
+                    "Optional MS levels",
+                    TypeDescriptor::array(TypeDescriptor::scalar(ParameterType::Integer)),
+                    Some(json!([])),
+                ),
+                parameter(
+                    "targets",
+                    "Independent mass spectrometry target ranges",
+                    TypeDescriptor::array(TypeDescriptor::scalar(ParameterType::Object)),
+                    None,
+                ),
+                parameter(
+                    "polarity",
+                    "Optional ion polarity (-1 or 1)",
+                    TypeDescriptor::scalar(ParameterType::Integer),
+                    None,
+                ),
+                parameter(
+                    "ppm",
+                    "Mass tolerance in parts per million",
+                    TypeDescriptor::scalar(ParameterType::Real),
+                    None,
+                ),
+                parameter(
+                    "rt_tolerance",
+                    "Retention-time tolerance",
+                    TypeDescriptor::scalar(ParameterType::Real),
+                    None,
+                ),
+                parameter(
+                    "charge",
+                    "Ion charge used for mass conversion",
+                    TypeDescriptor::scalar(ParameterType::Integer),
+                    None,
+                ),
+            ]);
+            if operation.ends_with("get_raw_spectra_ms1") {
+                definitions.extend([
+                    parameter(
+                        "mz_clust",
+                        "m/z clustering tolerance",
+                        TypeDescriptor::scalar(ParameterType::Real),
+                        Some(json!(0.003)),
+                    ),
+                    parameter(
+                        "presence",
+                        "Minimum trace presence fraction",
+                        TypeDescriptor::scalar(ParameterType::Real),
+                        Some(json!(0.8)),
+                    ),
+                    parameter(
+                        "min_intensity_ms1",
+                        "Minimum MS1 peak intensity",
+                        TypeDescriptor::scalar(ParameterType::Real),
+                        Some(json!(0.0)),
+                    ),
+                ]);
+            } else if operation.ends_with("get_raw_spectra_ms2") {
+                definitions.extend([
+                    parameter(
+                        "isolation_window",
+                        "Precursor isolation window width",
+                        TypeDescriptor::scalar(ParameterType::Real),
+                        Some(json!(1.3)),
+                    ),
+                    parameter(
+                        "mz_clust",
+                        "m/z clustering tolerance",
+                        TypeDescriptor::scalar(ParameterType::Real),
+                        Some(json!(0.005)),
+                    ),
+                    parameter(
+                        "presence",
+                        "Minimum trace presence fraction",
+                        TypeDescriptor::scalar(ParameterType::Real),
+                        Some(json!(0.0)),
+                    ),
+                    parameter(
+                        "min_intensity_ms2",
+                        "Minimum MS2 peak intensity",
+                        TypeDescriptor::scalar(ParameterType::Real),
+                        Some(json!(0.0)),
+                    ),
+                ]);
+            }
+        } else if operation.ends_with("get_spectra_headers")
+            || operation.ends_with("get_chromatograms_headers")
+        {
+            // Headers accept analysis selection only.
+        }
+        ParameterSchema { definitions }
+    }
+}
+
 pub fn register_operations(registry: &mut OperationRegistry) -> Result<()> {
     registry.register(Operation::new(
         "mass_spec.add_analyses",
         "mass_spec.add_analyses",
-        "Mass spectrometry project operation",
+        ontology_description("mass_spec.add_analyses"),
         "mass_spec",
-        ParameterSchema {
-            definitions: vec![ParameterDefinition {
-                name: "analyses".into(),
-                description: "Analysis file records or names".into(),
-                kind: TypeDescriptor::array(TypeDescriptor::scalar(ParameterType::Object)),
-                default: None,
-                required: true,
-            }],
-        },
-        Box::new(add_analyses),
+        ontology_parameters("mass_spec.add_analyses"),
+        Box::new(|project, parameters| {
+            table_result("mass_spec.add_analyses", add_analyses(project, parameters))
+        }),
     ))?;
     registry.register(Operation::new(
         "mass_spec.remove_analyses",
         "mass_spec.remove_analyses",
-        "Mass spectrometry project operation",
+        ontology_description("mass_spec.remove_analyses"),
         "mass_spec",
-        ParameterSchema {
-            definitions: vec![ParameterDefinition {
-                name: "analysis_names".into(),
-                description: "Analysis names".into(),
-                kind: TypeDescriptor::array(TypeDescriptor::scalar(ParameterType::String)),
-                default: None,
-                required: true,
-            }],
-        },
+        ontology_parameters("mass_spec.remove_analyses"),
         Box::new(remove_analyses),
     ))?;
     registry.register(Operation::new(
         "mass_spec.get_analyses_info",
         "mass_spec.get_analyses_info",
-        "Mass spectrometry project operation",
+        ontology_description("mass_spec.get_analyses_info"),
         "mass_spec",
         ParameterSchema {
             definitions: vec![],
         },
-        Box::new(|project, _| get_analyses_info(project)),
+        Box::new(|project, _| {
+            table_result("mass_spec.get_analyses_info", get_analyses_info(project))
+        }),
     ))?;
+    for id in [
+        "mass_spec.get_spectra_headers",
+        "mass_spec.get_chromatograms_headers",
+        "mass_spec.get_spectra_tic",
+        "mass_spec.get_raw_spectra",
+        "mass_spec.get_raw_spectra_eic",
+        "mass_spec.get_raw_spectra_ms1",
+        "mass_spec.get_raw_spectra_ms2",
+        "mass_spec.get_chromatograms",
+        "mass_spec.get_raw_chromatograms",
+    ] {
+        registry.register(Operation::new(
+            id,
+            id,
+            ontology_description(id),
+            "mass_spec",
+            ontology_parameters(id),
+            Box::new(move |project, parameters| {
+                table_result(
+                    id,
+                    match id {
+                        "mass_spec.get_spectra_headers" => {
+                            get_spectra_headers_impl(project, parameters)
+                        }
+                        "mass_spec.get_chromatograms_headers" => {
+                            get_chromatograms_headers_impl(project, parameters)
+                        }
+                        "mass_spec.get_spectra_tic" => get_spectra_tic_impl(project, parameters),
+                        "mass_spec.get_raw_spectra" => {
+                            get_raw_spectra_impl(project, parameters, None)
+                        }
+                        "mass_spec.get_raw_spectra_eic" => {
+                            get_raw_spectra_eic_impl(project, parameters)
+                        }
+                        "mass_spec.get_raw_spectra_ms1" => Ok(merge_raw_spectra_rows(
+                            get_raw_spectra_impl(project, parameters, Some(1))?,
+                            target_number(parameters.get("mz_clust")).unwrap_or(0.003),
+                            target_number(parameters.get("presence")).unwrap_or(0.8),
+                        )),
+                        "mass_spec.get_raw_spectra_ms2" => Ok(merge_raw_spectra_rows(
+                            get_raw_spectra_impl(project, parameters, Some(2))?,
+                            target_number(parameters.get("mz_clust")).unwrap_or(0.005),
+                            target_number(parameters.get("presence")).unwrap_or(0.0),
+                        )),
+                        "mass_spec.get_chromatograms" => {
+                            get_chromatograms_impl(project, parameters)
+                        }
+                        "mass_spec.get_raw_chromatograms" => {
+                            processing_chromatograms::get_raw_chromatograms(project, parameters)
+                        }
+                        _ => unreachable!(),
+                    },
+                )
+            }),
+        ))?;
+    }
+    for (id, column) in [
+        ("mass_spec.get_analysis_names", "analysis"),
+        ("mass_spec.get_replicate_names", "replicate"),
+        ("mass_spec.get_blank_names", "blank"),
+        ("mass_spec.get_concentrations", "concentration"),
+    ] {
+        registry.register(Operation::new(
+            id,
+            id,
+            ontology_description(id),
+            "mass_spec",
+            ontology_parameters(id),
+            Box::new(move |project, _| get_analysis_column(project, column)),
+        ))?;
+    }
+    for (id, key, column, numeric) in [
+        (
+            "mass_spec.set_replicate_names",
+            "replicate_names",
+            "replicate",
+            false,
+        ),
+        ("mass_spec.set_blank_names", "blank_names", "blank", false),
+        (
+            "mass_spec.set_concentrations",
+            "concentrations",
+            "concentration",
+            true,
+        ),
+    ] {
+        registry.register(Operation::new(
+            id,
+            id,
+            ontology_description(id),
+            "mass_spec",
+            ontology_parameters(id),
+            Box::new(move |project, parameters| {
+                update_values(project, parameters, key, column, numeric)
+            }),
+        ))?;
+    }
+    Ok(())
+}
+
+pub fn register_methods(registry: &mut MethodRegistry) -> Result<()> {
+    for id in [
+        "mass_spec.load_chromatograms",
+        "mass_spec.filter_chromatograms_retention_time",
+    ] {
+        registry.register(Method::new(
+            id,
+            id,
+            ontology_description(id),
+            "mass_spec",
+            ontology_parameters(id),
+            Box::new(move |project, parameters| {
+                if id == "mass_spec.load_chromatograms" {
+                    processing_chromatograms::load_chromatograms(
+                        project,
+                        &processing_chromatograms::LoadChromatogramsRequest {
+                            analyses: string_list(parameters, "analysis_names"),
+                            chromatogram_id_regex: string_list(parameters, "chromatogram_id_regex"),
+                            ignore_case: parameters
+                                .get("ignore_case")
+                                .and_then(Value::as_bool)
+                                .unwrap_or(true),
+                            invert: parameters
+                                .get("invert")
+                                .and_then(Value::as_bool)
+                                .unwrap_or(false),
+                        },
+                    )
+                    .map(|_| json!({"status": "finished", "info": "Chromatograms loaded."}))
+                } else {
+                    processing_chromatograms::filter_chromatograms_retention_time(
+                        project,
+                        &processing_chromatograms::FilterChromatogramsRetentionTimeRequest {
+                            analyses: string_list(parameters, "analysis_names"),
+                            rtmin: number(parameters.get("rt_min").unwrap_or(&Value::Null)) as f64,
+                            rtmax: number(parameters.get("rt_max").unwrap_or(&Value::Null)) as f64,
+                        },
+                    )
+                    .map(|_| json!({"status": "finished", "info": "Chromatograms filtered by retention time."}))
+                }
+            }),
+        ))?;
+    }
     Ok(())
 }

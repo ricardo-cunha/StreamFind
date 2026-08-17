@@ -4,221 +4,240 @@
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
 
 sf:Operation
-	a rdfs:Class ;
-	rdfs:subClassOf skos:Concept ;
-	skos:prefLabel "Operation" ;
-	skos:definition "A generic public capability exposed by streamfind." .
+    a rdfs:Class ;
+    rdfs:subClassOf skos:Concept ;
+    skos:prefLabel "Operation" ;
+    skos:definition "A generic public capability exposed by streamfind." .
 
 sf:Method
-	a rdfs:Class ;
-	rdfs:subClassOf skos:Concept ;
-	skos:prefLabel "Method" ;
-	skos:definition "A workflow-executable capability available under a domain." .
+    a rdfs:Class ;
+    rdfs:subClassOf skos:Concept ;
+    skos:prefLabel "Method" ;
+    skos:definition "A workflow-executable capability available under a domain." .
 
 sf:Domain
-	a rdfs:Class ;
-	rdfs:subClassOf skos:Concept ;
-	skos:prefLabel "Domain" ;
-	skos:definition "A stable namespace that groups compatible streamfind methods." .
+    a rdfs:Class ;
+    rdfs:subClassOf skos:Concept ;
+    skos:prefLabel "Domain" ;
+    skos:definition "A stable namespace that groups compatible streamfind methods." .
 
 sf:Project
-	a rdfs:Class ;
-	rdfs:subClassOf skos:Concept ;
-	skos:prefLabel "Project" ;
-	skos:definition "A persisted streamfind workspace with an immutable domain." .
+    a rdfs:Class ;
+    rdfs:subClassOf skos:Concept ;
+    skos:prefLabel "Project" ;
+    skos:definition "A persisted streamfind workspace with an immutable domain." .
 
 sf:Workflow
-	a rdfs:Class ;
-	rdfs:subClassOf skos:Concept ;
-	skos:prefLabel "Workflow" ;
-	skos:definition "An ordered, versioned set of methods executed for a project." .
+    a rdfs:Class ;
+    rdfs:subClassOf skos:Concept ;
+    skos:prefLabel "Workflow" ;
+    skos:definition "An ordered, versioned set of methods executed for a project." .
 
 sf:Parameter
-	a rdfs:Class ;
-	rdfs:subClassOf skos:Concept ;
-	skos:prefLabel "Parameter" ;
-	skos:definition "A named input accepted by an operation or workflow method." .
+    a rdfs:Class ;
+    rdfs:subClassOf sf:Result ;
+    skos:prefLabel "Parameter" ;
+    skos:definition "A named input accepted by an operation or workflow method." .
 
 sf:Fixture
-	a rdfs:Class ;
-	rdfs:subClassOf skos:Concept ;
-	skos:prefLabel "Fixture" ;
-	skos:definition "A backend-neutral example used to verify a semantic contract." .
+    a rdfs:Class ;
+    rdfs:subClassOf skos:Concept ;
+    skos:prefLabel "Fixture" ;
+    skos:definition "A backend-neutral example used to verify a semantic contract." .
 
 sf:Result
-	a rdfs:Class ;
-	rdfs:subClassOf skos:Concept ;
-	skos:prefLabel "Result" ;
-	skos:definition "The structured value returned by a streamfind capability." .
+    a rdfs:Class ;
+    rdfs:subClassOf skos:Concept ;
+    skos:prefLabel "Result" ;
+    skos:definition "The structured value returned by a streamfind capability." .
 
 sf:Table
-	a rdfs:Class ;
-	rdfs:subClassOf skos:Concept ;
-	skos:prefLabel "Table" ;
-	skos:definition "A persisted project table used by a capability." .
+    a rdfs:Class ;
+    rdfs:subClassOf skos:Concept ;
+    skos:prefLabel "Table" ;
+    skos:definition "A persisted project table used by a capability." .
 
 sf:Column
-	a rdfs:Class ;
-	rdfs:subClassOf skos:Concept ;
-	skos:prefLabel "Column" ;
-	skos:definition "A typed column in a persisted project table." .
+    a rdfs:Class ;
+    rdfs:subClassOf sf:Field ;
+    skos:prefLabel "Column" ;
+    skos:definition "A typed column in a persisted project table." .
 
 sf:Error
-	a rdfs:Class ;
-	rdfs:subClassOf skos:Concept ;
-	skos:prefLabel "Error" ;
-	skos:definition "A stable failure category returned by a streamfind capability." .
+    a rdfs:Class ;
+    rdfs:subClassOf skos:Concept ;
+    skos:prefLabel "Error" ;
+    skos:definition "A stable failure category returned by a streamfind capability." .
+
+sf:Field
+    a rdfs:Class ;
+    rdfs:subClassOf skos:Concept ;
+    skos:prefLabel "Field" ;
+    skos:definition "A named logical JSON field used by a parameter, result, or object schema." .
 
 sf:operationId
-	a rdf:Property ;
-	rdfs:domain sf:Operation ;
-	rdfs:range rdfs:Literal ;
-	skos:prefLabel "operation identifier" ;
-	skos:definition "Stable identifier of a generic operation." .
+    a rdf:Property ;
+    rdfs:domain sf:Operation ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "operation identifier" ;
+    skos:definition "Stable identifier of a generic operation." .
 
 sf:methodId
-	a rdf:Property ;
-	rdfs:domain sf:Method ;
-	rdfs:range rdfs:Literal ;
-	skos:prefLabel "method identifier" ;
-	skos:definition "Stable identifier of a workflow method." .
+    a rdf:Property ;
+    rdfs:domain sf:Method ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "method identifier" ;
+    skos:definition "Stable identifier of a workflow method." .
 
 sf:toolName
-	a rdf:Property ;
-	rdfs:range rdfs:Literal ;
-	skos:prefLabel "tool name" ;
-	skos:definition "Name used to expose a capability through a tool interface." .
+    a rdf:Property ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "tool name" ;
+    skos:definition "Name used to expose a capability through a tool interface." .
 
 sf:availableInDomain
-	a rdf:Property ;
-	rdfs:range sf:Domain ;
-	skos:prefLabel "available in domain" ;
-	skos:definition "Associates a capability with a compatible domain." .
+    a rdf:Property ;
+    rdfs:range sf:Domain ;
+    skos:prefLabel "available in domain" ;
+    skos:definition "Associates a capability with a compatible domain." .
 
-sf:hasParameter
-	a rdf:Property ;
-	rdfs:range sf:Parameter ;
-	skos:prefLabel "has parameter" ;
-	skos:definition "Associates a capability with an accepted parameter." .
+    sf:hasParameter a rdf:Property ;
+    rdfs:range sf:Parameter ;
+    skos:prefLabel "has parameter" ;
+    skos:definition "Associates a capability with an accepted parameter." .
 
 sf:required
-	a rdf:Property ;
-	rdfs:range rdfs:Literal ;
-	skos:prefLabel "required" ;
-	skos:definition "Indicates whether a parameter must be supplied." .
+    a rdf:Property ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "required" ;
+    skos:definition "Indicates whether a parameter must be supplied." .
 
 sf:type
-	a rdf:Property ;
-	rdfs:range rdfs:Literal ;
-	skos:prefLabel "type" ;
-	skos:definition "Backend-neutral input type of a parameter." .
+    a rdf:Property ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "type" ;
+    skos:definition "Canonical logical type shared across language bindings." .
+
+sf:storageType
+    a rdf:Property ;
+    rdfs:domain sf:Column ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "storage type" ;
+    skos:definition "Backend-specific physical type used to persist a column." .
 
 sf:constraints
-	a rdf:Property ;
-	skos:prefLabel "constraints" ;
-	skos:definition "Machine-readable restrictions on a parameter value." .
+    a rdf:Property ;
+    skos:prefLabel "constraints" ;
+    skos:definition "Machine-readable restrictions on a parameter value." .
 
 sf:items
-	a rdf:Property ;
-	skos:prefLabel "items" ;
-	skos:definition "Schema of the items contained in an array parameter." .
+    a rdf:Property ;
+    skos:prefLabel "items" ;
+    skos:definition "Schema of the items contained in an array parameter." .
+
+    sf:hasProperty a rdf:Property ;
+    rdfs:range sf:Field ;
+    skos:prefLabel "has property" ;
+    skos:definition "Associates an object field with one of its named properties." .
+
+sf:propertyName
+    a rdf:Property ;
+    rdfs:domain sf:Field ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "property name" ;
+    skos:definition "JSON property name used inside an object parameter." .
+
+sf:example
+    a rdf:Property ;
+    skos:prefLabel "example" ;
+    skos:definition "Example value showing how a parameter is supplied." .
+
+sf:defaults
+    a rdf:Property ;
+    rdfs:domain sf:Operation ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "parameter defaults" ;
+    skos:definition "JSON object containing operation-specific default parameter values." .
 
 sf:extensions
-	a rdf:Property ;
-	skos:prefLabel "extensions" ;
-	skos:definition "Comma-separated file extensions accepted by a domain method." .
+    a rdf:Property ;
+    skos:prefLabel "extensions" ;
+    skos:definition "Comma-separated file extensions accepted by a domain method." .
 
-sf:hasColumn
-	a rdf:Property ;
-	rdfs:domain sf:Table ;
-	rdfs:range sf:Column ;
-	skos:prefLabel "has column" ;
-	skos:definition "Associates a table with one of its columns." .
+    sf:hasColumn a rdf:Property ;
+    rdfs:domain sf:Table ;
+    rdfs:range sf:Column ;
+    skos:prefLabel "has column" ;
+    skos:definition "Associates a table with one of its columns." .
 
 sf:columnName
-	a rdf:Property ;
-	rdfs:domain sf:Column ;
-	rdfs:range rdfs:Literal ;
-	skos:prefLabel "column name" ;
-	skos:definition "DuckDB column name." .
+    a rdf:Property ;
+    rdfs:domain sf:Column ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "column name" ;
+    skos:definition "DuckDB column name." .
 
 sf:tableName
-	a rdf:Property ;
-	rdfs:domain sf:Table ;
-	rdfs:range rdfs:Literal ;
-	skos:prefLabel "table name" ;
-	skos:definition "DuckDB table name." .
+    a rdf:Property ;
+    rdfs:domain sf:Table ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "table name" ;
+    skos:definition "DuckDB table name." .
 
 sf:reads
-	a rdf:Property ;
-	rdfs:domain sf:Operation ;
-	rdfs:range sf:Table ;
-	skos:prefLabel "reads" ;
-	skos:definition "Table data read by an operation." .
+    a rdf:Property ;
+    rdfs:range sf:Table ;
+    skos:prefLabel "reads" ;
+    skos:definition "Table data read by an operation or method." .
 
 sf:writes
-	a rdf:Property ;
-	rdfs:domain sf:Operation ;
-	rdfs:range sf:Table ;
-	skos:prefLabel "writes" ;
-	skos:definition "Table data created or modified by an operation." .
+    a rdf:Property ;
+    rdfs:range sf:Table ;
+    skos:prefLabel "writes" ;
+    skos:definition "Table data created or modified by an operation or method." .
 
 sf:mutatesProject
-	a rdf:Property ;
-	rdfs:domain sf:Operation ;
-	rdfs:range rdfs:Literal ;
-	skos:prefLabel "mutates project" ;
-	skos:definition "Whether an operation changes persisted project state." .
-
-sf:resultType
-	a rdf:Property ;
-	rdfs:domain sf:Result ;
-	rdfs:range rdfs:Literal ;
-	skos:prefLabel "result type" ;
-	skos:definition "Backend-neutral JSON type of a result." .
-
-sf:hasResultProperty
-	a rdf:Property ;
-	rdfs:domain sf:Result ;
-	rdfs:range sf:Column ;
-	skos:prefLabel "has result property" ;
-	skos:definition "Associates an object result with a returned property schema." .
+    a rdf:Property ;
+    rdfs:domain sf:Operation ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "mutates project" ;
+    skos:definition "Whether an operation changes persisted project state." .
 
 sf:mapsTo
-	a rdf:Property ;
-	rdfs:range sf:Operation ;
-	skos:prefLabel "maps to" ;
-	skos:definition "Associates an interface capability with its canonical operation." .
+    a rdf:Property ;
+    rdfs:range sf:Operation ;
+    skos:prefLabel "maps to" ;
+    skos:definition "Associates an interface capability with its canonical operation." .
 
 sf:fixturePath
-	a rdf:Property ;
-	rdfs:domain sf:Fixture ;
-	rdfs:range rdfs:Literal ;
-	skos:prefLabel "fixture path" ;
-	skos:definition "Repository path of the fixture data." .
+    a rdf:Property ;
+    rdfs:domain sf:Fixture ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "fixture path" ;
+    skos:definition "Repository path of the fixture data." .
 
 sf:hasWorkflow
-	a rdf:Property ;
-	rdfs:domain sf:Project ;
-	rdfs:range sf:Workflow ;
-	skos:prefLabel "has workflow" ;
-	skos:definition "Associates a project with its persisted workflow." .
+    a rdf:Property ;
+    rdfs:domain sf:Project ;
+    rdfs:range sf:Workflow ;
+    skos:prefLabel "has workflow" ;
+    skos:definition "Associates a project with its persisted workflow." .
 
 sf:returns
-	a rdf:Property ;
-	rdfs:range sf:Result ;
-	skos:prefLabel "returns" ;
-	skos:definition "Associates a capability with its result semantics." .
+    a rdf:Property ;
+    rdfs:range sf:Result ;
+    skos:prefLabel "returns" ;
+    skos:definition "Associates a capability with its result semantics." .
 
 sf:hasError
-	a rdf:Property ;
-	rdfs:range sf:Error ;
-	skos:prefLabel "has error" ;
-	skos:definition "Associates a capability with a stable error category." .
+    a rdf:Property ;
+    rdfs:range sf:Error ;
+    skos:prefLabel "has error" ;
+    skos:definition "Associates a capability with a stable error category." .
 
 sf:errorCode
-	a rdf:Property ;
-	rdfs:domain sf:Error ;
-	rdfs:range rdfs:Literal ;
-	skos:prefLabel "error code" ;
-	skos:definition "Stable machine-readable error identifier." .
+    a rdf:Property ;
+    rdfs:domain sf:Error ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "error code" ;
+    skos:definition "Stable machine-readable error identifier." .
