@@ -52,6 +52,7 @@ public:
     Json get_raw_spectra_ms2(const Json &parameters = Json::object());
     Json get_chromatograms(const Json &parameters = Json::object());
     Json get_raw_chromatograms(const Json &parameters = Json::object());
+    Json get_features(const Json &parameters = Json::object());
 
 private:
     streamfind::Project &project_;

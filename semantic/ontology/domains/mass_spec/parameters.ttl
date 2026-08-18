@@ -59,6 +59,89 @@ sfms:indicesParameter
     sf:items sfcore:integerItemParameter ;
     sf:example "[0,2]" .
 
+sfms:rtWindowsMinParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Feature RT window minimums" ;
+    skos:definition "Lower retention-time bounds for feature detection windows." ;
+    sf:type "array" ;
+    sf:required true ;
+    sf:items sfcore:realItemParameter ;
+    sf:example "[0.0]" .
+
+sfms:rtWindowsMaxParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Feature RT window maximums" ;
+    skos:definition "Upper retention-time bounds for feature detection windows." ;
+    sf:type "array" ;
+    sf:required true ;
+    sf:items sfcore:realItemParameter ;
+    sf:example "[1800.0]" .
+
+sfms:ppmThresholdParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Feature ppm threshold" ;
+    skos:definition "Maximum relative m/z distance used to group MS1 traces." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 15.0 .
+
+sfms:noiseThresholdParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Feature noise threshold" ;
+    skos:definition "Minimum MS1 intensity considered during feature detection." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 15.0 .
+
+sfms:minSnrParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Minimum feature SNR" ;
+    skos:definition "Minimum signal-to-noise ratio for a detected feature." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 3.0 .
+
+sfms:minTracesParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Minimum feature traces" ;
+    skos:definition "Minimum number of spectra contributing to a detected feature." ;
+    sf:type "integer" ;
+    sf:required false ;
+    sf:example 3 .
+
+sfms:baselineWindowParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Baseline window";
+    skos:definition "Retention-time baseline window used by NTA peak detection.";
+    sf:type "real";
+    sf:required false ;
+    sf:example 30.0 .
+
+sfms:maxFeatureWidthParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Maximum feature width";
+    skos:definition "Maximum chromatographic peak width used by NTA peak detection.";
+    sf:type "real";
+    sf:required false ;
+    sf:example 30.0 .
+
+sfms:baseQuantileParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Base noise quantile";
+    skos:definition "Base quantile for adaptive per-spectrum noise estimation.";
+    sf:type "real";
+    sf:required false ;
+    sf:example 0.1 .
+
 sfms:targetsParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;

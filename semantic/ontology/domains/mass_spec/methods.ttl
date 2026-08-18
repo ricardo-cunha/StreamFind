@@ -14,10 +14,9 @@ sfms:loadChromatogramsMassSpecMethod
         sfms:chromatogramIdRegexParameter,
         sfms:ignoreCaseParameter,
         sfms:invertParameter ;
-    sf:hasProperty
-        sfcore:methodCacheableField,
-        sfcore:methodRequiredField,
-        sfcore:methodMaxOccurrencesField ;
+    sf:cacheable false ;
+    sf:requiredMethods () ;
+    sf:singleOccurrence true ;
     sf:reads sfms:analysesTable ;
     sf:writes sfms:chromatogramsTable ;
     sf:returns sfcore:operationStatusResult .
@@ -32,10 +31,33 @@ sfms:filterChromatogramsRetentionTimeMassSpecMethod
         sfcore:analysisNamesParameter,
         sfms:rtMinParameter,
         sfms:rtMaxParameter ;
-    sf:hasProperty
-        sfcore:methodCacheableField,
-        sfcore:methodRequiredField,
-        sfcore:methodMaxOccurrencesField ;
+    sf:cacheable false ;
+    sf:requiredMethods () ;
+    sf:singleOccurrence false ;
     sf:reads sfms:chromatogramsTable ;
     sf:writes sfms:chromatogramsTable ;
+    sf:returns sfcore:operationStatusResult .
+
+sfms:findFeaturesMassSpecMethod
+    a sf:Method ;
+    sf:methodId "mass_spec.find_features" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Find mass spectrometry features" ;
+    skos:definition "Group MS1 centroid traces within retention-time windows and persist detected NTA features." ;
+    sf:hasParameter
+        sfms:rtWindowsMinParameter,
+        sfms:rtWindowsMaxParameter,
+        sfcore:analysisNamesParameter,
+        sfms:ppmThresholdParameter,
+        sfms:noiseThresholdParameter,
+        sfms:minSnrParameter,
+        sfms:minTracesParameter,
+        sfms:baselineWindowParameter,
+        sfms:maxFeatureWidthParameter,
+        sfms:baseQuantileParameter ;
+    sf:cacheable true ;
+    sf:requiredMethods () ;
+    sf:singleOccurrence true ;
+    sf:reads sfms:analysesTable ;
+    sf:writes sfms:ntaFeaturesTable ;
     sf:returns sfcore:operationStatusResult .

@@ -11,6 +11,7 @@ enum class ProjectCommand {
     create,
     describe,
     get_workflow,
+    get_workflow_execution,
     set_workflow,
     add_method,
     remove_method,

@@ -536,4 +536,75 @@ namespace streamfind::mass_spec
         return output;
     }
 
+    Json Project::get_features(const Json &p)
+    {
+        const double ppm = p.value("ppm", 20.0);
+        const double rt_tolerance = p.value("rt_tolerance", 60.0);
+        if (ppm < 0.0 || rt_tolerance < 0.0)
+            throw streamfind::Error(streamfind::ErrorCode::InvalidArgument, "ppm and rt_tolerance must be non-negative");
+        auto number = [](double value) { return std::to_string(value); };
+        auto values = [](const Json &value) {
+            return value.is_array() ? value.get<std::vector<int>>() : std::vector<int>{value.get<int>()};
+        };
+        std::vector<std::string> filters;
+        const auto analyses = detail::names(p, "analysis_names");
+        if (!analyses.empty()) {
+            std::string filter = "analysis IN (";
+            for (std::size_t i = 0; i < analyses.size(); ++i) filter += (i ? "," : "") + detail::sql(analyses[i]);
+            filters.push_back(filter + ")");
+        }
+        const auto targets = p.value("targets", Json::array({Json::object()}));
+        std::vector<std::string> target_filters;
+        for (const auto &target : targets) {
+            std::vector<std::string> match;
+            const auto target_analyses = target.contains("analyses") ? (target.at("analyses").is_array() ? target.at("analyses").get<std::vector<std::string>>() : std::vector<std::string>{target.at("analyses").get<std::string>()}) : analyses;
+            if (!target_analyses.empty()) {
+                std::string filter = "analysis IN (";
+                for (std::size_t i = 0; i < target_analyses.size(); ++i) filter += (i ? "," : "") + detail::sql(target_analyses[i]);
+                match.push_back(filter + ")");
+            }
+            const auto polarity = target.contains("polarity") ? values(target.at("polarity")) : (p.contains("polarity") ? values(p.at("polarity")) : std::vector<int>{});
+            if (!polarity.empty()) {
+                std::string filter = "polarity IN (";
+                for (std::size_t i = 0; i < polarity.size(); ++i) filter += (i ? "," : "") + std::to_string(polarity[i]);
+                match.push_back(filter + ")");
+            }
+            auto add_window = [&](const char *column, const char *exact, const char *minimum, const char *maximum) {
+                if (target.contains(exact)) {
+                    const double center = target.at(exact).get<double>();
+                    const double delta = std::abs(center) * ppm / 1e6;
+                    match.push_back(std::string(column) + " BETWEEN " + number(center - delta) + " AND " + number(center + delta));
+                } else if (target.contains(minimum) || target.contains(maximum)) {
+                    std::string range = std::string(column) + " >= " + number(target.value(minimum, -1e300));
+                    if (target.contains(maximum)) range += " AND " + std::string(column) + " <= " + number(target.at(maximum).get<double>());
+                    match.push_back(std::move(range));
+                }
+            };
+            add_window("mass", "mass", "mass_min", "mass_max");
+            add_window("mz", "mz", "mz_min", "mz_max");
+            if (target.contains("rt")) {
+                const double center = target.at("rt").get<double>();
+                match.push_back("rt BETWEEN " + number(center - rt_tolerance) + " AND " + number(center + rt_tolerance));
+            } else if (target.contains("rt_min") || target.contains("rt_max")) {
+                std::string range = "rt >= " + number(target.value("rt_min", -1e300));
+                if (target.contains("rt_max")) range += " AND rt <= " + number(target.at("rt_max").get<double>());
+                match.push_back(std::move(range));
+            }
+            if (!match.empty()) {
+                std::string expression = "(";
+                for (std::size_t i = 0; i < match.size(); ++i) expression += (i ? " AND " : "") + match[i];
+                target_filters.push_back(expression + ")");
+            }
+        }
+        if (!target_filters.empty()) {
+            std::string filter = "(";
+            for (std::size_t i = 0; i < target_filters.size(); ++i) filter += (i ? " OR " : "") + target_filters[i];
+            filters.push_back(filter + ")");
+        }
+        std::string query = "SELECT * FROM MASS_SPEC_NTA_FEATURES WHERE project_id = " + detail::sql(project_.get_project_id());
+        for (const auto &filter : filters) query += " AND " + filter;
+        query += " ORDER BY analysis, rt, feature";
+        return project_.query_json(query);
+    }
+
 }

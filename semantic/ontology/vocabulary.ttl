@@ -2,6 +2,7 @@
 @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
 @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
 
 sf:Operation
     a rdfs:Class ;
@@ -88,6 +89,27 @@ sf:methodId
     rdfs:range rdfs:Literal ;
     skos:prefLabel "method identifier" ;
     skos:definition "Stable identifier of a workflow method." .
+
+sf:cacheable
+    a rdf:Property ;
+    rdfs:domain sf:Method ;
+    rdfs:range xsd:boolean ;
+    skos:prefLabel "cacheable" ;
+    skos:definition "Whether successful method results may be cached." .
+
+sf:requiredMethods
+    a rdf:Property ;
+    rdfs:domain sf:Method ;
+    rdfs:range rdf:List ;
+    skos:prefLabel "required methods" ;
+    skos:definition "Methods that must already occur earlier in the workflow." .
+
+sf:singleOccurrence
+    a rdf:Property ;
+    rdfs:domain sf:Method ;
+    rdfs:range xsd:boolean ;
+    skos:prefLabel "single occurrence" ;
+    skos:definition "Whether a method may occur only once in a workflow." .
 
 sf:toolName
     a rdf:Property ;

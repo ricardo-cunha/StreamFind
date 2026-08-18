@@ -19,7 +19,7 @@ if (-not (Test-Path -LiteralPath $python)) {
     throw "Missing repository Python environment: $python"
 }
 
-foreach ($token in @('sfcore:create', 'sfcore:getWorkflow', 'sfcore:runMethod')) {
+foreach ($token in @('sfcore:create', 'sfcore:getWorkflow', 'sfcore:getWorkflowExecution', 'sfcore:runMethod')) {
     if (-not (Select-String -LiteralPath $catalogueFiles -Pattern ([regex]::Escape($token)) -Quiet)) {
         throw "Missing catalogue declaration: $token"
     }

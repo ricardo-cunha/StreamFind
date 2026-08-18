@@ -22,9 +22,9 @@ Json tools() {
 }
 
 const char *command(const std::string &name) {
-    static const std::array<std::string, 20> commands = {
+    static const std::array<std::string, 21> commands = {
         "create", "describe", "validate", "get_domain", "get_metadata",
-        "set_metadata", "get_workflow", "set_workflow", "add_method", "remove_method", "validate_workflow",
+        "set_metadata", "get_workflow", "get_workflow_execution", "set_workflow", "add_method", "remove_method", "validate_workflow",
         "run_workflow", "get_cache", "get_cache_size", "delete_cache",
         "get_audit_trail", "get_available_methods", "run_method", "copy", "close"
     };

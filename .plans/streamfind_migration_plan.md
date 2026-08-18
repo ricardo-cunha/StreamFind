@@ -48,13 +48,19 @@ semantic/ontology/
 │   ├── operations.ttl
 │   ├── results.ttl
 │   ├── errors.ttl
-│   └── tables.ttl
+│   ├── tables.ttl
+│   ├── fields.ttl
+│   └── columns.ttl
 └── domains/
     ├── mass_spec/
     │   ├── domain.ttl
     │   ├── operations.ttl
     │   ├── results.ttl
-    │   └── tables.ttl
+    │   ├── tables.ttl
+    │   ├── fields.ttl
+    │   ├── columns.ttl
+    │   ├── methods.ttl
+    │   └── parameters.ttl
     ├── raman/raman.ttl
     └── sensors/sensors.ttl
 ```
@@ -177,7 +183,7 @@ Every public capability has one canonical semantic identifier. Transports and la
  C++ Project API          Rust Project API     Python/CLI/FastAPI/MCP
 ```
 
-For MCP, the semantic catalogue is the authoritative source for tool-facing labels, descriptions, parameter metadata, result semantics, shared errors, and examples. MCP code owns protocol handling, session state, registry lookup, execution, cancellation/progress, and backend-specific diagnostics only.
+For MCP, the semantic catalogue is the authoritative source for tool-facing labels, descriptions, parameter metadata, result semantics, shared errors, and examples. MCP code owns protocol handling, session state for Methods, stateless project selection for Operations, registry lookup, execution, cancellation/progress, and backend-specific diagnostics only.
 
 ## Current implementation status
 
@@ -185,13 +191,13 @@ For MCP, the semantic catalogue is the authoritative source for tool-facing labe
 | --- | --- | --- | --- |
 | C++ backend | **Complete foundation / active implementation** | Standalone C++20 `core/` has Project/JSON APIs, DuckDB persistence, workflow, cache, audit, cancellation, progress, generic MCP, MassSpec reader and chromatogram processing, and MassSpec registry registration. | Put all new C++ operations and processing methods in `core/`; extend domain modules rather than the generic project kernel. |
 | Rust backend | **Complete foundation / active implementation** | `rust/` is an independent Cargo workspace with core, CLI, external, MCP, MassSpec, Raman, and sensors crates. MassSpec has reader, operations, and chromatogram processing. | Put all new Rust operations and processing methods in `rust/`; preserve independence from C++. |
-| Semantic catalogue | **Active implementation** | `semantic/` contains Turtle ontology sources, SHACL validation, deterministic projection generation, and generated metadata embedded by both MCP implementations. | Add or revise a semantic declaration, result/error contract, and fixture before registering each migrated capability. |
-| C++/Rust MCP | **Complete generic foundation** | Both stdio servers initialize, connect, list tools, call generic/domain capabilities, filter by connected domain, and consume generated semantic metadata. | Expose each migrated capability by semantic declaration plus backend registry registration; do not add capability-specific MCP dispatch. |
+| Semantic catalogue | **Active implementation** | `semantic/` contains Turtle ontology sources, strengthened SHACL validation for operations, methods, parameters, results, tables, columns, caching, and mutation contracts, deterministic projection generation, and generated metadata embedded by both MCP implementations. | Add or revise a semantic declaration, result/error contract, and fixture before registering each migrated capability. |
+| C++/Rust MCP | **Complete generic foundation / lifecycle split** | Both stdio servers consume generated semantic metadata and registry entries. Direct domain Operations are stateless and receive `database_path`/`project_id`; workflow Methods remain connected-session capabilities. | Preserve the split and add progress/cancellation handling before long-running processing Methods. |
 | Domain composition | **Partial** | C++ and Rust compose MassSpec, Raman, and sensors registration points. MassSpec has real registered operations and two workflow methods; Raman and sensors are scaffolding. | Continue with real MassSpec and NTA capabilities, creating no placeholder production tools. |
 | R binding | **Complete relocation / deferred alignment** | Complete R package is under `bindings/r/`. | Keep functional as-is until new backends/domain paths are mature. |
 | Cogniflow integration | **Complete relocation / deferred alignment** | Integration boundary exists under `integrations/cf-streamfind/`. | Align only after the public Python path is stable. |
 | Frontend | **Future** | No frontend is part of the active implementation path. | Start only after the required migrated operations and processing methods are available through MCP. |
-| Domain capabilities | **Partial / active** | C++ and Rust both register MassSpec analysis management, metadata/query, spectra/chromatogram retrieval operations, plus `load_chromatograms` and `filter_chromatograms_retention_time` workflow methods. The former R package retains broader MassSpec and NTA processing, including feature detection, filtering, alignment, gap filling, annotation, suspect screening, and transformation-product assignment. | Migrate the remaining former R capabilities in dependency order as independently tested C++ and Rust implementations. |
+| Domain capabilities | **Partial / active** | C++ and Rust both register MassSpec analysis management, metadata/query, raw and persisted spectra/chromatogram retrieval operations, `get_features`, plus `load_chromatograms`, `filter_chromatograms_retention_time`, and `find_features` workflow methods. The former R package retains broader MassSpec and NTA processing, including feature filtering, alignment, gap filling, annotation, suspect screening, and transformation-product assignment. | Continue through the remaining NTA dependency graph. |
 
 ### Current migration boundary
 
@@ -201,6 +207,46 @@ define the public operation inventory to assess; helper functions alone are
 not migration units. For every accepted capability, implement the target
 architecture directly in `semantic/`, `core/`, and `rust/`. Do not wrap, call,
 or redirect to the former R implementation.
+
+### Remaining public capability inventory
+
+The current inventory classifies exported capabilities by their target boundary.
+Constructors and pointer lifecycle helpers are binding mechanics, not migration
+units.
+
+| Capability group | Target kind | Migration order |
+| --- | --- | --- |
+| `rcpp_decode_string`, `rcpp_lcd_list_streams`, `rcpp_lcd_inspect_stream` | `sf:Operation` | MassSpec reader hardening, after the NTA foundation |
+| NTA feature detection: `rcpp_project_nta_find_features` | `sf:Method` | **Migrated baseline: `mass_spec.find_features`** |
+| NTA feature loading: `load_features_ms1`, `load_features_ms2` | `sf:Method` | After feature detection |
+| NTA feature processing: components, grouping, filling, blank subtraction, filtering | `sf:Method` | After feature tables are stable |
+| NTA annotation: suspects, internal standards, MetFrag | `sf:Method` | After feature/MS2 contracts are stable |
+| NTA transformation-product assignment on a project | `sf:Method` | After annotation contracts |
+| NTA feature/suspect/internal-standard/transformation-product queries | `sf:Operation` | `mass_spec.get_features` migrated; continue alongside each persisted table |
+| Pure transformation-product assignment over supplied records | `sf:Operation` | After the shared record contract is defined |
+
+The first capability is authored as `mass_spec.find_features` because it reads
+MassSpec analyses, persists NTA feature rows, and changes project state through
+the workflow. Its first contract is intentionally bounded: MS1 centroid grouping
+within supplied RT windows, ppm tolerance, noise/SNR threshold, and minimum
+trace count. The representative fixture is the three files under
+`tests/data/mass_spec/basic_tof/` ending in `00_tof_s_is_pos_cent-r001.mzML`,
+`r002.mzML`, and `r003.mzML`.
+
+### Completed workflow and NTA foundation
+
+The current branch now includes the following completed foundation:
+
+- `mass_spec.find_features` is implemented and registered independently in C++ and Rust.
+- `mass_spec.get_features` returns the persisted `MASS_SPEC_NTA_FEATURES` table with target, mass/mz ppm, RT, polarity, and analysis filtering.
+- NTA feature table and result columns use NTA-specific semantic identifiers.
+- Workflow execution is ordered and tracked per project, workflow revision, and step index.
+- Cache keys chain method identity, version, resolved parameters, and the previous step key.
+- Cacheable method outputs snapshot declared `sf:writes` tables and restore project rows on cache hits.
+- Workflow persistence retains version, domain, and ordered steps so replacing a workflow cannot reuse execution state from an older revision.
+- `get_chromatograms` reads loaded `MASS_SPEC_CHROMATOGRAMS`; `get_raw_chromatograms` reads source analyses and files.
+- Fixed-level raw spectrum operations no longer advertise the internal `levels` parameter: EIC/MS1 force level 1 and MS2 forces level 2.
+- C++ and Rust tests cover feature detection, Metoprolol-D7 feature retrieval, workflow caching, and chromatogram processing.
 
 ## Target repository shape
 
@@ -408,7 +454,8 @@ Adding the tenth MassSpec method therefore does not change the MCP executable. A
 
 ### Generic MCP adapter
 
-Both MCP implementations follow the same generic algorithm:
+Both MCP implementations follow the same generic algorithm, with separate lifecycle
+rules for direct Operations and workflow Methods:
 
 ```text
 initialize
@@ -420,37 +467,59 @@ load/embed semantic projection
 compose MethodRegistry + OperationRegistry
    │
    ▼
-connect(project)
-   │
-   ├── read immutable project domain
-   │
-   ▼
 tools/list
    │
    ├── generic operations
-   ├── direct domain Operations for the connected domain
-   └── intersection of:
-         semantic Methods/Operations for connected domain
-         AND
-         registered executable IDs in the matching registry
+   ├── stateless domain Operations with database/project context parameters
+   └── connected-session Methods after `connect(project)`
+       │
+       └── read immutable project domain
+   │
+   ▼
+intersection of:
+     semantic capabilities
+     AND registered executable IDs
    │
    ▼
 tools/call
    │
-   ├── resolve advertised MCP name -> canonical Method or Operation ID from projection
-   ├── validate parameters using projected contract
-   └── matching registry invokes the canonical ID
+   ├── Operation: open the request's project, invoke, audit, close
+   └── Method: resolve against the connected project session
+       │
+       ├── resolve advertised name to canonical ID
+       ├── validate parameters using projected contract
+       └── matching registry invokes the canonical ID
 ```
 
 The **intersection rule** is important: a semantic declaration alone must not advertise an unavailable executable, and a registered executor without a semantic declaration must fail validation/build tests rather than become an undocumented tool.
 
 The MCP servers must not contain per-domain or per-method `if`, `switch`, or match branches for normal method discovery/dispatch.
 
+### Long-running processing Methods
+
+Processing Methods may take minutes and must not require a second ad hoc job
+system per domain. The first execution contract is:
+
+- keep the MCP call open while the backend method runs;
+- pass an MCP `progressToken` into the backend execution context;
+- emit standard MCP progress notifications at meaningful stages;
+- propagate cancellation to the existing core cancellation token;
+- return one final result or structured error after completion;
+- keep progress payloads backend-neutral: `{completed, total, message}`.
+
+Do not add persistent background jobs, queues, or a database-backed job table yet.
+Add that framework only when clients need calls to survive server disconnects or
+methods must be scheduled across processes. Before the first long-running NTA
+Method is exposed, add the shared execution-context/progress boundary in core,
+Rust core, and both MCP adapters.
+
 ### Domain and method identity rules
 
 - Generic operations retain canonical generic IDs.
 - Domain methods always use `<domain>.<method>` internally and in workflows.
 - The connected project has one immutable domain.
+- Direct domain Operations receive `database_path` and `project_id` and do not require `connect`.
+- Workflow Methods require a connected project session and must use that session's domain.
 - MCP may expose a shorter local tool name after connection if unambiguous, but resolution must immediately map back to the canonical qualified ID.
 - A domain method from another domain must never be callable in the current session.
 - Same local names across domains are allowed because canonical IDs are qualified.
@@ -511,11 +580,12 @@ methods represented by `bindings/r/src/` into the target architecture. Work in
 workflow dependency order, beginning with MassSpec primitives required by NTA.
 
 1. Inventory the Rcpp-exported MassSpec and NTA public capabilities and map each to a canonical semantic ID, target type (`sf:Operation` or `sf:Method`), dependencies, input/output contract, and representative fixture.
-2. Treat the existing MassSpec analysis, spectra, chromatogram, and two chromatogram workflow methods as migrated baseline; close behavioural and fixture gaps before using them as NTA dependencies.
+2. Treat the existing MassSpec analysis, spectra, chromatogram, and three chromatogram/NTA workflow methods as migrated baseline; close behavioural and fixture gaps before using them as NTA dependencies.
 3. Migrate the remaining MassSpec processing primitives required by NTA.
 4. Migrate NTA in dependency order: feature detection/deconvolution, blank subtraction and corrections, feature filtering, alignment and gap filling, componentization, annotation, suspect screening, MetFrag integration, and transformation-product assignment.
 5. For every capability, update `semantic/` first, implement it independently in `core/` and `rust/`, register it in the matching registry, and add backend and conformance tests.
 6. Keep R functional and unchanged except for necessary build repairs. Do not create wrappers, fallbacks, or dual execution paths.
+7. Before exposing a long-running NTA Method, implement the shared execution context, progress notification, and cancellation boundary in both backends and both MCP adapters.
 
 **Exit condition:** every accepted former R public operation and processing method has one semantic contract and independently tested C++ and Rust implementations, or is explicitly retired by a separate decision.
 
@@ -525,12 +595,18 @@ MCP is the interface layer immediately after each capability is implemented,
 not a separate reimplementation phase.
 
 1. Regenerate the semantic projection after each ontology change.
-2. Verify both MCP servers advertise only the intersection of semantic executable IDs and registered C++/Rust executors for the connected domain.
+2. Verify both MCP servers advertise only the intersection of semantic executable IDs and registered C++/Rust executors; Operations use request project context and Methods use the connected domain.
 3. Add a shared MCP fixture and one C++ and Rust protocol test for each migrated capability or tightly coupled processing slice.
 4. Verify parameter validation, result shape, errors, cancellation, and progress where applicable.
 5. Do not add a method-specific tool definition, description, schema, or dispatch branch.
+6. Test stateless Operations with multiple projects in one MCP process, and test connected-session Methods separately.
+7. For long-running Methods, verify progress, cancellation, final result delivery, and structured failure without introducing persistent jobs prematurely.
 
 **Exit condition:** all migrated capabilities are callable and documented through both MCP implementations using only the semantic projection and registry registrations.
+
+Frontend development, packaging/release hardening, and R/Cogniflow alignment are
+explicitly deferred until the remaining MassSpec/NTA capability boundary is
+stable and the required long-running Method execution contract is covered.
 
 ### 3. Develop the frontend — **Future, after required MCP coverage**
 

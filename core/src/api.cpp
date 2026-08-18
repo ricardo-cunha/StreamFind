@@ -44,6 +44,16 @@ Json descriptor_table(const Project &project, const MethodRegistry &registry) {
     return {{"row_count", 1}, {"columns", std::move(columns)}};
 }
 
+Json workflow_execution_table(const Json &rows) {
+    const std::vector<std::string> names = {
+        "project_id", "workflow_revision", "step_index", "method", "parameter_hash",
+        "status", "started_at", "completed_at", "error", "cache_key"};
+    Json columns = Json::object();
+    for (const auto &name : names) columns[name] = Json::array();
+    for (const auto &row : rows) for (const auto &name : names) columns[name].push_back(row.value(name, Json(nullptr)));
+    return {{"row_count", rows.size()}, {"columns", std::move(columns)}};
+}
+
 Json metadata_table(const Json &metadata) {
     return {{"row_count", 1}, {"columns", {{"metadata", Json::array({metadata.dump()})}}}};
 }
@@ -86,6 +96,7 @@ ProjectCommand command_from_string(std::string_view name) {
     if (name == "create") return ProjectCommand::create;
     if (name == "describe") return ProjectCommand::describe;
     if (name == "get_workflow") return ProjectCommand::get_workflow;
+    if (name == "get_workflow_execution") return ProjectCommand::get_workflow_execution;
     if (name == "set_workflow") return ProjectCommand::set_workflow;
     if (name == "add_method") return ProjectCommand::add_method;
     if (name == "remove_method") return ProjectCommand::remove_method;
@@ -159,6 +170,8 @@ Json run(ProjectCommand command, const Json &request, const MethodRegistry &regi
         project.set_workflow(std::move(workflow), registry);
         return detail::workflow_table(project.get_workflow(), registry);
     }
+    case ProjectCommand::get_workflow_execution:
+        return detail::workflow_execution_table(Project::open(detail::options_from_request(request, true)).get_workflow_execution());
     case ProjectCommand::add_method: {
         if (!request.contains("method")) throw Error(ErrorCode::InvalidArgument, "Request requires method");
         auto project = Project::open(detail::options_from_request(request));

@@ -166,13 +166,15 @@ struct STREAMFIND_CORE_API MethodDefinition {
     std::string version{"1"};
     std::string domain;
     std::vector<std::string> required_methods;
-    double max_occurrences{std::numeric_limits<double>::infinity()};
+    bool single_occurrence{false};
     std::string developer;
     std::string contact;
     std::string link;
     std::string doi;
     ParameterSchema parameters;
     bool cacheable{false};
+    /// Tables whose rows must be captured for cache materialization.
+    std::vector<std::string> writes;
 };
 
 /** @brief Callback that executes a method against its owning Project. */
@@ -199,6 +201,8 @@ public:
     Json resolve_parameters(const Json &value) const;
     /** @brief Execute the method against a Project. */
     Json run(Project &project, const Json &parameters) const;
+    /** @brief Whether the method has an executable implementation. */
+    bool implemented() const noexcept;
 
 private:
     MethodDefinition definition_;
@@ -443,6 +447,8 @@ public:
     void delete_cache();
     /** @brief Return processing and cache audit events in time order. */
     std::vector<AuditEntry> get_audit_trail() const;
+    /** @brief Return persisted execution rows for every workflow step. */
+    Json get_workflow_execution() const;
 
     /** @brief Execute the persisted workflow using a method registry. */
     ExecutionResult run_workflow(const MethodRegistry &registry = methods(),

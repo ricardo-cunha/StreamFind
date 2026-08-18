@@ -128,3 +128,84 @@ sfcore:operationDetailsColumn
     sf:columnName "operation_details" ;
     sf:type "object" ;
     sf:storageType "JSON" .
+
+sfcore:workflowRevisionColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Workflow revision" ;
+    skos:definition "Version of the persisted workflow." ;
+    sf:columnName "workflow_revision" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfcore:stepIndexColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Step index" ;
+    skos:definition "Zero-based workflow step index." ;
+    sf:columnName "step_index" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfcore:executionMethodColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Method" ;
+    skos:definition "Method executed at this step." ;
+    sf:columnName "method" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfcore:parameterHashColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Parameter hash" ;
+    skos:definition "Hash of resolved step parameters." ;
+    sf:columnName "parameter_hash" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfcore:executionStatusColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Status" ;
+    skos:definition "pending, running, succeeded, or failed." ;
+    sf:columnName "status" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfcore:startedAtColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Started at" ;
+    skos:definition "Step start timestamp." ;
+    sf:columnName "started_at" ;
+    sf:type "timestamp" ;
+    sf:storageType "TIMESTAMP" .
+
+sfcore:completedAtColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Completed at" ;
+    skos:definition "Step completion timestamp." ;
+    sf:columnName "completed_at" ;
+    sf:type "timestamp" ;
+    sf:storageType "TIMESTAMP" .
+
+sfcore:executionErrorColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Execution error" ;
+    skos:definition "Failure message, when present." ;
+    sf:columnName "error" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfcore:cacheKeyColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Cache key" ;
+    skos:definition "Chained deterministic cache key." ;
+    sf:columnName "cache_key" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .

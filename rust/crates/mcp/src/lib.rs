@@ -219,6 +219,7 @@ pub fn handle(request: &Value, _registry: &MethodRegistry) -> Value {
         "get_metadata" => api::get_metadata(args),
         "set_metadata" => api::set_metadata(args),
         "get_workflow" => api::get_workflow(args),
+        "get_workflow_execution" => api::get_workflow_execution(args),
         "set_workflow" => api::set_workflow(args, _registry),
         "add_method" => api::add_method(args, _registry),
         "remove_method" => api::remove_method(args, _registry),

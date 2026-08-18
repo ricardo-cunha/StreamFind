@@ -217,7 +217,7 @@ sfms:getRawSpectra
         sfms:ppmParameter,
         sfms:rtToleranceParameter,
         sfms:chargeParameter ;
-    sf:defaults "{\"analysis_names\":[],\"levels\":[]}" ;
+      sf:defaults "{\"analysis_names\":[],\"levels\":[]}" ;
     sf:returns sfms:spectraResult ;
     sf:reads sfms:analysesTable ;
     sf:mutatesProject false .
@@ -233,13 +233,12 @@ sfms:getRawSpectraEic
         sfcore:databasePathParameter,
         sfcore:projectIdParameter,
         sfcore:analysisNamesParameter,
-        sfms:levelsParameter,
         sfms:targetsParameter,
         sfms:polarityParameter,
         sfms:ppmParameter,
         sfms:rtToleranceParameter,
         sfms:chargeParameter ;
-    sf:defaults "{\"analysis_names\":[],\"levels\":[]}" ;
+     sf:defaults "{\"analysis_names\":[]}" ;
     sf:returns sfms:eicResult ;
     sf:reads sfms:analysesTable ;
     sf:mutatesProject false .
@@ -255,7 +254,6 @@ sfms:getRawSpectraMs1
         sfcore:databasePathParameter,
         sfcore:projectIdParameter,
         sfcore:analysisNamesParameter,
-        sfms:levelsParameter,
         sfms:targetsParameter,
         sfms:polarityParameter,
         sfms:ppmParameter,
@@ -264,7 +262,7 @@ sfms:getRawSpectraMs1
         sfms:mzClustParameter,
         sfms:presenceParameter,
         sfms:minIntensityMs1Parameter ;
-    sf:defaults "{\"analysis_names\":[],\"levels\":[],\"mz_clust\":0.003,\"presence\":0.8,\"min_intensity_ms1\":0.0}" ;
+     sf:defaults "{\"analysis_names\":[],\"mz_clust\":0.003,\"presence\":0.8,\"min_intensity_ms1\":0.0}" ;
     sf:returns sfms:ms1Result ;
     sf:reads sfms:analysesTable ;
     sf:mutatesProject false .
@@ -280,7 +278,6 @@ sfms:getRawSpectraMs2
         sfcore:databasePathParameter,
         sfcore:projectIdParameter,
         sfcore:analysisNamesParameter,
-        sfms:levelsParameter,
         sfms:targetsParameter,
         sfms:polarityParameter,
         sfms:ppmParameter,
@@ -290,7 +287,7 @@ sfms:getRawSpectraMs2
         sfms:mzClustParameter,
         sfms:presenceParameter,
         sfms:minIntensityMs2Parameter ;
-    sf:defaults "{\"analysis_names\":[],\"levels\":[],\"isolation_window\":1.3,\"mz_clust\":0.005,\"presence\":0.0,\"min_intensity_ms2\":0.0}" ;
+     sf:defaults "{\"analysis_names\":[],\"isolation_window\":1.3,\"mz_clust\":0.005,\"presence\":0.0,\"min_intensity_ms2\":0.0}" ;
     sf:returns sfms:ms2Result ;
     sf:reads sfms:analysesTable ;
     sf:mutatesProject false .
@@ -308,8 +305,8 @@ sfms:getChromatograms
         sfcore:analysisNamesParameter,
         sfms:indicesParameter ;
     sf:defaults "{\"analysis_names\":[],\"indices\":[]}" ;
-    sf:returns sfms:chromatogramsResult ;
-    sf:reads sfms:analysesTable ;
+     sf:returns sfms:chromatogramsResult ;
+     sf:reads sfms:chromatogramsTable ;
     sf:mutatesProject false .
 
 sfms:getRawChromatograms
@@ -324,6 +321,26 @@ sfms:getRawChromatograms
         sfcore:projectIdParameter,
         sfcore:analysisNamesParameter,
         sfms:indicesParameter ;
-    sf:returns sfms:chromatogramsResult ;
-    sf:reads sfms:analysesTable ;
+     sf:returns sfms:chromatogramsResult ;
+     sf:reads sfms:analysesTable ;
+    sf:mutatesProject false .
+
+sfms:getFeatures
+    a sf:Operation ;
+    sf:operationId "mass_spec.get_features" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Get NTA features" ;
+    skos:definition "Read persisted non-target-analysis features matching analysis, mass or m/z, retention time, and polarity targets." ;
+    sf:toolName "get_features" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:analysisNamesParameter,
+        sfms:targetsParameter,
+        sfms:polarityParameter,
+        sfms:ppmParameter,
+        sfms:rtToleranceParameter ;
+    sf:defaults "{\"analysis_names\":[],\"ppm\":20.0,\"rt_tolerance\":60.0}" ;
+    sf:returns sfms:featuresResult ;
+    sf:reads sfms:ntaFeaturesTable ;
     sf:mutatesProject false .

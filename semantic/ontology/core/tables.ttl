@@ -43,3 +43,21 @@ sfcore:auditTrailTable
         sfcore:objectTypeColumn,
         sfcore:operationDetailsColumn,
         sfcore:createdAtColumn .
+
+sfcore:workflowExecutionTable
+    a sf:Table ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Workflow execution table" ;
+    skos:definition "Persisted status and cache identity for every workflow step." ;
+    sf:tableName "WORKFLOW_EXECUTION" ;
+    sf:hasColumn
+        sfcore:projectIdColumn,
+        sfcore:workflowRevisionColumn,
+        sfcore:stepIndexColumn,
+        sfcore:executionMethodColumn,
+        sfcore:parameterHashColumn,
+        sfcore:executionStatusColumn,
+        sfcore:startedAtColumn,
+        sfcore:completedAtColumn,
+        sfcore:executionErrorColumn,
+        sfcore:cacheKeyColumn .

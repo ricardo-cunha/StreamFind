@@ -1,6 +1,6 @@
 {
   "canonical_ids": [
-    "create", "describe", "get_workflow", "set_workflow", "add_method", "remove_method",
+    "create", "describe", "get_workflow", "get_workflow_execution", "set_workflow", "add_method", "remove_method",
     "validate_workflow", "validate", "get_domain", "get_available_methods",
     "run_method", "copy", "run_workflow", "get_metadata", "set_metadata",
     "get_cache", "delete_cache", "get_cache_size", "get_audit_trail", "close",
@@ -11,6 +11,6 @@
     "mass_spec.get_chromatograms_headers", "mass_spec.get_spectra_tic",
     "mass_spec.get_raw_spectra", "mass_spec.get_raw_spectra_eic",
     "mass_spec.get_raw_spectra_ms1", "mass_spec.get_raw_spectra_ms2",
-    "mass_spec.get_chromatograms", "mass_spec.get_raw_chromatograms"
+    "mass_spec.get_chromatograms", "mass_spec.get_raw_chromatograms", "mass_spec.get_features"
   ]
 }

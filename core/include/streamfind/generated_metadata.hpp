@@ -68,9 +68,6 @@ inline constexpr char tools[] = R"JSON(
             "items": {
               "type": "string"
             }
-          },
-          "max_occurrences": {
-            "type": "integer"
           }
         }
       }
@@ -126,7 +123,7 @@ inline constexpr char tools[] = R"JSON(
       }
     },
     "effects": {
-      "mutates_project": true,
+      "mutates_project": false,
       "reads": [],
       "writes": []
     }
@@ -283,9 +280,6 @@ inline constexpr char tools[] = R"JSON(
                   "items": {
                     "type": "string"
                   }
-                },
-                "max_occurrences": {
-                  "type": "integer"
                 }
               }
             }
@@ -403,9 +397,6 @@ inline constexpr char tools[] = R"JSON(
                   "items": {
                     "type": "string"
                   }
-                },
-                "max_occurrences": {
-                  "type": "integer"
                 }
               }
             }
@@ -564,9 +555,6 @@ inline constexpr char tools[] = R"JSON(
                   "items": {
                     "type": "string"
                   }
-                },
-                "max_occurrences": {
-                  "type": "integer"
                 }
               }
             }
@@ -881,9 +869,6 @@ inline constexpr char tools[] = R"JSON(
             "items": {
               "type": "string"
             }
-          },
-          "max_occurrences": {
-            "type": "integer"
           }
         }
       }
@@ -892,6 +877,103 @@ inline constexpr char tools[] = R"JSON(
       "mutates_project": false,
       "reads": [
         "PROJECT"
+      ],
+      "writes": []
+    }
+  },
+  {
+    "name": "get_workflow_execution",
+    "description": "Read workflow execution",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "database_path": {
+          "type": "string",
+          "examples": [
+            "/data/project.duckdb"
+          ]
+        },
+        "project_id": {
+          "type": "string",
+          "examples": [
+            "demo"
+          ]
+        }
+      },
+      "required": [
+        "database_path",
+        "project_id"
+      ]
+    },
+    "outputSchema": {
+      "type": "table",
+      "properties": {
+        "project_id": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "workflow_revision": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "step_index": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          }
+        },
+        "method": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "parameter_hash": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "status": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "started_at": {
+          "type": "array",
+          "items": {
+            "type": "timestamp"
+          }
+        },
+        "completed_at": {
+          "type": "array",
+          "items": {
+            "type": "timestamp"
+          }
+        },
+        "error": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "cache_key": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "effects": {
+      "mutates_project": false,
+      "reads": [
+        "WORKFLOW_EXECUTION"
       ],
       "writes": []
     }
@@ -955,9 +1037,6 @@ inline constexpr char tools[] = R"JSON(
             "items": {
               "type": "string"
             }
-          },
-          "max_occurrences": {
-            "type": "integer"
           }
         }
       }
@@ -975,7 +1054,7 @@ inline constexpr char tools[] = R"JSON(
   },
   {
     "name": "run_method",
-    "description": "Append and run a workflow method",
+    "description": "Run a planned workflow method",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -1167,9 +1246,6 @@ inline constexpr char tools[] = R"JSON(
                     "sample"
                   ]
                 }
-              },
-              "max_occurrences": {
-                "type": "integer"
               }
             }
           }
@@ -1209,9 +1285,6 @@ inline constexpr char tools[] = R"JSON(
             "items": {
               "type": "string"
             }
-          },
-          "max_occurrences": {
-            "type": "integer"
           }
         }
       }
@@ -1310,9 +1383,6 @@ inline constexpr char tools[] = R"JSON(
                     "sample"
                   ]
                 }
-              },
-              "max_occurrences": {
-                "type": "integer"
               }
             }
           }
@@ -1486,9 +1556,6 @@ inline constexpr char catalogue[] = R"JSON(
                 "items": {
                   "type": "string"
                 }
-              },
-              "max_occurrences": {
-                "type": "integer"
               }
             }
           }
@@ -1590,7 +1657,7 @@ inline constexpr char catalogue[] = R"JSON(
         }
       },
       "effects": {
-        "mutates_project": true,
+        "mutates_project": false,
         "reads": [],
         "writes": []
       }
@@ -1868,9 +1935,6 @@ inline constexpr char catalogue[] = R"JSON(
                       "items": {
                         "type": "string"
                       }
-                    },
-                    "max_occurrences": {
-                      "type": "integer"
                     }
                   }
                 }
@@ -2049,9 +2113,6 @@ inline constexpr char catalogue[] = R"JSON(
                       "items": {
                         "type": "string"
                       }
-                    },
-                    "max_occurrences": {
-                      "type": "integer"
                     }
                   }
                 }
@@ -2300,9 +2361,6 @@ inline constexpr char catalogue[] = R"JSON(
                       "items": {
                         "type": "string"
                       }
-                    },
-                    "max_occurrences": {
-                      "type": "integer"
                     }
                   }
                 }
@@ -2916,9 +2974,6 @@ inline constexpr char catalogue[] = R"JSON(
                 "items": {
                   "type": "string"
                 }
-              },
-              "max_occurrences": {
-                "type": "integer"
               }
             }
           }
@@ -2928,6 +2983,148 @@ inline constexpr char catalogue[] = R"JSON(
         "mutates_project": false,
         "reads": [
           "PROJECT"
+        ],
+        "writes": []
+      }
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "get_workflow_execution",
+      "domain": "streamfind",
+      "label": "Read workflow execution",
+      "definition": "Return execution status, hashes, timestamps, errors, and cache keys for the project's workflow steps.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "get_workflow_execution",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string",
+              "examples": [
+                "/data/project.duckdb"
+              ]
+            },
+            "project_id": {
+              "type": "string",
+              "examples": [
+                "demo"
+              ]
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "string",
+            "examples": [
+              "/data/project.duckdb"
+            ]
+          },
+          "example": "/data/project.duckdb",
+          "default": null
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "string",
+            "examples": [
+              "demo"
+            ]
+          },
+          "example": "demo",
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#workflowExecutionEntriesResult",
+        "schema": {
+          "type": "table",
+          "properties": {
+            "project_id": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "workflow_revision": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "step_index": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "method": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "parameter_hash": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "status": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "started_at": {
+              "type": "array",
+              "items": {
+                "type": "timestamp"
+              }
+            },
+            "completed_at": {
+              "type": "array",
+              "items": {
+                "type": "timestamp"
+              }
+            },
+            "error": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "cache_key": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "WORKFLOW_EXECUTION"
         ],
         "writes": []
       }
@@ -3274,7 +3471,341 @@ inline constexpr char catalogue[] = R"JSON(
         "writes": [
           "MASS_SPEC_CHROMATOGRAMS"
         ]
-      }
+      },
+      "cacheable": false,
+      "required_methods": [],
+      "single_occurrence": false
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.find_features",
+      "domain": "mass_spec",
+      "label": "Find mass spectrometry features",
+      "definition": "Group MS1 centroid traces within retention-time windows and persist detected NTA features.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "rt_windows_min": {
+              "type": "array",
+              "examples": [
+                [
+                  0.0
+                ]
+              ],
+              "items": {
+                "type": "real",
+                "examples": [
+                  1.0
+                ]
+              }
+            },
+            "rt_windows_max": {
+              "type": "array",
+              "examples": [
+                [
+                  1800.0
+                ]
+              ],
+              "items": {
+                "type": "real",
+                "examples": [
+                  1.0
+                ]
+              }
+            },
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "ppm_threshold": {
+              "type": "real",
+              "examples": [
+                15.0
+              ]
+            },
+            "noise_threshold": {
+              "type": "real",
+              "examples": [
+                15.0
+              ]
+            },
+            "min_snr": {
+              "type": "real",
+              "examples": [
+                3.0
+              ]
+            },
+            "min_traces": {
+              "type": "integer",
+              "examples": [
+                3
+              ]
+            },
+            "baseline_window": {
+              "type": "real",
+              "examples": [
+                30.0
+              ]
+            },
+            "max_feature_width": {
+              "type": "real",
+              "examples": [
+                30.0
+              ]
+            },
+            "base_quantile": {
+              "type": "real",
+              "examples": [
+                0.1
+              ]
+            }
+          },
+          "required": [
+            "rt_windows_min",
+            "rt_windows_max",
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "rt_windows_min",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "realItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                0.0
+              ]
+            ],
+            "items": {
+              "type": "real",
+              "examples": [
+                1.0
+              ]
+            }
+          },
+          "example": [
+            0.0
+          ],
+          "default": null
+        },
+        {
+          "name": "rt_windows_max",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "realItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                1800.0
+              ]
+            ],
+            "items": {
+              "type": "real",
+              "examples": [
+                1.0
+              ]
+            }
+          },
+          "example": [
+            1800.0
+          ],
+          "default": null
+        },
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "ppm_threshold",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              15.0
+            ]
+          },
+          "example": 15.0,
+          "default": null
+        },
+        {
+          "name": "noise_threshold",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              15.0
+            ]
+          },
+          "example": 15.0,
+          "default": null
+        },
+        {
+          "name": "min_snr",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              3.0
+            ]
+          },
+          "example": 3.0,
+          "default": null
+        },
+        {
+          "name": "min_traces",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              3
+            ]
+          },
+          "example": 3,
+          "default": null
+        },
+        {
+          "name": "baseline_window",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              30.0
+            ]
+          },
+          "example": 30.0,
+          "default": null
+        },
+        {
+          "name": "max_feature_width",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              30.0
+            ]
+          },
+          "example": 30.0,
+          "default": null
+        },
+        {
+          "name": "base_quantile",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.1
+            ]
+          },
+          "example": 0.1,
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_ANALYSES"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_FEATURES"
+        ]
+      },
+      "cacheable": true,
+      "required_methods": [],
+      "single_occurrence": true
     },
     {
       "kind": "operation",
@@ -3776,7 +4307,7 @@ inline constexpr char catalogue[] = R"JSON(
       "effects": {
         "mutates_project": false,
         "reads": [
-          "MASS_SPEC_ANALYSES"
+          "MASS_SPEC_CHROMATOGRAMS"
         ],
         "writes": []
       }
@@ -4096,6 +4627,875 @@ inline constexpr char catalogue[] = R"JSON(
         "mutates_project": false,
         "reads": [
           "MASS_SPEC_ANALYSES"
+        ],
+        "writes": []
+      }
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "mass_spec.get_features",
+      "domain": "mass_spec",
+      "label": "Get NTA features",
+      "definition": "Read persisted non-target-analysis features matching analysis, mass or m/z, retention time, and polarity targets.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "get_features",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string",
+              "examples": [
+                "/data/project.duckdb"
+              ]
+            },
+            "project_id": {
+              "type": "string",
+              "examples": [
+                "demo"
+              ]
+            },
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              },
+              "default": []
+            },
+            "targets": {
+              "type": "array",
+              "examples": [
+                [
+                  {
+                    "id": "caffeine",
+                    "mass": 194.0804
+                  }
+                ]
+              ],
+              "items": {
+                "type": "object",
+                "examples": [
+                  {
+                    "id": "caffeine",
+                    "mass": 194.0804
+                  }
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "analyses": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        "sample-r001",
+                        "sample-r002"
+                      ]
+                    ],
+                    "items": {
+                      "type": "string",
+                      "examples": [
+                        "sample"
+                      ]
+                    }
+                  },
+                  "polarity": {
+                    "type": "integer",
+                    "examples": [
+                      1
+                    ]
+                  },
+                  "levels": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        1,
+                        2
+                      ]
+                    ],
+                    "items": {
+                      "type": "integer",
+                      "examples": [
+                        1
+                      ]
+                    }
+                  },
+                  "mass": {
+                    "type": "real",
+                    "examples": [
+                      194.0804
+                    ]
+                  },
+                  "mass_min": {
+                    "type": "real",
+                    "examples": [
+                      194.0
+                    ]
+                  },
+                  "mass_max": {
+                    "type": "real",
+                    "examples": [
+                      194.2
+                    ]
+                  },
+                  "mz": {
+                    "type": "real",
+                    "examples": [
+                      195.0877
+                    ]
+                  },
+                  "mz_min": {
+                    "type": "real",
+                    "examples": [
+                      195.0
+                    ]
+                  },
+                  "mz_max": {
+                    "type": "real",
+                    "examples": [
+                      195.2
+                    ]
+                  },
+                  "rt": {
+                    "type": "real",
+                    "examples": [
+                      1020.0
+                    ]
+                  },
+                  "rt_min": {
+                    "type": "real",
+                    "examples": [
+                      1000.0
+                    ]
+                  },
+                  "rt_max": {
+                    "type": "real",
+                    "examples": [
+                      1040.0
+                    ]
+                  }
+                }
+              }
+            },
+            "polarity": {
+              "type": "integer",
+              "examples": [
+                1
+              ]
+            },
+            "ppm": {
+              "type": "real",
+              "examples": [
+                20.0
+              ],
+              "default": 20.0
+            },
+            "rt_tolerance": {
+              "type": "real",
+              "examples": [
+                60.0
+              ],
+              "default": 60.0
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id",
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "string",
+            "examples": [
+              "/data/project.duckdb"
+            ]
+          },
+          "example": "/data/project.duckdb",
+          "default": null
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "string",
+            "examples": [
+              "demo"
+            ]
+          },
+          "example": "demo",
+          "default": null
+        },
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            },
+            "default": []
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": []
+        },
+        {
+          "name": "targets",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "targetRange",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                {
+                  "id": "caffeine",
+                  "mass": 194.0804
+                }
+              ]
+            ],
+            "items": {
+              "type": "object",
+              "examples": [
+                {
+                  "id": "caffeine",
+                  "mass": 194.0804
+                }
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "analyses": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      "sample-r001",
+                      "sample-r002"
+                    ]
+                  ],
+                  "items": {
+                    "type": "string",
+                    "examples": [
+                      "sample"
+                    ]
+                  }
+                },
+                "polarity": {
+                  "type": "integer",
+                  "examples": [
+                    1
+                  ]
+                },
+                "levels": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      1,
+                      2
+                    ]
+                  ],
+                  "items": {
+                    "type": "integer",
+                    "examples": [
+                      1
+                    ]
+                  }
+                },
+                "mass": {
+                  "type": "real",
+                  "examples": [
+                    194.0804
+                  ]
+                },
+                "mass_min": {
+                  "type": "real",
+                  "examples": [
+                    194.0
+                  ]
+                },
+                "mass_max": {
+                  "type": "real",
+                  "examples": [
+                    194.2
+                  ]
+                },
+                "mz": {
+                  "type": "real",
+                  "examples": [
+                    195.0877
+                  ]
+                },
+                "mz_min": {
+                  "type": "real",
+                  "examples": [
+                    195.0
+                  ]
+                },
+                "mz_max": {
+                  "type": "real",
+                  "examples": [
+                    195.2
+                  ]
+                },
+                "rt": {
+                  "type": "real",
+                  "examples": [
+                    1020.0
+                  ]
+                },
+                "rt_min": {
+                  "type": "real",
+                  "examples": [
+                    1000.0
+                  ]
+                },
+                "rt_max": {
+                  "type": "real",
+                  "examples": [
+                    1040.0
+                  ]
+                }
+              }
+            }
+          },
+          "example": [
+            {
+              "id": "caffeine",
+              "mass": 194.0804
+            }
+          ],
+          "default": null
+        },
+        {
+          "name": "polarity",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              1
+            ]
+          },
+          "example": 1,
+          "default": null
+        },
+        {
+          "name": "ppm",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              20.0
+            ],
+            "default": 20.0
+          },
+          "example": 20.0,
+          "default": 20.0
+        },
+        {
+          "name": "rt_tolerance",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              60.0
+            ],
+            "default": 60.0
+          },
+          "example": 60.0,
+          "default": 60.0
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/domains/mass_spec#featuresResult",
+        "schema": {
+          "type": "table",
+          "properties": {
+            "project_id": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "analysis": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "feature": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "feature_component": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "feature_group": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "adduct": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "rt": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "mz": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "mass": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "intensity": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "noise": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "sn": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "area": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "rtmin": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "rtmax": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "width": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "mzmin": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "mzmax": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "ppm": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "fwhm_rt": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "fwhm_mz": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "gaussian_A": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "gaussian_mu": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "gaussian_sigma": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "gaussian_r2": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "jaggedness": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "sharpness": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "asymmetry": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "modality": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "plates": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "polarity": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "filtered": {
+              "type": "array",
+              "items": {
+                "type": "boolean"
+              }
+            },
+            "filter": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "filled": {
+              "type": "array",
+              "items": {
+                "type": "boolean"
+              }
+            },
+            "correction": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "eic_size": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "eic_rt": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "eic_mz": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "eic_intensity": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "eic_baseline": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "eic_smoothed": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "ms1_size": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "ms1_mz": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "ms1_intensity": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "ms2_size": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "ms2_mz": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "ms2_intensity": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "annotation_category": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "annotation_type": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "annotation_parent_feature": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "annotation_element": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "annotation_mass_error_da": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "annotation_mass_error_ppm": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "annotation_rt_error": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "annotation_rel_intensity": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "annotation_expected_rel_intensity_min": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "annotation_expected_rel_intensity_max": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "annotation_score": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "component_size": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "component_rt_center": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "component_rt_spread": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "component_density": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "component_mean_correlation": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "component_best_partner": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "component_max_correlation": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "component_mean_correlation_to_component": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "component_membership_score": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "component_is_core": {
+              "type": "array",
+              "items": {
+                "type": "boolean"
+              }
+            },
+            "component_bridge_flag": {
+              "type": "array",
+              "items": {
+                "type": "boolean"
+              }
+            },
+            "created_at": {
+              "type": "array",
+              "items": {
+                "type": "timestamp"
+              }
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_FEATURES"
         ],
         "writes": []
       }
@@ -4948,22 +6348,6 @@ inline constexpr char catalogue[] = R"JSON(
               },
               "default": []
             },
-            "levels": {
-              "type": "array",
-              "examples": [
-                [
-                  1,
-                  2
-                ]
-              ],
-              "items": {
-                "type": "integer",
-                "examples": [
-                  1
-                ]
-              },
-              "default": []
-            },
             "targets": {
               "type": "array",
               "examples": [
@@ -5173,35 +6557,6 @@ inline constexpr char catalogue[] = R"JSON(
           "example": [
             "sample",
             "blank"
-          ],
-          "default": []
-        },
-        {
-          "name": "levels",
-          "type": "array",
-          "required": false,
-          "constraints": {},
-          "items": "integerItem",
-          "extensions": [],
-          "schema": {
-            "type": "array",
-            "examples": [
-              [
-                1,
-                2
-              ]
-            ],
-            "items": {
-              "type": "integer",
-              "examples": [
-                1
-              ]
-            },
-            "default": []
-          },
-          "example": [
-            1,
-            2
           ],
           "default": []
         },
@@ -5544,22 +6899,6 @@ inline constexpr char catalogue[] = R"JSON(
               },
               "default": []
             },
-            "levels": {
-              "type": "array",
-              "examples": [
-                [
-                  1,
-                  2
-                ]
-              ],
-              "items": {
-                "type": "integer",
-                "examples": [
-                  1
-                ]
-              },
-              "default": []
-            },
             "targets": {
               "type": "array",
               "examples": [
@@ -5790,35 +7129,6 @@ inline constexpr char catalogue[] = R"JSON(
           "example": [
             "sample",
             "blank"
-          ],
-          "default": []
-        },
-        {
-          "name": "levels",
-          "type": "array",
-          "required": false,
-          "constraints": {},
-          "items": "integerItem",
-          "extensions": [],
-          "schema": {
-            "type": "array",
-            "examples": [
-              [
-                1,
-                2
-              ]
-            ],
-            "items": {
-              "type": "integer",
-              "examples": [
-                1
-              ]
-            },
-            "default": []
-          },
-          "example": [
-            1,
-            2
           ],
           "default": []
         },
@@ -6212,22 +7522,6 @@ inline constexpr char catalogue[] = R"JSON(
               },
               "default": []
             },
-            "levels": {
-              "type": "array",
-              "examples": [
-                [
-                  1,
-                  2
-                ]
-              ],
-              "items": {
-                "type": "integer",
-                "examples": [
-                  1
-                ]
-              },
-              "default": []
-            },
             "targets": {
               "type": "array",
               "examples": [
@@ -6465,35 +7759,6 @@ inline constexpr char catalogue[] = R"JSON(
           "example": [
             "sample",
             "blank"
-          ],
-          "default": []
-        },
-        {
-          "name": "levels",
-          "type": "array",
-          "required": false,
-          "constraints": {},
-          "items": "integerItem",
-          "extensions": [],
-          "schema": {
-            "type": "array",
-            "examples": [
-              [
-                1,
-                2
-              ]
-            ],
-            "items": {
-              "type": "integer",
-              "examples": [
-                1
-              ]
-            },
-            "default": []
-          },
-          "example": [
-            1,
-            2
           ],
           "default": []
         },
@@ -7645,7 +8910,10 @@ inline constexpr char catalogue[] = R"JSON(
         "writes": [
           "MASS_SPEC_CHROMATOGRAMS"
         ]
-      }
+      },
+      "cacheable": false,
+      "required_methods": [],
+      "single_occurrence": true
     },
     {
       "kind": "operation",
@@ -8305,7 +9573,10 @@ inline constexpr char catalogue[] = R"JSON(
         "mutates_project": false,
         "reads": [],
         "writes": []
-      }
+      },
+      "cacheable": false,
+      "required_methods": [],
+      "single_occurrence": true
     },
     {
       "kind": "method",
@@ -8393,7 +9664,10 @@ inline constexpr char catalogue[] = R"JSON(
         "mutates_project": false,
         "reads": [],
         "writes": []
-      }
+      },
+      "cacheable": false,
+      "required_methods": [],
+      "single_occurrence": true
     },
     {
       "kind": "operation",
@@ -8514,9 +9788,6 @@ inline constexpr char catalogue[] = R"JSON(
                 "items": {
                   "type": "string"
                 }
-              },
-              "max_occurrences": {
-                "type": "integer"
               }
             }
           }
@@ -8537,8 +9808,8 @@ inline constexpr char catalogue[] = R"JSON(
       "kind": "operation",
       "canonical_id": "run_method",
       "domain": "streamfind",
-      "label": "Append and run a workflow method",
-      "definition": "Append a method to a project's workflow, validate it, and execute it.",
+      "label": "Run a planned workflow method",
+      "definition": "Execute only the next pending method already present in the project's workflow.",
       "executable": true,
       "exposed": true,
       "mcp": {
@@ -8917,9 +10188,6 @@ inline constexpr char catalogue[] = R"JSON(
                         "sample"
                       ]
                     }
-                  },
-                  "max_occurrences": {
-                    "type": "integer"
                   }
                 }
               }
@@ -9006,9 +10274,6 @@ inline constexpr char catalogue[] = R"JSON(
                       "sample"
                     ]
                   }
-                },
-                "max_occurrences": {
-                  "type": "integer"
                 }
               }
             }
@@ -9047,9 +10312,6 @@ inline constexpr char catalogue[] = R"JSON(
                 "items": {
                   "type": "string"
                 }
-              },
-              "max_occurrences": {
-                "type": "integer"
               }
             }
           }
@@ -9201,9 +10463,6 @@ inline constexpr char catalogue[] = R"JSON(
                         "sample"
                       ]
                     }
-                  },
-                  "max_occurrences": {
-                    "type": "integer"
                   }
                 }
               }
@@ -9256,9 +10515,6 @@ inline constexpr char catalogue[] = R"JSON(
                       "sample"
                     ]
                   }
-                },
-                "max_occurrences": {
-                  "type": "integer"
                 }
               }
             }

@@ -9,6 +9,7 @@ use streamfind_rust_core::{
 mod generated_metadata;
 
 pub mod processing_methods_chromatograms;
+pub mod processing_methods_nta;
 pub mod reader;
 
 const ANALYSES_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_ANALYSES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, replicate VARCHAR, blank VARCHAR, file_name VARCHAR, file_path VARCHAR NOT NULL, file_dir VARCHAR, file_extension VARCHAR, format VARCHAR, type VARCHAR, time_stamp VARCHAR, number_spectra INTEGER, number_chromatograms INTEGER, number_spectra_binary_arrays INTEGER, min_mz DOUBLE, max_mz DOUBLE, start_rt DOUBLE, end_rt DOUBLE, has_ion_mobility BOOLEAN, concentration DOUBLE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis))";
@@ -685,6 +686,45 @@ fn get_raw_chromatograms_impl(project: &mut Project, parameters: &Value) -> Resu
     Ok(Value::Array(output))
 }
 
+fn get_features_impl(project: &mut Project, p: &Value) -> Result<Value> {
+    let ppm = p.get("ppm").and_then(Value::as_f64).unwrap_or(20.0);
+    let rt_tolerance = p.get("rt_tolerance").and_then(Value::as_f64).unwrap_or(60.0);
+    if ppm < 0.0 || rt_tolerance < 0.0 { return Err(invalid("ppm and rt_tolerance must be non-negative")); }
+    let list = |value: &Value| value.as_array().map(|v| v.iter().filter_map(Value::as_i64).map(|x| x as i32).collect()).unwrap_or_else(|| vec![value.as_i64().unwrap_or(0) as i32]);
+    let analyses = string_list(p, "analysis_names");
+    let mut targets = p.get("targets").and_then(Value::as_array).cloned().unwrap_or_else(|| vec![json!({})]);
+    if targets.is_empty() { targets.push(json!({})); }
+    let mut target_filters = Vec::new();
+    for target in targets {
+        let mut matchers = Vec::new();
+        let target_analyses = target.get("analyses").map(|v| if v.is_array() { v.as_array().unwrap().iter().filter_map(Value::as_str).map(str::to_owned).collect() } else { vec![text(v)] }).unwrap_or_else(|| analyses.clone());
+        if !target_analyses.is_empty() { matchers.push(format!("analysis IN ({})", target_analyses.iter().map(|v| sql(v)).collect::<Vec<_>>().join(","))); }
+        let polarities = target.get("polarity").or_else(|| p.get("polarity")).map(list).unwrap_or_default();
+        if !polarities.is_empty() { matchers.push(format!("polarity IN ({})", polarities.iter().map(ToString::to_string).collect::<Vec<_>>().join(","))); }
+        for (column, exact, minimum, maximum) in [("mass", "mass", "mass_min", "mass_max"), ("mz", "mz", "mz_min", "mz_max")] {
+            if let Some(center) = target.get(exact).and_then(Value::as_f64) {
+                let delta = center.abs() * ppm / 1e6;
+                matchers.push(format!("{column} BETWEEN {} AND {}", center - delta, center + delta));
+            } else if target.get(minimum).is_some() || target.get(maximum).is_some() {
+                let lo = target.get(minimum).and_then(Value::as_f64).map_or("-1e300".into(), |v| v.to_string());
+                let hi = target.get(maximum).and_then(Value::as_f64).map_or("1e300".into(), |v| v.to_string());
+                matchers.push(format!("{column} BETWEEN {lo} AND {hi}"));
+            }
+        }
+        if let Some(center) = target.get("rt").and_then(Value::as_f64) { matchers.push(format!("rt BETWEEN {} AND {}", center - rt_tolerance, center + rt_tolerance)); }
+        else if target.get("rt_min").is_some() || target.get("rt_max").is_some() {
+            let lo = target.get("rt_min").and_then(Value::as_f64).map_or("-1e300".into(), |v| v.to_string());
+            let hi = target.get("rt_max").and_then(Value::as_f64).map_or("1e300".into(), |v| v.to_string());
+            matchers.push(format!("rt BETWEEN {lo} AND {hi}"));
+        }
+        if !matchers.is_empty() { target_filters.push(format!("({})", matchers.join(" AND "))); }
+    }
+    let mut query = format!("SELECT * FROM MASS_SPEC_NTA_FEATURES WHERE project_id = {}", sql(project.get_project_id()));
+    if !target_filters.is_empty() { query.push_str(&format!(" AND ({})", target_filters.join(" OR "))); }
+    query.push_str(" ORDER BY analysis, rt, feature");
+    project.query_json(&query)
+}
+
 fn parameter_example(name: &str) -> Option<Value> {
     match name {
         "analysis_names" => Some(json!(["sample-r001"])),
@@ -761,6 +801,21 @@ fn ontology_description(id: &str) -> String {
         .as_str()
         .unwrap_or_default()
         .into()
+}
+
+fn configure_method(mut method: Method, id: &str) -> Method {
+    let entry = ontology_entry(id);
+    method.cacheable = entry["cacheable"].as_bool().unwrap_or(false);
+    method.writes = entry["effects"]["writes"].as_array().into_iter().flatten().filter_map(Value::as_str).map(str::to_owned).collect();
+    method.required_methods = entry["required_methods"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter_map(Value::as_str)
+        .map(str::to_owned)
+        .collect();
+    method.single_occurrence = entry["single_occurrence"].as_bool().unwrap_or(false);
+    method
 }
 
 fn ontology_result_schema(id: &str) -> Value {
@@ -971,6 +1026,7 @@ pub fn register_operations(registry: &mut OperationRegistry) -> Result<()> {
         "mass_spec.get_raw_spectra_ms2",
         "mass_spec.get_chromatograms",
         "mass_spec.get_raw_chromatograms",
+        "mass_spec.get_features",
     ] {
         registry.register(Operation::new(
             id,
@@ -1011,6 +1067,7 @@ pub fn register_operations(registry: &mut OperationRegistry) -> Result<()> {
                         "mass_spec.get_raw_chromatograms" => {
                             get_raw_chromatograms_impl(project, parameters)
                         }
+                        "mass_spec.get_features" => get_features_impl(project, parameters),
                         _ => unreachable!(),
                     },
                 )
@@ -1066,7 +1123,7 @@ pub fn register_methods(registry: &mut MethodRegistry) -> Result<()> {
         "mass_spec.load_chromatograms",
         "mass_spec.filter_chromatograms_retention_time",
     ] {
-        registry.register(Method::new(
+        registry.register(configure_method(Method::new(
             id,
             id,
             ontology_description(id),
@@ -1102,7 +1159,15 @@ pub fn register_methods(registry: &mut MethodRegistry) -> Result<()> {
                     .map(|_| json!({"status": "finished", "info": "Chromatograms filtered by retention time."}))
                 }
             }),
-        ))?;
+        ), id))?;
     }
+    registry.register(configure_method(Method::new(
+        "mass_spec.find_features",
+        "mass_spec.find_features",
+        ontology_description("mass_spec.find_features"),
+        "mass_spec",
+        ontology_parameters("mass_spec.find_features"),
+        Box::new(processing_methods_nta::find_features),
+    ), "mass_spec.find_features"))?;
     Ok(())
 }

@@ -163,10 +163,69 @@ void ensure_schema(duckdb_connection connection,
     query(connection,
           "CREATE TABLE IF NOT EXISTS AUDIT_TRAIL (project_id VARCHAR NOT NULL, operation_type VARCHAR NOT NULL, object_type VARCHAR NOT NULL, operation_details JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP)",
           "create AUDIT_TRAIL table");
+    query(connection, "CREATE TABLE IF NOT EXISTS WORKFLOW_EXECUTION (project_id VARCHAR NOT NULL, workflow_revision INTEGER NOT NULL, step_index INTEGER NOT NULL, method VARCHAR NOT NULL, parameter_hash VARCHAR NOT NULL, status VARCHAR NOT NULL, started_at TIMESTAMP, completed_at TIMESTAMP, error VARCHAR, cache_key VARCHAR NOT NULL, PRIMARY KEY(project_id, workflow_revision, step_index))", "create WORKFLOW_EXECUTION table");
 }
 
 std::string now_string() {
     return "current";
+}
+
+std::string sql_quote(const std::string &value) {
+    std::string result = "'";
+    for (const char character : value) result += character == '\'' ? "''" : std::string(1, character);
+    return result + "'";
+}
+
+std::string identifier_quote(const std::string &value) {
+    std::string result = "\"";
+    for (const char character : value) result += character == '"' ? "\"\"" : std::string(1, character);
+    return result + "\"";
+}
+
+Json snapshot_tables(duckdb_connection connection, const std::string &project_id, const std::vector<std::string> &tables) {
+    Json snapshots = Json::object();
+    for (const auto &table : tables) {
+        Json rows = Json::array();
+        duckdb_result result{};
+        const std::string filter = has_column(connection, table.c_str(), "project_id") ? " WHERE project_id = " + sql_quote(project_id) : "";
+        const std::string sql = "SELECT to_json(t) FROM " + identifier_quote(table) + " t" + filter;
+        if (duckdb_query(connection, sql.c_str(), &result) == DuckDBError) { const std::string message = db_error(result); duckdb_destroy_result(&result); throw Error(ErrorCode::DatabaseError, "snapshot " + table + ": " + message); }
+        ResultGuard guard(result);
+        for (idx_t row = 0; row < duckdb_row_count(&result); ++row) rows.push_back(parse_json(value_string(result, 0, row), "table snapshot"));
+        snapshots[table] = std::move(rows);
+    }
+    return snapshots;
+}
+
+void restore_tables(duckdb_connection connection, const std::string &project_id, const Json &snapshots) {
+    for (auto table = snapshots.begin(); table != snapshots.end(); ++table) {
+        const std::string table_name = table.key();
+        duckdb_result schema{};
+        const std::string describe = "DESCRIBE " + identifier_quote(table_name);
+        if (duckdb_query(connection, describe.c_str(), &schema) == DuckDBError) { const std::string message = db_error(schema); duckdb_destroy_result(&schema); throw Error(ErrorCode::DatabaseError, "describe cached table: " + message); }
+        ResultGuard schema_guard(schema);
+        std::vector<std::pair<std::string, std::string>> columns;
+        for (idx_t row = 0; row < duckdb_row_count(&schema); ++row) columns.emplace_back(value_string(schema, 0, row), value_string(schema, 1, row));
+        const auto project_column = std::find_if(columns.begin(), columns.end(), [](const auto &column) { return column.first == "project_id"; });
+        query(connection, "DELETE FROM " + identifier_quote(table_name) + (project_column == columns.end() ? "" : " WHERE project_id = " + sql_quote(project_id)), "clear cached table");
+        for (const auto &row : table.value()) {
+            std::string sql = "INSERT INTO " + identifier_quote(table_name) + " VALUES (";
+            for (std::size_t index = 0; index < columns.size(); ++index) {
+                if (index) sql += ", ";
+                const auto &value = row.value(columns[index].first, Json(nullptr));
+                if (value.is_null()) sql += "NULL";
+                else if (value.is_string()) sql += sql_quote(value.get<std::string>());
+                else if (value.is_boolean()) sql += value.get<bool>() ? "TRUE" : "FALSE";
+                else sql += value.dump();
+            }
+            sql += ")";
+            query(connection, sql, "restore cached table");
+        }
+    }
+}
+
+void execution_row(duckdb_connection connection, const std::string &project_id, int revision, std::size_t index, const std::string &method, const std::string &parameter_hash, const std::string &status, const std::string &cache_key, const std::string &error = {}) {
+    prepared(connection, "INSERT INTO WORKFLOW_EXECUTION (project_id, workflow_revision, step_index, method, parameter_hash, status, started_at, completed_at, error, cache_key) VALUES (?, ?, ?, ?, ?, ?, CASE WHEN ? = 'running' THEN CURRENT_TIMESTAMP ELSE NULL END, CASE WHEN ? IN ('succeeded', 'failed') THEN CURRENT_TIMESTAMP ELSE NULL END, ?, ?) ON CONFLICT(project_id, workflow_revision, step_index) DO UPDATE SET status = excluded.status, started_at = COALESCE(WORKFLOW_EXECUTION.started_at, excluded.started_at), completed_at = excluded.completed_at, error = excluded.error, cache_key = excluded.cache_key", "write workflow execution", [&](Statement statement) { bind_text(statement, 1, project_id); duckdb_bind_int32(statement, 2, revision); duckdb_bind_int32(statement, 3, static_cast<int>(index)); bind_text(statement, 4, method); bind_text(statement, 5, parameter_hash); bind_text(statement, 6, status); bind_text(statement, 7, status); bind_text(statement, 8, status); bind_text(statement, 9, error); bind_text(statement, 10, cache_key); }, [](duckdb_result &) {});
 }
 
 const char *parameter_type_name(ParameterType type) {
@@ -457,11 +516,11 @@ Json Method::to_json() const {
         {"description", definition_.description},
         {"version", definition_.version}, {"domain", definition_.domain},
         {"required_methods", definition_.required_methods},
-        {"max_occurrences", definition_.max_occurrences},
+        {"single_occurrence", definition_.single_occurrence},
         {"developer", definition_.developer}, {"contact", definition_.contact},
         {"link", definition_.link}, {"doi", definition_.doi},
         {"parameters", definition_.parameters.to_json()},
-        {"cacheable", definition_.cacheable}
+        {"cacheable", definition_.cacheable}, {"writes", definition_.writes}
     };
 }
 
@@ -476,13 +535,14 @@ MethodDefinition Method::definition_from_json(const Json &value) {
     definition.version = value.value("version", "1");
     definition.domain = value.value("domain", "");
     definition.required_methods = value.value("required_methods", std::vector<std::string>{});
-    definition.max_occurrences = value.value("max_occurrences", std::numeric_limits<double>::infinity());
+    definition.single_occurrence = value.value("single_occurrence", false);
     definition.developer = value.value("developer", "");
     definition.contact = value.value("contact", "");
     definition.link = value.value("link", "");
     definition.doi = value.value("doi", "");
     definition.parameters = ParameterSchema::from_json(value.value("parameters", Json::array()));
     definition.cacheable = value.value("cacheable", false);
+    definition.writes = value.value("writes", std::vector<std::string>{});
     return definition;
 }
 
@@ -597,6 +657,10 @@ void Workflow::validate(const MethodRegistry &registry) const {
         const Method *method = registry.find(step.method);
         if (!method) throw Error(ErrorCode::WorkflowValidation,
                                  "Unknown workflow method: " + step.method);
+        if (!method->implemented()) {
+            throw Error(ErrorCode::WorkflowValidation,
+                        "Method is not implemented: " + step.method);
+        }
         const auto &definition = method->definition();
         if (!domain.empty() && !definition.domain.empty() && domain != definition.domain) {
             throw Error(ErrorCode::WorkflowValidation,
@@ -608,7 +672,7 @@ void Workflow::validate(const MethodRegistry &registry) const {
                             "Required method is not earlier in workflow: " + required);
             }
         }
-        if (++counts[step.method] > definition.max_occurrences) {
+        if (definition.single_occurrence && ++counts[step.method] > 1) {
             throw Error(ErrorCode::WorkflowValidation,
                         "Method occurs too many times: " + step.method);
         }
@@ -623,14 +687,21 @@ Json Workflow::to_json() const {
     return serialized_steps;
 }
 
+bool Method::implemented() const noexcept { return static_cast<bool>(executor_); }
+
 Json Workflow::to_json(const MethodRegistry &registry) const {
-    Json serialized = Json::array();
+    Json serialized = Json::object({
+        {"name", name},
+        {"version", version},
+        {"domain", domain},
+        {"steps", Json::array()}
+    });
     for (const auto &step : steps) {
         const auto *method = registry.find(step.method);
         if (!method) throw Error(ErrorCode::WorkflowValidation, "Unknown workflow method: " + step.method);
         auto value = method->to_json();
         value["parameters"] = step.parameters.to_json();
-        serialized.push_back(std::move(value));
+        serialized["steps"].push_back(std::move(value));
     }
     return serialized;
 }
@@ -809,6 +880,7 @@ void Project::validate() const {
     read_info(connection.get(), get_project_id());
     query(connection.get(), "SELECT project_id, name, description, hash, data, created_at FROM CACHE LIMIT 0", "validate CACHE schema");
     query(connection.get(), "SELECT project_id, operation_type, object_type, operation_details, created_at FROM AUDIT_TRAIL LIMIT 0", "validate AUDIT_TRAIL schema");
+    query(connection.get(), "SELECT project_id, workflow_revision, step_index, method, parameter_hash, status, started_at, completed_at, error, cache_key FROM WORKFLOW_EXECUTION LIMIT 0", "validate WORKFLOW_EXECUTION schema");
 }
 
 void Project::set_metadata(Json metadata) {
@@ -968,23 +1040,35 @@ std::vector<AuditEntry> Project::get_audit_trail() const {
     return output;
 }
 
+Json Project::get_workflow_execution() const {
+    return query_json("SELECT project_id, workflow_revision, step_index, method, parameter_hash, status, started_at, completed_at, error, cache_key FROM WORKFLOW_EXECUTION WHERE project_id = " + detail::sql_quote(get_project_id()) + " ORDER BY workflow_revision, step_index");
+}
+
 ExecutionResult Project::run_workflow(const MethodRegistry &registry, CancellationToken *cancellation, ProgressCallback progress) {
     Workflow current = get_workflow(); current.validate(registry);
     Json results = Json::array();
     std::size_t completed = 0;
-    for (const auto &step : current.steps) {
+    std::string previous_hash = "initial";
+    for (std::size_t index = 0; index < current.steps.size(); ++index) {
+        const auto &step = current.steps[index];
         if (cancellation && cancellation->is_cancelled()) return {results, true};
         const Method *method = registry.find(step.method);
         const Json parameters = method->resolve_parameters(step.parameters.values);
         const auto &definition = method->definition();
-    const std::string key = hash_text(get_project_id() + "\n" + definition.id + "\n" + definition.version + "\n" + parameters.dump());
+        const std::string parameter_hash = hash_text(parameters.dump());
+        const std::string key = hash_text(previous_hash + "\n" + definition.id + "\n" + definition.version + "\n" + parameters.dump());
+        { std::lock_guard lock(impl_->mutex); ensure_active(*impl_); Connection connection(*impl_); execution_row(connection.get(), get_project_id(), current.version, index, definition.id, parameter_hash, "pending", key); }
         if (definition.cacheable) {
             if (auto cached = get_cache_entry(key)) {
-                const Json result = parse_json(std::string(cached->data.begin(), cached->data.end()), "cached result");
-                results.push_back(result);
-                std::lock_guard lock(impl_->mutex); Connection connection(*impl_);
-                audit(connection.get(), get_project_id(), "cache_hit", "workflow_step", Json{{"method", definition.id}, {"cache_key", key}});
-                continue;
+                const Json payload = parse_json(std::string(cached->data.begin(), cached->data.end()), "cached result");
+                if (payload.is_object() && payload.contains("result") && payload.contains("tables") && payload.at("tables").is_object()) {
+                    std::lock_guard lock(impl_->mutex); Connection connection(*impl_); restore_tables(connection.get(), get_project_id(), payload.at("tables"));
+                    results.push_back(payload.at("result"));
+                    execution_row(connection.get(), get_project_id(), current.version, index, definition.id, parameter_hash, "succeeded", key);
+                    audit(connection.get(), get_project_id(), "cache_hit", "workflow_step", Json{{"method", definition.id}, {"cache_key", key}});
+                    previous_hash = key;
+                    continue;
+                }
             }
             std::lock_guard lock(impl_->mutex); Connection connection(*impl_);
             audit(connection.get(), get_project_id(), "cache_miss", "workflow_step", Json{{"method", definition.id}, {"cache_key", key}});
@@ -992,15 +1076,22 @@ ExecutionResult Project::run_workflow(const MethodRegistry &registry, Cancellati
         {
             std::lock_guard lock(impl_->mutex); ensure_active(*impl_); Connection connection(*impl_);
             audit(connection.get(), get_project_id(), "start", "workflow_step", Json{{"method", definition.id}, {"cache_key", key}, {"parameters", parameters}});
+            execution_row(connection.get(), get_project_id(), current.version, index, definition.id, parameter_hash, "running", key);
         }
         try {
             Json result = method->run(*this, parameters);
             results.push_back(result);
-             if (definition.cacheable) set_cache(definition.id, "workflow result", key, result);
+             if (definition.cacheable) {
+                 Json snapshots;
+                 { std::lock_guard lock(impl_->mutex); Connection connection(*impl_); snapshots = snapshot_tables(connection.get(), get_project_id(), definition.writes); }
+                  set_cache(definition.id, "workflow result", key, Json{{"result", result}, {"tables", std::move(snapshots)}});
+             }
+             previous_hash = key;
             if (progress) progress({"workflow", ++completed, current.steps.size()});
             std::lock_guard lock(impl_->mutex); Connection connection(*impl_); audit(connection.get(), get_project_id(), "complete", "workflow_step", Json{{"method", definition.id}, {"cache_key", key}});
+            execution_row(connection.get(), get_project_id(), current.version, index, definition.id, parameter_hash, "succeeded", key);
         } catch (const std::exception &error) {
-            std::lock_guard lock(impl_->mutex); Connection connection(*impl_); audit(connection.get(), get_project_id(), "failed", "workflow_step", Json{{"method", definition.id}, {"error", error.what()}});
+            std::lock_guard lock(impl_->mutex); Connection connection(*impl_); audit(connection.get(), get_project_id(), "failed", "workflow_step", Json{{"method", definition.id}, {"error", error.what()}}); execution_row(connection.get(), get_project_id(), current.version, index, definition.id, parameter_hash, "failed", key, error.what());
             throw;
         }
     }
@@ -1013,15 +1104,63 @@ Json Project::run_method(const std::string &method_id, const Json &parameters,
     if (!method) throw Error(ErrorCode::WorkflowValidation, "Unknown method: " + method_id);
     Workflow workflow = get_workflow();
     workflow.domain = workflow.domain.empty() ? get_domain() : workflow.domain;
-    workflow.steps.push_back({method_id, ParameterValues::from_json(parameters)});
     workflow.validate(registry);
-    set_workflow(workflow, registry);
+    std::size_t index = 0;
+    while (index < workflow.steps.size()) {
+        bool completed = false;
+        for (const auto &row : get_workflow_execution()) {
+            if (row.value("workflow_revision", "") == std::to_string(workflow.version) && row.value("step_index", "") == std::to_string(index) && row.value("status", "") == "succeeded") { completed = true; break; }
+        }
+        if (workflow.steps[index].method == method_id && !completed) break;
+        ++index;
+    }
+    if (index == workflow.steps.size()) throw Error(ErrorCode::WorkflowValidation, "Method is not a planned workflow step: " + method_id);
     const Json resolved = method->resolve_parameters(parameters);
+    if (workflow.steps[index].parameters.values != resolved) throw Error(ErrorCode::WorkflowValidation, "Parameters do not match the planned workflow step");
+    std::string previous_hash = "initial";
+    if (index > 0) {
+        const auto execution = get_workflow_execution();
+        for (const auto &row : execution) {
+            if (row.value("workflow_revision", "") == std::to_string(workflow.version) && row.value("step_index", "") == std::to_string(index - 1) && row.value("status", "") == "succeeded") {
+                previous_hash = row.value("cache_key", "initial");
+                break;
+            }
+        }
+        if (previous_hash == "initial") throw Error(ErrorCode::WorkflowValidation, "Previous workflow step has not succeeded");
+    }
+    const auto &definition = method->definition();
+    const std::string parameter_hash = hash_text(resolved.dump());
+    const std::string key = hash_text(previous_hash + "\n" + definition.id + "\n" + definition.version + "\n" + resolved.dump());
+    { std::lock_guard lock(impl_->mutex); Connection connection(*impl_); execution_row(connection.get(), get_project_id(), workflow.version, index, method_id, parameter_hash, "running", key); }
     {
         std::lock_guard lock(impl_->mutex); ensure_active(*impl_); Connection connection(*impl_);
         audit(connection.get(), get_project_id(), "start", "method", Json{{"method", method_id}, {"parameters", resolved}});
     }
-    const Json result = method->run(*this, resolved);
+    Json result;
+    bool cache_hit = false;
+    try {
+        if (definition.cacheable) {
+            if (auto cached = get_cache_entry(key)) {
+                const Json payload = parse_json(std::string(cached->data.begin(), cached->data.end()), "cached result");
+                if (payload.is_object() && payload.contains("result") && payload.contains("tables") && payload.at("tables").is_object()) {
+                    std::lock_guard lock(impl_->mutex); Connection connection(*impl_); restore_tables(connection.get(), get_project_id(), payload.at("tables"));
+                    result = payload.at("result");
+                    execution_row(connection.get(), get_project_id(), workflow.version, index, method_id, parameter_hash, "succeeded", key);
+                    cache_hit = true;
+                }
+            }
+        }
+        if (!cache_hit) result = method->run(*this, resolved);
+        if (!cache_hit && definition.cacheable) {
+            Json snapshots;
+            { std::lock_guard lock(impl_->mutex); Connection connection(*impl_); snapshots = snapshot_tables(connection.get(), get_project_id(), definition.writes); }
+            set_cache(definition.id, "workflow result", key, Json{{"result", result}, {"tables", std::move(snapshots)}});
+        }
+        if (!cache_hit) { std::lock_guard lock(impl_->mutex); Connection connection(*impl_); execution_row(connection.get(), get_project_id(), workflow.version, index, method_id, parameter_hash, "succeeded", key); }
+    } catch (const std::exception &error) {
+        std::lock_guard lock(impl_->mutex); Connection connection(*impl_); execution_row(connection.get(), get_project_id(), workflow.version, index, method_id, parameter_hash, "failed", key, error.what());
+        throw;
+    }
     {
         std::lock_guard lock(impl_->mutex); Connection connection(*impl_);
         audit(connection.get(), get_project_id(), "complete", "method", Json{{"method", method_id}});

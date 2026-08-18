@@ -21,19 +21,24 @@ int run_domain_smoke() {
     streamfind::mass_spec::register_methods(registry);
     streamfind::raman::register_methods(registry);
     streamfind::sensors::register_methods(registry);
-    if (operations.list("mass_spec").size() != 19) return fail("mass_spec registration");
+    if (operations.list("mass_spec").size() != 20) return fail("mass_spec registration");
     if (operations.find("mass_spec.get_spectra_headers")->definition().parameters.definitions.size() != 3) return fail("spectra headers parameters");
     if (operations.find("mass_spec.get_chromatograms_headers")->definition().parameters.definitions.size() != 3) return fail("chromatogram headers parameters");
     if (operations.find("mass_spec.get_spectra_tic")->definition().parameters.definitions.size() != 6) return fail("spectra TIC parameters");
     if (operations.find("mass_spec.get_chromatograms")->definition().parameters.definitions.size() != 4) return fail("chromatogram parameters");
     if (operations.find("mass_spec.get_raw_chromatograms")->definition().parameters.definitions.size() != 4) return fail("raw chromatogram parameters");
     if (operations.find("mass_spec.get_raw_spectra")->definition().parameters.definitions.size() != 9) return fail("raw spectra parameters");
-    if (operations.find("mass_spec.get_raw_spectra_ms1")->definition().parameters.definitions.size() != 12) return fail("MS1 parameters");
-    if (operations.find("mass_spec.get_raw_spectra_ms2")->definition().parameters.definitions.size() != 13) return fail("MS2 parameters");
+    if (operations.find("mass_spec.get_raw_spectra_eic")->definition().parameters.definitions.size() != 8) return fail("EIC parameters");
+    if (operations.find("mass_spec.get_raw_spectra_ms1")->definition().parameters.definitions.size() != 11) return fail("MS1 parameters");
+    if (operations.find("mass_spec.get_raw_spectra_ms2")->definition().parameters.definitions.size() != 12) return fail("MS2 parameters");
+    if (operations.find("mass_spec.get_features")->definition().parameters.definitions.size() != 7) return fail("feature parameters");
     if (registry.list("raman").size() != 2) return fail("raman registration");
     if (!operations.find("mass_spec.add_analyses")) return fail("mass_spec.add_analyses registration");
     if (!registry.find("mass_spec.load_chromatograms")) return fail("mass_spec.load_chromatograms registration");
     if (!registry.find("mass_spec.filter_chromatograms_retention_time")) return fail("mass_spec.filter_chromatograms_retention_time registration");
+    if (!registry.find("mass_spec.find_features")) return fail("mass_spec.find_features registration");
+    const auto *find_features = registry.find("mass_spec.find_features");
+    if (!find_features->definition().cacheable || !find_features->definition().single_occurrence || !find_features->definition().required_methods.empty()) return fail("find_features lifecycle metadata");
     if (!registry.find("raman.remove_analyses")) return fail("raman.remove_analyses registration");
     if (!registry.list("sensors").empty()) return fail("sensors registration");
 
@@ -62,6 +67,17 @@ int run_domain_smoke() {
         std::cerr << "initial get_analyses_info returned " << initial_info.dump() << "\n";
         return 1;
     }
+    const streamfind::Json nta_parameters = { {"analysis_names", streamfind::Json::array({r001.stem().string(), r002.stem().string(), r003.stem().string()})}, {"rt_windows_min", streamfind::Json::array({streamfind::Json(800.0)})}, {"rt_windows_max", streamfind::Json::array({streamfind::Json(1000.0)})}, {"ppm_threshold", 12.0}, {"noise_threshold", 500.0}, {"min_snr", 15.0}, {"min_traces", 5}, {"baseline_window", 30.0}, {"max_feature_width", 60.0}, {"base_quantile", 0.1} };
+    streamfind::Workflow nta_workflow; nta_workflow.domain = "mass_spec"; nta_workflow.steps.push_back({"mass_spec.find_features", streamfind::ParameterValues::from_json(nta_parameters)}); project.set_workflow(std::move(nta_workflow), registry);
+    project.run_method("mass_spec.find_features", nta_parameters, registry);
+    if (project.query_json("SELECT COUNT(*) AS count FROM MASS_SPEC_NTA_FEATURES").at(0).at("count") == 0) return fail("feature detection");
+    const auto metoprolol = project.query_json("SELECT COUNT(*) AS count FROM MASS_SPEC_NTA_FEATURES WHERE ABS(mass - 274.227) < 0.01 AND ABS(rt - 915.0) < 5.0");
+    if (metoprolol.at(0).at("count").get<std::string>() != "3") return fail("Metoprolol-D7 feature detection");
+    const auto features = project.run_operation("mass_spec.get_features", {
+        {"analysis_names", streamfind::Json::array({r001.stem().string(), r002.stem().string(), r003.stem().string()})},
+        {"targets", streamfind::Json::array({{{"id", "Metoprolol-D7"}, {"mass", 274.227}, {"rt", 915.0}, {"polarity", 1}}})},
+        {"ppm", 20.0}, {"rt_tolerance", 5.0}}, operations);
+    if (features.at("row_count") != 3 || !features.at("columns").contains("feature") || !features.at("columns").contains("component_bridge_flag")) return fail("NTA feature table result");
     project.run_operation("mass_spec.set_replicate_names", {{"replicate_names", streamfind::Json::array({"r1", "r2", "r3"})}}, operations);
 
     streamfind::Json targets = streamfind::Json::array();
@@ -117,12 +133,12 @@ int run_domain_smoke() {
     project.run_operation("mass_spec.add_analyses", { {"analyses", streamfind::Json::array({streamfind::Json{{"path", karl.string()}}})} }, operations);
     const auto raw_chromatograms = project.run_operation("mass_spec.get_raw_chromatograms", {{"analysis_names", streamfind::Json::array({"karl"})}, {"indices", streamfind::Json::array({0})}}, operations);
     if (raw_chromatograms.at("row_count") != 695) return fail("raw chromatograms");
-    project.run_method("mass_spec.load_chromatograms", { {"analysis_names", streamfind::Json::array({"karl"})}, {"chromatogram_id_regex", streamfind::Json::array({"^TIC1$"})}, {"ignore_case", true}, {"invert", false} }, registry);
+    const auto load_parameters = streamfind::Json{{"analysis_names", streamfind::Json::array({"karl"})}, {"chromatogram_id_regex", streamfind::Json::array({"^TIC1$"})}, {"ignore_case", true}, {"invert", false}}; streamfind::Workflow load_workflow; load_workflow.domain = "mass_spec"; load_workflow.steps.push_back({"mass_spec.load_chromatograms", streamfind::ParameterValues::from_json(load_parameters)}); project.set_workflow(std::move(load_workflow), registry); project.run_method("mass_spec.load_chromatograms", load_parameters, registry);
     const auto chromatograms = project.run_operation("mass_spec.get_chromatograms", { {"analysis_names", streamfind::Json::array({"karl"})} }, operations);
     if (chromatograms.at("row_count") != 695) return fail("chromatogram loading");
     const auto rt_min = chromatograms.at("columns").at("rt").at(0).get<double>();
     const auto rt_max = chromatograms.at("columns").at("rt").at(2).get<double>();
-    project.run_method("mass_spec.filter_chromatograms_retention_time", { {"analysis_names", streamfind::Json::array({"karl"})}, {"rt_min", rt_min}, {"rt_max", rt_max} }, registry);
+    const auto filter_parameters = streamfind::Json{{"analysis_names", streamfind::Json::array({"karl"})}, {"rt_min", rt_min}, {"rt_max", rt_max}}; streamfind::Workflow filter_workflow; filter_workflow.domain = "mass_spec"; filter_workflow.steps.push_back({"mass_spec.filter_chromatograms_retention_time", streamfind::ParameterValues::from_json(filter_parameters)}); project.set_workflow(std::move(filter_workflow), registry); project.run_method("mass_spec.filter_chromatograms_retention_time", filter_parameters, registry);
     const auto filtered = project.run_operation("mass_spec.get_chromatograms", { {"analysis_names", streamfind::Json::array({"karl"})} }, operations);
     if (filtered.at("row_count") == 0 || filtered.at("columns").at("rt").back().get<double>() > rt_max) return fail("chromatogram retention filtering");
     std::filesystem::remove(database, error);

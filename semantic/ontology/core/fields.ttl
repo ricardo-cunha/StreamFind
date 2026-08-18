@@ -41,8 +41,7 @@ sfcore:methodField
         sfcore:methodDomainField,
         sfcore:methodParametersField,
         sfcore:methodCacheableField,
-        sfcore:methodRequiredField,
-        sfcore:methodMaxOccurrencesField .
+        sfcore:methodRequiredField .
 
 sfcore:methodIdField
     a sf:Field ;
@@ -101,14 +100,6 @@ sfcore:methodRequiredField
     sf:propertyName "required_methods" ;
     sf:type "array" ;
      sf:items sfcore:stringItemParameter .
-
-sfcore:methodMaxOccurrencesField
-    a sf:Field ;
-    skos:inScheme sfcore:scheme ;
-    skos:prefLabel "Maximum occurrences" ;
-    skos:definition "Maximum permitted method occurrences." ;
-    sf:propertyName "max_occurrences" ;
-     sf:type "integer" .
 
 sfcore:analysisFilePathField
     a sf:Field ;

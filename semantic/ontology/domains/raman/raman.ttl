@@ -11,9 +11,12 @@ sfcore:ramanAddAnalyses
         a sf:Method ;
         sf:methodId "raman.add_analyses" ;
         sf:availableInDomain sfcore:raman ;
-        skos:prefLabel "Add Raman analyses" ;
-        skos:definition "Add Raman analysis files to a project." ;
-        sf:toolName "add_analyses" ;
+         skos:prefLabel "Add Raman analyses" ;
+         skos:definition "Add Raman analysis files to a project." ;
+         sf:cacheable false ;
+         sf:requiredMethods () ;
+         sf:singleOccurrence true ;
+         sf:toolName "add_analyses" ;
     sf:hasParameter sfcore:analysesParameter ;
         sf:extensions "asc,sif" .
 
@@ -21,9 +24,12 @@ sfcore:ramanRemoveAnalyses
         a sf:Method ;
         sf:methodId "raman.remove_analyses" ;
         sf:availableInDomain sfcore:raman ;
-        skos:prefLabel "Remove Raman analyses" ;
-        skos:definition "Remove Raman analysis files from a project." ;
-        sf:toolName "remove_analyses" ;
+         skos:prefLabel "Remove Raman analyses" ;
+         skos:definition "Remove Raman analysis files from a project." ;
+         sf:cacheable false ;
+         sf:requiredMethods () ;
+         sf:singleOccurrence true ;
+         sf:toolName "remove_analyses" ;
     sf:hasParameter sfcore:analysisNamesParameter .
 
 sfcore:ramanAddAnalyses sf:returns sfcore:operationStatusResult .

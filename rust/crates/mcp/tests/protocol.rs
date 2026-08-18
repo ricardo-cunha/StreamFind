@@ -22,7 +22,7 @@ fn supports_initialize_and_tool_listing() {
             .as_array()
             .unwrap()
             .len(),
-        21
+        22
     );
     let tools = streamfind_rust_mcp::handle(&json!({"id": 2, "method": "tools/list"}), &registry);
     let metadata = tools["result"]["tools"]
@@ -44,7 +44,7 @@ fn session_hides_domain_methods_until_connected() {
     let operations = OperationRegistry::default();
     let mut session = streamfind_rust_mcp::Session::new(&registry, &operations);
     let tools = session.handle(&json!({"id": 1, "method": "tools/list"}));
-    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 21);
+    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 22);
 }
 
 #[test]
@@ -90,7 +90,7 @@ fn session_lifecycle_rebinds_catalogue() {
         .as_array()
         .unwrap()
         .clone();
-    assert_eq!(tools.len(), 40);
+    assert_eq!(tools.len(), 42);
     let eic = tools
         .iter()
         .find(|tool| tool["name"] == "mass_spec.get_raw_spectra_eic")
@@ -147,7 +147,7 @@ fn session_lifecycle_rebinds_catalogue() {
             .as_array()
             .unwrap()
             .len(),
-        40
+        42
     );
     let _ = std::fs::remove_file(path);
 }

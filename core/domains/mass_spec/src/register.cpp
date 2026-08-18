@@ -1,7 +1,10 @@
 #include "streamfind/generated_metadata.hpp"
 #include "streamfind/mass_spec/mass_spec.hpp"
 #include "streamfind/mass_spec/processing_methods_chromatograms.hpp"
+#include "streamfind/mass_spec/processing_methods_nta.hpp"
 #include "streamfind/mass_spec/register.hpp"
+
+#include <limits>
 
 namespace streamfind::mass_spec {
 
@@ -30,6 +33,10 @@ void register_methods(MethodRegistry &registry) {
         definition.name = definition.id;
         definition.description = entry.value("definition", entry.value("label", ""));
         definition.domain = "mass_spec";
+        definition.cacheable = entry.value("cacheable", false);
+        definition.writes = entry.value("effects", Json::object()).value("writes", std::vector<std::string>{});
+        definition.required_methods = entry.value("required_methods", std::vector<std::string>{});
+        definition.single_occurrence = entry.value("single_occurrence", false);
         for (const auto &item : entry.value("parameters", Json::array())) {
             ParameterDefinition parameter;
             parameter.name = item.at("name").get<std::string>();
@@ -39,10 +46,13 @@ void register_methods(MethodRegistry &registry) {
             parameter.example = item.value("example", Json(nullptr));
             definition.parameters.definitions.push_back(std::move(parameter));
         }
-        registry.register_method(Method(std::move(definition), [id = entry.at("canonical_id").get<std::string>()](streamfind::Project &project, const Json &parameters) {
-            if (id == "mass_spec.load_chromatograms") return processing::load_chromatograms(project, parameters);
-            return processing::filter_chromatograms_retention_time(project, parameters);
-        }));
+        const auto id = entry.at("canonical_id").get<std::string>();
+        MethodExecutor executor;
+        if (id == "mass_spec.find_features") executor = processing_methods::find_features;
+        else if (id == "mass_spec.load_chromatograms") executor = processing::load_chromatograms;
+        else if (id == "mass_spec.filter_chromatograms_retention_time") executor = processing::filter_chromatograms_retention_time;
+        else continue;
+        registry.register_method(Method(std::move(definition), std::move(executor)));
     }
 }
 
@@ -89,6 +99,7 @@ void register_operations(OperationRegistry &registry) {
             else if (id == "mass_spec.get_raw_spectra") result = domain.get_raw_spectra(parameters);
             else if (id == "mass_spec.get_chromatograms") result = domain.get_chromatograms(parameters);
             else if (id == "mass_spec.get_raw_chromatograms") result = domain.get_raw_chromatograms(parameters);
+            else if (id == "mass_spec.get_features") result = domain.get_features(parameters);
             else result = domain.get_analyses_info(parameters);
             return result_schema.value("type", "") == "table" ? detail::columnar(std::move(result), result_schema) : result;
         }));

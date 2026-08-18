@@ -53,6 +53,21 @@ fn workflow_table(workflow: &crate::Workflow) -> Json {
     workflow.to_json()
 }
 
+fn workflow_execution_table(rows: &Json) -> Json {
+    let names = [
+        "project_id", "workflow_revision", "step_index", "method", "parameter_hash",
+        "status", "started_at", "completed_at", "error", "cache_key",
+    ];
+    let mut columns = serde_json::Map::new();
+    for name in names { columns.insert(name.into(), Json::Array(Vec::new())); }
+    for row in rows.as_array().into_iter().flatten() {
+        for name in names {
+            columns.get_mut(name).unwrap().as_array_mut().unwrap().push(row.get(name).cloned().unwrap_or(Json::Null));
+        }
+    }
+    json!({"row_count": rows.as_array().map_or(0, Vec::len), "columns": columns})
+}
+
 pub fn describe(request: &Json) -> Result<Json> {
     let project = Project::open(options(request, true)?)?;
     descriptor(&project)
@@ -85,6 +100,11 @@ pub fn get_workflow(request: &Json) -> Result<Json> {
     Ok(workflow_table(
         &Project::open(options(request, true)?)?.get_workflow()?,
     ))
+}
+
+pub fn get_workflow_execution(request: &Json) -> Result<Json> {
+    let rows = Project::open(options(request, true)?)?.get_workflow_execution()?;
+    Ok(workflow_execution_table(&rows))
 }
 
 pub fn validate_workflow(request: &Json, registry: &crate::MethodRegistry) -> Result<Json> {

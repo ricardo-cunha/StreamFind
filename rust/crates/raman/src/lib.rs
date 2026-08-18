@@ -31,7 +31,7 @@ pub fn register_methods(registry: &mut MethodRegistry) -> Result<()> {
                     "raman analysis operation is not implemented",
                 ))
             }),
-        ))?;
+        ).unimplemented())?;
     }
     Ok(())
 }

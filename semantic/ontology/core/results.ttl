@@ -114,3 +114,21 @@ sfcore:workflowExecutionResult
     a sf:Result ; skos:inScheme sfcore:scheme ;
     skos:prefLabel "Workflow execution result" ;
     skos:definition "Workflow results, cancellation state, and the persisted workflow." ; sf:type "object" .
+
+sfcore:workflowExecutionEntriesResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Workflow execution entries" ;
+    skos:definition "Execution status for workflow steps." ;
+    sf:type "table" ;
+    sf:hasProperty
+        sfcore:projectIdColumn,
+        sfcore:workflowRevisionColumn,
+        sfcore:stepIndexColumn,
+        sfcore:executionMethodColumn,
+        sfcore:parameterHashColumn,
+        sfcore:executionStatusColumn,
+        sfcore:startedAtColumn,
+        sfcore:completedAtColumn,
+        sfcore:executionErrorColumn,
+        sfcore:cacheKeyColumn .

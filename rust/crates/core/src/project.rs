@@ -91,9 +91,9 @@ impl ExecutionResult {
 
 pub type ProgressCallback = Box<dyn Fn(&ProgressEvent) + Send + Sync>;
 
-fn cache_key(project_id: &str, method: &str, parameters: &Json) -> String {
+fn cache_key(previous: &str, method: &Method, parameters: &Json) -> String {
     let mut hash: u64 = 1469598103934665603;
-    for byte in format!("{project_id}\n{method}\n{}", parameters).bytes() {
+    for byte in format!("{previous}\n{}\n1\n{}", method.id, parameters).bytes() {
         hash ^= u64::from(byte);
         hash = hash.wrapping_mul(1099511628211);
     }
@@ -153,6 +153,55 @@ fn duck_value_to_json(value: DuckValue) -> Json {
         ),
         DuckValue::Union(value) => duck_value_to_json(*value),
     }
+}
+
+fn quote_identifier(value: &str) -> String {
+    format!("\"{}\"", value.replace('"', "\"\""))
+}
+
+fn sql_literal(value: &Json) -> String {
+    match value {
+        Json::Null => "NULL".into(),
+        Json::Bool(value) => value.to_string().to_uppercase(),
+        Json::Number(value) => value.to_string(),
+        Json::String(value) => format!("'{}'", value.replace('\'', "''")),
+        _ => format!("'{}'", value.to_string().replace('\'', "''")),
+    }
+}
+
+fn snapshot_tables(connection: &Connection, project_id: &str, tables: &[String]) -> Result<Json> {
+    let mut snapshots = serde_json::Map::new();
+    for table in tables {
+        let filter = if connection.query_row("SELECT COUNT(*) FROM information_schema.columns WHERE table_name = ?1 AND column_name = 'project_id'", [table], |row| row.get::<_, i64>(0))? > 0 { format!(" WHERE project_id = '{}'", project_id.replace('\'', "''")) } else { String::new() };
+        let mut statement = connection.prepare(&format!("SELECT to_json(t) FROM {} t{}", quote_identifier(table), filter))?;
+        let mut rows = statement.query([])?;
+        let mut snapshot = Vec::new();
+        while let Some(row) = rows.next()? {
+            let text: String = row.get(0)?;
+            snapshot.push(serde_json::from_str::<Json>(&text).map_err(|error| Error::new(ErrorCode::SchemaMismatch, error.to_string()))?);
+        }
+        snapshots.insert(table.clone(), Json::Array(snapshot));
+    }
+    Ok(Json::Object(snapshots))
+}
+
+fn restore_tables(connection: &Connection, project_id: &str, snapshots: &Json) -> Result<()> {
+    for (table, rows) in snapshots.as_object().ok_or_else(|| Error::new(ErrorCode::SchemaMismatch, "table snapshot must be an object"))? {
+        let mut schema = connection.prepare(&format!("DESCRIBE {}", quote_identifier(table)))?;
+        let columns: Vec<(String, String)> = schema.query_map([], |row| Ok((row.get(0)?, row.get(1)?)))?.collect::<std::result::Result<_, _>>()?;
+        let delete = if columns.iter().any(|(name, _)| name == "project_id") { format!("DELETE FROM {} WHERE project_id = ?1", quote_identifier(table)) } else { format!("DELETE FROM {}", quote_identifier(table)) };
+        if columns.iter().any(|(name, _)| name == "project_id") { connection.execute(&delete, [project_id])?; } else { connection.execute(&delete, [])?; }
+        for row in rows.as_array().ok_or_else(|| Error::new(ErrorCode::SchemaMismatch, "table snapshot rows must be an array"))? {
+            let expressions = columns
+                .iter()
+                .map(|(name, _)| sql_literal(row.get(name).unwrap_or(&Json::Null)))
+                .collect::<Vec<_>>()
+                .join(", ");
+            let sql = format!("INSERT INTO {} VALUES ({expressions})", quote_identifier(table));
+            connection.execute(&sql, [])?;
+        }
+    }
+    Ok(())
 }
 
 #[derive(Debug, Clone)]
@@ -526,8 +575,10 @@ pub struct Method {
     pub domain: String,
     pub parameters: ParameterSchema,
     pub cacheable: bool,
+    pub writes: Vec<String>,
     pub required_methods: Vec<String>,
-    pub max_occurrences: usize,
+    pub single_occurrence: bool,
+    pub implemented: bool,
     executor: MethodExecutor,
     validator: Option<MethodValidator>,
 }
@@ -548,8 +599,10 @@ impl Method {
             domain: domain.into(),
             parameters,
             cacheable: false,
+            writes: Vec::new(),
             required_methods: Vec::new(),
-            max_occurrences: 0,
+            single_occurrence: false,
+            implemented: true,
             executor,
             validator: None,
         }
@@ -562,7 +615,7 @@ impl Method {
             "description": self.description,
             "domain": self.domain,
             "required_methods": self.required_methods,
-            "max_occurrences": self.max_occurrences,
+            "single_occurrence": self.single_occurrence,
             "parameters": self.parameters.definitions.iter().map(|definition| json!({
                 "name": definition.name,
                 "description": definition.description,
@@ -571,7 +624,8 @@ impl Method {
                 "required": definition.required
                 ,"example": definition.example
             })).collect::<Vec<_>>(),
-            "cacheable": self.cacheable
+            "cacheable": self.cacheable,
+            "writes": self.writes
         })
     }
     pub fn resolve(&self, values: &Json) -> Result<Json> {
@@ -580,6 +634,10 @@ impl Method {
             validator(&resolved)?;
         }
         Ok(resolved)
+    }
+    pub fn unimplemented(mut self) -> Self {
+        self.implemented = false;
+        self
     }
     pub fn run(&self, project: &mut Project, values: &Json) -> Result<Json> {
         (self.executor)(project, &self.resolve(values)?)
@@ -750,17 +808,17 @@ impl Workflow {
             .collect::<Vec<_>>())
     }
     pub fn to_json_with_registry(&self, registry: &MethodRegistry) -> Result<Json> {
-        Ok(Json::Array(
-            self.steps
-                .iter()
-                .map(|step| {
-                    let method = registry.get(&step.method)?;
-                    let mut value = step.metadata.clone().unwrap_or_else(|| method.to_json());
-                    value["parameters"] = step.parameters.clone();
-                    Ok(value)
-                })
-                .collect::<Result<Vec<_>>>()?,
-        ))
+        Ok(json!({
+            "name": self.name,
+            "version": self.version,
+            "domain": self.domain,
+            "steps": self.steps.iter().map(|step| {
+                let method = registry.get(&step.method)?;
+                let mut value = step.metadata.clone().unwrap_or_else(|| method.to_json());
+                value["parameters"] = step.parameters.clone();
+                Ok(value)
+            }).collect::<Result<Vec<_>>>()?,
+        }))
     }
     pub fn from_json(value: &Json) -> Result<Self> {
         if let Some(items) = value.as_array() {
@@ -800,10 +858,11 @@ impl Workflow {
             .ok_or_else(|| Error::new(ErrorCode::WorkflowValidation, "workflow requires steps"))?
             .iter()
             .map(|item| {
-                Ok(WorkflowStep {
-                    method: item
-                        .get("method")
-                        .and_then(Value::as_str)
+                    Ok(WorkflowStep {
+                        method: item
+                            .get("method")
+                            .or_else(|| item.get("id"))
+                            .and_then(Value::as_str)
                         .ok_or_else(|| {
                             Error::new(ErrorCode::WorkflowValidation, "step requires method")
                         })?
@@ -833,6 +892,12 @@ impl Workflow {
         let mut counts = HashMap::new();
         for step in &self.steps {
             let method = registry.get(&step.method)?;
+            if !method.implemented {
+                return Err(Error::new(
+                    ErrorCode::WorkflowValidation,
+                    format!("method is not implemented: {}", step.method),
+                ));
+            }
             if !self.domain.is_empty() && !method.domain.is_empty() && self.domain != method.domain
             {
                 return Err(Error::new(
@@ -850,7 +915,7 @@ impl Workflow {
             }
             let count = counts.entry(step.method.clone()).or_insert(0);
             *count += 1;
-            if method.max_occurrences > 0 && *count > method.max_occurrences {
+            if method.single_occurrence && *count > 1 {
                 return Err(Error::new(
                     ErrorCode::WorkflowValidation,
                     format!("method occurs too many times: {}", step.method),
@@ -934,7 +999,7 @@ impl Project {
         };
         let connection = project.connection()?;
         if !project.options.read_only {
-            connection.execute_batch("CREATE TABLE IF NOT EXISTS PROJECT (project_id VARCHAR NOT NULL PRIMARY KEY, domain VARCHAR, metadata JSON, workflow JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, schema_version INTEGER NOT NULL DEFAULT 1, framework_version VARCHAR NOT NULL DEFAULT '0.1.0'); CREATE TABLE IF NOT EXISTS CACHE (project_id VARCHAR NOT NULL, name VARCHAR NOT NULL, description VARCHAR NOT NULL, hash VARCHAR NOT NULL, data BLOB NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, hash)); CREATE TABLE IF NOT EXISTS AUDIT_TRAIL (project_id VARCHAR NOT NULL, operation_type VARCHAR NOT NULL, object_type VARCHAR NOT NULL, operation_details JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP);")?;
+            connection.execute_batch("CREATE TABLE IF NOT EXISTS PROJECT (project_id VARCHAR NOT NULL PRIMARY KEY, domain VARCHAR, metadata JSON, workflow JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, schema_version INTEGER NOT NULL DEFAULT 1, framework_version VARCHAR NOT NULL DEFAULT '0.1.0'); CREATE TABLE IF NOT EXISTS CACHE (project_id VARCHAR NOT NULL, name VARCHAR NOT NULL, description VARCHAR NOT NULL, hash VARCHAR NOT NULL, data BLOB NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, hash)); CREATE TABLE IF NOT EXISTS AUDIT_TRAIL (project_id VARCHAR NOT NULL, operation_type VARCHAR NOT NULL, object_type VARCHAR NOT NULL, operation_details JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); CREATE TABLE IF NOT EXISTS WORKFLOW_EXECUTION (project_id VARCHAR NOT NULL, workflow_revision INTEGER NOT NULL, step_index INTEGER NOT NULL, method VARCHAR NOT NULL, parameter_hash VARCHAR NOT NULL, status VARCHAR NOT NULL, started_at TIMESTAMP, completed_at TIMESTAMP, error VARCHAR, cache_key VARCHAR NOT NULL, PRIMARY KEY(project_id, workflow_revision, step_index));")?;
             connection.execute("INSERT INTO PROJECT (project_id, domain, metadata, workflow) VALUES (?1, ?2, '{}', '[]') ON CONFLICT(project_id) DO NOTHING", params![project.options.project_id, project.options.domain])?;
         }
         let row = connection.query_row("SELECT project_id, COALESCE(domain, ''), COALESCE(metadata, '{}'), schema_version, framework_version, CAST(created_at AS VARCHAR) FROM PROJECT WHERE project_id = ?1", params![project.options.project_id], |row| Ok(ProjectInfo { id: row.get(0)?, domain: row.get(1)?, metadata: serde_json::from_str(&row.get::<_, String>(2)?).unwrap_or_else(|_| json!({})), schema_version: row.get(3)?, framework_version: row.get(4)?, created_at: row.get(5)? }))?;
@@ -1022,7 +1087,7 @@ impl Project {
     }
     pub fn validate(&self) -> Result<()> {
         let tables = self.list_tables()?;
-        for required in ["PROJECT", "CACHE", "AUDIT_TRAIL"] {
+        for required in ["PROJECT", "CACHE", "AUDIT_TRAIL", "WORKFLOW_EXECUTION"] {
             if !tables.iter().any(|table| table == required) {
                 return Err(Error::new(
                     ErrorCode::SchemaMismatch,
@@ -1165,6 +1230,14 @@ impl Project {
             .collect::<std::result::Result<Vec<_>, _>>()?;
         Ok(rows)
     }
+    pub fn get_workflow_execution(&self) -> Result<Json> {
+        let project_id = self.get_project_id().replace('\'', "''");
+        self.query_json(&format!("SELECT project_id, workflow_revision, step_index, method, parameter_hash, status, started_at, completed_at, error, cache_key FROM WORKFLOW_EXECUTION WHERE project_id = '{project_id}' ORDER BY workflow_revision, step_index"))
+    }
+    fn record_execution(&self, revision: i32, index: usize, method: &str, parameter_hash: &str, status: &str, cache_key: &str, error: Option<&str>) -> Result<()> {
+        self.connection()?.execute("INSERT INTO WORKFLOW_EXECUTION (project_id, workflow_revision, step_index, method, parameter_hash, status, started_at, completed_at, error, cache_key) VALUES (?1, ?2, ?3, ?4, ?5, ?6, CASE WHEN ?6 = 'running' THEN CURRENT_TIMESTAMP ELSE NULL END, CASE WHEN ?6 IN ('succeeded', 'failed') THEN CURRENT_TIMESTAMP ELSE NULL END, ?7, ?8) ON CONFLICT(project_id, workflow_revision, step_index) DO UPDATE SET status = excluded.status, started_at = COALESCE(WORKFLOW_EXECUTION.started_at, excluded.started_at), completed_at = excluded.completed_at, error = excluded.error, cache_key = excluded.cache_key", params![self.get_project_id(), revision, index as i64, method, parameter_hash, status, error, cache_key])?;
+        Ok(())
+    }
     pub fn run_method(
         &mut self,
         method_id: &str,
@@ -1172,25 +1245,50 @@ impl Project {
         registry: &MethodRegistry,
     ) -> Result<Json> {
         let method = registry.get(method_id)?;
-        let mut workflow = self.get_workflow()?;
-        workflow.domain = if workflow.domain.is_empty() {
-            self.get_domain()
-        } else {
-            workflow.domain
-        };
-        workflow.steps.push(WorkflowStep {
-            method: method_id.into(),
-            parameters: parameters.clone(),
-            metadata: None,
-        });
-        self.set_workflow(workflow, registry)?;
+        let workflow = self.get_workflow()?;
         let resolved = method.resolve(parameters)?;
+        workflow.validate(registry)?;
+        let index = (0..workflow.steps.len())
+            .find(|index| self.connection().ok().and_then(|connection| connection.query_row("SELECT status FROM WORKFLOW_EXECUTION WHERE project_id = ?1 AND workflow_revision = ?2 AND step_index = ?3", params![self.get_project_id(), workflow.version, *index as i64], |row| row.get::<_, String>(0)).optional().ok().flatten()).as_deref() != Some("succeeded"))
+            .ok_or_else(|| Error::new(ErrorCode::WorkflowValidation, "workflow has no pending steps"))?;
+        if workflow.steps[index].method != method_id {
+            return Err(Error::new(ErrorCode::WorkflowValidation, "method is not the next planned workflow step"));
+        }
+        if workflow.steps[index].parameters != resolved { return Err(Error::new(ErrorCode::WorkflowValidation, "parameters do not match the planned workflow step")); }
+        let previous_hash = if index == 0 { "initial".into() } else {
+            self.get_workflow_execution()?.as_array().and_then(|rows| rows.iter().find(|row| row["workflow_revision"] == workflow.version && row["step_index"] == index - 1 && row["status"] == "succeeded")).and_then(|row| row["cache_key"].as_str()).unwrap_or("initial").to_owned()
+        };
+        if index > 0 && previous_hash == "initial" { return Err(Error::new(ErrorCode::WorkflowValidation, "previous workflow step has not succeeded")); }
+        let parameter_hash = cache_key("parameters", method, &resolved);
+        let key = cache_key(&previous_hash, method, &resolved);
+        self.record_execution(workflow.version, index, method_id, &parameter_hash, "running", &key, None)?;
         self.audit(
             "start",
             "method",
             json!({"method": method_id, "parameters": resolved}),
         )?;
-        let result = method.run(self, &resolved)?;
+        let result = if method.cacheable {
+            if let Some(entry) = self.get_cache_entry(&key)? {
+                let payload: Json = serde_json::from_slice(&entry.data).map_err(|error| Error::new(ErrorCode::SchemaMismatch, error.to_string()))?;
+                if !payload["result"].is_null() && payload["tables"].is_object() {
+                    restore_tables(&self.connection()?, self.get_project_id(), &payload["tables"])?;
+                    self.record_execution(workflow.version, index, method_id, &parameter_hash, "succeeded", &key, None)?;
+                    payload["result"].clone()
+                } else {
+                    return Err(Error::new(ErrorCode::SchemaMismatch, "cache entry has no materialized tables"));
+                }
+            } else {
+                let result = method.run(self, &resolved)?;
+                let snapshots = snapshot_tables(&self.connection()?, self.get_project_id(), &method.writes)?;
+                self.set_cache(&method.id, "workflow result", &key, &json!({"result": result, "tables": snapshots}))?;
+                self.record_execution(workflow.version, index, method_id, &parameter_hash, "succeeded", &key, None)?;
+                result
+            }
+        } else {
+            let result = method.run(self, &resolved)?;
+            self.record_execution(workflow.version, index, method_id, &parameter_hash, "succeeded", &key, None)?;
+            result
+        };
         self.audit("complete", "method", json!({"method": method_id}))?;
         Ok(result)
     }
@@ -1216,6 +1314,7 @@ impl Project {
     ) -> Result<ExecutionResult> {
         workflow.validate(registry)?;
         let mut results = Vec::new();
+        let mut previous_hash = "initial".to_string();
         for (index, step) in workflow.steps.iter().enumerate() {
             if cancellation.is_some_and(CancellationToken::is_cancelled) {
                 return Ok(ExecutionResult {
@@ -1225,18 +1324,20 @@ impl Project {
             }
             let method = registry.get(&step.method)?;
             let parameters = method.resolve(&step.parameters)?;
-            let key = cache_key(self.get_project_id(), &method.id, &parameters);
+            let key = cache_key(&previous_hash, method, &parameters);
+            let parameter_hash = cache_key("parameters", method, &parameters);
+            self.record_execution(workflow.version, index, &method.id, &parameter_hash, "pending", &key, None)?;
             if method.cacheable {
                 if let Some(entry) = self.get_cache_entry(&key)? {
-                    results.push(serde_json::from_slice(&entry.data).map_err(|error| {
-                        Error::new(ErrorCode::SchemaMismatch, error.to_string())
-                    })?);
-                    self.audit(
-                        "cache_hit",
-                        "workflow_step",
-                        json!({"method": method.id, "cache_key": key}),
-                    )?;
-                    continue;
+                    let payload: Json = serde_json::from_slice(&entry.data).map_err(|error| Error::new(ErrorCode::SchemaMismatch, error.to_string()))?;
+                    if payload.get("result").is_some() && payload.get("tables").is_some_and(Json::is_object) {
+                        restore_tables(&self.connection()?, self.get_project_id(), &payload["tables"])?;
+                        results.push(payload["result"].clone());
+                        self.audit("cache_hit", "workflow_step", json!({"method": method.id, "cache_key": key}))?;
+                        self.record_execution(workflow.version, index, &method.id, &parameter_hash, "succeeded", &key, None)?;
+                        previous_hash = key;
+                        continue;
+                    }
                 }
                 self.audit(
                     "cache_miss",
@@ -1245,11 +1346,18 @@ impl Project {
                 )?;
             }
             self.audit("start", "workflow_step", json!({"method": method.id}))?;
-            let result = method.run(self, &parameters)?;
+            self.record_execution(workflow.version, index, &method.id, &parameter_hash, "running", &key, None)?;
+            let result = match method.run(self, &parameters) {
+                Ok(result) => result,
+                Err(error) => { self.record_execution(workflow.version, index, &method.id, &parameter_hash, "failed", &key, Some(&error.to_string()))?; return Err(error); }
+            };
             if method.cacheable {
-                self.set_cache(&method.id, "workflow result", &key, &result)?;
+                let snapshots = snapshot_tables(&self.connection()?, self.get_project_id(), &method.writes)?;
+                self.set_cache(&method.id, "workflow result", &key, &json!({"result": result.clone(), "tables": snapshots}))?;
             }
             results.push(result);
+            self.record_execution(workflow.version, index, &method.id, &parameter_hash, "succeeded", &key, None)?;
+            previous_hash = key.clone();
             if let Some(progress) = progress {
                 progress(&ProgressEvent {
                     operation: "workflow".into(),

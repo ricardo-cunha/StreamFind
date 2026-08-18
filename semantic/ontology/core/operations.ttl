@@ -115,6 +115,21 @@ sfcore:getWorkflow
     sf:reads sfcore:projectTable ;
     sf:mutatesProject false .
 
+sfcore:getWorkflowExecution
+    a sf:Operation ;
+    skos:inScheme sfcore:scheme ;
+    sf:operationId "get_workflow_execution" ;
+    skos:prefLabel "Read workflow execution" ;
+    skos:definition "Return execution status, hashes, timestamps, errors, and cache keys for the project's workflow steps." ;
+    sf:availableInDomain sfcore:streamfind ;
+    sf:toolName "get_workflow_execution" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter ;
+    sf:returns sfcore:workflowExecutionEntriesResult ;
+    sf:reads sfcore:workflowExecutionTable ;
+    sf:mutatesProject false .
+
 sfcore:setWorkflow
     a sf:Operation ;
     skos:inScheme sfcore:scheme ;
@@ -270,8 +285,8 @@ sfcore:runMethod
     a sf:Operation ;
     skos:inScheme sfcore:scheme ;
     sf:operationId "run_method" ;
-    skos:prefLabel "Append and run a workflow method" ;
-    skos:definition "Append a method to a project's workflow, validate it, and execute it." ;
+    skos:prefLabel "Run a planned workflow method" ;
+    skos:definition "Execute only the next pending method already present in the project's workflow." ;
     sf:availableInDomain sfcore:streamfind ;
     sf:toolName "run_method" ;
     sf:hasParameter
@@ -313,7 +328,7 @@ sfcore:close
         sfcore:databasePathParameter,
         sfcore:projectIdParameter ;
     sf:returns sfcore:operationStatusResult ;
-    sf:mutatesProject true .
+     sf:mutatesProject false .
 
 sfcore:connect
     a sf:Operation ;

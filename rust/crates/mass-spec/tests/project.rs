@@ -65,7 +65,7 @@ fn domain_smoke_matches_cpp_mass_spec_operations() {
     .unwrap();
     let mut operations = OperationRegistry::default();
     streamfind_rust_mass_spec::register_operations(&mut operations).unwrap();
-    assert_eq!(operations.list("mass_spec").len(), 19);
+    assert_eq!(operations.list("mass_spec").len(), 20);
     let parameter_count = |id: &str| {
         operations
             .list("mass_spec")
@@ -82,8 +82,9 @@ fn domain_smoke_matches_cpp_mass_spec_operations() {
     assert_eq!(parameter_count("mass_spec.get_chromatograms"), 4);
     assert_eq!(parameter_count("mass_spec.get_raw_chromatograms"), 4);
     assert_eq!(parameter_count("mass_spec.get_raw_spectra"), 9);
-    assert_eq!(parameter_count("mass_spec.get_raw_spectra_ms1"), 12);
-    assert_eq!(parameter_count("mass_spec.get_raw_spectra_ms2"), 13);
+    assert_eq!(parameter_count("mass_spec.get_raw_spectra_eic"), 8);
+    assert_eq!(parameter_count("mass_spec.get_raw_spectra_ms1"), 11);
+    assert_eq!(parameter_count("mass_spec.get_raw_spectra_ms2"), 12);
     assert!(operations
         .list("mass_spec")
         .iter()

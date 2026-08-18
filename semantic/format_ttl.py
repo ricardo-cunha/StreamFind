@@ -51,7 +51,8 @@ def split_objects(text):
 def format_predicate(predicate):
     name, objects = predicate.strip().split(None, 1)
     terminator = "." if objects.endswith(".") else ";"
-    objects = objects[:-1].rstrip()
+    if objects.endswith((";", ".")):
+        objects = objects[:-1].rstrip()
     values = split_objects(objects)
     if name not in LIST_PREDICATES or len(values) < 2:
         return [f"    {name} {objects} {terminator}"]

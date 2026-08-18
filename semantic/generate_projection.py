@@ -75,6 +75,14 @@ def projection():
     def result_type(result):
         return str(graph.value(result, SF.type))
 
+    def method_metadata(method):
+        required = graph.value(method, SF.requiredMethods)
+        return {
+            "cacheable": bool(graph.value(method, SF.cacheable).toPython()),
+            "required_methods": [str(value) for value in graph.items(required)] if required else [],
+            "single_occurrence": bool(graph.value(method, SF.singleOccurrence).toPython()),
+        }
+
     def result_schema(result):
         if result is None:
             return {"type": "object"}
@@ -134,7 +142,7 @@ def projection():
             "reads": [str(graph.value(table, SF.tableName)) for table in graph.objects(operation, SF.reads)],
             "writes": [str(graph.value(table, SF.tableName)) for table in graph.objects(operation, SF.writes)],
         }
-        entries.append({
+        entry = {
             "kind": kind,
             "canonical_id": canonical_id,
             "domain": domain,
@@ -153,7 +161,10 @@ def projection():
             "parameters": values,
             "result": {"id": str(result_node), "schema": result_schema(result_node)},
             "effects": effects,
-        })
+        }
+        if kind == "method":
+            entry.update(method_metadata(operation))
+        entries.append(entry)
     entries.sort(key=lambda value: value["canonical_id"])
     return {"version": 1, "entries": entries}
 
