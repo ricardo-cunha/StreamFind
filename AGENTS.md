@@ -1,0 +1,172 @@
+# StreamFind Agent Instructions
+
+## General Guidance
+
+- Read and follow the applicable skill below before making changes in its area.
+- Keep changes focused and preserve the existing architecture and package boundaries.
+- Do not modify third-party or vendored source under `core/vendor/` unless explicitly requested.
+- Run the narrowest relevant validation after each change and report concrete results.
+
+## C++ Project Rules
+
+- Do not create anonymous namespaces (`namespace {}`) in project C++ code.
+- Use an explicit named internal namespace such as `streamfind::detail` for non-public helpers, or use a file-local `static` function where appropriate.
+- This rule applies to `core/` and project-owned C++ code. Do not rewrite third-party or vendored source under `core/vendor/`.
+
+## Rust Project Rules
+
+- Put Rust tests in the owning crate's `tests/` directory. Do not add inline `#[cfg(test)] mod tests` modules to implementation files.
+- Keep integration tests under the relevant crate, such as `rust/crates/core/tests/` or `rust/crates/cli/tests/`.
+
+## Legacy-Free Development
+
+During the active StreamFind refactor, the codebase must move toward the target architecture without accumulating legacy scaffolding.
+
+### Required Rules
+
+- Do not create a legacy fallback, compatibility shim, forwarding module/package, duplicate source tree, dual execution path, transitional adapter, or migration helper.
+- Do not preserve an old API or build path because the replacement is incomplete. Implement the replacement at its intended boundary.
+- Treat relocations as atomic: after a move, there must be one owning implementation path.
+- Do not add feature flags that select old versus new behaviour.
+- Repairing an existing package or build break is allowed only when it preserves current behaviour without adding a new compatibility layer.
+
+### Deferred Boundaries
+
+- Treat `bindings/r` as a preserved, functional package during the current C++/Python and Rust implementation work. Do not refactor it, redirect it, or add R migration helpers until those implementations are complete.
+- Treat `integrations/cf-streamfind` the same way: defer public-Python integration work until the end-state C++/Python and Rust domain implementations are complete.
+
+### When Compatibility Is Truly Required
+
+For a released, user-facing transition that genuinely requires compatibility or data migration:
+
+1. Stop the routine refactor.
+2. Request an explicit, separately scoped decision.
+3. Document the supported versions, removal date, and tests.
+4. Isolate the transition code from the target implementation.
+5. Remove it when the approved transition window ends.
+
+Never introduce such code speculatively.
+
+## Repository Python Environment
+
+Use the repository-local `.venv` for every Python script, test, formatter, or package command in this repository. Use the same environment for dependency installation.
+
+- Never run repository Python code with the system interpreter.
+- Use `.venv\Scripts\python.exe` on Windows and `.venv/bin/python` on POSIX.
+- Create `.venv` in the repository root if it does not exist.
+- Install dependencies only into that environment.
+- Prefer `python -m pip` through the selected interpreter.
+- Verify the selected interpreter before running a script:
+  - Windows: `.venv\Scripts\python.exe -c "import sys; print(sys.executable)"`
+  - POSIX: `.venv/bin/python -c 'import sys; print(sys.executable)'`
+- Do not use `python`, `python3`, or a system `pip` directly for repository work.
+
+## Turtle Ontology Formatting
+
+Use this style for every edit to `semantic/ontology/**/*.ttl`.
+
+### Syntax
+
+- Keep the file as Turtle, not TriG. Do not add graph-wrapper braces around the document.
+- Keep the existing `@prefix` declarations at the top of the file.
+- Use the Turtle `a` shorthand for `rdf:type`; do not expand it to the full RDF type IRI.
+- Use prefixed names such as `sf:Operation`, `sfcore:mass_spec`, and `skos:prefLabel` instead of full IRIs when a prefix exists.
+- End declarations with `.` and use `;` for continued predicates.
+- Use commas only for compact lists of objects with the same predicate.
+
+### Layout
+
+- Put one named resource per block.
+- Indent predicates four spaces from the subject and continued objects eight spaces.
+- Put long predicate lists on separate lines.
+- Keep labels and definitions adjacent to the resource type.
+- Keep `skos:inScheme sfcore:scheme` on catalogue concepts that belong to the shared scheme.
+- Keep domain declarations in `semantic/ontology/domains/<domain>/` and generic declarations in `semantic/ontology/core/`.
+- Keep table columns and result properties explicit; do not hide schemas in comments or implementation code.
+
+Example:
+
+```turtle
+sfcore:example
+    a sf:Operation ;
+    skos:inScheme sfcore:scheme ;
+    sf:operationId "example" ;
+    skos:prefLabel "Example operation" ;
+    skos:definition "A concise description of the operation." ;
+    sf:returns sfcore:exampleResult ;
+    sf:mutatesProject false .
+```
+
+### Ontology Validation
+
+Before validation, use the repository formatter when ontology formatting is
+needed:
+
+```powershell
+& ".venv\Scripts\python.exe" semantic\format_ttl.py
+```
+
+Run it from the repository root. The script formats every `*.ttl` file under
+`semantic/ontology/`; inspect the resulting diff and avoid using it when an
+unrelated formatting-only rewrite would obscure the intended change.
+
+After ontology edits, run from the repository root:
+
+```powershell
+& ".venv\Scripts\python.exe" semantic\validate_semantic.py
+& ".venv\Scripts\python.exe" semantic\generate_projection.py --check
+```
+
+If the projection is intentionally changed, regenerate it first:
+
+```powershell
+& ".venv\Scripts\python.exe" semantic\generate_projection.py
+```
+
+## R Package Native Build
+
+Use this workflow for native C++ and Rcpp work in the StreamFind R package.
+
+### Package Root
+
+The R package root is `<repository-root>/bindings/r`. Run all R package commands with `bindings/r` as the working directory; do not treat the repository root as the R package root.
+
+### Required Validation
+
+After native or R changes, load the package with `devtools::load_all()`:
+
+```powershell
+Rscript -e "devtools::load_all()"
+```
+
+Run that command from `bindings/r`. This is the required package compilation and load check for this workflow. Do not substitute `R CMD check` for this routine unless the user explicitly requests a full CRAN-style check.
+
+### Generated Files
+
+Never manually edit generated or compiled package outputs, including:
+
+- `src/RcppExports.cpp`
+- `R/RcppExports.R`
+- `src/**/*.o`
+- `src/**/*.dll`
+- generated `man/*.Rd` files
+
+Use the project's R tooling to regenerate files when generation is explicitly required. `devtools::load_all()` must be used to compile and load the package; do not patch generated output to make a build pass.
+
+### Native Change Workflow
+
+1. Identify the package-relative native source under `bindings/r/src/`.
+2. Make the smallest source change in the hand-authored C++ or R file.
+3. Run `devtools::load_all()` from `bindings/r`.
+4. Inspect the first compiler or loader error and fix the owning source.
+5. Re-run `devtools::load_all()` until the package loads successfully.
+6. Run the narrowest relevant R tests or development fixture after loading.
+
+Keep the existing R package build authority in `bindings/r/src/Makevars` and `bindings/r/src/Makevars.win` until a later migration phase replaces it with the standalone core build. Do not move native code to `core/` as part of a routine compilation check.
+
+### Failure Rules
+
+- Do not delete or rewrite generated exports to bypass an error.
+- Do not compile from the repository root.
+- Do not introduce a second package root or compatibility copy.
+- Do not claim validation passed unless `devtools::load_all()` completed.

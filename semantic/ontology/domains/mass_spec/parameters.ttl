@@ -1,0 +1,285 @@
+@prefix sfms: <https://streamfind.dev/catalogue/domains/mass_spec#> .
+@prefix sf: <https://streamfind.dev/vocabulary#> .
+@prefix sfcore: <https://streamfind.dev/catalogue/core#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+sfms:levelsParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "MS levels" ;
+    skos:definition "Optional mass spectrometry levels to include." ;
+    sf:type "array" ;
+    sf:required false ;
+    sf:items sfcore:integerItemParameter ;
+    sf:example "[1,2]" .
+
+sfms:rtMinParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Minimum retention time" ;
+    skos:definition "Optional lower retention-time bound." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 900.0 .
+
+sfms:rtMaxParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Maximum retention time" ;
+    skos:definition "Optional upper retention-time bound." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 1200.0 .
+
+sfms:mzMinParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Minimum m/z" ;
+    skos:definition "Optional lower m/z bound." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 100.0 .
+
+sfms:mzMaxParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Maximum m/z" ;
+    skos:definition "Optional upper m/z bound." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 1000.0 .
+
+sfms:indicesParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Indices" ;
+    skos:definition "Optional zero-based data row indices." ;
+    sf:type "array" ;
+    sf:required false ;
+    sf:items sfcore:integerItemParameter ;
+    sf:example "[0,2]" .
+
+sfms:rtWindowsMinParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Feature RT window minimums" ;
+    skos:definition "Lower retention-time bounds for feature detection windows." ;
+    sf:type "array" ;
+    sf:required true ;
+    sf:items sfcore:realItemParameter ;
+    sf:example "[0.0]" .
+
+sfms:rtWindowsMaxParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Feature RT window maximums" ;
+    skos:definition "Upper retention-time bounds for feature detection windows." ;
+    sf:type "array" ;
+    sf:required true ;
+    sf:items sfcore:realItemParameter ;
+    sf:example "[1800.0]" .
+
+sfms:ppmThresholdParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Feature ppm threshold" ;
+    skos:definition "Maximum relative m/z distance used to group MS1 traces." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 15.0 .
+
+sfms:noiseThresholdParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Feature noise threshold" ;
+    skos:definition "Minimum MS1 intensity considered during feature detection." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 15.0 .
+
+sfms:minSnrParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Minimum feature SNR" ;
+    skos:definition "Minimum signal-to-noise ratio for a detected feature." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 3.0 .
+
+sfms:minTracesParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Minimum feature traces" ;
+    skos:definition "Minimum number of spectra contributing to a detected feature." ;
+    sf:type "integer" ;
+    sf:required false ;
+    sf:example 3 .
+
+sfms:baselineWindowParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Baseline window";
+    skos:definition "Retention-time baseline window used by NTA peak detection.";
+    sf:type "real";
+    sf:required false ;
+    sf:example 30.0 .
+
+sfms:maxFeatureWidthParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Maximum feature width";
+    skos:definition "Maximum chromatographic peak width used by NTA peak detection.";
+    sf:type "real";
+    sf:required false ;
+    sf:example 30.0 .
+
+sfms:baseQuantileParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Base noise quantile";
+    skos:definition "Base quantile for adaptive per-spectrum noise estimation.";
+    sf:type "real";
+    sf:required false ;
+    sf:example 0.1 .
+
+sfms:targetsParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry targets" ;
+    skos:definition "Array of independent target objects." ;
+    sf:type "array" ;
+    sf:required false ;
+    sf:example "[{\"id\":\"caffeine\",\"mass\":194.0804}]" ;
+    sf:items sfms:targetRangeParameter .
+
+sfms:targetRangeParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry target" ;
+    skos:definition "One independent mass spectrometry target object." ;
+    sf:type "object" ;
+    sf:required true ;
+    sf:example "{\"id\":\"caffeine\",\"mass\":194.0804}" ;
+    sf:hasProperty
+        sfms:targetIdField,
+        sfms:targetAnalysesField,
+        sfms:targetPolarityField,
+        sfms:targetLevelsField,
+        sfms:targetMassField,
+        sfms:targetMassMinField,
+        sfms:targetMassMaxField,
+        sfms:targetMzField,
+        sfms:targetMzMinField,
+        sfms:targetMzMaxField,
+        sfms:targetRtField,
+        sfms:targetRtMinField,
+        sfms:targetRtMaxField .
+
+sfms:polarityParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Ion polarity" ;
+    skos:definition "Ion polarity, -1 for negative or 1 for positive." ;
+    sf:type "integer" ;
+    sf:required false ;
+    sf:example 1 .
+
+sfms:ppmParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass tolerance" ;
+    skos:definition "Mass tolerance in parts per million." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 20.0 .
+
+sfms:rtToleranceParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Retention-time tolerance" ;
+    skos:definition "Tolerance applied to an exact target retention time." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 60.0 .
+
+sfms:chargeParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Ion charge" ;
+    skos:definition "Charge used when converting neutral mass to m/z." ;
+    sf:type "integer" ;
+    sf:required false ;
+    sf:example 1 .
+
+sfms:mzClustParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "m/z clustering tolerance" ;
+    skos:definition "Maximum m/z distance used when merging points." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 0.003 .
+
+sfms:presenceParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Trace presence" ;
+    skos:definition "Minimum fraction of unique retention times in which a cluster must appear." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 0.8 .
+
+sfms:isolationWindowParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Isolation window" ;
+    skos:definition "Precursor isolation window width." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 1.3 .
+
+sfms:minIntensityMs1Parameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Minimum MS1 intensity" ;
+    skos:definition "Minimum peak intensity retained from MS1 spectra." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 1000.0 .
+
+sfms:minIntensityMs2Parameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Minimum MS2 intensity" ;
+    skos:definition "Minimum peak intensity retained from MS2 spectra." ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 100.0 .
+
+sfms:chromatogramIdRegexParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Chromatogram ID regular expressions" ;
+    skos:definition "Regular expressions used to select chromatogram identifiers." ;
+    sf:type "array" ;
+    sf:required false ;
+    sf:items sfcore:stringItemParameter ;
+    sf:example "[\"^TIC.*\"]" .
+
+sfms:ignoreCaseParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Ignore chromatogram ID case" ;
+    skos:definition "Whether chromatogram ID matching ignores case." ;
+    sf:type "boolean" ;
+    sf:required false ;
+    sf:example true .
+
+sfms:invertParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Invert chromatogram ID selection" ;
+    skos:definition "Keep chromatograms that do not match the supplied regular expressions." ;
+    sf:type "boolean" ;
+    sf:required false ;
+    sf:example false .

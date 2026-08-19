@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="author" content="Ricardo Cunha">
+<title>From LLM to Agent: Setting Up and Using Local Models</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, minimal-ui">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css">
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em;
+  vertical-align: middle;
+}
+.display.math{display: block; text-align: center; margin: 0.5rem auto;}
+
+:root {
+  --iuta-blue: #004c93;
+  --iuta-green: #009f45;
+  --iuta-text: #6f6f6f;
+  --iuta-footer-text: #004c93;
+  --iuta-code-bg: #ffffff;
+  --iuta-code-fg: #2f6b2d;
+  --iuta-side-gap: 52px;
+  --iuta-top-rule: 78px;
+  --iuta-bottom-rule: 60px;
+  --iuta-footer-bottom: 24px;
+  --iuta-slide-heading-font-size: 1.22em;
+  --iuta-subheading-font-size: 1.1em;
+  --iuta-body-font-size: 0.98em;
+  --iuta-callout-font-size: 0.98em;
+  --iuta-footer-font-size: 0.8em;
+  --iuta-code-font-size: 0.8em;
+  --iuta-inline-code-font-size: 0.92em;
+  --iuta-title-side-inset: 4.3408%;
+  --iuta-title-content-right: 26.6881%;
+  --iuta-title-heading-top: 40%;
+  --iuta-title-font-size: 1.42em;
+  --iuta-title-date-font-size: 0.62em;
+  --iuta-title-event-font-size: 0.66em;
+  --iuta-title-speakers-font-size: 1.02em;
+  --iuta-title-affiliations-font-size: 0.48em;
+  --iuta-thank-you-message-top: 41.94%;
+}
+
+.reveal {
+  background: #ffffff;
+  color: var(--iuta-text);
+  font-family: "Open Sans", "Segoe UI", Arial, sans-serif;
+  position: relative;
+}
+
+.reveal .slides {
+  text-align: left;
+}
+
+.reveal .slides section.slide {
+  box-sizing: border-box;
+  height: 100%;
+  inset: 0;
+  overflow: hidden;
+  padding: 80px var(--iuta-side-gap) 40px var(--iuta-side-gap);
+  position: absolute;
+}
+
+.reveal .slides section.slide.scrollable {
+  overflow: hidden;
+  overflow-y: auto;
+}
+
+.reveal .slides .iuta-chrome {
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 45;
+}
+
+.reveal .slides .iuta-chrome-top-rule,
+.reveal .slides .iuta-chrome-bottom-rule {
+  border-top: 2px solid var(--iuta-blue);
+  left: var(--iuta-side-gap);
+  position: absolute;
+  right: var(--iuta-side-gap);
+}
+
+.reveal .slides .iuta-chrome-top-rule {
+  top: var(--iuta-top-rule);
+}
+
+.reveal .slides .iuta-chrome-bottom-rule {
+  bottom: var(--iuta-bottom-rule);
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3,
+.reveal h4 {
+  color: var(--iuta-blue);
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.reveal .slides section.slide > h2 {
+  border: 0;
+  font-size: var(--iuta-slide-heading-font-size);
+  left: var(--iuta-side-gap);
+  margin: 0;
+  max-width: calc(100% - 170px);
+  padding: 0;
+  position: absolute;
+  right: 120px;
+  top: 22px;
+}
+
+.reveal h3 {
+  color: var(--iuta-text);
+  font-size: var(--iuta-subheading-font-size);
+  margin: 0.3em 0 0.5em 0;
+}
+
+.reveal p,
+.reveal li,
+.reveal td,
+.reveal th {
+  color: var(--iuta-text);
+  font-size: var(--iuta-body-font-size);
+  line-height: 1.34;
+}
+
+.reveal ul,
+.reveal ol {
+  margin-left: 1.1em;
+}
+
+.reveal ul li,
+.reveal ol li {
+  margin-bottom: 0.35em;
+}
+
+.reveal .iuta-table-gap {
+  height: 0.9em;
+}
+
+.reveal .iuta-highlight-callout {
+  background: #eef5fb;
+  border-left: 6px solid var(--iuta-blue);
+  border-radius: 10px;
+  color: #274560;
+  font-size: var(--iuta-callout-font-size);
+  font-weight: 700;
+  line-height: 1.35;
+  margin: 0;
+  padding: 0.7em 0.9em;
+}
+
+.reveal a {
+  border-bottom: 1px solid rgba(0, 76, 147, 0.35);
+  color: var(--iuta-blue);
+  text-decoration: none;
+}
+
+.reveal strong {
+  color: #3f3f3f;
+}
+
+.reveal .slide-logo,
+.reveal .slide-number {
+  display: none !important;
+}
+
+.reveal .slides .iuta-chrome-logo {
+  height: 56px;
+  max-height: none;
+  position: absolute;
+  right: 54px;
+  top: -1px;
+  width: auto;
+}
+
+.reveal .footer-default,
+.reveal .footer {
+  display: none;
+}
+
+.reveal .slides .iuta-global-footer {
+  align-items: center;
+  bottom: var(--iuta-footer-bottom);
+  color: var(--iuta-footer-text);
+  display: grid;
+  font-size: var(--iuta-footer-font-size);
+  gap: 1rem;
+  grid-template-columns: 1fr auto auto;
+  left: 52px;
+  pointer-events: none;
+  position: absolute;
+  right: 52px;
+}
+
+.reveal .slides .iuta-footer-left {
+  align-items: center;
+  display: inline-flex;
+  gap: 10px;
+  padding-left: 24px;
+  position: relative;
+  text-align: left;
+}
+
+.reveal .slides .iuta-footer-left-text {
+  display: inline-block;
+}
+
+.reveal .slides .iuta-menu-trigger {
+  background:
+    linear-gradient(var(--iuta-blue) 0 0) left top / 14px 2px no-repeat,
+    linear-gradient(var(--iuta-blue) 0 0) left center / 14px 2px no-repeat,
+    linear-gradient(var(--iuta-blue) 0 0) left bottom / 14px 2px no-repeat;
+  border: 0;
+  cursor: pointer;
+  flex: 0 0 auto;
+  height: 10px;
+  left: 0;
+  margin: 0;
+  padding: 0;
+  pointer-events: auto;
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 14px;
+}
+
+.reveal .slides .iuta-menu-trigger:hover,
+.reveal .slides .iuta-menu-trigger:focus-visible,
+.reveal .slides .iuta-menu-trigger.is-open {
+  filter: brightness(0.82);
+}
+
+.reveal .slides .iuta-footer-center {
+  text-align: center;
+  white-space: nowrap;
+}
+
+.reveal .slides .iuta-footer-right {
+  min-width: 2.5rem;
+  text-align: right;
+}
+
+.reveal .columns {
+  gap: 1.3rem;
+}
+
+.reveal div.sourceCode,
+.reveal pre.sourceCode,
+.reveal pre code {
+  background: var(--iuta-code-bg);
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.reveal div.sourceCode {
+  margin: 0;
+  padding: 0;
+}
+
+.reveal pre.sourceCode,
+.reveal pre code {
+  color: var(--iuta-code-fg);
+  font-family: "Source Code Pro", Consolas, "Courier New", monospace;
+  font-size: var(--iuta-code-font-size);
+  line-height: 1.38;
+  margin: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.reveal pre.sourceCode {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.reveal pre.sourceCode > code.sourceCode {
+  margin: 0;
+  padding-top: 15px;
+  padding-bottom: 15px;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.reveal code:not(.sourceCode) {
+  background: rgba(0, 76, 147, 0.08);
+  border-radius: 3px;
+  color: var(--iuta-blue);
+  font-size: var(--iuta-inline-code-font-size);
+  padding: 0.08em 0.28em;
+}
+
+.reveal .quarto-title-block {
+  color: inherit;
+}
+
+.reveal .iuta-sequential-boxes {
+  display: grid;
+  gap: 18px;
+  margin-top: 54px;
+}
+
+.reveal .iuta-sequential-box {
+  background: #ffffff;
+  border: 3px solid #c8d9ea;
+  border-radius: 18px;
+  box-shadow: 0 10px 24px rgba(0, 76, 147, 0.12);
+  color: #4f4f4f;
+  font-size: 1.02em;
+  line-height: 1.36;
+  margin: 0;
+  padding: 22px 26px;
+}
+
+.reveal .llm-visual {
+  align-items: center;
+  display: grid;
+  gap: 18px;
+  grid-template-columns: 1fr 96px 1.25fr 96px 1fr;
+  margin-top: 72px;
+}
+.reveal .llm-visual-card {
+  align-items: center;
+  background: #f7fbff;
+  border: 3px solid #c8d9ea;
+  border-radius: 22px;
+  box-shadow: 0 10px 24px rgba(0, 76, 147, 0.12);
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  height: 400px;
+  justify-content: center;
+  padding: 24px;
+  text-align: center;
+}
+.reveal .llm-visual-card strong {
+  color: var(--iuta-blue);
+  font-size: 1.12em;
+  margin-top: 16px;
+}
+.reveal .llm-visual-card span {
+  color: #5d6f7f;
+  font-size: 0.76em;
+  line-height: 1.35;
+  margin-top: 10px;
+}
+.reveal .llm-visual-icon {
+  align-items: center;
+  background: #e8f2fb;
+  border: 3px solid var(--iuta-blue);
+  border-radius: 50%;
+  color: var(--iuta-blue);
+  display: flex;
+  font-size: 2.2em;
+  height: 84px;
+  justify-content: center;
+  width: 84px;
+}
+.reveal .llm-visual-card.model {
+  background: #eef9f2;
+  border-color: #9ed2b3;
+}
+.reveal .llm-visual-card.model .llm-visual-icon {
+  background: #dcf3e5;
+  border-color: var(--iuta-green);
+  color: var(--iuta-green);
+}
+.reveal .llm-visual-arrow {
+  color: var(--iuta-blue);
+  font-size: 2.4em;
+  font-weight: 700;
+  position: relative;
+  text-align: center;
+  white-space: nowrap;
+  z-index: 3;
+}
+.reveal .llm-token-strip {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+}
+.reveal .llm-token {
+  background: #ffffff;
+  border: 2px solid #8bb7d8;
+  border-radius: 8px;
+  color: var(--iuta-blue);
+  font-family: Consolas, monospace;
+  font-size: 0.66em;
+  padding: 7px 9px;
+}
+.reveal .llm-visual-caption {
+  color: #4f4f4f;
+  font-size: 0.92em;
+  margin-top: 34px;
+  text-align: center;
+}
+.reveal .llm-composition {
+  align-items: center;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 1fr 42px 1.2fr 42px 1.2fr 42px 1fr;
+  margin-top: 78px;
+}
+.reveal .llm-composition-node {
+  align-items: center;
+  background: #f7fbff;
+  border: 3px solid #c8d9ea;
+  border-radius: 18px;
+  box-shadow: 0 8px 20px rgba(0,76,147,.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-height: 210px;
+  padding: 18px;
+  text-align: center;
+}
+.reveal .llm-composition-node.training { background: #fff4e5; border-color: #e5b878; }
+.reveal .llm-composition-node.network { background: #eef9f2; border-color: #9ed2b3; }
+.reveal .llm-composition-node.inference { background: #f1edfb; border-color: #b9a1dd; }
+.reveal .llm-composition-node strong { color: var(--iuta-blue); display: block; font-size: .86em; margin-bottom: 12px; }
+.reveal .llm-composition-node span { color: #5d6f7f; display: block; font-size: .68em; line-height: 1.35; }
+.reveal .llm-equation { color: #2f6b2d; font-family: Consolas, monospace; font-size: .72em; line-height: 1.4; margin-top: 14px; }
+.reveal .llm-composition-arrow { color: var(--iuta-blue); font-size: 1.7em; font-weight: 700; text-align: center; }
+.reveal .llm-composition-caption { color: #4f4f4f; font-size: .82em; margin: 32px auto 0; max-width: 1500px; text-align: center; }
+.reveal .llm-composition-svg { display: block; height: auto; margin: 58px auto 0; max-width: 1700px; width: 92%; }
+.reveal .llm-composition-svg text { font-family: "Open Sans", "Segoe UI", Arial, sans-serif; }
+.reveal .llm-composition-svg .svg-title { fill: #004c93; font-size: 30px; font-weight: 700; }
+.reveal .llm-composition-svg .svg-label { fill: #5d6f7f; font-size: 22px; }
+.reveal .llm-composition-svg .svg-equation { fill: #2f6b2d; font-family: Consolas, monospace; font-size: 23px; }
+.reveal .llm-composition-svg .svg-box { fill: #f7fbff; stroke: #c8d9ea; stroke-width: 4; }
+.reveal .llm-composition-svg .svg-training { fill: #fff4e5; stroke: #e5b878; }
+.reveal .llm-composition-svg .svg-network { fill: #eef9f2; stroke: #9ed2b3; }
+.reveal .llm-composition-svg .svg-inference { fill: #f1edfb; stroke: #b9a1dd; }
+.reveal .llm-composition-svg .svg-arrow { fill: none; marker-end: url(#llm-arrow); stroke: #004c93; stroke-width: 5; }
+.reveal .llm-composition-svg .svg-link { stroke: #70a4c8; stroke-width: 3; }
+.reveal .llm-composition-svg .svg-label,
+.reveal .llm-composition-svg .svg-equation { display: none; }
+.reveal .llm-video-frame { display: block; height: 650px; margin: 45px auto 0; max-width: 1500px; width: 90%; }
+.reveal .llm-video-description { color: #5d6f7f; font-size: .7em; line-height: 1.35; margin: 18px auto 0; max-width: 1500px; text-align: left; width: 90%; }
+.reveal .workstation-upgrades { display: grid; gap: 22px; grid-template-columns: 1fr 1fr; margin: 58px auto 0; max-width: 1550px; }
+.reveal .upgrade-card { background: #f7fbff; border: 3px solid #c8d9ea; border-radius: 18px; box-shadow: 0 8px 20px rgba(0,76,147,.1); min-height: 230px; padding: 20px 24px; }
+.reveal .upgrade-card.psu { background: #eef9f2; border-color: #9ed2b3; }
+.reveal .upgrade-card h3 { color: var(--iuta-blue); font-size: .95em; margin: 0 0 14px; }
+.reveal .upgrade-card.psu h3 { color: var(--iuta-green); }
+.reveal .upgrade-card p { font-size: .68em; line-height: 1.3; margin: 7px 0; }
+.reveal .part-figure { align-items: center; display: flex; gap: 18px; margin-bottom: 16px; }
+.reveal .upgrade-image { height: 140px; object-fit: contain; width: 290px; }
+.reveal .gpu-figure { background: #202a35; border: 4px solid #566b7b; border-radius: 10px; height: 68px; justify-content: center; position: relative; width: 220px; }
+.reveal .gpu-fan { background: #7f95a5; border: 3px solid #b8c8d2; border-radius: 50%; height: 38px; width: 38px; }
+.reveal .gpu-label { color: #fff; font-family: Consolas, monospace; font-size: .58em; position: absolute; right: 12px; }
+.reveal .psu-figure { background: #30363b; border: 4px solid #707980; border-radius: 8px; height: 88px; justify-content: center; position: relative; width: 170px; }
+.reveal .psu-grille { border: 3px dotted #c4ccd0; border-radius: 50%; height: 54px; width: 54px; }
+.reveal .psu-label { color: #fff; font-family: Consolas, monospace; font-size: .58em; position: absolute; right: 8px; }
+.reveal .upgrade-arrow { color: var(--iuta-blue); font-size: 1.6em; font-weight: 700; }
+.reveal .upgrade-after { color: var(--iuta-green); font-weight: 700; }
+.reveal .workstation-baseline { background: #eef5fb; border-left: 6px solid var(--iuta-blue); border-radius: 8px; font-size: .68em; line-height: 1.35; margin: 24px auto 0; max-width: 1550px; padding: 13px 18px; }
+.reveal .workstation-note { color: #5d6f7f; font-size: .62em; line-height: 1.3; margin: 14px auto 0; max-width: 1550px; }
+.reveal .workstation-content { left: var(--iuta-side-gap); position: absolute; right: var(--iuta-side-gap); top: 50%; transform: translateY(-50%); }
+.reveal .youtube-card { display: block; height: 650px; margin: 45px auto 0; max-width: 1500px; overflow: hidden; position: relative; width: 90%; }
+.reveal .youtube-card img { display: block; height: 100%; object-fit: cover; width: 100%; }
+.reveal .youtube-card::after { align-items: center; background: rgba(204, 0, 0, .92); border-radius: 18px; color: #fff; content: "▶  Watch on YouTube"; display: flex; font-size: 1.1em; font-weight: 700; inset: 50% auto auto 50%; padding: 18px 26px; position: absolute; transform: translate(-50%, -50%); white-space: nowrap; }
+.reveal .youtube-card:hover::after, .reveal .youtube-card:focus-visible::after { background: #a80000; }
+.reveal .iuta-centered-content {
+  left: var(--iuta-side-gap);
+  position: absolute;
+  right: var(--iuta-side-gap);
+  top: 52%;
+  transform: translateY(-50%);
+}
+.reveal .iuta-centered-content .llm-visual {
+  margin-top: 0;
+}
+.reveal .agent-orchestration { align-items: stretch; display: grid; gap: 20px; grid-template-columns: 1.1fr 70px 1.2fr 70px 1.1fr; margin-top: 72px; }
+.reveal .agent-stage { background: #f7fbff; border: 3px solid #c8d9ea; border-radius: 18px; box-shadow: 0 8px 20px rgba(0,76,147,.1); min-height: 150px; padding: 20px; text-align: center; }
+.reveal .agent-stage strong { color: var(--iuta-blue); display: block; margin-bottom: 12px; }
+.reveal .agent-stage span { color: #5d6f7f; display: block; font-size: .78em; line-height: 1.35; }
+.reveal .agent-stage.core { background: #eef9f2; border-color: #9ed2b3; }
+.reveal .agent-stage.core strong { color: var(--iuta-green); }
+.reveal .agent-arrow { align-self: center; color: var(--iuta-blue); font-size: 1.8em; font-weight: 700; position: relative; text-align: center; white-space: nowrap; z-index: 3; }
+.reveal .agent-platforms { display: grid; gap: 14px; grid-template-columns: repeat(5, 1fr); margin-top: 42px; }
+.reveal .agent-platform { background: #eef5fb; border-left: 5px solid var(--iuta-blue); border-radius: 8px; padding: 14px 16px; }
+.reveal .agent-platform strong { color: var(--iuta-blue); display: block; font-size: .86em; margin-bottom: 7px; }
+.reveal .agent-platform span { color: #5d6f7f; display: block; font-size: .68em; line-height: 1.3; }
+.reveal .agent-platforms + .iuta-highlight-callout { margin-top: 28px; }
+.reveal .property-grid { display: grid; gap: 16px; grid-template-columns: repeat(3, 1fr); margin-top: 62px; }
+.reveal .property-card { background: #f7fbff; border: 3px solid #c8d9ea; border-radius: 16px; box-shadow: 0 8px 20px rgba(0,76,147,.1); min-height: 145px; padding: 18px 20px; }
+.reveal .property-card strong { color: var(--iuta-blue); display: block; font-size: .9em; margin-bottom: 9px; }
+.reveal .property-card span { color: #5d6f7f; display: block; font-size: .72em; line-height: 1.35; }
+.reveal .property-card em { color: var(--iuta-green); display: block; font-size: .7em; font-style: normal; font-weight: 700; margin-top: 9px; }
+.reveal .mcp-diagram { align-items: center; display: grid; gap: 16px; grid-template-columns: 1fr 70px 1.25fr 70px 1fr; margin-top: 70px; }
+.reveal .mcp-node { background: #f7fbff; border: 3px solid #c8d9ea; border-radius: 18px; box-shadow: 0 8px 20px rgba(0,76,147,.1); min-height: 170px; padding: 22px; text-align: center; }
+.reveal .mcp-node strong { color: var(--iuta-blue); display: block; font-size: .95em; margin-bottom: 12px; }
+.reveal .mcp-node span { color: #5d6f7f; display: block; font-size: .73em; line-height: 1.35; }
+.reveal .mcp-node.server { background: #eef9f2; border-color: #9ed2b3; }
+.reveal .mcp-node.server strong { color: var(--iuta-green); }
+.reveal .mcp-arrow { color: var(--iuta-blue); font-size: 1.8em; font-weight: 700; text-align: center; }
+.reveal .mcp-example { background: #eef5fb; border-left: 6px solid var(--iuta-blue); border-radius: 8px; font-size: .78em; line-height: 1.35; margin-top: 32px; padding: 14px 18px; }
+.reveal .mcp-code-grid { display: grid; gap: 18px; grid-template-columns: 1fr 1fr; margin-top: 20px; }
+.reveal .mcp-code-grid pre,
+.reveal .mcp-code-grid pre code { background: transparent !important; border: 0 !important; box-shadow: none !important; color: #2f6b2d; font-size: .58em; line-height: 1.25; margin: 0; padding: 0; white-space: pre-wrap; }
+.reveal .mcp-host-config { color: #2f6b2d; font-size: .58em; line-height: 1.25; margin-top: 22px; }
+.reveal .mcp-host-config pre,
+.reveal .mcp-host-config pre code { background: transparent !important; border: 0 !important; box-shadow: none !important; color: inherit; margin: 0; padding: 0; white-space: pre-wrap; }
+.reveal .mcp-backend { color: #2f6b2d; font-size: .56em; line-height: 1.2; margin-top: 20px; }
+.reveal .mcp-backend pre,
+.reveal .mcp-backend pre code { background: transparent !important; border: 0 !important; box-shadow: none !important; color: inherit; margin: 0; padding: 0; white-space: pre-wrap; }
+.reveal .mcp-code-grid pre strong { color: var(--iuta-blue); }
+.reveal .modality-grid { display: grid; gap: 18px; grid-template-columns: repeat(4, 1fr); margin-top: 76px; }
+.reveal .modality-card { background: #f7fbff; border: 3px solid #c8d9ea; border-radius: 18px; box-shadow: 0 8px 20px rgba(0,76,147,.1); min-height: 250px; padding: 22px 18px; text-align: center; }
+.reveal .modality-icon { font-size: 2.4em; margin-bottom: 15px; }
+.reveal .modality-card strong { color: var(--iuta-blue); display: block; margin-bottom: 12px; }
+.reveal .modality-card span { color: #5d6f7f; display: block; font-size: .72em; line-height: 1.35; }
+.reveal .modality-card em { color: var(--iuta-green); display: block; font-size: .68em; font-style: normal; font-weight: 700; margin-top: 14px; }
+.reveal .agent-summary-grid { display: grid; gap: 18px; grid-template-columns: repeat(4, 1fr); margin-top: 78px; }
+.reveal .agent-summary-card { background: #f7fbff; border: 3px solid #c8d9ea; border-radius: 18px; box-shadow: 0 8px 20px rgba(0,76,147,.1); min-height: 260px; padding: 24px 20px; text-align: center; }
+.reveal .agent-summary-card .summary-icon { font-size: 2.4em; margin-bottom: 16px; }
+.reveal .agent-summary-card strong { color: var(--iuta-blue); display: block; font-size: 1em; margin-bottom: 14px; }
+.reveal .agent-summary-card span { color: #5d6f7f; display: block; font-size: .75em; line-height: 1.4; }
+.reveal .agent-summary-card em { color: var(--iuta-green); display: block; font-size: .7em; font-style: normal; font-weight: 700; margin-top: 18px; }
+.reveal .skill-flow { align-items: center; display: grid; gap: 18px; grid-template-columns: 1fr 70px 1fr 70px 1fr; margin: 0 auto; max-width: 1550px; }
+.reveal .skill-stage { background: #f7fbff; border: 3px solid #c8d9ea; border-radius: 16px; box-sizing: border-box; display: flex; flex-direction: column; height: 210px; justify-content: flex-start; padding: 20px 16px; text-align: center; }
+.reveal .skill-slide .skill-stage { height: 270px; }
+.reveal .plugin-slide .skill-stage { height: 250px; }
+.reveal .skill-stage.plugin { background: #eef9f2; border-color: #9ed2b3; }
+.reveal .skill-stage strong { color: var(--iuta-blue); display: block; margin-bottom: 12px; }
+.reveal .skill-stage.plugin strong { color: var(--iuta-green); }
+.reveal .skill-stage span { color: #5d6f7f; display: block; font-size: .72em; line-height: 1.35; }
+.reveal .skill-arrow { color: var(--iuta-blue); font-size: 1.7em; font-weight: 700; position: relative; text-align: center; white-space: nowrap; z-index: 3; }
+.reveal .skill-example { background: #f1f3f5; color: #2f6b2d; font-family: Consolas, monospace; font-size: .7em; line-height: 1.35; margin-top: 30px; padding: 16px 20px; white-space: pre-wrap; }
+.reveal .skill-slide .skill-example { font-size: .58em; margin: 22px auto 0; max-width: 1550px; padding: 12px 16px; }
+.reveal .skill-slide .iuta-highlight-callout { font-size: .76em; margin: 18px auto 0; max-width: 1550px; padding: .5em .8em; }
+.reveal .skill-content { left: var(--iuta-side-gap); position: absolute; right: var(--iuta-side-gap); top: 52%; transform: translateY(-50%); }
+.reveal .plugin-slide .skill-flow { margin-top: 52px; }
+.reveal .compact-inference-slide > p { font-size: .82em; margin-bottom: .35em; }
+.reveal .compact-inference-slide table { font-size: .7em; margin-top: .25em; }
+.reveal .compact-inference-slide table th,
+.reveal .compact-inference-slide table td { padding: .18em .35em; }
+.reveal .compact-inference-slide pre { font-size: .52em; line-height: 1.15; margin-top: .45em; max-height: 230px; overflow: auto; }
+.mcp-code-trigger { cursor: pointer; outline: 2px solid transparent; transition: outline-color .15s ease; }
+.mcp-code-trigger:hover, .mcp-code-trigger:focus-visible { outline: 3px solid var(--iuta-blue); outline-offset: 6px; }
+.mcp-modal[hidden] { display: none; }
+.mcp-modal { align-items: center; background: rgba(0, 20, 40, .72); display: flex; inset: 0; justify-content: center; padding: 4vh 5vw; position: fixed; z-index: 100; }
+.mcp-modal-panel { background: #fff; border: 3px solid var(--iuta-blue); border-radius: 14px; box-shadow: 0 20px 60px rgba(0,0,0,.3); max-height: 90vh; max-width: 1500px; overflow: auto; padding: 28px 34px 34px; position: relative; width: 90vw; }
+.mcp-modal-panel h2 { color: var(--iuta-blue); font-size: 1.25em; margin: 0 0 18px; }
+.mcp-modal-panel pre { background: #f1f3f5; color: #2f6b2d; font-size: 1.25em; line-height: 1.45; margin: 0; max-height: 72vh; overflow-x: auto; overflow-y: auto; padding: 22px; white-space: pre; }
+.mcp-modal-close { background: var(--iuta-blue); border: 0; border-radius: 6px; color: #fff; cursor: pointer; font-size: .8em; padding: 8px 14px; position: absolute; right: 18px; top: 16px; }
+.mcp-modal-close:hover, .mcp-modal-close:focus-visible { background: #003568; }
+.reveal .mcp-demo-box { align-items: center; border: 0 !important; border-radius: 10px; box-shadow: none !important; box-sizing: border-box; display: flex; font-size: .58em; min-height: 82px; line-height: 1.2; margin: 12px 0; overflow: auto; padding: 14px 18px; white-space: pre-wrap; }
+.reveal .mcp-demo-box code { background: transparent !important; border: 0 !important; box-shadow: none !important; display: block; padding: 0 !important; }
+.reveal .mcp-demo-box.backend { background: #f1edfb !important; border-left: 6px solid #6f42c1; }
+.reveal .mcp-demo-box.host { background: #fff0f0 !important; border-left: 6px solid #c13b3b; }
+.reveal .mcp-demo-box.backend, .reveal .mcp-demo-box.host { min-height: 170px; }
+.reveal .mcp-demo-box.advertise { background: #e8f2fb !important; border-left: 6px solid #004c93; }
+.reveal .mcp-demo-box.call { background: #eef9f2 !important; border-left: 6px solid #009f45; }
+.reveal .mcp-demo-box.result { background: #fff4e5 !important; border-left: 6px solid #b35c00; }
+@media (max-width: 900px) {
+  .reveal .agent-orchestration { grid-template-columns: 1fr; }
+  .reveal .agent-arrow { display: none; }
+  .reveal .agent-platforms { grid-template-columns: 1fr; }
+  .reveal .property-grid, .reveal .modality-grid, .reveal .mcp-diagram { grid-template-columns: 1fr; }
+  .reveal .mcp-arrow { display: none; }
+  .reveal .agent-summary-grid, .reveal .skill-flow { grid-template-columns: 1fr; }
+  .reveal .skill-arrow { display: none; }
+  .reveal .skill-stage { height: auto; }
+  .reveal .skill-slide .skill-stage { height: auto; }
+  .reveal .plugin-slide .skill-stage { height: auto; }
+  .reveal .skill-content { left: 32px; position: relative; right: auto; top: auto; transform: none; }
+  .reveal .workstation-content { left: 32px; position: relative; right: auto; top: auto; transform: none; }
+  .reveal .upgrade-image { height: 110px; width: 230px; }
+}
+
+.reveal table {
+  font-size: var(--iuta-body-font-size);
+}
+
+.reveal table th {
+  color: var(--iuta-blue);
+}
+
+.reveal .slide-number {
+  display: none !important;
+}
+
+.reveal .slides section.slide {
+  padding-top: 80px;
+}
+
+@media (max-width: 900px) {
+  .reveal .slides section.slide {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+  .reveal .slides section.slide > h2 {
+    left: 32px;
+    right: 88px;
+  }
+  .reveal .slides section.slide {
+    padding-left: 32px;
+    padding-right: 32px;
+  }
+  .reveal .slides .iuta-chrome-logo {
+    right: 32px;
+    top: -6px;
+  }
+  .reveal .slides .iuta-global-footer {
+    left: 32px;
+    right: 32px;
+  }
+}
+</style>
+<style id="iuta-static-assets">.iuta-static-assets{display:none}</style>
+<div class="iuta-static-assets" aria-hidden="true">
+  <img data-iuta-asset="title-background" src="assets/title-background.jpg" alt="">
+  <img data-iuta-asset="title-logo-ude" src="assets/title-logo-ude.jpg" alt="">
+  <img data-iuta-asset="title-logo-jrf" src="assets/title-logo-jrf.png" alt="">
+  <img data-iuta-asset="title-logo-iuta" src="assets/title-logo-iuta.png" alt="">
+  <img data-iuta-asset="iuta-logo" src="assets/iuta-logo.png" alt="">
+</div>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<section id="title-slide" class="quarto-title-block">
+  <h1 class="title">From LLM to Agent: Setting Up and Using Local Models</h1>
+  <div class="quarto-title-authors">
+    <div class="quarto-title-author">
+      <div class="quarto-title-author-name">Ricardo Cunha</div>
+      <div class="quarto-title-author-email"><a href="mailto:cunha@iuta.de">cunha@iuta.de</a></div>
+      <p class="quarto-title-affiliation">Institut fur Umwelt & Energie, Technik & Analytik e. V. (IUTA)</p>
+    </div>
+  </div>
+  <p class="date"></p>
+  <div id="iuta-meta" hidden aria-hidden="true">
+    <span class="iuta-meta-event">FA Seminar</span>
+  </div>
+</section>
+
+<section class="slide level2 llm-slide">
+<h2>What Is An LLM?</h2>
+<div class="iuta-centered-content">
+<div class="llm-visual">
+  <div class="llm-visual-card">
+    <div class="llm-visual-icon">📚</div>
+    <strong>Training data</strong>
+    <span>Text, code, and examples are used to learn language patterns.</span>
+  </div>
+  <div class="llm-visual-arrow">→</div>
+  <div class="llm-visual-card model">
+    <div class="llm-visual-icon">🧠</div>
+    <strong>Language model</strong>
+    <span>Billions of learned parameters estimate what comes next.</span>
+    <div class="llm-token-strip">
+      <span class="llm-token">The</span>
+      <span class="llm-token">next</span>
+      <span class="llm-token">token</span>
+      <span class="llm-token">is...</span>
+    </div>
+  </div>
+  <div class="llm-visual-arrow">→</div>
+  <div class="llm-visual-card">
+    <div class="llm-visual-icon">💬</div>
+    <strong>Generated output</strong>
+    <span>A response is produced one token at a time from the context.</span>
+  </div>
+</div>
+<p class="llm-visual-caption"><strong>LLM = Large Language Model</strong> · It predicts the next likely token; it does not independently take actions.</p>
+</div>
+</section>
+
+<section class="slide level2">
+<h2>LLM Deep Dive</h2>
+<a class="youtube-card" href="https://www.youtube.com/watch?v=7xTGNNLPyMI" target="_blank" rel="noopener" aria-label="Watch Deep Dive into LLMs like ChatGPT on YouTube"><img src="https://i.ytimg.com/vi/7xTGNNLPyMI/maxresdefault.jpg" alt="Video thumbnail for Deep Dive into LLMs like ChatGPT"></a>
+<p class="llm-video-description"><strong>Author:</strong> Andrej Karpathy, AI researcher and educator. <strong>Perspective:</strong> A technical, from-first-principles explanation of what happens inside an LLM, rather than a discussion of a particular agent platform. <strong>Content:</strong> The video covers tokenization, embeddings, neural-network layers, transformer inference, training, and next-token prediction, providing a deeper follow-up to the preceding LLM overview.</p>
+</section>
+
+<section class="slide level2">
+<h2>What Is An AI Agent?</h2>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<p>An <strong>AI agent</strong> is an autonomous system that uses an LLM to <strong>perceive</strong>, <strong>reason</strong>, and <strong>act</strong> within an environment.</p>
+<div class="fragment fade-in">
+<table>
+<thead>
+<tr><th>LLM</th><th>AI Agent</th></tr>
+</thead>
+<tbody>
+<tr><td>Stateless text completion</td><td>Stateful, goal-oriented</td></tr>
+<tr><td>Single response</td><td>Multi-step reasoning</td></tr>
+<tr><td>No tool access</td><td>Can use tools (search, code, APIs)</td></tr>
+<tr><td>No memory of past turns</td><td>Maintains context & history</td></tr>
+<tr><td>Passive</td><td>Proactive - plans & executes</td></tr>
+</tbody>
+</table>
+</div>
+</section>
+
+<section class="slide level2">
+<h2>How An LLM Becomes An Agent</h2>
+<div class="agent-orchestration">
+  <div class="agent-stage"><strong>Goal</strong><span>User request, constraints, and success criteria</span></div>
+  <div class="agent-arrow">→</div>
+  <div class="agent-stage core"><strong>LLM + orchestration</strong><span>Prompting, planning, memory, tool selection, and the control loop</span></div>
+  <div class="agent-arrow">→</div>
+  <div class="agent-stage"><strong>Action</strong><span>Tools execute work and return results for the next decision</span></div>
+</div>
+<div class="agent-platforms">
+  <div class="agent-platform fragment fade-in"><strong>OpenCode</strong><span>LLM + filesystem, terminal, code search, and edit tools → coding agent</span></div>
+  <div class="agent-platform fragment fade-in"><strong>OpenClaw</strong><span>LLM + coding workflows, project context, and tool execution → coding agent</span></div>
+  <div class="agent-platform fragment fade-in"><strong>Claude Code</strong><span>LLM + terminal, files, project instructions, and controlled execution → coding agent</span></div>
+  <div class="agent-platform fragment fade-in"><strong>VS Code / Continue</strong><span>LLM + editor context, diagnostics, and code actions → IDE assistant</span></div>
+  <div class="agent-platform fragment fade-in"><strong>OpenAI Codex</strong><span>LLM + repository context, terminal, files, and code execution → coding agent</span></div>
+</div>
+<div class="iuta-highlight-callout fragment fade-in">The same LLM can become very different agents: the platform determines its tools, permissions, memory, workflow, and feedback loop.</div>
+</section>
+
+<section class="slide level2">
+<h2>Agent Characteristics At A Glance</h2>
+<div class="agent-summary-grid">
+  <div class="agent-summary-card"><div class="summary-icon">⚙</div><strong>Properties</strong><span>Model size, context window, latency, memory, permissions, and reliability.</span><em>What the agent can handle</em></div>
+  <div class="agent-summary-card"><div class="summary-icon">🛠</div><strong>Tools</strong><span>Executable functions such as reading files, running code, searching, or calling APIs.</span><em>How the agent acts</em></div>
+  <div class="agent-summary-card"><div class="summary-icon">🌐</div><strong>Capabilities</strong><span>Text, vision, audio, multimodal reasoning, planning, memory, and interaction with systems.</span><em>What the user experiences</em></div>
+  <div class="agent-summary-card"><div class="summary-icon">📘</div><strong>Skills</strong><span>Reusable instructions and workflows that teach the agent how to perform a recurring task.</span><em>How the agent performs a task</em></div>
+</div>
+</section>
+
+<section class="slide level2">
+<h2>Model Properties: Size, Context, and More</h2>
+<div class="property-grid">
+  <div class="property-card fragment fade-in"><strong>Parameters</strong><span>More parameters can represent more patterns and knowledge, but usually require more memory and compute.</span><em>7B ≈ 7 billion weights; 70B ≈ 70 billion</em></div>
+  <div class="property-card fragment fade-in"><strong>Context window</strong><span>How much input and conversation the model can consider in one request.</span><em>Examples: 4K, 8K, 32K, or 128K tokens</em></div>
+  <div class="property-card fragment fade-in"><strong>Quantization</strong><span>Weights are stored with fewer bits, reducing memory use with a possible quality trade-off.</span><em>Q8 = 8 bits/weight; FP16 = 16 bits/weight</em></div>
+  <div class="property-card fragment fade-in"><strong>VRAM / RAM</strong><span>Model weights, context cache, and runtime overhead must fit into available memory.</span><em>7B FP16 ≈ 14 GB; 7B Q4 ≈ 4–5 GB</em></div>
+  <div class="property-card fragment fade-in"><strong>Latency and throughput</strong><span>Latency is time to respond; throughput is how many tokens or users the system can serve.</span><em>Example: 20 tokens/s or 4 concurrent users</em></div>
+  <div class="property-card fragment fade-in"><strong>Training and specialization</strong><span>Base, instruct, reasoning, and coding models are optimized for different tasks.</span><em>Examples: 7B instruct, 14B coding, 32B reasoning</em></div>
+</div>
+</section>
+
+<section class="slide level2 mcp-slide">
+<h2>Tools and MCP Servers</h2>
+<div class="iuta-centered-content">
+<div class="mcp-diagram">
+  <div class="mcp-node"><strong>Agent host</strong><span>OpenCode, an IDE, or another agent decides when a capability is needed.</span></div>
+  <div class="mcp-arrow">→</div>
+  <div class="mcp-node server"><strong>MCP server</strong><span>Publishes tools, resources, and prompts through the Model Context Protocol.</span></div>
+  <div class="mcp-arrow">→</div>
+  <div class="mcp-node"><strong>External system</strong><span>Filesystem, Git, database, browser, laboratory system, or internal API.</span></div>
+</div>
+<div class="mcp-example fragment fade-in"><strong>Example:</strong> A filesystem MCP server exposes a <code>read_file</code> tool.</div>
+</div>
+</section>
+
+<section class="slide level2">
+<h2>MCP Demonstration: The read_file Tool</h2>
+<pre id="mcp-backend-trigger" class="mcp-demo-box backend mcp-code-trigger" tabindex="0" role="button" aria-label="Open detailed MCP server setup"><code>// 1. MCP server backend (pseudocode)
+registerTool("read_file", { path: "string" }, async ({ path }) =&gt; {
+  const file = resolveAllowedPath(ALLOWED_ROOT, path);
+  if (!file) throw new Error("Path is outside the allowed root");
+  const text = await readTextFile(file);
+  return { content: [{ type: "text", text }] };
+});</code></pre>
+<pre class="mcp-demo-box host"><code>// 2. Host configuration: start the server and scope its access
+{
+  "mcpServers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["@modelcontextprotocol/server-filesystem", "./project"]
+    }
+  }
+}</code></pre>
+<pre class="mcp-demo-box advertise"><code>// 3. MCP server advertises the tool
+{ "name": "read_file", "inputSchema": { "path": "string" } }</code></pre>
+<pre class="mcp-demo-box call"><code>// 4. Agent host sends the tool call
+{ "name": "read_file", "arguments": { "path": "./README.md" } }</code></pre>
+<pre class="mcp-demo-box result"><code>// 5. Result returned to the LLM
+{ "content": "...file text..." }</code></pre>
+</section>
+
+<section class="slide level2">
+<h2>Agent Capabilities Depend On The Model And Runtime</h2>
+<div class="modality-grid">
+  <div class="modality-card"><div class="modality-icon">💬</div><strong>Text-only</strong><span>Reads text and produces text. Tools can still let it act on files, code, and APIs.</span><em>Example: Llama 3.1 8B, text in / text out</em></div>
+  <div class="modality-card"><div class="modality-icon">👁</div><strong>Vision</strong><span>Accepts images and produces visual embeddings or classifications; it is not a conversational agent by itself.</span><em>Example: ViT-B/16, image classifier</em></div>
+  <div class="modality-card"><div class="modality-icon">🎧</div><strong>Audio</strong><span>Processes speech or sound and produces a transcription or audio representation.</span><em>Example: Whisper large-v3, audio in / text out</em></div>
+  <div class="modality-card"><div class="modality-icon">🔗</div><strong>Multimodal</strong><span>Accepts more than one input type, such as text plus images, and can combine them in one response.</span><em>Example: Qwen2.5-VL, text + image</em></div>
+</div>
+<aside class="notes">
+“Agent” describes the orchestration and behavior, not a single model modality. A text model can be an agent; a vision model can be an agent; tools connect either one to the world.
+</aside>
+</section>
+
+<section class="slide level2 skill-slide">
+<h2>What Is A Skill?</h2>
+<div class="skill-content">
+<div class="skill-flow">
+  <div class="skill-stage"><strong>1. Discover</strong><span>The host sees the skill name and description in its available skill catalog.</span></div>
+  <div class="skill-arrow">→</div>
+  <div class="skill-stage"><strong>2. Load</strong><span>When a request matches, the host loads the skill instructions and supporting resources.</span></div>
+  <div class="skill-arrow">→</div>
+  <div class="skill-stage"><strong>3. Execute</strong><span>The agent follows the workflow and uses its available tools to complete the task.</span></div>
+</div>
+<pre class="skill-example fragment fade-in"><code># Example: SKILL.md
+name: rcpp-build
+description: Build and update an R package with Rcpp C++ code
+
+When changing Rcpp code:
+1. Edit the C++ source files, not generated wrappers.
+2. Run devtools::load_all() to compile and refresh exports.
+3. Treat RcppExports.R as autogenerated; never edit it manually.
+4. Run the package tests and report build errors.</code></pre>
+<div class="iuta-highlight-callout fragment fade-in"><strong>Example:</strong> The user asks to update a C++ function. The agent loads <code>rcpp-build</code>, edits the C++ source, runs <code>devtools::load_all()</code>, and leaves <code>RcppExports.R</code> to the generation workflow.</div>
+</div>
+</section>
+
+<section class="slide level2 plugin-slide">
+<h2>Plugins: Skills, Tools, And Integrations</h2>
+<div class="skill-flow">
+  <div class="skill-stage"><strong>Plugin package</strong><span>Packages skills, executable tools, commands, hooks, and external integrations.</span></div>
+  <div class="skill-arrow">→</div>
+  <div class="skill-stage plugin"><strong>Agent host</strong><span>Discovers the plugin and registers its skills and executable capabilities.</span></div>
+  <div class="skill-arrow">→</div>
+  <div class="skill-stage"><strong>Agent workflow</strong><span>Loads a matching skill and calls the plugin tools when the task requires them.</span></div>
+</div>
+<pre class="skill-example"><code># A plugin can provide a skill package
+.opencode/plugins/project-dir/
+  plugin.json        # plugin metadata and registration
+  skills/rcpp-build/
+    SKILL.md         # reusable instructions and workflow
+  tools/validate.py  # executable validation tool
+  templates/         # reusable output files</code></pre>
+</section>
+
+<section class="slide level2">
+<h2>AI Coding Workflow Deep Dive</h2>
+<a class="youtube-card" href="https://www.youtube.com/watch?v=-QFHIoCo-Ko&t=14s" target="_blank" rel="noopener" aria-label="Watch Full Walkthrough: Workflow for AI Coding on YouTube"><img src="https://i.ytimg.com/vi/-QFHIoCo-Ko/maxresdefault.jpg" alt="Video thumbnail for Full Walkthrough: Workflow for AI Coding"></a>
+<p class="llm-video-description"><strong>Author:</strong> Matt Pocock, presented through the AI Engineer channel. <strong>Perspective:</strong> A practical walkthrough of using AI coding tools as part of a real development workflow. <strong>Content:</strong> The video shows how an agent can work with project context, instructions, tools, code changes, and review steps, complementing the preceding explanation of skills and plugins.</p>
+</section>
+
+<section class="slide level2">
+<h2>Local Model Deployment </h2>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<p><strong>Why go local?</strong></p>
+<ul>
+<li>Data privacy - no data leaves your network</li>
+<li>No API costs</li>
+<li>Offline availability</li>
+<li>Full control over model selection & configuration</li>
+</ul>
+<p><strong>Challenges:</strong></p>
+<ul>
+<li>Requires GPU hardware (or powerful CPU + quantization)</li>
+<li>Setup and maintenance effort</li>
+<li>Smaller model sizes vs cloud offerings</li>
+</ul>
+</section>
+
+<section class="slide level2 workstation-slide">
+<h2>Workstation Upgrade For Local Models</h2>
+<div class="workstation-content">
+<div class="workstation-upgrades">
+  <div class="upgrade-card">
+    <h3>GPU upgrade</h3>
+    <div class="part-figure"><img class="upgrade-image" src="assets/rtx5090_gigabyte.png" alt="Gigabyte Aorus Master RTX 5090 graphics card"><span class="upgrade-arrow">→</span><span class="upgrade-after">32 GB VRAM</span></div>
+    <p><strong>Before:</strong> NVIDIA GeForce GTX 1650, 4 GB</p>
+    <p><strong>After:</strong> NVIDIA GeForce RTX 5090, 32 GB, Gigabyte Aorus Master</p>
+  </div>
+  <div class="upgrade-card psu">
+    <h3>Power supply upgrade</h3>
+    <div class="part-figure"><img class="upgrade-image" src="assets/Corsair_HX1200i.png" alt="Corsair HX1200i 1200 watt power supply"><span class="upgrade-arrow">→</span><span class="upgrade-after">1200 W</span></div>
+    <p><strong>Before:</strong> 1000 W power supply</p>
+    <p><strong>After:</strong> Corsair HX Series HX1200i 2025, 1200 W, 80Plus Platinum</p>
+  </div>
+</div>
+<div class="workstation-baseline"><strong>Workstation baseline:</strong> Fractal Design Define 7 XL · Threadripper PRO 5965WX · ASUS Pro WS WRX80E-SAGE SE WIFI · 256 GB DDR4 ECC RAM · 2 × 1 TB SSD · 2 × 6 TB HDD · 1 × 8 TB HDD</div>
+</div>
+</section>
+
+<section class="slide level2">
+<h2>Option 1: Ollama</h2>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<p><strong>Ollama</strong> is the easiest way to run open-source LLMs locally.</p>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<table>
+<thead>
+<tr><th>Feature</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td>Installation</td><td>One-click installer for macOS, Linux, Windows</td></tr>
+<tr><td>Model support</td><td>Llama 3, Mistral, Qwen, Gemma, Phi, DeepSeek, and 100+ more</td></tr>
+<tr><td>Quantization</td><td>Automatic - downloads GGUF quantized models</td></tr>
+<tr><td>API</td><td>OpenAI-compatible REST API at <code>localhost:11434</code></td></tr>
+<tr><td>GPU support</td><td>CUDA (NVIDIA), Vulkan (AMD/Intel), Metal (Apple)</td></tr>
+<tr><td>Use case</td><td>Development, prototyping, single-user or small-team use</td></tr>
+</tbody>
+</table>
+<pre><code># Pull and run a model
+ollama pull deepseek-r1:8b
+ollama run deepseek-r1:8b
+
+# API call (OpenAI-compatible)
+curl http://localhost:11434/v1/chat/completions \
+  -d '{"model":"deepseek-r1:8b","messages":[{"role":"user","content":"Hello"}]}'</code></pre>
+</section>
+
+<section class="slide level2 compact-inference-slide">
+<h2>Option 2: vLLM</h2>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<p><strong>vLLM</strong> is a high-throughput inference engine optimized for production.</p>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<table>
+<thead>
+<tr><th>Feature</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td>Installation</td><td><code>pip install vllm</code> (Python package)</td></tr>
+<tr><td>Model support</td><td>Hugging Face models (Llama, Mistral, Qwen, etc.)</td></tr>
+<tr><td>Key innovation</td><td>PagedAttention - efficient KV cache management</td></tr>
+<tr><td>Performance</td><td>10-24x higher throughput than Hugging Face default</td></tr>
+<tr><td>API</td><td>OpenAI-compatible server</td></tr>
+<tr><td>GPU support</td><td>CUDA (NVIDIA only)</td></tr>
+<tr><td>Use case</td><td>High-throughput production serving, multi-user</td></tr>
+</tbody>
+</table>
+<pre><code># Start the server
+vllm serve mistralai/Mistral-7B-Instruct-v0.3 \
+  --host 0.0.0.0 --port 8000
+
+# API call
+curl http://localhost:8000/v1/chat/completions \
+  -d '{"model":"mistralai/Mistral-7B-Instruct-v0.3","messages":[{"role":"user","content":"Hello"}]}'</code></pre>
+</section>
+
+<section class="slide level2">
+<h2>Option 3: ML Studio (Windows)</h2>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<p><strong>Windows ML Studio</strong> (part of Windows AI Studio / VS Code extension) simplifies running SLMs locally on Windows.</p>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<table>
+<thead>
+<tr><th>Feature</th><th>Details</th></tr>
+</thead>
+<tbody>
+<tr><td>Installation</td><td>Via VS Code extension or Windows AI Dev Hub</td></tr>
+<tr><td>Model support</td><td>Phi-3, Phi-3.5, Mistral, Llama (ONNX-optimized)</td></tr>
+<tr><td>Hardware</td><td>Optimized for Windows DirectML (AMD, Intel, NVIDIA)</td></tr>
+<tr><td>Integration</td><td>Tight VS Code integration</td></tr>
+<tr><td>Use case</td><td>Windows-native development, no Linux/WSL needed</td></tr>
+</tbody>
+</table>
+<div class="iuta-highlight-callout">ML Studio uses ONNX Runtime with DirectML, enabling GPU acceleration on any DirectX 12-compatible GPU - including AMD and Intel cards, not just NVIDIA.</div>
+</section>
+
+<section class="slide level2">
+<h2>Comparison: Ollama vs vLLM vs ML Studio</h2>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<table>
+<thead>
+<tr><th>Criterion</th><th>Ollama</th><th>vLLM</th><th>ML Studio</th></tr>
+</thead>
+<tbody>
+<tr><td>Ease of setup</td><td>★★★★★</td><td>★★★☆☆</td><td>★★★★☆</td></tr>
+<tr><td>Performance</td><td>★★★☆☆</td><td>★★★★★</td><td>★★★☆☆</td></tr>
+<tr><td>GPU coverage</td><td>All major</td><td>NVIDIA only</td><td>Any DX12 GPU</td></tr>
+<tr><td>Multi-user</td><td>Limited</td><td>Native</td><td>No</td></tr>
+<tr><td>Quantization</td><td>Built-in (GGUF)</td><td>Via AWQ/GPTQ</td><td>ONNX quantized</td></tr>
+<tr><td>Best for</td><td>Quick start, dev</td><td>Production, scale</td><td>Windows-native dev</td></tr>
+</tbody>
+</table>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<div class="iuta-highlight-callout">For most teams starting out, <strong>Ollama</strong> is the recommended starting point due to its simplicity and broad model support. vLLM is better for production scale, ML Studio for Windows-only environments.</div>
+</section>
+
+<section class="slide level2">
+<h2>OpenCode: Orchestration For Local Models</h2>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<p><strong>OpenCode</strong> is one possible orchestration layer for connecting a local model to an agent workflow.</p>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<p><strong>What OpenCode adds around the model:</strong></p>
+<ul>
+<li>Connects to local model endpoints such as Ollama or vLLM</li>
+<li>Provides tools for files, search, terminal commands, and code changes</li>
+<li>Maintains task context and feeds tool results back to the model</li>
+<li>Applies project instructions, skills, permissions, and workflows</li>
+</ul>
+<p><strong>Orchestration loop:</strong></p>
+<pre><code>User request → LLM (reasoning) → Tool calls → Results → LLM → Next action
+                ↑                                        |
+                └────────── Loop until done ─────────────┘</code></pre>
+</section>
+
+<section class="slide level2">
+<h2>Setting Up Ollama For Internal Network Access</h2>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<p>By default, Ollama binds to <code>localhost:11434</code>. To make it accessible on your <strong>internal network</strong>:</p>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<p><strong>Step 1: Configure Ollama to listen on all interfaces</strong></p>
+<p><strong>Linux/macOS (systemd):</strong></p>
+<pre><code># Edit the systemd service
+sudo systemctl edit ollama.service
+
+# Add these lines:
+[Service]
+Environment="OLLAMA_HOST=0.0.0.0:11434"
+Environment="OLLAMA_ORIGINS=*"</code></pre>
+<p><strong>Windows:</strong></p>
+<pre><code># Set environment variables (System Properties → Environment Variables)
+OLLAMA_HOST=0.0.0.0:11434
+OLLAMA_ORIGINS=*
+# Then restart Ollama from system tray</code></pre>
+</section>
+
+<section class="slide level2">
+<h2>Setting Up Ollama - Firewall & Security</h2>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<p><strong>Step 2: Configure firewall</strong></p>
+<pre><code># Windows (PowerShell as Admin)
+New-NetFirewallRule -DisplayName "Ollama" -Direction Inbound `
+  -LocalPort 11434 -Protocol TCP -Action Allow</code></pre>
+<p><strong>Alternative: Use a reverse proxy with authentication</strong></p>
+<pre><code># Example using Nginx with basic auth
+# This adds security and allows HTTPS</code></pre>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<div class="iuta-highlight-callout">⚠ <strong>Security note:</strong> Exposing Ollama without authentication on a network allows anyone to run models on your GPU. Always use a firewall or reverse proxy with auth in shared environments.</div>
+</section>
+
+<section class="slide level2">
+<h2>OpenCode Configuration With Remote Ollama</h2>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<p><strong>Step 3: Configure OpenCode to use Ollama on another machine</strong></p>
+<pre><code>{
+  "provider": {
+    "ollama-lan": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Ollama LAN",
+      "options": {
+        "baseURL": "http://10.93.0.226:11434/v1",
+        "timeout": 600000,
+        "chunkTimeout": 120000
+      },
+      "models": {
+        "qwen3.6:35b": {
+          "name": "Qwen 3.6 35B",
+          "limit": {
+            "context": 49152,
+            "output": 8192
+          }
+        }
+      }
+    },
+    "compaction": {
+      "auto": true,
+      "prune": true,
+      "reserved": 12000
+    }
+  }
+}</code></pre>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<p><strong>Step 4: Verify connectivity</strong></p>
+<pre><code># Test that the Ollama LAN API is reachable
+curl http://10.93.0.226:11434/v1/chat/completions \
+  -d '{"model":"qwen3.6:35b","messages":[{"role":"user","content":"Hello"}]}'</code></pre>
+</section>
+
+<section class="slide level2">
+<h2>Summary</h2>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<ul>
+<li><strong>LLM ≠ Agent</strong>: An LLM generates text; an agent uses an LLM to accomplish tasks with tools and memory</li>
+<li><strong>Local deployment</strong>: Ollama (easiest), vLLM (fastest), ML Studio (Windows-native)</li>
+<li><strong>Agent orchestration</strong>: OpenCode bridges the gap between an LLM and an agent by adding tools, context, skills, and workflows</li>
+<li><strong>Network setup</strong>: External clients use <code>http://10.93.0.226:11434/v1</code></li>
+</ul>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<div class="iuta-table-gap" aria-hidden="true"></div>
+<div class="iuta-highlight-callout">Give it a try: connect OpenCode to the local Ollama <code>Qwen3.6:35B</code> model and explore what your private AI coding assistant can do.</div>
+</section>
+
+<section class="slide level2 iuta-thank-you-slide">
+<h2>Thank you for your attention</h2>
+</section>
+
+</div>
+</div>
+
+<div id="mcp-code-modal" class="mcp-modal" hidden role="dialog" aria-modal="true" aria-labelledby="mcp-modal-title">
+  <div class="mcp-modal-panel">
+    <button class="mcp-modal-close" type="button" aria-label="Close detailed MCP setup">Close</button>
+    <h2 id="mcp-modal-title">Detailed MCP Server Setup</h2>
+    <pre><code># Create the project
+npm init -y
+npm install @modelcontextprotocol/sdk zod
+
+// server.mjs
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { readFile } from "node:fs/promises";
+import { resolve, relative, isAbsolute, sep } from "node:path";
+import { z } from "zod";
+
+const ROOT = resolve(process.env.ALLOWED_ROOT ?? "./project");
+const server = new McpServer({ name: "safe-filesystem", version: "1.0.0" });
+
+server.registerTool("read_file", {
+  description: "Read a UTF-8 text file inside the allowed project folder",
+  inputSchema: { path: z.string().describe("Relative file path") }
+}, async ({ path }) =&gt; {
+  const file = resolve(ROOT, path);
+  const rel = relative(ROOT, file);
+  const outside = rel === ".." || rel.startsWith(`..${sep}`) || isAbsolute(rel);
+  if (outside) throw new Error("Path is outside the allowed root");
+  const text = await readFile(file, "utf8");
+  return { content: [{ type: "text", text }] };
+});
+
+const transport = new StdioServerTransport();
+await server.connect(transport);</code></pre>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/notes/notes.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/search/search.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/plugin/zoom/zoom.js"></script>
+<script>
+(function() {
+  var d = new Date();
+  var y = d.getFullYear();
+  var m = String(d.getMonth() + 1).padStart(2, '0');
+  var day = String(d.getDate()).padStart(2, '0');
+  var dateEl = document.querySelector('p.date');
+  if (dateEl) dateEl.textContent = y + '-' + m + '-' + day;
+})();
+
+const mcpTrigger = document.getElementById("mcp-backend-trigger");
+const mcpModal = document.getElementById("mcp-code-modal");
+const mcpClose = mcpModal ? mcpModal.querySelector(".mcp-modal-close") : null;
+let mcpPreviousFocus = null;
+
+function openMcpModal() {
+  if (!mcpModal) return;
+  mcpPreviousFocus = document.activeElement;
+  mcpModal.hidden = false;
+  if (mcpClose) mcpClose.focus();
+}
+
+function closeMcpModal() {
+  if (!mcpModal) return;
+  mcpModal.hidden = true;
+  if (mcpPreviousFocus) mcpPreviousFocus.focus();
+}
+
+if (mcpTrigger && mcpModal) {
+  mcpTrigger.addEventListener("click", openMcpModal);
+  mcpTrigger.addEventListener("keydown", function (event) {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      openMcpModal();
+    }
+  });
+  mcpClose.addEventListener("click", closeMcpModal);
+  mcpModal.addEventListener("click", function (event) {
+    if (event.target === mcpModal) closeMcpModal();
+  });
+  document.addEventListener("keydown", function (event) {
+    if (!mcpModal.hidden && event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      closeMcpModal();
+    }
+  }, true);
+}
+
+function assetUrl(assetName) {
+  const assetNode = document.querySelector('[data-iuta-asset="' + assetName + '"]');
+  if (!assetNode) return "";
+  return assetNode.currentSrc || assetNode.src || "";
+}
+
+function applyTitleAssets() {
+  const root = document.documentElement;
+  if (!root) return;
+  root.style.setProperty("--iuta-title-bg-image", 'url("' + assetUrl("title-background") + '")');
+  root.style.setProperty("--iuta-title-logo-ude-image", 'url("' + assetUrl("title-logo-ude") + '")');
+  root.style.setProperty("--iuta-title-logo-jrf-image", 'url("' + assetUrl("title-logo-jrf") + '")');
+  root.style.setProperty("--iuta-title-logo-iuta-image", 'url("' + assetUrl("title-logo-iuta") + '")');
+}
+
+function escapeHtml(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function textContent(selector, root) {
+  const node = (root || document).querySelector(selector);
+  return node ? (node.textContent || "").trim() : "";
+}
+
+function readBridgeContent(selector) {
+  const node = document.querySelector(selector);
+  if (!node) return "";
+  const value = (node.textContent || "").trim();
+  return value || "";
+}
+
+function readAuthors(titleSlide) {
+  return Array.from(titleSlide.querySelectorAll(".quarto-title-author")).map(function (authorNode) {
+    const affiliations = Array.from(authorNode.querySelectorAll(".quarto-title-affiliation")).map(function (node) {
+      return (node.textContent || "").trim();
+    }).filter(Boolean);
+    return {
+      name: textContent(".quarto-title-author-name", authorNode),
+      email: textContent(".quarto-title-author-email", authorNode),
+      affiliations: affiliations
+    };
+  }).filter(function (author) {
+    return author.name || author.email || author.affiliations.length > 0;
+  });
+}
+
+function readMeta() {
+  const titleSlide = document.getElementById("title-slide");
+  const authors = titleSlide ? readAuthors(titleSlide) : [];
+  const firstAuthor = authors[0] || {};
+  return {
+    title: titleSlide ? textContent("h1.title", titleSlide) : textContent("title"),
+    subtitle: titleSlide ? textContent("p.subtitle", titleSlide) : "",
+    date: titleSlide ? textContent("p.date", titleSlide) : textContent('meta[name="dcterms.date"]'),
+    event: readBridgeContent("#iuta-meta .iuta-meta-event"),
+    footerName: readBridgeContent("#iuta-meta .iuta-meta-footer-name") || firstAuthor.name || "",
+    footerEmail: readBridgeContent("#iuta-meta .iuta-meta-footer-email") || firstAuthor.email || "",
+    affiliations: authors.reduce(function (result, author) {
+      (author.affiliations || []).forEach(function (affiliation) {
+        if (affiliation && result.indexOf(affiliation) === -1) result.push(affiliation);
+      });
+      return result;
+    }, []),
+    authors: authors
+  };
+}
+
+function joinNonEmpty(parts) {
+  return parts.filter(function (part) {
+    return part && String(part).trim() !== "";
+  }).join(" | ");
+}
+
+function getMenuPlugin() {
+  if (!window.Reveal || typeof window.Reveal.getPlugin !== "function") return null;
+  return window.Reveal.getPlugin("menu");
+}
+
+function syncMenuTriggerState() {
+  const trigger = document.querySelector(".reveal .slides .iuta-menu-trigger");
+  if (!trigger) return;
+  const menuPlugin = getMenuPlugin();
+  const expanded = !!(menuPlugin && typeof menuPlugin.isOpen === "function" && menuPlugin.isOpen());
+  trigger.setAttribute("aria-expanded", expanded ? "true" : "false");
+  trigger.classList.toggle("is-open", expanded);
+}
+
+function bindMenuTrigger(trigger) {
+  if (!trigger || trigger.dataset.iutaMenuBound === "true") return;
+  trigger.dataset.iutaMenuBound = "true";
+  trigger.addEventListener("click", function (event) {
+    const menuPlugin = getMenuPlugin();
+    if (!menuPlugin) return;
+    event.preventDefault();
+    if (typeof menuPlugin.toggle === "function") menuPlugin.toggle(event);
+    else if (typeof menuPlugin.openMenu === "function") menuPlugin.openMenu(event);
+    window.setTimeout(syncMenuTriggerState, 0);
+  });
+}
+
+function observeMenuState() {
+  const body = document.body;
+  if (!body || body.dataset.iutaMenuObserved === "true") return;
+  body.dataset.iutaMenuObserved = "true";
+  const observer = new MutationObserver(function (mutations) {
+    const changed = mutations.some(function (mutation) {
+      return mutation.type === "attributes" && mutation.attributeName === "class";
+    });
+    if (changed) syncMenuTriggerState();
+  });
+  observer.observe(body, { attributes: true, attributeFilter: ["class"] });
+}
+
+function ensureFooter(meta) {
+  const slides = document.querySelector(".reveal .slides");
+  if (!slides) return;
+  let chrome = slides.querySelector(".iuta-chrome");
+  if (!chrome) {
+    chrome = document.createElement("div");
+    chrome.className = "iuta-chrome";
+    chrome.innerHTML = [
+      '<div class="iuta-chrome-top-rule"></div>',
+      '<div class="iuta-chrome-bottom-rule"></div>',
+      '<img class="iuta-chrome-logo" alt="IUTA" />',
+      '<div class="iuta-global-footer">',
+      '<div class="iuta-footer-left">',
+      '<button class="iuta-menu-trigger" type="button" aria-label="Open slide menu" aria-haspopup="dialog" aria-expanded="false"></button>',
+      '<span class="iuta-footer-left-text"></span>',
+      '</div>',
+      '<div class="iuta-footer-center"></div>',
+      '<div class="iuta-footer-right"></div>',
+      '</div>'
+    ].join("");
+    slides.appendChild(chrome);
+  }
+  const logo = chrome.querySelector(".iuta-chrome-logo");
+  const footer = chrome.querySelector(".iuta-global-footer");
+  if (logo) { logo.src = assetUrl("iuta-logo"); }
+  const footerLeftText = footer.querySelector(".iuta-footer-left-text");
+  const footerCenter = footer.querySelector(".iuta-footer-center");
+  const footerRight = footer.querySelector(".iuta-footer-right");
+  if (footerLeftText) footerLeftText.textContent = joinNonEmpty([meta.date, meta.event]);
+  if (footerCenter) footerCenter.textContent = joinNonEmpty([meta.footerName, meta.footerEmail]);
+  if (footerRight) footerRight.textContent = "";
+  if (footer.querySelector(".iuta-footer-left")) bindMenuTrigger(footer.querySelector(".iuta-footer-left").querySelector(".iuta-menu-trigger"));
+  observeMenuState();
+  syncMenuTriggerState();
+}
+
+function syncSlideNumber() {
+  const source = document.querySelector(".reveal .slide-number");
+  const target = document.querySelector(".reveal .slides .iuta-footer-right");
+  if (!target) return;
+  target.textContent = source ? (source.textContent || "").trim() : "";
+}
+
+function decorateAuthors(meta) {
+  const affiliations = meta.affiliations || [];
+  return (meta.authors || []).map(function (author) {
+    const indices = (author.affiliations || []).map(function (affiliation) {
+      return affiliations.indexOf(affiliation) + 1;
+    }).filter(function (index) { return index > 0; });
+    return { name: author.name || "", affiliationIndices: indices };
+  });
+}
+
+function affiliationNumbers(indices) {
+  if (!indices || indices.length === 0) return "";
+  return '<sup class="iuta-affiliation-sup">' + indices.join(",") + '</sup>';
+}
+
+function renderSpeakers(meta) {
+  return decorateAuthors(meta).map(function (author) {
+    return '<span class="iuta-title-speaker">' + escapeHtml(author.name) + affiliationNumbers(author.affiliationIndices) + '</span>';
+  }).filter(Boolean).join(', ');
+}
+
+function renderAffiliations(meta) {
+  return (meta.affiliations || []).map(function (affiliation, index) {
+    return '<div class="iuta-title-affiliation-line"><sup class="iuta-affiliation-sup">' + (index + 1) + '</sup><span class="iuta-title-affiliation-text">' + escapeHtml(affiliation) + '</span></div>';
+  }).join('');
+}
+
+function ensureTitleSlide(meta) {
+  const titleSlide = document.getElementById("title-slide");
+  if (!titleSlide || titleSlide.dataset.iutaEnhanced === "true") return;
+  titleSlide.dataset.iutaEnhanced = "true";
+  const names = renderSpeakers(meta);
+  const affiliations = renderAffiliations(meta);
+  const blocks = [
+    '<div class="iuta-title-logo-ude" aria-hidden="true"></div>',
+    '<div class="iuta-title-logo-jrf" aria-hidden="true"></div>',
+    '<div class="iuta-title-logo-iuta" aria-hidden="true"></div>',
+    '<div class="iuta-title-date">' + escapeHtml(meta.date || "") + '</div>',
+    '<div class="iuta-title-event">' + escapeHtml(meta.event || "") + '</div>',
+    names ? '<div class="iuta-title-speakers">' + names + '</div>' : '',
+    affiliations ? '<div class="iuta-title-affiliations">' + affiliations + '</div>' : ''
+  ].join("");
+  titleSlide.insertAdjacentHTML("beforeend", blocks);
+}
+
+function ensureThankYouSlides() {
+  Array.from(document.querySelectorAll(".reveal .slides section.iuta-thank-you-slide")).forEach(function (slide) {
+    if (!slide || slide.dataset.iutaThankYouEnhanced === "true") return;
+    slide.dataset.iutaThankYouEnhanced = "true";
+    var message = textContent("h2", slide) || "Thank you";
+    slide.innerHTML = [
+      '<div class="iuta-thank-you-message">' + escapeHtml(message) + '</div>',
+      '<div class="iuta-thank-you-path">Slides: <code>\\\\10.89.11.34\\Mitarbeitende\\Cunha\\slides</code></div>',
+      '<img class="iuta-thank-you-logo-iuta" alt="IUTA" src="' + escapeHtml(assetUrl("title-logo-iuta")) + '" />',
+      '<img class="iuta-thank-you-logo-ude" alt="Universitat Duisburg-Essen" src="' + escapeHtml(assetUrl("title-logo-ude")) + '" />',
+      '<img class="iuta-thank-you-logo-jrf" alt="Johannes-Rau-Forschungsgemeinschaft" src="' + escapeHtml(assetUrl("title-logo-jrf")) + '" />'
+    ].join("");
+  });
+}
+
+function syncChrome() {
+  const reveal = document.querySelector(".reveal");
+  if (!reveal) return;
+  const currentSlide = window.Reveal && typeof window.Reveal.getCurrentSlide === "function" ? window.Reveal.getCurrentSlide() : document.querySelector(".slides section.present");
+  const onTitleSlide = !!currentSlide && currentSlide.id === "title-slide";
+  const onThankYouSlide = !!currentSlide && currentSlide.classList.contains("iuta-thank-you-slide");
+  reveal.classList.toggle("iuta-on-title-slide", onTitleSlide);
+  reveal.classList.toggle("iuta-on-thank-you-slide", onThankYouSlide);
+}
+
+function init() {
+  applyTitleAssets();
+  const meta = readMeta();
+  ensureFooter(meta);
+  ensureTitleSlide(meta);
+  ensureThankYouSlides();
+  syncChrome();
+  syncSlideNumber();
+  if (window.Reveal && typeof window.Reveal.on === "function") {
+    window.Reveal.on("ready", function () { syncChrome(); syncSlideNumber(); syncMenuTriggerState(); });
+    window.Reveal.on("slidechanged", function () { syncChrome(); syncSlideNumber(); syncMenuTriggerState(); });
+  }
+}
+
+Reveal.initialize({
+  controls: false,
+  controlsTutorial: false,
+  controlsLayout: 'edges',
+  controlsBackArrows: 'faded',
+  progress: false,
+  slideNumber: 'c/t',
+  showSlideNumber: 'all',
+  hash: true,
+  hashOneBasedIndex: false,
+  respondToHashChanges: true,
+  history: true,
+  keyboard: true,
+  overview: true,
+  disableLayout: false,
+  center: false,
+  touch: true,
+  loop: false,
+  rtl: false,
+  navigationMode: 'linear',
+  shuffle: false,
+  fragments: true,
+  fragmentInURL: false,
+  embedded: false,
+  help: true,
+  pause: true,
+  showNotes: false,
+  autoPlayMedia: null,
+  preloadIframes: null,
+  autoSlide: 0,
+  autoSlideStoppable: true,
+  mouseWheel: false,
+  display: 'block',
+  hideInactiveCursor: true,
+  hideCursorTime: 5000,
+  previewLinks: false,
+  transition: 'none',
+  transitionSpeed: 'default',
+  backgroundTransition: 'none',
+  viewDistance: 3,
+  mobileViewDistance: 2,
+  width: 1920,
+  height: 1080,
+  margin: 4.0e-2,
+  plugins: [ RevealNotes, RevealSearch, RevealZoom ]
+}).then(function() { init(); });
+
+</script>
+<style>
+.reveal.iuta-on-title-slide .slides { isolation: isolate; overflow: hidden; }
+.reveal.iuta-on-title-slide .iuta-chrome { display: none; }
+.reveal.iuta-on-thank-you-slide .iuta-chrome { display: none; }
+.reveal.iuta-on-title-slide .slides::before {
+  background-image:
+    linear-gradient(to bottom, #ffffff 0, #ffffff 24.23%, rgba(255,255,255,0) 24.23%, rgba(255,255,255,0) 59.65%, #ffffff 59.65%, #ffffff 100%),
+    var(--iuta-title-bg-image);
+  background-position: center, center;
+  background-repeat: no-repeat, no-repeat;
+  background-size: cover, cover;
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  transform: translateZ(0);
+  z-index: 0;
+}
+.reveal #title-slide {
+  background: transparent; box-sizing: border-box; display: block; height: 100%; inset: 0; isolation: isolate; margin: 0; border: 0 !important; box-shadow: none !important; outline: 0; overflow: visible; padding: 0; position: absolute; text-align: left; width: 100%;
+}
+.reveal #title-slide > * { position: relative; z-index: 1; }
+.reveal #title-slide .quarto-title-authors, .reveal #title-slide .date { display: none; }
+.reveal #title-slide .title { color: #ffffff; font-size: var(--iuta-title-font-size); left: var(--iuta-title-side-inset); line-height: 1.08; margin: 0; position: absolute; right: var(--iuta-title-side-inset); top: var(--iuta-title-heading-top); }
+.reveal #title-slide .iuta-title-date { color: #ffffff; font-size: var(--iuta-title-date-font-size); left: var(--iuta-title-side-inset); position: absolute; top: 28.2857%; }
+.reveal #title-slide .iuta-title-event { color: #ffffff; font-size: var(--iuta-title-event-font-size); font-weight: 700; left: var(--iuta-title-side-inset); letter-spacing: 0.02em; position: absolute; text-transform: uppercase; top: 32.2857%; }
+.reveal #title-slide .iuta-title-speakers { color: #7b7b7b; font-size: var(--iuta-title-speakers-font-size); left: var(--iuta-title-side-inset); position: absolute; right: var(--iuta-title-content-right); top: 63.7143%; }
+.reveal #title-slide .iuta-title-speaker { display: inline; }
+.reveal #title-slide .iuta-title-affiliations { color: var(--iuta-blue); font-size: var(--iuta-title-affiliations-font-size); left: var(--iuta-title-side-inset); line-height: 1.3; position: absolute; right: var(--iuta-title-content-right); top: 72%; }
+.reveal #title-slide .iuta-title-affiliation-line { display: block; margin-top: 0.12em; }
+.reveal #title-slide .iuta-title-affiliation-line:first-child { margin-top: 0; }
+.reveal #title-slide .iuta-affiliation-sup { font-size: 0.72em; line-height: 0; margin-right: 0.18em; vertical-align: super; }
+.reveal #title-slide .iuta-title-logo-ude {
+  background-image: var(--iuta-title-logo-ude-image);
+  background-position: center; background-repeat: no-repeat; background-size: contain;
+  bottom: 2.5714%; height: 15.4286%; position: absolute;
+  right: 17.0418%; width: 8.6817%;
+}
+.reveal #title-slide .iuta-title-logo-jrf {
+  background-image: var(--iuta-title-logo-jrf-image);
+  background-position: center; background-repeat: no-repeat; background-size: contain;
+  bottom: 1.4286%; height: 15.4286%; position: absolute;
+  right: 7.3955%; width: 8.6817%;
+}
+.reveal #title-slide .iuta-title-logo-iuta {
+  background-image: var(--iuta-title-logo-iuta-image);
+  background-position: left top; background-repeat: no-repeat; background-size: contain;
+  height: 13.7143%; left: 4.3408%; position: absolute;
+  top: 4.5714%; width: 17.2026%;
+}
+.reveal .slides section.slide.iuta-thank-you-slide {
+  align-items: center; background-image:
+    linear-gradient(to bottom, #ffffff 0, #ffffff 24.23%, rgba(255,255,255,0) 24.23%, rgba(255,255,255,0) 59.65%, #ffffff 59.65%, #ffffff 100%),
+    var(--iuta-title-bg-image);
+  background-position: center, center; background-repeat: no-repeat, no-repeat;
+  background-size: cover, cover; display: flex; flex-direction: column;
+  justify-content: center; padding: 0 9.6463%; position: absolute; text-align: center;
+}
+.reveal .slides section.slide.iuta-thank-you-slide .iuta-thank-you-message { color: #ffffff; font-size: 1.48em; left: 50%; margin: 0; max-width: calc(100% - 19.2926%); padding: 0; position: absolute; top: var(--iuta-thank-you-message-top); text-align: center; transform: translate(-50%, -50%); width: min(51%, calc(100% - 19.2926%)); z-index: 1; text-shadow: 0 2px 10px rgba(0,0,0,0.18); }
+.reveal .slides section.slide.iuta-thank-you-slide .iuta-thank-you-path { color: #ffffff; font-size: .72em; left: 50%; position: absolute; text-align: center; top: 53%; transform: translateX(-50%); width: 80%; z-index: 1; }
+.reveal .slides section.slide.iuta-thank-you-slide .iuta-thank-you-path code { background: transparent; color: #ffffff; font-size: 1em; }
+.reveal .slides section.slide.iuta-thank-you-slide .iuta-thank-you-logo-iuta,
+.reveal .slides section.slide.iuta-thank-you-slide .iuta-thank-you-logo-ude,
+.reveal .slides section.slide.iuta-thank-you-slide .iuta-thank-you-logo-jrf { display: block; object-fit: contain; position: absolute; z-index: 1; }
+.reveal .slides section.slide.iuta-thank-you-slide .iuta-thank-you-logo-iuta { height: 13.7143%; left: 4.3408%; top: 4.5714%; width: 17.2026%; }
+.reveal .slides section.slide.iuta-thank-you-slide .iuta-thank-you-logo-ude { bottom: 2.5714%; height: 15.4286%; right: 17.0418%; width: 8.6817%; }
+.reveal .slides section.slide.iuta-thank-you-slide .iuta-thank-you-logo-jrf { bottom: 1.4286%; height: 15.4286%; right: 7.3955%; width: 8.6817%; }
+@media (max-width: 900px) {
+  .reveal .slides section.slide.iuta-thank-you-slide { background-position: center, center; background-size: cover, cover; padding: 0 40px; }
+  .reveal .slides section.slide.iuta-thank-you-slide .iuta-thank-you-message { font-size: 1.18em; max-width: calc(100% - 80px); width: calc(100% - 80px); }
+  .reveal .slides section.slide.iuta-thank-you-slide .iuta-thank-you-logo-iuta { height: 76px; left: 32px; top: 24px; width: 170px; }
+  .reveal .slides section.slide.iuta-thank-you-slide .iuta-thank-you-logo-ude { bottom: 14px; height: 84px; right: 156px; width: 84px; }
+  .reveal .slides section.slide.iuta-thank-you-slide .iuta-thank-you-logo-jrf { bottom: 8px; height: 84px; right: 64px; width: 84px; }
+  .reveal .llm-visual-card { height: auto; }
+  .reveal .iuta-centered-content { left: 32px; position: relative; right: auto; top: auto; transform: none; }
+}
+</style>
+</body>
+</html>

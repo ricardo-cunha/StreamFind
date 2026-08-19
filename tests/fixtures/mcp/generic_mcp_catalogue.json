@@ -1,0 +1,33 @@
+{
+  "generic_tools": [
+    {"name": "create", "required": ["database_path", "project_id", "domain"]},
+    {"name": "connect", "required": ["database_path", "project_id"]},
+    {"name": "describe", "required": ["database_path", "project_id"]},
+    {"name": "validate", "required": ["database_path", "project_id"]},
+    {"name": "get_domain", "required": ["database_path", "project_id"]},
+    {"name": "get_metadata", "required": ["database_path", "project_id"]},
+    {"name": "set_metadata", "required": ["database_path", "project_id", "metadata"]},
+    {"name": "get_workflow", "required": ["database_path", "project_id"]},
+    {"name": "get_workflow_execution", "required": ["database_path", "project_id"]},
+    {"name": "set_workflow", "required": ["database_path", "project_id", "workflow"]},
+    {"name": "add_method", "required": ["database_path", "project_id", "method"]},
+    {"name": "remove_method", "required": ["database_path", "project_id", "method"]},
+    {"name": "validate_workflow", "required": ["workflow"]},
+    {"name": "run_workflow", "required": ["database_path", "project_id"]},
+    {"name": "get_cache", "required": ["database_path", "project_id"]},
+    {"name": "get_cache_size", "required": ["database_path", "project_id"]},
+    {"name": "delete_cache", "required": ["database_path", "project_id"]},
+    {"name": "get_audit_trail", "required": ["database_path", "project_id"]},
+    {"name": "get_available_methods", "required": ["domain"]},
+    {"name": "run_method", "required": ["database_path", "project_id", "method"]},
+    {"name": "copy", "required": ["database_path", "project_id", "destination_database_path", "destination_project_id"]},
+    {"name": "close", "required": ["database_path", "project_id"]}
+  ],
+  "lifecycle": [
+    "initialize",
+    "connect",
+    "tools/list",
+    "tools/call",
+    "close"
+  ]
+}

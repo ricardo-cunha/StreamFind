@@ -1,0 +1,144 @@
+@prefix sfcore: <https://streamfind.dev/catalogue/core#> .
+@prefix sfms: <https://streamfind.dev/catalogue/domains/mass_spec#> .
+@prefix sf: <https://streamfind.dev/vocabulary#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+sfms:updatedField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Updated row count" ;
+    skos:definition "Number of analysis rows updated by a metadata operation." ;
+    sf:propertyName "updated" ;
+    sf:type "integer" .
+
+sfms:targetIdField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Target identifier" ;
+    skos:definition "Stable identifier returned with rows matched to this target." ;
+    sf:propertyName "id" ;
+    sf:type "string" ;
+    sf:required false ;
+    sf:example "caffeine" .
+
+sfms:targetAnalysesField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Target analyses" ;
+    skos:definition "Analysis names to match." ;
+    sf:propertyName "analyses" ;
+    sf:type "array" ;
+    sf:required false ;
+    sf:items sfcore:stringItemParameter ;
+    sf:example "[\"sample-r001\",\"sample-r002\"]" .
+
+sfms:targetPolarityField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Target polarity" ;
+    skos:definition "Ion polarity." ;
+    sf:propertyName "polarity" ;
+    sf:type "integer" ;
+    sf:required false ;
+    sf:example 1 .
+
+sfms:targetLevelsField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Target MS levels" ;
+    skos:definition "MS levels to match for this target." ;
+    sf:propertyName "levels" ;
+    sf:type "array" ;
+    sf:required false ;
+    sf:items sfcore:integerItemParameter ;
+    sf:example "[1,2]" .
+
+sfms:targetMassField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Target neutral mass" ;
+    skos:definition "Exact neutral mass." ;
+    sf:propertyName "mass" ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 194.0804 .
+
+sfms:targetMassMinField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Minimum target neutral mass" ;
+    skos:definition "Lower neutral-mass bound." ;
+    sf:propertyName "mass_min" ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 194.0 .
+
+sfms:targetMassMaxField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Maximum target neutral mass" ;
+    skos:definition "Upper neutral-mass bound." ;
+    sf:propertyName "mass_max" ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 194.2 .
+
+sfms:targetMzField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Target m/z" ;
+    skos:definition "Exact m/z." ;
+    sf:propertyName "mz" ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 195.0877 .
+
+sfms:targetMzMinField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Minimum target m/z" ;
+    skos:definition "Lower m/z bound." ;
+    sf:propertyName "mz_min" ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 195.0 .
+
+sfms:targetMzMaxField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Maximum target m/z" ;
+    skos:definition "Upper m/z bound." ;
+    sf:propertyName "mz_max" ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 195.2 .
+
+sfms:targetRtField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Target retention time" ;
+    skos:definition "Exact retention time." ;
+    sf:propertyName "rt" ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 1020.0 .
+
+sfms:targetRtMinField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Minimum target retention time" ;
+    skos:definition "Lower retention-time bound." ;
+    sf:propertyName "rt_min" ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 1000.0 .
+
+sfms:targetRtMaxField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Maximum target retention time" ;
+    skos:definition "Upper retention-time bound." ;
+    sf:propertyName "rt_max" ;
+    sf:type "real" ;
+    sf:required false ;
+    sf:example 1040.0 .
