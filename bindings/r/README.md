@@ -40,8 +40,13 @@ options(timeout = 600)
 if (!requireNamespace("remotes", quietly = TRUE)) {
   install.packages("remotes")
 }
-remotes::install_github("odea-project/streamfind")
+remotes::install_github("odea-project/streamfind", subdir = "bindings/r")
 ```
+
+The repository root is not the R package root. The `subdir` argument tells
+`remotes` to install the package under `bindings/r`; this command can be run
+from any working directory. For local development, run package commands from
+this directory and use `devtools::load_all()`.
 
 Supplementary example data and assets are available in the companion package
 [streamfind.data](https://github.com/odea-project/streamfind.data):

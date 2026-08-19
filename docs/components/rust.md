@@ -4,6 +4,11 @@
 project backend. It uses the same DuckDB project schema and JSON contract as
 `streamfind-core`, but never links to or wraps the C++ implementation.
 
+!!! note "Maturity"
+    The Rust backend is an active developer-preview foundation. It is intended
+    to remain interoperable with C++ through the semantic catalogue and shared
+    fixtures, but it is not yet a release-stable replacement for the R package.
+
 ## Crates
 
 - `streamfind-rust-core` — project, workflow, typed parameters, methods,
@@ -63,3 +68,6 @@ fixtures and conformance tests live under `tests/data/` and
 `rust/crates/core/tests/`.
 
 See `rust/README.md` for the full contracts.
+
+The [development status](../status.md) describes which capabilities have
+crossed the migration boundary and which remain in the preserved R package.

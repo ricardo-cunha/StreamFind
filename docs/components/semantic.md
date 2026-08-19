@@ -56,5 +56,5 @@ Regenerate the projection after changing `semantic/ontology/`:
 4. Add backend tests. No MCP description or dispatch code is edited.
 
 See the
-[living roadmap](https://github.com/ricardo-cunha/streamfind/blob/dev_refactoring/.plans/streamfind_migration_plan.md)
+[living roadmap](https://github.com/odea-project/StreamFind/blob/master/.plans/streamfind_migration_plan.md)
 for the full rules and the definition of done.

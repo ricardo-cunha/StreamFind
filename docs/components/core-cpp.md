@@ -5,6 +5,11 @@ persistence and generic workflow execution. It does not depend on R, Python,
 FastAPI, or React. Domain libraries depend on the generic core; the generic
 core never depends on domains.
 
+!!! note "Maturity"
+    The C++ backend is an active developer-preview foundation, not yet a
+    released compatibility-stable library. It is the native backend planned
+    for the future public Python distribution.
+
 ## Build and test
 
 ```powershell
@@ -72,3 +77,6 @@ the stable `ErrorCode` enum. The core uses the shared `PROJECT`, `CACHE`, and
 using the shared fixtures in `tests/data`.
 
 See `core/README.md` for the full contracts.
+
+The [development status](../status.md) lists the currently migrated domain
+capabilities and the remaining migration boundary.

@@ -37,7 +37,8 @@ The ontology distinguishes two kinds of public capability:
   `create`, `get_metadata`, `mass_spec.get_analyses_info`.
 - **`sf:Method`** — workflow-executable capability owned by one domain, the
   only unit allowed in a `WorkflowStep`. Examples:
-  `mass_spec.process_features`, `raman.preprocess_spectra`.
+  `mass_spec.find_features`, `mass_spec.load_chromatograms`, and
+  `mass_spec.filter_chromatograms_retention_time`.
 
 Every public capability has one canonical semantic identifier. Transports and
 language interfaces map to it; they do not create another domain contract.
@@ -56,11 +57,17 @@ Both MCP servers follow the same generic algorithm:
 1. `initialize` — handshake.
 2. Load the embedded semantic projection and compose the method/operation
    registries for the application.
-3. `connect(project)` — reads the immutable project domain.
-4. `tools/list` — advertises generic operations plus the intersection of the
-   connected domain's semantic capabilities and the registered executables.
-5. `tools/call` — resolves the tool name to a canonical ID, validates
+3. `tools/list` — advertises generic capabilities before a project is
+   connected. After `connect(project)`, it also advertises the intersection of
+   the connected domain's capabilities and registered executables.
+4. `tools/call` — resolves the tool name to a canonical ID, validates
    parameters against the projection, and invokes the matching registry.
+
+Direct domain **Operations** are stateless: their request includes
+`database_path` and `project_id`, and the server opens and closes the project
+within that request. Workflow **Methods** are session-bound: call
+`connect(project)` first, invoke Methods using the connected context, and call
+`close` when the session ends.
 
 The **intersection rule** is important: a semantic declaration alone must not
 advertise an unavailable executable, and a registered executor without a

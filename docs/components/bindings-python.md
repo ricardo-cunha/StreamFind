@@ -1,7 +1,12 @@
 # Python binding (future)
 
 `bindings/python` is reserved for the future public Python package. It is not
-developed yet.
+available as an installable public package yet.
+
+!!! warning "Not available yet"
+    Do not use this directory as an installation or runtime entry point. The
+    public Python boundary starts after the semantic, registry, and MCP
+    contracts have stabilised.
 
 ## Planned design
 

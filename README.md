@@ -15,13 +15,20 @@ errors, and interface mappings. Each backend implements that contract
 independently and shares behaviour through conformance fixtures, never by
 wrapping the other backend.
 
+> **Development stage:** streamfind is in an active architecture migration.
+> The R package is the preserved functional user path. The C++ and Rust
+> backends and MCP servers are active developer-preview foundations; the public
+> Python package and complete non-target-analysis migration are not available
+> yet. See the [development status](https://streamfind.odea-project.org/status/)
+> page for the current capabilities and limitations.
+
 ## Repository layout
 
 | Path | Component | Status |
 | --- | --- | --- |
 | `semantic/` | Backend-neutral semantic catalogue and generated projection | Foundation |
-| `core/` | Independent C++20 backend (`streamfind-core`) | Foundation |
-| `rust/` | Independent Rust backend (`streamfind-rust-*` crates) | Foundation |
+| `core/` | Independent C++20 backend (`streamfind-core`) | Active foundation |
+| `rust/` | Independent Rust backend (`streamfind-rust-*` crates) | Active foundation |
 | `bindings/r/` | R package | Preserved and functional |
 | `bindings/python/` | Public Python binding | Future |
 | `integrations/cf-streamfind/` | Cogniflow integration | Deferred |
@@ -57,6 +64,8 @@ FastAPI, or React. Domain libraries depend on the generic core; the generic
 core never depends on domains.
 
 ### Build and test
+
+From `core/`:
 
 ```powershell
 cmake --preset default
@@ -100,8 +109,8 @@ The package is built on a DuckDB-backed workflow framework of persistent
 `Project` child classes (`ProjectMassSpec`, `ProjectNonTargetAnalysis`, and
 related classes) that hold data, workflow metadata, cached results, and audit
 state. Workflows are assembled from ordered `Method` objects and executed
-reproducibly. A Docker image bundles the package with code-server, SSH, and
-external tools.
+reproducibly. The R package is currently the most complete user-facing
+workflow path in the repository.
 
 ### Installation
 
@@ -112,7 +121,7 @@ options(timeout = 600)
 if (!requireNamespace("remotes", quietly = TRUE)) {
   install.packages("remotes")
 }
-remotes::install_github("odea-project/streamfind")
+remotes::install_github("odea-project/streamfind", subdir = "bindings/r")
 ```
 
 ### Development
@@ -120,12 +129,71 @@ remotes::install_github("odea-project/streamfind")
 Run package commands from `bindings/r`:
 
 ```text
-R CMD check bindings/r
-R CMD build bindings/r
+cd bindings/r
+devtools::load_all()
+R CMD check .
+R CMD build .
 ```
 
-The repository root is not the package root. See `bindings/r/README.md` for
-the framework overview, Shiny application, and Docker usage.
+The repository root is not the package root. For a local installation from the
+repository root, use `remotes::install_local("bindings/r")`.
+
+### Methods and documentation
+
+Workflow steps are exported `Method_*` constructors. Their parameters,
+prerequisites, return objects, and examples are documented with roxygen2 in
+`bindings/r/R/` and generated into the package help topics:
+
+```r
+library(streamfind)
+
+grep("^Method_", getNamespaceExports("streamfind"), value = TRUE)
+?Method_NonTargetAnalysis_FindFeatures
+?Method_MassSpecChromatograms_LoadChromatograms
+```
+
+Regenerate the documentation from `bindings/r/` with:
+
+```powershell
+Rscript -e "devtools::document(); devtools::load_all()"
+```
+
+### Shiny application
+
+The R package includes a Shiny application for browsing projects, analyses,
+workflows, chromatograms, spectra, and non-target-analysis results:
+
+```r
+library(streamfind)
+
+nta <- open_ProjectNonTargetAnalysis(
+  db = "streamfind.duckdb",
+  project_id = "nta_demo"
+)
+nta$run_app()
+```
+
+### Docker image
+
+A pre-built image is available at
+[ricardocunha23/streamfind on Docker Hub](https://hub.docker.com/r/ricardocunha23/streamfind):
+
+```bash
+docker pull ricardocunha23/streamfind:latest
+docker run -d --name streamfind \
+  -v "$PWD/data:/host/data:rw" \
+  -p 3838:3838 -p 8080:8080 -p 2222:22 \
+  -e SSH_PASSWORD=change-me \
+  -e CS_PASSWORD=change-me \
+  ricardocunha23/streamfind:latest
+```
+
+The container provides the Shiny application at <http://localhost:3838>,
+code-server at <http://localhost:8080>, and SSH on port `2222`. Change the
+example passwords before exposing the container beyond the local machine.
+
+See [`bindings/r/README.md`](bindings/r/README.md) for mounts, external tools,
+and additional container configuration.
 
 ## bindings/python
 
@@ -146,6 +214,22 @@ deferred until the public C++/Python path is complete.
 Shared backend-neutral fixtures used by the C++ and Rust implementations for
 conformance: analytical sample data under `tests/data/` (mass spectrometry,
 Raman, sensors) and semantic/MCP JSON fixtures under `tests/fixtures/`.
+
+## MCP lifecycle
+
+Direct domain **Operations** are stateless: pass `database_path` and
+`project_id` with each request, and the server opens and closes the project
+within that request. They do not require `connect` or `close`.
+
+Workflow **Methods** are session-bound: call `connect` first, use `tools/list`
+to discover the connected domain's Methods, invoke the Methods, and call
+`close` when the session ends. See the [C++ MCP quickstart](https://streamfind.odea-project.org/quickstart/cpp-mcp/)
+or [Rust MCP quickstart](https://streamfind.odea-project.org/quickstart/rust-mcp/).
+
+## Documentation
+
+The full documentation site is available at
+<https://streamfind.odea-project.org/>.
 
 ## Contributing
 
