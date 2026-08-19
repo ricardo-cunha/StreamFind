@@ -45,6 +45,8 @@ _skbuild/
 **/*.rds
 **/*.sf
 **/*.html
+!/slides/**/*.html
+!/docs/**/*.html
 /log/
 /cache/
 /tmp/
