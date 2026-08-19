@@ -1,0 +1,16 @@
+{
+  "canonical_ids": [
+    "create", "describe", "get_workflow", "get_workflow_execution", "set_workflow", "add_method", "remove_method",
+    "validate_workflow", "validate", "get_domain", "get_available_methods",
+    "run_method", "copy", "run_workflow", "get_metadata", "set_metadata",
+    "get_cache", "delete_cache", "get_cache_size", "get_audit_trail", "close",
+    "mass_spec.add_analyses", "mass_spec.remove_analyses", "mass_spec.get_analyses_info",
+    "mass_spec.get_analysis_names", "mass_spec.get_replicate_names", "mass_spec.get_blank_names",
+    "mass_spec.get_concentrations", "mass_spec.set_replicate_names", "mass_spec.set_blank_names",
+    "mass_spec.set_concentrations", "mass_spec.get_spectra_headers",
+    "mass_spec.get_chromatograms_headers", "mass_spec.get_spectra_tic",
+    "mass_spec.get_raw_spectra", "mass_spec.get_raw_spectra_eic",
+    "mass_spec.get_raw_spectra_ms1", "mass_spec.get_raw_spectra_ms2",
+    "mass_spec.get_chromatograms", "mass_spec.get_raw_chromatograms", "mass_spec.get_features"
+  ]
+}

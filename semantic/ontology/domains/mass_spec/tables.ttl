@@ -1,0 +1,186 @@
+@prefix sfcore: <https://streamfind.dev/catalogue/core#> .
+@prefix sfms: <https://streamfind.dev/catalogue/domains/mass_spec#> .
+@prefix sf: <https://streamfind.dev/vocabulary#> .
+@prefix skos: <http://www.w3.org/2004/02/skos/core#> .
+
+sfms:analysesTable
+    a sf:Table ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry analyses table" ;
+    skos:definition "Persisted summary and metadata for imported mass spectrometry analyses." ;
+    sf:tableName "MASS_SPEC_ANALYSES" ;
+    sf:hasColumn
+        sfcore:projectIdColumn,
+        sfms:analysisNameColumn,
+        sfms:replicateNameColumn,
+        sfms:blankNameColumn,
+        sfms:fileNameColumn,
+        sfms:filePathColumn,
+        sfms:fileDirColumn,
+        sfms:fileExtensionColumn,
+        sfms:formatColumn,
+        sfms:typeColumn,
+        sfms:timeStampColumn,
+        sfms:numberSpectraColumn,
+        sfms:numberChromatogramsColumn,
+        sfms:numberSpectraBinaryArraysColumn,
+        sfms:minMzColumn,
+        sfms:maxMzColumn,
+        sfms:startRtColumn,
+        sfms:endRtColumn,
+        sfms:hasIonMobilityColumn,
+        sfms:concentrationColumn,
+        sfcore:createdAtColumn .
+
+sfms:spectraHeadersTable
+    a sf:Table ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry spectra headers table" ;
+    skos:definition "Persisted header metadata for spectra in a mass spectrometry analysis." ;
+    sf:tableName "MASS_SPEC_SPECTRA_HEADERS" ;
+    sf:hasColumn
+        sfcore:projectIdColumn,
+        sfms:analysisNameColumn,
+        sfms:indexColumn,
+        sfms:scanColumn,
+        sfms:arrayLengthColumn,
+        sfms:levelColumn,
+        sfms:modeColumn,
+        sfms:polarityColumn,
+        sfms:configurationColumn,
+        sfms:lowMzColumn,
+        sfms:highMzColumn,
+        sfms:bpMzColumn,
+        sfms:bpIntColumn,
+        sfms:ticColumn,
+        sfms:rtColumn,
+        sfms:mobilityColumn,
+        sfms:windowMzColumn,
+        sfms:windowMzLowColumn,
+        sfms:windowMzHighColumn,
+        sfms:precursorMzColumn,
+        sfms:precursorIntensityColumn,
+        sfms:precursorChargeColumn,
+        sfms:activationCeColumn .
+
+sfms:chromatogramsHeadersTable
+    a sf:Table ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry chromatograms headers table" ;
+    skos:definition "Persisted header metadata for chromatograms in a mass spectrometry analysis." ;
+    sf:tableName "MASS_SPEC_CHROMATOGRAMS_HEADERS" ;
+    sf:hasColumn
+        sfcore:projectIdColumn,
+        sfms:analysisNameColumn,
+        sfms:indexColumn,
+        sfms:chromatogramIdColumn,
+        sfms:arrayLengthColumn,
+        sfms:polarityColumn,
+        sfms:precursorMzColumn,
+        sfms:activationCeColumn,
+        sfms:productMzColumn,
+        sfms:signalTypeColumn,
+        sfms:chromatogramTypeColumn,
+        sfms:detectorColumn,
+        sfms:channelColumn,
+        sfms:unitsColumn,
+        sfms:wavelengthNmColumn,
+        sfms:intervalMsColumn,
+        sfms:startTimeColumn,
+        sfms:endTimeColumn,
+        sfms:intensityMultiplierColumn .
+
+sfms:chromatogramsTable
+    a sf:Table ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Mass spectrometry chromatograms table" ;
+    skos:definition "Persisted chromatogram points loaded and filtered for mass spectrometry analyses." ;
+    sf:tableName "MASS_SPEC_CHROMATOGRAMS" ;
+    sf:hasColumn
+        sfcore:projectIdColumn,
+        sfms:analysisNameColumn,
+        sfms:chromatogramIdColumn,
+        sfms:rtColumn,
+        sfms:rawIntensityColumn,
+        sfms:baselineColumn,
+        sfms:intensityColumn,
+        sfcore:createdAtColumn .
+
+sfms:ntaFeaturesTable
+    a sf:Table ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "NTA features table" ;
+    skos:definition "Persisted MS1 features detected for non-target analysis." ;
+    sf:tableName "MASS_SPEC_NTA_FEATURES" ;
+    sf:hasColumn
+        sfcore:projectIdColumn,
+        sfms:analysisNameColumn,
+        sfms:ntaFeatureIdColumn,
+        sfms:ntaFeatureComponentColumn,
+        sfms:ntaFeatureGroupColumn,
+        sfms:ntaAdductColumn,
+        sfms:ntaFeatureRtColumn,
+        sfms:ntaFeatureMzColumn,
+        sfms:ntaMassColumn,
+        sfms:ntaFeatureIntensityColumn,
+        sfms:ntaNoiseColumn,
+        sfms:ntaFeatureSnColumn,
+        sfms:ntaFeatureAreaColumn,
+        sfms:ntaFeatureTraceCountColumn,
+        sfms:ntaRtMinColumn,
+        sfms:ntaRtMaxColumn,
+        sfms:ntaWidthColumn,
+        sfms:ntaMzMinColumn,
+        sfms:ntaMzMaxColumn,
+        sfms:ntaPpmColumn,
+        sfms:ntaFwhmRtColumn,
+        sfms:ntaFwhmMzColumn,
+        sfms:ntaGaussianAColumn,
+        sfms:ntaGaussianMuColumn,
+        sfms:ntaGaussianSigmaColumn,
+        sfms:ntaGaussianR2Column,
+        sfms:ntaJaggednessColumn,
+        sfms:ntaSharpnessColumn,
+        sfms:ntaAsymmetryColumn,
+        sfms:ntaModalityColumn,
+        sfms:ntaPlatesColumn,
+        sfms:ntaPolarityColumn,
+        sfms:ntaFilteredColumn,
+        sfms:ntaFilterColumn,
+        sfms:ntaFilledColumn,
+        sfms:ntaCorrectionColumn,
+        sfms:ntaEicSizeColumn,
+        sfms:ntaEicRtColumn,
+        sfms:ntaEicMzColumn,
+        sfms:ntaEicIntensityColumn,
+        sfms:ntaEicBaselineColumn,
+        sfms:ntaEicSmoothedColumn,
+        sfms:ntaMs1SizeColumn,
+        sfms:ntaMs1MzColumn,
+        sfms:ntaMs1IntensityColumn,
+        sfms:ntaMs2SizeColumn,
+        sfms:ntaMs2MzColumn,
+        sfms:ntaMs2IntensityColumn,
+        sfms:ntaAnnotationCategoryColumn,
+        sfms:ntaAnnotationTypeColumn,
+        sfms:ntaAnnotationParentFeatureColumn,
+        sfms:ntaAnnotationElementColumn,
+        sfms:ntaAnnotationMassErrorDaColumn,
+        sfms:ntaAnnotationMassErrorPpmColumn,
+        sfms:ntaAnnotationRtErrorColumn,
+        sfms:ntaAnnotationRelIntensityColumn,
+        sfms:ntaAnnotationExpectedRelIntensityMinColumn,
+        sfms:ntaAnnotationExpectedRelIntensityMaxColumn,
+        sfms:ntaAnnotationScoreColumn,
+        sfms:ntaComponentSizeColumn,
+        sfms:ntaComponentRtCenterColumn,
+        sfms:ntaComponentRtSpreadColumn,
+        sfms:ntaComponentDensityColumn,
+        sfms:ntaComponentMeanCorrelationColumn,
+        sfms:ntaComponentBestPartnerColumn,
+        sfms:ntaComponentMaxCorrelationColumn,
+        sfms:ntaComponentMeanCorrelationToComponentColumn,
+        sfms:ntaComponentMembershipScoreColumn,
+        sfms:ntaComponentIsCoreColumn,
+        sfms:ntaComponentBridgeFlagColumn,
+        sfcore:createdAtColumn .

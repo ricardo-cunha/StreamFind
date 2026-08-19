@@ -1,0 +1,26 @@
+:root {
+  --md-primary-fg-color: #000000;
+  --md-primary-fg-color--light: #1a1a1a;
+  --md-primary-fg-color--dark: #000000;
+  --md-accent-fg-color: #002060;
+}
+
+[data-md-color-scheme="slate"] {
+  --md-primary-fg-color: #000000;
+  --md-primary-fg-color--light: #1a1a1a;
+  --md-primary-fg-color--dark: #000000;
+  --md-accent-fg-color: #7aa0e6;
+  --md-default-bg-color: #000000;
+}
+
+/* Keep the top navigation bar black in both light and dark modes. */
+.md-header,
+.md-tabs {
+  background-color: #000000;
+}
+
+.md-header .md-icon,
+.md-header__title,
+.md-header__button {
+  color: #ffffff;
+}

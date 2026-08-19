@@ -1,30 +1,61 @@
+# Repository build outputs -----------------------------------------------------
+/build/
+/dist/
+/cmake-build-*/
+/core/build/
+/integrations/cf-streamfind/build/
+/site/
+**/CMakeCache.txt
+**/CMakeFiles/
+**/.ninja_deps
+**/.ninja_log
+_skbuild/
 
-# R project files -------------------------------------------------------------
-*.Rproj.user
+# Native and language build artifacts ------------------------------------------
+**/*.o
+**/*.obj
+**/*.a
+**/*.lib
+**/*.so
+**/*.dll
+**/*.dylib
+**/*.pyd
+**/*.egg-info/
+/core/vendor/openbabel/build/
+
+# DuckDB runtime/import libraries are vendored for native builds ----------------
+!/core/vendor/duckdb/lib/
+!/core/vendor/duckdb/lib/**
+
+# Python tooling ----------------------------------------------------------------
+**/__pycache__/
+**/*.py[cod]
+**/.pytest_cache/
+**/.venv/
+**/.venv-wheel/
+
+# Node/frontend tooling ---------------------------------------------------------
+**/node_modules/
+**/coverage/
+**/.vite/
+
+# Runtime and generated data ----------------------------------------------------
+**/*.sqlite
+**/*.duckdb
+**/*.rds
+**/*.sf
+**/*.html
+!/slides/**/*.html
+!/docs/**/*.html
+/log/
+/cache/
+/tmp/
+
+# IDE and OS files --------------------------------------------------------------
+*.Rproj.user/
 *.Rhistory
-*.Rdata
 *.RData
-*.httr-oauth
 *.DS_Store
 *.Rproj
-*.vscode
-*.quarto
-
-# Excluded project folders ----------------------------------------------------
-**/doc
-/Meta/
-**/log
-/cache
-
-# Globally excluded file types and folders ------------------------------------
-*.sqlite
-*.rds
-*.json
-*.o
-*.so
-*.dll
-*.html
-*.duckdb
-.Rproj.user
-/.quarto/
-**/*.quarto_ipynb
+*.vscode/
+*.quarto/
