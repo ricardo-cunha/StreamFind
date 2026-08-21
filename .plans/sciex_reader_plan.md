@@ -18,6 +18,55 @@ E:\example_files\raw_vendor_files\sciex\220511_Nitrosamine_M220426_M220503_Vierl
 E:\example_files\raw_vendor_files\sciex\220511_Nitrosamine_M220426_M220503_Vierlinden.wiff.scan
 ```
 
+**Additional validation fixtures used by the worktree:**
+
+```text
+E:\example_files\raw_vendor_files\sciex\201023_Pac.wiff
+E:\example_files\raw_vendor_files\sciex\201023_Pac.wiff.scan
+
+E:\example_files\raw_vendor_files\sciex\201209_MM_2.wiff
+E:\example_files\raw_vendor_files\sciex\201209_MM_2.wiff.scan
+
+E:\example_files\raw_vendor_files\sciex\tof\220104_1_1.wiff
+E:\example_files\raw_vendor_files\sciex\tof\220104_1_1.wiff.scan
+
+E:\example_files\raw_vendor_files\sciex\as_mzML\
+E:\example_files\raw_vendor_files\sciex\as_mzMl_direct_no_peck_picking\
+```
+
+These paths are local development-fixture paths only. They must not be embedded in production source, installed into the package, or required by default builds.
+
+**CMake fixture variables used for local C++ validation:**
+
+```text
+STREAMFIND_SCIEX_WIFF_FIXTURE
+    → Mix1 or another single-fixture SCIEX smoke test
+
+STREAMFIND_SCIEX_MULTI_WIFF_FIXTURE
+    → E:\example_files\raw_vendor_files\sciex\201209_MM_2.wiff
+
+STREAMFIND_SCIEX_NITRO_WIFF_FIXTURE
+    → E:\example_files\raw_vendor_files\sciex\220511_Nitrosamine_M220426_M220503_Vierlinden.wiff
+```
+
+Example local configuration commands, run from the repository root with the C++ source directory as the CMake source:
+
+```text
+cmake -S core -B build-sciex-multi-vs \
+  -DSTREAMFIND_SCIEX_MULTI_WIFF_FIXTURE=E:/example_files/raw_vendor_files/sciex/201209_MM_2.wiff
+
+cmake -S core -B build-sciex-nitro-vs \
+  -DSTREAMFIND_SCIEX_NITRO_WIFF_FIXTURE=E:/example_files/raw_vendor_files/sciex/220511_Nitrosamine_M220426_M220503_Vierlinden.wiff
+```
+
+The test targets are conditionally created only when the selected fixture variable is nonempty and the path exists:
+
+```text
+streamfind_mass_spec_sciex_reader_tests
+streamfind_mass_spec_sciex_multi_reader_tests
+streamfind_mass_spec_sciex_nitro_reader_tests
+```
+
 **Validation oracles:**
 
 ```text
