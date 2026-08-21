@@ -26,6 +26,35 @@ Parameters and default values reproduce the R package
 (`bindings/r/R/class_MethodsNonTargetAnalysis.R`). Verified: full wastewater
 conformance passes; the fast (basic_tof) tests pass; no regressions.
 
+### 1b. Analysis-container harmonization (multi-analysis files)
+- `add_analyses` enumerates container catalogs (Sciex WIFF) into one row per
+  logical analysis: `analysis_index` / `source_analysis_number` / `analysis_count`
+  are stored on `MASS_SPEC_ANALYSES`.
+- All operations and NTA methods select the logical analysis internally by
+  matching the unique analysis name and resolving the index from the DB row;
+  `analysis_index` is never a user-facing argument. Analyses are addressed by
+  their unique names everywhere.
+- C++ and Rust both carry per-analysis indices through the NTA context and call
+  `select_analysis(index)` at every reader open (find_features,
+  load_analysis_features, load_features_ms1/2, load_chromatograms, raw ops).
+- Fixed a latent bug: `Project::query_json` stringifies columns, so
+  `analysis_index` (and other int columns) are parsed via string-tolerant
+  helpers (`detail::integer_column` / `as_i64`) instead of `row.value(int)`.
+
+### 1c. Chromatogram R-scheme harmonization
+- `MASS_SPEC_CHROMATOGRAMS` now carries the reader-derived per-point columns
+  `index`, `polarity`, `precursor_mz`, `activation_ce`, `product_mz` plus
+  `rt`, `raw_intensity`, `baseline`, `intensity` (replicate is NOT a table
+  column; it is joined from `MASS_SPEC_ANALYSES` into results).
+- Both `get_chromatograms` and `get_raw_chromatograms` return the R-interface
+  scheme, exactly: `project_id, analysis, replicate, index, chromatogram_id,
+  polarity, precursor_mz, activation_ce, product_mz, rt, raw_intensity,
+  baseline, intensity`.
+- `load_chromatograms` persists via the batched DuckDB Appender
+  (`Project::append_rows`) — no per-row INSERT slowdown.
+- Semantic definitions are neutral element descriptions (no development-decisions
+  baked into vocabulary text).
+
 ### 2. Columnar NTA data model
 `MASS_SPEC_NTA_FEATURES` is structure-of-arrays in-memory, matching the persisted
 DuckDB table and the columnar semantic results. Existing methods were migrated
@@ -61,8 +90,14 @@ embedded metadata for both MCP implementations. Run
 ## What is staged / modified (commit this)
 
 All modified + added files under `.plans/`, `semantic/`, `core/` (incl. the new
-`nta_*` sources, `external/` openbabel adapter, and the three new test files),
-and the Rust mass-spec changes already present on the branch.
+`nta_*` sources, `external/` openbabel adapter, and the test files), and the Rust
+mass-spec changes already present on the branch.
+
+Subagent work-briefs that are now complete were moved to `.plans/completed/`
+(`nta_wiring_brief`, `nta_fidelity_brief`, `nta_batch_persistence_brief`,
+`analysis_index_harmonization_brief`, `chromatogram_r_scheme_brief`). The living
+documents stay in `.plans/` root: `streamfind_migration_plan.md`,
+`commit-readiness.md`, `sciex_reader_plan.md`.
 
 ## What to LEAVE OUT of the commit
 

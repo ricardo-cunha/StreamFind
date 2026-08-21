@@ -1017,12 +1017,15 @@ public:
                                 std::vector<mass_spec::reader::MASS_SPEC_SPECTRA_HEADERS> headers)
         : names_(std::move(names)), paths_(std::move(paths)), headers_(std::move(headers)),
           buffers_(names_.size()), blank_names_(names_.size()), replicate_names_(names_.size()),
-          suspect_buffers_(names_.size()), internal_standard_buffers_(names_.size()) {}
+          suspect_buffers_(names_.size()), internal_standard_buffers_(names_.size()),
+          analysis_indices_(names_.size(), 0) {}
     const std::vector<std::string> &analysis_names() const { return names_; }
     const std::vector<std::string> &file_paths() const { return paths_; }
     const std::vector<std::string> &blank_names() const { return blank_names_; }
     const std::vector<std::string> &replicate_names() const { return replicate_names_; }
     const auto &spectra_headers_at(size_t i) const { return headers_.at(i); }
+    const std::vector<int> &analysis_indices() const { return analysis_indices_; }
+    int analysis_index_at(size_t i) const { return analysis_indices_.at(i); }
     auto &feature_buffers() { return buffers_; }
     std::vector<api::NTA_SUSPECTS> &suspect_buffers() { return suspect_buffers_; }
     const std::vector<api::NTA_SUSPECTS> &suspect_buffers() const { return suspect_buffers_; }
@@ -1036,6 +1039,10 @@ public:
         replicate_names_ = std::move(r);
         if (replicate_names_.size() < names_.size()) replicate_names_.resize(names_.size());
     }
+    void set_analysis_indices(std::vector<int> a) {
+        analysis_indices_ = std::move(a);
+        if (analysis_indices_.size() < names_.size()) analysis_indices_.resize(names_.size(), 0);
+    }
     int size() const { return static_cast<int>(names_.size()); }
 private:
     std::vector<std::string> names_, paths_;
@@ -1044,6 +1051,7 @@ private:
     std::vector<api::NTA_FEATURES> buffers_;
     std::vector<api::NTA_SUSPECTS> suspect_buffers_;
     std::vector<api::NTA_INTERNAL_STANDARDS> internal_standard_buffers_;
+    std::vector<int> analysis_indices_;
 };
 } // namespace nta::api
 

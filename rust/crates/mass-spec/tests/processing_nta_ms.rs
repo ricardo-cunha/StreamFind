@@ -24,12 +24,12 @@ fn setup_project(database: &str) -> Project {
     })
     .unwrap();
     project
-        .execute_sql("CREATE TABLE MASS_SPEC_ANALYSES (project_id VARCHAR, analysis VARCHAR, file_path VARCHAR)")
+        .execute_sql("CREATE TABLE MASS_SPEC_ANALYSES (project_id VARCHAR, analysis VARCHAR, file_path VARCHAR, analysis_index INTEGER DEFAULT 0)")
         .unwrap();
     for (analysis, fixture) in ["r001", "r002", "r003"].into_iter().zip(fixtures()) {
         project
             .execute_sql(&format!(
-                "INSERT INTO MASS_SPEC_ANALYSES VALUES ('rust-nta', '{}', '{}')",
+                "INSERT INTO MASS_SPEC_ANALYSES (project_id, analysis, file_path) VALUES ('rust-nta', '{}', '{}')",
                 analysis,
                 fixture.to_string_lossy().replace('\'', "''")
             ))

@@ -243,12 +243,18 @@ sfms:chromatogramsResult
     a sf:Result ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Mass spectrometry chromatograms" ;
-    skos:definition "Table of persisted chromatogram point records." ;
+    skos:definition "Table of chromatogram point records with chromatogram metadata and intensities." ;
     sf:type "table" ;
     sf:hasProperty
         sfcore:projectIdColumn,
         sfms:analysisNameColumn,
+        sfms:replicateNameColumn,
+        sfms:indexColumn,
         sfms:chromatogramIdColumn,
+        sfms:polarityColumn,
+        sfms:precursorMzColumn,
+        sfms:activationCeColumn,
+        sfms:productMzColumn,
         sfms:rtColumn,
         sfms:rawIntensityColumn,
         sfms:baselineColumn,

@@ -5747,10 +5747,46 @@ pub const CATALOGUE: &str = r###"
                 "type": "string"
               }
             },
+            "replicate": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "index": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
             "chromatogram_id": {
               "type": "array",
               "items": {
                 "type": "string"
+              }
+            },
+            "polarity": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "precursor_mz": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "activation_ce": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "product_mz": {
+              "type": "array",
+              "items": {
+                "type": "real"
               }
             },
             "rt": {
@@ -7146,10 +7182,46 @@ pub const CATALOGUE: &str = r###"
                 "type": "string"
               }
             },
+            "replicate": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "index": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
             "chromatogram_id": {
               "type": "array",
               "items": {
                 "type": "string"
+              }
+            },
+            "polarity": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "precursor_mz": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "activation_ce": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "product_mz": {
+              "type": "array",
+              "items": {
+                "type": "real"
               }
             },
             "rt": {

@@ -16,7 +16,23 @@ pub mod reader_sciex;
 const ANALYSES_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_ANALYSES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, analysis_index INTEGER NOT NULL DEFAULT 0, source_analysis_number INTEGER, analysis_count INTEGER NOT NULL DEFAULT 1, replicate VARCHAR, blank VARCHAR, file_name VARCHAR, file_path VARCHAR NOT NULL, file_dir VARCHAR, file_extension VARCHAR, format VARCHAR, type VARCHAR, time_stamp VARCHAR, number_spectra INTEGER, number_chromatograms INTEGER, number_spectra_binary_arrays INTEGER, min_mz DOUBLE, max_mz DOUBLE, start_rt DOUBLE, end_rt DOUBLE, has_ion_mobility BOOLEAN, concentration DOUBLE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis))";
 const SPECTRA_HEADERS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_SPECTRA_HEADERS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, index INTEGER NOT NULL, scan INTEGER, array_length INTEGER, level INTEGER, mode INTEGER, polarity INTEGER, configuration INTEGER, lowmz DOUBLE, highmz DOUBLE, bpmz DOUBLE, bpint DOUBLE, tic DOUBLE, rt DOUBLE, mobility DOUBLE, window_mz DOUBLE, window_mzlow DOUBLE, window_mzhigh DOUBLE, precursor_mz DOUBLE, precursor_intensity DOUBLE, precursor_charge INTEGER, activation_ce DOUBLE, PRIMARY KEY(project_id, analysis, index))";
 const CHROMATOGRAMS_HEADERS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_CHROMATOGRAMS_HEADERS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, index INTEGER NOT NULL, chromatogram_id VARCHAR, array_length INTEGER, polarity INTEGER, precursor_mz DOUBLE, activation_ce DOUBLE, product_mz DOUBLE, signal_type VARCHAR, chromatogram_type VARCHAR, detector VARCHAR, channel VARCHAR, units VARCHAR, wavelength_nm DOUBLE, interval_ms DOUBLE, start_time DOUBLE, end_time DOUBLE, intensity_multiplier DOUBLE, PRIMARY KEY(project_id, analysis, index))";
-pub(crate) const CHROMATOGRAMS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_CHROMATOGRAMS (project_id TEXT NOT NULL, analysis TEXT NOT NULL, chromatogram_id TEXT NOT NULL, rt DOUBLE NOT NULL, raw_intensity DOUBLE NOT NULL, baseline DOUBLE NOT NULL DEFAULT 0, intensity DOUBLE NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, chromatogram_id, rt))";
+pub(crate) const CHROMATOGRAMS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_CHROMATOGRAMS (project_id TEXT NOT NULL, analysis TEXT NOT NULL, index INTEGER NOT NULL DEFAULT 0, chromatogram_id TEXT NOT NULL, polarity INTEGER, precursor_mz DOUBLE, activation_ce DOUBLE, product_mz DOUBLE, rt DOUBLE NOT NULL, raw_intensity DOUBLE NOT NULL, baseline DOUBLE NOT NULL DEFAULT 0, intensity DOUBLE NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, chromatogram_id, rt))";
+
+const CHROMATOGRAMS_SCHEMA_ALTERS: [&str; 5] = [
+    "ALTER TABLE MASS_SPEC_CHROMATOGRAMS ADD COLUMN IF NOT EXISTS index INTEGER DEFAULT 0",
+    "ALTER TABLE MASS_SPEC_CHROMATOGRAMS ADD COLUMN IF NOT EXISTS polarity INTEGER",
+    "ALTER TABLE MASS_SPEC_CHROMATOGRAMS ADD COLUMN IF NOT EXISTS precursor_mz DOUBLE",
+    "ALTER TABLE MASS_SPEC_CHROMATOGRAMS ADD COLUMN IF NOT EXISTS activation_ce DOUBLE",
+    "ALTER TABLE MASS_SPEC_CHROMATOGRAMS ADD COLUMN IF NOT EXISTS product_mz DOUBLE",
+];
+
+pub(crate) fn ensure_chromatograms_schema(project: &Project) -> Result<()> {
+    project.execute_sql(CHROMATOGRAMS_SCHEMA)?;
+    for alter in CHROMATOGRAMS_SCHEMA_ALTERS {
+        project.execute_sql(alter)?;
+    }
+    Ok(())
+}
 
 fn sql(value: &str) -> String {
     format!("'{}'", value.replace('\'', "''"))
@@ -27,6 +43,7 @@ fn ensure_schema(project: &Project) -> Result<()> {
     project.execute_sql("ALTER TABLE MASS_SPEC_ANALYSES ADD COLUMN IF NOT EXISTS analysis_index INTEGER DEFAULT 0")?;
     project.execute_sql("ALTER TABLE MASS_SPEC_ANALYSES ADD COLUMN IF NOT EXISTS source_analysis_number INTEGER")?;
     project.execute_sql("ALTER TABLE MASS_SPEC_ANALYSES ADD COLUMN IF NOT EXISTS analysis_count INTEGER DEFAULT 1")?;
+    project.execute_sql("ALTER TABLE MASS_SPEC_ANALYSES ADD COLUMN IF NOT EXISTS replicate VARCHAR")?;
     project.execute_sql(SPECTRA_HEADERS_SCHEMA)?;
     project.execute_sql(CHROMATOGRAMS_HEADERS_SCHEMA)?;
     Ok(())
@@ -623,7 +640,7 @@ fn merge_raw_spectra_rows(rows: Value, mz_clust: f64, presence: f64) -> Value {
 }
 
 fn get_chromatograms_impl(project: &mut Project, parameters: &Value) -> Result<Value> {
-    project.execute_sql(CHROMATOGRAMS_SCHEMA)?;
+    crate::ensure_chromatograms_schema(project)?;
     let wanted = parameters
         .get("analysis_names")
         .and_then(Value::as_array)
@@ -639,7 +656,7 @@ fn get_chromatograms_impl(project: &mut Project, parameters: &Value) -> Result<V
         String::new()
     } else {
         format!(
-            " AND analysis IN ({})",
+            " AND c.analysis IN ({})",
             wanted
                 .iter()
                 .map(|value| sql(value))
@@ -648,7 +665,7 @@ fn get_chromatograms_impl(project: &mut Project, parameters: &Value) -> Result<V
         )
     };
     project.query_json(&format!(
-        "SELECT project_id, analysis, chromatogram_id, rt, raw_intensity, baseline, intensity FROM MASS_SPEC_CHROMATOGRAMS WHERE project_id = {}{} ORDER BY analysis, chromatogram_id, rt",
+        "SELECT c.project_id, c.analysis, COALESCE(a.replicate, '') AS replicate, c.index, c.chromatogram_id, c.polarity, c.precursor_mz, c.activation_ce, c.product_mz, c.rt, c.raw_intensity, c.baseline, c.intensity FROM MASS_SPEC_CHROMATOGRAMS c JOIN MASS_SPEC_ANALYSES a ON a.project_id = c.project_id AND a.analysis = c.analysis WHERE c.project_id = {}{} ORDER BY c.analysis, c.chromatogram_id, c.rt",
         sql(project.get_project_id()), filter
     ))
 }
@@ -678,43 +695,52 @@ fn get_raw_chromatograms_impl(project: &mut Project, parameters: &Value) -> Resu
         })
         .unwrap_or_default();
     let rows = project.query_json(&format!(
-        "SELECT analysis, file_path FROM MASS_SPEC_ANALYSES WHERE project_id = {} ORDER BY analysis",
-        sql(project.get_project_id())
-    ))?;
-    let mut output = Vec::new();
-    for row in rows.as_array().into_iter().flatten() {
-        let analysis = row["analysis"].as_str().unwrap_or_default();
-        if !wanted.is_empty() && !wanted.iter().any(|value| value == analysis) {
-            continue;
-        }
-        let file = reader::Reader::open(row["file_path"].as_str().unwrap_or_default())
-            .map_err(|error| Error::new(ErrorCode::InvalidArgument, error.to_string()))?;
-        let selected = if indices.is_empty() {
-            (0..file.chromatograms().len()).collect::<Vec<_>>()
-        } else {
-            indices
-                .iter()
-                .copied()
-                .filter(|index| *index < file.chromatograms().len())
-                .collect()
-        };
-        for index in selected {
-            let chromatogram = &file.chromatograms()[index];
-            for (rt, intensity) in chromatogram.time.iter().zip(&chromatogram.intensity) {
-                output.push(json!({
-                    "project_id": project.get_project_id(),
-                    "analysis": analysis,
-                    "chromatogram_id": chromatogram.id,
-                    "rt": *rt as f64,
-                    "raw_intensity": *intensity as f64,
-                    "baseline": 0.0,
-                    "intensity": *intensity as f64,
-                }));
+                "SELECT analysis, file_path, analysis_index, COALESCE(replicate, '') AS replicate FROM MASS_SPEC_ANALYSES WHERE project_id = {} ORDER BY analysis",
+                sql(project.get_project_id())
+            ))?;
+            let mut output = Vec::new();
+            for row in rows.as_array().into_iter().flatten() {
+                let analysis = row["analysis"].as_str().unwrap_or_default();
+                if !wanted.is_empty() && !wanted.iter().any(|value| value == analysis) {
+                    continue;
+                }
+                let replicate = row["replicate"].clone();
+                let mut file = reader::Reader::open(row["file_path"].as_str().unwrap_or_default())
+                    .map_err(|error| Error::new(ErrorCode::InvalidArgument, error.to_string()))?;
+                file.select_analysis(row["analysis_index"].as_i64().unwrap_or(0) as usize)
+                    .map_err(|error| Error::new(ErrorCode::InvalidArgument, error.to_string()))?;
+                let selected = if indices.is_empty() {
+                (0..file.chromatograms().len()).collect::<Vec<_>>()
+            } else {
+                indices
+                    .iter()
+                    .copied()
+                    .filter(|index| *index < file.chromatograms().len())
+                    .collect()
+            };
+            for index in selected {
+                let chromatogram = &file.chromatograms()[index];
+                for (rt, intensity) in chromatogram.time.iter().zip(&chromatogram.intensity) {
+                    output.push(json!({
+                        "project_id": project.get_project_id(),
+                        "analysis": analysis,
+                        "replicate": replicate,
+                        "index": index,
+                        "chromatogram_id": chromatogram.id,
+                        "polarity": chromatogram.polarity,
+                        "precursor_mz": chromatogram.precursor_mz,
+                        "activation_ce": chromatogram.activation_ce,
+                        "product_mz": chromatogram.product_mz,
+                        "rt": *rt as f64,
+                        "raw_intensity": *intensity as f64,
+                        "baseline": 0.0,
+                        "intensity": *intensity as f64,
+                    }));
+                }
             }
         }
+        Ok(Value::Array(output))
     }
-    Ok(Value::Array(output))
-}
 
 fn get_features_impl(project: &mut Project, p: &Value) -> Result<Value> {
     let ppm = p.get("ppm").and_then(Value::as_f64).unwrap_or(20.0);

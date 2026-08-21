@@ -158,21 +158,32 @@ std::string encode_float_array(const std::vector<float> &values) {
 nta::PROJECT_NON_TARGET_ANALYSIS load_analysis_features(streamfind::Project &project, const Json &parameters) {
     const auto project_id = project.get_project_id();
     std::vector<std::string> names, paths, blanks, replicates;
+    std::vector<int> indices;
     std::vector<::mass_spec::reader::MASS_SPEC_SPECTRA_HEADERS> headers;
     const auto wanted = parameters.value("analysis_names", Json::array());
-    for (const auto &row : project.query_json("SELECT analysis,file_path,blank,replicate FROM MASS_SPEC_ANALYSES WHERE project_id="+detail::sql(project_id)+" ORDER BY analysis")) {
+    // query_json stringifies every column; parse the analysis index tolerantly.
+    auto analysis_index_of = [&](const Json &row) {
+        auto it = row.find("analysis_index");
+        if (it == row.end() || it->is_null()) return 0;
+        const auto v = it->get<std::string>();
+        return v.empty() ? 0 : std::stoi(v);
+    };
+    for (const auto &row : project.query_json("SELECT analysis,file_path,analysis_index,blank,replicate FROM MASS_SPEC_ANALYSES WHERE project_id="+detail::sql(project_id)+" ORDER BY analysis")) {
         const auto name = row.at("analysis").get<std::string>();
         bool selected = wanted.empty();
         for (const auto &x : wanted) selected = selected || x.get<std::string>() == name;
         if (!selected) continue;
         ::mass_spec::reader::MASS_SPEC_FILE file(row.at("file_path").get<std::string>());
+        file.select_analysis(analysis_index_of(row));
         names.push_back(name);
         paths.push_back(row.at("file_path").get<std::string>());
+        indices.push_back(analysis_index_of(row));
         blanks.push_back(row.value("blank", ""));
         replicates.push_back(row.value("replicate", ""));
         headers.push_back(file.get_spectra_headers());
     }
     nta::PROJECT_NON_TARGET_ANALYSIS data(std::move(names), std::move(paths), std::move(headers));
+    data.set_analysis_indices(std::move(indices));
     data.set_blank_names(std::move(blanks));
     data.set_replicate_names(std::move(replicates));
     auto &buffers = data.feature_buffers();
@@ -531,13 +542,21 @@ Json find_features(streamfind::Project &project, const Json &parameters) {
     const auto project_id = project.get_project_id();
      project.execute_sql("CREATE TABLE IF NOT EXISTS MASS_SPEC_NTA_FEATURES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, feature VARCHAR NOT NULL, feature_component VARCHAR, feature_group VARCHAR, adduct VARCHAR, rt DOUBLE, mz DOUBLE, mass DOUBLE, intensity DOUBLE, noise DOUBLE, sn DOUBLE, area DOUBLE, trace_count INTEGER, rtmin DOUBLE, rtmax DOUBLE, width DOUBLE, mzmin DOUBLE, mzmax DOUBLE, ppm DOUBLE, fwhm_rt DOUBLE, fwhm_mz DOUBLE, gaussian_A DOUBLE, gaussian_mu DOUBLE, gaussian_sigma DOUBLE, gaussian_r2 DOUBLE, jaggedness DOUBLE, sharpness DOUBLE, asymmetry DOUBLE, modality INTEGER, plates DOUBLE, polarity INTEGER, filtered BOOLEAN, filter VARCHAR, filled BOOLEAN, correction DOUBLE, eic_size INTEGER, eic_rt VARCHAR, eic_mz VARCHAR, eic_intensity VARCHAR, eic_baseline VARCHAR, eic_smoothed VARCHAR, ms1_size INTEGER, ms1_mz VARCHAR, ms1_intensity VARCHAR, ms2_size INTEGER, ms2_mz VARCHAR, ms2_intensity VARCHAR, annotation_category VARCHAR, annotation_type VARCHAR, annotation_parent_feature VARCHAR, annotation_element VARCHAR, annotation_mass_error_da DOUBLE, annotation_mass_error_ppm DOUBLE, annotation_rt_error DOUBLE, annotation_rel_intensity DOUBLE, annotation_expected_rel_intensity_min DOUBLE, annotation_expected_rel_intensity_max DOUBLE, annotation_score DOUBLE, component_size INTEGER, component_rt_center DOUBLE, component_rt_spread DOUBLE, component_density DOUBLE, component_mean_correlation DOUBLE, component_best_partner VARCHAR, component_max_correlation DOUBLE, component_mean_correlation_to_component DOUBLE, component_membership_score DOUBLE, component_is_core BOOLEAN, component_bridge_flag BOOLEAN, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, feature))");
     project.execute_sql("DELETE FROM MASS_SPEC_NTA_FEATURES WHERE project_id=" + detail::sql(project_id));
-    std::vector<std::string> names, paths; std::vector<::mass_spec::reader::MASS_SPEC_SPECTRA_HEADERS> headers;
+    std::vector<std::string> names, paths; std::vector<int> indices; std::vector<::mass_spec::reader::MASS_SPEC_SPECTRA_HEADERS> headers;
     const auto wanted = parameters.value("analysis_names", Json::array());
-    for (const auto &row : project.query_json("SELECT analysis,file_path FROM MASS_SPEC_ANALYSES WHERE project_id="+detail::sql(project_id)+" ORDER BY analysis")) {
+    for (const auto &row : project.query_json("SELECT analysis,file_path,analysis_index FROM MASS_SPEC_ANALYSES WHERE project_id="+detail::sql(project_id)+" ORDER BY analysis")) {
         const auto name=row.at("analysis").get<std::string>(); bool selected=wanted.empty(); for(const auto &x:wanted) selected=selected||x.get<std::string>()==name; if(!selected)continue;
-        ::mass_spec::reader::MASS_SPEC_FILE file(row.at("file_path").get<std::string>()); names.push_back(name); paths.push_back(row.at("file_path").get<std::string>()); headers.push_back(file.get_spectra_headers());
+        int index = 0;
+        if (auto it = row.find("analysis_index"); it != row.end() && !it->is_null()) {
+            const auto text = it->get<std::string>();
+            index = text.empty() ? 0 : std::stoi(text);
+        }
+        ::mass_spec::reader::MASS_SPEC_FILE file(row.at("file_path").get<std::string>());
+        file.select_analysis(index);
+        names.push_back(name); paths.push_back(row.at("file_path").get<std::string>()); indices.push_back(index); headers.push_back(file.get_spectra_headers());
     }
     nta::PROJECT_NON_TARGET_ANALYSIS data(std::move(names), std::move(paths), std::move(headers));
+    data.set_analysis_indices(std::move(indices));
     std::vector<float> mins, maxs; for(const auto &v:minimums) mins.push_back(v.get<float>()); for(const auto &v:maximums) maxs.push_back(v.get<float>());
     nta::deconvolution::find_features_impl(data, mins, maxs, ppm, noise, snr, traces, baseline, width, quantile, "", 0, -1);
     std::vector<std::vector<std::optional<std::string>>> feature_rows;
@@ -589,6 +608,7 @@ Json load_features_ms1(streamfind::Project &project, const Json &parameters) {
         if (targets.id.empty()) continue;
         if (!std::filesystem::exists(data.file_paths()[i])) continue;
         ::mass_spec::reader::MASS_SPEC_FILE file(data.file_paths()[i]);
+        file.select_analysis(data.analysis_index_at(i));
         auto spectra = file.get_spectra_targets(targets, data.spectra_headers_at(i), min_traces, 0.0f);
         for (int j = 0; j < buffers[i].size(); ++j) {
             auto ft = buffers[i].get_feature(j);
@@ -653,6 +673,7 @@ Json load_features_ms2(streamfind::Project &project, const Json &parameters) {
         if (targets.id.empty()) continue;
         if (!std::filesystem::exists(data.file_paths()[i])) continue;
         ::mass_spec::reader::MASS_SPEC_FILE file(data.file_paths()[i]);
+        file.select_analysis(data.analysis_index_at(i));
         auto spectra = file.get_spectra_targets(targets, data.spectra_headers_at(i), 0.0f, min_traces);
         for (int j = 0; j < buffers[i].size(); ++j) {
             auto ft = buffers[i].get_feature(j);

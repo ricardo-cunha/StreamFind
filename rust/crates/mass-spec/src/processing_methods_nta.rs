@@ -768,7 +768,7 @@ pub fn find_features(project: &mut Project, p: &Value) -> Result<Value> {
         .cloned()
         .unwrap_or_default();
     let rows = project.query_json(&format!(
-        "SELECT analysis,file_path FROM MASS_SPEC_ANALYSES WHERE project_id={} ORDER BY analysis",
+        "SELECT analysis,file_path,analysis_index FROM MASS_SPEC_ANALYSES WHERE project_id={} ORDER BY analysis",
         sql(&project_id)
     ))?;
     for row in rows.as_array().into_iter().flatten() {
@@ -776,7 +776,9 @@ pub fn find_features(project: &mut Project, p: &Value) -> Result<Value> {
         if !wanted.is_empty() && !wanted.iter().any(|x| x.as_str() == Some(name)) {
             continue;
         }
-        let file = Reader::open(row["file_path"].as_str().unwrap_or_default())
+        let mut file = Reader::open(row["file_path"].as_str().unwrap_or_default())
+            .map_err(|e| invalid(e.to_string()))?;
+        file.select_analysis(row["analysis_index"].as_i64().unwrap_or(0) as usize)
             .map_err(|e| invalid(e.to_string()))?;
         for polarity in [-1, 1] {
             let mut points = Vec::new();
@@ -1003,20 +1005,24 @@ pub fn load_features_ms1(project: &mut Project, p: &Value) -> Result<Value> {
     }
     for (analysis, frows) in per_analysis {
         let fs = project.query_json(&format!(
-            "SELECT file_path FROM MASS_SPEC_ANALYSES WHERE project_id={} AND analysis={}",
+            "SELECT file_path, analysis_index FROM MASS_SPEC_ANALYSES WHERE project_id={} AND analysis={}",
             sql(&project_id),
             sql(&analysis)
         ))?;
-        let file = fs
-            .as_array()
-            .and_then(|a| a.first())
-            .and_then(|r| r["file_path"].as_str())
-            .unwrap_or_default()
-            .to_string();
+        let (file, analysis_index) = match fs.as_array().and_then(|a| a.first()) {
+            Some(r) => (
+                r["file_path"].as_str().unwrap_or_default().to_string(),
+                r["analysis_index"].as_i64().unwrap_or(0) as usize,
+            ),
+            None => (String::new(), 0),
+        };
         if file.is_empty() {
             continue;
         }
-        let reader = Reader::open(&file).map_err(|e| invalid(e.to_string()))?;
+        let mut reader = Reader::open(&file).map_err(|e| invalid(e.to_string()))?;
+        reader
+            .select_analysis(analysis_index)
+            .map_err(|e| invalid(e.to_string()))?;
         for row in &frows {
             let feature = row["feature"].as_str().unwrap_or_default().to_string();
             let row_filtered = row["filtered"].as_bool().unwrap_or(false);
@@ -1148,20 +1154,24 @@ pub fn load_features_ms2(project: &mut Project, p: &Value) -> Result<Value> {
     }
     for (analysis, frows) in per_analysis {
         let fs = project.query_json(&format!(
-            "SELECT file_path FROM MASS_SPEC_ANALYSES WHERE project_id={} AND analysis={}",
+            "SELECT file_path, analysis_index FROM MASS_SPEC_ANALYSES WHERE project_id={} AND analysis={}",
             sql(&project_id),
             sql(&analysis)
         ))?;
-        let file = fs
-            .as_array()
-            .and_then(|a| a.first())
-            .and_then(|r| r["file_path"].as_str())
-            .unwrap_or_default()
-            .to_string();
+        let (file, analysis_index) = match fs.as_array().and_then(|a| a.first()) {
+            Some(r) => (
+                r["file_path"].as_str().unwrap_or_default().to_string(),
+                r["analysis_index"].as_i64().unwrap_or(0) as usize,
+            ),
+            None => (String::new(), 0),
+        };
         if file.is_empty() {
             continue;
         }
-        let reader = Reader::open(&file).map_err(|e| invalid(e.to_string()))?;
+        let mut reader = Reader::open(&file).map_err(|e| invalid(e.to_string()))?;
+        reader
+            .select_analysis(analysis_index)
+            .map_err(|e| invalid(e.to_string()))?;
         for row in &frows {
             let feature = row["feature"].as_str().unwrap_or_default().to_string();
             let row_filtered = row["filtered"].as_bool().unwrap_or(false);

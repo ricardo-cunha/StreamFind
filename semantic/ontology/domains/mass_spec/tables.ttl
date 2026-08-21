@@ -97,12 +97,17 @@ sfms:chromatogramsTable
     a sf:Table ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Mass spectrometry chromatograms table" ;
-    skos:definition "Persisted chromatogram points loaded and filtered for mass spectrometry analyses." ;
+    skos:definition "Persisted chromatogram point records for mass spectrometry analyses, including chromatogram metadata and intensities." ;
     sf:tableName "MASS_SPEC_CHROMATOGRAMS" ;
     sf:hasColumn
         sfcore:projectIdColumn,
         sfms:analysisNameColumn,
+        sfms:indexColumn,
         sfms:chromatogramIdColumn,
+        sfms:polarityColumn,
+        sfms:precursorMzColumn,
+        sfms:activationCeColumn,
+        sfms:productMzColumn,
         sfms:rtColumn,
         sfms:rawIntensityColumn,
         sfms:baselineColumn,
