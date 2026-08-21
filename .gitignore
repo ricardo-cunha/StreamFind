@@ -27,6 +27,10 @@ _skbuild/
 # Machine-local Cargo config (e.g. a per-user linker path); never commit.
 rust/.cargo/
 
+# Linked git worktrees ---------------------------------------------------------
+# Nested git repositories (have their own .git file); local developer state.
+.worktrees/
+
 # DuckDB runtime/import libraries are vendored for native builds ----------------
 !/core/vendor/duckdb/lib/
 !/core/vendor/duckdb/lib/**
