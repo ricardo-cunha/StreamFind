@@ -242,6 +242,14 @@ namespace mass_spec
       bool has_ion_mobility;
     };
 
+    struct MASS_SPEC_ANALYSIS
+    {
+      int analysis_index = 0;
+      int source_analysis_number = 0;
+      std::string name;
+      int analysis_count = 1;
+    };
+
     struct MASS_SPEC_CHROMATOGRAMS_HEADERS
     {
       std::vector<int> index;
@@ -349,6 +357,10 @@ namespace mass_spec
     public:
       explicit MASS_SPEC_FILE(const std::string &file);
 
+      const std::vector<MASS_SPEC_ANALYSIS> &get_analysis_catalog() const { return analysis_catalog; }
+      void select_analysis(int index);
+      int selected_analysis_index() const { return selected_analysis; }
+
       int get_number_spectra() { return ms->get_number_spectra(); }
       int get_number_chromatograms() { return ms->get_number_chromatograms(); }
       int get_number_spectra_binary_arrays() { return ms->get_number_spectra_binary_arrays(); }
@@ -401,6 +413,8 @@ namespace mass_spec
       std::string file_extension;
       std::string format;
       int format_case = -1;
+      std::vector<MASS_SPEC_ANALYSIS> analysis_catalog;
+      int selected_analysis = 0;
 
     private:
       const std::vector<std::string> possible_formats = {"mzML", "mzXML", "ShimadzuTXT", "ASC", "ShimadzuLCD"};

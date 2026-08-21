@@ -12,6 +12,9 @@ sfms:analysesTable
     sf:hasColumn
         sfcore:projectIdColumn,
         sfms:analysisNameColumn,
+        sfms:analysisIndexColumn,
+        sfms:sourceAnalysisNumberColumn,
+        sfms:analysisCountColumn,
         sfms:replicateNameColumn,
         sfms:blankNameColumn,
         sfms:fileNameColumn,

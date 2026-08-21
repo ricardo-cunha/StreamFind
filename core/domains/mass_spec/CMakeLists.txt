@@ -1,6 +1,7 @@
 add_library(streamfind_mass_spec STATIC
     src/register.cpp
     src/reader.cpp
+    src/reader_sciex.cpp
     src/mass_spec.cpp
     src/processing_methods_chromatograms.cpp
     src/processing_methods_nta.cpp

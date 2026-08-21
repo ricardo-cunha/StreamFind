@@ -11,8 +11,9 @@ mod generated_metadata;
 pub mod processing_methods_chromatograms;
 pub mod processing_methods_nta;
 pub mod reader;
+pub mod reader_sciex;
 
-const ANALYSES_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_ANALYSES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, replicate VARCHAR, blank VARCHAR, file_name VARCHAR, file_path VARCHAR NOT NULL, file_dir VARCHAR, file_extension VARCHAR, format VARCHAR, type VARCHAR, time_stamp VARCHAR, number_spectra INTEGER, number_chromatograms INTEGER, number_spectra_binary_arrays INTEGER, min_mz DOUBLE, max_mz DOUBLE, start_rt DOUBLE, end_rt DOUBLE, has_ion_mobility BOOLEAN, concentration DOUBLE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis))";
+const ANALYSES_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_ANALYSES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, analysis_index INTEGER NOT NULL DEFAULT 0, source_analysis_number INTEGER, analysis_count INTEGER NOT NULL DEFAULT 1, replicate VARCHAR, blank VARCHAR, file_name VARCHAR, file_path VARCHAR NOT NULL, file_dir VARCHAR, file_extension VARCHAR, format VARCHAR, type VARCHAR, time_stamp VARCHAR, number_spectra INTEGER, number_chromatograms INTEGER, number_spectra_binary_arrays INTEGER, min_mz DOUBLE, max_mz DOUBLE, start_rt DOUBLE, end_rt DOUBLE, has_ion_mobility BOOLEAN, concentration DOUBLE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis))";
 const SPECTRA_HEADERS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_SPECTRA_HEADERS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, index INTEGER NOT NULL, scan INTEGER, array_length INTEGER, level INTEGER, mode INTEGER, polarity INTEGER, configuration INTEGER, lowmz DOUBLE, highmz DOUBLE, bpmz DOUBLE, bpint DOUBLE, tic DOUBLE, rt DOUBLE, mobility DOUBLE, window_mz DOUBLE, window_mzlow DOUBLE, window_mzhigh DOUBLE, precursor_mz DOUBLE, precursor_intensity DOUBLE, precursor_charge INTEGER, activation_ce DOUBLE, PRIMARY KEY(project_id, analysis, index))";
 const CHROMATOGRAMS_HEADERS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_CHROMATOGRAMS_HEADERS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, index INTEGER NOT NULL, chromatogram_id VARCHAR, array_length INTEGER, polarity INTEGER, precursor_mz DOUBLE, activation_ce DOUBLE, product_mz DOUBLE, signal_type VARCHAR, chromatogram_type VARCHAR, detector VARCHAR, channel VARCHAR, units VARCHAR, wavelength_nm DOUBLE, interval_ms DOUBLE, start_time DOUBLE, end_time DOUBLE, intensity_multiplier DOUBLE, PRIMARY KEY(project_id, analysis, index))";
 pub(crate) const CHROMATOGRAMS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_CHROMATOGRAMS (project_id TEXT NOT NULL, analysis TEXT NOT NULL, chromatogram_id TEXT NOT NULL, rt DOUBLE NOT NULL, raw_intensity DOUBLE NOT NULL, baseline DOUBLE NOT NULL DEFAULT 0, intensity DOUBLE NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, chromatogram_id, rt))";
@@ -23,6 +24,9 @@ fn sql(value: &str) -> String {
 
 fn ensure_schema(project: &Project) -> Result<()> {
     project.execute_sql(ANALYSES_SCHEMA)?;
+    project.execute_sql("ALTER TABLE MASS_SPEC_ANALYSES ADD COLUMN IF NOT EXISTS analysis_index INTEGER DEFAULT 0")?;
+    project.execute_sql("ALTER TABLE MASS_SPEC_ANALYSES ADD COLUMN IF NOT EXISTS source_analysis_number INTEGER")?;
+    project.execute_sql("ALTER TABLE MASS_SPEC_ANALYSES ADD COLUMN IF NOT EXISTS analysis_count INTEGER DEFAULT 1")?;
     project.execute_sql(SPECTRA_HEADERS_SCHEMA)?;
     project.execute_sql(CHROMATOGRAMS_HEADERS_SCHEMA)?;
     Ok(())
@@ -38,6 +42,7 @@ fn format_name(format: reader::Format) -> &'static str {
         reader::Format::MzXml => "mzXML",
         reader::Format::Asc => "ASC",
         reader::Format::ShimadzuLcd => "ShimadzuLCD",
+        reader::Format::SciexWiff => "SciexWIFF",
     }
 }
 
@@ -54,14 +59,13 @@ fn add_analyses(project: &mut Project, parameters: &Value) -> Result<Value> {
             .and_then(Value::as_str)
             .ok_or_else(|| invalid("analysis.path is required"))?;
         let path = Path::new(path_string);
-        let reader = reader::Reader::open(path)
+        let mut reader = reader::Reader::open(path)
             .map_err(|error| Error::new(ErrorCode::InvalidArgument, error.to_string()))?;
-        let summary = reader.summary();
-        let analysis = path
+        let base_analysis = path
             .file_stem()
             .and_then(|value| value.to_str())
             .unwrap_or_default();
-        if analysis.is_empty() {
+        if base_analysis.is_empty() {
             return Err(invalid("analysis path has no file stem"));
         }
         let replicate = item
@@ -84,9 +88,32 @@ fn add_analyses(project: &mut Project, parameters: &Value) -> Result<Value> {
             .extension()
             .and_then(|value| value.to_str())
             .unwrap_or_default();
-        let query = format!("INSERT OR REPLACE INTO MASS_SPEC_ANALYSES (project_id, analysis, replicate, blank, file_name, file_path, file_dir, file_extension, format, type, time_stamp, number_spectra, number_chromatograms, number_spectra_binary_arrays, min_mz, max_mz, start_rt, end_rt, has_ion_mobility, concentration) VALUES ({},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},{},NULL)", sql(project.get_project_id()), sql(analysis), sql(replicate), sql(blank), sql(file_name), sql(path_string), sql(file_dir.as_ref()), sql(extension), sql(format_name(summary.format)), sql("MS"), sql(""), summary.number_spectra, summary.number_chromatograms, summary.number_spectra_binary_arrays, summary.min_mz, summary.max_mz, summary.start_rt, summary.end_rt, summary.has_ion_mobility);
-        project.execute_sql(&query)?;
-        added.push(json!({"analysis": analysis, "file_path": path_string, "replicate": replicate, "blank": blank}));
+        let catalog = reader.analysis_catalog().to_vec();
+        for descriptor in catalog {
+            reader
+                .select_analysis(descriptor.analysis_index)
+                .map_err(|error| invalid(error.to_string()))?;
+            let summary = reader.summary();
+            let analysis = if reader.format() == crate::reader::Format::SciexWiff {
+                format!("{base_analysis}::{}", descriptor.name)
+            } else {
+                base_analysis.to_owned()
+            };
+            let existing = project.query_json(&format!(
+                "SELECT analysis FROM MASS_SPEC_ANALYSES WHERE project_id = {} AND analysis = {}",
+                sql(project.get_project_id()),
+                sql(&analysis)
+            ))?;
+            if existing.as_array().is_some_and(|rows| !rows.is_empty()) {
+                return Err(invalid(format!("analysis already exists in project: {analysis}")));
+            }
+            let source_number = descriptor
+                .source_analysis_number
+                .map_or("NULL".to_owned(), |value| value.to_string());
+            let query = format!("INSERT INTO MASS_SPEC_ANALYSES (project_id, analysis, analysis_index, source_analysis_number, analysis_count, replicate, blank, file_name, file_path, file_dir, file_extension, format, type, time_stamp, number_spectra, number_chromatograms, number_spectra_binary_arrays, min_mz, max_mz, start_rt, end_rt, has_ion_mobility, concentration) VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, NULL)", sql(project.get_project_id()), sql(&analysis), descriptor.analysis_index, source_number, descriptor.analysis_count, sql(replicate), sql(blank), sql(file_name), sql(path_string), sql(file_dir.as_ref()), sql(extension), sql(format_name(summary.format)), sql("MS"), sql(""), summary.number_spectra, summary.number_chromatograms, summary.number_spectra_binary_arrays, summary.min_mz, summary.max_mz, summary.start_rt, summary.end_rt, summary.has_ion_mobility);
+            project.execute_sql(&query)?;
+            added.push(json!({"analysis": analysis, "file_path": path_string, "analysis_index": descriptor.analysis_index, "source_analysis_number": descriptor.source_analysis_number, "analysis_count": descriptor.analysis_count, "replicate": replicate, "blank": blank}));
+        }
     }
     Ok(Value::Array(added))
 }
@@ -114,7 +141,7 @@ fn remove_analyses(project: &mut Project, parameters: &Value) -> Result<Value> {
 
 fn get_analyses_info(project: &Project) -> Result<Value> {
     ensure_schema(project)?;
-    project.query_json(&format!("SELECT analysis, replicate, blank, file_path, format, number_spectra, number_chromatograms FROM MASS_SPEC_ANALYSES WHERE project_id = {} ORDER BY analysis", sql(project.get_project_id())))
+    project.query_json(&format!("SELECT analysis, analysis_index, source_analysis_number, analysis_count, replicate, blank, file_path, format, number_spectra, number_chromatograms FROM MASS_SPEC_ANALYSES WHERE project_id = {} ORDER BY analysis", sql(project.get_project_id())))
 }
 
 fn text(value: &Value) -> String {
@@ -392,8 +419,9 @@ fn get_spectra_headers_impl(project: &mut Project, parameters: &Value) -> Result
         if !selected(&wanted, &analysis) {
             continue;
         }
-        let reader =
+        let mut reader =
             reader::Reader::open(text(&row["file_path"])).map_err(|e| invalid(e.to_string()))?;
+        reader.select_analysis(row["analysis_index"].as_i64().unwrap_or(0) as usize).map_err(|e| invalid(e.to_string()))?;
         for spectrum in reader.spectra() {
             out.push(json!({"analysis": analysis, "index": spectrum.index, "scan": spectrum.scan, "array_length": spectrum.array_length, "level": spectrum.level, "mode": 0, "polarity": spectrum.polarity, "configuration": 0, "lowmz": spectrum.low_mz, "highmz": spectrum.high_mz, "bpmz": spectrum.base_peak_mz, "bpint": spectrum.base_peak_intensity, "tic": spectrum.tic, "rt": spectrum.retention_time, "mobility": spectrum.mobility, "window_mz": 0.0, "window_mzlow": 0.0, "window_mzhigh": 0.0, "precursor_mz": spectrum.precursor_mz, "precursor_intensity": spectrum.precursor_intensity, "precursor_charge": spectrum.precursor_charge, "activation_ce": spectrum.collision_energy}));
         }
@@ -414,10 +442,11 @@ fn get_chromatograms_headers_impl(project: &mut Project, parameters: &Value) -> 
         if !selected(&wanted, &analysis) {
             continue;
         }
-        let reader =
+        let mut reader =
             reader::Reader::open(text(&row["file_path"])).map_err(|e| invalid(e.to_string()))?;
+        reader.select_analysis(row["analysis_index"].as_i64().unwrap_or(0) as usize).map_err(|e| invalid(e.to_string()))?;
         for (index, chromatogram) in reader.chromatograms().iter().enumerate() {
-            out.push(json!({"analysis": analysis, "index": index, "chromatogram_id": chromatogram.id, "array_length": chromatogram.time.len().min(chromatogram.intensity.len()), "polarity": chromatogram.polarity, "precursor_mz": 0.0, "activation_ce": 0.0, "product_mz": 0.0, "signal_type": chromatogram.signal_type, "chromatogram_type": chromatogram.chromatogram_type, "detector": chromatogram.detector, "channel": chromatogram.channel, "units": chromatogram.units, "wavelength_nm": 0.0, "interval_ms": chromatogram.interval_ms, "start_time": chromatogram.time.first().copied().unwrap_or(0.0), "end_time": chromatogram.time.last().copied().unwrap_or(0.0), "intensity_multiplier": 1.0}));
+            out.push(json!({"analysis": analysis, "index": index, "chromatogram_id": chromatogram.id, "array_length": chromatogram.time.len().min(chromatogram.intensity.len()), "polarity": chromatogram.polarity, "precursor_mz": chromatogram.precursor_mz.unwrap_or(0.0), "activation_ce": chromatogram.activation_ce.unwrap_or(0.0), "product_mz": chromatogram.product_mz.unwrap_or(0.0), "signal_type": chromatogram.signal_type, "chromatogram_type": chromatogram.chromatogram_type, "detector": chromatogram.detector, "channel": chromatogram.channel, "units": chromatogram.units, "wavelength_nm": 0.0, "interval_ms": chromatogram.interval_ms, "start_time": chromatogram.time.first().copied().unwrap_or(0.0), "end_time": chromatogram.time.last().copied().unwrap_or(0.0), "intensity_multiplier": 1.0}));
         }
     }
     Ok(Value::Array(out))
@@ -442,8 +471,9 @@ fn get_raw_spectra_impl(
         .unwrap_or_default()
     {
         let analysis = text(&row["analysis"]);
-        let reader =
+        let mut reader =
             reader::Reader::open(text(&row["file_path"])).map_err(|e| invalid(e.to_string()))?;
+        reader.select_analysis(row["analysis_index"].as_i64().unwrap_or(0) as usize).map_err(|e| invalid(e.to_string()))?;
         for spectrum in reader.spectra() {
             if forced_level.is_some() && forced_level != Some(spectrum.level) {
                 continue;

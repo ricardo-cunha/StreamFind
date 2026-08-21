@@ -58,5 +58,37 @@ endif()
 add_test(NAME streamfind_mass_spec_nta_wastewater_quantized
     COMMAND streamfind_mass_spec_nta_wastewater_conformance --quantized)
 set_tests_properties(streamfind_mass_spec_nta_wastewater_quantized PROPERTIES TIMEOUT 900)
+
+# Sciex reader smoke tests (only when a WIFF fixture is supplied).
+set(STREAMFIND_SCIEX_WIFF_FIXTURE "" CACHE FILEPATH "Path to a Sciex WIFF fixture")
+if(STREAMFIND_SCIEX_WIFF_FIXTURE AND EXISTS "${STREAMFIND_SCIEX_WIFF_FIXTURE}")
+    add_executable(streamfind_mass_spec_sciex_reader_tests mass_spec/tests/reader_sciex_smoke.cpp)
+    target_link_libraries(streamfind_mass_spec_sciex_reader_tests PRIVATE streamfind_mass_spec)
+    target_compile_definitions(streamfind_mass_spec_sciex_reader_tests PRIVATE
+        STREAMFIND_SCIEX_WIFF_FIXTURE="${STREAMFIND_SCIEX_WIFF_FIXTURE}"
+    )
+    add_test(NAME streamfind_mass_spec_sciex_reader_tests COMMAND streamfind_mass_spec_sciex_reader_tests)
+endif()
+
+set(STREAMFIND_SCIEX_MULTI_WIFF_FIXTURE "" CACHE FILEPATH "Path to a multi-experiment Sciex WIFF fixture")
+if(STREAMFIND_SCIEX_MULTI_WIFF_FIXTURE AND EXISTS "${STREAMFIND_SCIEX_MULTI_WIFF_FIXTURE}")
+    add_executable(streamfind_mass_spec_sciex_multi_reader_tests mass_spec/tests/reader_sciex_multi_smoke.cpp)
+    target_link_libraries(streamfind_mass_spec_sciex_multi_reader_tests PRIVATE streamfind_mass_spec)
+    target_compile_definitions(streamfind_mass_spec_sciex_multi_reader_tests PRIVATE
+        STREAMFIND_SCIEX_WIFF_FIXTURE="${STREAMFIND_SCIEX_MULTI_WIFF_FIXTURE}"
+    )
+    add_test(NAME streamfind_mass_spec_sciex_multi_reader_tests COMMAND streamfind_mass_spec_sciex_multi_reader_tests)
+endif()
+
+set(STREAMFIND_SCIEX_NITRO_WIFF_FIXTURE "" CACHE FILEPATH "Path to a sparse-tagged Sciex WIFF fixture")
+if(STREAMFIND_SCIEX_NITRO_WIFF_FIXTURE AND EXISTS "${STREAMFIND_SCIEX_NITRO_WIFF_FIXTURE}")
+    add_executable(streamfind_mass_spec_sciex_nitro_reader_tests mass_spec/tests/reader_sciex_nitro_smoke.cpp)
+    target_link_libraries(streamfind_mass_spec_sciex_nitro_reader_tests PRIVATE streamfind_mass_spec)
+    target_compile_definitions(streamfind_mass_spec_sciex_nitro_reader_tests PRIVATE
+        STREAMFIND_SCIEX_WIFF_FIXTURE="${STREAMFIND_SCIEX_NITRO_WIFF_FIXTURE}"
+    )
+    add_test(NAME streamfind_mass_spec_sciex_nitro_reader_tests COMMAND streamfind_mass_spec_sciex_nitro_reader_tests)
+endif()
+
 add_subdirectory(raman)
 add_subdirectory(sensors)

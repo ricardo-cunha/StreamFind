@@ -280,7 +280,10 @@ namespace streamfind::mass_spec
 
     void Project::create_schema()
     {
-        project_.execute_sql("CREATE TABLE IF NOT EXISTS MASS_SPEC_ANALYSES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, replicate VARCHAR, blank VARCHAR, file_name VARCHAR, file_path VARCHAR NOT NULL, file_dir VARCHAR, file_extension VARCHAR, format VARCHAR, type VARCHAR, time_stamp VARCHAR, number_spectra INTEGER, number_chromatograms INTEGER, number_spectra_binary_arrays INTEGER, min_mz DOUBLE, max_mz DOUBLE, start_rt DOUBLE, end_rt DOUBLE, has_ion_mobility BOOLEAN, concentration DOUBLE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis))");
+        project_.execute_sql("CREATE TABLE IF NOT EXISTS MASS_SPEC_ANALYSES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, analysis_index INTEGER NOT NULL DEFAULT 0, source_analysis_number INTEGER, analysis_count INTEGER NOT NULL DEFAULT 1, replicate VARCHAR, blank VARCHAR, file_name VARCHAR, file_path VARCHAR NOT NULL, file_dir VARCHAR, file_extension VARCHAR, format VARCHAR, type VARCHAR, time_stamp VARCHAR, number_spectra INTEGER, number_chromatograms INTEGER, number_spectra_binary_arrays INTEGER, min_mz DOUBLE, max_mz DOUBLE, start_rt DOUBLE, end_rt DOUBLE, has_ion_mobility BOOLEAN, concentration DOUBLE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis))");
+        project_.execute_sql("ALTER TABLE MASS_SPEC_ANALYSES ADD COLUMN IF NOT EXISTS analysis_index INTEGER DEFAULT 0");
+        project_.execute_sql("ALTER TABLE MASS_SPEC_ANALYSES ADD COLUMN IF NOT EXISTS source_analysis_number INTEGER");
+        project_.execute_sql("ALTER TABLE MASS_SPEC_ANALYSES ADD COLUMN IF NOT EXISTS analysis_count INTEGER DEFAULT 1");
         project_.execute_sql("CREATE TABLE IF NOT EXISTS MASS_SPEC_SPECTRA_HEADERS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, index INTEGER NOT NULL, scan INTEGER, array_length INTEGER, level INTEGER, mode INTEGER, polarity INTEGER, configuration INTEGER, lowmz DOUBLE, highmz DOUBLE, bpmz DOUBLE, bpint DOUBLE, tic DOUBLE, rt DOUBLE, mobility DOUBLE, window_mz DOUBLE, window_mzlow DOUBLE, window_mzhigh DOUBLE, precursor_mz DOUBLE, precursor_intensity DOUBLE, precursor_charge INTEGER, activation_ce DOUBLE, PRIMARY KEY(project_id, analysis, index))");
         project_.execute_sql("CREATE TABLE IF NOT EXISTS MASS_SPEC_CHROMATOGRAMS_HEADERS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, index INTEGER NOT NULL, chromatogram_id VARCHAR, array_length INTEGER, polarity INTEGER, precursor_mz DOUBLE, activation_ce DOUBLE, product_mz DOUBLE, signal_type VARCHAR, chromatogram_type VARCHAR, detector VARCHAR, channel VARCHAR, units VARCHAR, wavelength_nm DOUBLE, interval_ms DOUBLE, start_time DOUBLE, end_time DOUBLE, intensity_multiplier DOUBLE, PRIMARY KEY(project_id, analysis, index))");
     }
@@ -293,16 +296,23 @@ namespace streamfind::mass_spec
         {
             const std::filesystem::path path = item.at("path").get<std::string>();
             const auto extension = detail::lower(path.extension().string());
-            if (extension != ".mzml" && extension != ".mzxml" && extension != ".lcd" && extension != ".asc" && extension != ".d")
+            if (extension != ".mzml" && extension != ".mzxml" && extension != ".lcd" && extension != ".asc" && extension != ".d" && extension != ".wiff")
                 throw streamfind::Error(streamfind::ErrorCode::InvalidArgument, "unsupported mass spectrometry file extension: " + extension);
             ::mass_spec::reader::MASS_SPEC_FILE file(path.string());
-            const auto summary = file.get_summary();
-            const auto analysis = path.stem().string();
             const auto replicate = item.value("replicate_name", "");
             const auto blank = item.value("blank_name", "");
-            const auto query = "INSERT OR REPLACE INTO MASS_SPEC_ANALYSES (project_id, analysis, replicate, blank, file_name, file_path, file_dir, file_extension, format, type, time_stamp, number_spectra, number_chromatograms, number_spectra_binary_arrays, min_mz, max_mz, start_rt, end_rt, has_ion_mobility, concentration) VALUES (" + detail::sql(project_.get_project_id()) + "," + detail::sql(analysis) + "," + detail::sql(replicate) + "," + detail::sql(blank) + "," + detail::sql(path.filename().string()) + "," + detail::sql(path.string()) + "," + detail::sql(path.parent_path().string()) + "," + detail::sql(extension) + "," + detail::sql(summary.format) + ",'MS',''," + std::to_string(summary.number_spectra) + "," + std::to_string(summary.number_chromatograms) + "," + std::to_string(summary.number_spectra_binary_arrays) + "," + std::to_string(summary.min_mz) + "," + std::to_string(summary.max_mz) + "," + std::to_string(summary.start_rt) + "," + std::to_string(summary.end_rt) + "," + (summary.has_ion_mobility ? "true" : "false") + ",NULL)";
-            project_.execute_sql(query);
-            added.push_back({{"analysis", analysis}, {"file_path", path.string()}, {"replicate", replicate}, {"blank", blank}});
+            const auto catalog = file.get_analysis_catalog();
+            for (const auto &descriptor : catalog)
+            {
+                file.select_analysis(descriptor.analysis_index);
+                const auto summary = file.get_summary();
+                const auto analysis = extension == ".wiff" ? path.stem().string() + "::" + descriptor.name : path.stem().string();
+                if (!project_.query_json("SELECT analysis FROM MASS_SPEC_ANALYSES WHERE project_id = " + detail::sql(project_.get_project_id()) + " AND analysis = " + detail::sql(analysis)).empty())
+                    throw streamfind::Error(streamfind::ErrorCode::InvalidArgument, "analysis already exists in project: " + analysis);
+                const auto query = "INSERT INTO MASS_SPEC_ANALYSES (project_id, analysis, analysis_index, source_analysis_number, analysis_count, replicate, blank, file_name, file_path, file_dir, file_extension, format, type, time_stamp, number_spectra, number_chromatograms, number_spectra_binary_arrays, min_mz, max_mz, start_rt, end_rt, has_ion_mobility, concentration) VALUES (" + detail::sql(project_.get_project_id()) + "," + detail::sql(analysis) + "," + std::to_string(descriptor.analysis_index) + "," + std::to_string(descriptor.source_analysis_number) + "," + std::to_string(descriptor.analysis_count) + "," + detail::sql(replicate) + "," + detail::sql(blank) + "," + detail::sql(path.filename().string()) + "," + detail::sql(path.string()) + "," + detail::sql(path.parent_path().string()) + "," + detail::sql(extension) + "," + detail::sql(summary.format) + ",'MS',''," + std::to_string(summary.number_spectra) + "," + std::to_string(summary.number_chromatograms) + "," + std::to_string(summary.number_spectra_binary_arrays) + "," + std::to_string(summary.min_mz) + "," + std::to_string(summary.max_mz) + "," + std::to_string(summary.start_rt) + "," + std::to_string(summary.end_rt) + "," + (summary.has_ion_mobility ? "true" : "false") + ",NULL)";
+                project_.execute_sql(query);
+                added.push_back({{"analysis", analysis}, {"file_path", path.string()}, {"analysis_index", descriptor.analysis_index}, {"source_analysis_number", descriptor.source_analysis_number}, {"analysis_count", descriptor.analysis_count}, {"replicate", replicate}, {"blank", blank}});
+            }
         }
         return added;
     }
@@ -323,7 +333,7 @@ namespace streamfind::mass_spec
     Json Project::get_analyses_info(const Json &)
     {
         create_schema();
-        return project_.query_json("SELECT analysis, replicate, blank, file_path, format, number_spectra, number_chromatograms FROM MASS_SPEC_ANALYSES WHERE project_id = " + detail::sql(project_.get_project_id()) + " ORDER BY analysis");
+        return project_.query_json("SELECT analysis, analysis_index, source_analysis_number, analysis_count, replicate, blank, file_path, format, number_spectra, number_chromatograms FROM MASS_SPEC_ANALYSES WHERE project_id = " + detail::sql(project_.get_project_id()) + " ORDER BY analysis");
     }
 
     Json analysis_column(streamfind::Project &project, const char *column, bool numeric = false)
@@ -394,11 +404,12 @@ namespace streamfind::mass_spec
         create_schema();
         Json out = Json::array();
         const auto wanted = detail::names(parameters, "analysis_names");
-        const auto rows = project_.query_json("SELECT analysis, file_path FROM MASS_SPEC_ANALYSES WHERE project_id = " + detail::sql(project_.get_project_id()) + " ORDER BY analysis");
+        const auto rows = project_.query_json("SELECT analysis, file_path, analysis_index FROM MASS_SPEC_ANALYSES WHERE project_id = " + detail::sql(project_.get_project_id()) + " ORDER BY analysis");
         for (const auto &row : rows)
             if (detail::selected(wanted, row.at("analysis").get<std::string>()))
             {
                 ::mass_spec::reader::MASS_SPEC_FILE file(row.at("file_path").get<std::string>());
+                file.select_analysis(row.value("analysis_index", 0));
                 const auto h = file.get_spectra_headers();
                 for (std::size_t i = 0; i < h.index.size(); ++i)
                     out.push_back({{"analysis", row.at("analysis")}, {"index", h.index[i]}, {"scan", h.scan[i]}, {"array_length", h.array_length[i]}, {"level", h.level[i]}, {"mode", h.mode[i]}, {"polarity", h.polarity[i]}, {"configuration", h.configuration[i]}, {"lowmz", h.lowmz[i]}, {"highmz", h.highmz[i]}, {"bpmz", h.bpmz[i]}, {"bpint", h.bpint[i]}, {"tic", h.tic[i]}, {"rt", h.rt[i]}, {"mobility", h.mobility[i]}, {"window_mz", h.window_mz[i]}, {"window_mzlow", h.window_mzlow[i]}, {"window_mzhigh", h.window_mzhigh[i]}, {"precursor_mz", h.precursor_mz[i]}, {"precursor_intensity", h.precursor_intensity[i]}, {"precursor_charge", h.precursor_charge[i]}, {"activation_ce", h.activation_ce[i]}});
@@ -411,11 +422,12 @@ namespace streamfind::mass_spec
         create_schema();
         Json out = Json::array();
         const auto wanted = detail::names(parameters, "analysis_names");
-        const auto rows = project_.query_json("SELECT analysis, file_path FROM MASS_SPEC_ANALYSES WHERE project_id = " + detail::sql(project_.get_project_id()) + " ORDER BY analysis");
+        const auto rows = project_.query_json("SELECT analysis, file_path, analysis_index FROM MASS_SPEC_ANALYSES WHERE project_id = " + detail::sql(project_.get_project_id()) + " ORDER BY analysis");
         for (const auto &row : rows)
             if (detail::selected(wanted, row.at("analysis").get<std::string>()))
             {
                 ::mass_spec::reader::MASS_SPEC_FILE file(row.at("file_path").get<std::string>());
+                file.select_analysis(row.value("analysis_index", 0));
                 const auto h = file.get_chromatograms_headers();
                 for (std::size_t i = 0; i < h.index.size(); ++i)
                     out.push_back({{"analysis", row.at("analysis")}, {"index", h.index[i]}, {"chromatogram_id", h.chromatogram_id[i]}, {"array_length", h.array_length[i]}, {"polarity", h.polarity[i]}, {"precursor_mz", h.precursor_mz[i]}, {"activation_ce", h.activation_ce[i]}, {"product_mz", h.product_mz[i]}, {"signal_type", h.signal_type[i]}, {"chromatogram_type", h.chromatogram_type[i]}, {"detector", h.detector[i]}, {"channel", h.channel[i]}, {"units", h.units[i]}, {"wavelength_nm", h.wavelength_nm[i]}, {"interval_ms", h.interval_ms[i]}, {"start_time", h.start_time[i]}, {"end_time", h.end_time[i]}, {"intensity_multiplier", h.intensity_multiplier[i]}});
@@ -448,6 +460,7 @@ namespace streamfind::mass_spec
         {
             const auto analysis = row.at("analysis").get<std::string>();
             ::mass_spec::reader::MASS_SPEC_FILE file(row.at("file_path").get<std::string>());
+                file.select_analysis(row.value("analysis_index", 0));
             const auto headers = file.get_spectra_headers();
             const auto spectra = file.get_spectra();
             for (std::size_t i = 0; i < spectra.size() && i < headers.index.size(); ++i)
@@ -514,11 +527,12 @@ namespace streamfind::mass_spec
         for (const auto &value : parameters.value("indices", Json::array())) indices.push_back(value.get<int>());
         Json output = Json::array();
         const auto wanted = detail::names(parameters, "analysis_names");
-        const auto rows = project_.query_json("SELECT analysis, file_path FROM MASS_SPEC_ANALYSES WHERE project_id = " + detail::sql(project_.get_project_id()) + " ORDER BY analysis");
+        const auto rows = project_.query_json("SELECT analysis, file_path, analysis_index FROM MASS_SPEC_ANALYSES WHERE project_id = " + detail::sql(project_.get_project_id()) + " ORDER BY analysis");
         for (const auto &row : rows) {
             const auto analysis = row.at("analysis").get<std::string>();
             if (!detail::selected(wanted, analysis)) continue;
             ::mass_spec::reader::MASS_SPEC_FILE file(row.at("file_path").get<std::string>());
+                file.select_analysis(row.value("analysis_index", 0));
             const auto headers = file.get_chromatograms_headers(indices);
             const auto arrays = file.get_chromatograms(indices);
             for (std::size_t i = 0; i < arrays.size() && i < headers.chromatogram_id.size(); ++i) {
