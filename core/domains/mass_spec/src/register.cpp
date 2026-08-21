@@ -43,12 +43,27 @@ void register_methods(MethodRegistry &registry) {
             parameter.description = item.value("definition", "");
             parameter.type = TypeDescriptor::from_json(item.at("schema"));
             parameter.required = item.value("required", false);
+            parameter.default_value = item.value("default", Json(nullptr));
             parameter.example = item.value("example", Json(nullptr));
             definition.parameters.definitions.push_back(std::move(parameter));
         }
         const auto id = entry.at("canonical_id").get<std::string>();
         MethodExecutor executor;
         if (id == "mass_spec.find_features") executor = processing_methods::find_features;
+        else if (id == "mass_spec.load_features_ms1") executor = processing_methods::load_features_ms1;
+        else if (id == "mass_spec.load_features_ms2") executor = processing_methods::load_features_ms2;
+        else if (id == "mass_spec.subtract_blank") executor = processing_methods::subtract_blank;
+        else if (id == "mass_spec.filter_features") executor = processing_methods::filter_features;
+        else if (id == "mass_spec.filter_features_ms2") executor = processing_methods::filter_features_ms2;
+        else if (id == "mass_spec.group_features") executor = processing_methods::group_features;
+        else if (id == "mass_spec.fill_features") executor = processing_methods::fill_features;
+        else if (id == "mass_spec.create_components") executor = processing_methods::create_components;
+        else if (id == "mass_spec.annotate_components") executor = processing_methods::annotate_components;
+        else if (id == "mass_spec.suspect_screening") executor = processing_methods::suspect_screening;
+        else if (id == "mass_spec.find_internal_standards") executor = processing_methods::find_internal_standards;
+        else if (id == "mass_spec.filter_suspects") executor = processing_methods::filter_suspects;
+        else if (id == "mass_spec.filter_internal_standards") executor = processing_methods::filter_internal_standards;
+        else if (id == "mass_spec.correct_matrix_suppression") executor = processing_methods::correct_matrix_suppression;
         else if (id == "mass_spec.load_chromatograms") executor = processing::load_chromatograms;
         else if (id == "mass_spec.filter_chromatograms_retention_time") executor = processing::filter_chromatograms_retention_time;
         else continue;

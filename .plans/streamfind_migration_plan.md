@@ -189,15 +189,16 @@ For MCP, the semantic catalogue is the authoritative source for tool-facing labe
 
 | Area | Status | Evidence in this branch | Roadmap implication |
 | --- | --- | --- | --- |
-| C++ backend | **Complete foundation / active implementation** | Standalone C++20 `core/` has Project/JSON APIs, DuckDB persistence, workflow, cache, audit, cancellation, progress, generic MCP, MassSpec reader and chromatogram processing, and MassSpec registry registration. | Put all new C++ operations and processing methods in `core/`; extend domain modules rather than the generic project kernel. |
-| Rust backend | **Complete foundation / active implementation** | `rust/` is an independent Cargo workspace with core, CLI, external, MCP, MassSpec, Raman, and sensors crates. MassSpec has reader, operations, and chromatogram processing. | Put all new Rust operations and processing methods in `rust/`; preserve independence from C++. |
-| Semantic catalogue | **Active implementation** | `semantic/` contains Turtle ontology sources, strengthened SHACL validation for operations, methods, parameters, results, tables, columns, caching, and mutation contracts, deterministic projection generation, and generated metadata embedded by both MCP implementations. | Add or revise a semantic declaration, result/error contract, and fixture before registering each migrated capability. |
-| C++/Rust MCP | **Complete generic foundation / lifecycle split** | Both stdio servers consume generated semantic metadata and registry entries. Direct domain Operations are stateless and receive `database_path`/`project_id`; workflow Methods remain connected-session capabilities. | Preserve the split and add progress/cancellation handling before long-running processing Methods. |
-| Domain composition | **Partial** | C++ and Rust compose MassSpec, Raman, and sensors registration points. MassSpec has real registered operations and two workflow methods; Raman and sensors are scaffolding. | Continue with real MassSpec and NTA capabilities, creating no placeholder production tools. |
-| R binding | **Complete relocation / deferred alignment** | Complete R package is under `bindings/r/`. | Keep functional as-is until new backends/domain paths are mature. |
-| Cogniflow integration | **Complete relocation / deferred alignment** | Integration boundary exists under `integrations/cf-streamfind/`. | Align only after the public Python path is stable. |
-| Frontend | **Future** | No frontend is part of the active implementation path. | Start only after the required migrated operations and processing methods are available through MCP. |
-| Domain capabilities | **Partial / active** | C++ and Rust both register MassSpec analysis management, metadata/query, raw and persisted spectra/chromatogram retrieval operations, `get_features`, plus `load_chromatograms`, `filter_chromatograms_retention_time`, and `find_features` workflow methods. The former R package retains broader MassSpec and NTA processing, including feature filtering, alignment, gap filling, annotation, suspect screening, and transformation-product assignment. | Continue through the remaining NTA dependency graph. |
+| C++ backend | **Complete foundation / active implementation** | Standalone C++20 `core/` has Project/JSON APIs, DuckDB persistence (incl. batched Appender writes), workflow, cache, audit, cancellation, progress, generic MCP, MassSpec reader, and a full registered NTA method suite. | Put all new C++ operations and processing methods in `core/`; extend domain modules rather than the generic project kernel. |
+| Rust backend | **Complete foundation / active implementation** | `rust/` is an independent Cargo workspace with core, CLI, external, MCP, MassSpec, Raman, and sensors crates. MassSpec has reader, operations, chromatogram processing, and `find_features`/`get_features`/`load_features_ms1`/`load_features_ms2`. | Put all new Rust operations and processing methods in `rust/`; preserve independence from C++. |
+| Semantic catalogue | **Active implementation** | `semantic/` contains Turtle ontology sources, SHACL validation, deterministic projection generation, and generated metadata embedded by both MCP implementations. Declares all NTA methods + parameters. | Add or revise a semantic declaration, result/error contract, and fixture before registering each migrated capability. |
+| C++/Rust MCP | **Complete generic foundation / lifecycle split** | Both stdio servers consume generated semantic metadata and registry entries. Direct Operations are stateless; workflow Methods are connected-session capabilities. | Preserve the split; add progress/cancellation handling before exposing long-running NTA Methods via MCP. |
+| Domain composition | **Partial → active** | C++ and Rust compose MassSpec, Raman, and sensors registration points. MassSpec now registers the full NTA method suite. | Continue with real MassSpec/NTA capabilities; no placeholder production tools. |
+| R binding | **Complete relocation / deferred alignment** | Complete R package under `bindings/r/`. | Keep functional as-is until new backends/domain paths are mature. |
+| Cogniflow integration | **Complete relocation / deferred alignment** | Integration boundary under `integrations/cf-streamfind/`. | Align only after the public Python path is stable. |
+| Frontend | **Future** | No frontend in the active implementation path. | Start only after migrated operations/methods are available through MCP. |
+| NTA domain capabilities (C++) | **Substantially implemented** | C++ core builds a columnar NTA model and registers: `find_features`, `get_features`, `load_features_ms1/2`, `load_chromatograms`, `filter_chromatograms_retention_time`, `subtract_blank`, `filter_features` (full R surface), `filter_features_ms2`, `group_features`, `fill_features`, `create_components`, `annotate_components`, `suspect_screening`, `find_internal_standards`, `filter_suspects`, `filter_internal_standards`, `correct_matrix_suppression`. Parameter defaults and semantics align to the R package (`bindings/r/R/class_MethodsNonTargetAnalysis.R`). | Reproduce R behaviour with meaningful fixtures; keep R functional as-is. |
+| NTA domain capabilities (Rust) | **Partial** | Rust still carries only the earlier `find_features`/`get_features`/`load_features_ms1/2` + chromatogram methods. | Port the remaining NTA processing methods to Rust (see below). |
 
 ### Current migration boundary
 
@@ -216,37 +217,65 @@ units.
 
 | Capability group | Target kind | Migration order |
 | --- | --- | --- |
-| `rcpp_decode_string`, `rcpp_lcd_list_streams`, `rcpp_lcd_inspect_stream` | `sf:Operation` | MassSpec reader hardening, after the NTA foundation |
-| NTA feature detection: `rcpp_project_nta_find_features` | `sf:Method` | **Migrated baseline: `mass_spec.find_features`** |
-| NTA feature loading: `load_features_ms1`, `load_features_ms2` | `sf:Method` | After feature detection |
-| NTA feature processing: components, grouping, filling, blank subtraction, filtering | `sf:Method` | After feature tables are stable |
-| NTA annotation: suspects, internal standards, MetFrag | `sf:Method` | After feature/MS2 contracts are stable |
-| NTA transformation-product assignment on a project | `sf:Method` | After annotation contracts |
-| NTA feature/suspect/internal-standard/transformation-product queries | `sf:Operation` | `mass_spec.get_features` migrated; continue alongside each persisted table |
+| `rcpp_decode_string` (Sciex), `rcpp_lcd_list_streams`, `rcpp_lcd_inspect_stream` | `sf:Operation` | MassSpec reader hardening (separate worktree `mass_spec_reader_extension`) |
+| NTA feature detection: `find_features` | `sf:Method` | **Migrated: `mass_spec.find_features` (C++ + Rust)** |
+| NTA feature loading MS1/MS2 | `sf:Method` | **Migrated: `mass_spec.load_features_ms1/2` (C++, Rust)** |
+| NTA feature processing: components, grouping, filling, blank subtraction, filtering | `sf:Method` | **Migrated in C++** (`create_components`, `group_features`, `fill_features`, `subtract_blank`, `filter_features`, `filter_features_ms2`); **Rust pending** |
+| NTA annotation: isotopes/adducts/losses, suspects, internal standards | `sf:Method` | **C++ done** (`annotate_components`, `suspect_screening`, `find_internal_standards`, `filter_suspects`, `filter_internal_standards`); **Rust pending** |
+| NTA matrix-suppression correction | `sf:Method` | **C++ done** (`correct_matrix_suppression`); **Rust pending** |
+| NTA MetFrag screening | `sf:Method` | Not yet implemented in C++/Rust (external Java tool; needs a design decision) |
+| NTA transformation-product assignment | `sf:Method` | Not yet implemented in C++/Rust |
+| NTA table queries (features/suspects/IS/TP) | `sf:Operation` | `mass_spec.get_features` migrated; continue alongside each persisted table |
 | Pure transformation-product assignment over supplied records | `sf:Operation` | After the shared record contract is defined |
 
-The first capability is authored as `mass_spec.find_features` because it reads
-MassSpec analyses, persists NTA feature rows, and changes project state through
-the workflow. Its first contract is intentionally bounded: MS1 centroid grouping
-within supplied RT windows, ppm tolerance, noise/SNR threshold, and minimum
-trace count. The representative fixture is the three files under
-`tests/data/mass_spec/basic_tof/` ending in `00_tof_s_is_pos_cent-r001.mzML`,
-`r002.mzML`, and `r003.mzML`.
+The NTA feature-detection baseline is `mass_spec.find_features`: MS1 centroid
+grouping within supplied RT windows, ppm tolerance, noise/SNR threshold, and
+minimum trace count. Representative fixtures: the three files under
+`tests/data/mass_spec/basic_tof/` ending in `00_tof_s_is_pos_cent-r00[123].mzML`,
+and the wastewater suite under `tests/data/mass_spec/wastewater/`.
 
 ### Completed workflow and NTA foundation
 
-The current branch now includes the following completed foundation:
+The current branch now includes the following completed work:
 
-- `mass_spec.find_features` is implemented and registered independently in C++ and Rust.
-- `mass_spec.get_features` returns the persisted `MASS_SPEC_NTA_FEATURES` table with target, mass/mz ppm, RT, polarity, and analysis filtering.
-- NTA feature table and result columns use NTA-specific semantic identifiers.
-- Workflow execution is ordered and tracked per project, workflow revision, and step index.
-- Cache keys chain method identity, version, resolved parameters, and the previous step key.
-- Cacheable method outputs snapshot declared `sf:writes` tables and restore project rows on cache hits.
-- Workflow persistence retains version, domain, and ordered steps so replacing a workflow cannot reuse execution state from an older revision.
-- `get_chromatograms` reads loaded `MASS_SPEC_CHROMATOGRAMS`; `get_raw_chromatograms` reads source analyses and files.
-- Fixed-level raw spectrum operations no longer advertise the internal `levels` parameter: EIC/MS1 force level 1 and MS2 forces level 2.
-- C++ and Rust tests cover feature detection, Metoprolol-D7 feature retrieval, workflow caching, and chromatogram processing.
+- NTA model is **columnar (SoA)** in core and Rust: `MASS_SPEC_NTA_FEATURES`
+  columns match the persisted DuckDB table and the columnar semantic results;
+  existing methods (`find_features`, `load_features_ms1/2`) were migrated onto it.
+- Full C++ NTA method suite (list above), each registered generically through the
+  semantic catalogue (`register.cpp` reads the projection; no per-method MCP code).
+- Parameters and default values reproduce the R package
+  (`bindings/r/R/class_MethodsNonTargetAnalysis.R`): e.g. `filter_features` exposes
+  the full ~30-parameter surface; `find_features`/others use R defaults; empty RT
+  windows = full range; `filtered` default true for suspect/IS steps.
+- `Project::append_rows` batched DuckDB Appender persistence (mirrors
+  `bindings/r/src/core/nta/nta.cpp`), replacing per-row `execute_sql` inserts for
+  the NTA result tables. This cut the wastewater run from ~3 h to under a minute.
+- OpenBabel C-API + `sf::obabel` adapter ported into core, made robust
+  (`openbabel_available()` returns false rather than crashing when the DLL is absent).
+- No anonymous namespaces anywhere in project C++ (all converterd to named
+  `streamfind::*_detail` namespaces or file-local `static`).
+- Workflow execution is ordered and tracked per project, revision, and step index;
+  cache keys chain method identity/version/params/previous-step; cacheable outputs
+  snapshot declared `sf:writes` tables.
+- Tests: basic_tof feature detection + Metoprolol-D7 retrieval, load_features,
+  full NTA processing pipeline, and a **wastewater conformance** test with a fast
+  `--quantized` CI variant (3-file positive subset, narrow RT window, ~1 min).
+
+### Next work
+
+The NTA processing suite is substantially complete in C++. The clear next units,
+in this order:
+
+1. **Port the remaining NTA methods to Rust** (process/annotation/matrix paths above)
+   so the two independent backends converge on the same semantic contracts.
+2. **CI adoption** — add the quantized conformance target + the existing fast tests
+   to the repo's CI workflow, and decide whether the full 18-file wastewater run is
+   a nightly optional gate.
+3. **NTA queries** (`get_suspects`, `get_internal_standards`, etc.) as `sf:Operation`s
+   alongside the persisted tables.
+4. **MetFrag + transformation-product assignment** — separate design decision
+   (MetFrag shells out to an external Java tool).
+5. MCP progress/cancellation boundary before exposing long-running NTA Methods.
 
 ## Target repository shape
 

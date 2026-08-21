@@ -10,10 +10,14 @@ void close_debug_log() { if (debug_log.is_open()) debug_log.close(); }
 float mean(const std::vector<float> &v) { return v.empty() ? 0.f : std::accumulate(v.begin(), v.end(), 0.f) / v.size(); }
 float standard_deviation(const std::vector<float> &v, float m) { if (v.empty()) return 0.f; float s = 0; for (float x : v) s += (x - m) * (x - m); return std::sqrt(s / v.size()); }
 float quantile(std::vector<float> v, float q) { if (v.empty()) return 0; q = std::clamp(q, 0.f, 1.f); auto i = static_cast<size_t>((v.size() - 1) * q); std::nth_element(v.begin(), v.begin() + i, v.end()); return v[i]; }
+std::string encode_floats_base64(const std::vector<float> &input, int precision) {
+    return ::mass_spec::reader::utils::encode_base64(::mass_spec::reader::utils::encode_little_endian_from_float(input, precision));
+}
 std::vector<size_t> get_sort_indices_float(const std::vector<float> &v) { std::vector<size_t> i(v.size()); std::iota(i.begin(), i.end(), 0); std::sort(i.begin(), i.end(), [&](auto a, auto b) { return v[a] < v[b]; }); return i; }
 static void reorder(std::vector<float> &v, const std::vector<size_t> &i) { std::vector<float> out; out.reserve(i.size()); for (auto x : i) out.push_back(v[x]); v = std::move(out); }
 static void reorder(std::vector<int> &v, const std::vector<size_t> &i) { std::vector<int> out; out.reserve(i.size()); for (auto x : i) out.push_back(v[x]); v = std::move(out); }
 void reorder_multiple_vectors(const std::vector<size_t> &i, std::vector<float> &a, std::vector<float> &b, std::vector<float> &c) { reorder(a,i); reorder(b,i); reorder(c,i); }
+void reorder_multiple_vectors(const std::vector<size_t> &i, std::vector<float> &a, std::vector<float> &b, std::vector<float> &c, std::vector<float> &d) { reorder(a,i); reorder(b,i); reorder(c,i); reorder(d,i); }
 void reorder_multiple_vectors(const std::vector<size_t> &i, std::vector<float> &a, std::vector<float> &b, std::vector<float> &c, std::vector<float> &d, std::vector<int> &e) { reorder(a,i); reorder(b,i); reorder(c,i); reorder(d,i); reorder(e,i); }
 std::vector<size_t> filter_above_threshold(const std::vector<float> &v, const std::vector<float> &t) { std::vector<size_t> out; for (size_t i=0; i<std::min(v.size(),t.size()); ++i) if (v[i] > t[i]) out.push_back(i); return out; }
 std::vector<int> cluster_by_threshold_float(const std::vector<float> &v, const std::vector<float> &t) { std::vector<int> out(v.size()); for (size_t i=1; i<v.size(); ++i) out[i] = out[i-1] + (v[i]-v[i-1] > t[std::min(i,t.size()-1)]); return out; }

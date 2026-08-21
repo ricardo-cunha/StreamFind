@@ -847,3 +847,392 @@ pub fn find_features(project: &mut Project, p: &Value) -> Result<Value> {
     }
     Ok(json!({"status":"finished","info":"Features detected."}))
 }
+
+/// Port of `merge_NTA_FEATURE_SPECTRA` from bindings/r/src/core/nta/nta.cpp.
+/// Each input point is `(mz, intensity, rt, pre_ce)`. Returns clustered
+/// `(mz, intensity)` pairs in ascending m/z order.
+fn merge_feature_spectra(
+    points: &[(f32, f32, f32, Option<f32>)],
+    mz_clust: f32,
+    presence: f32,
+) -> Vec<(f32, f32)> {
+    let n = points.len();
+    if n == 0 {
+        return Vec::new();
+    }
+    let mut sorted: Vec<(f32, f32, f32, Option<f32>)> = points.to_vec();
+    sorted.sort_by(|a, b| a.0.total_cmp(&b.0));
+
+    let mut sorted_rt: Vec<f32> = sorted.iter().map(|p| p.2).collect();
+    sorted_rt.sort_by(f32::total_cmp);
+    sorted_rt.dedup();
+    let total_unique_rt = sorted_rt.len();
+
+    let mut all_finite_ce: Vec<f32> = sorted.iter().filter_map(|p| p.3).collect();
+    all_finite_ce.sort_by(f32::total_cmp);
+    all_finite_ce.dedup();
+    let total_unique_pre_ce = all_finite_ce.len();
+
+    let mz_tol = mz_clust.max(0.0);
+    let presence_thresh = presence.clamp(0.0, 1.0);
+
+    let mut out: Vec<(f32, f32)> = Vec::new();
+    let mut start = 0;
+    while start < n {
+        let mut end = start + 1;
+        while end < n && (sorted[end].0 - sorted[end - 1].0) <= mz_tol {
+            end += 1;
+        }
+
+        // Group the m/z cluster by RT (same scan == same RT must not merge).
+        let mut rt_groups: std::collections::BTreeMap<u32, Vec<usize>> =
+            std::collections::BTreeMap::new();
+        for i in start..end {
+            rt_groups.entry(sorted[i].2.to_bits()).or_default().push(i);
+        }
+
+        if rt_groups.len() <= 1 {
+            for i in start..end {
+                out.push((sorted[i].0, sorted[i].1));
+            }
+            start = end;
+            continue;
+        }
+
+        let mut reps_mz: Vec<f32> = Vec::new();
+        let mut reps_int: Vec<f32> = Vec::new();
+        let mut reps_pre_ce: Vec<f32> = Vec::new();
+        for (_rt_bits, indices) in rt_groups {
+            let mut best = indices[0];
+            let mut best_int = sorted[best].1;
+            for &ji in &indices {
+                if sorted[ji].1 > best_int {
+                    best = ji;
+                    best_int = sorted[ji].1;
+                }
+            }
+            reps_mz.push(sorted[best].0);
+            reps_int.push(best_int);
+            if let Some(ce) = sorted[best].3 {
+                reps_pre_ce.push(ce);
+            }
+        }
+
+        let mut pass = true;
+        if presence_thresh > 0.0 && total_unique_rt > 0 {
+            let mut required = presence_thresh * total_unique_rt as f32;
+            if total_unique_pre_ce > 0 && !reps_pre_ce.is_empty() {
+                reps_pre_ce.sort_by(f32::total_cmp);
+                reps_pre_ce.dedup();
+                let uniq_ce = reps_pre_ce.len();
+                if (uniq_ce as f32) < total_unique_pre_ce as f32 {
+                    required *= uniq_ce as f32 / total_unique_pre_ce as f32;
+                }
+            }
+            if (reps_mz.len() as f32) < required {
+                pass = false;
+            }
+        }
+        if !pass {
+            start = end;
+            continue;
+        }
+
+        let mut best_rep = 0;
+        let mut best_rep_int = reps_int[0];
+        for i in 1..reps_mz.len() {
+            if reps_int[i] > best_rep_int {
+                best_rep = i;
+                best_rep_int = reps_int[i];
+            }
+        }
+        out.push((reps_mz[best_rep], reps_int[best_rep]));
+        start = end;
+    }
+    out
+}
+
+/// Resolve and cluster MS1 spectra for each persisted feature and store the
+/// joined MS1 spectrum (`ms1_size`, `ms1_mz`, `ms1_intensity`) on the row.
+///
+/// Parameters (see semantic/generated/catalogue.json `mass_spec.load_features_ms1`):
+/// `analysis_names` (array, optional — empty means all), `filtered` (bool,
+/// default false), `rt_window` (array[2], optional), `mz_window` (array[2],
+/// optional), `min_traces_intensity` (real, default 250.0), `mz_clust` (real,
+/// default 0.005), `presence` (real, default 0.8).
+pub fn load_features_ms1(project: &mut Project, p: &Value) -> Result<Value> {
+    let filtered = p.get("filtered").and_then(Value::as_bool).unwrap_or(false);
+    let rt_window: Vec<f32> = p
+        .get("rt_window")
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(|v| v.as_f64()).map(|x| x as f32).collect())
+        .unwrap_or_default();
+    let mz_window: Vec<f32> = p
+        .get("mz_window")
+        .and_then(Value::as_array)
+        .map(|a| a.iter().filter_map(|v| v.as_f64()).map(|x| x as f32).collect())
+        .unwrap_or_default();
+    let min_traces_intensity = p
+        .get("min_traces_intensity")
+        .and_then(Value::as_f64)
+        .unwrap_or(250.0) as f32;
+    let mz_clust = p.get("mz_clust").and_then(Value::as_f64).unwrap_or(0.005) as f32;
+    let presence = p.get("presence").and_then(Value::as_f64).unwrap_or(0.8) as f32;
+    let has_rt = rt_window.len() >= 2;
+    let has_mz = mz_window.len() >= 2;
+
+    let project_id = project.get_project_id();
+    let wanted = p
+        .get("analysis_names")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let rows = project.query_json(&format!(
+        "SELECT analysis, feature, rt, mz, rtmin, rtmax, mzmin, mzmax, polarity, filtered FROM MASS_SPEC_NTA_FEATURES WHERE project_id={} ORDER BY analysis, feature",
+        sql(&project_id)
+    ))?;
+    let mut updated = 0usize;
+    let mut per_analysis: std::collections::BTreeMap<String, Vec<Value>> =
+        std::collections::BTreeMap::new();
+    for row in rows.as_array().into_iter().flatten() {
+        let analysis = row["analysis"].as_str().unwrap_or_default().to_string();
+        if !wanted.is_empty() && !wanted.iter().any(|x| x.as_str() == Some(&analysis)) {
+            continue;
+        }
+        per_analysis.entry(analysis).or_default().push(row.clone());
+    }
+    for (analysis, frows) in per_analysis {
+        let fs = project.query_json(&format!(
+            "SELECT file_path FROM MASS_SPEC_ANALYSES WHERE project_id={} AND analysis={}",
+            sql(&project_id),
+            sql(&analysis)
+        ))?;
+        let file = fs
+            .as_array()
+            .and_then(|a| a.first())
+            .and_then(|r| r["file_path"].as_str())
+            .unwrap_or_default()
+            .to_string();
+        if file.is_empty() {
+            continue;
+        }
+        let reader = Reader::open(&file).map_err(|e| invalid(e.to_string()))?;
+        for row in &frows {
+            let feature = row["feature"].as_str().unwrap_or_default().to_string();
+            let row_filtered = row["filtered"].as_bool().unwrap_or(false);
+            if row_filtered && !filtered {
+                continue;
+            }
+            if row["ms1_size"].as_i64().unwrap_or(0) > 0
+                && !row["ms1_mz"].as_str().unwrap_or("").is_empty()
+                && !row["ms1_intensity"].as_str().unwrap_or("").is_empty()
+            {
+                continue;
+            }
+            let ft_rtmin = row["rtmin"].as_f64().unwrap_or(0.0) as f32;
+            let ft_rtmax = row["rtmax"].as_f64().unwrap_or(0.0) as f32;
+            let ft_mzmin = row["mzmin"].as_f64().unwrap_or(0.0) as f32;
+            let ft_mzmax = row["mzmax"].as_f64().unwrap_or(0.0) as f32;
+            let ft_mz = row["mz"].as_f64().unwrap_or(0.0) as f32;
+            let polarity = row["polarity"].as_i64().unwrap_or(0) as i32;
+
+            let (rtmin, rtmax) = if has_rt {
+                (ft_rtmin + rt_window[0], ft_rtmax + rt_window[1])
+            } else {
+                (ft_rtmin, ft_rtmax)
+            };
+            let (mzmin, mzmax) = if has_mz {
+                (ft_mzmin + mz_window[0], ft_mzmax + mz_window[1])
+            } else {
+                (ft_mzmin, ft_mzmax)
+            };
+            let mmin = if mzmin == 0.0 && mzmax == 0.0 {
+                ft_mz - 0.01
+            } else {
+                mzmin
+            };
+            let mmax = if mzmin == 0.0 && mzmax == 0.0 {
+                ft_mz + 0.01
+            } else {
+                mzmax
+            };
+
+            let mut points: Vec<(f32, f32, f32, Option<f32>)> = Vec::new();
+            for s in reader.spectra().iter().filter(|s| s.level == 1) {
+                if polarity != 0 && s.polarity != polarity {
+                    continue;
+                }
+                if rtmin != 0.0 && s.retention_time < rtmin {
+                    continue;
+                }
+                if rtmax != 0.0 && s.retention_time > rtmax {
+                    continue;
+                }
+                if s.mz.len() < 2 {
+                    continue;
+                }
+                for k in 0..s.mz.len() {
+                    let mzv = s.mz[k];
+                    let inv = s.intensity[k];
+                    if inv < min_traces_intensity {
+                        continue;
+                    }
+                    if mzv < mmin || mzv > mmax {
+                        continue;
+                    }
+                    points.push((mzv, inv, s.retention_time, None));
+                }
+            }
+            let clustered = merge_feature_spectra(&points, mz_clust, presence);
+            if clustered.is_empty() {
+                continue;
+            }
+            let mzs: Vec<f32> = clustered.iter().map(|x| x.0).collect();
+            let ints: Vec<f32> = clustered.iter().map(|x| x.1).collect();
+            let n = mzs.len();
+            project.execute_sql(&format!(
+                "UPDATE MASS_SPEC_NTA_FEATURES SET ms1_size={}, ms1_mz={}, ms1_intensity={} WHERE project_id={} AND analysis={} AND feature={}",
+                n,
+                sql(&encode(&mzs)),
+                sql(&encode(&ints)),
+                sql(&project_id),
+                sql(&analysis),
+                sql(&feature)
+            ))?;
+            updated += 1;
+        }
+    }
+    Ok(json!({"status": "finished", "info": format!("MS1 spectra loaded for {updated} features.")}))
+}
+
+/// Resolve and cluster MS2 spectra for each persisted feature and store the
+/// joined MS2 spectrum (`ms2_size`, `ms2_mz`, `ms2_intensity`) on the row.
+///
+/// Parameters (see semantic/generated/catalogue.json `mass_spec.load_features_ms2`):
+/// `analysis_names` (array, optional — empty means all), `filtered` (bool,
+/// default false), `min_traces_intensity` (real, default 10.0),
+/// `isolation_window` (real, default 1.3), `mz_clust` (real, default 0.005),
+/// `presence` (real, default 0.8).
+pub fn load_features_ms2(project: &mut Project, p: &Value) -> Result<Value> {
+    let filtered = p.get("filtered").and_then(Value::as_bool).unwrap_or(false);
+    let min_traces_intensity = p
+        .get("min_traces_intensity")
+        .and_then(Value::as_f64)
+        .unwrap_or(10.0) as f32;
+    let isolation_window = p
+        .get("isolation_window")
+        .and_then(Value::as_f64)
+        .unwrap_or(1.3) as f32;
+    let mz_clust = p.get("mz_clust").and_then(Value::as_f64).unwrap_or(0.005) as f32;
+    let presence = p.get("presence").and_then(Value::as_f64).unwrap_or(0.8) as f32;
+
+    let project_id = project.get_project_id();
+    let wanted = p
+        .get("analysis_names")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let rows = project.query_json(&format!(
+        "SELECT analysis, feature, rt, mz, rtmin, rtmax, polarity, filtered FROM MASS_SPEC_NTA_FEATURES WHERE project_id={} ORDER BY analysis, feature",
+        sql(&project_id)
+    ))?;
+    let mut updated = 0usize;
+    let mut per_analysis: std::collections::BTreeMap<String, Vec<Value>> =
+        std::collections::BTreeMap::new();
+    for row in rows.as_array().into_iter().flatten() {
+        let analysis = row["analysis"].as_str().unwrap_or_default().to_string();
+        if !wanted.is_empty() && !wanted.iter().any(|x| x.as_str() == Some(&analysis)) {
+            continue;
+        }
+        per_analysis.entry(analysis).or_default().push(row.clone());
+    }
+    for (analysis, frows) in per_analysis {
+        let fs = project.query_json(&format!(
+            "SELECT file_path FROM MASS_SPEC_ANALYSES WHERE project_id={} AND analysis={}",
+            sql(&project_id),
+            sql(&analysis)
+        ))?;
+        let file = fs
+            .as_array()
+            .and_then(|a| a.first())
+            .and_then(|r| r["file_path"].as_str())
+            .unwrap_or_default()
+            .to_string();
+        if file.is_empty() {
+            continue;
+        }
+        let reader = Reader::open(&file).map_err(|e| invalid(e.to_string()))?;
+        for row in &frows {
+            let feature = row["feature"].as_str().unwrap_or_default().to_string();
+            let row_filtered = row["filtered"].as_bool().unwrap_or(false);
+            if row_filtered && !filtered {
+                continue;
+            }
+            if row["ms2_size"].as_i64().unwrap_or(0) > 0
+                && !row["ms2_mz"].as_str().unwrap_or("").is_empty()
+                && !row["ms2_intensity"].as_str().unwrap_or("").is_empty()
+            {
+                continue;
+            }
+            let ft_rtmin = row["rtmin"].as_f64().unwrap_or(0.0) as f32;
+            let ft_rtmax = row["rtmax"].as_f64().unwrap_or(0.0) as f32;
+            let ft_mz = row["mz"].as_f64().unwrap_or(0.0) as f32;
+            let polarity = row["polarity"].as_i64().unwrap_or(0) as i32;
+
+            let rtmin = ft_rtmin;
+            let rtmax = ft_rtmax;
+            let mmin = ft_mz - isolation_window / 2.0;
+            let mmax = ft_mz + isolation_window / 2.0;
+
+            let mut points: Vec<(f32, f32, f32, Option<f32>)> = Vec::new();
+            for s in reader.spectra().iter().filter(|s| s.level == 2) {
+                if polarity != 0 && s.polarity != polarity {
+                    continue;
+                }
+                if rtmin != 0.0 && s.retention_time < rtmin {
+                    continue;
+                }
+                if rtmax != 0.0 && s.retention_time > rtmax {
+                    continue;
+                }
+                if (mmin != 0.0 || mmax != 0.0) && (s.precursor_mz < mmin || s.precursor_mz > mmax) {
+                    continue;
+                }
+                if s.mz.len() < 2 {
+                    continue;
+                }
+                for k in 0..s.mz.len() {
+                    let mzv = s.mz[k];
+                    let inv = s.intensity[k];
+                    if inv < min_traces_intensity {
+                        continue;
+                    }
+                    let ce = if s.collision_energy.is_finite() {
+                        Some(s.collision_energy)
+                    } else {
+                        None
+                    };
+                    points.push((mzv, inv, s.retention_time, ce));
+                }
+            }
+            let clustered = merge_feature_spectra(&points, mz_clust, presence);
+            if clustered.is_empty() {
+                continue;
+            }
+            let mzs: Vec<f32> = clustered.iter().map(|x| x.0).collect();
+            let ints: Vec<f32> = clustered.iter().map(|x| x.1).collect();
+            let n = mzs.len();
+            project.execute_sql(&format!(
+                "UPDATE MASS_SPEC_NTA_FEATURES SET ms2_size={}, ms2_mz={}, ms2_intensity={} WHERE project_id={} AND analysis={} AND feature={}",
+                n,
+                sql(&encode(&mzs)),
+                sql(&encode(&ints)),
+                sql(&project_id),
+                sql(&analysis),
+                sql(&feature)
+            ))?;
+            updated += 1;
+        }
+    }
+    Ok(json!({"status": "finished", "info": format!("MS2 spectra loaded for {updated} features.")}))
+}

@@ -1169,5 +1169,21 @@ pub fn register_methods(registry: &mut MethodRegistry) -> Result<()> {
         ontology_parameters("mass_spec.find_features"),
         Box::new(processing_methods_nta::find_features),
     ), "mass_spec.find_features"))?;
+    registry.register(configure_method(Method::new(
+        "mass_spec.load_features_ms1",
+        "mass_spec.load_features_ms1",
+        ontology_description("mass_spec.load_features_ms1"),
+        "mass_spec",
+        ontology_parameters("mass_spec.load_features_ms1"),
+        Box::new(processing_methods_nta::load_features_ms1),
+    ), "mass_spec.load_features_ms1"))?;
+    registry.register(configure_method(Method::new(
+        "mass_spec.load_features_ms2",
+        "mass_spec.load_features_ms2",
+        ontology_description("mass_spec.load_features_ms2"),
+        "mass_spec",
+        ontology_parameters("mass_spec.load_features_ms2"),
+        Box::new(processing_methods_nta::load_features_ms2),
+    ), "mass_spec.load_features_ms2"))?;
     Ok(())
 }

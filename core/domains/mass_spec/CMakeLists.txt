@@ -6,6 +6,16 @@ add_library(streamfind_mass_spec STATIC
     src/processing_methods_nta.cpp
     src/nta_deconvolution.cpp
     src/nta.cpp
+    src/nta_annotation.cpp
+    src/nta_componentization.cpp
+    src/nta_blank_subtraction.cpp
+    src/nta_filters.cpp
+    src/nta_gap_filling.cpp
+    src/nta_alignment.cpp
+    src/nta_suspect_screening.cpp
+    src/nta_correction_algorithms.cpp
+    src/openbabel_adapter.cpp
+    src/openbabel_c_api.cpp
     "${CMAKE_CURRENT_SOURCE_DIR}/../../vendor/simdutf/simdutf.cpp"
 )
 target_include_directories(streamfind_mass_spec PUBLIC include)
@@ -13,4 +23,12 @@ target_link_libraries(streamfind_mass_spec PUBLIC streamfind::core)
 target_include_directories(streamfind_mass_spec PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../../vendor/pugixml-1.14/src"
     "${CMAKE_CURRENT_SOURCE_DIR}/../../vendor/simdutf"
+    "${CMAKE_CURRENT_SOURCE_DIR}/../../vendor/openbabel/openbabel-3-2-0/include"
 )
+if(MSVC)
+    target_compile_definitions(streamfind_mass_spec PRIVATE
+        NOMINMAX
+        strcasecmp=_stricmp
+        strncasecmp=_strnicmp
+    )
+endif()

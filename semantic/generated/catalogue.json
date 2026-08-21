@@ -1925,6 +1925,859 @@
     },
     {
       "kind": "method",
+      "canonical_id": "mass_spec.annotate_components",
+      "domain": "mass_spec",
+      "label": "Annotate components",
+      "definition": "Annotate feature components with isotopic, adduct, and fragment relationships.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "max_isotopes": {
+              "type": "integer",
+              "examples": [
+                5
+              ]
+            },
+            "max_charge": {
+              "type": "integer",
+              "examples": [
+                2
+              ]
+            },
+            "max_gaps": {
+              "type": "integer",
+              "examples": [
+                3
+              ]
+            },
+            "ppm": {
+              "type": "real",
+              "examples": [
+                20.0
+              ]
+            },
+            "isotope_elements": {
+              "type": "array",
+              "examples": [
+                [
+                  "C",
+                  "H",
+                  "N",
+                  "O",
+                  "S"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "max_isotopes",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              5
+            ]
+          },
+          "example": 5,
+          "default": null
+        },
+        {
+          "name": "max_charge",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              2
+            ]
+          },
+          "example": 2,
+          "default": null
+        },
+        {
+          "name": "max_gaps",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              3
+            ]
+          },
+          "example": 3,
+          "default": null
+        },
+        {
+          "name": "ppm",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              20.0
+            ]
+          },
+          "example": 20.0,
+          "default": null
+        },
+        {
+          "name": "isotope_elements",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "C",
+                "H",
+                "N",
+                "O",
+                "S"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "C",
+            "H",
+            "N",
+            "O",
+            "S"
+          ],
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_FEATURES"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_FEATURES"
+        ]
+      },
+      "cacheable": true,
+      "required_methods": [],
+      "single_occurrence": false
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.correct_matrix_suppression",
+      "domain": "mass_spec",
+      "label": "Correct matrix suppression",
+      "definition": "Apply matrix/suppression correction factors derived from analysis intensity profiles.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "mp_rt_window": {
+              "type": "real",
+              "examples": [
+                60.0
+              ]
+            },
+            "ref_blank_replicate": {
+              "type": "string",
+              "examples": [
+                "blank"
+              ]
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "mp_rt_window",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              60.0
+            ]
+          },
+          "example": 60.0,
+          "default": null
+        },
+        {
+          "name": "ref_blank_replicate",
+          "type": "string",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "string",
+            "examples": [
+              "blank"
+            ]
+          },
+          "example": "blank",
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_FEATURES"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_FEATURES"
+        ]
+      },
+      "cacheable": true,
+      "required_methods": [],
+      "single_occurrence": false
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.create_components",
+      "domain": "mass_spec",
+      "label": "Create components",
+      "definition": "Join correlated features into components based on EIC correlation within a retention-time window.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "rt_window": {
+              "type": "array",
+              "examples": [
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              "items": {
+                "type": "real",
+                "examples": [
+                  1.0
+                ]
+              }
+            },
+            "min_correlation": {
+              "type": "real",
+              "examples": [
+                0.8
+              ]
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "rt_window",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "realItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                0.0,
+                0.0
+              ]
+            ],
+            "items": {
+              "type": "real",
+              "examples": [
+                1.0
+              ]
+            }
+          },
+          "example": [
+            0.0,
+            0.0
+          ],
+          "default": null
+        },
+        {
+          "name": "min_correlation",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.8
+            ]
+          },
+          "example": 0.8,
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_FEATURES"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_FEATURES"
+        ]
+      },
+      "cacheable": true,
+      "required_methods": [],
+      "single_occurrence": false
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.fill_features",
+      "domain": "mass_spec",
+      "label": "Fill feature gaps",
+      "definition": "Fill missing feature values across analyses by extracting and integrating EIC peaks in the expected windows.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "within_replicate": {
+              "type": "boolean"
+            },
+            "filtered": {
+              "type": "boolean"
+            },
+            "rt_expand": {
+              "type": "real",
+              "examples": [
+                60.0
+              ]
+            },
+            "mz_expand": {
+              "type": "real",
+              "examples": [
+                0.005
+              ]
+            },
+            "max_peak_width": {
+              "type": "real",
+              "examples": [
+                30.0
+              ]
+            },
+            "min_traces_intensity": {
+              "type": "real"
+            },
+            "min_number_traces": {
+              "type": "integer",
+              "examples": [
+                3
+              ]
+            },
+            "min_intensity_ms1": {
+              "type": "real",
+              "examples": [
+                1000.0
+              ]
+            },
+            "rt_apex_deviation": {
+              "type": "real",
+              "examples": [
+                1.0
+              ]
+            },
+            "min_signal_to_noise_ratio": {
+              "type": "real",
+              "examples": [
+                3.0
+              ]
+            },
+            "min_gaussian_fit": {
+              "type": "real",
+              "examples": [
+                0.8
+              ]
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "within_replicate",
+          "type": "boolean",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "boolean"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "filtered",
+          "type": "boolean",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "boolean"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "rt_expand",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              60.0
+            ]
+          },
+          "example": 60.0,
+          "default": null
+        },
+        {
+          "name": "mz_expand",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.005
+            ]
+          },
+          "example": 0.005,
+          "default": null
+        },
+        {
+          "name": "max_peak_width",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              30.0
+            ]
+          },
+          "example": 30.0,
+          "default": null
+        },
+        {
+          "name": "min_traces_intensity",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "min_number_traces",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              3
+            ]
+          },
+          "example": 3,
+          "default": null
+        },
+        {
+          "name": "min_intensity_ms1",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              1000.0
+            ]
+          },
+          "example": 1000.0,
+          "default": null
+        },
+        {
+          "name": "rt_apex_deviation",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              1.0
+            ]
+          },
+          "example": 1.0,
+          "default": null
+        },
+        {
+          "name": "min_signal_to_noise_ratio",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              3.0
+            ]
+          },
+          "example": 3.0,
+          "default": null
+        },
+        {
+          "name": "min_gaussian_fit",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.8
+            ]
+          },
+          "example": 0.8,
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_FEATURES"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_FEATURES"
+        ]
+      },
+      "cacheable": true,
+      "required_methods": [],
+      "single_occurrence": false
+    },
+    {
+      "kind": "method",
       "canonical_id": "mass_spec.filter_chromatograms_retention_time",
       "domain": "mass_spec",
       "label": "Filter chromatograms by retention time",
@@ -2059,6 +2912,1548 @@
         ]
       },
       "cacheable": false,
+      "required_methods": [],
+      "single_occurrence": false
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.filter_features",
+      "domain": "mass_spec",
+      "label": "Filter features",
+      "definition": "Remove or flag features failing signal, shape, and quality criteria.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "min_sn": {
+              "type": "real",
+              "examples": [
+                3.0
+              ]
+            },
+            "min_intensity": {
+              "type": "real",
+              "examples": [
+                10000.0
+              ]
+            },
+            "min_area": {
+              "type": "real",
+              "examples": [
+                10000.0
+              ]
+            },
+            "min_width": {
+              "type": "real",
+              "examples": [
+                5.0
+              ]
+            },
+            "max_width": {
+              "type": "real",
+              "examples": [
+                100.0
+              ]
+            },
+            "max_ppm": {
+              "type": "real",
+              "examples": [
+                10.0
+              ]
+            },
+            "min_fwhm_rt": {
+              "type": "real",
+              "examples": [
+                1.0
+              ]
+            },
+            "max_fwhm_rt": {
+              "type": "real",
+              "examples": [
+                100.0
+              ]
+            },
+            "min_fwhm_mz": {
+              "type": "real",
+              "examples": [
+                0.001
+              ]
+            },
+            "max_fwhm_mz": {
+              "type": "real",
+              "examples": [
+                0.1
+              ]
+            },
+            "min_gaussian_a": {
+              "type": "real"
+            },
+            "min_gaussian_mu": {
+              "type": "real"
+            },
+            "max_gaussian_mu": {
+              "type": "real",
+              "examples": [
+                2000.0
+              ]
+            },
+            "min_gaussian_sigma": {
+              "type": "real"
+            },
+            "max_gaussian_sigma": {
+              "type": "real",
+              "examples": [
+                100.0
+              ]
+            },
+            "min_gaussian_r2": {
+              "type": "real",
+              "examples": [
+                0.8
+              ]
+            },
+            "max_jaggedness": {
+              "type": "real",
+              "examples": [
+                100.0
+              ]
+            },
+            "min_sharpness": {
+              "type": "real"
+            },
+            "min_asymmetry": {
+              "type": "real"
+            },
+            "max_asymmetry": {
+              "type": "real",
+              "examples": [
+                100.0
+              ]
+            },
+            "max_modality": {
+              "type": "integer",
+              "examples": [
+                2
+              ]
+            },
+            "min_plates": {
+              "type": "real",
+              "examples": [
+                100.0
+              ]
+            },
+            "only_filled": {
+              "type": "boolean",
+              "examples": [
+                true
+              ]
+            },
+            "remove_filled": {
+              "type": "boolean"
+            },
+            "min_size_eic": {
+              "type": "integer",
+              "examples": [
+                5
+              ]
+            },
+            "min_size_ms1": {
+              "type": "integer",
+              "examples": [
+                5
+              ]
+            },
+            "min_size_ms2": {
+              "type": "integer",
+              "examples": [
+                5
+              ]
+            },
+            "min_rel_presence_replicate": {
+              "type": "real",
+              "examples": [
+                0.8
+              ]
+            },
+            "remove_isotopes": {
+              "type": "boolean"
+            },
+            "remove_adducts": {
+              "type": "boolean"
+            },
+            "remove_losses": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "min_sn",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              3.0
+            ]
+          },
+          "example": 3.0,
+          "default": null
+        },
+        {
+          "name": "min_intensity",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              10000.0
+            ]
+          },
+          "example": 10000.0,
+          "default": null
+        },
+        {
+          "name": "min_area",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              10000.0
+            ]
+          },
+          "example": 10000.0,
+          "default": null
+        },
+        {
+          "name": "min_width",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              5.0
+            ]
+          },
+          "example": 5.0,
+          "default": null
+        },
+        {
+          "name": "max_width",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              100.0
+            ]
+          },
+          "example": 100.0,
+          "default": null
+        },
+        {
+          "name": "max_ppm",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              10.0
+            ]
+          },
+          "example": 10.0,
+          "default": null
+        },
+        {
+          "name": "min_fwhm_rt",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              1.0
+            ]
+          },
+          "example": 1.0,
+          "default": null
+        },
+        {
+          "name": "max_fwhm_rt",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              100.0
+            ]
+          },
+          "example": 100.0,
+          "default": null
+        },
+        {
+          "name": "min_fwhm_mz",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.001
+            ]
+          },
+          "example": 0.001,
+          "default": null
+        },
+        {
+          "name": "max_fwhm_mz",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.1
+            ]
+          },
+          "example": 0.1,
+          "default": null
+        },
+        {
+          "name": "min_gaussian_a",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "min_gaussian_mu",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "max_gaussian_mu",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              2000.0
+            ]
+          },
+          "example": 2000.0,
+          "default": null
+        },
+        {
+          "name": "min_gaussian_sigma",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "max_gaussian_sigma",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              100.0
+            ]
+          },
+          "example": 100.0,
+          "default": null
+        },
+        {
+          "name": "min_gaussian_r2",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.8
+            ]
+          },
+          "example": 0.8,
+          "default": null
+        },
+        {
+          "name": "max_jaggedness",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              100.0
+            ]
+          },
+          "example": 100.0,
+          "default": null
+        },
+        {
+          "name": "min_sharpness",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "min_asymmetry",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "max_asymmetry",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              100.0
+            ]
+          },
+          "example": 100.0,
+          "default": null
+        },
+        {
+          "name": "max_modality",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              2
+            ]
+          },
+          "example": 2,
+          "default": null
+        },
+        {
+          "name": "min_plates",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              100.0
+            ]
+          },
+          "example": 100.0,
+          "default": null
+        },
+        {
+          "name": "only_filled",
+          "type": "boolean",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "boolean",
+            "examples": [
+              true
+            ]
+          },
+          "example": true,
+          "default": null
+        },
+        {
+          "name": "remove_filled",
+          "type": "boolean",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "boolean"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "min_size_eic",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              5
+            ]
+          },
+          "example": 5,
+          "default": null
+        },
+        {
+          "name": "min_size_ms1",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              5
+            ]
+          },
+          "example": 5,
+          "default": null
+        },
+        {
+          "name": "min_size_ms2",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              5
+            ]
+          },
+          "example": 5,
+          "default": null
+        },
+        {
+          "name": "min_rel_presence_replicate",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.8
+            ]
+          },
+          "example": 0.8,
+          "default": null
+        },
+        {
+          "name": "remove_isotopes",
+          "type": "boolean",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "boolean"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "remove_adducts",
+          "type": "boolean",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "boolean"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "remove_losses",
+          "type": "boolean",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "boolean"
+          },
+          "example": null,
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_FEATURES"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_FEATURES"
+        ]
+      },
+      "cacheable": true,
+      "required_methods": [],
+      "single_occurrence": false
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.filter_features_ms2",
+      "domain": "mass_spec",
+      "label": "Filter feature MS2 spectra",
+      "definition": "Clean feature MS2 spectra: remove blank contaminants, apply relative intensity and top-N limits.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "top": {
+              "type": "integer"
+            },
+            "min_intensity_ms2": {
+              "type": "real",
+              "examples": [
+                100.0
+              ]
+            },
+            "rel_min_intensity": {
+              "type": "real",
+              "examples": [
+                0.01
+              ]
+            },
+            "blank_clean": {
+              "type": "boolean",
+              "examples": [
+                true
+              ]
+            },
+            "mz_clust": {
+              "type": "real",
+              "examples": [
+                0.003
+              ]
+            },
+            "blank_presence_threshold": {
+              "type": "real",
+              "examples": [
+                0.5
+              ]
+            },
+            "global_presence_threshold": {
+              "type": "real"
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "top",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "min_intensity_ms2",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              100.0
+            ]
+          },
+          "example": 100.0,
+          "default": null
+        },
+        {
+          "name": "rel_min_intensity",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.01
+            ]
+          },
+          "example": 0.01,
+          "default": null
+        },
+        {
+          "name": "blank_clean",
+          "type": "boolean",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "boolean",
+            "examples": [
+              true
+            ]
+          },
+          "example": true,
+          "default": null
+        },
+        {
+          "name": "mz_clust",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.003
+            ]
+          },
+          "example": 0.003,
+          "default": null
+        },
+        {
+          "name": "blank_presence_threshold",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.5
+            ]
+          },
+          "example": 0.5,
+          "default": null
+        },
+        {
+          "name": "global_presence_threshold",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real"
+          },
+          "example": null,
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_FEATURES"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_FEATURES"
+        ]
+      },
+      "cacheable": true,
+      "required_methods": [],
+      "single_occurrence": false
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.filter_internal_standards",
+      "domain": "mass_spec",
+      "label": "Filter internal standards",
+      "definition": "Refine internal-standard matches by applying name, score, RT/mass error, identification-level, fragment, and cosine-similarity thresholds.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "names": {
+              "type": "array",
+              "examples": [
+                [
+                  "caffeine"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "min_score": {
+              "type": "real",
+              "examples": [
+                0.5
+              ]
+            },
+            "max_error_rt": {
+              "type": "real",
+              "examples": [
+                30.0
+              ]
+            },
+            "max_error_mass": {
+              "type": "real",
+              "examples": [
+                5.0
+              ]
+            },
+            "id_levels": {
+              "type": "array",
+              "examples": [
+                [
+                  1,
+                  2,
+                  3
+                ]
+              ],
+              "items": {
+                "type": "integer",
+                "examples": [
+                  1
+                ]
+              }
+            },
+            "min_shared_fragments": {
+              "type": "integer",
+              "examples": [
+                1
+              ]
+            },
+            "min_cosine_similarity": {
+              "type": "real",
+              "examples": [
+                0.8
+              ]
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "names",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "caffeine"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "caffeine"
+          ],
+          "default": null
+        },
+        {
+          "name": "min_score",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.5
+            ]
+          },
+          "example": 0.5,
+          "default": null
+        },
+        {
+          "name": "max_error_rt",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              30.0
+            ]
+          },
+          "example": 30.0,
+          "default": null
+        },
+        {
+          "name": "max_error_mass",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              5.0
+            ]
+          },
+          "example": 5.0,
+          "default": null
+        },
+        {
+          "name": "id_levels",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "integerItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                1,
+                2,
+                3
+              ]
+            ],
+            "items": {
+              "type": "integer",
+              "examples": [
+                1
+              ]
+            }
+          },
+          "example": [
+            1,
+            2,
+            3
+          ],
+          "default": null
+        },
+        {
+          "name": "min_shared_fragments",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              1
+            ]
+          },
+          "example": 1,
+          "default": null
+        },
+        {
+          "name": "min_cosine_similarity",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.8
+            ]
+          },
+          "example": 0.8,
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_FEATURES"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_FEATURES"
+        ]
+      },
+      "cacheable": true,
+      "required_methods": [],
+      "single_occurrence": false
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.filter_suspects",
+      "domain": "mass_spec",
+      "label": "Filter suspects",
+      "definition": "Refine suspect-screening results by applying name, score, RT/mass error, identification-level, fragment, and cosine-similarity thresholds.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "names": {
+              "type": "array",
+              "examples": [
+                [
+                  "caffeine"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "min_score": {
+              "type": "real",
+              "examples": [
+                0.5
+              ]
+            },
+            "max_error_rt": {
+              "type": "real",
+              "examples": [
+                30.0
+              ]
+            },
+            "max_error_mass": {
+              "type": "real",
+              "examples": [
+                5.0
+              ]
+            },
+            "id_levels": {
+              "type": "array",
+              "examples": [
+                [
+                  1,
+                  2,
+                  3
+                ]
+              ],
+              "items": {
+                "type": "integer",
+                "examples": [
+                  1
+                ]
+              }
+            },
+            "min_shared_fragments": {
+              "type": "integer",
+              "examples": [
+                1
+              ]
+            },
+            "min_cosine_similarity": {
+              "type": "real",
+              "examples": [
+                0.8
+              ]
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "names",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "caffeine"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "caffeine"
+          ],
+          "default": null
+        },
+        {
+          "name": "min_score",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.5
+            ]
+          },
+          "example": 0.5,
+          "default": null
+        },
+        {
+          "name": "max_error_rt",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              30.0
+            ]
+          },
+          "example": 30.0,
+          "default": null
+        },
+        {
+          "name": "max_error_mass",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              5.0
+            ]
+          },
+          "example": 5.0,
+          "default": null
+        },
+        {
+          "name": "id_levels",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "integerItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                1,
+                2,
+                3
+              ]
+            ],
+            "items": {
+              "type": "integer",
+              "examples": [
+                1
+              ]
+            }
+          },
+          "example": [
+            1,
+            2,
+            3
+          ],
+          "default": null
+        },
+        {
+          "name": "min_shared_fragments",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              1
+            ]
+          },
+          "example": 1,
+          "default": null
+        },
+        {
+          "name": "min_cosine_similarity",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.8
+            ]
+          },
+          "example": 0.8,
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_FEATURES"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_FEATURES"
+        ]
+      },
+      "cacheable": true,
       "required_methods": [],
       "single_occurrence": false
     },
@@ -2392,6 +4787,500 @@
       "cacheable": true,
       "required_methods": [],
       "single_occurrence": true
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.find_internal_standards",
+      "domain": "mass_spec",
+      "label": "Find internal standards",
+      "definition": "Match detected features against internal-standard targets by mass, RT, and MS2 similarity.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "targets": {
+              "type": "array",
+              "examples": [
+                [
+                  {
+                    "id": "caffeine",
+                    "mass": 194.0804
+                  }
+                ]
+              ],
+              "items": {
+                "type": "object",
+                "examples": [
+                  {
+                    "id": "caffeine",
+                    "mass": 194.0804
+                  }
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "analyses": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        "sample-r001",
+                        "sample-r002"
+                      ]
+                    ],
+                    "items": {
+                      "type": "string",
+                      "examples": [
+                        "sample"
+                      ]
+                    }
+                  },
+                  "polarity": {
+                    "type": "integer",
+                    "examples": [
+                      1
+                    ]
+                  },
+                  "levels": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        1,
+                        2
+                      ]
+                    ],
+                    "items": {
+                      "type": "integer",
+                      "examples": [
+                        1
+                      ]
+                    }
+                  },
+                  "mass": {
+                    "type": "real",
+                    "examples": [
+                      194.0804
+                    ]
+                  },
+                  "mass_min": {
+                    "type": "real",
+                    "examples": [
+                      194.0
+                    ]
+                  },
+                  "mass_max": {
+                    "type": "real",
+                    "examples": [
+                      194.2
+                    ]
+                  },
+                  "mz": {
+                    "type": "real",
+                    "examples": [
+                      195.0877
+                    ]
+                  },
+                  "mz_min": {
+                    "type": "real",
+                    "examples": [
+                      195.0
+                    ]
+                  },
+                  "mz_max": {
+                    "type": "real",
+                    "examples": [
+                      195.2
+                    ]
+                  },
+                  "rt": {
+                    "type": "real",
+                    "examples": [
+                      1020.0
+                    ]
+                  },
+                  "rt_min": {
+                    "type": "real",
+                    "examples": [
+                      1000.0
+                    ]
+                  },
+                  "rt_max": {
+                    "type": "real",
+                    "examples": [
+                      1040.0
+                    ]
+                  }
+                }
+              }
+            },
+            "ppm": {
+              "type": "real",
+              "examples": [
+                20.0
+              ]
+            },
+            "sec": {
+              "type": "real",
+              "examples": [
+                60.0
+              ]
+            },
+            "ppm_ms2": {
+              "type": "real",
+              "examples": [
+                20.0
+              ]
+            },
+            "mzr_ms2": {
+              "type": "real",
+              "examples": [
+                0.01
+              ]
+            },
+            "min_cosine_similarity": {
+              "type": "real",
+              "examples": [
+                0.8
+              ]
+            },
+            "min_shared_fragments": {
+              "type": "integer",
+              "examples": [
+                1
+              ]
+            },
+            "filtered": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "targets",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "targetRange",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                {
+                  "id": "caffeine",
+                  "mass": 194.0804
+                }
+              ]
+            ],
+            "items": {
+              "type": "object",
+              "examples": [
+                {
+                  "id": "caffeine",
+                  "mass": 194.0804
+                }
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "analyses": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      "sample-r001",
+                      "sample-r002"
+                    ]
+                  ],
+                  "items": {
+                    "type": "string",
+                    "examples": [
+                      "sample"
+                    ]
+                  }
+                },
+                "polarity": {
+                  "type": "integer",
+                  "examples": [
+                    1
+                  ]
+                },
+                "levels": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      1,
+                      2
+                    ]
+                  ],
+                  "items": {
+                    "type": "integer",
+                    "examples": [
+                      1
+                    ]
+                  }
+                },
+                "mass": {
+                  "type": "real",
+                  "examples": [
+                    194.0804
+                  ]
+                },
+                "mass_min": {
+                  "type": "real",
+                  "examples": [
+                    194.0
+                  ]
+                },
+                "mass_max": {
+                  "type": "real",
+                  "examples": [
+                    194.2
+                  ]
+                },
+                "mz": {
+                  "type": "real",
+                  "examples": [
+                    195.0877
+                  ]
+                },
+                "mz_min": {
+                  "type": "real",
+                  "examples": [
+                    195.0
+                  ]
+                },
+                "mz_max": {
+                  "type": "real",
+                  "examples": [
+                    195.2
+                  ]
+                },
+                "rt": {
+                  "type": "real",
+                  "examples": [
+                    1020.0
+                  ]
+                },
+                "rt_min": {
+                  "type": "real",
+                  "examples": [
+                    1000.0
+                  ]
+                },
+                "rt_max": {
+                  "type": "real",
+                  "examples": [
+                    1040.0
+                  ]
+                }
+              }
+            }
+          },
+          "example": [
+            {
+              "id": "caffeine",
+              "mass": 194.0804
+            }
+          ],
+          "default": null
+        },
+        {
+          "name": "ppm",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              20.0
+            ]
+          },
+          "example": 20.0,
+          "default": null
+        },
+        {
+          "name": "sec",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              60.0
+            ]
+          },
+          "example": 60.0,
+          "default": null
+        },
+        {
+          "name": "ppm_ms2",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              20.0
+            ]
+          },
+          "example": 20.0,
+          "default": null
+        },
+        {
+          "name": "mzr_ms2",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.01
+            ]
+          },
+          "example": 0.01,
+          "default": null
+        },
+        {
+          "name": "min_cosine_similarity",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.8
+            ]
+          },
+          "example": 0.8,
+          "default": null
+        },
+        {
+          "name": "min_shared_fragments",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              1
+            ]
+          },
+          "example": 1,
+          "default": null
+        },
+        {
+          "name": "filtered",
+          "type": "boolean",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "boolean"
+          },
+          "example": null,
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_FEATURES"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_FEATURES"
+        ]
+      },
+      "cacheable": true,
+      "required_methods": [],
+      "single_occurrence": false
     },
     {
       "kind": "operation",
@@ -7330,6 +10219,212 @@
     },
     {
       "kind": "method",
+      "canonical_id": "mass_spec.group_features",
+      "domain": "mass_spec",
+      "label": "Group features",
+      "definition": "Group features across analyses into shared feature groups using RT/mass tolerance and an alignment method.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "method": {
+              "type": "string",
+              "examples": [
+                "mass_spec.get_raw_spectra"
+              ]
+            },
+            "rt_deviation": {
+              "type": "real",
+              "examples": [
+                40.0
+              ]
+            },
+            "ppm": {
+              "type": "real",
+              "examples": [
+                20.0
+              ]
+            },
+            "min_samples": {
+              "type": "integer",
+              "examples": [
+                2
+              ]
+            },
+            "bin_size": {
+              "type": "real",
+              "examples": [
+                5.0
+              ]
+            }
+          },
+          "required": [
+            "analysis_names",
+            "method"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "method",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "string",
+            "examples": [
+              "mass_spec.get_raw_spectra"
+            ]
+          },
+          "example": "mass_spec.get_raw_spectra",
+          "default": null
+        },
+        {
+          "name": "rt_deviation",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              40.0
+            ]
+          },
+          "example": 40.0,
+          "default": null
+        },
+        {
+          "name": "ppm",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              20.0
+            ]
+          },
+          "example": 20.0,
+          "default": null
+        },
+        {
+          "name": "min_samples",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              2
+            ]
+          },
+          "example": 2,
+          "default": null
+        },
+        {
+          "name": "bin_size",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              5.0
+            ]
+          },
+          "example": 5.0,
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_FEATURES"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_FEATURES"
+        ]
+      },
+      "cacheable": true,
+      "required_methods": [],
+      "single_occurrence": false
+    },
+    {
+      "kind": "method",
       "canonical_id": "mass_spec.load_chromatograms",
       "domain": "mass_spec",
       "label": "Load chromatograms",
@@ -7500,6 +10595,456 @@
       "cacheable": false,
       "required_methods": [],
       "single_occurrence": true
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.load_features_ms1",
+      "domain": "mass_spec",
+      "label": "Load MS1 spectra for features",
+      "definition": "Resolve and cluster MS1 spectra for each persisted feature and store the joined MS1 spectrum on the feature row.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "filtered": {
+              "type": "boolean"
+            },
+            "rt_window": {
+              "type": "array",
+              "examples": [
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              "items": {
+                "type": "real",
+                "examples": [
+                  1.0
+                ]
+              }
+            },
+            "mz_window": {
+              "type": "array",
+              "examples": [
+                [
+                  0.0,
+                  0.0
+                ]
+              ],
+              "items": {
+                "type": "real",
+                "examples": [
+                  1.0
+                ]
+              }
+            },
+            "min_traces_intensity": {
+              "type": "real"
+            },
+            "mz_clust": {
+              "type": "real",
+              "examples": [
+                0.003
+              ]
+            },
+            "presence": {
+              "type": "real",
+              "examples": [
+                0.8
+              ]
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "filtered",
+          "type": "boolean",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "boolean"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "rt_window",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "realItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                0.0,
+                0.0
+              ]
+            ],
+            "items": {
+              "type": "real",
+              "examples": [
+                1.0
+              ]
+            }
+          },
+          "example": [
+            0.0,
+            0.0
+          ],
+          "default": null
+        },
+        {
+          "name": "mz_window",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "realItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                0.0,
+                0.0
+              ]
+            ],
+            "items": {
+              "type": "real",
+              "examples": [
+                1.0
+              ]
+            }
+          },
+          "example": [
+            0.0,
+            0.0
+          ],
+          "default": null
+        },
+        {
+          "name": "min_traces_intensity",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "mz_clust",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.003
+            ]
+          },
+          "example": 0.003,
+          "default": null
+        },
+        {
+          "name": "presence",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.8
+            ]
+          },
+          "example": 0.8,
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_FEATURES"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_FEATURES"
+        ]
+      },
+      "cacheable": true,
+      "required_methods": [],
+      "single_occurrence": false
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.load_features_ms2",
+      "domain": "mass_spec",
+      "label": "Load MS2 spectra for features",
+      "definition": "Resolve and cluster MS2 spectra for each persisted feature using the precursor isolation window and store the joined MS2 spectrum on the feature row.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "filtered": {
+              "type": "boolean"
+            },
+            "min_traces_intensity": {
+              "type": "real"
+            },
+            "isolation_window": {
+              "type": "real",
+              "examples": [
+                1.3
+              ]
+            },
+            "mz_clust": {
+              "type": "real",
+              "examples": [
+                0.003
+              ]
+            },
+            "presence": {
+              "type": "real",
+              "examples": [
+                0.8
+              ]
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "filtered",
+          "type": "boolean",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "boolean"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "min_traces_intensity",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "isolation_window",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              1.3
+            ]
+          },
+          "example": 1.3,
+          "default": null
+        },
+        {
+          "name": "mz_clust",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.003
+            ]
+          },
+          "example": 0.003,
+          "default": null
+        },
+        {
+          "name": "presence",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.8
+            ]
+          },
+          "example": 0.8,
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_FEATURES"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_FEATURES"
+        ]
+      },
+      "cacheable": true,
+      "required_methods": [],
+      "single_occurrence": false
     },
     {
       "kind": "operation",
@@ -8014,6 +11559,661 @@
           "MASS_SPEC_ANALYSES"
         ]
       }
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.subtract_blank",
+      "domain": "mass_spec",
+      "label": "Subtract blank features",
+      "definition": "Flag features whose intensity is largely explained by blank analyses, using RT and m/z expansion windows.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "blank_threshold": {
+              "type": "real",
+              "examples": [
+                0.3
+              ]
+            },
+            "rt_expand": {
+              "type": "real",
+              "examples": [
+                60.0
+              ]
+            },
+            "mz_expand": {
+              "type": "real",
+              "examples": [
+                0.005
+              ]
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "blank_threshold",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.3
+            ]
+          },
+          "example": 0.3,
+          "default": null
+        },
+        {
+          "name": "rt_expand",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              60.0
+            ]
+          },
+          "example": 60.0,
+          "default": null
+        },
+        {
+          "name": "mz_expand",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.005
+            ]
+          },
+          "example": 0.005,
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_FEATURES"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_FEATURES"
+        ]
+      },
+      "cacheable": true,
+      "required_methods": [],
+      "single_occurrence": false
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.suspect_screening",
+      "domain": "mass_spec",
+      "label": "Screen suspect features",
+      "definition": "Match detected features against a suspect list by mass, RT, and MS2 similarity and record candidate assignments.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "targets": {
+              "type": "array",
+              "examples": [
+                [
+                  {
+                    "id": "caffeine",
+                    "mass": 194.0804
+                  }
+                ]
+              ],
+              "items": {
+                "type": "object",
+                "examples": [
+                  {
+                    "id": "caffeine",
+                    "mass": 194.0804
+                  }
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "analyses": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        "sample-r001",
+                        "sample-r002"
+                      ]
+                    ],
+                    "items": {
+                      "type": "string",
+                      "examples": [
+                        "sample"
+                      ]
+                    }
+                  },
+                  "polarity": {
+                    "type": "integer",
+                    "examples": [
+                      1
+                    ]
+                  },
+                  "levels": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        1,
+                        2
+                      ]
+                    ],
+                    "items": {
+                      "type": "integer",
+                      "examples": [
+                        1
+                      ]
+                    }
+                  },
+                  "mass": {
+                    "type": "real",
+                    "examples": [
+                      194.0804
+                    ]
+                  },
+                  "mass_min": {
+                    "type": "real",
+                    "examples": [
+                      194.0
+                    ]
+                  },
+                  "mass_max": {
+                    "type": "real",
+                    "examples": [
+                      194.2
+                    ]
+                  },
+                  "mz": {
+                    "type": "real",
+                    "examples": [
+                      195.0877
+                    ]
+                  },
+                  "mz_min": {
+                    "type": "real",
+                    "examples": [
+                      195.0
+                    ]
+                  },
+                  "mz_max": {
+                    "type": "real",
+                    "examples": [
+                      195.2
+                    ]
+                  },
+                  "rt": {
+                    "type": "real",
+                    "examples": [
+                      1020.0
+                    ]
+                  },
+                  "rt_min": {
+                    "type": "real",
+                    "examples": [
+                      1000.0
+                    ]
+                  },
+                  "rt_max": {
+                    "type": "real",
+                    "examples": [
+                      1040.0
+                    ]
+                  }
+                }
+              }
+            },
+            "ppm": {
+              "type": "real",
+              "examples": [
+                20.0
+              ]
+            },
+            "sec": {
+              "type": "real",
+              "examples": [
+                60.0
+              ]
+            },
+            "ppm_ms2": {
+              "type": "real",
+              "examples": [
+                20.0
+              ]
+            },
+            "mzr_ms2": {
+              "type": "real",
+              "examples": [
+                0.01
+              ]
+            },
+            "min_cosine_similarity": {
+              "type": "real",
+              "examples": [
+                0.8
+              ]
+            },
+            "min_shared_fragments": {
+              "type": "integer",
+              "examples": [
+                1
+              ]
+            },
+            "filtered": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "targets",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "targetRange",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                {
+                  "id": "caffeine",
+                  "mass": 194.0804
+                }
+              ]
+            ],
+            "items": {
+              "type": "object",
+              "examples": [
+                {
+                  "id": "caffeine",
+                  "mass": 194.0804
+                }
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "analyses": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      "sample-r001",
+                      "sample-r002"
+                    ]
+                  ],
+                  "items": {
+                    "type": "string",
+                    "examples": [
+                      "sample"
+                    ]
+                  }
+                },
+                "polarity": {
+                  "type": "integer",
+                  "examples": [
+                    1
+                  ]
+                },
+                "levels": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      1,
+                      2
+                    ]
+                  ],
+                  "items": {
+                    "type": "integer",
+                    "examples": [
+                      1
+                    ]
+                  }
+                },
+                "mass": {
+                  "type": "real",
+                  "examples": [
+                    194.0804
+                  ]
+                },
+                "mass_min": {
+                  "type": "real",
+                  "examples": [
+                    194.0
+                  ]
+                },
+                "mass_max": {
+                  "type": "real",
+                  "examples": [
+                    194.2
+                  ]
+                },
+                "mz": {
+                  "type": "real",
+                  "examples": [
+                    195.0877
+                  ]
+                },
+                "mz_min": {
+                  "type": "real",
+                  "examples": [
+                    195.0
+                  ]
+                },
+                "mz_max": {
+                  "type": "real",
+                  "examples": [
+                    195.2
+                  ]
+                },
+                "rt": {
+                  "type": "real",
+                  "examples": [
+                    1020.0
+                  ]
+                },
+                "rt_min": {
+                  "type": "real",
+                  "examples": [
+                    1000.0
+                  ]
+                },
+                "rt_max": {
+                  "type": "real",
+                  "examples": [
+                    1040.0
+                  ]
+                }
+              }
+            }
+          },
+          "example": [
+            {
+              "id": "caffeine",
+              "mass": 194.0804
+            }
+          ],
+          "default": null
+        },
+        {
+          "name": "ppm",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              20.0
+            ]
+          },
+          "example": 20.0,
+          "default": null
+        },
+        {
+          "name": "sec",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              60.0
+            ]
+          },
+          "example": 60.0,
+          "default": null
+        },
+        {
+          "name": "ppm_ms2",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              20.0
+            ]
+          },
+          "example": 20.0,
+          "default": null
+        },
+        {
+          "name": "mzr_ms2",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.01
+            ]
+          },
+          "example": 0.01,
+          "default": null
+        },
+        {
+          "name": "min_cosine_similarity",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.8
+            ]
+          },
+          "example": 0.8,
+          "default": null
+        },
+        {
+          "name": "min_shared_fragments",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              1
+            ]
+          },
+          "example": 1,
+          "default": null
+        },
+        {
+          "name": "filtered",
+          "type": "boolean",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "boolean"
+          },
+          "example": null,
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_FEATURES"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_FEATURES"
+        ]
+      },
+      "cacheable": true,
+      "required_methods": [],
+      "single_occurrence": false
     },
     {
       "kind": "method",
