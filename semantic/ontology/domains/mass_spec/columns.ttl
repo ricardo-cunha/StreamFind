@@ -12,6 +12,33 @@ sfms:analysisNameColumn
     sf:type "string" ;
     sf:storageType "VARCHAR" .
 
+sfms:analysisIndexColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Analysis index" ;
+    skos:definition "Zero-based logical analysis index within the physical source file." ;
+    sf:columnName "analysis_index" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:sourceAnalysisNumberColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Source analysis number" ;
+    skos:definition "Vendor-provided analysis number within the physical source file." ;
+    sf:columnName "source_analysis_number" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:analysisCountColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Analysis count" ;
+    skos:definition "Number of logical analyses contained in the physical source file." ;
+    sf:columnName "analysis_count" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
 sfms:replicateNameColumn
     a sf:Column ;
     skos:inScheme sfcore:scheme ;

@@ -2,6 +2,7 @@
 #include <pugixml.hpp>
 
 #include "streamfind/mass_spec/reader.hpp"
+#include "streamfind/mass_spec/reader_sciex.hpp"
 #include <simdutf.h>
 
 #include <algorithm>
@@ -3759,6 +3760,12 @@ namespace mass_spec
       if (lower.size() >= 6 && lower.substr(lower.size() - 6) == ".mzxml")
         return "mzXML";
 
+      if (lower.size() >= 5 && lower.substr(lower.size() - 5) == ".wiff")
+      {
+        if (ole::is_compound_file(file_path))
+          return "SciexWIFF";
+      }
+
       if (lower.size() >= 4 && lower.substr(lower.size() - 4) == ".lcd")
       {
         std::ifstream file(file_path, std::ios::binary);
@@ -3815,6 +3822,8 @@ namespace mass_spec
         return std::make_unique<asc::Reader>(file_path);
       if (format == "ShimadzuLCD")
         return std::make_unique<shimadzu_lcd::Reader>(file_path);
+      if (format == "SciexWIFF")
+        return sciex::create_reader(file_path);
       throw std::runtime_error("Unsupported file format: " + format);
     }
 
@@ -3836,7 +3845,25 @@ namespace mass_spec
         format_case = 3;
       else if (format == "ShimadzuLCD")
         format_case = 4;
+      if (format == "SciexWIFF")
+        analysis_catalog = sciex::read_analysis_catalog(file);
+      else
+        analysis_catalog.push_back({0, 0, file_name, 1});
       ms = create_reader(file);
+    }
+
+    void MASS_SPEC_FILE::select_analysis(int index)
+    {
+      if (index < 0 || static_cast<std::size_t>(index) >= analysis_catalog.size())
+        throw std::out_of_range("Mass spectrometry analysis index is out of range: " + std::to_string(index));
+      if (index != 0)
+      {
+        if (format == "SciexWIFF")
+          ms = sciex::create_reader(file_path, analysis_catalog[static_cast<std::size_t>(index)].source_analysis_number);
+        else
+          throw std::runtime_error("Selected analysis is not yet supported by this reader.");
+      }
+      selected_analysis = index;
     }
 
     mass_spec::spectra::MASS_SPEC_TARGETS_SPECTRA MASS_SPEC_FILE::get_spectra_targets(const mass_spec::spectra::MASS_SPEC_TARGETS &targets, const MASS_SPEC_SPECTRA_HEADERS &hd, const float &minIntLv1, const float &minIntLv2)
