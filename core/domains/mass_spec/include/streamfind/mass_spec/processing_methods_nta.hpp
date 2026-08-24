@@ -34,4 +34,8 @@ Json filter_internal_standards(streamfind::Project &project, const Json &paramet
 
 Json correct_matrix_suppression(streamfind::Project &project, const Json &parameters);
 
+Json assign_transformation_products(streamfind::Project &project, const Json &parameters);
+
+Json metfrag_screening(streamfind::Project &project, const Json &parameters);
+
 }

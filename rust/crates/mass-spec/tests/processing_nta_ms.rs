@@ -38,25 +38,32 @@ fn setup_project(database: &str) -> Project {
     project
 }
 
-/// Run a single workflow method with explicit parameters (mirrors the existing
-/// wastewater test harness: the workflow declares the method as a pending step).
+/// Run a single workflow method with the pipeline installed once via set_workflow.
 fn run_method(project: &mut Project, methods: &MethodRegistry, method: &str, parameters: Value) {
+    project.run_method(method, &parameters, methods).unwrap();
+}
+
+/// Install the full ordered pipeline once; required_methods ordering is validated
+/// against the complete workflow and `run_method` executes one step per call.
+fn set_pipeline(project: &mut Project, methods: &MethodRegistry, steps: Vec<(&str, Value)>) {
     project
         .set_workflow(
             Workflow {
                 name: String::new(),
                 version: 1,
                 domain: "mass_spec".into(),
-                steps: vec![WorkflowStep {
-                    method: method.into(),
-                    parameters: parameters.clone(),
-                    metadata: None,
-                }],
+                steps: steps
+                    .into_iter()
+                    .map(|(method, parameters)| WorkflowStep {
+                        method: method.into(),
+                        parameters,
+                        metadata: None,
+                    })
+                    .collect(),
             },
             methods,
         )
         .unwrap();
-    project.run_method(method, &parameters, methods).unwrap();
 }
 
 #[test]
@@ -66,57 +73,54 @@ fn loads_ms1_and_ms2_spectra_for_basic_tof_features() {
     let mut methods = MethodRegistry::default();
     streamfind_rust_mass_spec::register_methods(&mut methods).unwrap();
 
-    // Persist features first.
-    run_method(
+    // Install one full ordered pipeline (find_features -> load_features_ms1 ->
+    // load_features_ms2): required_methods ordering is validated against the
+    // complete workflow, then each step runs via run_method in the same revision.
+    let find_parameters = json!({
+        "analysis_names": ["r001", "r002", "r003"],
+        "rt_windows_min": [800.0],
+        "rt_windows_max": [1000.0],
+        "ppm_threshold": 15.0,
+        "noise_threshold": 2000.0,
+        "min_snr": 5.0,
+        "min_traces": 3,
+        "baseline_window": 30.0,
+        "max_feature_width": 60.0,
+        "base_quantile": 0.1
+    });
+    let load_ms1_parameters = json!({
+        "analysis_names": ["r001", "r002", "r003"],
+        "filtered": false,
+        "rt_window": [-2.0, 2.0],
+        "mz_window": [-0.5, 0.5],
+        "min_traces_intensity": 250.0,
+        "mz_clust": 0.005,
+        "presence": 0.5
+    });
+    let load_ms2_parameters = json!({
+        "analysis_names": ["r001", "r002", "r003"],
+        "filtered": false,
+        "min_traces_intensity": 10.0,
+        "isolation_window": 1.3,
+        "mz_clust": 0.005,
+        "presence": 0.5
+    });
+    set_pipeline(
         &mut project,
         &methods,
-        "mass_spec.find_features",
-        json!({
-            "analysis_names": ["r001", "r002", "r003"],
-            "rt_windows_min": [800.0],
-            "rt_windows_max": [1000.0],
-            "ppm_threshold": 15.0,
-            "noise_threshold": 2000.0,
-            "min_snr": 5.0,
-            "min_traces": 3,
-            "baseline_window": 30.0,
-            "max_feature_width": 60.0,
-            "base_quantile": 0.1
-        }),
+        vec![
+            ("mass_spec.find_features", find_parameters.clone()),
+            ("mass_spec.load_features_ms1", load_ms1_parameters.clone()),
+            ("mass_spec.load_features_ms2", load_ms2_parameters.clone()),
+        ],
     );
+    run_method(&mut project, &methods, "mass_spec.find_features", find_parameters);
     let counts = project
         .query_json("SELECT analysis, COUNT(*) AS count FROM MASS_SPEC_NTA_FEATURES GROUP BY analysis ORDER BY analysis")
         .unwrap();
     println!("FEATURE COUNTS: {counts}");
-
-    // Load MS1 then MS2 spectra into the matching columns.
-    run_method(
-        &mut project,
-        &methods,
-        "mass_spec.load_features_ms1",
-        json!({
-            "analysis_names": ["r001", "r002", "r003"],
-            "filtered": false,
-            "rt_window": [-2.0, 2.0],
-            "mz_window": [-0.5, 0.5],
-            "min_traces_intensity": 250.0,
-            "mz_clust": 0.005,
-            "presence": 0.5
-        }),
-    );
-    run_method(
-        &mut project,
-        &methods,
-        "mass_spec.load_features_ms2",
-        json!({
-            "analysis_names": ["r001", "r002", "r003"],
-            "filtered": false,
-            "min_traces_intensity": 10.0,
-            "isolation_window": 1.3,
-            "mz_clust": 0.005,
-            "presence": 0.5
-        }),
-    );
+    run_method(&mut project, &methods, "mass_spec.load_features_ms1", load_ms1_parameters);
+    run_method(&mut project, &methods, "mass_spec.load_features_ms2", load_ms2_parameters);
 
     // Inspect the persisted columns.
     let ms1 = project

@@ -1,9 +1,11 @@
 #include <filesystem>
 #include <iostream>
 #include <exception>
+#include <cmath>
 
 #include "streamfind/mass_spec/register.hpp"
 #include "streamfind/project.hpp"
+#include "streamfind/external/openbabel_adapter.hpp"
 
 #ifndef STREAMFIND_BASIC_TOF_DATA_ROOT
 #error STREAMFIND_BASIC_TOF_DATA_ROOT is required
@@ -52,11 +54,29 @@ int run_load_features_test() {
         {"ppm_threshold", 12.0}, {"noise_threshold", 500.0}, {"min_snr", 15.0},
         {"min_traces", 5}, {"baseline_window", 30.0}, {"max_feature_width", 60.0}, {"base_quantile", 0.1}
     };
+    // MS1 loading
+    const streamfind::Json ms1_params = {
+        {"analysis_names", analysis_names}, {"filtered", false},
+        {"rt_window", streamfind::Json::array({streamfind::Json(0.0), streamfind::Json(0.0)})},
+        {"mz_window", streamfind::Json::array({streamfind::Json(0.0), streamfind::Json(0.0)})},
+        {"min_traces_intensity", 0.0}, {"mz_clust", 0.003}, {"presence", 0.8}
+    };
+    // MS2 loading
+    const streamfind::Json ms2_params = {
+        {"analysis_names", analysis_names}, {"filtered", false},
+        {"min_traces_intensity", 0.0}, {"isolation_window", 1.3},
+        {"mz_clust", 0.003}, {"presence", 0.8}
+    };
+
+    // The workflow is set ONCE with the full ordered pipeline: load_features_ms1
+    // and load_features_ms2 both require find_features earlier in the workflow.
     streamfind::Workflow nta_workflow; nta_workflow.domain = "mass_spec";
     nta_workflow.steps.push_back({"mass_spec.find_features", streamfind::ParameterValues::from_json(nta_parameters)});
+    nta_workflow.steps.push_back({"mass_spec.load_features_ms1", streamfind::ParameterValues::from_json(ms1_params)});
+    nta_workflow.steps.push_back({"mass_spec.load_features_ms2", streamfind::ParameterValues::from_json(ms2_params)});
     project.set_workflow(std::move(nta_workflow), registry);
-    project.run_method("mass_spec.find_features", nta_parameters, registry);
 
+    project.run_method("mass_spec.find_features", nta_parameters, registry);
     const auto metoprolol = project.query_json(
         "SELECT COUNT(*) AS count FROM MASS_SPEC_NTA_FEATURES WHERE ABS(mz - 268.19) < 0.01");
     if (metoprolol.at(0).at("count").get<std::string>() == "0") {
@@ -65,31 +85,12 @@ int run_load_features_test() {
         return fail("Metoprolol-D7 feature detection");
     }
 
-    // MS1 loading
-    const streamfind::Json ms1_params = {
-        {"analysis_names", analysis_names}, {"filtered", false},
-        {"rt_window", streamfind::Json::array({streamfind::Json(0.0), streamfind::Json(0.0)})},
-        {"mz_window", streamfind::Json::array({streamfind::Json(0.0), streamfind::Json(0.0)})},
-        {"min_traces_intensity", 0.0}, {"mz_clust", 0.003}, {"presence", 0.8}
-    };
-    streamfind::Workflow ms1_workflow; ms1_workflow.domain = "mass_spec";
-    ms1_workflow.steps.push_back({"mass_spec.load_features_ms1", streamfind::ParameterValues::from_json(ms1_params)});
-    project.set_workflow(std::move(ms1_workflow), registry);
     project.run_method("mass_spec.load_features_ms1", ms1_params, registry);
     const auto ms1 = project.query_json(
         "SELECT COUNT(*) AS count FROM MASS_SPEC_NTA_FEATURES WHERE ABS(mz - 268.19) < 0.01 "
         "AND ms1_size > 0 AND ms1_mz != '' AND ms1_intensity != ''");
     if (ms1.at(0).at("count").get<std::string>() == "0") return fail("MS1 spectrum population");
 
-    // MS2 loading
-    const streamfind::Json ms2_params = {
-        {"analysis_names", analysis_names}, {"filtered", false},
-        {"min_traces_intensity", 0.0}, {"isolation_window", 1.3},
-        {"mz_clust", 0.003}, {"presence", 0.8}
-    };
-    streamfind::Workflow ms2_workflow; ms2_workflow.domain = "mass_spec";
-    ms2_workflow.steps.push_back({"mass_spec.load_features_ms2", streamfind::ParameterValues::from_json(ms2_params)});
-    project.set_workflow(std::move(ms2_workflow), registry);
     project.run_method("mass_spec.load_features_ms2", ms2_params, registry);
     const auto ms2 = project.query_json(
         "SELECT COUNT(*) AS count FROM MASS_SPEC_NTA_FEATURES WHERE ABS(mz - 268.19) < 0.01 "
@@ -100,8 +101,32 @@ int run_load_features_test() {
         "SELECT analysis, feature, mz, rt, ms1_size, ms2_size FROM MASS_SPEC_NTA_FEATURES WHERE ABS(mz - 268.19) < 0.01 ORDER BY analysis");
     std::cout << "Metoprolol-D7 features (m/z ~268.19):\n" << summary.dump(2) << "\n";
 
-    std::filesystem::remove(database, error);
-    return 0;
+        // Chemical (SMILES-only) targets must also yield raw-data queries: the
+        // exact mass is derived via Open Babel and converted to an m/z window with
+        // the polarity-aware adduct ([M+H]+ for positive-mode data).
+        if (!sf::obabel::openbabel_available())
+            std::cout << "Open Babel unavailable; skipping SMILES-target EIC check.\n";
+        else
+        {
+            const streamfind::Json chemical = {
+                        {"analysis_names", analysis_names},
+                        {"targets", streamfind::Json::array({streamfind::Json{{"id", "metoprolol"},
+                            {"SMILES", "COCCc1ccc(cc1)OCC(CNC(C)C)O"}}})},
+                        {"ppm", 20.0}
+                    };
+                    const auto eic = project.run_operation("mass_spec.get_raw_spectra_eic", chemical, operations);
+                                const auto &columns = eic.at("columns");
+                                if (!columns.contains("mz") || columns.at("mz").empty())
+                                    return fail("SMILES-only target produced no EIC rows");
+                                double sum = 0.0;
+                                for (const auto &value : columns.at("mz")) sum += value.get<double>();
+                                const double mean = sum / static_cast<double>(columns.at("mz").size());
+                                std::cout << "SMILES metoprolol EIC mean m/z: " << mean << " over " << columns.at("mz").size() << " rows\n";
+                                if (std::abs(mean - 268.19) > 0.01) return fail("SMILES EIC m/z mean not near metoprolol [M+H]+");
+        }
+
+        std::filesystem::remove(database, error);
+        return 0;
 }
 
 int main() {

@@ -77,9 +77,9 @@ sfms:loadFeaturesMs1MassSpecMethod
         sfms:mzClustParameter,
         sfms:presenceParameter ;
     sf:cacheable true ;
-    sf:requiredMethods () ;
+    sf:requiredMethods ( sfms:findFeaturesMassSpecMethod ) ;
     sf:singleOccurrence false ;
-    sf:reads sfms:ntaFeaturesTable ;
+    sf:reads sfms:analysesTable, sfms:ntaFeaturesTable ;
     sf:writes sfms:ntaFeaturesTable ;
     sf:returns sfcore:operationStatusResult .
 
@@ -97,9 +97,9 @@ sfms:loadFeaturesMs2MassSpecMethod
         sfms:mzClustParameter,
         sfms:presenceParameter ;
     sf:cacheable true ;
-    sf:requiredMethods () ;
+    sf:requiredMethods ( sfms:findFeaturesMassSpecMethod ) ;
     sf:singleOccurrence false ;
-    sf:reads sfms:ntaFeaturesTable ;
+    sf:reads sfms:analysesTable, sfms:ntaFeaturesTable ;
     sf:writes sfms:ntaFeaturesTable ;
     sf:returns sfcore:operationStatusResult .
 
@@ -115,9 +115,9 @@ sfms:subtractBlankMassSpecMethod
         sfms:rtExpandParameter,
         sfms:mzExpandParameter ;
     sf:cacheable true ;
-    sf:requiredMethods () ;
+    sf:requiredMethods ( sfms:findFeaturesMassSpecMethod ) ;
     sf:singleOccurrence false ;
-    sf:reads sfms:ntaFeaturesTable ;
+    sf:reads sfms:analysesTable, sfms:ntaFeaturesTable ;
     sf:writes sfms:ntaFeaturesTable ;
     sf:returns sfcore:operationStatusResult .
 
@@ -161,7 +161,7 @@ sfms:filterFeaturesMassSpecMethod
         sfms:removeAdductsParameter,
         sfms:removeLossesParameter ;
     sf:cacheable true ;
-    sf:requiredMethods () ;
+    sf:requiredMethods ( sfms:findFeaturesMassSpecMethod ) ;
     sf:singleOccurrence false ;
     sf:reads sfms:ntaFeaturesTable ;
     sf:writes sfms:ntaFeaturesTable ;
@@ -183,9 +183,9 @@ sfms:filterFeaturesMs2MassSpecMethod
         sfms:blankPresenceThresholdParameter,
         sfms:globalPresenceThresholdParameter ;
     sf:cacheable true ;
-    sf:requiredMethods () ;
+    sf:requiredMethods ( sfms:findFeaturesMassSpecMethod sfms:loadFeaturesMs2MassSpecMethod ) ;
     sf:singleOccurrence false ;
-    sf:reads sfms:ntaFeaturesTable ;
+    sf:reads sfms:analysesTable, sfms:ntaFeaturesTable ;
     sf:writes sfms:ntaFeaturesTable ;
     sf:returns sfcore:operationStatusResult .
 
@@ -197,15 +197,15 @@ sfms:groupFeaturesMassSpecMethod
     skos:definition "Group features across analyses into shared feature groups using RT/mass tolerance and an alignment method." ;
     sf:hasParameter
         sfcore:analysisNamesParameter,
-        sfcore:methodParameter,
+        sfms:methodParameter,
         sfms:rtDeviationParameter,
         sfms:ppmParameter,
         sfms:minSamplesParameter,
         sfms:binSizeParameter ;
     sf:cacheable true ;
-    sf:requiredMethods () ;
+    sf:requiredMethods ( sfms:findFeaturesMassSpecMethod ) ;
     sf:singleOccurrence false ;
-    sf:reads sfms:ntaFeaturesTable ;
+    sf:reads sfms:analysesTable, sfms:ntaFeaturesTable, sfms:internalStandardsTable ;
     sf:writes sfms:ntaFeaturesTable ;
     sf:returns sfcore:operationStatusResult .
 
@@ -229,9 +229,9 @@ sfms:fillFeaturesMassSpecMethod
         sfms:minSignalToNoiseRatioParameter,
         sfms:minGaussianFitParameter ;
     sf:cacheable true ;
-    sf:requiredMethods () ;
+    sf:requiredMethods ( sfms:findFeaturesMassSpecMethod sfms:groupFeaturesMassSpecMethod ) ;
     sf:singleOccurrence false ;
-    sf:reads sfms:ntaFeaturesTable ;
+    sf:reads sfms:analysesTable, sfms:ntaFeaturesTable ;
     sf:writes sfms:ntaFeaturesTable ;
     sf:returns sfcore:operationStatusResult .
 
@@ -246,7 +246,7 @@ sfms:createComponentsMassSpecMethod
         sfms:rtWindowParameter,
         sfms:minCorrelationParameter ;
     sf:cacheable true ;
-    sf:requiredMethods () ;
+    sf:requiredMethods ( sfms:findFeaturesMassSpecMethod ) ;
     sf:singleOccurrence false ;
     sf:reads sfms:ntaFeaturesTable ;
     sf:writes sfms:ntaFeaturesTable ;
@@ -266,7 +266,7 @@ sfms:annotateComponentsMassSpecMethod
         sfms:ppmParameter,
         sfms:isotopeElementsParameter ;
     sf:cacheable true ;
-    sf:requiredMethods () ;
+    sf:requiredMethods ( sfms:createComponentsMassSpecMethod ) ;
     sf:singleOccurrence false ;
     sf:reads sfms:ntaFeaturesTable ;
     sf:writes sfms:ntaFeaturesTable ;
@@ -289,10 +289,10 @@ sfms:suspectScreeningMassSpecMethod
         sfms:minSharedFragmentsParameter,
         sfms:filteredParameter ;
     sf:cacheable true ;
-    sf:requiredMethods () ;
+    sf:requiredMethods ( sfms:findFeaturesMassSpecMethod ) ;
     sf:singleOccurrence false ;
     sf:reads sfms:ntaFeaturesTable ;
-    sf:writes sfms:ntaFeaturesTable ;
+    sf:writes sfms:ntaFeaturesTable, sfms:suspectsTable ;
     sf:returns sfcore:operationStatusResult .
 
 sfms:findInternalStandardsMassSpecMethod
@@ -312,10 +312,10 @@ sfms:findInternalStandardsMassSpecMethod
         sfms:minSharedFragmentsParameter,
         sfms:filteredParameter ;
     sf:cacheable true ;
-    sf:requiredMethods () ;
+    sf:requiredMethods ( sfms:findFeaturesMassSpecMethod ) ;
     sf:singleOccurrence false ;
     sf:reads sfms:ntaFeaturesTable ;
-    sf:writes sfms:ntaFeaturesTable ;
+    sf:writes sfms:ntaFeaturesTable, sfms:internalStandardsTable ;
     sf:returns sfcore:operationStatusResult .
 
 sfms:correctMatrixSuppressionMassSpecMethod
@@ -329,9 +329,9 @@ sfms:correctMatrixSuppressionMassSpecMethod
         sfms:mpRtWindowParameter,
         sfms:refBlankReplicateParameter ;
     sf:cacheable true ;
-    sf:requiredMethods () ;
+    sf:requiredMethods ( sfms:findInternalStandardsMassSpecMethod ) ;
     sf:singleOccurrence false ;
-    sf:reads sfms:ntaFeaturesTable ;
+    sf:reads sfms:analysesTable, sfms:ntaFeaturesTable, sfms:internalStandardsTable ;
     sf:writes sfms:ntaFeaturesTable ;
     sf:returns sfcore:operationStatusResult .
 
@@ -351,10 +351,10 @@ sfms:filterSuspectsMassSpecMethod
         sfms:minSharedFragmentsParameter,
         sfms:minCosineSimilarityParameter ;
     sf:cacheable true ;
-    sf:requiredMethods () ;
+    sf:requiredMethods ( sfms:suspectScreeningMassSpecMethod ) ;
     sf:singleOccurrence false ;
-    sf:reads sfms:ntaFeaturesTable ;
-    sf:writes sfms:ntaFeaturesTable ;
+    sf:reads sfms:ntaFeaturesTable, sfms:suspectsTable ;
+    sf:writes sfms:suspectsTable ;
     sf:returns sfcore:operationStatusResult .
 
 sfms:filterInternalStandardsMassSpecMethod
@@ -373,8 +373,60 @@ sfms:filterInternalStandardsMassSpecMethod
         sfms:minSharedFragmentsParameter,
         sfms:minCosineSimilarityParameter ;
     sf:cacheable true ;
-    sf:requiredMethods () ;
+    sf:requiredMethods ( sfms:findInternalStandardsMassSpecMethod ) ;
     sf:singleOccurrence false ;
-    sf:reads sfms:ntaFeaturesTable ;
-    sf:writes sfms:ntaFeaturesTable ;
+    sf:reads sfms:ntaFeaturesTable, sfms:internalStandardsTable ;
+    sf:writes sfms:internalStandardsTable ;
+    sf:returns sfcore:operationStatusResult .
+
+
+sfms:assignTransformationProductsMassSpecMethod
+    a sf:Method ;
+    sf:methodId "mass_spec.assign_transformation_products" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Assign transformation products" ;
+    skos:definition "Assign plausible biotransformation products to suspected features using transformation-product candidates, scoring combinations by mass/MS2 cosine similarity and logP-based retention-time plausibility, and append the assignments to the suspect results." ;
+    sf:hasParameter
+        sfcore:analysisNamesParameter,
+        sfms:transformationProductsParameter,
+        sfms:chromatographicPhaseParameter,
+        sfms:mzrMs2Parameter ;
+        sf:cacheable true ;
+        sf:requiredMethods () ;
+        sf:singleOccurrence false ;
+        sf:reads sfms:analysesTable, sfms:ntaFeaturesTable, sfms:suspectsTable ;
+        sf:writes sfms:suspectsTable ;
+        sf:returns sfcore:operationStatusResult .
+
+
+
+sfms:metfragScreeningMassSpecMethod
+    a sf:Method ;
+    sf:methodId "mass_spec.metfrag_screening" ;
+    sf:availableInDomain sfcore:mass_spec ;
+    skos:prefLabel "Screen features with MetFrag" ;
+    skos:definition "Run in-silico MetFrag fragmenter screening for detected features: write per-feature MetFrag input, invoke the MetFrag command line (Java) from the ~/.streamfind tool layout, and rank resulting candidate fragments into the suspect results." ;
+    sf:hasParameter
+        sfcore:analysisNamesParameter,
+        sfms:databaseTypeParameter,
+        sfms:databaseParameter,
+        sfms:ppmParameter,
+        sfms:secParameter,
+        sfms:ppmMs2Parameter,
+        sfms:mzrMs2Parameter,
+        sfms:topNParameter,
+        sfms:scoreTypesParameter,
+        sfms:scoreWeightsParameter,
+        sfms:preProcessingCandidateFilterParameter,
+        sfms:postProcessingCandidateFilterParameter,
+        sfms:maximumTreeDepthParameter,
+        sfms:numberThreadsParameter,
+        sfms:useSmilesParameter,
+        sfms:filteredParameter,
+        sfms:debugParameter ;
+    sf:cacheable true ;
+    sf:requiredMethods ( sfms:findFeaturesMassSpecMethod sfms:loadFeaturesMs2MassSpecMethod ) ;
+    sf:singleOccurrence false ;
+    sf:reads sfms:analysesTable, sfms:ntaFeaturesTable ;
+    sf:writes sfms:ntaFeaturesTable, sfms:suspectsTable ;
     sf:returns sfcore:operationStatusResult .

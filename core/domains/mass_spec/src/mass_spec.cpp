@@ -1,5 +1,6 @@
 #include "streamfind/mass_spec/mass_spec.hpp"
 #include "streamfind/mass_spec/processing_methods_chromatograms.hpp"
+#include "streamfind/external/openbabel_adapter.hpp"
 
 #include <algorithm>
 #include <cmath>
@@ -161,45 +162,64 @@ namespace streamfind::mass_spec::detail
             target.polarities = polarity.is_null() ? std::vector<int>{0} : polarity.is_array() ? polarity.get<std::vector<int>>()
                                                                                                : std::vector<int>{polarity.get<int>()};
             target.levels = source.value("levels", p.value("levels", Json::array())).get<std::vector<int>>();
-            const double sign = target.polarities.front() < 0 ? -1.0 : 1.0;
-            const double mass = source.value("mass", 0.0);
-            const bool mass_based = mass != 0.0 || source.contains("mass_min") || source.contains("mass_max");
-            double mz_min = source.value("mz_min", p.value("mz_min", 0.0));
-            double mz_max = source.value("mz_max", p.value("mz_max", 0.0));
-            const double exact_mz = source.value("mz", 0.0);
-            if (mz_min == 0.0 && mz_max == 0.0 && exact_mz != 0.0)
-                mz_min = mz_max = exact_mz;
-            if (mz_min == 0.0 && mz_max == 0.0 && mass_based)
-            {
-                mz_min = source.value("mass_min", mass) + sign * proton / charge;
-                mz_max = source.value("mass_max", mass) + sign * proton / charge;
-            }
-            if (mz_min != 0.0 || mz_max != 0.0)
-            {
-                const double mz = mz_min != 0.0 ? mz_min : mz_max;
-                const double delta = mz * ppm / 1e6;
-                if ((mass_based || exact_mz != 0.0) && mz_min == mz_max)
-                    mz_min = mz - delta, mz_max = mz + delta;
-                else
-                {
-                    if (mz_min == 0.0)
-                        mz_min = mz - delta;
-                    if (mz_max == 0.0)
-                        mz_max = mz + delta;
-                }
-            }
-            const double isolation_window = p.value("isolation_window", 0.0);
-            if (isolation_window > 0.0)
-            {
-                mz_min -= isolation_window / 2.0;
-                mz_max += isolation_window / 2.0;
-            }
-            const double rt = source.value("rt", 0.0);
-            target.mz_min = static_cast<float>(mz_min == 0.0 ? -std::numeric_limits<float>::infinity() : mz_min);
-            target.mz_max = static_cast<float>(mz_max == 0.0 ? std::numeric_limits<float>::infinity() : mz_max);
-            target.rt_min = static_cast<float>(source.value("rt_min", p.value("rt_min", rt == 0.0 ? -std::numeric_limits<double>::infinity() : rt - rt_tolerance)));
-            target.rt_max = static_cast<float>(source.value("rt_max", p.value("rt_max", rt == 0.0 ? std::numeric_limits<double>::infinity() : rt + rt_tolerance)));
-            out.push_back(std::move(target));
+                        double chemical_mass = 0.0;
+                        const bool chemical = !source.contains("mass") && !source.contains("mass_min") && !source.contains("mass_max") &&
+                                              !source.contains("mz") && !source.contains("mz_min") && !source.contains("mz_max") &&
+                                              (source.contains("SMILES") || source.contains("InChI"));
+                        if (chemical)
+                        {
+                            const auto normalized = sf::obabel::normalize_structure(source.value("SMILES", ""), source.value("InChI", ""));
+                            if (normalized.ok && normalized.exact_mass > 0.0) chemical_mass = normalized.exact_mass;
+                        }
+                        const bool unspecified_polarity = target.polarities.size() == 1 && target.polarities[0] == 0;
+                        std::vector<int> signs;
+                        if (chemical_mass > 0.0 && unspecified_polarity)
+                            signs = {-1, 1}; // query both [M-H]- and [M+H]+ so the analysis polarity selects the hit
+                        else
+                            signs = {target.polarities.front() < 0 ? -1 : 1};
+                        for (const int sign : signs)
+                        {
+                            const double mass = source.value("mass", chemical_mass);
+                            const bool mass_based = chemical_mass > 0.0 || mass != 0.0 || source.contains("mass_min") || source.contains("mass_max");
+                            double mz_min = source.value("mz_min", p.value("mz_min", 0.0));
+                            double mz_max = source.value("mz_max", p.value("mz_max", 0.0));
+                            const double exact_mz = source.value("mz", 0.0);
+                            if (mz_min == 0.0 && mz_max == 0.0 && exact_mz != 0.0)
+                                mz_min = mz_max = exact_mz;
+                            if (mz_min == 0.0 && mz_max == 0.0 && mass_based)
+                            {
+                                mz_min = source.value("mass_min", mass) + sign * proton / charge;
+                                mz_max = source.value("mass_max", mass) + sign * proton / charge;
+                            }
+                            if (mz_min != 0.0 || mz_max != 0.0)
+                            {
+                                const double mz = mz_min != 0.0 ? mz_min : mz_max;
+                                const double delta = mz * ppm / 1e6;
+                                if ((mass_based || exact_mz != 0.0) && mz_min == mz_max)
+                                    mz_min = mz - delta, mz_max = mz + delta;
+                                else
+                                {
+                                    if (mz_min == 0.0)
+                                        mz_min = mz - delta;
+                                    if (mz_max == 0.0)
+                                        mz_max = mz + delta;
+                                }
+                            }
+                            const double isolation_window = p.value("isolation_window", 0.0);
+                            if (isolation_window > 0.0)
+                            {
+                                mz_min -= isolation_window / 2.0;
+                                mz_max += isolation_window / 2.0;
+                            }
+                            const double rt = source.value("rt", 0.0);
+                            TargetRange emitted = target;
+                            emitted.polarities = {sign};
+                            emitted.mz_min = static_cast<float>(mz_min == 0.0 ? -std::numeric_limits<float>::infinity() : mz_min);
+                            emitted.mz_max = static_cast<float>(mz_max == 0.0 ? std::numeric_limits<float>::infinity() : mz_max);
+                            emitted.rt_min = static_cast<float>(source.value("rt_min", p.value("rt_min", rt == 0.0 ? -std::numeric_limits<double>::infinity() : rt - rt_tolerance)));
+                            emitted.rt_max = static_cast<float>(source.value("rt_max", p.value("rt_max", rt == 0.0 ? std::numeric_limits<double>::infinity() : rt + rt_tolerance)));
+                            out.push_back(std::move(emitted));
+                        }
         }
         return out;
     }
@@ -629,8 +649,19 @@ namespace streamfind::mass_spec
                 }
             };
             add_window("mass", "mass", "mass_min", "mass_max");
-            add_window("mz", "mz", "mz_min", "mz_max");
-            if (target.contains("rt")) {
+                        add_window("mz", "mz", "mz_min", "mz_max");
+                        if (!target.contains("mass") && !target.contains("mass_min") && !target.contains("mass_max") &&
+                            !target.contains("mz") && !target.contains("mz_min") && !target.contains("mz_max") &&
+                            (target.contains("SMILES") || target.contains("InChI")))
+                        {
+                            const auto normalized = sf::obabel::normalize_structure(target.value("SMILES", ""), target.value("InChI", ""));
+                            if (normalized.ok && normalized.exact_mass > 0.0)
+                            {
+                                const double delta = normalized.exact_mass * ppm / 1e6;
+                                match.push_back("mass BETWEEN " + number(normalized.exact_mass - delta) + " AND " + number(normalized.exact_mass + delta));
+                            }
+                        }
+                        if (target.contains("rt")) {
                 const double center = target.at("rt").get<double>();
                 match.push_back("rt BETWEEN " + number(center - rt_tolerance) + " AND " + number(center + rt_tolerance));
             } else if (target.contains("rt_min") || target.contains("rt_max")) {

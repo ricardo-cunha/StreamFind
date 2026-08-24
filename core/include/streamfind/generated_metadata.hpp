@@ -3374,13 +3374,13 @@ inline constexpr char catalogue[] = R"JSON(
             "max_charge": {
               "type": "integer",
               "examples": [
-                2
+                1
               ]
             },
             "max_gaps": {
               "type": "integer",
               "examples": [
-                3
+                1
               ]
             },
             "ppm": {
@@ -3468,10 +3468,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "integer",
             "examples": [
-              2
+              1
             ]
           },
-          "example": 2,
+          "example": 1,
           "default": null
         },
         {
@@ -3484,10 +3484,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "integer",
             "examples": [
-              3
+              1
             ]
           },
-          "example": 3,
+          "example": 1,
           "default": null
         },
         {
@@ -3566,6 +3566,430 @@ inline constexpr char catalogue[] = R"JSON(
         ],
         "writes": [
           "MASS_SPEC_NTA_FEATURES"
+        ]
+      },
+      "cacheable": true,
+      "required_methods": [
+        "mass_spec.create_components"
+      ],
+      "single_occurrence": false
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.assign_transformation_products",
+      "domain": "mass_spec",
+      "label": "Assign transformation products",
+      "definition": "Assign plausible biotransformation products to suspected features using transformation-product candidates, scoring combinations by mass/MS2 cosine similarity and logP-based retention-time plausibility, and append the assignments to the suspect results.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "transformation_products": {
+              "type": "array",
+              "examples": [
+                [
+                  {
+                    "name": "Metoprolol O-dealkylation",
+                    "transformation": "O-Dealkylation"
+                  }
+                ]
+              ],
+              "items": {
+                "type": "object",
+                "examples": [
+                  {
+                    "name": "Metoprolol O-dealkylation",
+                    "transformation": "O-Dealkylation",
+                    "precursor_name": "Metoprolol",
+                    "precursor_mass": 267.1834,
+                    "SMILES": "COCCc1ccc(cc1)OCC(CNC(C)C)O"
+                  }
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "examples": [
+                      "Metoprolol O-dealkylation"
+                    ]
+                  },
+                  "transformation": {
+                    "type": "string",
+                    "examples": [
+                      "O-Dealkylation"
+                    ]
+                  },
+                  "precursor_name": {
+                    "type": "string",
+                    "examples": [
+                      "Metoprolol"
+                    ]
+                  },
+                  "precursor_formula": {
+                    "type": "string",
+                    "examples": [
+                      "C15H25NO3"
+                    ]
+                  },
+                  "precursor_mass": {
+                    "type": "real",
+                    "examples": [
+                      267.1834
+                    ]
+                  },
+                  "precursor_SMILES": {
+                    "type": "string",
+                    "examples": [
+                      "COCCc1ccc(cc1)OCC(CNC(C)C)O"
+                    ]
+                  },
+                  "precursor_InChI": {
+                    "type": "string",
+                    "examples": [
+                      "InChI=1S/C15H25NO3/c1-12(2)16-10-14(17)11-19-15-6-4-13(5-7-15)8-9-18-3/h4-7,12,14,16-17H,8-11H2,1-3H3"
+                    ]
+                  },
+                  "precursor_InChIKey": {
+                    "type": "string",
+                    "examples": [
+                      "IUBSYMUCCVWXPE-UHFFFAOYSA-N"
+                    ]
+                  },
+                  "precursor_xLogP": {
+                    "type": "real",
+                    "examples": [
+                      1.9
+                    ]
+                  },
+                  "main_precursor_name": {
+                    "type": "string",
+                    "examples": [
+                      "Metoprolol"
+                    ]
+                  },
+                  "main_precursor_formula": {
+                    "type": "string",
+                    "examples": [
+                      "C15H25NO3"
+                    ]
+                  },
+                  "main_precursor_mass": {
+                    "type": "real",
+                    "examples": [
+                      267.1834
+                    ]
+                  },
+                  "main_precursor_SMILES": {
+                    "type": "string",
+                    "examples": [
+                      "COCCc1ccc(cc1)OCC(CNC(C)C)O"
+                    ]
+                  },
+                  "main_precursor_InChI": {
+                    "type": "string",
+                    "examples": [
+                      "InChI=1S/C15H25NO3/c1-12(2)16-10-14(17)11-19-15-6-4-13(5-7-15)8-9-18-3/h4-7,12,14,16-17H,8-11H2,1-3H3"
+                    ]
+                  },
+                  "main_precursor_InChIKey": {
+                    "type": "string",
+                    "examples": [
+                      "IUBSYMUCCVWXPE-UHFFFAOYSA-N"
+                    ]
+                  },
+                  "main_precursor_xLogP": {
+                    "type": "real",
+                    "examples": [
+                      1.9
+                    ]
+                  },
+                  "SMILES": {
+                    "type": "string",
+                    "examples": [
+                      "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                    ]
+                  },
+                  "InChI": {
+                    "type": "string"
+                  },
+                  "InChIKey": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "chromatographic_phase": {
+              "type": "string",
+              "examples": [
+                "reverse_phase"
+              ]
+            },
+            "mzr_ms2": {
+              "type": "real",
+              "examples": [
+                0.008
+              ]
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "transformation_products",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "transformationProductRange",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                {
+                  "name": "Metoprolol O-dealkylation",
+                  "transformation": "O-Dealkylation"
+                }
+              ]
+            ],
+            "items": {
+              "type": "object",
+              "examples": [
+                {
+                  "name": "Metoprolol O-dealkylation",
+                  "transformation": "O-Dealkylation",
+                  "precursor_name": "Metoprolol",
+                  "precursor_mass": 267.1834,
+                  "SMILES": "COCCc1ccc(cc1)OCC(CNC(C)C)O"
+                }
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "examples": [
+                    "Metoprolol O-dealkylation"
+                  ]
+                },
+                "transformation": {
+                  "type": "string",
+                  "examples": [
+                    "O-Dealkylation"
+                  ]
+                },
+                "precursor_name": {
+                  "type": "string",
+                  "examples": [
+                    "Metoprolol"
+                  ]
+                },
+                "precursor_formula": {
+                  "type": "string",
+                  "examples": [
+                    "C15H25NO3"
+                  ]
+                },
+                "precursor_mass": {
+                  "type": "real",
+                  "examples": [
+                    267.1834
+                  ]
+                },
+                "precursor_SMILES": {
+                  "type": "string",
+                  "examples": [
+                    "COCCc1ccc(cc1)OCC(CNC(C)C)O"
+                  ]
+                },
+                "precursor_InChI": {
+                  "type": "string",
+                  "examples": [
+                    "InChI=1S/C15H25NO3/c1-12(2)16-10-14(17)11-19-15-6-4-13(5-7-15)8-9-18-3/h4-7,12,14,16-17H,8-11H2,1-3H3"
+                  ]
+                },
+                "precursor_InChIKey": {
+                  "type": "string",
+                  "examples": [
+                    "IUBSYMUCCVWXPE-UHFFFAOYSA-N"
+                  ]
+                },
+                "precursor_xLogP": {
+                  "type": "real",
+                  "examples": [
+                    1.9
+                  ]
+                },
+                "main_precursor_name": {
+                  "type": "string",
+                  "examples": [
+                    "Metoprolol"
+                  ]
+                },
+                "main_precursor_formula": {
+                  "type": "string",
+                  "examples": [
+                    "C15H25NO3"
+                  ]
+                },
+                "main_precursor_mass": {
+                  "type": "real",
+                  "examples": [
+                    267.1834
+                  ]
+                },
+                "main_precursor_SMILES": {
+                  "type": "string",
+                  "examples": [
+                    "COCCc1ccc(cc1)OCC(CNC(C)C)O"
+                  ]
+                },
+                "main_precursor_InChI": {
+                  "type": "string",
+                  "examples": [
+                    "InChI=1S/C15H25NO3/c1-12(2)16-10-14(17)11-19-15-6-4-13(5-7-15)8-9-18-3/h4-7,12,14,16-17H,8-11H2,1-3H3"
+                  ]
+                },
+                "main_precursor_InChIKey": {
+                  "type": "string",
+                  "examples": [
+                    "IUBSYMUCCVWXPE-UHFFFAOYSA-N"
+                  ]
+                },
+                "main_precursor_xLogP": {
+                  "type": "real",
+                  "examples": [
+                    1.9
+                  ]
+                },
+                "SMILES": {
+                  "type": "string",
+                  "examples": [
+                    "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                  ]
+                },
+                "InChI": {
+                  "type": "string"
+                },
+                "InChIKey": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "example": [
+            {
+              "name": "Metoprolol O-dealkylation",
+              "transformation": "O-Dealkylation"
+            }
+          ],
+          "default": null
+        },
+        {
+          "name": "chromatographic_phase",
+          "type": "string",
+          "required": false,
+          "constraints": "reverse_phase|hilic",
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "string",
+            "examples": [
+              "reverse_phase"
+            ]
+          },
+          "example": "reverse_phase",
+          "default": null
+        },
+        {
+          "name": "mzr_ms2",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.008
+            ]
+          },
+          "example": 0.008,
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_ANALYSES",
+          "MASS_SPEC_NTA_FEATURES",
+          "MASS_SPEC_NTA_SUSPECTS"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_SUSPECTS"
         ]
       },
       "cacheable": true,
@@ -3701,14 +4125,18 @@ inline constexpr char catalogue[] = R"JSON(
       "effects": {
         "mutates_project": false,
         "reads": [
-          "MASS_SPEC_NTA_FEATURES"
+          "MASS_SPEC_ANALYSES",
+          "MASS_SPEC_NTA_FEATURES",
+          "MASS_SPEC_NTA_INTERNAL_STANDARDS"
         ],
         "writes": [
           "MASS_SPEC_NTA_FEATURES"
         ]
       },
       "cacheable": true,
-      "required_methods": [],
+      "required_methods": [
+        "mass_spec.find_internal_standards"
+      ],
       "single_occurrence": false
     },
     {
@@ -3868,7 +4296,9 @@ inline constexpr char catalogue[] = R"JSON(
         ]
       },
       "cacheable": true,
-      "required_methods": [],
+      "required_methods": [
+        "mass_spec.find_features"
+      ],
       "single_occurrence": false
     },
     {
@@ -3908,7 +4338,7 @@ inline constexpr char catalogue[] = R"JSON(
             "rt_expand": {
               "type": "real",
               "examples": [
-                60.0
+                10.0
               ]
             },
             "mz_expand": {
@@ -3924,12 +4354,15 @@ inline constexpr char catalogue[] = R"JSON(
               ]
             },
             "min_traces_intensity": {
-              "type": "real"
+              "type": "real",
+              "examples": [
+                1000.0
+              ]
             },
             "min_number_traces": {
               "type": "integer",
               "examples": [
-                3
+                5
               ]
             },
             "min_intensity_ms1": {
@@ -3953,7 +4386,7 @@ inline constexpr char catalogue[] = R"JSON(
             "min_gaussian_fit": {
               "type": "real",
               "examples": [
-                0.8
+                0.2
               ]
             }
           },
@@ -4027,10 +4460,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              60.0
+              10.0
             ]
           },
-          "example": 60.0,
+          "example": 10.0,
           "default": null
         },
         {
@@ -4073,9 +4506,12 @@ inline constexpr char catalogue[] = R"JSON(
           "items": null,
           "extensions": [],
           "schema": {
-            "type": "real"
+            "type": "real",
+            "examples": [
+              1000.0
+            ]
           },
-          "example": null,
+          "example": 1000.0,
           "default": null
         },
         {
@@ -4088,10 +4524,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "integer",
             "examples": [
-              3
+              5
             ]
           },
-          "example": 3,
+          "example": 5,
           "default": null
         },
         {
@@ -4152,10 +4588,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              0.8
+              0.2
             ]
           },
-          "example": 0.8,
+          "example": 0.2,
           "default": null
         }
       ],
@@ -4180,6 +4616,7 @@ inline constexpr char catalogue[] = R"JSON(
       "effects": {
         "mutates_project": false,
         "reads": [
+          "MASS_SPEC_ANALYSES",
           "MASS_SPEC_NTA_FEATURES"
         ],
         "writes": [
@@ -4187,7 +4624,10 @@ inline constexpr char catalogue[] = R"JSON(
         ]
       },
       "cacheable": true,
-      "required_methods": [],
+      "required_methods": [
+        "mass_spec.find_features",
+        "mass_spec.group_features"
+      ],
       "single_occurrence": false
     },
     {
@@ -5049,7 +5489,9 @@ inline constexpr char catalogue[] = R"JSON(
         ]
       },
       "cacheable": true,
-      "required_methods": [],
+      "required_methods": [
+        "mass_spec.find_features"
+      ],
       "single_occurrence": false
     },
     {
@@ -5279,6 +5721,7 @@ inline constexpr char catalogue[] = R"JSON(
       "effects": {
         "mutates_project": false,
         "reads": [
+          "MASS_SPEC_ANALYSES",
           "MASS_SPEC_NTA_FEATURES"
         ],
         "writes": [
@@ -5286,7 +5729,10 @@ inline constexpr char catalogue[] = R"JSON(
         ]
       },
       "cacheable": true,
-      "required_methods": [],
+      "required_methods": [
+        "mass_spec.find_features",
+        "mass_spec.load_features_ms2"
+      ],
       "single_occurrence": false
     },
     {
@@ -5368,13 +5814,13 @@ inline constexpr char catalogue[] = R"JSON(
             "min_shared_fragments": {
               "type": "integer",
               "examples": [
-                1
+                3
               ]
             },
             "min_cosine_similarity": {
               "type": "real",
               "examples": [
-                0.8
+                0.7
               ]
             }
           },
@@ -5526,10 +5972,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "integer",
             "examples": [
-              1
+              3
             ]
           },
-          "example": 1,
+          "example": 3,
           "default": null
         },
         {
@@ -5542,10 +5988,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              0.8
+              0.7
             ]
           },
-          "example": 0.8,
+          "example": 0.7,
           "default": null
         }
       ],
@@ -5570,14 +6016,17 @@ inline constexpr char catalogue[] = R"JSON(
       "effects": {
         "mutates_project": false,
         "reads": [
-          "MASS_SPEC_NTA_FEATURES"
+          "MASS_SPEC_NTA_FEATURES",
+          "MASS_SPEC_NTA_INTERNAL_STANDARDS"
         ],
         "writes": [
-          "MASS_SPEC_NTA_FEATURES"
+          "MASS_SPEC_NTA_INTERNAL_STANDARDS"
         ]
       },
       "cacheable": true,
-      "required_methods": [],
+      "required_methods": [
+        "mass_spec.find_internal_standards"
+      ],
       "single_occurrence": false
     },
     {
@@ -5659,13 +6108,13 @@ inline constexpr char catalogue[] = R"JSON(
             "min_shared_fragments": {
               "type": "integer",
               "examples": [
-                1
+                3
               ]
             },
             "min_cosine_similarity": {
               "type": "real",
               "examples": [
-                0.8
+                0.7
               ]
             }
           },
@@ -5817,10 +6266,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "integer",
             "examples": [
-              1
+              3
             ]
           },
-          "example": 1,
+          "example": 3,
           "default": null
         },
         {
@@ -5833,10 +6282,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              0.8
+              0.7
             ]
           },
-          "example": 0.8,
+          "example": 0.7,
           "default": null
         }
       ],
@@ -5861,14 +6310,17 @@ inline constexpr char catalogue[] = R"JSON(
       "effects": {
         "mutates_project": false,
         "reads": [
-          "MASS_SPEC_NTA_FEATURES"
+          "MASS_SPEC_NTA_FEATURES",
+          "MASS_SPEC_NTA_SUSPECTS"
         ],
         "writes": [
-          "MASS_SPEC_NTA_FEATURES"
+          "MASS_SPEC_NTA_SUSPECTS"
         ]
       },
       "cacheable": true,
-      "required_methods": [],
+      "required_methods": [
+        "mass_spec.suspect_screening"
+      ],
       "single_occurrence": false
     },
     {
@@ -5936,7 +6388,7 @@ inline constexpr char catalogue[] = R"JSON(
             "noise_threshold": {
               "type": "real",
               "examples": [
-                15.0
+                250.0
               ]
             },
             "min_snr": {
@@ -5954,13 +6406,13 @@ inline constexpr char catalogue[] = R"JSON(
             "baseline_window": {
               "type": "real",
               "examples": [
-                30.0
+                200.0
               ]
             },
             "max_feature_width": {
               "type": "real",
               "examples": [
-                30.0
+                100.0
               ]
             },
             "base_quantile": {
@@ -5971,8 +6423,6 @@ inline constexpr char catalogue[] = R"JSON(
             }
           },
           "required": [
-            "rt_windows_min",
-            "rt_windows_max",
             "analysis_names"
           ]
         }
@@ -5981,7 +6431,7 @@ inline constexpr char catalogue[] = R"JSON(
         {
           "name": "rt_windows_min",
           "type": "array",
-          "required": true,
+          "required": false,
           "constraints": {},
           "items": "realItem",
           "extensions": [],
@@ -6007,7 +6457,7 @@ inline constexpr char catalogue[] = R"JSON(
         {
           "name": "rt_windows_max",
           "type": "array",
-          "required": true,
+          "required": false,
           "constraints": {},
           "items": "realItem",
           "extensions": [],
@@ -6084,10 +6534,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              15.0
+              250.0
             ]
           },
-          "example": 15.0,
+          "example": 250.0,
           "default": null
         },
         {
@@ -6132,10 +6582,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              30.0
+              200.0
             ]
           },
-          "example": 30.0,
+          "example": 200.0,
           "default": null
         },
         {
@@ -6148,10 +6598,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              30.0
+              100.0
             ]
           },
-          "example": 30.0,
+          "example": 100.0,
           "default": null
         },
         {
@@ -6245,11 +6695,17 @@ inline constexpr char catalogue[] = R"JSON(
                 "examples": [
                   {
                     "id": "caffeine",
-                    "mass": 194.0804
+                    "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
                   }
                 ],
                 "properties": {
                   "id": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "name": {
                     "type": "string",
                     "examples": [
                       "caffeine"
@@ -6344,6 +6800,97 @@ inline constexpr char catalogue[] = R"JSON(
                     "examples": [
                       1040.0
                     ]
+                  },
+                  "formula": {
+                    "type": "string",
+                    "examples": [
+                      "C8H10N4O2"
+                    ]
+                  },
+                  "SMILES": {
+                    "type": "string",
+                    "examples": [
+                      "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                    ]
+                  },
+                  "InChI": {
+                    "type": "string"
+                  },
+                  "InChIKey": {
+                    "type": "string"
+                  },
+                  "xLogP": {
+                    "type": "real",
+                    "examples": [
+                      0.5
+                    ]
+                  },
+                  "score": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  },
+                  "database_id": {
+                    "type": "string"
+                  },
+                  "fragments_mz_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066,
+                        195.088
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0,
+                        80.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_mz_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
                   }
                 }
               }
@@ -6357,31 +6904,31 @@ inline constexpr char catalogue[] = R"JSON(
             "sec": {
               "type": "real",
               "examples": [
-                60.0
+                10.0
               ]
             },
             "ppm_ms2": {
               "type": "real",
               "examples": [
-                20.0
+                10.0
               ]
             },
             "mzr_ms2": {
               "type": "real",
               "examples": [
-                0.01
+                0.008
               ]
             },
             "min_cosine_similarity": {
               "type": "real",
               "examples": [
-                0.8
+                0.7
               ]
             },
             "min_shared_fragments": {
               "type": "integer",
               "examples": [
-                1
+                3
               ]
             },
             "filtered": {
@@ -6444,11 +6991,17 @@ inline constexpr char catalogue[] = R"JSON(
               "examples": [
                 {
                   "id": "caffeine",
-                  "mass": 194.0804
+                  "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
                 }
               ],
               "properties": {
                 "id": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "name": {
                   "type": "string",
                   "examples": [
                     "caffeine"
@@ -6543,6 +7096,97 @@ inline constexpr char catalogue[] = R"JSON(
                   "examples": [
                     1040.0
                   ]
+                },
+                "formula": {
+                  "type": "string",
+                  "examples": [
+                    "C8H10N4O2"
+                  ]
+                },
+                "SMILES": {
+                  "type": "string",
+                  "examples": [
+                    "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                  ]
+                },
+                "InChI": {
+                  "type": "string"
+                },
+                "InChIKey": {
+                  "type": "string"
+                },
+                "xLogP": {
+                  "type": "real",
+                  "examples": [
+                    0.5
+                  ]
+                },
+                "score": {
+                  "type": "real",
+                  "examples": [
+                    1.0
+                  ]
+                },
+                "database_id": {
+                  "type": "string"
+                },
+                "fragments_mz_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066,
+                      195.088
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0,
+                      80.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_mz_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
                 }
               }
             }
@@ -6581,10 +7225,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              60.0
+              10.0
             ]
           },
-          "example": 60.0,
+          "example": 10.0,
           "default": null
         },
         {
@@ -6597,10 +7241,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              20.0
+              10.0
             ]
           },
-          "example": 20.0,
+          "example": 10.0,
           "default": null
         },
         {
@@ -6613,10 +7257,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              0.01
+              0.008
             ]
           },
-          "example": 0.01,
+          "example": 0.008,
           "default": null
         },
         {
@@ -6629,10 +7273,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              0.8
+              0.7
             ]
           },
-          "example": 0.8,
+          "example": 0.7,
           "default": null
         },
         {
@@ -6645,10 +7289,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "integer",
             "examples": [
-              1
+              3
             ]
           },
-          "example": 1,
+          "example": 3,
           "default": null
         },
         {
@@ -6689,11 +7333,14 @@ inline constexpr char catalogue[] = R"JSON(
           "MASS_SPEC_NTA_FEATURES"
         ],
         "writes": [
-          "MASS_SPEC_NTA_FEATURES"
+          "MASS_SPEC_NTA_FEATURES",
+          "MASS_SPEC_NTA_INTERNAL_STANDARDS"
         ]
       },
       "cacheable": true,
-      "required_methods": [],
+      "required_methods": [
+        "mass_spec.find_features"
+      ],
       "single_occurrence": false
     },
     {
@@ -7612,11 +8259,17 @@ inline constexpr char catalogue[] = R"JSON(
                 "examples": [
                   {
                     "id": "caffeine",
-                    "mass": 194.0804
+                    "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
                   }
                 ],
                 "properties": {
                   "id": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "name": {
                     "type": "string",
                     "examples": [
                       "caffeine"
@@ -7711,6 +8364,97 @@ inline constexpr char catalogue[] = R"JSON(
                     "examples": [
                       1040.0
                     ]
+                  },
+                  "formula": {
+                    "type": "string",
+                    "examples": [
+                      "C8H10N4O2"
+                    ]
+                  },
+                  "SMILES": {
+                    "type": "string",
+                    "examples": [
+                      "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                    ]
+                  },
+                  "InChI": {
+                    "type": "string"
+                  },
+                  "InChIKey": {
+                    "type": "string"
+                  },
+                  "xLogP": {
+                    "type": "real",
+                    "examples": [
+                      0.5
+                    ]
+                  },
+                  "score": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  },
+                  "database_id": {
+                    "type": "string"
+                  },
+                  "fragments_mz_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066,
+                        195.088
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0,
+                        80.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_mz_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
                   }
                 }
               }
@@ -7827,11 +8571,17 @@ inline constexpr char catalogue[] = R"JSON(
               "examples": [
                 {
                   "id": "caffeine",
-                  "mass": 194.0804
+                  "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
                 }
               ],
               "properties": {
                 "id": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "name": {
                   "type": "string",
                   "examples": [
                     "caffeine"
@@ -7926,6 +8676,97 @@ inline constexpr char catalogue[] = R"JSON(
                   "examples": [
                     1040.0
                   ]
+                },
+                "formula": {
+                  "type": "string",
+                  "examples": [
+                    "C8H10N4O2"
+                  ]
+                },
+                "SMILES": {
+                  "type": "string",
+                  "examples": [
+                    "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                  ]
+                },
+                "InChI": {
+                  "type": "string"
+                },
+                "InChIKey": {
+                  "type": "string"
+                },
+                "xLogP": {
+                  "type": "real",
+                  "examples": [
+                    0.5
+                  ]
+                },
+                "score": {
+                  "type": "real",
+                  "examples": [
+                    1.0
+                  ]
+                },
+                "database_id": {
+                  "type": "string"
+                },
+                "fragments_mz_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066,
+                      195.088
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0,
+                      80.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_mz_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
                 }
               }
             }
@@ -8744,11 +9585,17 @@ inline constexpr char catalogue[] = R"JSON(
                 "examples": [
                   {
                     "id": "caffeine",
-                    "mass": 194.0804
+                    "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
                   }
                 ],
                 "properties": {
                   "id": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "name": {
                     "type": "string",
                     "examples": [
                       "caffeine"
@@ -8843,6 +9690,97 @@ inline constexpr char catalogue[] = R"JSON(
                     "examples": [
                       1040.0
                     ]
+                  },
+                  "formula": {
+                    "type": "string",
+                    "examples": [
+                      "C8H10N4O2"
+                    ]
+                  },
+                  "SMILES": {
+                    "type": "string",
+                    "examples": [
+                      "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                    ]
+                  },
+                  "InChI": {
+                    "type": "string"
+                  },
+                  "InChIKey": {
+                    "type": "string"
+                  },
+                  "xLogP": {
+                    "type": "real",
+                    "examples": [
+                      0.5
+                    ]
+                  },
+                  "score": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  },
+                  "database_id": {
+                    "type": "string"
+                  },
+                  "fragments_mz_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066,
+                        195.088
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0,
+                        80.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_mz_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
                   }
                 }
               }
@@ -8992,11 +9930,17 @@ inline constexpr char catalogue[] = R"JSON(
               "examples": [
                 {
                   "id": "caffeine",
-                  "mass": 194.0804
+                  "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
                 }
               ],
               "properties": {
                 "id": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "name": {
                   "type": "string",
                   "examples": [
                     "caffeine"
@@ -9091,6 +10035,97 @@ inline constexpr char catalogue[] = R"JSON(
                   "examples": [
                     1040.0
                   ]
+                },
+                "formula": {
+                  "type": "string",
+                  "examples": [
+                    "C8H10N4O2"
+                  ]
+                },
+                "SMILES": {
+                  "type": "string",
+                  "examples": [
+                    "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                  ]
+                },
+                "InChI": {
+                  "type": "string"
+                },
+                "InChIKey": {
+                  "type": "string"
+                },
+                "xLogP": {
+                  "type": "real",
+                  "examples": [
+                    0.5
+                  ]
+                },
+                "score": {
+                  "type": "real",
+                  "examples": [
+                    1.0
+                  ]
+                },
+                "database_id": {
+                  "type": "string"
+                },
+                "fragments_mz_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066,
+                      195.088
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0,
+                      80.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_mz_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
                 }
               }
             }
@@ -9324,11 +10359,17 @@ inline constexpr char catalogue[] = R"JSON(
                 "examples": [
                   {
                     "id": "caffeine",
-                    "mass": 194.0804
+                    "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
                   }
                 ],
                 "properties": {
                   "id": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "name": {
                     "type": "string",
                     "examples": [
                       "caffeine"
@@ -9423,6 +10464,97 @@ inline constexpr char catalogue[] = R"JSON(
                     "examples": [
                       1040.0
                     ]
+                  },
+                  "formula": {
+                    "type": "string",
+                    "examples": [
+                      "C8H10N4O2"
+                    ]
+                  },
+                  "SMILES": {
+                    "type": "string",
+                    "examples": [
+                      "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                    ]
+                  },
+                  "InChI": {
+                    "type": "string"
+                  },
+                  "InChIKey": {
+                    "type": "string"
+                  },
+                  "xLogP": {
+                    "type": "real",
+                    "examples": [
+                      0.5
+                    ]
+                  },
+                  "score": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  },
+                  "database_id": {
+                    "type": "string"
+                  },
+                  "fragments_mz_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066,
+                        195.088
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0,
+                        80.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_mz_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
                   }
                 }
               }
@@ -9543,11 +10675,17 @@ inline constexpr char catalogue[] = R"JSON(
               "examples": [
                 {
                   "id": "caffeine",
-                  "mass": 194.0804
+                  "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
                 }
               ],
               "properties": {
                 "id": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "name": {
                   "type": "string",
                   "examples": [
                     "caffeine"
@@ -9642,6 +10780,97 @@ inline constexpr char catalogue[] = R"JSON(
                   "examples": [
                     1040.0
                   ]
+                },
+                "formula": {
+                  "type": "string",
+                  "examples": [
+                    "C8H10N4O2"
+                  ]
+                },
+                "SMILES": {
+                  "type": "string",
+                  "examples": [
+                    "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                  ]
+                },
+                "InChI": {
+                  "type": "string"
+                },
+                "InChIKey": {
+                  "type": "string"
+                },
+                "xLogP": {
+                  "type": "real",
+                  "examples": [
+                    0.5
+                  ]
+                },
+                "score": {
+                  "type": "real",
+                  "examples": [
+                    1.0
+                  ]
+                },
+                "database_id": {
+                  "type": "string"
+                },
+                "fragments_mz_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066,
+                      195.088
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0,
+                      80.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_mz_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
                 }
               }
             }
@@ -9875,11 +11104,17 @@ inline constexpr char catalogue[] = R"JSON(
                 "examples": [
                   {
                     "id": "caffeine",
-                    "mass": 194.0804
+                    "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
                   }
                 ],
                 "properties": {
                   "id": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "name": {
                     "type": "string",
                     "examples": [
                       "caffeine"
@@ -9974,6 +11209,97 @@ inline constexpr char catalogue[] = R"JSON(
                     "examples": [
                       1040.0
                     ]
+                  },
+                  "formula": {
+                    "type": "string",
+                    "examples": [
+                      "C8H10N4O2"
+                    ]
+                  },
+                  "SMILES": {
+                    "type": "string",
+                    "examples": [
+                      "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                    ]
+                  },
+                  "InChI": {
+                    "type": "string"
+                  },
+                  "InChIKey": {
+                    "type": "string"
+                  },
+                  "xLogP": {
+                    "type": "real",
+                    "examples": [
+                      0.5
+                    ]
+                  },
+                  "score": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  },
+                  "database_id": {
+                    "type": "string"
+                  },
+                  "fragments_mz_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066,
+                        195.088
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0,
+                        80.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_mz_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
                   }
                 }
               }
@@ -10115,11 +11441,17 @@ inline constexpr char catalogue[] = R"JSON(
               "examples": [
                 {
                   "id": "caffeine",
-                  "mass": 194.0804
+                  "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
                 }
               ],
               "properties": {
                 "id": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "name": {
                   "type": "string",
                   "examples": [
                     "caffeine"
@@ -10214,6 +11546,97 @@ inline constexpr char catalogue[] = R"JSON(
                   "examples": [
                     1040.0
                   ]
+                },
+                "formula": {
+                  "type": "string",
+                  "examples": [
+                    "C8H10N4O2"
+                  ]
+                },
+                "SMILES": {
+                  "type": "string",
+                  "examples": [
+                    "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                  ]
+                },
+                "InChI": {
+                  "type": "string"
+                },
+                "InChIKey": {
+                  "type": "string"
+                },
+                "xLogP": {
+                  "type": "real",
+                  "examples": [
+                    0.5
+                  ]
+                },
+                "score": {
+                  "type": "real",
+                  "examples": [
+                    1.0
+                  ]
+                },
+                "database_id": {
+                  "type": "string"
+                },
+                "fragments_mz_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066,
+                      195.088
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0,
+                      80.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_mz_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
                 }
               }
             }
@@ -10498,11 +11921,17 @@ inline constexpr char catalogue[] = R"JSON(
                 "examples": [
                   {
                     "id": "caffeine",
-                    "mass": 194.0804
+                    "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
                   }
                 ],
                 "properties": {
                   "id": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "name": {
                     "type": "string",
                     "examples": [
                       "caffeine"
@@ -10597,6 +12026,97 @@ inline constexpr char catalogue[] = R"JSON(
                     "examples": [
                       1040.0
                     ]
+                  },
+                  "formula": {
+                    "type": "string",
+                    "examples": [
+                      "C8H10N4O2"
+                    ]
+                  },
+                  "SMILES": {
+                    "type": "string",
+                    "examples": [
+                      "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                    ]
+                  },
+                  "InChI": {
+                    "type": "string"
+                  },
+                  "InChIKey": {
+                    "type": "string"
+                  },
+                  "xLogP": {
+                    "type": "real",
+                    "examples": [
+                      0.5
+                    ]
+                  },
+                  "score": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  },
+                  "database_id": {
+                    "type": "string"
+                  },
+                  "fragments_mz_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066,
+                        195.088
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0,
+                        80.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_mz_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
                   }
                 }
               }
@@ -10745,11 +12265,17 @@ inline constexpr char catalogue[] = R"JSON(
               "examples": [
                 {
                   "id": "caffeine",
-                  "mass": 194.0804
+                  "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
                 }
               ],
               "properties": {
                 "id": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "name": {
                   "type": "string",
                   "examples": [
                     "caffeine"
@@ -10844,6 +12370,97 @@ inline constexpr char catalogue[] = R"JSON(
                   "examples": [
                     1040.0
                   ]
+                },
+                "formula": {
+                  "type": "string",
+                  "examples": [
+                    "C8H10N4O2"
+                  ]
+                },
+                "SMILES": {
+                  "type": "string",
+                  "examples": [
+                    "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                  ]
+                },
+                "InChI": {
+                  "type": "string"
+                },
+                "InChIKey": {
+                  "type": "string"
+                },
+                "xLogP": {
+                  "type": "real",
+                  "examples": [
+                    0.5
+                  ]
+                },
+                "score": {
+                  "type": "real",
+                  "examples": [
+                    1.0
+                  ]
+                },
+                "database_id": {
+                  "type": "string"
+                },
+                "fragments_mz_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066,
+                      195.088
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0,
+                      80.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_mz_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
                 }
               }
             }
@@ -11734,13 +13351,13 @@ inline constexpr char catalogue[] = R"JSON(
             "method": {
               "type": "string",
               "examples": [
-                "mass_spec.get_raw_spectra"
+                "internal_standards"
               ]
             },
             "rt_deviation": {
               "type": "real",
               "examples": [
-                40.0
+                5.0
               ]
             },
             "ppm": {
@@ -11763,8 +13380,7 @@ inline constexpr char catalogue[] = R"JSON(
             }
           },
           "required": [
-            "analysis_names",
-            "method"
+            "analysis_names"
           ]
         }
       },
@@ -11800,17 +13416,17 @@ inline constexpr char catalogue[] = R"JSON(
         {
           "name": "method",
           "type": "string",
-          "required": true,
-          "constraints": {},
+          "required": false,
+          "constraints": "internal_standards|obi_warp",
           "items": null,
           "extensions": [],
           "schema": {
             "type": "string",
             "examples": [
-              "mass_spec.get_raw_spectra"
+              "internal_standards"
             ]
           },
-          "example": "mass_spec.get_raw_spectra",
+          "example": "internal_standards",
           "default": null
         },
         {
@@ -11823,10 +13439,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              40.0
+              5.0
             ]
           },
-          "example": 40.0,
+          "example": 5.0,
           "default": null
         },
         {
@@ -11899,14 +13515,18 @@ inline constexpr char catalogue[] = R"JSON(
       "effects": {
         "mutates_project": false,
         "reads": [
-          "MASS_SPEC_NTA_FEATURES"
+          "MASS_SPEC_ANALYSES",
+          "MASS_SPEC_NTA_FEATURES",
+          "MASS_SPEC_NTA_INTERNAL_STANDARDS"
         ],
         "writes": [
           "MASS_SPEC_NTA_FEATURES"
         ]
       },
       "cacheable": true,
-      "required_methods": [],
+      "required_methods": [
+        "mass_spec.find_features"
+      ],
       "single_occurrence": false
     },
     {
@@ -12144,7 +13764,10 @@ inline constexpr char catalogue[] = R"JSON(
               }
             },
             "min_traces_intensity": {
-              "type": "real"
+              "type": "real",
+              "examples": [
+                1000.0
+              ]
             },
             "mz_clust": {
               "type": "real",
@@ -12270,9 +13893,12 @@ inline constexpr char catalogue[] = R"JSON(
           "items": null,
           "extensions": [],
           "schema": {
-            "type": "real"
+            "type": "real",
+            "examples": [
+              1000.0
+            ]
           },
-          "example": null,
+          "example": 1000.0,
           "default": null
         },
         {
@@ -12329,6 +13955,7 @@ inline constexpr char catalogue[] = R"JSON(
       "effects": {
         "mutates_project": false,
         "reads": [
+          "MASS_SPEC_ANALYSES",
           "MASS_SPEC_NTA_FEATURES"
         ],
         "writes": [
@@ -12336,7 +13963,9 @@ inline constexpr char catalogue[] = R"JSON(
         ]
       },
       "cacheable": true,
-      "required_methods": [],
+      "required_methods": [
+        "mass_spec.find_features"
+      ],
       "single_occurrence": false
     },
     {
@@ -12371,7 +14000,10 @@ inline constexpr char catalogue[] = R"JSON(
               "type": "boolean"
             },
             "min_traces_intensity": {
-              "type": "real"
+              "type": "real",
+              "examples": [
+                1000.0
+              ]
             },
             "isolation_window": {
               "type": "real",
@@ -12447,9 +14079,12 @@ inline constexpr char catalogue[] = R"JSON(
           "items": null,
           "extensions": [],
           "schema": {
-            "type": "real"
+            "type": "real",
+            "examples": [
+              1000.0
+            ]
           },
-          "example": null,
+          "example": 1000.0,
           "default": null
         },
         {
@@ -12522,6 +14157,7 @@ inline constexpr char catalogue[] = R"JSON(
       "effects": {
         "mutates_project": false,
         "reads": [
+          "MASS_SPEC_ANALYSES",
           "MASS_SPEC_NTA_FEATURES"
         ],
         "writes": [
@@ -12529,7 +14165,636 @@ inline constexpr char catalogue[] = R"JSON(
         ]
       },
       "cacheable": true,
-      "required_methods": [],
+      "required_methods": [
+        "mass_spec.find_features"
+      ],
+      "single_occurrence": false
+    },
+    {
+      "kind": "method",
+      "canonical_id": "mass_spec.metfrag_screening",
+      "domain": "mass_spec",
+      "label": "Screen features with MetFrag",
+      "definition": "Run in-silico MetFrag fragmenter screening for detected features: write per-feature MetFrag input, invoke the MetFrag command line (Java) from the ~/.streamfind tool layout, and rank resulting candidate fragments into the suspect results.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "None",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "database_type": {
+              "type": "string",
+              "examples": [
+                "PubChem"
+              ]
+            },
+            "database": {
+              "type": "array",
+              "examples": [
+                [
+                  {
+                    "name": "Metoprolol",
+                    "formula": "C15H25NO3",
+                    "mass": 267.1834
+                  }
+                ]
+              ],
+              "items": {
+                "type": "object",
+                "examples": [
+                  {
+                    "name": "Metoprolol",
+                    "mass": 267.1834
+                  }
+                ],
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "formula": {
+                    "type": "string",
+                    "examples": [
+                      "C8H10N4O2"
+                    ]
+                  },
+                  "mass": {
+                    "type": "real",
+                    "examples": [
+                      194.0804
+                    ]
+                  },
+                  "SMILES": {
+                    "type": "string",
+                    "examples": [
+                      "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                    ]
+                  },
+                  "InChI": {
+                    "type": "string"
+                  },
+                  "InChIKey": {
+                    "type": "string"
+                  },
+                  "xLogP": {
+                    "type": "real",
+                    "examples": [
+                      0.5
+                    ]
+                  }
+                }
+              }
+            },
+            "ppm": {
+              "type": "real",
+              "examples": [
+                20.0
+              ]
+            },
+            "sec": {
+              "type": "real",
+              "examples": [
+                10.0
+              ]
+            },
+            "ppm_ms2": {
+              "type": "real",
+              "examples": [
+                10.0
+              ]
+            },
+            "mzr_ms2": {
+              "type": "real",
+              "examples": [
+                0.008
+              ]
+            },
+            "top_n": {
+              "type": "integer",
+              "examples": [
+                5
+              ]
+            },
+            "score_types": {
+              "type": "array",
+              "examples": [
+                [
+                  "FragmenterScore"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "score_weights": {
+              "type": "array",
+              "examples": [
+                [
+                  1.0
+                ]
+              ],
+              "items": {
+                "type": "real",
+                "examples": [
+                  1.0
+                ]
+              }
+            },
+            "pre_processing_candidate_filter": {
+              "type": "array",
+              "examples": [
+                [
+                  "UnconnectedCompoundFilter",
+                  "IsotopeFilter"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "post_processing_candidate_filter": {
+              "type": "array",
+              "examples": [
+                [
+                  "InChIKeyFilter"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              }
+            },
+            "maximum_tree_depth": {
+              "type": "integer",
+              "examples": [
+                3
+              ]
+            },
+            "number_threads": {
+              "type": "integer",
+              "examples": [
+                1
+              ]
+            },
+            "use_smiles": {
+              "type": "boolean",
+              "examples": [
+                true
+              ]
+            },
+            "filtered": {
+              "type": "boolean"
+            },
+            "debug": {
+              "type": "boolean"
+            }
+          },
+          "required": [
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": null
+        },
+        {
+          "name": "database_type",
+          "type": "string",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "string",
+            "examples": [
+              "PubChem"
+            ]
+          },
+          "example": "PubChem",
+          "default": null
+        },
+        {
+          "name": "database",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "databaseRange",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                {
+                  "name": "Metoprolol",
+                  "formula": "C15H25NO3",
+                  "mass": 267.1834
+                }
+              ]
+            ],
+            "items": {
+              "type": "object",
+              "examples": [
+                {
+                  "name": "Metoprolol",
+                  "mass": 267.1834
+                }
+              ],
+              "properties": {
+                "name": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "formula": {
+                  "type": "string",
+                  "examples": [
+                    "C8H10N4O2"
+                  ]
+                },
+                "mass": {
+                  "type": "real",
+                  "examples": [
+                    194.0804
+                  ]
+                },
+                "SMILES": {
+                  "type": "string",
+                  "examples": [
+                    "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                  ]
+                },
+                "InChI": {
+                  "type": "string"
+                },
+                "InChIKey": {
+                  "type": "string"
+                },
+                "xLogP": {
+                  "type": "real",
+                  "examples": [
+                    0.5
+                  ]
+                }
+              }
+            }
+          },
+          "example": [
+            {
+              "name": "Metoprolol",
+              "formula": "C15H25NO3",
+              "mass": 267.1834
+            }
+          ],
+          "default": null
+        },
+        {
+          "name": "ppm",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              20.0
+            ]
+          },
+          "example": 20.0,
+          "default": null
+        },
+        {
+          "name": "sec",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              10.0
+            ]
+          },
+          "example": 10.0,
+          "default": null
+        },
+        {
+          "name": "ppm_ms2",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              10.0
+            ]
+          },
+          "example": 10.0,
+          "default": null
+        },
+        {
+          "name": "mzr_ms2",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              0.008
+            ]
+          },
+          "example": 0.008,
+          "default": null
+        },
+        {
+          "name": "top_n",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              5
+            ]
+          },
+          "example": 5,
+          "default": null
+        },
+        {
+          "name": "score_types",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "FragmenterScore"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "FragmenterScore"
+          ],
+          "default": null
+        },
+        {
+          "name": "score_weights",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "realItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                1.0
+              ]
+            ],
+            "items": {
+              "type": "real",
+              "examples": [
+                1.0
+              ]
+            }
+          },
+          "example": [
+            1.0
+          ],
+          "default": null
+        },
+        {
+          "name": "pre_processing_candidate_filter",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "UnconnectedCompoundFilter",
+                "IsotopeFilter"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "UnconnectedCompoundFilter",
+            "IsotopeFilter"
+          ],
+          "default": null
+        },
+        {
+          "name": "post_processing_candidate_filter",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "InChIKeyFilter"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            }
+          },
+          "example": [
+            "InChIKeyFilter"
+          ],
+          "default": null
+        },
+        {
+          "name": "maximum_tree_depth",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              3
+            ]
+          },
+          "example": 3,
+          "default": null
+        },
+        {
+          "name": "number_threads",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              1
+            ]
+          },
+          "example": 1,
+          "default": null
+        },
+        {
+          "name": "use_smiles",
+          "type": "boolean",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "boolean",
+            "examples": [
+              true
+            ]
+          },
+          "example": true,
+          "default": null
+        },
+        {
+          "name": "filtered",
+          "type": "boolean",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "boolean"
+          },
+          "example": null,
+          "default": null
+        },
+        {
+          "name": "debug",
+          "type": "boolean",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "boolean"
+          },
+          "example": null,
+          "default": null
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/core#operationStatusResult",
+        "schema": {
+          "type": "object",
+          "properties": {
+            "status": {
+              "type": "string",
+              "enum": [
+                "finished",
+                "failed"
+              ]
+            },
+            "info": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_ANALYSES",
+          "MASS_SPEC_NTA_FEATURES"
+        ],
+        "writes": [
+          "MASS_SPEC_NTA_FEATURES",
+          "MASS_SPEC_NTA_SUSPECTS"
+        ]
+      },
+      "cacheable": true,
+      "required_methods": [
+        "mass_spec.find_features",
+        "mass_spec.load_features_ms2"
+      ],
       "single_occurrence": false
     },
     {
@@ -13077,13 +15342,13 @@ inline constexpr char catalogue[] = R"JSON(
             "blank_threshold": {
               "type": "real",
               "examples": [
-                0.3
+                5.0
               ]
             },
             "rt_expand": {
               "type": "real",
               "examples": [
-                60.0
+                10.0
               ]
             },
             "mz_expand": {
@@ -13137,10 +15402,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              0.3
+              5.0
             ]
           },
-          "example": 0.3,
+          "example": 5.0,
           "default": null
         },
         {
@@ -13153,10 +15418,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              60.0
+              10.0
             ]
           },
-          "example": 60.0,
+          "example": 10.0,
           "default": null
         },
         {
@@ -13197,6 +15462,7 @@ inline constexpr char catalogue[] = R"JSON(
       "effects": {
         "mutates_project": false,
         "reads": [
+          "MASS_SPEC_ANALYSES",
           "MASS_SPEC_NTA_FEATURES"
         ],
         "writes": [
@@ -13204,7 +15470,9 @@ inline constexpr char catalogue[] = R"JSON(
         ]
       },
       "cacheable": true,
-      "required_methods": [],
+      "required_methods": [
+        "mass_spec.find_features"
+      ],
       "single_occurrence": false
     },
     {
@@ -13250,11 +15518,17 @@ inline constexpr char catalogue[] = R"JSON(
                 "examples": [
                   {
                     "id": "caffeine",
-                    "mass": 194.0804
+                    "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
                   }
                 ],
                 "properties": {
                   "id": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "name": {
                     "type": "string",
                     "examples": [
                       "caffeine"
@@ -13349,6 +15623,97 @@ inline constexpr char catalogue[] = R"JSON(
                     "examples": [
                       1040.0
                     ]
+                  },
+                  "formula": {
+                    "type": "string",
+                    "examples": [
+                      "C8H10N4O2"
+                    ]
+                  },
+                  "SMILES": {
+                    "type": "string",
+                    "examples": [
+                      "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                    ]
+                  },
+                  "InChI": {
+                    "type": "string"
+                  },
+                  "InChIKey": {
+                    "type": "string"
+                  },
+                  "xLogP": {
+                    "type": "real",
+                    "examples": [
+                      0.5
+                    ]
+                  },
+                  "score": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  },
+                  "database_id": {
+                    "type": "string"
+                  },
+                  "fragments_mz_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066,
+                        195.088
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0,
+                        80.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_mz_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
                   }
                 }
               }
@@ -13362,31 +15727,31 @@ inline constexpr char catalogue[] = R"JSON(
             "sec": {
               "type": "real",
               "examples": [
-                60.0
+                10.0
               ]
             },
             "ppm_ms2": {
               "type": "real",
               "examples": [
-                20.0
+                10.0
               ]
             },
             "mzr_ms2": {
               "type": "real",
               "examples": [
-                0.01
+                0.008
               ]
             },
             "min_cosine_similarity": {
               "type": "real",
               "examples": [
-                0.8
+                0.7
               ]
             },
             "min_shared_fragments": {
               "type": "integer",
               "examples": [
-                1
+                3
               ]
             },
             "filtered": {
@@ -13449,11 +15814,17 @@ inline constexpr char catalogue[] = R"JSON(
               "examples": [
                 {
                   "id": "caffeine",
-                  "mass": 194.0804
+                  "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
                 }
               ],
               "properties": {
                 "id": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "name": {
                   "type": "string",
                   "examples": [
                     "caffeine"
@@ -13548,6 +15919,97 @@ inline constexpr char catalogue[] = R"JSON(
                   "examples": [
                     1040.0
                   ]
+                },
+                "formula": {
+                  "type": "string",
+                  "examples": [
+                    "C8H10N4O2"
+                  ]
+                },
+                "SMILES": {
+                  "type": "string",
+                  "examples": [
+                    "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                  ]
+                },
+                "InChI": {
+                  "type": "string"
+                },
+                "InChIKey": {
+                  "type": "string"
+                },
+                "xLogP": {
+                  "type": "real",
+                  "examples": [
+                    0.5
+                  ]
+                },
+                "score": {
+                  "type": "real",
+                  "examples": [
+                    1.0
+                  ]
+                },
+                "database_id": {
+                  "type": "string"
+                },
+                "fragments_mz_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066,
+                      195.088
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0,
+                      80.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_mz_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
                 }
               }
             }
@@ -13586,10 +16048,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              60.0
+              10.0
             ]
           },
-          "example": 60.0,
+          "example": 10.0,
           "default": null
         },
         {
@@ -13602,10 +16064,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              20.0
+              10.0
             ]
           },
-          "example": 20.0,
+          "example": 10.0,
           "default": null
         },
         {
@@ -13618,10 +16080,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              0.01
+              0.008
             ]
           },
-          "example": 0.01,
+          "example": 0.008,
           "default": null
         },
         {
@@ -13634,10 +16096,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "real",
             "examples": [
-              0.8
+              0.7
             ]
           },
-          "example": 0.8,
+          "example": 0.7,
           "default": null
         },
         {
@@ -13650,10 +16112,10 @@ inline constexpr char catalogue[] = R"JSON(
           "schema": {
             "type": "integer",
             "examples": [
-              1
+              3
             ]
           },
-          "example": 1,
+          "example": 3,
           "default": null
         },
         {
@@ -13694,11 +16156,14 @@ inline constexpr char catalogue[] = R"JSON(
           "MASS_SPEC_NTA_FEATURES"
         ],
         "writes": [
-          "MASS_SPEC_NTA_FEATURES"
+          "MASS_SPEC_NTA_FEATURES",
+          "MASS_SPEC_NTA_SUSPECTS"
         ]
       },
       "cacheable": true,
-      "required_methods": [],
+      "required_methods": [
+        "mass_spec.find_features"
+      ],
       "single_occurrence": false
     },
     {

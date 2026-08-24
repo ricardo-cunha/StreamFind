@@ -10,10 +10,15 @@
 #include "streamfind/mass_spec/nta_gap_filling.hpp"
 #include "streamfind/mass_spec/nta_alignment.hpp"
 #include "streamfind/mass_spec/nta_suspect_screening.hpp"
+#include "streamfind/mass_spec/nta_assign_transformation_products.hpp"
+#include "streamfind/mass_spec/nta_metfrag_runner.hpp"
+#include "streamfind/external/tools_resolver.hpp"
 
 #include <algorithm>
 #include <cmath>
 #include <filesystem>
+#include <fstream>
+#include <iomanip>
 #include <limits>
 #include <map>
 #include <numeric>
@@ -523,9 +528,229 @@ void load_internal_standards(streamfind::Project &project, nta::PROJECT_NON_TARG
         r.database_id = col_s(row, "database_id"); r.db_ms2_size = col_i(row, "db_ms2_size"); r.db_ms2_mz = col_s(row, "db_ms2_mz");
         r.db_ms2_intensity = col_s(row, "db_ms2_intensity"); r.db_ms2_formula = col_s(row, "db_ms2_formula"); r.db_ms2_smiles = col_s(row, "db_ms2_smiles");
         r.exp_ms2_size = col_i(row, "exp_ms2_size"); r.exp_ms2_mz = col_s(row, "exp_ms2_mz"); r.exp_ms2_intensity = col_s(row, "exp_ms2_intensity");
-        buffers[static_cast<size_t>(it - data.analysis_names().begin())].append(r);
+    buffers[static_cast<size_t>(it - data.analysis_names().begin())].append(r);
     }
 }
+
+    // Map the JSON `transformation_products` parameter (R data.frame columns:
+    // name, transformation, precursor_*/main_precursor_* plus optional product
+    // formula/mass/SMILES/InChI/InChIKey/xLogP) into model rows. Mirrors the R
+    // wrapper's required-column checks (16 mandatory columns, at least one product
+    // structure identifier); absent numbers become NaN like R NA values.
+    std::vector<nta::api::NTA_TRANSFORMATION_PRODUCT_ROW> parse_transformation_products(const Json &parameters) {
+        std::vector<nta::api::NTA_TRANSFORMATION_PRODUCT_ROW> out;
+        const auto rows = parameters.value("transformation_products", Json::array());
+        if (!rows.is_array()) throw Error(ErrorCode::InvalidArgument, "transformation_products must be an array");
+        if (rows.empty()) return out;
+        static const char *required_cols[] = {
+            "name", "transformation",
+            "precursor_name", "precursor_formula", "precursor_mass",
+            "precursor_SMILES", "precursor_InChI", "precursor_InChIKey", "precursor_xLogP",
+            "main_precursor_name", "main_precursor_formula", "main_precursor_mass",
+            "main_precursor_SMILES", "main_precursor_InChI", "main_precursor_InChIKey", "main_precursor_xLogP"};
+        const double nan = std::numeric_limits<double>::quiet_NaN();
+        auto str = [](const Json &o, const char *key) {
+            auto it = o.find(key);
+            return (it != o.end() && !it->is_null()) ? it->get<std::string>() : std::string();
+        };
+        auto num = [&](const Json &o, const char *key) {
+            auto it = o.find(key);
+            return (it != o.end() && !it->is_null()) ? it->get<double>() : nan;
+        };
+        for (const auto &t : rows) {
+            if (!t.is_object()) throw Error(ErrorCode::InvalidArgument, "transformation_products entries must be objects");
+            for (const char *col : required_cols) {
+                if (!t.contains(col))
+                    throw Error(ErrorCode::InvalidArgument, std::string("transformation_products rows require column '") + col + "'");
+            }
+            const bool has_structure = t.contains("SMILES") || t.contains("InChI") || t.contains("InChIKey");
+            if (!has_structure)
+                throw Error(ErrorCode::InvalidArgument, "transformation_products rows require at least one of SMILES, InChI, or InChIKey");
+            nta::api::NTA_TRANSFORMATION_PRODUCT_ROW r;
+            r.name = str(t, "name");
+            r.formula = str(t, "formula");
+            r.mass = num(t, "mass");
+            r.SMILES = str(t, "SMILES");
+            r.InChI = str(t, "InChI");
+            r.InChIKey = str(t, "InChIKey");
+            r.xLogP = num(t, "xLogP");
+            r.transformation = str(t, "transformation");
+            r.precursor_name = str(t, "precursor_name");
+            r.precursor_formula = str(t, "precursor_formula");
+            r.precursor_mass = num(t, "precursor_mass");
+            r.precursor_SMILES = str(t, "precursor_SMILES");
+            r.precursor_InChI = str(t, "precursor_InChI");
+            r.precursor_InChIKey = str(t, "precursor_InChIKey");
+            r.precursor_xLogP = num(t, "precursor_xLogP");
+            r.main_precursor_name = str(t, "main_precursor_name");
+            r.main_precursor_formula = str(t, "main_precursor_formula");
+            r.main_precursor_mass = num(t, "main_precursor_mass");
+            r.main_precursor_SMILES = str(t, "main_precursor_SMILES");
+            r.main_precursor_InChI = str(t, "main_precursor_InChI");
+            r.main_precursor_InChIKey = str(t, "main_precursor_InChIKey");
+            r.main_precursor_xLogP = num(t, "main_precursor_xLogP");
+            out.push_back(std::move(r));
+        }
+        return out;
+    }
+
+    // Append assign_transformation_products output rows to the per-analysis suspect
+    // buffers. Each output row is placed in the analysis whose suspect buffer
+    // contains the resolved product feature group (falling back to the resolved
+    // parent groups, then to the buffer holding the most suspects). Context fields
+    // (polarity, RT, intensity, experimental MS2) are carried over from a
+    // representative suspect of the target analysis when one exists. The `feature`
+    // cell is synthesized per row so the SUSPECTS primary key
+    // (project_id, analysis, feature) stays unique.
+    void append_transformation_products_to_suspects(nta::PROJECT_NON_TARGET_ANALYSIS &data,
+                                                    const nta::api::NTA_TRANSFORMATION_PRODUCTS &products) {
+        auto &buffers = data.suspect_buffers();
+        const auto &names = data.analysis_names();
+        const double nan = std::numeric_limits<double>::quiet_NaN();
+
+        auto analysis_of_group = [&](const std::string &fg) -> int {
+            if (fg.empty()) return -1;
+            for (size_t a = 0; a < buffers.size(); ++a)
+                for (int i = 0; i < buffers[a].size(); ++i)
+                    if (buffers[a].get_suspect(i).feature_group == fg)
+                        return static_cast<int>(a);
+            return -1;
+        };
+
+        int fallback_analysis = 0;
+        int fallback_count = -1;
+        for (size_t a = 0; a < buffers.size(); ++a)
+            if (buffers[a].size() > fallback_count) {
+                fallback_count = buffers[a].size();
+                fallback_analysis = static_cast<int>(a);
+            }
+
+        for (int i = 0; i < products.size(); ++i) {
+            const auto row = products.get_transformation_product(i);
+            int a = analysis_of_group(row.feature_group);
+            if (a < 0) a = analysis_of_group(row.resolved_direct_parent_feature_group);
+            if (a < 0) a = analysis_of_group(row.resolved_main_parent_feature_group);
+            if (a < 0) a = fallback_analysis;
+
+            int rep = -1;
+            for (int s = 0; s < buffers[a].size(); ++s) {
+                const auto cand = buffers[a].get_suspect(s);
+                if (cand.feature_group == row.feature_group) { rep = s; break; }
+            }
+            if (rep < 0 && buffers[a].size() > 0) rep = 0;
+
+            const auto rep_suspect = rep >= 0 ? buffers[a].get_suspect(rep) : nta::api::NTA_SUSPECT_ROW();
+
+            nta::api::NTA_SUSPECT_ROW s;
+            s.analysis = names[static_cast<size_t>(a)];
+            s.feature = rep >= 0 ? rep_suspect.feature + "_transform_" + std::to_string(i)
+                                 : "transform_" + std::to_string(i);
+            s.feature_group = row.feature_group;
+            s.candidate_rank = row.assignment_rank;
+            s.name = row.name;
+            s.polarity = rep_suspect.polarity;
+            s.db_mass = row.mass;
+            s.exp_mass = rep_suspect.exp_mass;
+            s.error_mass = nan;
+            s.db_rt = nan;
+            s.exp_rt = rep_suspect.exp_rt;
+            s.error_rt = nan;
+            s.intensity = rep_suspect.intensity;
+            s.area = rep_suspect.area;
+            s.id_level = 0;
+            s.score = row.assignment_score;
+            s.shared_fragments = 0;
+            s.cosine_similarity = row.cosine_similarity;
+            s.formula = row.formula;
+            s.SMILES = row.SMILES;
+            s.InChI = row.InChI;
+            s.InChIKey = row.InChIKey;
+            s.xLogP = row.xLogP;
+            s.database_id = "";
+            s.db_ms2_size = 0;
+            s.db_ms2_mz = "";
+            s.db_ms2_intensity = "";
+            s.db_ms2_formula = "";
+            s.db_ms2_smiles = "";
+            s.exp_ms2_size = rep_suspect.exp_ms2_size;
+            s.exp_ms2_mz = rep_suspect.exp_ms2_mz;
+            s.exp_ms2_intensity = rep_suspect.exp_ms2_intensity;
+            buffers[static_cast<size_t>(a)].append(s);
+        }
+    }
+
+    // Write the MetFrag LocalCSV database from the JSON `database` parameter rows
+    // (name, formula, mass, SMILES, InChI, InChIKey, xLogP), mirroring the R
+    // binding's write_local_metfrag_database. The runner's normalize_localcsv_database
+    // step maps the user-friendly columns onto MetFrag's required identifiers.
+    std::string write_local_metfrag_database(const Json &database, const std::string &run_dir) {
+        if (!database.is_array() || database.empty())
+            throw Error(ErrorCode::InvalidArgument, "Local MetFrag database must contain at least one row.");
+        auto str = [](const Json &o, const char *key) {
+            auto it = o.find(key);
+            return (it != o.end() && !it->is_null()) ? it->get<std::string>() : std::string();
+        };
+        auto num = [](const Json &o, const char *key) {
+            auto it = o.find(key);
+            return (it != o.end() && !it->is_null()) ? it->get<double>()
+                                                     : std::numeric_limits<double>::quiet_NaN();
+        };
+        auto csv_escape = [](const std::string &value) {
+            if (value.find_first_of(",\"\r\n") == std::string::npos) return value;
+            std::string out;
+            out.reserve(value.size() + 2);
+            out.push_back('"');
+            for (char c : value) {
+                if (c == '"') out += "\"\"";
+                else out.push_back(c);
+            }
+            out.push_back('"');
+            return out;
+        };
+        auto write_num = [](double value) {
+            if (std::isnan(value)) return std::string();
+            std::ostringstream oss;
+            oss << std::fixed << std::setprecision(10) << value;
+            return oss.str();
+        };
+
+        const std::string out_path = (std::filesystem::path(run_dir) / "metfrag_local_database.csv").string();
+        std::ofstream out(out_path);
+        if (!out.is_open()) throw Error(ErrorCode::InvalidArgument, "Cannot write local MetFrag database to: " + out_path);
+        out << "name,formula,mass,rt,SMILES,InChI,InChIKey,xLogP\n";
+        for (const auto &t : database) {
+            if (!t.is_object()) throw Error(ErrorCode::InvalidArgument, "database entries must be objects");
+            out << csv_escape(str(t, "name")) << ','
+                << csv_escape(str(t, "formula")) << ','
+                << csv_escape(write_num(num(t, "mass"))) << ','
+                << ','  // rt is not part of the wire schema; kept empty like the R passthrough
+                << csv_escape(str(t, "SMILES")) << ','
+                << csv_escape(str(t, "InChI")) << ','
+                << csv_escape(str(t, "InChIKey")) << ','
+                << csv_escape(write_num(num(t, "xLogP"))) << '\n';
+        }
+        return out_path;
+    }
+
+    // Normalize the MetFrag database_type exactly like R's
+    // .normalize_metfrag_database_type (case-insensitive match against the R
+    // choices) plus the run() mapping "Local" -> "LocalCSV".
+    std::string normalize_metfrag_database_type(const std::string &database_type) {
+        static const std::vector<std::string> r_types = {"KEGG", "PubChem", "ExtendedPubChem", "Local"};
+        std::string lowered = database_type;
+        std::transform(lowered.begin(), lowered.end(), lowered.begin(), [](unsigned char c) {
+            return static_cast<char>(std::tolower(c));
+        });
+        for (const auto &t : r_types) {
+            std::string lt = t;
+            std::transform(lt.begin(), lt.end(), lt.begin(), [](unsigned char c) {
+                return static_cast<char>(std::tolower(c));
+            });
+            if (lt == lowered) return t == "Local" ? std::string("LocalCSV") : t;
+        }
+    throw Error(ErrorCode::WorkflowValidation,
+        "database_type must be one of: KEGG, PubChem, ExtendedPubChem, Local.");
+    }
 
 } // namespace detail
 
@@ -974,8 +1199,112 @@ Json correct_matrix_suppression(streamfind::Project &project, const Json &parame
     auto data = detail::load_analysis_features(project, parameters);
     detail::load_internal_standards(project, data);
     nta::correction_algorithms::correct_matrix_suppression_impl(data, mp_rt_window, ref_blank_replicate);
-    detail::persist_features(project, data);
-    return Json{{"status","finished"},{"info","Matrix suppression corrected."}};
-}
+        detail::persist_features(project, data);
+        return Json{{"status","finished"},{"info","Matrix suppression corrected."}};
+    }
+
+Json assign_transformation_products(streamfind::Project &project, const Json &parameters) {
+    // R defaults (catalogue carries no defaults; the executor mirrors the R method).
+    const std::string phase = parameters.value("chromatographic_phase", std::string("reverse_phase"));
+    const double mzr_ms2 = parameters.value("mzr_ms2", 0.008);
+    if (phase != "reverse_phase" && phase != "hilic")
+        throw Error(ErrorCode::InvalidArgument, "invalid assign_transformation_products parameters: chromatographic_phase must be reverse_phase or hilic");
+    if (mzr_ms2 < 0)
+        throw Error(ErrorCode::InvalidArgument, "invalid assign_transformation_products parameters: mzr_ms2 must be >= 0");
+
+    // Operate on the current suspects buffer (from suspect_screening): load the
+    // per-analysis features/analyses plus the persisted suspects, run the
+    // algorithm over the combined suspect rows, append the combination-scored
+    // rows back into the suspect buffers, and persist through the suspects path.
+    auto data = detail::load_analysis_features(project, parameters);
+    detail::load_suspects(project, data);
+    const auto tp_rows = detail::parse_transformation_products(parameters);
+
+    std::vector<nta::api::NTA_SUSPECT_ROW> suspects;
+    for (const auto &buffer : data.suspect_buffers())
+        for (int i = 0; i < buffer.size(); ++i)
+            suspects.push_back(buffer.get_suspect(i));
+
+    const auto products = nta::assign_transformation_products::assign_transformation_products_impl(
+        suspects, tp_rows, phase, mzr_ms2);
+    detail::append_transformation_products_to_suspects(data, products);
+    detail::persist_suspects(project, data);
+    return Json{{"status","finished"},{"info","Transformation products assigned."}};
+    }
+
+    Json metfrag_screening(streamfind::Project &project, const Json &parameters) {
+    // Tool resolution mirrors R's get_metfrag_path()/get_java_path() NA checks.
+    const auto tool = streamfind::tools::resolve_metfrag();
+    if (!tool)
+        throw Error(ErrorCode::MethodExecution, "MetFrag command line is not installed; run 'streamfind tools install'");
+
+    const std::string database_type = detail::normalize_metfrag_database_type(
+        parameters.value("database_type", std::string("PubChem")));
+    // R method defaults.
+    const double ppm = parameters.value("ppm", 5.0);
+    const double sec = parameters.value("sec", 10.0);
+    const double ppm_ms2 = parameters.value("ppm_ms2", 10.0);
+    const double mzr_ms2 = parameters.value("mzr_ms2", 0.008);
+    const int top_n = parameters.value("top_n", 5);
+    std::vector<std::string> score_types;
+    for (const auto &v : parameters.value("score_types", Json::array({Json("FragmenterScore")})))
+        score_types.push_back(v.get<std::string>());
+    std::vector<double> score_weights;
+    for (const auto &v : parameters.value("score_weights", Json::array({Json(1.0)})))
+        score_weights.push_back(v.get<double>());
+    std::vector<std::string> pre_processing_candidate_filter;
+    for (const auto &v : parameters.value("pre_processing_candidate_filter",
+            Json::array({Json("UnconnectedCompoundFilter"), Json("IsotopeFilter")})))
+        pre_processing_candidate_filter.push_back(v.get<std::string>());
+    std::vector<std::string> post_processing_candidate_filter;
+    for (const auto &v : parameters.value("post_processing_candidate_filter", Json::array({Json("InChIKeyFilter")})))
+        post_processing_candidate_filter.push_back(v.get<std::string>());
+    const int maximum_tree_depth = parameters.value("maximum_tree_depth", 3);
+    const int number_threads = parameters.value("number_threads", 1);
+    const bool use_smiles = parameters.value("use_smiles", true);
+    const bool filtered = parameters.value("filtered", false);
+    // `debug` is accepted for schema parity; the runner keeps the inspectable
+    // PSV output for features with candidates regardless (R never forwards it).
+
+    if (ppm < 0 || sec < 0 || ppm_ms2 < 0 || mzr_ms2 < 0)
+        throw Error(ErrorCode::InvalidArgument, "invalid metfrag_screening parameters: ppm, sec, ppm_ms2, and mzr_ms2 must be >= 0");
+    if (top_n < 1)
+        throw Error(ErrorCode::InvalidArgument, "invalid metfrag_screening parameters: top_n must be >= 1");
+    if (maximum_tree_depth < 1)
+        throw Error(ErrorCode::InvalidArgument, "invalid metfrag_screening parameters: maximum_tree_depth must be >= 1");
+    if (number_threads < 1)
+        throw Error(ErrorCode::InvalidArgument, "invalid metfrag_screening parameters: number_threads must be >= 1");
+    if (score_types.size() != score_weights.size())
+        throw Error(ErrorCode::InvalidArgument, "invalid metfrag_screening parameters: score_types and score_weights must have the same length");
+
+    auto data = detail::load_analysis_features(project, parameters);
+    nta::metfrag_runner::MetFragParams p;
+    p.metfrag_path = tool->second;   // MetFragCL.jar
+    p.java_path = tool->first;       // java executable
+    p.database_type = database_type;
+    p.ppm = ppm;
+    p.sec = sec;
+    p.ppmMS2 = ppm_ms2;
+    p.mzrMS2 = mzr_ms2;
+    p.top_n = top_n;
+    p.score_types = std::move(score_types);
+    p.score_weights = std::move(score_weights);
+    p.pre_processing_candidate_filter = std::move(pre_processing_candidate_filter);
+    p.post_processing_candidate_filter = std::move(post_processing_candidate_filter);
+    p.candidate_writer = {"CSV", "FragmentSmilesPSV"};
+    p.maximum_tree_depth = maximum_tree_depth;
+    p.number_threads = number_threads;
+    p.use_smiles = use_smiles;
+    p.filtered = filtered;
+    p.run_dir = nta::metfrag_runner::resolve_run_dir(p);
+    if (p.database_type == "LocalCSV") {
+        std::filesystem::create_directories(p.run_dir);
+        p.database_path = detail::write_local_metfrag_database(
+            parameters.value("database", Json::array()), p.run_dir);
+    }
+    nta::metfrag_runner::metfrag_screening_impl(data, data.analysis_names(), p);
+    detail::persist_suspects(project, data);
+    return Json{{"status","finished"},{"info","MetFrag screening completed."}};
+    }
 
 } // namespace streamfind::mass_spec::processing_methods

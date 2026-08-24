@@ -76,12 +76,17 @@ def projection():
         return str(graph.value(result, SF.type))
 
     def method_metadata(method):
-        required = graph.value(method, SF.requiredMethods)
-        return {
-            "cacheable": bool(graph.value(method, SF.cacheable).toPython()),
-            "required_methods": [str(value) for value in graph.items(required)] if required else [],
-            "single_occurrence": bool(graph.value(method, SF.singleOccurrence).toPython()),
-        }
+            required = graph.value(method, SF.requiredMethods)
+            required_methods = []
+            if required:
+                for value in graph.items(required):
+                    canonical = graph.value(value, SF.methodId) or graph.value(value, SF.operationId)
+                    required_methods.append(str(canonical) if canonical else str(value))
+            return {
+                "cacheable": bool(graph.value(method, SF.cacheable).toPython()),
+                "required_methods": required_methods,
+                "single_occurrence": bool(graph.value(method, SF.singleOccurrence).toPython()),
+            }
 
     def result_schema(result):
         if result is None:

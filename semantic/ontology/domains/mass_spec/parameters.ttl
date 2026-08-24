@@ -63,9 +63,9 @@ sfms:rtWindowsMinParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Feature RT window minimums" ;
-    skos:definition "Lower retention-time bounds for feature detection windows." ;
+    skos:definition "Lower retention-time bounds for feature detection windows; omitted or empty means the full retention-time range." ;
     sf:type "array" ;
-    sf:required true ;
+    sf:required false ;
     sf:items sfcore:realItemParameter ;
     sf:example "[0.0]" .
 
@@ -73,11 +73,22 @@ sfms:rtWindowsMaxParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Feature RT window maximums" ;
-    skos:definition "Upper retention-time bounds for feature detection windows." ;
+    skos:definition "Upper retention-time bounds for feature detection windows; omitted or empty means the full retention-time range." ;
     sf:type "array" ;
-    sf:required true ;
+    sf:required false ;
     sf:items sfcore:realItemParameter ;
     sf:example "[1800.0]" .
+
+sfms:methodParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Feature grouping alignment method" ;
+    skos:definition "Alignment method used when grouping features across analyses: internal_standards or obi_warp." ;
+    sf:type "string" ;
+    sf:required false ;
+    sf:constraints "internal_standards|obi_warp" ;
+    sf:example "internal_standards" .
+
 
 sfms:ppmThresholdParameter
     a sf:Parameter ;
@@ -95,7 +106,7 @@ sfms:noiseThresholdParameter
     skos:definition "Minimum MS1 intensity considered during feature detection." ;
     sf:type "real" ;
     sf:required false ;
-    sf:example 15.0 .
+    sf:example 250.0 .
 
 sfms:minSnrParameter
     a sf:Parameter ;
@@ -122,7 +133,7 @@ sfms:baselineWindowParameter
     skos:definition "Retention-time baseline window used by NTA peak detection.";
     sf:type "real";
     sf:required false ;
-    sf:example 30.0 .
+    sf:example 200.0 .
 
 sfms:maxFeatureWidthParameter
     a sf:Parameter ;
@@ -131,7 +142,7 @@ sfms:maxFeatureWidthParameter
     skos:definition "Maximum chromatographic peak width used by NTA peak detection.";
     sf:type "real";
     sf:required false ;
-    sf:example 30.0 .
+    sf:example 100.0 .
 
 sfms:baseQuantileParameter
     a sf:Parameter ;
@@ -146,7 +157,7 @@ sfms:targetsParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Mass spectrometry targets" ;
-    skos:definition "Array of independent target objects." ;
+    skos:definition "Array of independent target objects accepted by feature queries and by suspect/internal-standard screening." ;
     sf:type "array" ;
     sf:required false ;
     sf:example "[{\"id\":\"caffeine\",\"mass\":194.0804}]" ;
@@ -156,12 +167,13 @@ sfms:targetRangeParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Mass spectrometry target" ;
-    skos:definition "One independent mass spectrometry target object." ;
+    skos:definition "One independent target object shared by feature queries and suspect/internal-standard screening. Numeric fields (mass, m/z, rt and their bounds) are used directly. Chemical identity fields (SMILES, InChI, formula) are accepted by both consumers: suspect screening normalizes them fully with Open Babel, and numeric operations derive the exact mass with Open Babel when no numeric mass/mz is given, converting to an m/z window with the target polarity adduct (both [M+H]+ and [M-H]- when polarity is unspecified) so the analysis's actual polarity selects the hit." ;
     sf:type "object" ;
     sf:required true ;
-    sf:example "{\"id\":\"caffeine\",\"mass\":194.0804}" ;
+    sf:example "{\"id\":\"caffeine\",\"SMILES\":\"CN1C=NC2=C1C(=O)N(C(=O)N2C)C\"}" ;
     sf:hasProperty
         sfms:targetIdField,
+        sfms:suspectNameField,
         sfms:targetAnalysesField,
         sfms:targetPolarityField,
         sfms:targetLevelsField,
@@ -173,7 +185,18 @@ sfms:targetRangeParameter
         sfms:targetMzMaxField,
         sfms:targetRtField,
         sfms:targetRtMinField,
-        sfms:targetRtMaxField .
+        sfms:targetRtMaxField,
+        sfms:suspectFormulaField,
+        sfms:suspectSmilesField,
+        sfms:suspectInChIField,
+        sfms:suspectInChIKeyField,
+        sfms:suspectXLogPField,
+        sfms:suspectScoreField,
+        sfms:suspectDatabaseIdField,
+        sfms:suspectFragmentsMzPosField,
+        sfms:suspectFragmentsIntensityPosField,
+        sfms:suspectFragmentsMzNegField,
+        sfms:suspectFragmentsIntensityNegField .
 
 sfms:polarityParameter
     a sf:Parameter ;
@@ -320,7 +343,7 @@ sfms:minTracesIntensityParameter
     skos:definition "Minimum intensity a spectrum must meet to be considered for feature spectrum loading." ;
     sf:type "real" ;
     sf:required false ;
-    sf:example 0.0 .
+    sf:example 1000.0 .
 
 sfms:rtExpandParameter
     a sf:Parameter ;
@@ -329,7 +352,7 @@ sfms:rtExpandParameter
     skos:definition "Retention-time window expanded around a target feature when matching across analyses." ;
     sf:type "real" ;
     sf:required false ;
-    sf:example 60.0 .
+    sf:example 10.0 .
 
 sfms:mzExpandParameter
     a sf:Parameter ;
@@ -365,7 +388,7 @@ sfms:maxChargeParameter
     skos:definition "Maximum charge state considered during isotope annotation." ;
     sf:type "integer" ;
     sf:required false ;
-    sf:example 2 .
+    sf:example 1 .
 
 sfms:maxGapsParameter
     a sf:Parameter ;
@@ -374,7 +397,7 @@ sfms:maxGapsParameter
     skos:definition "Maximum allowed gaps in a feature annotation chain." ;
     sf:type "integer" ;
     sf:required false ;
-    sf:example 3 .
+    sf:example 1 .
 
 sfms:isotopeElementsParameter
     a sf:Parameter ;
@@ -411,7 +434,7 @@ sfms:rtDeviationParameter
     skos:definition "Retention-time deviation tolerance used when grouping features." ;
     sf:type "real" ;
     sf:required false ;
-    sf:example 40.0 .
+    sf:example 5.0 .
 
 sfms:minNumberTracesParameter
     a sf:Parameter ;
@@ -420,7 +443,7 @@ sfms:minNumberTracesParameter
     skos:definition "Minimum number of EIC traces required to fill a feature gap." ;
     sf:type "integer" ;
     sf:required false ;
-    sf:example 3 .
+    sf:example 5 .
 
 sfms:rtApexDeviationParameter
     a sf:Parameter ;
@@ -447,7 +470,7 @@ sfms:minGaussianFitParameter
     skos:definition "Minimum Gaussian fit R-squared for a filled feature peak." ;
     sf:type "real" ;
     sf:required false ;
-    sf:example 0.8 .
+    sf:example 0.2 .
 
 sfms:maxPeakWidthParameter
     a sf:Parameter ;
@@ -474,7 +497,7 @@ sfms:blankThresholdParameter
     skos:definition "Fraction of blank intensity above which a feature is flagged as contamination." ;
     sf:type "real" ;
     sf:required false ;
-    sf:example 0.3 .
+    sf:example 5.0 .
 
 sfms:secParameter
     a sf:Parameter ;
@@ -483,7 +506,7 @@ sfms:secParameter
     skos:definition "Retention-time tolerance in seconds used during suspect screening." ;
     sf:type "real" ;
     sf:required false ;
-    sf:example 60.0 .
+    sf:example 10.0 .
 
 sfms:ppmMs2Parameter
     a sf:Parameter ;
@@ -492,7 +515,7 @@ sfms:ppmMs2Parameter
     skos:definition "m/z tolerance in ppm used when matching MS2 fragments." ;
     sf:type "real" ;
     sf:required false ;
-    sf:example 20.0 .
+    sf:example 10.0 .
 
 sfms:mzrMs2Parameter
     a sf:Parameter ;
@@ -501,7 +524,7 @@ sfms:mzrMs2Parameter
     skos:definition "m/z tolerance used when matching MS2 fragment ratios." ;
     sf:type "real" ;
     sf:required false ;
-    sf:example 0.01 .
+    sf:example 0.008 .
 
 sfms:minCosineSimilarityParameter
     a sf:Parameter ;
@@ -510,7 +533,7 @@ sfms:minCosineSimilarityParameter
     skos:definition "Minimum cosine similarity for an MS2 match to be accepted." ;
     sf:type "real" ;
     sf:required false ;
-    sf:example 0.8 .
+    sf:example 0.7 .
 
 sfms:minSharedFragmentsParameter
     a sf:Parameter ;
@@ -519,7 +542,7 @@ sfms:minSharedFragmentsParameter
     skos:definition "Minimum number of shared MS2 fragments required for an assignment." ;
     sf:type "integer" ;
     sf:required false ;
-    sf:example 1 .
+    sf:example 3 .
 
 sfms:topParameter
     a sf:Parameter ;
@@ -910,3 +933,173 @@ sfms:idLevelsParameter
     sf:items sfcore:integerItemParameter ;
     sf:example "[1,2,3]" .
 
+
+sfms:transformationProductRangeParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Transformation product" ;
+    skos:definition "One transformation-product candidate: product identity (name, transformation, at least one of SMILES/InChI/InChIKey) plus precursor and main-precursor descriptors." ;
+    sf:type "object" ;
+    sf:required true ;
+    sf:example "{\"name\":\"Metoprolol O-dealkylation\",\"transformation\":\"O-Dealkylation\",\"precursor_name\":\"Metoprolol\",\"precursor_mass\":267.1834,\"SMILES\":\"COCCc1ccc(cc1)OCC(CNC(C)C)O\"}" ;
+    sf:hasProperty
+        sfms:tpProductNameField,
+        sfms:tpTransformationField,
+        sfms:tpPrecursorNameField,
+        sfms:tpPrecursorFormulaField,
+        sfms:tpPrecursorMassField,
+        sfms:tpPrecursorSmilesField,
+        sfms:tpPrecursorInChIField,
+        sfms:tpPrecursorInChIKeyField,
+        sfms:tpPrecursorXLogPField,
+        sfms:tpMainPrecursorNameField,
+        sfms:tpMainPrecursorFormulaField,
+        sfms:tpMainPrecursorMassField,
+        sfms:tpMainPrecursorSmilesField,
+        sfms:tpMainPrecursorInChIField,
+        sfms:tpMainPrecursorInChIKeyField,
+        sfms:tpMainPrecursorXLogPField,
+        sfms:suspectSmilesField,
+        sfms:suspectInChIField,
+        sfms:suspectInChIKeyField .
+
+sfms:transformationProductsParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Transformation products" ;
+    skos:definition "Transformation-product candidate table (array of objects) used to assign plausible products to suspected features." ;
+    sf:type "array" ;
+    sf:required false ;
+    sf:example "[{\"name\":\"Metoprolol O-dealkylation\",\"transformation\":\"O-Dealkylation\"}]" ;
+    sf:items sfms:transformationProductRangeParameter .
+
+sfms:chromatographicPhaseParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Chromatographic phase" ;
+    skos:definition "Chromatographic phase used for RT-plausibility scoring: reverse_phase or hilic." ;
+    sf:type "string" ;
+    sf:required false ;
+    sf:constraints "reverse_phase|hilic" ;
+    sf:example "reverse_phase" .
+
+sfms:databaseTypeParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "MetFrag database type" ;
+    skos:definition "MetFrag candidate database: PubChem, CS, ChemSpider, LocalCSV, ... (R .normalize_metfrag_database_type)." ;
+    sf:type "string" ;
+    sf:required false ;
+    sf:example "PubChem" .
+
+sfms:databaseParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "MetFrag candidate database" ;
+    skos:definition "Local candidate database rows for LocalCSV mode: name, formula, mass, SMILES, InChI, InChIKey, xLogP." ;
+    sf:type "array" ;
+    sf:required false ;
+    sf:example "[{\"name\":\"Metoprolol\",\"formula\":\"C15H25NO3\",\"mass\":267.1834}]" ;
+    sf:items sfms:databaseRangeParameter .
+
+sfms:databaseRangeParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "MetFrag database row" ;
+    skos:definition "One local candidate database row." ;
+    sf:type "object" ;
+    sf:required true ;
+    sf:example "{\"name\":\"Metoprolol\",\"mass\":267.1834}" ;
+    sf:hasProperty
+        sfms:suspectNameField,
+        sfms:suspectFormulaField,
+        sfms:targetMassField,
+        sfms:suspectSmilesField,
+        sfms:suspectInChIField,
+        sfms:suspectInChIKeyField,
+        sfms:suspectXLogPField .
+
+sfms:topNParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "MetFrag top N candidates" ;
+    skos:definition "Maximum number of MetFrag candidate fragments retained per feature." ;
+    sf:type "integer" ;
+    sf:required false ;
+    sf:example 5 .
+
+sfms:scoreTypesParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "MetFrag score types" ;
+    skos:definition "MetFrag scoring method names; paired with score_weights." ;
+    sf:type "array" ;
+    sf:required false ;
+    sf:items sfcore:stringItemParameter ;
+    sf:example "[\"FragmenterScore\"]" .
+
+sfms:scoreWeightsParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "MetFrag score weights" ;
+    skos:definition "Weights paired with score_types (same length)." ;
+    sf:type "array" ;
+    sf:required false ;
+    sf:items sfcore:realItemParameter ;
+    sf:example "[1.0]" .
+
+sfms:preProcessingCandidateFilterParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "MetFrag pre-processing filters" ;
+    skos:definition "MetFrag candidate filters applied before scoring." ;
+    sf:type "array" ;
+    sf:required false ;
+    sf:items sfcore:stringItemParameter ;
+    sf:example "[\"UnconnectedCompoundFilter\",\"IsotopeFilter\"]" .
+
+sfms:postProcessingCandidateFilterParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "MetFrag post-processing filters" ;
+    skos:definition "MetFrag candidate filters applied after scoring." ;
+    sf:type "array" ;
+    sf:required false ;
+    sf:items sfcore:stringItemParameter ;
+    sf:example "[\"InChIKeyFilter\"]" .
+
+sfms:maximumTreeDepthParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "MetFrag maximum tree depth" ;
+    skos:definition "Maximum MetFrag fragmentation tree depth." ;
+    sf:type "integer" ;
+    sf:required false ;
+    sf:example 3 .
+
+sfms:numberThreadsParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "MetFrag number of threads" ;
+    skos:definition "Thread count for the MetFrag command line." ;
+    sf:type "integer" ;
+    sf:required false ;
+    sf:example 1 .
+
+sfms:useSmilesParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "MetFrag use SMILES" ;
+    skos:definition "Whether the candidate SMILES is passed to MetFrag." ;
+    sf:type "boolean" ;
+    sf:required false ;
+    sf:example true .
+
+sfms:debugParameter
+    a sf:Parameter ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Debug" ;
+    skos:definition "Whether to keep debug/result files (e.g. MetFrag PSV outputs)." ;
+    sf:type "boolean" ;
+    sf:required false ;
+    sf:example false .

@@ -169,9 +169,6 @@ int run_nta_wastewater_conformance(bool quantized) {
     if (add_result.at("row_count") != N) return fail("add_analyses");
 
     auto run = [&](const std::string &id, const streamfind::Json &params) -> streamfind::Json {
-        streamfind::Workflow wf; wf.domain = "mass_spec";
-        wf.steps.push_back({id, streamfind::ParameterValues::from_json(params)});
-        project.set_workflow(std::move(wf), registry);
         return project.run_method(id, params, registry);
     };
     auto finished = [](const streamfind::Json &r) { return r.value("status", "") == "finished"; };
@@ -209,6 +206,68 @@ int run_nta_wastewater_conformance(bool quantized) {
             {"rt_windows_min", streamfind::Json::array()}, {"rt_windows_max", streamfind::Json::array()},
             {"ppm_threshold", 10.0}, {"noise_threshold", 250.0}, {"min_snr", 3.0},
             {"min_traces", 3}, {"baseline_window", 200.0}, {"max_feature_width", 100.0}, {"base_quantile", 0.99}};
+
+    // Parameter sets for the remaining pipeline steps.
+    const streamfind::Json create_params = {
+        {"analysis_names", analysis_names},
+        {"rt_window", streamfind::Json::array({streamfind::Json(-2.5), streamfind::Json(2.5)})},
+        {"min_correlation", 0.85}};
+    const streamfind::Json annotate_params = {
+        {"analysis_names", analysis_names},
+        {"max_isotopes", 8}, {"max_charge", 1}, {"max_gaps", 1}, {"ppm", 10.0},
+        {"isotope_elements", streamfind::Json::array({streamfind::Json("C:1-80"), streamfind::Json("N:0-10"),
+            streamfind::Json("O:0-20"), streamfind::Json("S:0-4"), streamfind::Json("Cl:0-6"), streamfind::Json("Br:0-4")})}};
+    const streamfind::Json load_ms2_params = {
+        {"analysis_names", analysis_names}, {"filtered", false},
+        {"min_traces_intensity", 10.0}, {"isolation_window", 1.3}, {"mz_clust", 0.008}, {"presence", 0.5}};
+    const auto is_csv = (ww / "internal_standards.csv").string();
+    const streamfind::Json is_targets = targets_from_csv(is_csv);
+    const streamfind::Json is_params = {
+        {"analysis_names", analysis_names}, {"targets", is_targets},
+        {"ppm", 10.0}, {"sec", 15.0}, {"ppm_ms2", 10.0}, {"mzr_ms2", 0.008},
+        {"min_cosine_similarity", 0.7}, {"min_shared_fragments", 3}, {"filtered", true}};
+    const streamfind::Json filter_is_params = {
+        {"analysis_names", analysis_names},
+        {"id_levels", streamfind::Json::array({streamfind::Json(1), streamfind::Json(2), streamfind::Json(3)})}};
+    const streamfind::Json group_params = {
+        {"analysis_names", analysis_names}, {"method", "internal_standards"},
+        {"rt_deviation", 5.0}, {"ppm", 10.0}, {"min_samples", 1}, {"bin_size", 5.0}};
+    const streamfind::Json subtract_params = {
+        {"analysis_names", analysis_names}, {"blank_threshold", 5.0}, {"rt_expand", 10.0}, {"mz_expand", 0.005}};
+    const streamfind::Json filter_params = {
+        {"analysis_names", analysis_names},
+        {"min_intensity", 10000.0},
+        {"remove_isotopes", true}, {"remove_adducts", true}, {"remove_losses", true}};
+    // Step 10: suspect_screening before filter_suspects (filter_suspects requires it
+    // earlier in the workflow), using the suspects.csv targets and the same
+    // parameters as the find_internal_standards step.
+    const auto suspects_csv = (ww / "suspects.csv").string();
+    const streamfind::Json suspect_targets = targets_from_csv(suspects_csv);
+    std::cout << "suspect targets parsed: " << suspect_targets.size() << "\n";
+    const streamfind::Json suspect_params = {
+        {"analysis_names", analysis_names}, {"targets", suspect_targets},
+        {"ppm", 10.0}, {"sec", 15.0}, {"ppm_ms2", 10.0}, {"mzr_ms2", 0.008},
+        {"min_cosine_similarity", 0.7}, {"min_shared_fragments", 3}, {"filtered", true}};
+    const streamfind::Json filter_suspects_params = {
+        {"analysis_names", analysis_names}, {"id_levels", streamfind::Json::array({streamfind::Json(1), streamfind::Json(2)})}};
+
+    // The workflow is set ONCE with the full ordered pipeline: Workflow::validate
+    // enforces required_methods, so every step's prerequisites must appear earlier.
+    streamfind::Workflow pipeline; pipeline.domain = "mass_spec";
+    pipeline.steps.push_back({"mass_spec.find_features", streamfind::ParameterValues::from_json(find_params)});
+    pipeline.steps.push_back({"mass_spec.create_components", streamfind::ParameterValues::from_json(create_params)});
+    pipeline.steps.push_back({"mass_spec.annotate_components", streamfind::ParameterValues::from_json(annotate_params)});
+    pipeline.steps.push_back({"mass_spec.load_features_ms2", streamfind::ParameterValues::from_json(load_ms2_params)});
+    pipeline.steps.push_back({"mass_spec.find_internal_standards", streamfind::ParameterValues::from_json(is_params)});
+    pipeline.steps.push_back({"mass_spec.filter_internal_standards", streamfind::ParameterValues::from_json(filter_is_params)});
+    pipeline.steps.push_back({"mass_spec.group_features", streamfind::ParameterValues::from_json(group_params)});
+    pipeline.steps.push_back({"mass_spec.subtract_blank", streamfind::ParameterValues::from_json(subtract_params)});
+    pipeline.steps.push_back({"mass_spec.filter_features", streamfind::ParameterValues::from_json(filter_params)});
+    pipeline.steps.push_back({"mass_spec.suspect_screening", streamfind::ParameterValues::from_json(suspect_params)});
+    pipeline.steps.push_back({"mass_spec.filter_suspects", streamfind::ParameterValues::from_json(filter_suspects_params)});
+    project.set_workflow(std::move(pipeline), registry);
+
+    // Step 3: find_features.
     if (!finished(run("mass_spec.find_features", find_params))) return fail("find_features status");
     const auto feats = project.query_json("SELECT COUNT(*) AS count FROM MASS_SPEC_NTA_FEATURES");
     const long feat_count = std::stol(feats.at(0).at("count").get<std::string>());
@@ -216,69 +275,38 @@ int run_nta_wastewater_conformance(bool quantized) {
     std::cout << "features detected: " << feat_count << "\n";
 
     // Step 4: create_components.
-    if (!finished(run("mass_spec.create_components", {
-        {"analysis_names", analysis_names},
-        {"rt_window", streamfind::Json::array({streamfind::Json(-2.5), streamfind::Json(2.5)})},
-        {"min_correlation", 0.85}}))) return fail("create_components status");
+    if (!finished(run("mass_spec.create_components", create_params))) return fail("create_components status");
 
     // Step 5: annotate_components.
-    if (!finished(run("mass_spec.annotate_components", {
-        {"analysis_names", analysis_names},
-        {"max_isotopes", 8}, {"max_charge", 1}, {"max_gaps", 1}, {"ppm", 10.0},
-        {"isotope_elements", streamfind::Json::array({streamfind::Json("C:1-80"), streamfind::Json("N:0-10"),
-            streamfind::Json("O:0-20"), streamfind::Json("S:0-4"), streamfind::Json("Cl:0-6"), streamfind::Json("Br:0-4")})}})))
-        return fail("annotate_components status");
+    if (!finished(run("mass_spec.annotate_components", annotate_params))) return fail("annotate_components status");
 
     // Step 6: load_features_ms2.
-    if (!finished(run("mass_spec.load_features_ms2", {
-        {"analysis_names", analysis_names}, {"filtered", false},
-        {"min_traces_intensity", 10.0}, {"isolation_window", 1.3}, {"mz_clust", 0.008}, {"presence", 0.5}})))
-        return fail("load_features_ms2 status");
+    if (!finished(run("mass_spec.load_features_ms2", load_ms2_params))) return fail("load_features_ms2 status");
 
     // Step 7: find_internal_standards from internal_standards.csv.
-    const auto is_csv = (ww / "internal_standards.csv").string();
-    const streamfind::Json is_targets = targets_from_csv(is_csv);
     std::cout << "internal standard targets parsed: " << is_targets.size() << "\n";
-    const streamfind::Json is_params = {
-        {"analysis_names", analysis_names}, {"targets", is_targets},
-        {"ppm", 10.0}, {"sec", 15.0}, {"ppm_ms2", 10.0}, {"mzr_ms2", 0.008},
-        {"min_cosine_similarity", 0.7}, {"min_shared_fragments", 3}, {"filtered", true}
-    };
     if (!finished(run("mass_spec.find_internal_standards", is_params))) return fail("find_internal_standards status");
     const auto is_rows = project.query_json("SELECT COUNT(*) AS count FROM MASS_SPEC_NTA_INTERNAL_STANDARDS");
     const long is_found = std::stol(is_rows.at(0).at("count").get<std::string>());
     std::cout << "internal standards found: " << is_found << "\n";
 
     // Step 8: filter_internal_standards (idLevels 1,2,3).
-    if (!finished(run("mass_spec.filter_internal_standards", {
-        {"analysis_names", analysis_names},
-        {"id_levels", streamfind::Json::array({streamfind::Json(1), streamfind::Json(2), streamfind::Json(3)})}})))
-        return fail("filter_internal_standards status");
+    if (!finished(run("mass_spec.filter_internal_standards", filter_is_params))) return fail("filter_internal_standards status");
     const auto is_after = project.query_json("SELECT COUNT(*) AS count FROM MASS_SPEC_NTA_INTERNAL_STANDARDS");
     std::cout << "internal standards after filter: " << is_after.at(0).at("count").dump() << "\n";
 
     // Step 9: group_features (internal_standards alignment).
-    if (!finished(run("mass_spec.group_features", {
-        {"analysis_names", analysis_names}, {"method", "internal_standards"},
-        {"rt_deviation", 5.0}, {"ppm", 10.0}, {"min_samples", 1}, {"bin_size", 5.0}})))
-        return fail("group_features status");
+    if (!finished(run("mass_spec.group_features", group_params))) return fail("group_features status");
     const auto groups = project.query_json("SELECT COUNT(DISTINCT feature_group) AS count FROM MASS_SPEC_NTA_FEATURES WHERE feature_group != ''");
     std::cout << "feature groups: " << groups.at(0).at("count").dump() << "\n";
 
-    // Optional step 10: blank_subtraction + filter_features to prove the new params run.
-    if (!finished(run("mass_spec.subtract_blank", {
-        {"analysis_names", analysis_names}, {"blank_threshold", 5.0}, {"rt_expand", 10.0}, {"mz_expand", 0.005}})))
-        return fail("subtract_blank status");
-    if (!finished(run("mass_spec.filter_features", {
-        {"analysis_names", analysis_names},
-        {"min_intensity", 10000.0},
-        {"remove_isotopes", true}, {"remove_adducts", true}, {"remove_losses", true}})))
-        return fail("filter_features status");
+    // Step 10: blank_subtraction + filter_features to prove the new params run.
+    if (!finished(run("mass_spec.subtract_blank", subtract_params))) return fail("subtract_blank status");
+    if (!finished(run("mass_spec.filter_features", filter_params))) return fail("filter_features status");
 
-    // Exercise filter_suspects wiring (no suspect_screening ran -> buffers empty, no-op).
-    if (!finished(run("mass_spec.filter_suspects", {
-        {"analysis_names", analysis_names}, {"id_levels", streamfind::Json::array({streamfind::Json(1), streamfind::Json(2)})}})))
-        return fail("filter_suspects status");
+    // Step 11: suspect_screening (suspects.csv) then filter_suspects on its results.
+    if (!finished(run("mass_spec.suspect_screening", suspect_params))) return fail("suspect_screening status");
+    if (!finished(run("mass_spec.filter_suspects", filter_suspects_params))) return fail("filter_suspects status");
 
     std::cout << (quantized ? "NTA wastewater QUANTIZED conformance pipeline completed successfully.\n"
                             : "NTA wastewater conformance pipeline completed successfully.\n");

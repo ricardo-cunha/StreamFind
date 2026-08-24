@@ -824,6 +824,204 @@ struct NTA_SUSPECTS {
     }
 };
 
+// MARK: NTA_TRANSFORMATION_PRODUCT_ROW
+struct NTA_TRANSFORMATION_PRODUCT_ROW {
+    std::string project_id;
+    std::string created_at;
+    std::string name;
+    std::string formula;
+    double mass = 0.0;
+    std::string SMILES;
+    std::string InChI;
+    std::string InChIKey;
+    double xLogP = 0.0;
+    std::string transformation;
+    std::string precursor_name;
+    std::string precursor_formula;
+    double precursor_mass = 0.0;
+    std::string precursor_SMILES;
+    std::string precursor_InChI;
+    std::string precursor_InChIKey;
+    double precursor_xLogP = 0.0;
+    std::string main_precursor_name;
+    std::string main_precursor_formula;
+    double main_precursor_mass = 0.0;
+    std::string main_precursor_SMILES;
+    std::string main_precursor_InChI;
+    std::string main_precursor_InChIKey;
+    double main_precursor_xLogP = 0.0;
+    std::string feature_group;
+    std::string precursor_feature_group;
+    std::string main_precursor_feature_group;
+    double cosine_similarity = 0.0;
+    double main_precursor_cosine_similarity = 0.0;
+    double rt_plausibility = 0.0;
+    double main_precursor_rt_plausibility = 0.0;
+    std::string product_structure_key;
+    std::string precursor_structure_key;
+    std::string main_precursor_structure_key;
+    std::string resolved_direct_parent_feature_group;
+    std::string resolved_main_parent_feature_group;
+    std::string assignment_status;
+    bool is_direct_assignment = false;
+    bool is_main_parent_consistent = false;
+    bool transformation_valid = false;
+    int assignment_rank = 0;
+    int network_level = 0;
+    double assignment_score = 0.0;
+    double transformation_mass_delta_expected = 0.0;
+    double transformation_mass_delta_observed = 0.0;
+    double transformation_mass_delta_error = 0.0;
+};
+
+// MARK: NTA_TRANSFORMATION_PRODUCTS (columnar; structure-of-arrays ported from the R model)
+struct NTA_TRANSFORMATION_PRODUCTS {
+    std::vector<std::string> name;
+    std::vector<std::string> formula;
+    std::vector<double> mass;
+    std::vector<std::string> SMILES;
+    std::vector<std::string> InChI;
+    std::vector<std::string> InChIKey;
+    std::vector<double> xLogP;
+    std::vector<std::string> transformation;
+    std::vector<std::string> precursor_name;
+    std::vector<std::string> precursor_formula;
+    std::vector<double> precursor_mass;
+    std::vector<std::string> precursor_SMILES;
+    std::vector<std::string> precursor_InChI;
+    std::vector<std::string> precursor_InChIKey;
+    std::vector<double> precursor_xLogP;
+    std::vector<std::string> main_precursor_name;
+    std::vector<std::string> main_precursor_formula;
+    std::vector<double> main_precursor_mass;
+    std::vector<std::string> main_precursor_SMILES;
+    std::vector<std::string> main_precursor_InChI;
+    std::vector<std::string> main_precursor_InChIKey;
+    std::vector<double> main_precursor_xLogP;
+    std::vector<std::string> feature_group;
+    std::vector<std::string> precursor_feature_group;
+    std::vector<std::string> main_precursor_feature_group;
+    std::vector<double> cosine_similarity;
+    std::vector<double> main_precursor_cosine_similarity;
+    std::vector<double> rt_plausibility;
+    std::vector<double> main_precursor_rt_plausibility;
+    std::vector<std::string> product_structure_key;
+    std::vector<std::string> precursor_structure_key;
+    std::vector<std::string> main_precursor_structure_key;
+    std::vector<std::string> resolved_direct_parent_feature_group;
+    std::vector<std::string> resolved_main_parent_feature_group;
+    std::vector<std::string> assignment_status;
+    std::vector<bool> is_direct_assignment;
+    std::vector<bool> is_main_parent_consistent;
+    std::vector<bool> transformation_valid;
+    std::vector<int> assignment_rank;
+    std::vector<int> network_level;
+    std::vector<double> assignment_score;
+    std::vector<double> transformation_mass_delta_expected;
+    std::vector<double> transformation_mass_delta_observed;
+    std::vector<double> transformation_mass_delta_error;
+
+    int size() const { return static_cast<int>(name.size()); }
+
+    NTA_TRANSFORMATION_PRODUCT_ROW get_transformation_product(const int &i) const
+    {
+        NTA_TRANSFORMATION_PRODUCT_ROW row;
+        row.name = name[i];
+        row.formula = formula[i];
+        row.mass = mass[i];
+        row.SMILES = SMILES[i];
+        row.InChI = InChI[i];
+        row.InChIKey = InChIKey[i];
+        row.xLogP = xLogP[i];
+        row.transformation = transformation[i];
+        row.precursor_name = precursor_name[i];
+        row.precursor_formula = precursor_formula[i];
+        row.precursor_mass = precursor_mass[i];
+        row.precursor_SMILES = precursor_SMILES[i];
+        row.precursor_InChI = precursor_InChI[i];
+        row.precursor_InChIKey = precursor_InChIKey[i];
+        row.precursor_xLogP = precursor_xLogP[i];
+        row.main_precursor_name = main_precursor_name[i];
+        row.main_precursor_formula = main_precursor_formula[i];
+        row.main_precursor_mass = main_precursor_mass[i];
+        row.main_precursor_SMILES = main_precursor_SMILES[i];
+        row.main_precursor_InChI = main_precursor_InChI[i];
+        row.main_precursor_InChIKey = main_precursor_InChIKey[i];
+        row.main_precursor_xLogP = main_precursor_xLogP[i];
+        row.feature_group = feature_group[i];
+        row.precursor_feature_group = precursor_feature_group[i];
+        row.main_precursor_feature_group = main_precursor_feature_group[i];
+        row.cosine_similarity = cosine_similarity[i];
+        row.main_precursor_cosine_similarity = main_precursor_cosine_similarity[i];
+        row.rt_plausibility = rt_plausibility[i];
+        row.main_precursor_rt_plausibility = main_precursor_rt_plausibility[i];
+        row.product_structure_key = product_structure_key[i];
+        row.precursor_structure_key = precursor_structure_key[i];
+        row.main_precursor_structure_key = main_precursor_structure_key[i];
+        row.resolved_direct_parent_feature_group = resolved_direct_parent_feature_group[i];
+        row.resolved_main_parent_feature_group = resolved_main_parent_feature_group[i];
+        row.assignment_status = assignment_status[i];
+        row.is_direct_assignment = is_direct_assignment[i];
+        row.is_main_parent_consistent = is_main_parent_consistent[i];
+        row.transformation_valid = transformation_valid[i];
+        row.assignment_rank = assignment_rank[i];
+        row.network_level = network_level[i];
+        row.assignment_score = assignment_score[i];
+        row.transformation_mass_delta_expected = transformation_mass_delta_expected[i];
+        row.transformation_mass_delta_observed = transformation_mass_delta_observed[i];
+        row.transformation_mass_delta_error = transformation_mass_delta_error[i];
+        return row;
+    }
+
+    void append(const NTA_TRANSFORMATION_PRODUCT_ROW &row)
+    {
+        name.push_back(row.name);
+        formula.push_back(row.formula);
+        mass.push_back(row.mass);
+        SMILES.push_back(row.SMILES);
+        InChI.push_back(row.InChI);
+        InChIKey.push_back(row.InChIKey);
+        xLogP.push_back(row.xLogP);
+        transformation.push_back(row.transformation);
+        precursor_name.push_back(row.precursor_name);
+        precursor_formula.push_back(row.precursor_formula);
+        precursor_mass.push_back(row.precursor_mass);
+        precursor_SMILES.push_back(row.precursor_SMILES);
+        precursor_InChI.push_back(row.precursor_InChI);
+        precursor_InChIKey.push_back(row.precursor_InChIKey);
+        precursor_xLogP.push_back(row.precursor_xLogP);
+        main_precursor_name.push_back(row.main_precursor_name);
+        main_precursor_formula.push_back(row.main_precursor_formula);
+        main_precursor_mass.push_back(row.main_precursor_mass);
+        main_precursor_SMILES.push_back(row.main_precursor_SMILES);
+        main_precursor_InChI.push_back(row.main_precursor_InChI);
+        main_precursor_InChIKey.push_back(row.main_precursor_InChIKey);
+        main_precursor_xLogP.push_back(row.main_precursor_xLogP);
+        feature_group.push_back(row.feature_group);
+        precursor_feature_group.push_back(row.precursor_feature_group);
+        main_precursor_feature_group.push_back(row.main_precursor_feature_group);
+        cosine_similarity.push_back(row.cosine_similarity);
+        main_precursor_cosine_similarity.push_back(row.main_precursor_cosine_similarity);
+        rt_plausibility.push_back(row.rt_plausibility);
+        main_precursor_rt_plausibility.push_back(row.main_precursor_rt_plausibility);
+        product_structure_key.push_back(row.product_structure_key);
+        precursor_structure_key.push_back(row.precursor_structure_key);
+        main_precursor_structure_key.push_back(row.main_precursor_structure_key);
+        resolved_direct_parent_feature_group.push_back(row.resolved_direct_parent_feature_group);
+        resolved_main_parent_feature_group.push_back(row.resolved_main_parent_feature_group);
+        assignment_status.push_back(row.assignment_status);
+        is_direct_assignment.push_back(row.is_direct_assignment);
+        is_main_parent_consistent.push_back(row.is_main_parent_consistent);
+        transformation_valid.push_back(row.transformation_valid);
+        assignment_rank.push_back(row.assignment_rank);
+        network_level.push_back(row.network_level);
+        assignment_score.push_back(row.assignment_score);
+        transformation_mass_delta_expected.push_back(row.transformation_mass_delta_expected);
+        transformation_mass_delta_observed.push_back(row.transformation_mass_delta_observed);
+        transformation_mass_delta_error.push_back(row.transformation_mass_delta_error);
+    }
+};
+
 // MARK: NTA_INTERNAL_STANDARD_ROW
 struct NTA_INTERNAL_STANDARD_ROW {
     std::string project_id;
