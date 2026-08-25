@@ -1,7 +1,7 @@
-//! Resolution of user-installed external tools.
-//!
-//! Tools are never downloaded or installed by this crate. Each tool must be
-//! installed separately and available through the process `PATH`.
+//! Resolution of user-installed external tools, plus `~/.streamfind`-scoped
+//! provisioning for Java + MetFragCL (mirrors `bindings/r`).
+
+pub mod tools;
 
 use std::env;
 use std::fmt;

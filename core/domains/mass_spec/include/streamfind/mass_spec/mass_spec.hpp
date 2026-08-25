@@ -53,6 +53,9 @@ public:
     Json get_chromatograms(const Json &parameters = Json::object());
     Json get_raw_chromatograms(const Json &parameters = Json::object());
     Json get_features(const Json &parameters = Json::object());
+    Json get_suspects(const Json &parameters = Json::object());
+    Json get_internal_standards(const Json &parameters = Json::object());
+    Json get_transformation_products(const Json &parameters = Json::object());
 
 private:
     streamfind::Project &project_;

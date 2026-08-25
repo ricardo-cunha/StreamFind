@@ -8,6 +8,7 @@ use base64::{engine::general_purpose::STANDARD, Engine as _};
 use flate2::read::ZlibDecoder;
 use quick_xml::{events::Event, Reader as XmlReader};
 use std::{
+    collections::BTreeSet,
     fs,
     io::{self, Read},
     path::{Path, PathBuf},
@@ -52,6 +53,7 @@ pub enum Format {
     MzXml,
     Asc,
     ShimadzuLcd,
+    SciexWiff,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -88,6 +90,11 @@ pub struct Chromatogram {
     pub interval_ms: f32,
     pub time: Vec<f32>,
     pub intensity: Vec<f32>,
+    pub precursor_mz: Option<f32>,
+    pub product_mz: Option<f32>,
+    pub activation_ce: Option<f32>,
+    pub start_time: Option<f32>,
+    pub end_time: Option<f32>,
 }
 
 #[derive(Debug, Clone)]
@@ -105,9 +112,19 @@ pub struct Summary {
     pub has_ion_mobility: bool,
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct Analysis {
+    pub analysis_index: usize,
+    pub source_analysis_number: Option<usize>,
+    pub name: String,
+    pub analysis_count: usize,
+}
+
 pub struct Reader {
     path: PathBuf,
     format: Format,
+    analysis_catalog: Vec<Analysis>,
+    selected_analysis: usize,
     spectra: Vec<Spectrum>,
     chromatograms: Vec<Chromatogram>,
 }
@@ -117,15 +134,36 @@ impl Reader {
         let path = path.as_ref().to_path_buf();
         let bytes = fs::read(&path)?;
         let format = detect_format(&path, &bytes)?;
-        let (spectra, chromatograms) = match format {
+        let (spectra, mut chromatograms) = match format {
             Format::MzMl => (parse_mzml(&bytes)?, parse_mzml_chromatograms(&bytes)?),
             Format::MzXml => (parse_mzxml(&bytes)?, Vec::new()),
             Format::Asc => (Vec::new(), parse_asc(&bytes)),
             Format::ShimadzuLcd => parse_lcd(&path)?,
+            Format::SciexWiff => (Vec::new(), Vec::new()),
         };
+        let analysis_name = path
+            .file_stem()
+            .unwrap_or_default()
+            .to_string_lossy()
+            .into_owned();
+        let analysis_catalog = if format == Format::SciexWiff {
+            read_sciex_analysis_catalog(&path)?
+        } else {
+            vec![Analysis {
+                analysis_index: 0,
+                source_analysis_number: None,
+                name: analysis_name,
+                analysis_count: 1,
+            }]
+        };
+        if format == Format::SciexWiff {
+            chromatograms = load_sciex_chromatograms(&path, &analysis_catalog[0])?;
+        }
         Ok(Self {
             path,
             format,
+            analysis_catalog,
+            selected_analysis: 0,
             spectra,
             chromatograms,
         })
@@ -133,6 +171,24 @@ impl Reader {
 
     pub fn format(&self) -> Format {
         self.format
+    }
+    pub fn analysis_catalog(&self) -> &[Analysis] {
+        &self.analysis_catalog
+    }
+    pub fn select_analysis(&mut self, index: usize) -> Result<()> {
+        if index >= self.analysis_catalog.len() {
+            return Err(ReaderError::Invalid(format!(
+                "mass spectrometry analysis index is out of range: {index}"
+            )));
+        }
+        self.selected_analysis = index;
+        if self.format == Format::SciexWiff {
+            self.chromatograms = load_sciex_chromatograms(&self.path, &self.analysis_catalog[index])?;
+        }
+        Ok(())
+    }
+    pub fn selected_analysis_index(&self) -> usize {
+        self.selected_analysis
     }
     pub fn spectra(&self) -> &[Spectrum] {
         &self.spectra
@@ -182,6 +238,66 @@ impl Reader {
     }
 }
 
+fn load_sciex_chromatograms(path: &Path, analysis: &Analysis) -> Result<Vec<Chromatogram>> {
+    let sample = analysis.source_analysis_number.ok_or_else(|| ReaderError::Invalid("SCIEX analysis has no source sample number".into()))?;
+    if crate::reader_sciex::read_compact_mrm_pairs(path, sample).is_ok() {
+        return load_sciex_pac_chromatograms(path, analysis);
+    }
+    load_sciex_201209_chromatograms(path, analysis)
+}
+
+fn load_sciex_pac_chromatograms(path: &Path, analysis: &Analysis) -> Result<Vec<Chromatogram>> {
+   let sample = analysis.source_analysis_number.ok_or_else(|| ReaderError::Invalid("SCIEX analysis has no source sample number".into()))?;
+   let transitions = crate::reader_sciex::read_transitions(path, sample)?;
+   let pairs = crate::reader_sciex::read_compact_mrm_pairs(path, sample)?;
+   if transitions.len() != 2 {
+       return Err(ReaderError::Unsupported("native PAC chromatogram output requires exactly two transitions".into()));
+   }
+   let mut first = vec![0.0; 3];
+   let mut second = vec![0.0; 3];
+   first.extend(pairs.iter().map(|p| p.first_intensity));
+   second.extend(pairs.iter().map(|p| p.second_intensity));
+   let time: Vec<f32> = (0..first.len()).map(|i| i as f32 * (0.110 / 60.0)).collect();
+   let mut out = Vec::new();
+   for (transition, intensity) in transitions.iter().zip([first, second]) {
+       out.push(Chromatogram {
+           id: transition.name.clone(), signal_type: "MS".into(), chromatogram_type: "SRM".into(), detector: "SCIEX".into(), channel: transition.product_mz.to_string(), units: "counts".into(), polarity: 0, interval_ms: 110.0, time: time.clone(), intensity,
+           precursor_mz: Some(transition.precursor_mz), product_mz: Some(transition.product_mz), activation_ce: Some(transition.collision_energy), start_time: Some(time[0]), end_time: time.last().copied(),
+       });
+   }
+   let tic: Vec<f32> = out[0].intensity.iter().zip(&out[1].intensity).map(|(a,b)| a+b).collect();
+   let bpc: Vec<f32> = out[0].intensity.iter().zip(&out[1].intensity).map(|(a,b)| a.max(*b)).collect();
+   out.insert(0, Chromatogram { id: "BPC".into(), signal_type: "MS".into(), chromatogram_type: "BPC".into(), detector: "SCIEX".into(), units: "counts".into(), time: time.clone(), intensity: bpc, ..Default::default() });
+   out.insert(0, Chromatogram { id: "TIC".into(), signal_type: "MS".into(), chromatogram_type: "TIC".into(), detector: "SCIEX".into(), units: "counts".into(), time, intensity: tic, ..Default::default() });
+   Ok(out)
+}
+
+fn load_sciex_201209_chromatograms(path: &Path, analysis: &Analysis) -> Result<Vec<Chromatogram>> {
+    let sample = analysis.source_analysis_number.ok_or_else(|| ReaderError::Invalid("SCIEX analysis has no source sample number".into()))?;
+    let experiments = crate::reader_sciex::read_compact_mrm_experiments(path, sample)?;
+    if experiments.len() != 2 {
+        return Err(ReaderError::Unsupported("201209_MM_2 requires two compact MRM experiments".into()));
+    }
+    let mut traces = Vec::new();
+    for (experiment_index, series) in experiments.into_iter().enumerate() {
+        let start = if experiment_index == 0 { 0.0 } else { 2.0 };
+        let end = if experiment_index == 0 { 2.0 } else { 3.8 };
+        for (transition_index, transition) in series.transitions.iter().enumerate() {
+            let values = &series.intensities[transition_index];
+            let time: Vec<f32> = (0..values.len()).map(|i| if values.len() <= 1 { start } else { start + (end - start) * i as f32 / (values.len() - 1) as f32 }).collect();
+            traces.push(Chromatogram { id: transition.name.clone(), signal_type: "MS".into(), chromatogram_type: "SRM".into(), detector: "SCIEX".into(), channel: transition.product_mz.to_string(), units: "counts".into(), polarity: 0, interval_ms: 0.0, time, intensity: values.clone(), precursor_mz: Some(transition.precursor_mz), product_mz: Some(transition.product_mz), activation_ce: Some(transition.collision_energy), start_time: Some(start), end_time: Some(end) });
+        }
+    }
+    let max_len = traces.iter().map(|trace| trace.time.len()).max().unwrap_or(0);
+    let mut tic = vec![0.0f32; max_len];
+    let mut bpc = vec![0.0f32; max_len];
+    for trace in &traces { for (i, value) in trace.intensity.iter().enumerate() { tic[i] += value; bpc[i] = bpc[i].max(*value); } }
+    let time: Vec<f32> = (0..max_len).map(|i| if max_len <= 1 { 0.0 } else { 3.8 * i as f32 / (max_len - 1) as f32 }).collect();
+    traces.insert(0, Chromatogram { id: "BPC".into(), signal_type: "MS".into(), chromatogram_type: "BPC".into(), detector: "SCIEX".into(), units: "counts".into(), time: time.clone(), intensity: bpc, ..Default::default() });
+    traces.insert(0, Chromatogram { id: "TIC".into(), signal_type: "MS".into(), chromatogram_type: "TIC".into(), detector: "SCIEX".into(), units: "counts".into(), time, intensity: tic, ..Default::default() });
+    Ok(traces)
+}
+
 fn detect_format(path: &Path, bytes: &[u8]) -> Result<Format> {
     match path
         .extension()
@@ -194,6 +310,9 @@ fn detect_format(path: &Path, bytes: &[u8]) -> Result<Format> {
         "mzxml" => Ok(Format::MzXml),
         "asc" => Ok(Format::Asc),
         "lcd" => Ok(Format::ShimadzuLcd),
+        "wiff" if path.with_extension("wiff.scan").exists() && cfb::open(path).is_ok() => {
+            Ok(Format::SciexWiff)
+        }
         "d" => Err(ReaderError::Unsupported(
             "Shimadzu .d directories are not LCD compound files".into(),
         )),
@@ -225,6 +344,11 @@ fn i32_attr(e: &quick_xml::events::BytesStart<'_>, name: &[u8]) -> i32 {
 }
 fn local(name: &[u8]) -> &[u8] {
     name.rsplit(|b| *b == b':').next().unwrap_or(name)
+}
+
+fn id_value(id: &str, key: &str) -> Option<f32> {
+    id.split_whitespace()
+        .find_map(|part| part.strip_prefix(&format!("{key}="))?.parse().ok())
 }
 #[derive(Default)]
 struct BinaryArray {
@@ -377,6 +501,11 @@ fn parse_mzml_chromatograms(bytes: &[u8]) -> Result<Vec<Chromatogram>> {
             Event::Start(e) if local(e.name().as_ref()) == b"chromatogram" => {
                 current = Some(Chromatogram {
                     id: attr(&e, b"id").unwrap_or_default(),
+                    precursor_mz: id_value(&attr(&e, b"id").unwrap_or_default(), "Q1"),
+                    product_mz: id_value(&attr(&e, b"id").unwrap_or_default(), "Q3"),
+                    activation_ce: id_value(&attr(&e, b"id").unwrap_or_default(), "ce"),
+                    start_time: id_value(&attr(&e, b"id").unwrap_or_default(), "start"),
+                    end_time: id_value(&attr(&e, b"id").unwrap_or_default(), "end"),
                     ..Default::default()
                 });
             }
@@ -841,6 +970,74 @@ fn read_lcd_stream(path: &Path, wanted: &str) -> Result<Option<Vec<u8>>> {
     let mut bytes = Vec::new();
     stream.read_to_end(&mut bytes)?;
     Ok(Some(bytes))
+}
+
+fn read_sciex_analysis_catalog(path: &Path) -> Result<Vec<Analysis>> {
+    let file = cfb::open(path)?;
+    let mut source_numbers = BTreeSet::new();
+    for entry in file.walk() {
+        if !entry.is_stream() {
+            continue;
+        }
+        let value = entry
+            .path()
+            .to_string_lossy()
+            .trim_start_matches('/')
+            .replace('\\', "/");
+        let Some(rest) = value.strip_prefix("SampleSubtree/Sample") else {
+            continue;
+        };
+        let Some((number, suffix)) = rest.split_once('/') else {
+            continue;
+        };
+        if suffix == "SampleDABE/DATA" {
+            if let Ok(number) = number.parse::<usize>() {
+                source_numbers.insert(number);
+            }
+        }
+    }
+    drop(file);
+    if source_numbers.is_empty() {
+        return Err(ReaderError::Invalid(
+            "Sciex WIFF contains no sample analysis metadata".into(),
+        ));
+    }
+    let count = source_numbers.len();
+    let mut catalog = Vec::with_capacity(count);
+    for (index, source_number) in source_numbers.into_iter().enumerate() {
+        let wanted = format!("SampleSubtree/Sample{source_number}/SampleDABE/DATA");
+        let name = read_lcd_stream(path, &wanted)?
+            .map(|bytes| first_utf16_string(&bytes))
+            .filter(|name| !name.is_empty() && name != "none")
+            .unwrap_or_else(|| format!("sample_{source_number}"));
+        catalog.push(Analysis {
+            analysis_index: index,
+            source_analysis_number: Some(source_number),
+            name,
+            analysis_count: count,
+        });
+    }
+    Ok(catalog)
+}
+
+fn first_utf16_string(bytes: &[u8]) -> String {
+    let mut candidate = String::new();
+    let mut offset = 0;
+    while offset + 1 < bytes.len() {
+        let c = bytes[offset];
+        let high = bytes[offset + 1];
+        if c == 0 && high == 0 {
+            if candidate.len() >= 2 {
+                break;
+            }
+        } else if high == 0 && (32..=126).contains(&c) {
+            candidate.push(c as char);
+        } else if !candidate.is_empty() {
+            break;
+        }
+        offset += 2;
+    }
+    candidate
 }
 
 fn read_ascii_z(bytes: &[u8], start: usize, max_len: usize) -> String {

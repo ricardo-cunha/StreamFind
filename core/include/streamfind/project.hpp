@@ -434,6 +434,21 @@ public:
     /** @brief Execute a query and return rows as JSON objects keyed by column name. */
     Json query_json(const std::string &sql) const;
 
+    /**
+     * @brief Bulk-append rows into a table using a single DuckDB Appender session.
+     *
+     * Equivalent to the DuckDB Appender path used by the R bindings: all rows are
+     * written through one `duckdb_appender` that is flushed (and closed) once, instead
+     * of one `INSERT` per row. Each cell is an optional string; `std::nullopt` becomes
+     * SQL NULL, otherwise the value is bound by the reflected DuckDB column type so
+     * numeric columns stay numeric (DOUBLE/INTEGER/BOOLEAN) rather than becoming text.
+     * Only the supplied `column_names` are appended; table columns not listed here are
+     * filled with their DEFAULT value (or NULL).
+     */
+    void append_rows(const std::string &table_name,
+                     const std::vector<std::string> &column_names,
+                     const std::vector<std::vector<std::optional<std::string>>> &rows) const;
+
     /** @brief Return all cache entries for this project. */
     std::vector<CacheEntry> get_cache() const;
     /** @brief Return the number of cache entries for this project. */

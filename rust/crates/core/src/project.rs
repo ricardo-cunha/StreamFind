@@ -608,6 +608,11 @@ impl Method {
         }
     }
 
+    pub fn with_validator(mut self, validator: MethodValidator) -> Self {
+        self.validator = Some(validator);
+        self
+    }
+
     pub fn to_json(&self) -> Json {
         json!({
             "id": self.id,

@@ -27,9 +27,13 @@ fn sql(value: &str) -> String {
     format!("'{}'", value.replace('\'', "''"))
 }
 
-fn analyses(project: &Project, wanted: &[String]) -> Result<Vec<(String, String)>> {
+fn option(value: Option<f32>) -> String {
+    value.map_or_else(|| "NULL".to_string(), |v| format!("{}", v as f64))
+}
+
+fn analyses(project: &Project, wanted: &[String]) -> Result<Vec<(String, String, i64)>> {
     let rows = project.query_json(&format!(
-        "SELECT analysis, file_path FROM MASS_SPEC_ANALYSES WHERE project_id = {} ORDER BY analysis",
+        "SELECT analysis, file_path, analysis_index FROM MASS_SPEC_ANALYSES WHERE project_id = {} ORDER BY analysis",
         sql(project.get_project_id())
     ))?;
     let rows = rows.as_array().cloned().unwrap_or_default();
@@ -41,6 +45,7 @@ fn analyses(project: &Project, wanted: &[String]) -> Result<Vec<(String, String)
                 (
                     name,
                     row["file_path"].as_str().unwrap_or_default().to_owned(),
+                    row["analysis_index"].as_i64().unwrap_or(0),
                 )
             })
         })
@@ -59,7 +64,7 @@ pub fn load_chromatograms(
     project: &mut Project,
     request: &LoadChromatogramsRequest,
 ) -> Result<bool> {
-    project.execute_sql(crate::CHROMATOGRAMS_SCHEMA)?;
+    crate::ensure_chromatograms_schema(project)?;
     let patterns = request
         .chromatogram_id_regex
         .iter()
@@ -72,17 +77,24 @@ pub fn load_chromatograms(
             Regex::new(&pattern).ok()
         })
         .collect::<Vec<_>>();
-    for (analysis, path) in analyses(project, &request.analyses)? {
-        let file = reader::Reader::open(path).map_err(|error| invalid(error.to_string()))?;
-        for chromatogram in file
+    for (analysis, path, analysis_index) in analyses(project, &request.analyses)? {
+        let mut file = reader::Reader::open(path).map_err(|error| invalid(error.to_string()))?;
+        file.select_analysis(analysis_index as usize)
+            .map_err(|error| invalid(error.to_string()))?;
+        for (chromatogram_index, chromatogram) in file
             .chromatograms()
             .iter()
-            .filter(|chromatogram| matches(&chromatogram.id, &patterns) ^ request.invert)
+            .enumerate()
+            .filter(|(_, chromatogram)| matches(&chromatogram.id, &patterns) ^ request.invert)
         {
             let count = chromatogram.time.len().min(chromatogram.intensity.len());
             if count == 0 {
                 continue;
             }
+            let polarity = chromatogram.polarity;
+            let precursor_mz = option(chromatogram.precursor_mz);
+            let activation_ce = option(chromatogram.activation_ce);
+            let product_mz = option(chromatogram.product_mz);
             let mut statements = format!(
                 "DELETE FROM MASS_SPEC_CHROMATOGRAMS WHERE project_id = {} AND analysis = {} AND chromatogram_id = {}",
                 sql(project.get_project_id()), sql(&analysis), sql(&chromatogram.id)
@@ -95,8 +107,8 @@ pub fn load_chromatograms(
                 .take(count)
             {
                 statements.push_str(&format!(
-                    "INSERT INTO MASS_SPEC_CHROMATOGRAMS (project_id, analysis, chromatogram_id, rt, raw_intensity, baseline, intensity) VALUES ({},{},{},{},{},0,{})",
-                    sql(project.get_project_id()), sql(&analysis), sql(&chromatogram.id), *rt as f64, *intensity as f64, *intensity as f64
+                    "INSERT INTO MASS_SPEC_CHROMATOGRAMS (project_id, analysis, index, chromatogram_id, polarity, precursor_mz, activation_ce, product_mz, rt, raw_intensity, baseline, intensity) VALUES ({},{},{},{},{},{},{},{},{},{},0,{})",
+                    sql(project.get_project_id()), sql(&analysis), chromatogram_index, sql(&chromatogram.id), polarity, precursor_mz, activation_ce, product_mz, *rt as f64, *intensity as f64, *intensity as f64
                 ));
                 statements.push(';');
             }
@@ -113,7 +125,7 @@ pub fn filter_chromatograms_retention_time(
     if request.rtmin >= request.rtmax {
         return Err(invalid("rtmin must be less than rtmax."));
     }
-    project.execute_sql(crate::CHROMATOGRAMS_SCHEMA)?;
+    crate::ensure_chromatograms_schema(project)?;
     let analysis_filter = if request.analyses.is_empty() {
         String::new()
     } else {
@@ -128,7 +140,7 @@ pub fn filter_chromatograms_retention_time(
         )
     };
     let rows = project.query_json(&format!(
-        "SELECT analysis, chromatogram_id, rt, raw_intensity, baseline, intensity FROM MASS_SPEC_CHROMATOGRAMS WHERE project_id = {}{} AND rt >= {} AND rt <= {} ORDER BY chromatogram_id, rt",
+        "SELECT analysis, chromatogram_id, index, polarity, precursor_mz, activation_ce, product_mz, rt, raw_intensity, baseline, intensity FROM MASS_SPEC_CHROMATOGRAMS WHERE project_id = {}{} AND rt >= {} AND rt <= {} ORDER BY chromatogram_id, rt",
         sql(project.get_project_id()), analysis_filter, request.rtmin, request.rtmax
     ))?;
     let mut grouped = std::collections::BTreeMap::<(String, String), Vec<&Value>>::new();
@@ -144,7 +156,7 @@ pub fn filter_chromatograms_retention_time(
     for ((analysis, id), selected) in grouped {
         let mut statements = format!("DELETE FROM MASS_SPEC_CHROMATOGRAMS WHERE project_id = {} AND analysis = {} AND chromatogram_id = {};", sql(project.get_project_id()), sql(&analysis), sql(&id));
         for row in selected {
-            statements.push_str(&format!("INSERT INTO MASS_SPEC_CHROMATOGRAMS (project_id, analysis, chromatogram_id, rt, raw_intensity, baseline, intensity) VALUES ({},{},{},{},{},{},{}) ;", sql(project.get_project_id()), sql(&analysis), sql(&id), row["rt"], row["raw_intensity"], row["baseline"], row["intensity"]));
+            statements.push_str(&format!("INSERT INTO MASS_SPEC_CHROMATOGRAMS (project_id, analysis, index, chromatogram_id, polarity, precursor_mz, activation_ce, product_mz, rt, raw_intensity, baseline, intensity) VALUES ({},{},{},{},{},{},{},{},{},{},{},{}) ;", sql(project.get_project_id()), sql(&analysis), row["index"], sql(&id), row["polarity"], row["precursor_mz"], row["activation_ce"], row["product_mz"], row["rt"], row["raw_intensity"], row["baseline"], row["intensity"]));
         }
         project.execute_sql(&statements)?;
     }

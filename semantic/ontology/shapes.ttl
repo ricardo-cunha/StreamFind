@@ -89,15 +89,37 @@ sfcore:MethodShape
         """
     ] ;
     sh:sparql [
-        sh:message "Cacheable methods must declare every table needed for cache restoration in sf:writes." ;
-        sh:select """
-            SELECT $this
-            WHERE {
-                $this sf:cacheable true .
-                FILTER NOT EXISTS { $this sf:writes ?table . }
-            }
-        """
-    ] .
+            sh:message "Cacheable methods must declare every table needed for cache restoration in sf:writes." ;
+            sh:select """
+                SELECT $this
+                WHERE {
+                    $this sf:cacheable true .
+                    FILTER NOT EXISTS { $this sf:writes ?table . }
+                }
+            """
+        ] ;
+        sh:sparql [
+            sh:message "Every required method must reference a declared method." ;
+            sh:select """
+                SELECT $this ?required
+                WHERE {
+                    $this sf:requiredMethods ?list .
+                    ?list rdf:rest*/rdf:first ?required .
+                    FILTER NOT EXISTS { ?required a sf:Method . }
+                }
+            """
+        ] ;
+        sh:sparql [
+            sh:message "Object parameters must declare at least one property schema." ;
+            sh:select """
+                SELECT $this
+                WHERE {
+                    $this sf:hasParameter ?parameter .
+                    ?parameter sf:type "object" .
+                    FILTER NOT EXISTS { ?parameter sf:hasProperty ?property . }
+                }
+            """
+        ] .
 
 sfcore:ParameterShape
     a sh:NodeShape ;
@@ -231,7 +253,7 @@ sfcore:TableShape
 sfcore:ColumnShape
     a sh:NodeShape ;
     sh:targetClass sf:Column ;
-    sh:property [ sh:path sf:columnName ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:pattern "^[a-z][a-zA-Z0-9_]*$" ] ;
+    sh:property [ sh:path sf:columnName ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:pattern "^[A-Za-z][A-Za-z0-9_]*$" ] ;
     sh:property [
         sh:path sf:type ;
         sh:minCount 1 ;
