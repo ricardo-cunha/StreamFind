@@ -392,11 +392,11 @@ sfms:assignTransformationProductsMassSpecMethod
         sfms:chromatographicPhaseParameter,
         sfms:mzrMs2Parameter ;
         sf:cacheable true ;
-        sf:requiredMethods () ;
-        sf:singleOccurrence false ;
-        sf:reads sfms:analysesTable, sfms:ntaFeaturesTable, sfms:suspectsTable ;
-        sf:writes sfms:suspectsTable ;
-        sf:returns sfcore:operationStatusResult .
+                sf:requiredMethods () ;
+                sf:singleOccurrence false ;
+                sf:reads sfms:analysesTable, sfms:ntaFeaturesTable, sfms:suspectsTable ;
+                sf:writes sfms:suspectsTable, sfms:transformationProductsTable ;
+                sf:returns sfcore:operationStatusResult .
 
 
 

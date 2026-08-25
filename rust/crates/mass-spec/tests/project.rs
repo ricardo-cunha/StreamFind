@@ -65,7 +65,9 @@ fn domain_smoke_matches_cpp_mass_spec_operations() {
     .unwrap();
     let mut operations = OperationRegistry::default();
     streamfind_rust_mass_spec::register_operations(&mut operations).unwrap();
-    assert_eq!(operations.list("mass_spec").len(), 20);
+    // 20 pre-existing operations + the three NTA table query operations
+    // (get_suspects, get_internal_standards, get_transformation_products).
+    assert_eq!(operations.list("mass_spec").len(), 23);
     let parameter_count = |id: &str| {
         operations
             .list("mass_spec")

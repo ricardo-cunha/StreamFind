@@ -686,7 +686,152 @@ namespace streamfind::mass_spec
         return project_.query_json(query);
     }
 
-}
+    // Table-query spec for the NTA read operations. Mirrors Project::get_features
+    // but points the same filter logic at a target table's own columns: the
+    // analyses / polarity / mass-mz (pm) / rt (rt_tolerance) / SMILES-InChI
+    // exact-mass matchers are emitted only for the columns that exist in the
+    // table (e.g. suspects expose db_mass/exp_mass and db_rt/exp_rt; the
+    // transformation-products table exposes `mass` but has no mz/rt/polarity).
+    struct TableQuerySpec {
+        const char *table;
+        std::vector<const char *> mass_columns;
+        std::vector<const char *> mz_columns;
+        std::vector<const char *> rt_columns;
+        bool has_polarity;
+        const char *order_by;
+    };
 
+    Json query_nta_table(streamfind::Project &project, const Json &p, const TableQuerySpec &spec)
+    {
+        const double ppm = p.value("ppm", 20.0);
+        const double rt_tolerance = p.value("rt_tolerance", 60.0);
+        if (ppm < 0.0 || rt_tolerance < 0.0)
+            throw streamfind::Error(streamfind::ErrorCode::InvalidArgument, "ppm and rt_tolerance must be non-negative");
+        auto number = [](double value) { return std::to_string(value); };
+        auto values = [](const Json &value) {
+            return value.is_array() ? value.get<std::vector<int>>() : std::vector<int>{value.get<int>()};
+        };
+        std::vector<std::string> filters;
+        const auto analyses = detail::names(p, "analysis_names");
+        if (!analyses.empty()) {
+            std::string filter = "analysis IN (";
+            for (std::size_t i = 0; i < analyses.size(); ++i) filter += (i ? "," : "") + detail::sql(analyses[i]);
+            filters.push_back(filter + ")");
+        }
+        const auto targets = p.value("targets", Json::array({Json::object()}));
+        std::vector<std::string> target_filters;
+        for (const auto &target : targets) {
+            std::vector<std::string> match;
+            const auto target_analyses = target.contains("analyses") ? (target.at("analyses").is_array() ? target.at("analyses").get<std::vector<std::string>>() : std::vector<std::string>{target.at("analyses").get<std::string>()}) : analyses;
+            if (!target_analyses.empty()) {
+                std::string filter = "analysis IN (";
+                for (std::size_t i = 0; i < target_analyses.size(); ++i) filter += (i ? "," : "") + detail::sql(target_analyses[i]);
+                match.push_back(filter + ")");
+            }
+            if (spec.has_polarity) {
+                const auto polarity = target.contains("polarity") ? values(target.at("polarity")) : (p.contains("polarity") ? values(p.at("polarity")) : std::vector<int>{});
+                if (!polarity.empty()) {
+                    std::string filter = "polarity IN (";
+                    for (std::size_t i = 0; i < polarity.size(); ++i) filter += (i ? "," : "") + std::to_string(polarity[i]);
+                    match.push_back(filter + ")");
+                }
+            }
+            // A single metric may map onto several columns (db_mass/exp_mass):
+            // each column's condition is OR-ed so a row matching either passes.
+            auto add_window = [&](const std::vector<const char *> &columns, const char *exact, const char *minimum, const char *maximum) {
+                std::vector<std::string> conditions;
+                if (target.contains(exact)) {
+                    const double center = target.at(exact).get<double>();
+                    const double delta = std::abs(center) * ppm / 1e6;
+                    for (const char *column : columns)
+                        conditions.push_back(std::string(column) + " BETWEEN " + number(center - delta) + " AND " + number(center + delta));
+                } else if (target.contains(minimum) || target.contains(maximum)) {
+                    for (const char *column : columns) {
+                        std::string range = std::string(column) + " >= " + number(target.value(minimum, -1e300));
+                        if (target.contains(maximum)) range += " AND " + std::string(column) + " <= " + number(target.at(maximum).get<double>());
+                        conditions.push_back(std::move(range));
+                    }
+                }
+                if (conditions.size() == 1)
+                    match.push_back(conditions.front());
+                else if (conditions.size() > 1) {
+                    std::string expression = "(";
+                    for (std::size_t i = 0; i < conditions.size(); ++i) expression += (i ? " OR " : "") + conditions[i];
+                    match.push_back(expression + ")");
+                }
+            };
+            add_window(spec.mass_columns, "mass", "mass_min", "mass_max");
+            add_window(spec.mz_columns, "mz", "mz_min", "mz_max");
+            if (!spec.mass_columns.empty() && !target.contains("mass") && !target.contains("mass_min") && !target.contains("mass_max") &&
+                !target.contains("mz") && !target.contains("mz_min") && !target.contains("mz_max") &&
+                (target.contains("SMILES") || target.contains("InChI"))) {
+                const auto normalized = sf::obabel::normalize_structure(target.value("SMILES", ""), target.value("InChI", ""));
+                if (normalized.ok && normalized.exact_mass > 0.0) {
+                    const double delta = normalized.exact_mass * ppm / 1e6;
+                    std::vector<std::string> conditions;
+                    for (const char *column : spec.mass_columns)
+                        conditions.push_back(std::string(column) + " BETWEEN " + number(normalized.exact_mass - delta) + " AND " + number(normalized.exact_mass + delta));
+                    if (conditions.size() == 1)
+                        match.push_back(conditions.front());
+                    else {
+                        std::string expression = "(";
+                        for (std::size_t i = 0; i < conditions.size(); ++i) expression += (i ? " OR " : "") + conditions[i];
+                        match.push_back(expression + ")");
+                    }
+                }
+            }
+            add_window(spec.rt_columns, "rt", "rt_min", "rt_max");
+            if (!match.empty()) {
+                std::string expression = "(";
+                for (std::size_t i = 0; i < match.size(); ++i) expression += (i ? " AND " : "") + match[i];
+                target_filters.push_back(expression + ")");
+            }
+        }
+        if (!target_filters.empty()) {
+            std::string filter = "(";
+            for (std::size_t i = 0; i < target_filters.size(); ++i) filter += (i ? " OR " : "") + target_filters[i];
+            filters.push_back(filter + ")");
+        }
+        std::string query = "SELECT * FROM " + std::string(spec.table) + " WHERE project_id = " + detail::sql(project.get_project_id());
+        for (const auto &filter : filters) query += " AND " + filter;
+        query += " ORDER BY " + std::string(spec.order_by);
+        return project.query_json(query);
+    }
 
+    Json Project::get_suspects(const Json &p)
+    {
+        static const TableQuerySpec spec{
+            "MASS_SPEC_NTA_SUSPECTS",
+            {"db_mass", "exp_mass"},
+            {},
+            {"db_rt", "exp_rt"},
+            true,
+            "analysis"};
+        return query_nta_table(project_, p, spec);
+    }
 
+    Json Project::get_internal_standards(const Json &p)
+    {
+        static const TableQuerySpec spec{
+            "MASS_SPEC_NTA_INTERNAL_STANDARDS",
+            {"db_mass", "exp_mass"},
+            {},
+            {"db_rt", "exp_rt"},
+            true,
+            "analysis"};
+        return query_nta_table(project_, p, spec);
+    }
+
+    Json Project::get_transformation_products(const Json &p)
+    {
+        static const TableQuerySpec spec{
+            "MASS_SPEC_NTA_TRANSFORMATION_PRODUCTS",
+            {"mass"},
+            {},
+            {},
+            false,
+            "analysis"};
+        return query_nta_table(project_, p, spec);
+    }
+
+    }

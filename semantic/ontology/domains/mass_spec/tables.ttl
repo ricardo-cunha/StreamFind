@@ -274,3 +274,47 @@ sfms:internalStandardsTable
         sfms:isExpMs2SizeColumn,
         sfms:isExpMs2MzColumn,
         sfms:isExpMs2IntensityColumn .
+
+        sfms:transformationProductsTable
+            a sf:Table ;
+            skos:inScheme sfcore:scheme ;
+            skos:prefLabel "NTA transformation products table" ;
+            skos:definition "Persisted transformation-product assignment rows." ;
+            sf:tableName "MASS_SPEC_NTA_TRANSFORMATION_PRODUCTS" ;
+    sf:hasColumn
+        sfcore:projectIdColumn,
+        sfms:tpAnalysisColumn,
+        sfms:tpFeatureGroupColumn,
+        sfms:tpPrecursorFeatureGroupColumn,
+        sfms:tpMainPrecursorFeatureGroupColumn,
+        sfms:tpAssignmentRankColumn,
+        sfms:tpNameColumn,
+        sfms:tpFormulaColumn,
+        sfms:tpMassColumn,
+        sfms:tpSmilesColumn,
+        sfms:tpInChIColumn,
+        sfms:tpInChIKeyColumn,
+        sfms:tpXLogPColumn,
+        sfms:tpTransformationColumn,
+        sfms:tpPrecursorNameColumn,
+        sfms:tpPrecursorFormulaColumn,
+        sfms:tpPrecursorMassColumn,
+        sfms:tpPrecursorSmilesColumn,
+        sfms:tpPrecursorInChIColumn,
+        sfms:tpPrecursorInChIKeyColumn,
+        sfms:tpPrecursorXLogPColumn,
+        sfms:tpMainPrecursorNameColumn,
+        sfms:tpMainPrecursorFormulaColumn,
+        sfms:tpMainPrecursorMassColumn,
+        sfms:tpMainPrecursorSmilesColumn,
+        sfms:tpMainPrecursorInChIColumn,
+        sfms:tpMainPrecursorInChIKeyColumn,
+        sfms:tpMainPrecursorXLogPColumn,
+        sfms:tpCosineSimilarityColumn,
+        sfms:tpMainPrecursorCosineSimilarityColumn,
+        sfms:tpRtPlausibilityColumn,
+        sfms:tpMainPrecursorRtPlausibilityColumn,
+        sfms:tpAssignmentScoreColumn,
+        sfms:tpNetworkLevelColumn,
+        sfms:tpAssignmentStatusColumn,
+        sfcore:createdAtColumn .

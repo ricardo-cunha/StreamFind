@@ -401,6 +401,9 @@ void register_operations(OperationRegistry &registry) {
             else if (id == "mass_spec.get_chromatograms") result = domain.get_chromatograms(parameters);
             else if (id == "mass_spec.get_raw_chromatograms") result = domain.get_raw_chromatograms(parameters);
             else if (id == "mass_spec.get_features") result = domain.get_features(parameters);
+            else if (id == "mass_spec.get_suspects") result = domain.get_suspects(parameters);
+            else if (id == "mass_spec.get_internal_standards") result = domain.get_internal_standards(parameters);
+            else if (id == "mass_spec.get_transformation_products") result = domain.get_transformation_products(parameters);
             else result = domain.get_analyses_info(parameters);
             return result_schema.value("type", "") == "table" ? detail::columnar(std::move(result), result_schema) : result;
         }));

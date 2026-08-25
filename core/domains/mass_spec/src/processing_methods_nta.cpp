@@ -594,6 +594,43 @@ void load_internal_standards(streamfind::Project &project, nta::PROJECT_NON_TARG
         return out;
     }
 
+    // Resolve the per-row analysis index for transformation-product output rows:
+    // the analysis whose suspect buffer contains the resolved product feature
+    // group (falling back to the resolved parent groups, then to the buffer
+    // holding the most suspects). Shared by the suspects append and the
+    // transformation-products persistence so both paths agree on the analysis.
+    std::vector<int> transformation_product_analysis_indices(nta::PROJECT_NON_TARGET_ANALYSIS &data,
+                                                             const nta::api::NTA_TRANSFORMATION_PRODUCTS &products)
+    {
+        auto &buffers = data.suspect_buffers();
+        std::vector<int> out;
+        out.reserve(static_cast<size_t>(products.size()));
+        auto analysis_of_group = [&](const std::string &fg) -> int {
+            if (fg.empty()) return -1;
+            for (size_t a = 0; a < buffers.size(); ++a)
+                for (int i = 0; i < buffers[a].size(); ++i)
+                    if (buffers[a].get_suspect(i).feature_group == fg)
+                        return static_cast<int>(a);
+            return -1;
+        };
+        int fallback_analysis = 0;
+        int fallback_count = -1;
+        for (size_t a = 0; a < buffers.size(); ++a)
+            if (buffers[a].size() > fallback_count) {
+                fallback_count = buffers[a].size();
+                fallback_analysis = static_cast<int>(a);
+            }
+        for (int i = 0; i < products.size(); ++i) {
+            const auto row = products.get_transformation_product(i);
+            int a = analysis_of_group(row.feature_group);
+            if (a < 0) a = analysis_of_group(row.resolved_direct_parent_feature_group);
+            if (a < 0) a = analysis_of_group(row.resolved_main_parent_feature_group);
+            if (a < 0) a = fallback_analysis;
+            out.push_back(a);
+        }
+        return out;
+    }
+
     // Append assign_transformation_products output rows to the per-analysis suspect
     // buffers. Each output row is placed in the analysis whose suspect buffer
     // contains the resolved product feature group (falling back to the resolved
@@ -607,30 +644,11 @@ void load_internal_standards(streamfind::Project &project, nta::PROJECT_NON_TARG
         auto &buffers = data.suspect_buffers();
         const auto &names = data.analysis_names();
         const double nan = std::numeric_limits<double>::quiet_NaN();
-
-        auto analysis_of_group = [&](const std::string &fg) -> int {
-            if (fg.empty()) return -1;
-            for (size_t a = 0; a < buffers.size(); ++a)
-                for (int i = 0; i < buffers[a].size(); ++i)
-                    if (buffers[a].get_suspect(i).feature_group == fg)
-                        return static_cast<int>(a);
-            return -1;
-        };
-
-        int fallback_analysis = 0;
-        int fallback_count = -1;
-        for (size_t a = 0; a < buffers.size(); ++a)
-            if (buffers[a].size() > fallback_count) {
-                fallback_count = buffers[a].size();
-                fallback_analysis = static_cast<int>(a);
-            }
+        const auto assigned = transformation_product_analysis_indices(data, products);
 
         for (int i = 0; i < products.size(); ++i) {
             const auto row = products.get_transformation_product(i);
-            int a = analysis_of_group(row.feature_group);
-            if (a < 0) a = analysis_of_group(row.resolved_direct_parent_feature_group);
-            if (a < 0) a = analysis_of_group(row.resolved_main_parent_feature_group);
-            if (a < 0) a = fallback_analysis;
+            const int a = assigned[static_cast<size_t>(i)];
 
             int rep = -1;
             for (int s = 0; s < buffers[a].size(); ++s) {
@@ -677,6 +695,42 @@ void load_internal_standards(streamfind::Project &project, nta::PROJECT_NON_TARG
             s.exp_ms2_intensity = rep_suspect.exp_ms2_intensity;
             buffers[static_cast<size_t>(a)].append(s);
         }
+    }
+
+    const std::vector<std::string> &transformation_products_columns() {
+        static const std::vector<std::string> cols = {
+            "project_id", "analysis", "feature_group", "precursor_feature_group", "main_precursor_feature_group",
+            "assignment_rank", "name", "formula", "mass", "SMILES", "InChI", "InChIKey", "xLogP", "transformation",
+            "precursor_name", "precursor_formula", "precursor_mass", "precursor_SMILES", "precursor_InChI", "precursor_InChIKey", "precursor_xLogP",
+            "main_precursor_name", "main_precursor_formula", "main_precursor_mass", "main_precursor_SMILES", "main_precursor_InChI", "main_precursor_InChIKey", "main_precursor_xLogP",
+            "cosine_similarity", "main_precursor_cosine_similarity", "rt_plausibility", "main_precursor_rt_plausibility",
+            "assignment_score", "network_level", "assignment_status"};
+        return cols;
+    }
+
+    std::vector<std::optional<std::string>> transformation_product_cells(const std::string &project, const std::string &analysis,
+                                                                        const nta::api::NTA_TRANSFORMATION_PRODUCT_ROW &r) {
+        return {
+            str_cell(project), str_cell(analysis), str_cell(r.feature_group), str_cell(r.precursor_feature_group), str_cell(r.main_precursor_feature_group),
+            inum_cell(r.assignment_rank), str_cell(r.name), str_cell(r.formula), dnum_cell(r.mass), str_cell(r.SMILES), str_cell(r.InChI), str_cell(r.InChIKey), dnum_cell(r.xLogP), str_cell(r.transformation),
+            str_cell(r.precursor_name), str_cell(r.precursor_formula), dnum_cell(r.precursor_mass), str_cell(r.precursor_SMILES), str_cell(r.precursor_InChI), str_cell(r.precursor_InChIKey), dnum_cell(r.precursor_xLogP),
+            str_cell(r.main_precursor_name), str_cell(r.main_precursor_formula), dnum_cell(r.main_precursor_mass), str_cell(r.main_precursor_SMILES), str_cell(r.main_precursor_InChI), str_cell(r.main_precursor_InChIKey), dnum_cell(r.main_precursor_xLogP),
+            dnum_cell(r.cosine_similarity), dnum_cell(r.main_precursor_cosine_similarity), dnum_cell(r.rt_plausibility), dnum_cell(r.main_precursor_rt_plausibility),
+            dnum_cell(r.assignment_score), inum_cell(r.network_level), str_cell(r.assignment_status)};
+    }
+
+    void persist_transformation_products(streamfind::Project &project, nta::PROJECT_NON_TARGET_ANALYSIS &data,
+                                         const nta::api::NTA_TRANSFORMATION_PRODUCTS &products) {
+        const auto project_id = project.get_project_id();
+        project.execute_sql("CREATE TABLE IF NOT EXISTS MASS_SPEC_NTA_TRANSFORMATION_PRODUCTS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, feature_group VARCHAR, precursor_feature_group VARCHAR, main_precursor_feature_group VARCHAR, assignment_rank INTEGER, name VARCHAR NOT NULL, formula VARCHAR, mass DOUBLE, SMILES VARCHAR, InChI VARCHAR, InChIKey VARCHAR, xLogP DOUBLE, transformation VARCHAR, precursor_name VARCHAR, precursor_formula VARCHAR, precursor_mass DOUBLE, precursor_SMILES VARCHAR, precursor_InChI VARCHAR, precursor_InChIKey VARCHAR, precursor_xLogP DOUBLE, main_precursor_name VARCHAR, main_precursor_formula VARCHAR, main_precursor_mass DOUBLE, main_precursor_SMILES VARCHAR, main_precursor_InChI VARCHAR, main_precursor_InChIKey VARCHAR, main_precursor_xLogP DOUBLE, cosine_similarity DOUBLE, main_precursor_cosine_similarity DOUBLE, rt_plausibility DOUBLE, main_precursor_rt_plausibility DOUBLE, assignment_score DOUBLE, network_level INTEGER, assignment_status VARCHAR, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, feature_group, name))");
+        project.execute_sql("DELETE FROM MASS_SPEC_NTA_TRANSFORMATION_PRODUCTS WHERE project_id=" + detail::sql(project_id));
+        const auto assigned = transformation_product_analysis_indices(data, products);
+        const auto &names = data.analysis_names();
+        std::vector<std::vector<std::optional<std::string>>> rows;
+        rows.reserve(static_cast<size_t>(products.size()));
+        for (int i = 0; i < products.size(); ++i)
+            rows.push_back(transformation_product_cells(project_id, names[static_cast<size_t>(assigned[static_cast<size_t>(i)])], products.get_transformation_product(i)));
+        project.append_rows("MASS_SPEC_NTA_TRANSFORMATION_PRODUCTS", transformation_products_columns(), rows);
     }
 
     // Write the MetFrag LocalCSV database from the JSON `database` parameter rows
@@ -1228,6 +1282,7 @@ Json assign_transformation_products(streamfind::Project &project, const Json &pa
     const auto products = nta::assign_transformation_products::assign_transformation_products_impl(
         suspects, tp_rows, phase, mzr_ms2);
     detail::append_transformation_products_to_suspects(data, products);
+    detail::persist_transformation_products(project, data, products);
     detail::persist_suspects(project, data);
     return Json{{"status","finished"},{"info","Transformation products assigned."}};
     }

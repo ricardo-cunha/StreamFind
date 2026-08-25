@@ -18,6 +18,7 @@ use crate::nta::{NtaSuspectRow, ProjectNonTargetAnalysis};
 use crate::nta_utils::decode_floats_base64;
 use crate::processing_methods_nta::{
     finished, load_analysis_features, load_suspects, persist_suspects,
+    persist_transformation_products,
 };
 
 /// Mirrors `nta::api::NTA_TRANSFORMATION_PRODUCT_ROW`.
@@ -814,13 +815,19 @@ pub fn assign_transformation_products(project: &mut Project, p: &Value) -> Resul
     let out =
         assign_transformation_products_impl(&suspects, &tp_rows, &chromatographic_phase, mzr_ms2);
 
+    // Persist real transformation-product rows (one per assignment, with the
+    // resolved analysis) alongside the suspects-table append; the analysis
+    // resolution mirrors the group -> buffer logic below.
+    let mut tp_rows_with_analysis = Vec::new();
     for row in out {
         let index = analysis_index_of_group(&data, &row.feature_group);
         let analysis = data.analysis_names()[index].clone();
+        tp_rows_with_analysis.push((analysis.clone(), row.clone()));
         let suspect = transformation_product_to_suspect(&row, &analysis);
         data.suspect_buffers[index].append(&suspect);
     }
 
     persist_suspects(project, &data)?;
+    persist_transformation_products(project, &tp_rows_with_analysis)?;
     Ok(finished("Assigning transformation products completed."))
 }

@@ -3986,7 +3986,8 @@ pub const CATALOGUE: &str = r###"
           "MASS_SPEC_NTA_SUSPECTS"
         ],
         "writes": [
-          "MASS_SPEC_NTA_SUSPECTS"
+          "MASS_SPEC_NTA_SUSPECTS",
+          "MASS_SPEC_NTA_TRANSFORMATION_PRODUCTS"
         ]
       },
       "cacheable": true,
@@ -9265,6 +9266,865 @@ pub const CATALOGUE: &str = r###"
     },
     {
       "kind": "operation",
+      "canonical_id": "mass_spec.get_internal_standards",
+      "domain": "mass_spec",
+      "label": "Get NTA internal standards",
+      "definition": "Read persisted non-target-analysis internal-standard assignments matching analysis, mass or m/z, retention time, and polarity targets.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "get_internal_standards",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string",
+              "examples": [
+                "/data/project.duckdb"
+              ]
+            },
+            "project_id": {
+              "type": "string",
+              "examples": [
+                "demo"
+              ]
+            },
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              },
+              "default": []
+            },
+            "targets": {
+              "type": "array",
+              "examples": [
+                [
+                  {
+                    "id": "caffeine",
+                    "mass": 194.0804
+                  }
+                ]
+              ],
+              "items": {
+                "type": "object",
+                "examples": [
+                  {
+                    "id": "caffeine",
+                    "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                  }
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "analyses": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        "sample-r001",
+                        "sample-r002"
+                      ]
+                    ],
+                    "items": {
+                      "type": "string",
+                      "examples": [
+                        "sample"
+                      ]
+                    }
+                  },
+                  "polarity": {
+                    "type": "integer",
+                    "examples": [
+                      1
+                    ]
+                  },
+                  "levels": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        1,
+                        2
+                      ]
+                    ],
+                    "items": {
+                      "type": "integer",
+                      "examples": [
+                        1
+                      ]
+                    }
+                  },
+                  "mass": {
+                    "type": "real",
+                    "examples": [
+                      194.0804
+                    ]
+                  },
+                  "mass_min": {
+                    "type": "real",
+                    "examples": [
+                      194.0
+                    ]
+                  },
+                  "mass_max": {
+                    "type": "real",
+                    "examples": [
+                      194.2
+                    ]
+                  },
+                  "mz": {
+                    "type": "real",
+                    "examples": [
+                      195.0877
+                    ]
+                  },
+                  "mz_min": {
+                    "type": "real",
+                    "examples": [
+                      195.0
+                    ]
+                  },
+                  "mz_max": {
+                    "type": "real",
+                    "examples": [
+                      195.2
+                    ]
+                  },
+                  "rt": {
+                    "type": "real",
+                    "examples": [
+                      1020.0
+                    ]
+                  },
+                  "rt_min": {
+                    "type": "real",
+                    "examples": [
+                      1000.0
+                    ]
+                  },
+                  "rt_max": {
+                    "type": "real",
+                    "examples": [
+                      1040.0
+                    ]
+                  },
+                  "formula": {
+                    "type": "string",
+                    "examples": [
+                      "C8H10N4O2"
+                    ]
+                  },
+                  "SMILES": {
+                    "type": "string",
+                    "examples": [
+                      "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                    ]
+                  },
+                  "InChI": {
+                    "type": "string"
+                  },
+                  "InChIKey": {
+                    "type": "string"
+                  },
+                  "xLogP": {
+                    "type": "real",
+                    "examples": [
+                      0.5
+                    ]
+                  },
+                  "score": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  },
+                  "database_id": {
+                    "type": "string"
+                  },
+                  "fragments_mz_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066,
+                        195.088
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0,
+                        80.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_mz_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "polarity": {
+              "type": "integer",
+              "examples": [
+                1
+              ]
+            },
+            "ppm": {
+              "type": "real",
+              "examples": [
+                20.0
+              ],
+              "default": 20.0
+            },
+            "rt_tolerance": {
+              "type": "real",
+              "examples": [
+                60.0
+              ],
+              "default": 60.0
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id",
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "string",
+            "examples": [
+              "/data/project.duckdb"
+            ]
+          },
+          "example": "/data/project.duckdb",
+          "default": null
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "string",
+            "examples": [
+              "demo"
+            ]
+          },
+          "example": "demo",
+          "default": null
+        },
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            },
+            "default": []
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": []
+        },
+        {
+          "name": "targets",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "targetRange",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                {
+                  "id": "caffeine",
+                  "mass": 194.0804
+                }
+              ]
+            ],
+            "items": {
+              "type": "object",
+              "examples": [
+                {
+                  "id": "caffeine",
+                  "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                }
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "name": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "analyses": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      "sample-r001",
+                      "sample-r002"
+                    ]
+                  ],
+                  "items": {
+                    "type": "string",
+                    "examples": [
+                      "sample"
+                    ]
+                  }
+                },
+                "polarity": {
+                  "type": "integer",
+                  "examples": [
+                    1
+                  ]
+                },
+                "levels": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      1,
+                      2
+                    ]
+                  ],
+                  "items": {
+                    "type": "integer",
+                    "examples": [
+                      1
+                    ]
+                  }
+                },
+                "mass": {
+                  "type": "real",
+                  "examples": [
+                    194.0804
+                  ]
+                },
+                "mass_min": {
+                  "type": "real",
+                  "examples": [
+                    194.0
+                  ]
+                },
+                "mass_max": {
+                  "type": "real",
+                  "examples": [
+                    194.2
+                  ]
+                },
+                "mz": {
+                  "type": "real",
+                  "examples": [
+                    195.0877
+                  ]
+                },
+                "mz_min": {
+                  "type": "real",
+                  "examples": [
+                    195.0
+                  ]
+                },
+                "mz_max": {
+                  "type": "real",
+                  "examples": [
+                    195.2
+                  ]
+                },
+                "rt": {
+                  "type": "real",
+                  "examples": [
+                    1020.0
+                  ]
+                },
+                "rt_min": {
+                  "type": "real",
+                  "examples": [
+                    1000.0
+                  ]
+                },
+                "rt_max": {
+                  "type": "real",
+                  "examples": [
+                    1040.0
+                  ]
+                },
+                "formula": {
+                  "type": "string",
+                  "examples": [
+                    "C8H10N4O2"
+                  ]
+                },
+                "SMILES": {
+                  "type": "string",
+                  "examples": [
+                    "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                  ]
+                },
+                "InChI": {
+                  "type": "string"
+                },
+                "InChIKey": {
+                  "type": "string"
+                },
+                "xLogP": {
+                  "type": "real",
+                  "examples": [
+                    0.5
+                  ]
+                },
+                "score": {
+                  "type": "real",
+                  "examples": [
+                    1.0
+                  ]
+                },
+                "database_id": {
+                  "type": "string"
+                },
+                "fragments_mz_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066,
+                      195.088
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0,
+                      80.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_mz_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "example": [
+            {
+              "id": "caffeine",
+              "mass": 194.0804
+            }
+          ],
+          "default": null
+        },
+        {
+          "name": "polarity",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              1
+            ]
+          },
+          "example": 1,
+          "default": null
+        },
+        {
+          "name": "ppm",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              20.0
+            ],
+            "default": 20.0
+          },
+          "example": 20.0,
+          "default": 20.0
+        },
+        {
+          "name": "rt_tolerance",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              60.0
+            ],
+            "default": 60.0
+          },
+          "example": 60.0,
+          "default": 60.0
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/domains/mass_spec#internalStandardsResult",
+        "schema": {
+          "type": "table",
+          "properties": {
+            "project_id": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "analysis": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "feature": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "feature_group": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "feature_component": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "adduct": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "candidate_rank": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "name": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "polarity": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "db_mass": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "exp_mass": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "error_mass": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "db_rt": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "exp_rt": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "error_rt": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "intensity": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "area": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "id_level": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "score": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "shared_fragments": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "cosine_similarity": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "formula": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "SMILES": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "InChI": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "InChIKey": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "xLogP": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "database_id": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "db_ms2_size": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "db_ms2_mz": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "db_ms2_intensity": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "db_ms2_formula": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "db_ms2_smiles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "exp_ms2_size": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "exp_ms2_mz": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "exp_ms2_intensity": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "created_at": {
+              "type": "array",
+              "items": {
+                "type": "timestamp"
+              }
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_INTERNAL_STANDARDS"
+        ],
+        "writes": []
+      }
+    },
+    {
+      "kind": "operation",
       "canonical_id": "mass_spec.get_raw_chromatograms",
       "domain": "mass_spec",
       "label": "Get raw chromatograms",
@@ -13313,6 +14173,1690 @@ pub const CATALOGUE: &str = r###"
         "mutates_project": false,
         "reads": [
           "MASS_SPEC_SPECTRA_HEADERS"
+        ],
+        "writes": []
+      }
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "mass_spec.get_suspects",
+      "domain": "mass_spec",
+      "label": "Get NTA suspects",
+      "definition": "Read persisted non-target-analysis suspect-screening assignments matching analysis, mass or m/z, retention time, and polarity targets.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "get_suspects",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string",
+              "examples": [
+                "/data/project.duckdb"
+              ]
+            },
+            "project_id": {
+              "type": "string",
+              "examples": [
+                "demo"
+              ]
+            },
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              },
+              "default": []
+            },
+            "targets": {
+              "type": "array",
+              "examples": [
+                [
+                  {
+                    "id": "caffeine",
+                    "mass": 194.0804
+                  }
+                ]
+              ],
+              "items": {
+                "type": "object",
+                "examples": [
+                  {
+                    "id": "caffeine",
+                    "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                  }
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "analyses": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        "sample-r001",
+                        "sample-r002"
+                      ]
+                    ],
+                    "items": {
+                      "type": "string",
+                      "examples": [
+                        "sample"
+                      ]
+                    }
+                  },
+                  "polarity": {
+                    "type": "integer",
+                    "examples": [
+                      1
+                    ]
+                  },
+                  "levels": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        1,
+                        2
+                      ]
+                    ],
+                    "items": {
+                      "type": "integer",
+                      "examples": [
+                        1
+                      ]
+                    }
+                  },
+                  "mass": {
+                    "type": "real",
+                    "examples": [
+                      194.0804
+                    ]
+                  },
+                  "mass_min": {
+                    "type": "real",
+                    "examples": [
+                      194.0
+                    ]
+                  },
+                  "mass_max": {
+                    "type": "real",
+                    "examples": [
+                      194.2
+                    ]
+                  },
+                  "mz": {
+                    "type": "real",
+                    "examples": [
+                      195.0877
+                    ]
+                  },
+                  "mz_min": {
+                    "type": "real",
+                    "examples": [
+                      195.0
+                    ]
+                  },
+                  "mz_max": {
+                    "type": "real",
+                    "examples": [
+                      195.2
+                    ]
+                  },
+                  "rt": {
+                    "type": "real",
+                    "examples": [
+                      1020.0
+                    ]
+                  },
+                  "rt_min": {
+                    "type": "real",
+                    "examples": [
+                      1000.0
+                    ]
+                  },
+                  "rt_max": {
+                    "type": "real",
+                    "examples": [
+                      1040.0
+                    ]
+                  },
+                  "formula": {
+                    "type": "string",
+                    "examples": [
+                      "C8H10N4O2"
+                    ]
+                  },
+                  "SMILES": {
+                    "type": "string",
+                    "examples": [
+                      "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                    ]
+                  },
+                  "InChI": {
+                    "type": "string"
+                  },
+                  "InChIKey": {
+                    "type": "string"
+                  },
+                  "xLogP": {
+                    "type": "real",
+                    "examples": [
+                      0.5
+                    ]
+                  },
+                  "score": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  },
+                  "database_id": {
+                    "type": "string"
+                  },
+                  "fragments_mz_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066,
+                        195.088
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0,
+                        80.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_mz_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "polarity": {
+              "type": "integer",
+              "examples": [
+                1
+              ]
+            },
+            "ppm": {
+              "type": "real",
+              "examples": [
+                20.0
+              ],
+              "default": 20.0
+            },
+            "rt_tolerance": {
+              "type": "real",
+              "examples": [
+                60.0
+              ],
+              "default": 60.0
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id",
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "string",
+            "examples": [
+              "/data/project.duckdb"
+            ]
+          },
+          "example": "/data/project.duckdb",
+          "default": null
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "string",
+            "examples": [
+              "demo"
+            ]
+          },
+          "example": "demo",
+          "default": null
+        },
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            },
+            "default": []
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": []
+        },
+        {
+          "name": "targets",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "targetRange",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                {
+                  "id": "caffeine",
+                  "mass": 194.0804
+                }
+              ]
+            ],
+            "items": {
+              "type": "object",
+              "examples": [
+                {
+                  "id": "caffeine",
+                  "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                }
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "name": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "analyses": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      "sample-r001",
+                      "sample-r002"
+                    ]
+                  ],
+                  "items": {
+                    "type": "string",
+                    "examples": [
+                      "sample"
+                    ]
+                  }
+                },
+                "polarity": {
+                  "type": "integer",
+                  "examples": [
+                    1
+                  ]
+                },
+                "levels": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      1,
+                      2
+                    ]
+                  ],
+                  "items": {
+                    "type": "integer",
+                    "examples": [
+                      1
+                    ]
+                  }
+                },
+                "mass": {
+                  "type": "real",
+                  "examples": [
+                    194.0804
+                  ]
+                },
+                "mass_min": {
+                  "type": "real",
+                  "examples": [
+                    194.0
+                  ]
+                },
+                "mass_max": {
+                  "type": "real",
+                  "examples": [
+                    194.2
+                  ]
+                },
+                "mz": {
+                  "type": "real",
+                  "examples": [
+                    195.0877
+                  ]
+                },
+                "mz_min": {
+                  "type": "real",
+                  "examples": [
+                    195.0
+                  ]
+                },
+                "mz_max": {
+                  "type": "real",
+                  "examples": [
+                    195.2
+                  ]
+                },
+                "rt": {
+                  "type": "real",
+                  "examples": [
+                    1020.0
+                  ]
+                },
+                "rt_min": {
+                  "type": "real",
+                  "examples": [
+                    1000.0
+                  ]
+                },
+                "rt_max": {
+                  "type": "real",
+                  "examples": [
+                    1040.0
+                  ]
+                },
+                "formula": {
+                  "type": "string",
+                  "examples": [
+                    "C8H10N4O2"
+                  ]
+                },
+                "SMILES": {
+                  "type": "string",
+                  "examples": [
+                    "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                  ]
+                },
+                "InChI": {
+                  "type": "string"
+                },
+                "InChIKey": {
+                  "type": "string"
+                },
+                "xLogP": {
+                  "type": "real",
+                  "examples": [
+                    0.5
+                  ]
+                },
+                "score": {
+                  "type": "real",
+                  "examples": [
+                    1.0
+                  ]
+                },
+                "database_id": {
+                  "type": "string"
+                },
+                "fragments_mz_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066,
+                      195.088
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0,
+                      80.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_mz_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "example": [
+            {
+              "id": "caffeine",
+              "mass": 194.0804
+            }
+          ],
+          "default": null
+        },
+        {
+          "name": "polarity",
+          "type": "integer",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "integer",
+            "examples": [
+              1
+            ]
+          },
+          "example": 1,
+          "default": null
+        },
+        {
+          "name": "ppm",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              20.0
+            ],
+            "default": 20.0
+          },
+          "example": 20.0,
+          "default": 20.0
+        },
+        {
+          "name": "rt_tolerance",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              60.0
+            ],
+            "default": 60.0
+          },
+          "example": 60.0,
+          "default": 60.0
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/domains/mass_spec#suspectsResult",
+        "schema": {
+          "type": "table",
+          "properties": {
+            "project_id": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "analysis": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "feature": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "feature_group": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "candidate_rank": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "name": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "polarity": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "db_mass": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "exp_mass": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "error_mass": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "db_rt": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "exp_rt": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "error_rt": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "intensity": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "area": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "id_level": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "score": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "shared_fragments": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "cosine_similarity": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "formula": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "SMILES": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "InChI": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "InChIKey": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "xLogP": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "database_id": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "db_ms2_size": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "db_ms2_mz": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "db_ms2_intensity": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "db_ms2_formula": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "db_ms2_smiles": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "exp_ms2_size": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "exp_ms2_mz": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "exp_ms2_intensity": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "created_at": {
+              "type": "array",
+              "items": {
+                "type": "timestamp"
+              }
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_SUSPECTS"
+        ],
+        "writes": []
+      }
+    },
+    {
+      "kind": "operation",
+      "canonical_id": "mass_spec.get_transformation_products",
+      "domain": "mass_spec",
+      "label": "Get NTA transformation products",
+      "definition": "Read persisted non-target-analysis transformation-product assignments matching analysis, mass or m/z, and retention time targets.",
+      "executable": true,
+      "exposed": true,
+      "mcp": {
+        "name": "get_transformation_products",
+        "input_schema": {
+          "type": "object",
+          "properties": {
+            "database_path": {
+              "type": "string",
+              "examples": [
+                "/data/project.duckdb"
+              ]
+            },
+            "project_id": {
+              "type": "string",
+              "examples": [
+                "demo"
+              ]
+            },
+            "analysis_names": {
+              "type": "array",
+              "examples": [
+                [
+                  "sample",
+                  "blank"
+                ]
+              ],
+              "items": {
+                "type": "string",
+                "examples": [
+                  "sample"
+                ]
+              },
+              "default": []
+            },
+            "targets": {
+              "type": "array",
+              "examples": [
+                [
+                  {
+                    "id": "caffeine",
+                    "mass": 194.0804
+                  }
+                ]
+              ],
+              "items": {
+                "type": "object",
+                "examples": [
+                  {
+                    "id": "caffeine",
+                    "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                  }
+                ],
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "name": {
+                    "type": "string",
+                    "examples": [
+                      "caffeine"
+                    ]
+                  },
+                  "analyses": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        "sample-r001",
+                        "sample-r002"
+                      ]
+                    ],
+                    "items": {
+                      "type": "string",
+                      "examples": [
+                        "sample"
+                      ]
+                    }
+                  },
+                  "polarity": {
+                    "type": "integer",
+                    "examples": [
+                      1
+                    ]
+                  },
+                  "levels": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        1,
+                        2
+                      ]
+                    ],
+                    "items": {
+                      "type": "integer",
+                      "examples": [
+                        1
+                      ]
+                    }
+                  },
+                  "mass": {
+                    "type": "real",
+                    "examples": [
+                      194.0804
+                    ]
+                  },
+                  "mass_min": {
+                    "type": "real",
+                    "examples": [
+                      194.0
+                    ]
+                  },
+                  "mass_max": {
+                    "type": "real",
+                    "examples": [
+                      194.2
+                    ]
+                  },
+                  "mz": {
+                    "type": "real",
+                    "examples": [
+                      195.0877
+                    ]
+                  },
+                  "mz_min": {
+                    "type": "real",
+                    "examples": [
+                      195.0
+                    ]
+                  },
+                  "mz_max": {
+                    "type": "real",
+                    "examples": [
+                      195.2
+                    ]
+                  },
+                  "rt": {
+                    "type": "real",
+                    "examples": [
+                      1020.0
+                    ]
+                  },
+                  "rt_min": {
+                    "type": "real",
+                    "examples": [
+                      1000.0
+                    ]
+                  },
+                  "rt_max": {
+                    "type": "real",
+                    "examples": [
+                      1040.0
+                    ]
+                  },
+                  "formula": {
+                    "type": "string",
+                    "examples": [
+                      "C8H10N4O2"
+                    ]
+                  },
+                  "SMILES": {
+                    "type": "string",
+                    "examples": [
+                      "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                    ]
+                  },
+                  "InChI": {
+                    "type": "string"
+                  },
+                  "InChIKey": {
+                    "type": "string"
+                  },
+                  "xLogP": {
+                    "type": "real",
+                    "examples": [
+                      0.5
+                    ]
+                  },
+                  "score": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  },
+                  "database_id": {
+                    "type": "string"
+                  },
+                  "fragments_mz_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066,
+                        195.088
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_pos": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0,
+                        80.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_mz_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        138.066
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  },
+                  "fragments_intensity_neg": {
+                    "type": "array",
+                    "examples": [
+                      [
+                        100.0
+                      ]
+                    ],
+                    "items": {
+                      "type": "real",
+                      "examples": [
+                        1.0
+                      ]
+                    }
+                  }
+                }
+              }
+            },
+            "ppm": {
+              "type": "real",
+              "examples": [
+                20.0
+              ],
+              "default": 20.0
+            },
+            "rt_tolerance": {
+              "type": "real",
+              "examples": [
+                60.0
+              ],
+              "default": 60.0
+            }
+          },
+          "required": [
+            "database_path",
+            "project_id",
+            "analysis_names"
+          ]
+        }
+      },
+      "parameters": [
+        {
+          "name": "database_path",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "string",
+            "examples": [
+              "/data/project.duckdb"
+            ]
+          },
+          "example": "/data/project.duckdb",
+          "default": null
+        },
+        {
+          "name": "project_id",
+          "type": "string",
+          "required": true,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "string",
+            "examples": [
+              "demo"
+            ]
+          },
+          "example": "demo",
+          "default": null
+        },
+        {
+          "name": "analysis_names",
+          "type": "array",
+          "required": true,
+          "constraints": {},
+          "items": "stringItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                "sample",
+                "blank"
+              ]
+            ],
+            "items": {
+              "type": "string",
+              "examples": [
+                "sample"
+              ]
+            },
+            "default": []
+          },
+          "example": [
+            "sample",
+            "blank"
+          ],
+          "default": []
+        },
+        {
+          "name": "targets",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "targetRange",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "examples": [
+              [
+                {
+                  "id": "caffeine",
+                  "mass": 194.0804
+                }
+              ]
+            ],
+            "items": {
+              "type": "object",
+              "examples": [
+                {
+                  "id": "caffeine",
+                  "SMILES": "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                }
+              ],
+              "properties": {
+                "id": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "name": {
+                  "type": "string",
+                  "examples": [
+                    "caffeine"
+                  ]
+                },
+                "analyses": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      "sample-r001",
+                      "sample-r002"
+                    ]
+                  ],
+                  "items": {
+                    "type": "string",
+                    "examples": [
+                      "sample"
+                    ]
+                  }
+                },
+                "polarity": {
+                  "type": "integer",
+                  "examples": [
+                    1
+                  ]
+                },
+                "levels": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      1,
+                      2
+                    ]
+                  ],
+                  "items": {
+                    "type": "integer",
+                    "examples": [
+                      1
+                    ]
+                  }
+                },
+                "mass": {
+                  "type": "real",
+                  "examples": [
+                    194.0804
+                  ]
+                },
+                "mass_min": {
+                  "type": "real",
+                  "examples": [
+                    194.0
+                  ]
+                },
+                "mass_max": {
+                  "type": "real",
+                  "examples": [
+                    194.2
+                  ]
+                },
+                "mz": {
+                  "type": "real",
+                  "examples": [
+                    195.0877
+                  ]
+                },
+                "mz_min": {
+                  "type": "real",
+                  "examples": [
+                    195.0
+                  ]
+                },
+                "mz_max": {
+                  "type": "real",
+                  "examples": [
+                    195.2
+                  ]
+                },
+                "rt": {
+                  "type": "real",
+                  "examples": [
+                    1020.0
+                  ]
+                },
+                "rt_min": {
+                  "type": "real",
+                  "examples": [
+                    1000.0
+                  ]
+                },
+                "rt_max": {
+                  "type": "real",
+                  "examples": [
+                    1040.0
+                  ]
+                },
+                "formula": {
+                  "type": "string",
+                  "examples": [
+                    "C8H10N4O2"
+                  ]
+                },
+                "SMILES": {
+                  "type": "string",
+                  "examples": [
+                    "CN1C=NC2=C1C(=O)N(C(=O)N2C)C"
+                  ]
+                },
+                "InChI": {
+                  "type": "string"
+                },
+                "InChIKey": {
+                  "type": "string"
+                },
+                "xLogP": {
+                  "type": "real",
+                  "examples": [
+                    0.5
+                  ]
+                },
+                "score": {
+                  "type": "real",
+                  "examples": [
+                    1.0
+                  ]
+                },
+                "database_id": {
+                  "type": "string"
+                },
+                "fragments_mz_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066,
+                      195.088
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_pos": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0,
+                      80.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_mz_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      138.066
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                },
+                "fragments_intensity_neg": {
+                  "type": "array",
+                  "examples": [
+                    [
+                      100.0
+                    ]
+                  ],
+                  "items": {
+                    "type": "real",
+                    "examples": [
+                      1.0
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "example": [
+            {
+              "id": "caffeine",
+              "mass": 194.0804
+            }
+          ],
+          "default": null
+        },
+        {
+          "name": "ppm",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              20.0
+            ],
+            "default": 20.0
+          },
+          "example": 20.0,
+          "default": 20.0
+        },
+        {
+          "name": "rt_tolerance",
+          "type": "real",
+          "required": false,
+          "constraints": {},
+          "items": null,
+          "extensions": [],
+          "schema": {
+            "type": "real",
+            "examples": [
+              60.0
+            ],
+            "default": 60.0
+          },
+          "example": 60.0,
+          "default": 60.0
+        }
+      ],
+      "result": {
+        "id": "https://streamfind.dev/catalogue/domains/mass_spec#transformationProductsResult",
+        "schema": {
+          "type": "table",
+          "properties": {
+            "project_id": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "analysis": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "feature_group": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "precursor_feature_group": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "main_precursor_feature_group": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "assignment_rank": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "name": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "formula": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "mass": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "SMILES": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "InChI": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "InChIKey": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "xLogP": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "transformation": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "precursor_name": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "precursor_formula": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "precursor_mass": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "precursor_SMILES": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "precursor_InChI": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "precursor_InChIKey": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "precursor_xLogP": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "main_precursor_name": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "main_precursor_formula": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "main_precursor_mass": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "main_precursor_SMILES": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "main_precursor_InChI": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "main_precursor_InChIKey": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "main_precursor_xLogP": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "cosine_similarity": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "main_precursor_cosine_similarity": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "rt_plausibility": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "main_precursor_rt_plausibility": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "assignment_score": {
+              "type": "array",
+              "items": {
+                "type": "real"
+              }
+            },
+            "network_level": {
+              "type": "array",
+              "items": {
+                "type": "integer"
+              }
+            },
+            "assignment_status": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "created_at": {
+              "type": "array",
+              "items": {
+                "type": "timestamp"
+              }
+            }
+          }
+        }
+      },
+      "effects": {
+        "mutates_project": false,
+        "reads": [
+          "MASS_SPEC_NTA_TRANSFORMATION_PRODUCTS"
         ],
         "writes": []
       }

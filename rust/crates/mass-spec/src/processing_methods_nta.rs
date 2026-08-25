@@ -1299,10 +1299,14 @@ const NTA_SUSPECTS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_NTA_SUSP
 
 const NTA_INTERNAL_STANDARDS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_NTA_INTERNAL_STANDARDS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, feature VARCHAR NOT NULL, feature_group VARCHAR, feature_component VARCHAR, adduct VARCHAR, candidate_rank INTEGER, name VARCHAR, polarity INTEGER, db_mass DOUBLE, exp_mass DOUBLE, error_mass DOUBLE, db_rt DOUBLE, exp_rt DOUBLE, error_rt DOUBLE, intensity DOUBLE, area DOUBLE, id_level INTEGER, score DOUBLE, shared_fragments INTEGER, cosine_similarity DOUBLE, formula VARCHAR, SMILES VARCHAR, InChI VARCHAR, InChIKey VARCHAR, xLogP DOUBLE, database_id VARCHAR, db_ms2_size INTEGER, db_ms2_mz VARCHAR, db_ms2_intensity VARCHAR, db_ms2_formula VARCHAR, db_ms2_smiles VARCHAR, exp_ms2_size INTEGER, exp_ms2_mz VARCHAR, exp_ms2_intensity VARCHAR, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, feature))";
 
+const NTA_TRANSFORMATION_PRODUCTS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_NTA_TRANSFORMATION_PRODUCTS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, feature_group VARCHAR, precursor_feature_group VARCHAR, main_precursor_feature_group VARCHAR, assignment_rank INTEGER, name VARCHAR NOT NULL, formula VARCHAR, mass DOUBLE, SMILES VARCHAR, InChI VARCHAR, InChIKey VARCHAR, xLogP DOUBLE, transformation VARCHAR, precursor_name VARCHAR, precursor_formula VARCHAR, precursor_mass DOUBLE, precursor_SMILES VARCHAR, precursor_InChI VARCHAR, precursor_InChIKey VARCHAR, precursor_xLogP DOUBLE, main_precursor_name VARCHAR, main_precursor_formula VARCHAR, main_precursor_mass DOUBLE, main_precursor_SMILES VARCHAR, main_precursor_InChI VARCHAR, main_precursor_InChIKey VARCHAR, main_precursor_xLogP DOUBLE, cosine_similarity DOUBLE, main_precursor_cosine_similarity DOUBLE, rt_plausibility DOUBLE, main_precursor_rt_plausibility DOUBLE, assignment_score DOUBLE, network_level INTEGER, assignment_status VARCHAR, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, feature_group, name))";
+
+
 pub(crate) fn ensure_nta_schemas(project: &Project) -> Result<()> {
     project.execute_sql(NTA_FEATURES_SCHEMA)?;
     project.execute_sql(NTA_SUSPECTS_SCHEMA)?;
     project.execute_sql(NTA_INTERNAL_STANDARDS_SCHEMA)?;
+    project.execute_sql(NTA_TRANSFORMATION_PRODUCTS_SCHEMA)?;
     Ok(())
 }
 
@@ -1693,6 +1697,77 @@ pub(crate) fn persist_internal_standards(project: &Project, data: &crate::nta::P
     }
     insert_rows(project, "MASS_SPEC_NTA_INTERNAL_STANDARDS", INTERNAL_STANDARDS_COLUMNS, tuples)
 }
+const TRANSFORMATION_PRODUCTS_COLUMNS: &str = "project_id,analysis,feature_group,precursor_feature_group,main_precursor_feature_group,assignment_rank,name,formula,mass,SMILES,InChI,InChIKey,xLogP,transformation,precursor_name,precursor_formula,precursor_mass,precursor_SMILES,precursor_InChI,precursor_InChIKey,precursor_xLogP,main_precursor_name,main_precursor_formula,main_precursor_mass,main_precursor_SMILES,main_precursor_InChI,main_precursor_InChIKey,main_precursor_xLogP,cosine_similarity,main_precursor_cosine_similarity,rt_plausibility,main_precursor_rt_plausibility,assignment_score,network_level,assignment_status";
+
+fn transformation_product_values(
+    project_id: &str,
+    analysis: &str,
+    r: &crate::nta_transformation_products::TransformationProductRow,
+) -> String {
+    let vals = vec![
+        sql(project_id),
+        sql(analysis),
+        sql(&r.feature_group),
+        sql(&r.precursor_feature_group),
+        sql(&r.main_precursor_feature_group),
+        r.assignment_rank.to_string(),
+        sql(&r.name),
+        sql(&r.formula),
+        dnum_cell(r.mass),
+        sql(&r.SMILES),
+        sql(&r.InChI),
+        sql(&r.InChIKey),
+        dnum_cell(r.xLogP),
+        sql(&r.transformation),
+        sql(&r.precursor_name),
+        sql(&r.precursor_formula),
+        dnum_cell(r.precursor_mass),
+        sql(&r.precursor_SMILES),
+        sql(&r.precursor_InChI),
+        sql(&r.precursor_InChIKey),
+        dnum_cell(r.precursor_xLogP),
+        sql(&r.main_precursor_name),
+        sql(&r.main_precursor_formula),
+        dnum_cell(r.main_precursor_mass),
+        sql(&r.main_precursor_SMILES),
+        sql(&r.main_precursor_InChI),
+        sql(&r.main_precursor_InChIKey),
+        dnum_cell(r.main_precursor_xLogP),
+        dnum_cell(r.cosine_similarity),
+        dnum_cell(r.main_precursor_cosine_similarity),
+        dnum_cell(r.rt_plausibility),
+        dnum_cell(r.main_precursor_rt_plausibility),
+        dnum_cell(r.assignment_score),
+        r.network_level.to_string(),
+        sql(&r.assignment_status),
+    ];
+    format!("({})", vals.join(","))
+}
+
+/// Delete + full re-insert of the transformation-product assignment rows
+/// (mirrors `persist_suspects`); `analysis` is resolved per row by the caller.
+pub(crate) fn persist_transformation_products(
+    project: &Project,
+    rows: &[(String, crate::nta_transformation_products::TransformationProductRow)],
+) -> Result<()> {
+    let project_id = project.get_project_id().to_string();
+    project.execute_sql(NTA_TRANSFORMATION_PRODUCTS_SCHEMA)?;
+    project.execute_sql(&format!(
+        "DELETE FROM MASS_SPEC_NTA_TRANSFORMATION_PRODUCTS WHERE project_id={}",
+        sql(&project_id)
+    ))?;
+    let tuples: Vec<String> = rows
+        .iter()
+        .map(|(analysis, row)| transformation_product_values(&project_id, analysis, row))
+        .collect();
+    insert_rows(
+        project,
+        "MASS_SPEC_NTA_TRANSFORMATION_PRODUCTS",
+        TRANSFORMATION_PRODUCTS_COLUMNS,
+        tuples,
+    )
+}
+
 
 /// NULL-tolerant numeric load for suspect/IS tables: SQL NULL (persisted
 /// NaN) maps back to NaN, matching C++ `detail::col_d`.

@@ -847,6 +847,127 @@ fn get_features_impl(project: &mut Project, p: &Value) -> Result<Value> {
     project.query_json(&query)
 }
 
+/// Shared executor for the NTA table query operations (suspects, internal
+/// standards, transformation products): mirrors `get_features_impl` with the
+/// target table's own columns. `mass_columns`/`rt_columns` name the columns
+/// the table actually carries (suspects/IS: db_mass/exp_mass, db_rt/exp_rt;
+/// transformation products: mass only, no rt column), so matchers are only
+/// emitted for columns that exist; `has_polarity` drops the polarity matcher
+/// for tables without a polarity column (transformation products).
+fn query_nta_table_impl(
+    project: &mut Project,
+    p: &Value,
+    table: &str,
+    order_by: &str,
+    mass_columns: &[&str],
+    rt_columns: &[&str],
+    has_polarity: bool,
+) -> Result<Value> {
+    let ppm = p.get("ppm").and_then(Value::as_f64).unwrap_or(20.0);
+    let rt_tolerance = p.get("rt_tolerance").and_then(Value::as_f64).unwrap_or(60.0);
+    if ppm < 0.0 || rt_tolerance < 0.0 { return Err(invalid("ppm and rt_tolerance must be non-negative")); }
+    let list = |value: &Value| value.as_array().map(|v| v.iter().filter_map(Value::as_i64).map(|x| x as i32).collect()).unwrap_or_else(|| vec![value.as_i64().unwrap_or(0) as i32]);
+    let analyses = string_list(p, "analysis_names");
+    let mut targets = p.get("targets").and_then(Value::as_array).cloned().unwrap_or_else(|| vec![json!({})]);
+    if targets.is_empty() { targets.push(json!({})); }
+    let mut target_filters = Vec::new();
+    for target in targets {
+        let mut matchers = Vec::new();
+        let target_analyses = target.get("analyses").map(|v| if v.is_array() { v.as_array().unwrap().iter().filter_map(Value::as_str).map(str::to_owned).collect() } else { vec![text(v)] }).unwrap_or_else(|| analyses.clone());
+        if !target_analyses.is_empty() { matchers.push(format!("analysis IN ({})", target_analyses.iter().map(|v| sql(v)).collect::<Vec<_>>().join(","))); }
+        if has_polarity {
+            let polarities = target.get("polarity").or_else(|| p.get("polarity")).map(list).unwrap_or_default();
+            if !polarities.is_empty() { matchers.push(format!("polarity IN ({})", polarities.iter().map(ToString::to_string).collect::<Vec<_>>().join(","))); }
+        }
+        let has_mass = target.get("mass").is_some() || target.get("mass_min").is_some() || target.get("mass_max").is_some();
+        let has_mz = target.get("mz").is_some() || target.get("mz_min").is_some() || target.get("mz_max").is_some();
+        // Mass window (±ppm) and explicit [min,max] bounds on every mass column
+        // the target table carries. These tables have no mz column, so an
+        // mz-only target matches nothing (mirrors dropping the polarity
+        // matcher for columns the table does not have).
+        for column in mass_columns {
+            if let Some(center) = target.get("mass").and_then(Value::as_f64) {
+                let delta = center.abs() * ppm / 1e6;
+                matchers.push(format!("{column} BETWEEN {} AND {}", center - delta, center + delta));
+            } else if target.get("mass_min").is_some() || target.get("mass_max").is_some() {
+                let lo = target.get("mass_min").and_then(Value::as_f64).map_or("-1e300".into(), |v| v.to_string());
+                let hi = target.get("mass_max").and_then(Value::as_f64).map_or("1e300".into(), |v| v.to_string());
+                matchers.push(format!("{column} BETWEEN {lo} AND {hi}"));
+            }
+        }
+        if !has_mass && !has_mz && (target.get("SMILES").is_some() || target.get("InChI").is_some()) {
+            let normalized = crate::nta_suspect_screening::normalize_structure(
+                target.get("SMILES").and_then(Value::as_str).unwrap_or(""),
+                target.get("InChI").and_then(Value::as_str).unwrap_or(""),
+            );
+            if normalized.ok && normalized.exact_mass > 0.0 {
+                let delta = normalized.exact_mass * ppm / 1e6;
+                for column in mass_columns {
+                    matchers.push(format!(
+                        "{column} BETWEEN {} AND {}",
+                        normalized.exact_mass - delta,
+                        normalized.exact_mass + delta
+                    ));
+                }
+            }
+        }
+        // RT window (±rt_tolerance) on every rt column the table carries.
+        if let Some(center) = target.get("rt").and_then(Value::as_f64) {
+            for column in rt_columns {
+                matchers.push(format!("{column} BETWEEN {} AND {}", center - rt_tolerance, center + rt_tolerance));
+            }
+        } else if target.get("rt_min").is_some() || target.get("rt_max").is_some() {
+            let lo = target.get("rt_min").and_then(Value::as_f64).map_or("-1e300".into(), |v| v.to_string());
+            let hi = target.get("rt_max").and_then(Value::as_f64).map_or("1e300".into(), |v| v.to_string());
+            for column in rt_columns {
+                matchers.push(format!("{column} BETWEEN {lo} AND {hi}"));
+            }
+        }
+        if !matchers.is_empty() { target_filters.push(format!("({})", matchers.join(" AND "))); }
+    }
+    let mut query = format!("SELECT * FROM {table} WHERE project_id = {}", sql(project.get_project_id()));
+    if !target_filters.is_empty() { query.push_str(&format!(" AND ({})", target_filters.join(" OR "))); }
+    query.push_str(" ORDER BY analysis");
+    if !order_by.is_empty() { query.push_str(&format!(", {order_by}")); }
+    project.query_json(&query)
+}
+
+fn get_suspects_impl(project: &mut Project, p: &Value) -> Result<Value> {
+    query_nta_table_impl(
+        project,
+        p,
+        "MASS_SPEC_NTA_SUSPECTS",
+        "feature",
+        &["db_mass", "exp_mass"],
+        &["db_rt", "exp_rt"],
+        true,
+    )
+}
+
+fn get_internal_standards_impl(project: &mut Project, p: &Value) -> Result<Value> {
+    query_nta_table_impl(
+        project,
+        p,
+        "MASS_SPEC_NTA_INTERNAL_STANDARDS",
+        "feature",
+        &["db_mass", "exp_mass"],
+        &["db_rt", "exp_rt"],
+        true,
+    )
+}
+
+fn get_transformation_products_impl(project: &mut Project, p: &Value) -> Result<Value> {
+    query_nta_table_impl(
+        project,
+        p,
+        "MASS_SPEC_NTA_TRANSFORMATION_PRODUCTS",
+        "feature_group",
+        &["mass"],
+        &[],
+        false,
+    )
+}
+
 fn parameter_example(name: &str) -> Option<Value> {
     match name {
         "analysis_names" => Some(json!(["sample-r001"])),
@@ -1152,6 +1273,9 @@ pub fn register_operations(registry: &mut OperationRegistry) -> Result<()> {
         "mass_spec.get_chromatograms",
         "mass_spec.get_raw_chromatograms",
         "mass_spec.get_features",
+        "mass_spec.get_suspects",
+        "mass_spec.get_internal_standards",
+        "mass_spec.get_transformation_products",
     ] {
         registry.register(Operation::new(
             id,
@@ -1193,6 +1317,13 @@ pub fn register_operations(registry: &mut OperationRegistry) -> Result<()> {
                             get_raw_chromatograms_impl(project, parameters)
                         }
                         "mass_spec.get_features" => get_features_impl(project, parameters),
+                        "mass_spec.get_suspects" => get_suspects_impl(project, parameters),
+                        "mass_spec.get_internal_standards" => {
+                            get_internal_standards_impl(project, parameters)
+                        }
+                        "mass_spec.get_transformation_products" => {
+                            get_transformation_products_impl(project, parameters)
+                        }
                         _ => unreachable!(),
                     },
                 )

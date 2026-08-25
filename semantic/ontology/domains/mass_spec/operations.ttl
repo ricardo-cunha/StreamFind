@@ -340,7 +340,66 @@ sfms:getFeatures
         sfms:polarityParameter,
         sfms:ppmParameter,
         sfms:rtToleranceParameter ;
-    sf:defaults "{\"analysis_names\":[],\"ppm\":20.0,\"rt_tolerance\":60.0}" ;
-    sf:returns sfms:featuresResult ;
-    sf:reads sfms:ntaFeaturesTable ;
-    sf:mutatesProject false .
+            sf:defaults "{\"analysis_names\":[],\"ppm\":20.0,\"rt_tolerance\":60.0}" ;
+            sf:returns sfms:featuresResult ;
+            sf:reads sfms:ntaFeaturesTable ;
+            sf:mutatesProject false .
+
+        sfms:getSuspects
+            a sf:Operation ;
+            sf:operationId "mass_spec.get_suspects" ;
+            sf:availableInDomain sfcore:mass_spec ;
+            skos:prefLabel "Get NTA suspects" ;
+            skos:definition "Read persisted non-target-analysis suspect-screening assignments matching analysis, mass or m/z, retention time, and polarity targets." ;
+            sf:toolName "get_suspects" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:analysisNamesParameter,
+        sfms:targetsParameter,
+        sfms:polarityParameter,
+        sfms:ppmParameter,
+        sfms:rtToleranceParameter ;
+            sf:defaults "{\"analysis_names\":[],\"ppm\":20.0,\"rt_tolerance\":60.0}" ;
+            sf:returns sfms:suspectsResult ;
+            sf:reads sfms:suspectsTable ;
+            sf:mutatesProject false .
+
+        sfms:getInternalStandards
+            a sf:Operation ;
+            sf:operationId "mass_spec.get_internal_standards" ;
+            sf:availableInDomain sfcore:mass_spec ;
+            skos:prefLabel "Get NTA internal standards" ;
+            skos:definition "Read persisted non-target-analysis internal-standard assignments matching analysis, mass or m/z, retention time, and polarity targets." ;
+            sf:toolName "get_internal_standards" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:analysisNamesParameter,
+        sfms:targetsParameter,
+        sfms:polarityParameter,
+        sfms:ppmParameter,
+        sfms:rtToleranceParameter ;
+            sf:defaults "{\"analysis_names\":[],\"ppm\":20.0,\"rt_tolerance\":60.0}" ;
+            sf:returns sfms:internalStandardsResult ;
+            sf:reads sfms:internalStandardsTable ;
+            sf:mutatesProject false .
+
+        sfms:getTransformationProducts
+            a sf:Operation ;
+            sf:operationId "mass_spec.get_transformation_products" ;
+            sf:availableInDomain sfcore:mass_spec ;
+            skos:prefLabel "Get NTA transformation products" ;
+            skos:definition "Read persisted non-target-analysis transformation-product assignments matching analysis, mass or m/z, and retention time targets." ;
+            sf:toolName "get_transformation_products" ;
+    sf:hasParameter
+        sfcore:databasePathParameter,
+        sfcore:projectIdParameter,
+        sfcore:analysisNamesParameter,
+        sfms:targetsParameter,
+        sfms:ppmParameter,
+        sfms:rtToleranceParameter ;
+            sf:defaults "{\"analysis_names\":[],\"ppm\":20.0,\"rt_tolerance\":60.0}" ;
+            sf:returns sfms:transformationProductsResult ;
+            sf:reads sfms:transformationProductsTable ;
+            sf:mutatesProject false .
