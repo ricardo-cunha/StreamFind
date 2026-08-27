@@ -76,6 +76,29 @@ function(streamfind_configure_duckdb vendor_root)
     set(STREAMFIND_PLATFORM_TAG "${_platform}" PARENT_SCOPE)
 endfunction()
 
+function(streamfind_configure_zstd vendor_root)
+    set(_root "${vendor_root}/zstd")
+    if(NOT EXISTS "${_root}/build/cmake/CMakeLists.txt")
+        message(FATAL_ERROR "Vendored Zstandard sources not found under ${_root}")
+    endif()
+
+    set(ZSTD_BUILD_PROGRAMS OFF CACHE BOOL "" FORCE)
+    set(ZSTD_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(ZSTD_BUILD_CONTRIB OFF CACHE BOOL "" FORCE)
+    set(ZSTD_BUILD_STATIC ON CACHE BOOL "" FORCE)
+    set(ZSTD_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+
+    add_subdirectory(
+        "${_root}/build/cmake"
+        "${CMAKE_BINARY_DIR}/streamfind-zstd"
+        EXCLUDE_FROM_ALL
+    )
+
+    if(NOT TARGET streamfind::zstd)
+        add_library(streamfind::zstd ALIAS libzstd_static)
+    endif()
+endfunction()
+
 function(streamfind_add_openbabel vendor_root)
     set(_root "${vendor_root}/openbabel")
     set(_ob_root "${_root}/openbabel-3-2-0")
@@ -156,6 +179,7 @@ endfunction()
 function(streamfind_configure_dependencies vendor_root)
     set(_vendor_root "${vendor_root}")
     streamfind_configure_duckdb("${_vendor_root}")
+    streamfind_configure_zstd("${_vendor_root}")
     streamfind_add_openbabel("${_vendor_root}")
 
     if(NOT TARGET streamfind::zlib)

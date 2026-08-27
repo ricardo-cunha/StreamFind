@@ -8,7 +8,7 @@ use base64::{engine::general_purpose::STANDARD, Engine as _};
 use flate2::read::ZlibDecoder;
 use quick_xml::{events::Event, Reader as XmlReader};
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeMap, BTreeSet},
     fs,
     io::{self, Read},
     path::{Path, PathBuf},
@@ -54,6 +54,8 @@ pub enum Format {
     Asc,
     ShimadzuLcd,
     SciexWiff,
+    AgilentMassHunterD,
+    BrukerTsf,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -127,25 +129,50 @@ pub struct Reader {
     selected_analysis: usize,
     spectra: Vec<Spectrum>,
     chromatograms: Vec<Chromatogram>,
+    agilent_records: Option<Vec<crate::reader_agilent::ScanRecord>>,
 }
 
 impl Reader {
     pub fn open(path: impl AsRef<Path>) -> Result<Self> {
         let path = path.as_ref().to_path_buf();
-        let bytes = fs::read(&path)?;
-        let format = detect_format(&path, &bytes)?;
-        let (spectra, mut chromatograms) = match format {
+        let agilent = crate::reader_agilent::is_agilent_mass_hunter_directory(&path);
+        let bruker_tsf = crate::reader_bruker::detect_family(&path) == crate::reader_bruker::Family::Tsf;
+        let bytes = if agilent || bruker_tsf { Vec::new() } else { fs::read(&path)? };
+        let format = if agilent { Format::AgilentMassHunterD } else if bruker_tsf { Format::BrukerTsf } else { detect_format(&path, &bytes)? };
+        let (mut spectra, mut chromatograms) = match format {
             Format::MzMl => (parse_mzml(&bytes)?, parse_mzml_chromatograms(&bytes)?),
             Format::MzXml => (parse_mzxml(&bytes)?, Vec::new()),
             Format::Asc => (Vec::new(), parse_asc(&bytes)),
             Format::ShimadzuLcd => parse_lcd(&path)?,
             Format::SciexWiff => (Vec::new(), Vec::new()),
+            Format::AgilentMassHunterD => (Vec::new(), Vec::new()),
+            Format::BrukerTsf => (load_bruker_tsf_spectra(&path)?, Vec::new()),
         };
         let analysis_name = path
             .file_stem()
             .unwrap_or_default()
             .to_string_lossy()
             .into_owned();
+        let agilent_records = if format == Format::AgilentMassHunterD {
+            Some(crate::reader_agilent::read_scan_records(&path).map_err(ReaderError::Invalid)?)
+        } else {
+            None
+        };
+        if let Some(records) = &agilent_records {
+            spectra = records.iter().enumerate().map(|(index, record)| Spectrum {
+                index: index as i32,
+                scan: record.scan_id as i32,
+                array_length: record.spectrum_point_count as i32,
+                level: record.ms_level,
+                low_mz: record.spectrum_min_x as f32,
+                high_mz: record.spectrum_max_x as f32,
+                base_peak_mz: record.base_peak_mz as f32,
+                base_peak_intensity: record.base_peak_value as f32,
+                tic: record.tic as f32,
+                retention_time: record.scan_time_minutes as f32,
+                ..Default::default()
+            }).collect();
+        }
         let analysis_catalog = if format == Format::SciexWiff {
             read_sciex_analysis_catalog(&path)?
         } else {
@@ -157,7 +184,12 @@ impl Reader {
             }]
         };
         if format == Format::SciexWiff {
-            chromatograms = load_sciex_chromatograms(&path, &analysis_catalog[0])?;
+            if let Ok(tof_spectra) = crate::reader_sciex::read_tof_spectra(&path, analysis_catalog[0].source_analysis_number.unwrap_or(1)) {
+                spectra = tof_spectra;
+                chromatograms = Vec::new();
+            } else {
+                chromatograms = load_sciex_chromatograms(&path, &analysis_catalog[0])?;
+            }
         }
         Ok(Self {
             path,
@@ -166,6 +198,7 @@ impl Reader {
             selected_analysis: 0,
             spectra,
             chromatograms,
+            agilent_records,
         })
     }
 
@@ -183,7 +216,12 @@ impl Reader {
         }
         self.selected_analysis = index;
         if self.format == Format::SciexWiff {
-            self.chromatograms = load_sciex_chromatograms(&self.path, &self.analysis_catalog[index])?;
+            if let Ok(tof_spectra) = crate::reader_sciex::read_tof_spectra(&self.path, self.analysis_catalog[index].source_analysis_number.unwrap_or(1)) {
+                self.spectra = tof_spectra;
+                self.chromatograms.clear();
+            } else {
+                self.chromatograms = load_sciex_chromatograms(&self.path, &self.analysis_catalog[index])?;
+            }
         }
         Ok(())
     }
@@ -200,11 +238,47 @@ impl Reader {
         self.spectra.get(index)
     }
 
+    pub fn spectrum_data(&self, index: usize) -> Result<Spectrum> {
+        if self.format != Format::AgilentMassHunterD {
+            return self.spectra.get(index).cloned().ok_or_else(|| {
+                ReaderError::Invalid(format!("spectrum index is out of range: {index}"))
+            });
+        }
+        let record = self
+            .agilent_records
+            .as_ref()
+            .and_then(|records| records.get(index))
+            .ok_or_else(|| ReaderError::Invalid(format!("spectrum index is out of range: {index}")))?;
+        let profile = crate::reader_agilent::read_profile_spectrum(&self.path, record)
+            .map_err(ReaderError::Invalid)?;
+        Ok(Spectrum {
+            index: index as i32,
+            scan: record.scan_id as i32,
+            array_length: profile.mz.len() as i32,
+            level: record.ms_level,
+            low_mz: record.spectrum_min_x as f32,
+            high_mz: record.spectrum_max_x as f32,
+            base_peak_mz: record.base_peak_mz as f32,
+            base_peak_intensity: record.base_peak_value as f32,
+            tic: record.tic as f32,
+            retention_time: record.scan_time_minutes as f32,
+            mz: profile.mz.into_iter().map(|value| value as f32).collect(),
+            intensity: profile.intensity,
+            ..Default::default()
+        })
+    }
+
     pub fn summary(&self) -> Summary {
         let mzs = self
             .spectra
             .iter()
-            .flat_map(|s| s.mz.iter().copied())
+            .flat_map(|s| {
+                if self.format == Format::AgilentMassHunterD {
+                    vec![s.low_mz, s.high_mz]
+                } else {
+                    s.mz.clone()
+                }
+            })
             .filter(|v| *v > 0.0);
         let (min_mz, max_mz) = mzs.fold((f32::INFINITY, 0.0f32), |(lo, hi), v| {
             (lo.min(v), hi.max(v))
@@ -213,6 +287,11 @@ impl Reader {
             .spectra
             .iter()
             .map(|s| s.retention_time)
+            .chain(
+                self.chromatograms
+                    .iter()
+                    .flat_map(|chromatogram| chromatogram.time.iter().copied()),
+            )
             .filter(|v| *v > 0.0);
         let (start_rt, end_rt) = times.fold((f32::INFINITY, 0.0f32), |(lo, hi), v| {
             (lo.min(v), hi.max(v))
@@ -238,64 +317,111 @@ impl Reader {
     }
 }
 
+fn load_bruker_tsf_spectra(path: &Path) -> Result<Vec<Spectrum>> {
+    let frames = crate::reader_bruker::read_tsf_frames(path).map_err(ReaderError::Invalid)?;
+    let msms = crate::reader_bruker::read_tsf_msms_info(path).map_err(ReaderError::Invalid)?;
+    let mut calibrations = BTreeMap::new();
+    let mut spectra = Vec::with_capacity(frames.len());
+    for (index, frame) in frames.iter().enumerate() {
+        let raw = crate::reader_bruker::read_tsf_line_spectrum(path, frame).map_err(ReaderError::Invalid)?;
+        if !calibrations.contains_key(&frame.mz_calibration) {
+            let calibration = crate::reader_bruker::read_tsf_calibration(path, frame)
+                .map_err(ReaderError::Invalid)?;
+            calibrations.insert(frame.mz_calibration, calibration);
+        }
+        let calibration = calibrations.get(&frame.mz_calibration).expect("calibration inserted above");
+        let mz = crate::reader_bruker::tsf_tof_to_mz(&calibration, &raw.tof);
+        let info = msms.iter().find(|value| value.frame == frame.id);
+        let (precursor_mz, precursor_charge, collision_energy) = info
+            .map(|value| (Some(value.trigger_mass as f32), value.precursor_charge, value.collision_energy as f32))
+            .unwrap_or((None, 0, 0.0));
+        let polarity = match frame.polarity.as_str() { "+" => 1, "-" => -1, _ => 0 };
+        let level = if frame.msms_type == 0 { 1 } else { 2 };
+        spectra.push(Spectrum {
+            index: index as i32,
+            scan: frame.id as i32,
+            array_length: mz.len() as i32,
+            level,
+            polarity,
+            low_mz: mz.iter().copied().fold(f32::INFINITY, |lo, value| lo.min(value as f32)),
+            high_mz: mz.iter().copied().fold(0.0, |hi, value| hi.max(value as f32)),
+            base_peak_mz: raw.intensity.iter().enumerate().max_by(|(_, left), (_, right)| left.partial_cmp(right).unwrap_or(std::cmp::Ordering::Equal)).map(|(point, _)| mz[point] as f32).unwrap_or(0.0),
+            base_peak_intensity: frame.max_intensity as f32,
+            tic: frame.summed_intensities as f32,
+            retention_time: frame.retention_time as f32,
+            precursor_mz: precursor_mz.unwrap_or(0.0),
+            precursor_charge,
+            collision_energy,
+            mz: mz.into_iter().map(|value| value as f32).collect(),
+            intensity: raw.intensity.into_iter().map(|value| value as f32).collect(),
+            ..Default::default()
+        });
+    }
+    Ok(spectra)
+}
+
 fn load_sciex_chromatograms(path: &Path, analysis: &Analysis) -> Result<Vec<Chromatogram>> {
     let sample = analysis.source_analysis_number.ok_or_else(|| ReaderError::Invalid("SCIEX analysis has no source sample number".into()))?;
-    if crate::reader_sciex::read_compact_mrm_pairs(path, sample).is_ok() {
-        return load_sciex_pac_chromatograms(path, analysis);
-    }
-    load_sciex_201209_chromatograms(path, analysis)
+    let series = crate::reader_sciex::read_native_mrm_series(path, sample)?;
+    render_sciex_mrm_chromatograms(series)
 }
 
-fn load_sciex_pac_chromatograms(path: &Path, analysis: &Analysis) -> Result<Vec<Chromatogram>> {
-   let sample = analysis.source_analysis_number.ok_or_else(|| ReaderError::Invalid("SCIEX analysis has no source sample number".into()))?;
-   let transitions = crate::reader_sciex::read_transitions(path, sample)?;
-   let pairs = crate::reader_sciex::read_compact_mrm_pairs(path, sample)?;
-   if transitions.len() != 2 {
-       return Err(ReaderError::Unsupported("native PAC chromatogram output requires exactly two transitions".into()));
-   }
-   let mut first = vec![0.0; 3];
-   let mut second = vec![0.0; 3];
-   first.extend(pairs.iter().map(|p| p.first_intensity));
-   second.extend(pairs.iter().map(|p| p.second_intensity));
-   let time: Vec<f32> = (0..first.len()).map(|i| i as f32 * (0.110 / 60.0)).collect();
-   let mut out = Vec::new();
-   for (transition, intensity) in transitions.iter().zip([first, second]) {
-       out.push(Chromatogram {
-           id: transition.name.clone(), signal_type: "MS".into(), chromatogram_type: "SRM".into(), detector: "SCIEX".into(), channel: transition.product_mz.to_string(), units: "counts".into(), polarity: 0, interval_ms: 110.0, time: time.clone(), intensity,
-           precursor_mz: Some(transition.precursor_mz), product_mz: Some(transition.product_mz), activation_ce: Some(transition.collision_energy), start_time: Some(time[0]), end_time: time.last().copied(),
-       });
-   }
-   let tic: Vec<f32> = out[0].intensity.iter().zip(&out[1].intensity).map(|(a,b)| a+b).collect();
-   let bpc: Vec<f32> = out[0].intensity.iter().zip(&out[1].intensity).map(|(a,b)| a.max(*b)).collect();
-   out.insert(0, Chromatogram { id: "BPC".into(), signal_type: "MS".into(), chromatogram_type: "BPC".into(), detector: "SCIEX".into(), units: "counts".into(), time: time.clone(), intensity: bpc, ..Default::default() });
-   out.insert(0, Chromatogram { id: "TIC".into(), signal_type: "MS".into(), chromatogram_type: "TIC".into(), detector: "SCIEX".into(), units: "counts".into(), time, intensity: tic, ..Default::default() });
-   Ok(out)
-}
-
-fn load_sciex_201209_chromatograms(path: &Path, analysis: &Analysis) -> Result<Vec<Chromatogram>> {
-    let sample = analysis.source_analysis_number.ok_or_else(|| ReaderError::Invalid("SCIEX analysis has no source sample number".into()))?;
-    let experiments = crate::reader_sciex::read_compact_mrm_experiments(path, sample)?;
-    if experiments.len() != 2 {
-        return Err(ReaderError::Unsupported("201209_MM_2 requires two compact MRM experiments".into()));
-    }
+fn render_sciex_mrm_chromatograms(
+    series_list: Vec<crate::reader_sciex::MrmExperimentSeries>,
+) -> Result<Vec<Chromatogram>> {
     let mut traces = Vec::new();
-    for (experiment_index, series) in experiments.into_iter().enumerate() {
-        let start = if experiment_index == 0 { 0.0 } else { 2.0 };
-        let end = if experiment_index == 0 { 2.0 } else { 3.8 };
-        for (transition_index, transition) in series.transitions.iter().enumerate() {
-            let values = &series.intensities[transition_index];
-            let time: Vec<f32> = (0..values.len()).map(|i| if values.len() <= 1 { start } else { start + (end - start) * i as f32 / (values.len() - 1) as f32 }).collect();
-            traces.push(Chromatogram { id: transition.name.clone(), signal_type: "MS".into(), chromatogram_type: "SRM".into(), detector: "SCIEX".into(), channel: transition.product_mz.to_string(), units: "counts".into(), polarity: 0, interval_ms: 0.0, time, intensity: values.clone(), precursor_mz: Some(transition.precursor_mz), product_mz: Some(transition.product_mz), activation_ce: Some(transition.collision_energy), start_time: Some(start), end_time: Some(end) });
+    let mut tic = Vec::new();
+    let mut bpc = Vec::new();
+    let mut tic_time = Vec::new();
+    for series in series_list {
+        let point_count = series.intensities.first().map_or(0, Vec::len);
+        if point_count == 0 || series.transitions.len() != series.intensities.len() || series.retention_times.len() != series.intensities.len() {
+            return Err(ReaderError::Invalid("SCIEX MRM series has inconsistent transition arrays".into()));
+        }
+        if series.intensities.iter().any(|values| values.len() != point_count) {
+            return Err(ReaderError::Invalid("SCIEX MRM transition arrays have unequal lengths".into()));
+        }
+        let time = &series.retention_times[0];
+        if time.len() != point_count {
+            return Err(ReaderError::Invalid("SCIEX MRM time and intensity arrays have unequal lengths".into()));
+        }
+        tic_time.extend_from_slice(time);
+        for point in 0..point_count {
+            let values = series.intensities.iter().map(|trace| trace[point]);
+            tic.push(values.clone().sum());
+            bpc.push(values.fold(0.0_f32, f32::max));
+        }
+        for ((transition, time), intensity) in series.transitions.into_iter().zip(series.retention_times).zip(series.intensities) {
+            let (time, intensity): (Vec<_>, Vec<_>) = time
+                .into_iter()
+                .zip(intensity)
+                .filter(|(rt, _)| transition.start_time >= transition.end_time || (*rt >= transition.start_time && *rt <= transition.end_time))
+                .unzip();
+            let interval_ms = if time.len() > 1 { (time[1] - time[0]) * 60_000.0 } else { 0.0 };
+            traces.push(Chromatogram {
+                id: transition.name,
+                signal_type: "MS".into(),
+                chromatogram_type: "SRM".into(),
+                detector: "SCIEX".into(),
+                channel: transition.product_mz.to_string(),
+                units: "counts".into(),
+                polarity: 0,
+                interval_ms,
+                start_time: time.first().copied(),
+                end_time: time.last().copied(),
+                precursor_mz: Some(transition.precursor_mz),
+                product_mz: Some(transition.product_mz),
+                activation_ce: Some(transition.collision_energy),
+                time,
+                intensity,
+            });
         }
     }
-    let max_len = traces.iter().map(|trace| trace.time.len()).max().unwrap_or(0);
-    let mut tic = vec![0.0f32; max_len];
-    let mut bpc = vec![0.0f32; max_len];
-    for trace in &traces { for (i, value) in trace.intensity.iter().enumerate() { tic[i] += value; bpc[i] = bpc[i].max(*value); } }
-    let time: Vec<f32> = (0..max_len).map(|i| if max_len <= 1 { 0.0 } else { 3.8 * i as f32 / (max_len - 1) as f32 }).collect();
-    traces.insert(0, Chromatogram { id: "BPC".into(), signal_type: "MS".into(), chromatogram_type: "BPC".into(), detector: "SCIEX".into(), units: "counts".into(), time: time.clone(), intensity: bpc, ..Default::default() });
-    traces.insert(0, Chromatogram { id: "TIC".into(), signal_type: "MS".into(), chromatogram_type: "TIC".into(), detector: "SCIEX".into(), units: "counts".into(), time, intensity: tic, ..Default::default() });
-    Ok(traces)
+    let mut output = Vec::with_capacity(traces.len() + 2);
+    output.push(Chromatogram { id: "TIC".into(), signal_type: "MS".into(), chromatogram_type: "TIC".into(), detector: "SCIEX".into(), units: "counts".into(), time: tic_time.clone(), intensity: tic, ..Default::default() });
+    output.push(Chromatogram { id: "BPC".into(), signal_type: "MS".into(), chromatogram_type: "BPC".into(), detector: "SCIEX".into(), units: "counts".into(), time: tic_time, intensity: bpc, ..Default::default() });
+    output.extend(traces);
+    Ok(output)
 }
 
 fn detect_format(path: &Path, bytes: &[u8]) -> Result<Format> {
@@ -974,7 +1100,8 @@ fn read_lcd_stream(path: &Path, wanted: &str) -> Result<Option<Vec<u8>>> {
 
 fn read_sciex_analysis_catalog(path: &Path) -> Result<Vec<Analysis>> {
     let file = cfb::open(path)?;
-    let mut source_numbers = BTreeSet::new();
+    let mut metadata_numbers = BTreeSet::new();
+    let mut indexed_numbers = BTreeSet::new();
     for entry in file.walk() {
         if !entry.is_stream() {
             continue;
@@ -992,11 +1119,19 @@ fn read_sciex_analysis_catalog(path: &Path) -> Result<Vec<Analysis>> {
         };
         if suffix == "SampleDABE/DATA" {
             if let Ok(number) = number.parse::<usize>() {
-                source_numbers.insert(number);
+                metadata_numbers.insert(number);
+            }
+        } else if suffix == "Idx" {
+            if let Ok(number) = number.parse::<usize>() {
+                indexed_numbers.insert(number);
             }
         }
     }
     drop(file);
+    let source_numbers = metadata_numbers
+        .intersection(&indexed_numbers)
+        .copied()
+        .collect::<Vec<_>>();
     if source_numbers.is_empty() {
         return Err(ReaderError::Invalid(
             "Sciex WIFF contains no sample analysis metadata".into(),

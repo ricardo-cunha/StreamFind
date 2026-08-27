@@ -105,6 +105,8 @@ MrmExperimentSeries build_compact_mrm_series(const std::string &wiff_path,
 std::vector<ScanPoint> decode_scan_payload(const std::vector<std::uint8_t> &payload);
 std::vector<ScanPoint> read_scan_points(const std::string &wiff_path, const IdxRecord &record,
                                         const IdxRecord *next_record = nullptr);
+std::vector<MASS_SPEC_SPECTRUM> read_tof_spectra(const std::string &wiff_path,
+                                                 int source_analysis_number);
 std::unique_ptr<MASS_SPEC_READER> create_reader(const std::string &file, int source_analysis_number = 1);
 std::vector<MASS_SPEC_ANALYSIS> read_analysis_catalog(const std::string &wiff_path);
 std::vector<EventRecord> read_event_records(const ScanBlock &block);

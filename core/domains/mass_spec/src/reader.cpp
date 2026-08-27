@@ -2,6 +2,8 @@
 #include <pugixml.hpp>
 
 #include "streamfind/mass_spec/reader.hpp"
+#include "streamfind/mass_spec/reader_agilent.hpp"
+#include "streamfind/mass_spec/reader_bruker.hpp"
 #include "streamfind/mass_spec/reader_sciex.hpp"
 #include <simdutf.h>
 
@@ -3751,6 +3753,10 @@ namespace mass_spec
 
     std::string detect_format(const std::string &file_path)
     {
+      if (agilent::is_agilent_mass_hunter_directory(file_path))
+        return "AgilentMassHunterD";
+      if (bruker::detect_family(file_path) == bruker::Family::Tsf)
+        return "BrukerTSF";
       std::string lower = file_path;
       std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c)
                      { return static_cast<char>(std::tolower(c)); });
@@ -3764,6 +3770,15 @@ namespace mass_spec
       {
         if (ole::is_compound_file(file_path))
           return "SciexWIFF";
+      }
+
+      if (std::filesystem::is_directory(file_path))
+      {
+        const auto family = mass_spec::reader::bruker::detect_family(file_path);
+        if (family == mass_spec::reader::bruker::Family::Baf)
+          return "BrukerBAF";
+        if (family == mass_spec::reader::bruker::Family::Tsf)
+          return "BrukerTSF";
       }
 
       if (lower.size() >= 4 && lower.substr(lower.size() - 4) == ".lcd")
@@ -3824,6 +3839,12 @@ namespace mass_spec
         return std::make_unique<shimadzu_lcd::Reader>(file_path);
       if (format == "SciexWIFF")
         return sciex::create_reader(file_path);
+      if (format == "BrukerBAF")
+        return mass_spec::reader::bruker::create_baf_reader(file_path);
+      if (format == "BrukerTSF")
+        return mass_spec::reader::bruker::create_tsf_reader(file_path);
+      if (format == "AgilentMassHunterD")
+        return agilent::create_reader(file_path);
       throw std::runtime_error("Unsupported file format: " + format);
     }
 
@@ -3856,13 +3877,10 @@ namespace mass_spec
     {
       if (index < 0 || static_cast<std::size_t>(index) >= analysis_catalog.size())
         throw std::out_of_range("Mass spectrometry analysis index is out of range: " + std::to_string(index));
-      if (index != 0)
-      {
-        if (format == "SciexWIFF")
-          ms = sciex::create_reader(file_path, analysis_catalog[static_cast<std::size_t>(index)].source_analysis_number);
-        else
-          throw std::runtime_error("Selected analysis is not yet supported by this reader.");
-      }
+      if (format == "SciexWIFF")
+        ms = sciex::create_reader(file_path, analysis_catalog[static_cast<std::size_t>(index)].source_analysis_number);
+      else if (index != 0)
+        throw std::runtime_error("Selected analysis is not yet supported by this reader.");
       selected_analysis = index;
     }
 

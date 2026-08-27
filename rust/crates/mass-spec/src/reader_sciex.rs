@@ -1,5 +1,5 @@
 use std::{
-    collections::BTreeSet,
+    collections::{BTreeMap, BTreeSet},
     fs,
     io::Read,
     path::{Path, PathBuf},
@@ -41,6 +41,73 @@ pub struct IndexedFloatRecord {
 pub struct CompactMrmPair {
     pub first_intensity: f32,
     pub second_intensity: f32,
+}
+
+pub fn read_tof_spectra(path: &Path, source_analysis_number: usize) -> Result<Vec<crate::reader::Spectrum>> {
+    let calibration = read_stream(path, &format!("SampleSubtree/Sample{source_analysis_number}/TOFCalibrationData"))?;
+    if calibration.len() < 48 { return Err(ReaderError::Unsupported("SCIEX TOF calibration stream is incomplete".into())); }
+    let slope = f64::from_le_bytes(calibration[32..40].try_into().unwrap());
+    let intercept = f64::from_le_bytes(calibration[40..48].try_into().unwrap());
+    let scan_bytes = fs::read(scan_path_for_wiff(path))?;
+    let sample_base = sample_block_offset(path, source_analysis_number as u32)?;
+    let index_bytes = read_stream(path, &format!("SampleSubtree/Sample{source_analysis_number}/Idx"))?;
+    let mut records = Vec::new();
+    for offset in (32..=index_bytes.len().saturating_sub(54)).step_by(54) {
+        records.push(IdxRecord {
+            sample_number: source_analysis_number as u32,
+            scan_offset: read_u32(&index_bytes, offset)?,
+            scan_size: read_u32(&index_bytes, offset + 4)?,
+            retention_time_minutes: (read_f64(&index_bytes, offset + 8)? / 60_000.0) as f32,
+            ms_level_flag: *index_bytes.get(offset + 16).unwrap_or(&0),
+            tic: read_f64(&index_bytes, offset + 18)?,
+            grid_field: read_f64(&index_bytes, offset + 26)?,
+        });
+    }
+    let experiment_count = records
+        .iter()
+        .enumerate()
+        .skip(1)
+        .find_map(|(index, record)| (record.scan_size > 0 && index <= 64).then_some(index))
+        .unwrap_or(1);
+    let dde_precursors = read_stream(
+        path,
+        &format!("SampleSubtree/Sample{source_analysis_number}/DDERealTimeDataEx"),
+    )
+    .ok()
+    .map(|bytes| {
+        (32..=bytes.len().saturating_sub(76))
+            .step_by(76)
+            .filter_map(|offset| read_f64(&bytes, offset + 4).ok().map(|value| value as f32))
+            .collect::<Vec<_>>()
+    })
+    .unwrap_or_default();
+    let mut ms1_count = 0usize;
+    let mut spectra = Vec::new();
+    for (i, record) in records.iter().enumerate() {
+        if i == 0 || i + 1 == records.len() { continue; }
+        if record.scan_size == 0 { continue; }
+        let payload_start = sample_base + record.scan_offset as usize + 56;
+        let next_end = records.get(i + 1).map_or(scan_bytes.len(), |next| sample_base + next.scan_offset as usize + 64);
+        let own_end = sample_base + record.scan_offset as usize + record.scan_size as usize + 64;
+        let end = next_end.min(own_end).min(scan_bytes.len());
+        let points = if end > payload_start { decode_scan_payload(&scan_bytes[payload_start..end]) } else { Vec::new() };
+        let is_ms1 = experiment_count > 1 && i % experiment_count == 0;
+        if is_ms1 {
+            ms1_count += 1;
+        }
+        let mut spectrum = crate::reader::Spectrum { index: spectra.len() as i32, scan: i as i32, array_length: points.len() as i32, level: if is_ms1 { 1 } else { 2 }, polarity: 1, retention_time: record.retention_time_minutes, ..Default::default() };
+        if !is_ms1 {
+            if let Some(precursor) = dde_precursors.get(ms1_count.saturating_sub(1)) {
+                spectrum.precursor_mz = *precursor;
+            }
+        }
+        for point in points { spectrum.mz.push((slope * point.raw_mz_bin as f64 + intercept) as f32); spectrum.intensity.push(point.raw_intensity as f32); }
+        spectrum.tic = spectrum.intensity.iter().sum();
+        if let Some((index, intensity)) = spectrum.intensity.iter().enumerate().max_by(|a, b| a.1.total_cmp(b.1)) { spectrum.base_peak_intensity = *intensity; spectrum.base_peak_mz = spectrum.mz[index]; }
+        spectrum.low_mz = spectrum.mz.first().copied().unwrap_or(0.0); spectrum.high_mz = spectrum.mz.last().copied().unwrap_or(0.0);
+        spectra.push(spectrum);
+    }
+    Ok(spectra)
 }
 
 #[derive(Debug, Clone)]
@@ -121,6 +188,10 @@ pub fn scan_path_for_wiff(path: &Path) -> PathBuf {
 
 fn sample_block_offset(path: &Path, sample_number: u32) -> Result<usize> {
     let bytes = fs::read(scan_path_for_wiff(path))?;
+    sample_block_offset_in_bytes(&bytes, sample_number)
+}
+
+fn sample_block_offset_in_bytes(bytes: &[u8], sample_number: u32) -> Result<usize> {
     for offset in (0..=bytes.len().saturating_sub(12)).step_by(4) {
         if read_u32(&bytes, offset)? == 0x11111111
             && read_u32(&bytes, offset + 8)? == sample_number
@@ -142,12 +213,12 @@ pub fn read_idx_records(path: &Path, source_analysis_number: usize) -> Result<Ve
     let mut records = Vec::new();
     for offset in (HEADER..=bytes.len().saturating_sub(RECORD)).step_by(RECORD) {
         let scan_size = read_u32(&bytes, offset + 4)?;
-        if scan_size <= 56 { continue; }
+        if scan_size == 0 { continue; }
         records.push(IdxRecord {
             sample_number: source_analysis_number as u32,
             scan_offset: read_u32(&bytes, offset)?,
             scan_size,
-            retention_time_minutes: read_f32(&bytes, offset + 12)?,
+            retention_time_minutes: (read_f64(&bytes, offset + 8)? / 60_000.0) as f32,
             ms_level_flag: bytes[offset + 16],
             tic: read_f64(&bytes, offset + 18)?,
             grid_field: read_f64(&bytes, offset + 26)?,
@@ -195,6 +266,7 @@ pub fn read_scan_points(path: &Path, record: &IdxRecord, next: Option<&IdxRecord
 pub fn read_idx_float_records(path: &Path, source_analysis_number: usize) -> Result<Vec<IndexedFloatRecord>> {
     let index_bytes = read_stream(path, &format!("SampleSubtree/Sample{source_analysis_number}/Idx"))?;
     let scan_bytes = fs::read(scan_path_for_wiff(path))?;
+    let sample_base = sample_block_offset_in_bytes(&scan_bytes, source_analysis_number as u32)?;
     const HEADER: usize = 32;
     const RECORD: usize = 54;
     if index_bytes.len() < HEADER {
@@ -204,7 +276,6 @@ pub fn read_idx_float_records(path: &Path, source_analysis_number: usize) -> Res
     for offset in (HEADER..=index_bytes.len().saturating_sub(RECORD)).step_by(RECORD) {
         let scan_offset = read_u32(&index_bytes, offset)?;
         let scan_size = read_u32(&index_bytes, offset + 4)?;
-        let sample_base = sample_block_offset(path, source_analysis_number as u32)?;
         let global_offset = sample_base + scan_offset as usize;
         let end = global_offset + scan_size as usize;
         if end > scan_bytes.len() || scan_size % 4 != 0 { continue; }
@@ -212,7 +283,7 @@ pub fn read_idx_float_records(path: &Path, source_analysis_number: usize) -> Res
             sample_number: source_analysis_number as u32,
             scan_offset,
             scan_size,
-            retention_time_minutes: read_f32(&index_bytes, offset + 12)?,
+            retention_time_minutes: (read_f64(&index_bytes, offset + 8)? / 60_000.0) as f32,
             ms_level_flag: index_bytes[offset + 16],
             tic: read_f64(&index_bytes, offset + 18)?,
             grid_field: read_f64(&index_bytes, offset + 26)?,
@@ -303,9 +374,10 @@ pub fn read_compact_mrm_experiments(path: &Path, source_analysis_number: usize) 
         let width = group[0].fields.len();
         if width == 0 { continue; }
         let transitions = read_transitions_for_experiment(path, source_analysis_number, experiment_index, 0)?;
-        if transitions.len() != width {
+        if transitions.len() < width {
             return Err(ReaderError::Invalid(format!("SCIEX experiment {experiment_index} has {width} payload channels but {} transitions", transitions.len())));
         }
+        let transitions = transitions.into_iter().take(width).collect::<Vec<_>>();
         let intensities = (0..width).map(|column| group.iter().map(|record| record.fields[column]).collect()).collect::<Vec<Vec<f32>>>();
         let retention_times = transitions.iter().enumerate().map(|(column, transition)| {
             let count = intensities[column].len();
@@ -317,6 +389,138 @@ pub fn read_compact_mrm_experiments(path: &Path, source_analysis_number: usize) 
         out.push(MrmExperimentSeries { experiment_index, transitions, retention_times, intensities });
     }
     Ok(out)
+}
+
+pub fn read_tagged_mrm_series(path: &Path, source_analysis_number: usize) -> Result<MrmExperimentSeries> {
+    let fragments = read_idx_float_records(path, source_analysis_number)?;
+    let transitions = read_transitions(path, source_analysis_number)?;
+    decode_tagged_mrm_series(&fragments, transitions)
+}
+
+fn decode_tagged_mrm_series(
+    fragments: &[IndexedFloatRecord],
+    transitions: Vec<Transition>,
+) -> Result<MrmExperimentSeries> {
+    let mut marker_counts = BTreeMap::<usize, usize>::new();
+    for fragment in fragments {
+        for value in &fragment.fields {
+            let channel_count = (-*value).round();
+            if *value < -1.0
+                && (*value - (-channel_count - 0.01)).abs() < 0.001
+                && channel_count > 0.0
+                && channel_count as usize <= transitions.len()
+            {
+                *marker_counts.entry(channel_count as usize).or_default() += 1;
+            }
+        }
+    }
+    let Some((&channel_count, &marker_count)) = marker_counts
+        .iter()
+        .min_by_key(|(channels, count)| (count.abs_diff(fragments.len()), std::cmp::Reverse(**channels)))
+    else {
+        return Err(ReaderError::Unsupported("SCIEX MRM payload has no tagged record marker".into()));
+    };
+    if marker_count * 10 < fragments.len() * 9 {
+        return Err(ReaderError::Unsupported("SCIEX MRM tagged marker is not record-aligned".into()));
+    }
+    let transitions = transitions.into_iter().take(channel_count).collect::<Vec<_>>();
+    let record_marker = -(channel_count as f32) - 0.01;
+    let flat = fragments.iter().flat_map(|fragment| fragment.fields.iter().copied()).collect::<Vec<_>>();
+    let starts = flat.iter().enumerate().filter_map(|(index, value)| ((value - record_marker).abs() < 0.001).then_some(index)).collect::<Vec<_>>();
+    if starts.is_empty() { return Err(ReaderError::Unsupported("SCIEX MRM payload has no tagged record marker".into())); }
+    let mut events = Vec::with_capacity(starts.len());
+    for (event_index, start) in starts.iter().enumerate() {
+        let end = starts.get(event_index + 1).copied().unwrap_or(flat.len());
+        let mut values = vec![0.0; channel_count];
+        let mut position = 0usize;
+        let mut valid = true;
+        for value in &flat[start + 1..end] {
+            if *value < 0.0 { position = position.saturating_add((-*value).round() as usize); if position > values.len() { valid = false; } }
+            else if position < values.len() { values[position] = *value; position += 1; }
+            else { valid = false; }
+        }
+        let complete = valid && position == values.len();
+        events.push((values, complete, valid));
+    }
+    let has_signal = |event: &(Vec<f32>, bool, bool)| event.0.iter().any(|value| *value != 0.0);
+    let is_active = |channel: usize, rt: f32| transitions[channel].start_time >= transitions[channel].end_time || (rt >= transitions[channel].start_time && rt <= transitions[channel].end_time);
+    let min_delta = -16i32;
+    let max_delta = 16.max((events.len().abs_diff(fragments.len()) + 16) as i32);
+    let width = (max_delta - min_delta + 1) as usize;
+    let offset = |delta: i32| (delta - min_delta) as usize;
+    let impossible = i64::MIN / 4;
+    let mut parent = vec![vec![None; width]; events.len() + 1];
+    let mut row = vec![impossible; width]; row[offset(0)] = 0;
+    for event_index in 0..=events.len() {
+        for delta in ((min_delta + 1)..=max_delta).rev() {
+            let cycle = event_index as i32 - delta;
+            if row[offset(delta)] != impossible && cycle >= 0 && (cycle as usize) < fragments.len() && !(0..channel_count).any(|channel| is_active(channel, fragments[cycle as usize].index.retention_time_minutes)) && row[offset(delta)] > row[offset(delta - 1)] {
+                row[offset(delta - 1)] = row[offset(delta)]; parent[event_index][offset(delta - 1)] = Some((event_index, delta, b'c'));
+            }
+        }
+        if event_index == events.len() { break; }
+        let mut next = vec![impossible; width];
+        for delta in min_delta..=max_delta {
+            let cycle = event_index as i32 - delta;
+            if row[offset(delta)] == impossible { continue; }
+            if events[event_index].2 && cycle >= 0 && (cycle as usize) < fragments.len() {
+                let inactive = events[event_index].0.iter().enumerate().filter(|(channel, value)| **value != 0.0 && !is_active(*channel, fragments[cycle as usize].index.retention_time_minutes)).count() as i64;
+                let nonzero = events[event_index].0.iter().filter(|value| **value != 0.0).count() as i64;
+                let score = row[offset(delta)] + nonzero * 10 - inactive * 10_000;
+                if score > next[offset(delta)] { next[offset(delta)] = score; parent[event_index + 1][offset(delta)] = Some((event_index, delta, b'm')); }
+            }
+            if !events[event_index].1 && !has_signal(&events[event_index]) && event_index > 0 && !has_signal(&events[event_index - 1]) && delta < max_delta && row[offset(delta)] > next[offset(delta + 1)] {
+                next[offset(delta + 1)] = row[offset(delta)]; parent[event_index + 1][offset(delta + 1)] = Some((event_index, delta, b'e'));
+            }
+        }
+        row = next;
+    }
+    let final_delta = events.len() as i32 - fragments.len() as i32;
+    if final_delta < min_delta || final_delta > max_delta || row[offset(final_delta)] == impossible { return Err(ReaderError::Unsupported("SCIEX tagged MRM payload cannot be reconciled to native acquisition cycles".into())); }
+    let mut intensities = vec![vec![0.0; fragments.len()]; channel_count];
+    let mut event_index = events.len(); let mut delta = final_delta;
+    while event_index > 0 || delta != 0 {
+        let Some((prior_event, prior_delta, action)) = parent[event_index][offset(delta)] else { return Err(ReaderError::Unsupported("SCIEX tagged MRM cycle reconciliation has no monotonic predecessor".into())); };
+        if action == b'm' { let cycle = prior_event as i32 - prior_delta; if cycle < 0 || cycle as usize >= fragments.len() { return Err(ReaderError::Invalid("SCIEX tagged MRM cycle reconciliation produced an invalid cycle".into())); } for (channel, value) in events[prior_event].0.iter().enumerate() { intensities[channel][cycle as usize] = *value; } }
+        event_index = prior_event; delta = prior_delta;
+    }
+    let time = fragments.iter().map(|fragment| fragment.index.retention_time_minutes).collect::<Vec<_>>();
+    Ok(MrmExperimentSeries { experiment_index: 0, transitions, retention_times: (0..channel_count).map(|_| time.clone()).collect(), intensities })
+}
+
+pub fn read_native_mrm_series(path: &Path, source_analysis_number: usize) -> Result<Vec<MrmExperimentSeries>> {
+    let fragments = read_idx_float_records(path, source_analysis_number)?;
+    let transitions = read_transitions(path, source_analysis_number)?;
+    if fragments.iter().all(|fragment| fragment.fields.len() == 2) && transitions.len() == 2 {
+        let mut first = vec![0.0; 3];
+        let mut second = vec![0.0; 3];
+        first.extend(fragments.iter().skip(3).map(|fragment| fragment.fields[0]));
+        second.extend(fragments.iter().skip(3).map(|fragment| fragment.fields[1]));
+        let time = fragments.iter().map(|fragment| fragment.index.retention_time_minutes).collect::<Vec<_>>();
+        return Ok(vec![MrmExperimentSeries { experiment_index: 0, transitions, retention_times: vec![time.clone(), time], intensities: vec![first, second] }]);
+    }
+    if let Ok(tagged) = decode_tagged_mrm_series(&fragments, transitions.clone()) {
+        return Ok(vec![tagged]);
+    }
+    let mut groups: Vec<Vec<IndexedFloatRecord>> = Vec::new();
+    for fragment in fragments {
+        if let Some(group) = groups.last_mut() {
+            if group[0].fields.len() == fragment.fields.len() { group.push(fragment); continue; }
+        }
+        groups.push(vec![fragment]);
+    }
+    let mut series = Vec::new();
+    for (experiment_index, group) in groups.into_iter().enumerate() {
+        let width = group[0].fields.len();
+        let transitions = read_transitions_for_experiment(path, source_analysis_number, experiment_index, 0)?;
+        if width == 0 || transitions.len() < width { return Err(ReaderError::Unsupported("SCIEX MRM payload width does not match method transitions".into())); }
+        let transitions = transitions.into_iter().take(width).collect::<Vec<_>>();
+        let intensities = (0..width).map(|column| group.iter().map(|record| record.fields[column]).collect::<Vec<_>>()).collect::<Vec<_>>();
+        let time = group.iter().map(|record| record.index.retention_time_minutes).collect::<Vec<_>>();
+        let retention_times = (0..width).map(|_| time.clone()).collect();
+        series.push(MrmExperimentSeries { experiment_index, transitions, retention_times, intensities });
+    }
+    Ok(series)
 }
 
 pub fn read_scan_blocks(path: &Path) -> Result<Vec<ScanBlock>> {
@@ -375,7 +579,8 @@ fn first_utf16_string(bytes: &[u8]) -> String {
 
 pub fn read_analysis_catalog(path: &Path) -> Result<Vec<crate::reader::Analysis>> {
     let file = cfb::open(path)?;
-    let mut source_numbers = BTreeSet::new();
+    let mut metadata_numbers = BTreeSet::new();
+    let mut indexed_numbers = BTreeSet::new();
     for entry in file.walk() {
         if !entry.is_stream() {
             continue;
@@ -389,11 +594,19 @@ pub fn read_analysis_catalog(path: &Path) -> Result<Vec<crate::reader::Analysis>
         };
         if suffix == "sampledabe/data" {
             if let Ok(number) = number.parse::<usize>() {
-                source_numbers.insert(number);
+                metadata_numbers.insert(number);
+            }
+        } else if suffix == "idx" {
+            if let Ok(number) = number.parse::<usize>() {
+                indexed_numbers.insert(number);
             }
         }
     }
     drop(file);
+    let source_numbers = metadata_numbers
+        .intersection(&indexed_numbers)
+        .copied()
+        .collect::<Vec<_>>();
     if source_numbers.is_empty() {
         return Err(ReaderError::Invalid(
             "Sciex WIFF contains no sample analysis metadata".into(),
@@ -505,7 +718,7 @@ pub fn read_transitions_for_experiment(path: &Path, source_analysis_number: usiz
             continue;
         }
         let (name, cursor, quoted, prefixed) = read_transition_name(&bytes, offset);
-        if name.len() < 3 || !seen.insert(name.clone()) {
+        if name.len() < 3 || name == "CXP" || !seen.insert(name.clone()) {
             continue;
         }
         let field_offset = if quoted || prefixed { 20 } else { 22 };
@@ -540,9 +753,11 @@ pub fn read_transitions_for_experiment(path: &Path, source_analysis_number: usiz
         Ok(times) => times,
         Err(_) => return Ok(transitions),
     };
-    if times.len() >= 16 && (times.len() - 16) / 8 >= transitions.len() {
+    let available_pairs = times.len().saturating_sub(16) / 8;
+    let pair_offset = if available_pairs == transitions.len() { 0 } else { 2 };
+    if times.len() >= 16 && available_pairs >= transitions.len() + pair_offset {
         for (index, transition) in transitions.iter_mut().enumerate() {
-            let offset = 16 + (index + 2) * 8;
+            let offset = 16 + (index + pair_offset) * 8;
             transition.start_time = read_u32(&times, offset)? as f32 / 60000.0;
             transition.end_time = read_u32(&times, offset + 4)? as f32 / 60000.0;
         }

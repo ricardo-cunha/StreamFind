@@ -9,6 +9,14 @@ target_compile_definitions(streamfind_mass_spec_reader_tests PRIVATE
 )
 add_test(NAME streamfind_mass_spec_reader_tests COMMAND streamfind_mass_spec_reader_tests)
 
+add_executable(streamfind_mass_spec_bruker_tsf_reader_tests mass_spec/tests/reader_bruker_tsf_smoke.cpp)
+target_link_libraries(streamfind_mass_spec_bruker_tsf_reader_tests PRIVATE streamfind_mass_spec)
+add_test(NAME streamfind_mass_spec_bruker_tsf_reader_tests COMMAND streamfind_mass_spec_bruker_tsf_reader_tests)
+
+add_executable(streamfind_mass_spec_bruker_baf_reader_tests mass_spec/tests/reader_bruker_baf_smoke.cpp)
+target_link_libraries(streamfind_mass_spec_bruker_baf_reader_tests PRIVATE streamfind_mass_spec)
+add_test(NAME streamfind_mass_spec_bruker_baf_reader_tests COMMAND streamfind_mass_spec_bruker_baf_reader_tests)
+
 add_executable(streamfind_mass_spec_load_features_tests mass_spec/tests/load_features_test.cpp)
 target_link_libraries(streamfind_mass_spec_load_features_tests PRIVATE streamfind_mass_spec)
 target_compile_definitions(streamfind_mass_spec_load_features_tests PRIVATE
@@ -87,6 +95,16 @@ if(STREAMFIND_SCIEX_WIFF_FIXTURE AND EXISTS "${STREAMFIND_SCIEX_WIFF_FIXTURE}")
     add_test(NAME streamfind_mass_spec_sciex_reader_tests COMMAND streamfind_mass_spec_sciex_reader_tests)
 endif()
 
+set(STREAMFIND_AGILENT_D_FIXTURE "" CACHE PATH "Path to an Agilent MassHunter .d directory")
+if(STREAMFIND_AGILENT_D_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_D_FIXTURE}")
+    add_executable(streamfind_mass_spec_agilent_reader_tests mass_spec/tests/reader_agilent_smoke.cpp)
+    target_link_libraries(streamfind_mass_spec_agilent_reader_tests PRIVATE streamfind_mass_spec)
+    target_compile_definitions(streamfind_mass_spec_agilent_reader_tests PRIVATE
+        STREAMFIND_AGILENT_D_FIXTURE="${STREAMFIND_AGILENT_D_FIXTURE}"
+    )
+    add_test(NAME streamfind_mass_spec_agilent_reader_tests COMMAND streamfind_mass_spec_agilent_reader_tests)
+endif()
+
 set(STREAMFIND_SCIEX_MULTI_WIFF_FIXTURE "" CACHE FILEPATH "Path to a multi-experiment Sciex WIFF fixture")
 if(STREAMFIND_SCIEX_MULTI_WIFF_FIXTURE AND EXISTS "${STREAMFIND_SCIEX_MULTI_WIFF_FIXTURE}")
     add_executable(streamfind_mass_spec_sciex_multi_reader_tests mass_spec/tests/reader_sciex_multi_smoke.cpp)
@@ -105,6 +123,26 @@ if(STREAMFIND_SCIEX_NITRO_WIFF_FIXTURE AND EXISTS "${STREAMFIND_SCIEX_NITRO_WIFF
         STREAMFIND_SCIEX_WIFF_FIXTURE="${STREAMFIND_SCIEX_NITRO_WIFF_FIXTURE}"
     )
     add_test(NAME streamfind_mass_spec_sciex_nitro_reader_tests COMMAND streamfind_mass_spec_sciex_nitro_reader_tests)
+endif()
+
+set(STREAMFIND_SCIEX_MIX1_HOLDOUT_WIFF_FIXTURE "" CACHE FILEPATH "Path to a holdout SCIEX Mix1 WIFF fixture")
+if(STREAMFIND_SCIEX_MIX1_HOLDOUT_WIFF_FIXTURE AND EXISTS "${STREAMFIND_SCIEX_MIX1_HOLDOUT_WIFF_FIXTURE}")
+    add_executable(streamfind_mass_spec_sciex_mix1_holdout_reader_tests mass_spec/tests/reader_sciex_mix1_holdout_smoke.cpp)
+    target_link_libraries(streamfind_mass_spec_sciex_mix1_holdout_reader_tests PRIVATE streamfind_mass_spec)
+    target_compile_definitions(streamfind_mass_spec_sciex_mix1_holdout_reader_tests PRIVATE
+        STREAMFIND_SCIEX_WIFF_FIXTURE="${STREAMFIND_SCIEX_MIX1_HOLDOUT_WIFF_FIXTURE}"
+    )
+    add_test(NAME streamfind_mass_spec_sciex_mix1_holdout_reader_tests COMMAND streamfind_mass_spec_sciex_mix1_holdout_reader_tests)
+endif()
+
+set(STREAMFIND_SCIEX_TOF_WIFF_FIXTURE "" CACHE FILEPATH "Path to a SCIEX TOF WIFF fixture")
+if(STREAMFIND_SCIEX_TOF_WIFF_FIXTURE AND EXISTS "${STREAMFIND_SCIEX_TOF_WIFF_FIXTURE}")
+    add_executable(streamfind_mass_spec_sciex_tof_reader_tests mass_spec/tests/reader_sciex_tof_smoke.cpp)
+    target_link_libraries(streamfind_mass_spec_sciex_tof_reader_tests PRIVATE streamfind_mass_spec)
+    target_compile_definitions(streamfind_mass_spec_sciex_tof_reader_tests PRIVATE
+        STREAMFIND_SCIEX_WIFF_FIXTURE="${STREAMFIND_SCIEX_TOF_WIFF_FIXTURE}"
+    )
+    add_test(NAME streamfind_mass_spec_sciex_tof_reader_tests COMMAND streamfind_mass_spec_sciex_tof_reader_tests)
 endif()
 
 add_subdirectory(raman)

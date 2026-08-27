@@ -13,5 +13,8 @@ flate2 = { version = "1", default-features = false, features = ["rust_backend"] 
 quick-xml = "0.38"
 regex = "1"
 
+duckdb = { version = "1.10504.0", features = ["bundled"] }
+zstd = "0.13"
+
 [dev-dependencies]
 streamfind-rust-test-support = { path = "../test-support" }

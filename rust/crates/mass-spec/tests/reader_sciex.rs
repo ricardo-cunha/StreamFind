@@ -2,7 +2,7 @@ use std::path::Path;
 use streamfind_rust_mass_spec::reader_sciex::{
     decode_intensity_groups, decode_scan_payload, read_analysis_catalog, read_compact_mrm_pairs,
     read_event_records, read_idx_event_records, read_idx_float_records, read_idx_records, read_scan_blocks,
-    read_scan_points, read_transitions, build_compact_mrm_series, ScanPoint,
+    read_scan_points, read_tagged_mrm_series, read_transitions, build_compact_mrm_series, ScanPoint,
 };
 
 #[test]
@@ -32,7 +32,7 @@ fn reads_sciex_catalog_transitions_and_event_groups() {
     let idx = read_idx_records(path, 4).unwrap();
     assert!(!idx.is_empty());
     assert!(idx.windows(2).all(|pair| pair[0].scan_offset <= pair[1].scan_offset));
-    assert!(idx[0].retention_time_minutes > 0.0);
+    assert!((idx[0].retention_time_minutes - 0.7005).abs() < 0.00001);
     let points = read_scan_points(path, &idx[0], idx.get(1));
     assert!(!points.unwrap().is_empty());
     let fragments = read_idx_float_records(path, 4).unwrap();
@@ -56,6 +56,12 @@ fn reads_sciex_catalog_transitions_and_event_groups() {
     assert_eq!(groups[0].intensities, vec![68.0, 1155.0]);
     assert_eq!(groups[1].field_code, -14);
     assert_eq!(groups[1].intensities, vec![3245.0, 113.0]);
+    let tagged = read_tagged_mrm_series(path, 4).unwrap();
+    assert_eq!(tagged.transitions.len(), 59);
+    assert_eq!(tagged.intensities[38].len(), 3421);
+    assert!((tagged.retention_times[38][8] - 0.708483).abs() < 0.00001);
+    assert_eq!(tagged.intensities[38][8], 3943.0);
+    assert_eq!(tagged.intensities[39][8], 203.0);
 }
 
 #[test]

@@ -1,3 +1,4 @@
+#include <cmath>
 #include <iostream>
 #include <stdexcept>
 #include "streamfind/mass_spec/reader.hpp"
@@ -17,8 +18,9 @@ int main() {
         if (arrays.size() != 16) return 4;
         if (arrays[0][0].size() != 1700 || arrays[0][1].size() != 1700) return 5;
         if (arrays[2][0].size() != 800 || arrays[12][0].size() != 900) return 6;
+        if (std::abs(arrays[2][0][1] - 0.0025f) > 0.00001f || arrays[12][0][0] <= 2.0f) return 7;
         for (const auto &array : arrays)
-            if (array.size() != 2 || array[0].size() != array[1].size()) return 7;
+            if (array.size() != 2 || array[0].size() != array[1].size()) return 8;
         return 0;
     } catch (const std::exception &error) {
         std::cerr << error.what() << "\n";

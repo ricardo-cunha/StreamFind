@@ -21,6 +21,8 @@ pub mod nta_utils;
 pub mod processing_methods_chromatograms;
 pub mod processing_methods_nta;
 pub mod reader;
+pub mod reader_agilent;
+pub mod reader_bruker;
 pub mod reader_sciex;
 
 const ANALYSES_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_ANALYSES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, analysis_index INTEGER NOT NULL DEFAULT 0, source_analysis_number INTEGER, analysis_count INTEGER NOT NULL DEFAULT 1, replicate VARCHAR, blank VARCHAR, file_name VARCHAR, file_path VARCHAR NOT NULL, file_dir VARCHAR, file_extension VARCHAR, format VARCHAR, type VARCHAR, time_stamp VARCHAR, number_spectra INTEGER, number_chromatograms INTEGER, number_spectra_binary_arrays INTEGER, min_mz DOUBLE, max_mz DOUBLE, start_rt DOUBLE, end_rt DOUBLE, has_ion_mobility BOOLEAN, concentration DOUBLE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis))";
@@ -70,6 +72,8 @@ fn format_name(format: reader::Format) -> &'static str {
         reader::Format::Asc => "ASC",
         reader::Format::ShimadzuLcd => "ShimadzuLCD",
         reader::Format::SciexWiff => "SciexWIFF",
+        reader::Format::AgilentMassHunterD => "AgilentMassHunterD",
+        reader::Format::BrukerTsf => "BrukerTSF",
     }
 }
 
