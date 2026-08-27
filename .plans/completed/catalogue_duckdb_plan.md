@@ -1,6 +1,6 @@
 # Plan: catalogue.duckdb — semantic knowledge base for MCP
 
-Status: proposed
+Status: implemented
 Owner: dev_refactoring (main worktree)
 
 ## Problem
