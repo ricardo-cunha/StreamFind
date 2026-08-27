@@ -48,9 +48,11 @@ project for the request and closes it before returning, so `connect` and
 For workflow **Methods**, use a connected session instead:
 
 1. Call `connect` with `database_path` and `project_id`.
-2. Call `tools/list` to advertise the connected domain's registered Methods.
-3. Call a Method such as `mass_spec.find_features`; the session supplies the
-   connected project context.
+2. Call `tools/list` to advertise the connected domain's registered
+   Operations (Methods are never tools).
+3. Call `get_available_methods` to discover the domain's Methods, then build a
+   workflow with `set_workflow` / `add_method` and execute it with
+   `run_workflow` (or `run_method` for a single method).
 4. Call `close` when the session is finished.
 
 ## 3. Use from an MCP client
@@ -59,6 +61,20 @@ Configure your MCP client (Claude Desktop, VS Code, Cursor, etc.) to launch
 the server over stdio with the command from step 1. Generic Operations can be
 called with their explicit project arguments. Connect a session when using
 workflow Methods.
+
+## Runtime requirement: catalogue.duckdb
+
+An installation is complete only when `catalogue.duckdb` — the semantic
+catalogue knowledge base generated from the Turtle ontology — is present
+alongside the runtime. The server refuses to start with a clear error when it
+cannot locate it. Search chain:
+
+1. `STREAMFIND_CATALOGUE` environment variable (explicit override)
+2. `catalogue.duckdb` next to the executable
+3. `<install-prefix>/share/streamfind/catalogue.duckdb`
+
+In a build tree the file is copied next to the server automatically
+(`semantic/generated/catalogue.duckdb` → the binary directory).
 
 ## Notes
 

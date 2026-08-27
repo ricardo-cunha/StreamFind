@@ -1,11 +1,18 @@
 #include <iostream>
 #include <string>
+#include "streamfind/catalogue.hpp"
 #include "streamfind/mcp.hpp"
 #include "streamfind/mass_spec/register.hpp"
 #include "streamfind/raman/register.hpp"
 #include "streamfind/sensors/register.hpp"
 
 int main() {
+    // The runtime knowledge base is a required installation artifact; refuse
+    // to start when it cannot be located via the search chain.
+    if (!streamfind::catalogue::load()) {
+        std::cerr << "streamfind-mcp: fatal: " << streamfind::catalogue::load_error() << '\n';
+        return 2;
+    }
     std::string line;
     streamfind::MethodRegistry registry;
     streamfind::OperationRegistry operations;

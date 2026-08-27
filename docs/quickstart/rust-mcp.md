@@ -33,15 +33,28 @@ This example invokes a stateless domain **Operation**. The server opens and
 closes the project for that request, so `connect` and `close` are not needed.
 
 For workflow **Methods**, use a connected session: call `connect`, call
-`tools/list` to obtain the connected domain's Methods, invoke a Method such as
-`mass_spec.find_features`, and call `close` when finished. The session flow is
-otherwise identical to the [C++ server](cpp-mcp.md).
+`tools/list` to obtain the connected domain's Operations (Methods are never
+tools), call `get_available_methods` to discover the domain's Methods, then
+`set_workflow` / `run_workflow` (or `run_method` for a single method), and
+call `close` when finished. The session flow is otherwise identical to the
+[C++ server](cpp-mcp.md).
 
 ## 3. Use from an MCP client
 
 Configure your MCP client to launch the server over stdio with the command
 from step 1. Generic Operations require `database_path` and `project_id` in
 each request; workflow Methods use the connected project session.
+
+## Runtime requirement: catalogue.duckdb
+
+An installation is complete only when `catalogue.duckdb` — the semantic
+catalogue knowledge base generated from the Turtle ontology — is present
+alongside the runtime. The server refuses to start with a clear error when it
+cannot locate it. Search chain:
+
+1. `STREAMFIND_CATALOGUE` environment variable (explicit override)
+2. `catalogue.duckdb` next to the executable
+3. the repository source-tree layout (`semantic/generated`), for dev/test runs
 
 ## Also on this backend
 

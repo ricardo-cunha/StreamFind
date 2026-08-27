@@ -1,15 +1,45 @@
 import argparse
+import hashlib
 import json
+import os
 import re
+import tempfile
 from decimal import Decimal
 from pathlib import Path
 
+import duckdb
 from rdflib import Dataset, Namespace, RDF
 
 
 ROOT = Path(__file__).parent
 SF = Namespace("https://streamfind.dev/vocabulary#")
 SKOS = Namespace("http://www.w3.org/2004/02/skos/core#")
+
+CATALOGUE_DB = ROOT / "generated" / "catalogue.duckdb"
+
+CATALOGUE_SCHEMA = """
+CREATE TABLE catalogue_entries (
+  canonical_id      VARCHAR PRIMARY KEY,   -- mass_spec.get_features | mass_spec.find_features
+  kind              VARCHAR CHECK (kind IN ('operation','method')),
+  domain            VARCHAR,               -- streamfind | mass_spec | raman | sensors
+  label             VARCHAR,
+  definition        VARCHAR,
+  executable        BOOLEAN,               -- registered in C++ AND Rust
+  exposed           BOOLEAN,               -- advertised via MCP (operations) / available-methods (methods)
+  mcp_name          VARCHAR,               -- operations: tool name; methods: NULL (never a tool)
+  input_schema      JSON,                  -- operations ONLY: {type:object, properties:(params only), required}
+  parameters        JSON,                  -- ordered param docs incl. description field
+  result_schema     JSON,                  -- JSON-Schema table description
+  reads_tables      JSON,                  -- DuckDB tables read (same in C++ and Rust)
+  writes_tables     JSON,                  -- DuckDB tables written
+  cacheable         BOOLEAN,               -- methods only
+  single_occurrence BOOLEAN,               -- methods only
+  mutates_project   BOOLEAN,               -- operations + methods
+  required_methods  JSON                   -- methods only: ordered [canonical_id, ...]
+);
+CREATE INDEX catalogue_kind_domain ON catalogue_entries (kind, domain);
+CREATE INDEX catalogue_executable ON catalogue_entries (executable);
+"""
 
 
 def wire_name(value):
@@ -33,6 +63,17 @@ def projection():
         graph.parse(path, format="turtle")
     def parameter_schema(parameter):
         schema = {"type": str(graph.value(parameter, SF.type))}
+        definition = graph.value(parameter, SKOS.definition)
+        if definition:
+            schema["description"] = str(definition)
+        constraint = graph.value(parameter, SF.constraints)
+        if constraint:
+            value = str(constraint)
+            if value.startswith("{"):
+                for key, item in json.loads(value).items():
+                    schema[key] = item
+            else:
+                schema["enum"] = value.split("|")
         example = graph.value(parameter, SF.example)
         if example:
             value = json_value(example.toPython())
@@ -69,6 +110,7 @@ def projection():
             "extensions": str(graph.value(parameter, SF.extensions)).split(",") if graph.value(parameter, SF.extensions) else [],
             "schema": parameter_schema(parameter),
             "example": parameter_schema(parameter).get("examples", [None])[0],
+            "description": str(graph.value(parameter, SKOS.definition) or ""),
         }
         for parameter in graph.subjects(RDF.type, SF.Parameter)
     }
@@ -174,47 +216,120 @@ def projection():
     return {"version": 1, "entries": entries}
 
 
-def outputs(value):
-    payload = json.dumps(value, indent=2) + "\n"
-    tools = json.dumps([
-        {
-            "name": entry["mcp"]["name"],
-            "description": entry["label"],
-            "inputSchema": entry["mcp"]["input_schema"],
-            "outputSchema": entry["result"]["schema"],
-            "effects": entry["effects"],
-        }
-        for entry in value["entries"] if entry["kind"] == "operation" and entry["domain"] == "streamfind"
-    ], indent=2) + "\n"
-    return {
-        ROOT / "generated" / "catalogue.json": payload,
-        ROOT.parent / "core" / "include" / "streamfind" / "generated_metadata.hpp":
-            "#pragma once\n\nnamespace streamfind::mcp::generated {\ninline constexpr char tools[] = R\"JSON(\n"
-            + tools + ")JSON\";\ninline constexpr char catalogue[] = R\"JSON(\n"
-            + payload + ")JSON\";\n}\n",
-        ROOT.parent / "rust" / "crates" / "mcp" / "src" / "generated_metadata.rs":
-            "pub const TOOLS: &str = r###\"\n" + tools + "\"###;\npub const CATALOGUE: &str = r###\"\n" + payload + "\"###;\n",
-        ROOT.parent / "rust" / "crates" / "mass-spec" / "src" / "generated_metadata.rs":
-            "pub const CATALOGUE: &str = r###\"\n" + payload + "\"###;\n",
-    }
+def entry_json(value):
+    """Serialize dict/list payloads to compact JSON text for JSON-typed columns."""
+    return json.dumps(value, separators=(",", ":")) if isinstance(value, (dict, list)) else value
+
+
+def entry_row(entry):
+    kind = entry["kind"]
+    effects = entry["effects"]
+    mcp_name = None
+    input_schema = None
+    if kind == "operation":
+        tool_name = entry["mcp"]["name"]
+        mcp_name = tool_name if tool_name != "None" else entry["canonical_id"]
+        input_schema = entry["mcp"]["input_schema"]
+    return (
+        entry["canonical_id"],
+        kind,
+        entry["domain"],
+        entry["label"],
+        entry["definition"],
+        entry["executable"],
+        entry["exposed"],
+        mcp_name,
+        entry_json(input_schema),
+        entry_json(entry["parameters"]),
+        entry_json(entry["result"]["schema"]),
+        entry_json(effects["reads"]),
+        entry_json(effects["writes"]),
+        entry.get("cacheable"),
+        entry.get("single_occurrence"),
+        effects["mutates_project"],
+        entry_json(entry.get("required_methods")),
+    )
+
+
+def build_catalogue_db(entries, path):
+    connection = duckdb.connect(str(path))
+    try:
+        connection.execute(CATALOGUE_SCHEMA)
+        connection.executemany(
+            "INSERT INTO catalogue_entries VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            [entry_row(entry) for entry in entries],
+        )
+    finally:
+        connection.close()
+
+
+def canonical_row(value):
+    """Normalize a fetched row value so deterministic hashing is stable."""
+    if isinstance(value, str):
+        try:
+            return json.loads(value)
+        except json.JSONDecodeError:
+            return value
+    return value
+
+
+def duckdb_hash(path):
+    connection = duckdb.connect(str(path), read_only=True)
+    digest = hashlib.sha256()
+    try:
+        rows = connection.execute(
+            "SELECT * FROM catalogue_entries ORDER BY canonical_id"
+        ).fetchall()
+        for row in rows:
+            digest.update(
+                json.dumps(
+                    [canonical_row(value) for value in row],
+                    sort_keys=True,
+                    separators=(",", ":"),
+                ).encode("utf-8")
+            )
+            digest.update(b"\n")
+    finally:
+        connection.close()
+    return digest.hexdigest()
+
+
+def catalogue_json(value):
+    return json.dumps(value, indent=2) + "\n"
 
 
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--check", action="store_true")
     args = parser.parse_args()
-    generated = outputs(projection())
-    stale = []
-    for path, content in generated.items():
-        if args.check:
-            if not path.exists() or path.read_text() != content:
-                stale.append(str(path.relative_to(ROOT.parent)))
-        else:
-            path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(content)
-    if stale:
-        raise SystemExit("stale generated semantic files: " + ", ".join(stale))
-    print("semantic projection is up to date" if args.check else f"generated {len(projection()['entries'])} semantic entries")
+    value = projection()
+    payload = catalogue_json(value)
+    json_path = ROOT / "generated" / "catalogue.json"
+    db_path = CATALOGUE_DB
+
+    if args.check:
+        stale = []
+        if not json_path.exists() or json_path.read_text(encoding="utf-8") != payload:
+            stale.append("semantic/generated/catalogue.json")
+        with tempfile.TemporaryDirectory(dir=str(ROOT / "generated")) as tmp_dir:
+            tmp_db = Path(tmp_dir) / "catalogue.duckdb"
+            build_catalogue_db(value["entries"], tmp_db)
+            fresh_hash = duckdb_hash(tmp_db)
+            existing_hash = duckdb_hash(db_path) if db_path.exists() else None
+        if existing_hash != fresh_hash:
+            stale.append("semantic/generated/catalogue.duckdb")
+        if stale:
+            raise SystemExit("stale generated semantic files: " + ", ".join(stale))
+        print("semantic projection is up to date")
+        return
+
+    json_path.parent.mkdir(parents=True, exist_ok=True)
+    json_path.write_text(payload, encoding="utf-8")
+    with tempfile.TemporaryDirectory(dir=str(ROOT / "generated")) as tmp_dir:
+        tmp_db = Path(tmp_dir) / "catalogue.duckdb"
+        build_catalogue_db(value["entries"], tmp_db)
+        os.replace(tmp_db, db_path)
+    print(f"generated {len(value['entries'])} semantic entries (catalogue.json + catalogue.duckdb)")
 
 
 if __name__ == "__main__":

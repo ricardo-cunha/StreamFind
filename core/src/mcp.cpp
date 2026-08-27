@@ -1,6 +1,6 @@
 #include "streamfind/mcp.hpp"
 #include "streamfind/api.hpp"
-#include "streamfind/generated_metadata.hpp"
+#include "streamfind/catalogue.hpp"
 #include <algorithm>
 #include <array>
 
@@ -18,7 +18,10 @@ Json tool(const char *name, const char *description, Json properties, Json requi
 }
 
 Json tools() {
-    return Json::parse(generated::tools);
+    // Catalogue-backed tool definitions; on a catalogue miss degrade to a
+    // minimal toolset (the registry-derived tools are appended by tools/list).
+    const auto catalogue = streamfind::catalogue::tools_json();
+    return catalogue ? *catalogue : Json::array();
 }
 
 const char *command(const std::string &name) {
@@ -39,32 +42,21 @@ Json Session::handle(const Json &request) {
     const auto method = request.value("method", "");
     if (method == "initialize") return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"protocolVersion", "2025-03-26"}, {"capabilities", {{"tools", Json::object()}}}, {"serverInfo", {{"name", "streamfind-cpp"}, {"version", "0.1.0"}}}}}};
     if (method == "tools/list") {
-        auto catalogue = detail::tools();
-        for (const auto &definition : registry_.list(domain_)) {
-            if (domain_.empty()) break;
-            Json properties = Json::object();
-            std::vector<std::string> required;
-            for (const auto &parameter : definition.parameters.definitions) {
-                auto type = parameter.type.to_json();
-                if (type.value("type", "") == "real") type["type"] = "number";
-                if (!parameter.example.is_null()) type["examples"] = Json::array({parameter.example});
-                properties[parameter.name] = std::move(type);
-                if (parameter.required && parameter.default_value.is_null()) required.push_back(parameter.name);
+            auto catalogue = detail::tools();
+            // Methods (kind='method') are NEVER tools: they are referenced by the
+            // workflow operations and discovered via get_available_methods.
+            for (const auto &definition : operations_.list(domain_)) {
+                Json properties = Json::object();
+                std::vector<std::string> required;
+                for (const auto &parameter : definition.parameters.definitions) {
+                    auto type = parameter.type.to_json();
+                    if (type.value("type", "") == "real") type["type"] = "number";
+                    if (!parameter.example.is_null()) type["examples"] = Json::array({parameter.example});
+                    properties[parameter.name] = std::move(type);
+                    if (parameter.required && parameter.default_value.is_null()) required.push_back(parameter.name);
+                }
+                catalogue.push_back(detail::tool(definition.id.c_str(), definition.description.c_str(), properties, required));
             }
-            catalogue.push_back(detail::tool(definition.id.c_str(), definition.description.c_str(), properties, required));
-        }
-        for (const auto &definition : operations_.list(domain_)) {
-            Json properties = Json::object();
-            std::vector<std::string> required;
-            for (const auto &parameter : definition.parameters.definitions) {
-                auto type = parameter.type.to_json();
-                if (type.value("type", "") == "real") type["type"] = "number";
-                if (!parameter.example.is_null()) type["examples"] = Json::array({parameter.example});
-                properties[parameter.name] = std::move(type);
-                if (parameter.required && parameter.default_value.is_null()) required.push_back(parameter.name);
-            }
-            catalogue.push_back(detail::tool(definition.id.c_str(), definition.description.c_str(), properties, required));
-        }
         return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"tools", catalogue}}}};
     }
     if (method != "tools/call") return {{"jsonrpc", "2.0"}, {"id", id}, {"error", {{"code", -32601}, {"message", "Unsupported MCP method"}}}};

@@ -6,8 +6,6 @@ use streamfind_rust_core::{
     ParameterDefinition, ParameterSchema, ParameterType, Project, Result, TypeDescriptor,
 };
 
-mod generated_metadata;
-
 pub mod nta;
 pub mod nta_alignment;
 pub mod nta_annotation;
@@ -1011,9 +1009,7 @@ fn parameter(
 }
 
 fn ontology_entry(id: &str) -> Value {
-    serde_json::from_str::<Value>(generated_metadata::CATALOGUE).unwrap()["entries"]
-        .as_array()
-        .unwrap()
+    streamfind_rust_core::catalogue::entries()
         .iter()
         .find(|entry| entry["canonical_id"] == id)
         .cloned()

@@ -90,7 +90,7 @@ fn session_lifecycle_rebinds_catalogue() {
         .as_array()
         .unwrap()
         .clone();
-    assert_eq!(tools.len(), 42);
+    assert_eq!(tools.len(), 45);
     let eic = tools
         .iter()
         .find(|tool| tool["name"] == "mass_spec.get_raw_spectra_eic")
@@ -147,7 +147,7 @@ fn session_lifecycle_rebinds_catalogue() {
             .as_array()
             .unwrap()
             .len(),
-        42
+        45
     );
     let _ = std::fs::remove_file(path);
 }

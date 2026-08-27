@@ -15,6 +15,13 @@ target_compile_definitions(streamfind_mass_spec_load_features_tests PRIVATE
     STREAMFIND_BASIC_TOF_DATA_ROOT="${STREAMFIND_TEST_DATA_ROOT}/mass_spec/basic_tof"
 )
 add_test(NAME streamfind_mass_spec_load_features_tests COMMAND streamfind_mass_spec_load_features_tests)
+# Test binaries consume the runtime knowledge base via the next-to-binary hop
+# of the catalogue search chain.
+add_custom_command(TARGET streamfind_mass_spec_load_features_tests POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${STREAMFIND_SEMANTIC_DIR}/catalogue.duckdb"
+        "$<TARGET_FILE_DIR:streamfind_mass_spec_load_features_tests>"
+)
 if(WIN32)
     add_custom_command(TARGET streamfind_mass_spec_load_features_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -29,6 +36,11 @@ target_compile_definitions(streamfind_mass_spec_nta_processing_tests PRIVATE
     STREAMFIND_BASIC_TOF_DATA_ROOT="${STREAMFIND_TEST_DATA_ROOT}/mass_spec/basic_tof"
 )
 add_test(NAME streamfind_mass_spec_nta_processing_tests COMMAND streamfind_mass_spec_nta_processing_tests)
+add_custom_command(TARGET streamfind_mass_spec_nta_processing_tests POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${STREAMFIND_SEMANTIC_DIR}/catalogue.duckdb"
+        "$<TARGET_FILE_DIR:streamfind_mass_spec_nta_processing_tests>"
+)
 if(WIN32)
     add_custom_command(TARGET streamfind_mass_spec_nta_processing_tests POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -43,6 +55,11 @@ target_compile_definitions(streamfind_mass_spec_nta_wastewater_conformance PRIVA
     STREAMFIND_WASTEWATER_DATA_ROOT="${STREAMFIND_TEST_DATA_ROOT}/mass_spec/wastewater"
 )
 add_test(NAME streamfind_mass_spec_nta_wastewater_conformance COMMAND streamfind_mass_spec_nta_wastewater_conformance)
+add_custom_command(TARGET streamfind_mass_spec_nta_wastewater_conformance POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${STREAMFIND_SEMANTIC_DIR}/catalogue.duckdb"
+        "$<TARGET_FILE_DIR:streamfind_mass_spec_nta_wastewater_conformance>"
+)
 if(WIN32)
     add_custom_command(TARGET streamfind_mass_spec_nta_wastewater_conformance POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different

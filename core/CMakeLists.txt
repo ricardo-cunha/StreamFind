@@ -11,11 +11,14 @@ endif()
 include(${CMAKE_CURRENT_SOURCE_DIR}/cmake/streamfind_dependencies.cmake)
 streamfind_configure_dependencies(${CMAKE_CURRENT_SOURCE_DIR}/vendor)
 
+set(STREAMFIND_SEMANTIC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../semantic/generated")
+
 set(STREAMFIND_CORE_SOURCES
     src/version.cpp
     src/api.cpp
     src/project.cpp
     src/mcp.cpp
+    src/catalogue.cpp
 )
 
 if(STREAMFIND_BUILD_SHARED)
@@ -32,6 +35,12 @@ set_target_properties(streamfind_core PROPERTIES
     CXX_STANDARD_REQUIRED ON
     CXX_EXTENSIONS OFF
     EXPORT_NAME core
+)
+
+# Compile-time install prefix so the catalogue search chain can resolve the
+# installed share/streamfind data directory when STREAMFIND_CATALOGUE is unset.
+target_compile_definitions(streamfind_core PRIVATE
+    STREAMFIND_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}"
 )
 
 target_compile_features(streamfind_core PUBLIC cxx_std_20)
@@ -94,6 +103,10 @@ if(STREAMFIND_DUCKDB_IMPORT_LIBRARY AND EXISTS "${STREAMFIND_DUCKDB_IMPORT_LIBRA
     install(FILES "${STREAMFIND_DUCKDB_IMPORT_LIBRARY}" DESTINATION lib)
 endif()
 
+# catalogue.duckdb is a required installation artifact (the runtime knowledge
+# base of the MCP servers); install it next to the DuckDB runtime under share.
+install(FILES "${STREAMFIND_SEMANTIC_DIR}/catalogue.duckdb" DESTINATION share/streamfind)
+
 add_subdirectory(domains)
 
 install(
@@ -115,3 +128,10 @@ if(WIN32)
             "$<TARGET_FILE_DIR:streamfind_mcp>"
     )
 endif()
+# Dev-tree catalogue: keep catalogue.duckdb next to the built MCP server so the
+# search chain (env -> next-to-binary -> install data dir) resolves in builds.
+add_custom_command(TARGET streamfind_mcp POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        "${STREAMFIND_SEMANTIC_DIR}/catalogue.duckdb"
+        "$<TARGET_FILE_DIR:streamfind_mcp>"
+)

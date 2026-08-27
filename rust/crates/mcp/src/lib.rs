@@ -1,9 +1,7 @@
 //! Minimal MCP JSON-RPC adapter for the Rust Streamfind core.
 
 use serde_json::{json, Value};
-use streamfind_rust_core::{api, MethodRegistry, OperationRegistry, Project, ProjectOptions};
-
-mod generated_metadata;
+use streamfind_rust_core::{api, catalogue, MethodRegistry, OperationRegistry, Project, ProjectOptions};
 
 fn json_schema_type(parameter: &Value) -> Value {
     let mut schema = parameter["type"].clone();
@@ -41,32 +39,8 @@ impl<'a> Session<'a> {
             .unwrap_or_default();
         if method == "tools/list" {
             let mut catalogue = tools().as_array().cloned().unwrap_or_default();
-            if !self.domain.is_empty() {
-                for definition in self.registry.list(&self.domain) {
-                    let parameters = definition["parameters"]
-                        .as_array()
-                        .cloned()
-                        .unwrap_or_default();
-                    let properties = parameters.iter().fold(
-                        serde_json::Map::new(),
-                        |mut properties, parameter| {
-                            if let Some(name) = parameter["name"].as_str() {
-                                properties.insert(name.into(), json_schema_type(parameter));
-                            }
-                            properties
-                        },
-                    );
-                    let required = parameters
-                        .iter()
-                        .filter_map(|p| {
-                            (p["required"].as_bool() == Some(true))
-                                .then(|| p["name"].as_str())
-                                .flatten()
-                        })
-                        .collect::<Vec<_>>();
-                    catalogue.push(json!({"name": definition["id"], "description": definition["description"], "inputSchema": {"type": "object", "properties": properties, "required": required}}));
-                }
-            }
+            // Methods (kind='method') are NEVER tools: they are referenced by
+            // the workflow operations and discovered via get_available_methods.
             for definition in self.operations.list("") {
                 let parameters = definition["parameters"]
                     .as_array()
@@ -187,7 +161,9 @@ impl<'a> Session<'a> {
 }
 
 pub fn tools() -> Value {
-    serde_json::from_str(generated_metadata::TOOLS).expect("generated MCP metadata is valid JSON")
+    // Catalogue-backed tool definitions; on a catalogue miss this degrades to
+    // a minimal toolset (empty array), matching the C++ behaviour.
+    catalogue::tools_json()
 }
 
 pub fn handle(request: &Value, _registry: &MethodRegistry) -> Value {

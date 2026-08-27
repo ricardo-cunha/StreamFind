@@ -21,7 +21,7 @@ int run_domain_smoke() {
     streamfind::mass_spec::register_methods(registry);
     streamfind::raman::register_methods(registry);
     streamfind::sensors::register_methods(registry);
-    if (operations.list("mass_spec").size() != 20) return fail("mass_spec registration");
+    if (operations.list("mass_spec").size() != 23) return fail("mass_spec registration");
     if (operations.find("mass_spec.get_spectra_headers")->definition().parameters.definitions.size() != 3) return fail("spectra headers parameters");
     if (operations.find("mass_spec.get_chromatograms_headers")->definition().parameters.definitions.size() != 3) return fail("chromatogram headers parameters");
     if (operations.find("mass_spec.get_spectra_tic")->definition().parameters.definitions.size() != 6) return fail("spectra TIC parameters");

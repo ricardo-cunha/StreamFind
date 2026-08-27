@@ -1,4 +1,4 @@
-#include "streamfind/generated_metadata.hpp"
+#include "streamfind/catalogue.hpp"
 #include "streamfind/mass_spec/mass_spec.hpp"
 #include "streamfind/mass_spec/processing_methods_chromatograms.hpp"
 #include "streamfind/mass_spec/processing_methods_nta.hpp"
@@ -309,8 +309,9 @@ MethodValidator nta_validator(const std::string &id) {
 }
 
 void register_methods(MethodRegistry &registry) {
-    const auto catalogue = Json::parse(streamfind::mcp::generated::catalogue);
-    for (const auto &entry : catalogue.at("entries")) {
+    const auto entries = streamfind::catalogue::entries_json();
+    if (!entries) return;
+    for (const auto &entry : *entries) {
         if (entry.value("domain", "") != "mass_spec" || entry.value("kind", "") != "method") continue;
         MethodDefinition definition;
         definition.id = entry.at("canonical_id").get<std::string>();
@@ -358,8 +359,9 @@ void register_methods(MethodRegistry &registry) {
 }
 
 void register_operations(OperationRegistry &registry) {
-    const auto catalogue = Json::parse(streamfind::mcp::generated::catalogue);
-    for (const auto &entry : catalogue.at("entries")) {
+    const auto entries = streamfind::catalogue::entries_json();
+    if (!entries) return;
+    for (const auto &entry : *entries) {
         if (entry.value("domain", "") != "mass_spec" || entry.value("kind", "") != "operation") continue;
         OperationDefinition definition;
         const std::string id = entry.at("canonical_id").get<std::string>();

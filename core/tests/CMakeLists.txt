@@ -77,5 +77,12 @@ if(WIN32)
                 "$<TARGET_FILE:streamfind::duckdb>"
                 "$<TARGET_FILE_DIR:${_test_target}>"
         )
+        # Test binaries consume the runtime knowledge base via the
+        # next-to-binary hop of the catalogue search chain.
+        add_custom_command(TARGET ${_test_target} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "${STREAMFIND_SEMANTIC_DIR}/catalogue.duckdb"
+                "$<TARGET_FILE_DIR:${_test_target}>"
+        )
     endforeach()
 endif()

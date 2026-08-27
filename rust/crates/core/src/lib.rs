@@ -5,6 +5,7 @@
 //! Projects use the same DuckDB schema as the C++ backend.
 
 pub mod api;
+pub mod catalogue;
 mod project;
 
 pub use project::*;

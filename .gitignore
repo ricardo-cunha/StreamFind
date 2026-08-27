@@ -50,6 +50,8 @@ rust/.cargo/
 # Runtime and generated data ----------------------------------------------------
 **/*.sqlite
 **/*.duckdb
+# The semantic catalogue knowledge base is a committed runtime artifact.
+!/semantic/generated/catalogue.duckdb
 **/*.rds
 **/*.sf
 **/*.html
