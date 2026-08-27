@@ -61,6 +61,47 @@ Use the repository-local `.venv` for every Python script, test, formatter, or pa
   - POSIX: `.venv/bin/python -c 'import sys; print(sys.executable)'`
 - Do not use `python`, `python3`, or a system `pip` directly for repository work.
 
+## Repository Scratch, Build, and Log Locations (`tmp/`)
+
+All transient artifacts — development temp scripts, scratch files, custom
+build trees, test outputs, temp projects created during tests, logs, and any
+other disposable asset — belong in the repository-local `tmp/` folder at the
+checkout root (`<repo-root>/tmp/`). `tmp/` is gitignored
+(`.gitignore` → `/tmp/`), removed by `scripts/clean-build-temp.cmd`, and
+disposable by design: treat it as managed scratch, never as a place for
+anything that must be committed.
+
+- **Never** write repository-work temp files outside the repository (system
+  `%TEMP%` / `TMP`, `AppData`, user home, `<tmp>`, `/tmp`, etc.).
+- **Never** drop temp files, scratch, or ad-hoc build outputs in the
+  repository root or in source directories (`core/`, `rust/`, `semantic/`,
+  `docs/`, `bindings/`, `tests/`, ...). Root-level `log/` and `cache/` are
+  legacy locations that are being folded into `tmp/`; do not create new
+  content there.
+
+### Layout
+
+- `tmp/scripts/` — development helper scripts (`.bat`/`.sh`/`.py` wrappers for builds, tests, and tooling)
+- `tmp/build/` — custom/experimental build trees, ad-hoc binaries, staging areas
+- `tmp/projects/` — DuckDB project files and fixtures created by tests or ad-hoc runs
+- `tmp/logs/` — build, test, server, and session logs
+- `tmp/scratch/` — anything else transient
+
+### Rules
+
+- Development temp scripts and wrapper `.bat`/`.sh` files must be created
+  under `tmp/scripts/`, never in the system temp directory.
+- Test code and ad-hoc runs that create temporary DuckDB projects or fixtures
+  must place them under `tmp/projects/` (or another `tmp/`-anchored
+  directory), never in `std::filesystem::temp_directory_path()` / system temp.
+- Logs of builds, tests, servers, interactive sessions, and agent runs go to
+  `tmp/logs/` with one file per run (or a run-specific subdirectory).
+- Custom build trees created outside the canonical build presets go to
+  `tmp/build/`.
+- Housekeeping before committing on `dev_refactoring`:
+  `scripts\clean-build-temp.cmd` removes `tmp/`, `core/build/`, `rust/target/`,
+  `log/`, and `cache/` — run it so the tree stays free of transient artifacts.
+
 ## Turtle Ontology Formatting
 
 Use this style for every edit to `semantic/ontology/**/*.ttl`.
