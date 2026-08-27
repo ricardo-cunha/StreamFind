@@ -9,3 +9,6 @@ streamfind-rust-core = { path = "../core" }
 streamfind-rust-mass-spec = { path = "../mass-spec" }
 streamfind-rust-raman = { path = "../raman" }
 streamfind-rust-sensors = { path = "../sensors" }
+
+[dev-dependencies]
+streamfind-rust-test-support = { path = "../test-support" }

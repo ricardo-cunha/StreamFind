@@ -12,7 +12,7 @@ fn temporary_database() -> std::path::PathBuf {
         .duration_since(UNIX_EPOCH)
         .unwrap()
         .as_nanos();
-    std::env::temp_dir().join(format!("streamfind-rust-{stamp}.duckdb"))
+    streamfind_rust_test_support::tmp_projects_dir().join(format!("streamfind-rust-{stamp}.duckdb"))
 }
 
 #[test]

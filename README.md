@@ -70,7 +70,7 @@ From `core/`:
 ```powershell
 cmake --preset default
 cmake --build --preset default --config Debug
-ctest --test-dir build/cmake/default -C Debug --output-on-failure
+ctest --test-dir ../tmp/build/core-default -C Debug --output-on-failure
 ```
 
 See `core/README.md` for the full project and JSON API contracts.
@@ -92,6 +92,10 @@ cargo fmt --all -- --check
 cargo test --workspace
 cargo doc --workspace --no-deps --open
 ```
+
+Cargo artifacts go to the repository-level target dir configured in
+`rust/.cargo/config.toml` (`target-dir = "../tmp/build/rust-target"`), which is
+gitignored and removed by `scripts\clean-build-temp.cmd`.
 
 See `rust/README.md` for the project API, CLI usage, and interoperability
 fixtures.

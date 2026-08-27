@@ -8,8 +8,11 @@ The core does not depend on R, Python, FastAPI, or React.
 ```powershell
 cmake --preset default
 cmake --build --preset default --config Debug
-ctest --test-dir build/cmake/default -C Debug --output-on-failure
+ctest --test-dir ../tmp/build/core-default -C Debug --output-on-failure
 ```
+
+The build tree and test outputs live under the repository `tmp/` folder
+(gitignored, removed by `scripts\clean-build-temp.cmd`).
 
 ## Project API
 

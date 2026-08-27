@@ -1803,11 +1803,15 @@ dependencies = [
  "duckdb",
  "serde",
  "serde_json",
+ "streamfind-rust-test-support",
 ]
 
 [[package]]
 name = "streamfind-rust-external"
 version = "0.1.0"
+dependencies = [
+ "streamfind-rust-test-support",
+]
 
 [[package]]
 name = "streamfind-rust-mass-spec"
@@ -1821,6 +1825,7 @@ dependencies = [
  "serde_json",
  "streamfind-rust-core",
  "streamfind-rust-external",
+ "streamfind-rust-test-support",
 ]
 
 [[package]]
@@ -1832,6 +1837,7 @@ dependencies = [
  "streamfind-rust-mass-spec",
  "streamfind-rust-raman",
  "streamfind-rust-sensors",
+ "streamfind-rust-test-support",
 ]
 
 [[package]]
@@ -1847,6 +1853,10 @@ version = "0.1.0"
 dependencies = [
  "streamfind-rust-core",
 ]
+
+[[package]]
+name = "streamfind-rust-test-support"
+version = "0.1.0"
 
 [[package]]
 name = "strum"

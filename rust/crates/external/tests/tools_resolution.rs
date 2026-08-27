@@ -7,7 +7,7 @@ use std::{env, fs, path::PathBuf};
 static ENV_LOCK: Mutex<()> = Mutex::new(());
 
 fn fixture_home() -> PathBuf {
-    let root = env::temp_dir().join("streamfind-tools-fixture");
+    let root = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-tools-fixture");
     let _ = fs::remove_dir_all(&root);
     fs::create_dir_all(root.join("tools/metfrag")).unwrap();
     fs::create_dir_all(root.join("tools/java/jdk-21.0.5/bin")).unwrap();

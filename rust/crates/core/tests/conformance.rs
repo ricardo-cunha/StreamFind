@@ -11,7 +11,7 @@ fn fixture() -> Value {
 }
 
 fn database(name: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(name);
+    let path = streamfind_rust_test_support::tmp_projects_dir().join(name);
     let _ = fs::remove_file(&path);
     path
 }

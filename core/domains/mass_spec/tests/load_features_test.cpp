@@ -6,6 +6,7 @@
 #include "streamfind/mass_spec/register.hpp"
 #include "streamfind/project.hpp"
 #include "streamfind/external/openbabel_adapter.hpp"
+#include "tmp_projects.hpp"
 
 #ifndef STREAMFIND_BASIC_TOF_DATA_ROOT
 #error STREAMFIND_BASIC_TOF_DATA_ROOT is required
@@ -31,7 +32,7 @@ int run_load_features_test() {
         r001.stem().string(), r002.stem().string(), r003.stem().string()
     });
 
-    const auto database = std::filesystem::current_path() / "streamfind-load-features-test.duckdb";
+    const auto database = streamfind::test::tmp_projects_dir() / "streamfind-load-features-test.duckdb";
     std::error_code error;
     std::filesystem::remove(database, error);
     auto project = streamfind::Project::create({database, "load-features-test", std::nullopt, false, false, "mass_spec"});

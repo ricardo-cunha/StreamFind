@@ -13,7 +13,7 @@ fn fixtures() -> [std::path::PathBuf; 3] {
 
 #[test]
 fn finds_wastewater_features() {
-    let database = std::env::temp_dir().join("streamfind-rust-nta-wastewater.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-wastewater.duckdb");
     let _ = fs::remove_file(&database);
     let mut project = Project::create(ProjectOptions {
         database_path: database,
@@ -102,7 +102,7 @@ fn finds_wastewater_features() {
 
 #[test]
 fn rejects_invalid_nta_parameters() {
-    let database = std::env::temp_dir().join("streamfind-rust-nta-validator.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-validator.duckdb");
     let _ = fs::remove_file(&database);
     let mut project = Project::create(ProjectOptions {
         database_path: database,

@@ -8,6 +8,7 @@
 
 #include "streamfind/mass_spec/register.hpp"
 #include "streamfind/project.hpp"
+#include "tmp_projects.hpp"
 
 #ifndef STREAMFIND_WASTEWATER_DATA_ROOT
 #error STREAMFIND_WASTEWATER_DATA_ROOT is required
@@ -157,8 +158,8 @@ int run_nta_wastewater_conformance(bool quantized) {
         analyses.push_back(streamfind::Json{{"path", p.string()}});
     }
 
-    const auto database = std::filesystem::current_path() /
-        (quantized ? "streamfind-nta-wastewater-quantized.duckdb" : "streamfind-nta-wastewater-conformance.duckdb");
+    const auto database = streamfind::test::tmp_projects_dir() /
+            (quantized ? "streamfind-nta-wastewater-quantized.duckdb" : "streamfind-nta-wastewater-conformance.duckdb");
     std::error_code error;
     std::filesystem::remove(database, error);
     auto project = streamfind::Project::create({database, "ww-conformance", std::nullopt, false, false, "mass_spec"});

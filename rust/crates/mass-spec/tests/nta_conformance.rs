@@ -182,7 +182,7 @@ fn nta_quantized_wastewater_pipeline() {
         "02_tof_ww_is_pos_influent-r001.mzML",
         "03_tof_ww_is_pos_o3sw_effluent-r001.mzML",
     ];
-    let database = std::env::temp_dir().join("streamfind-rust-nta-ww.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-ww.duckdb");
     let mut project = setup_project(&database);
     let mut methods = MethodRegistry::default();
     streamfind_rust_mass_spec::register_methods(&mut methods).unwrap();

@@ -11,7 +11,7 @@
       "displayName": "Default standalone core configuration",
       "generator": "Visual Studio 18 2026",
       "architecture": "x64",
-      "binaryDir": "${sourceDir}/build/cmake/default",
+      "binaryDir": "${sourceDir}/../tmp/build/core-default",
       "cacheVariables": {
         "STREAMFIND_BUILD_TESTS": "ON",
         "STREAMFIND_BUILD_SHARED": "OFF"

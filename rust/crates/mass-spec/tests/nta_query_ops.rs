@@ -209,7 +209,7 @@ fn run_operations_assert(project: &mut Project, operations: &OperationRegistry) 
 
 #[test]
 fn get_suspects_and_transformation_products_query_persisted_rows() {
-    let database = std::env::temp_dir().join("streamfind-rust-nta-query-ops.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-query-ops.duckdb");
     let fixture = basic_tof_root().join("00_tof_s_is_pos_cent-r002.mzML");
     let mut project = setup_project(&database, "r002", &fixture);
     let mut methods = MethodRegistry::default();
@@ -376,7 +376,7 @@ fn get_suspects_and_transformation_products_query_persisted_rows() {
 
 #[test]
 fn get_internal_standards_query_after_is_pipeline() {
-    let database = std::env::temp_dir().join("streamfind-rust-nta-query-ops-is.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-query-ops-is.duckdb");
     let fixture = basic_tof_root().join("00_tof_s_is_pos_cent-r002.mzML");
     let mut project = setup_project(&database, "r002", &fixture);
     let mut methods = MethodRegistry::default();
@@ -523,7 +523,7 @@ fn get_internal_standards_query_after_is_pipeline() {
 
 #[test]
 fn transformation_products_table_creatable_and_queryable_when_empty() {
-    let database = std::env::temp_dir().join("streamfind-rust-nta-query-ops-empty.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-query-ops-empty.duckdb");
     let fixture = basic_tof_root().join("00_tof_s_is_pos_cent-r002.mzML");
     let mut project = setup_project(&database, "r002", &fixture);
     let mut methods = MethodRegistry::default();

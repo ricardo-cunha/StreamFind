@@ -16,7 +16,7 @@ fn fixture() -> std::path::PathBuf {
 }
 
 fn project(name: &str) -> Project {
-    let database = std::env::temp_dir().join(format!("streamfind-{name}.duckdb"));
+    let database = streamfind_rust_test_support::tmp_projects_dir().join(format!("streamfind-{name}.duckdb"));
     let _ = fs::remove_file(&database);
     Project::create(ProjectOptions {
         database_path: database,

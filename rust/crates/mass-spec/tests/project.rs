@@ -4,7 +4,7 @@ use streamfind_rust_core::{OperationRegistry, Project, ProjectOptions};
 
 #[test]
 fn mass_spec_operations_persist_lcd_summary_and_ontology_tables() {
-    let database = std::env::temp_dir().join("streamfind-rust-mass-spec-project.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-mass-spec-project.duckdb");
     let _ = fs::remove_file(&database);
     let mut project = Project::create(ProjectOptions {
         database_path: database.clone(),
@@ -53,7 +53,7 @@ fn mass_spec_operations_persist_lcd_summary_and_ontology_tables() {
 
 #[test]
 fn domain_smoke_matches_cpp_mass_spec_operations() {
-    let database = std::env::temp_dir().join("streamfind-rust-mass-spec-domain-smoke.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-mass-spec-domain-smoke.duckdb");
     let _ = fs::remove_file(&database);
     let mut project = Project::create(ProjectOptions {
         database_path: database.clone(),

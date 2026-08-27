@@ -72,7 +72,7 @@ fn session_lifecycle_rebinds_catalogue() {
     let mut operations = OperationRegistry::default();
     streamfind_rust_mass_spec::register_operations(&mut operations).unwrap();
     let mut session = streamfind_rust_mcp::Session::new(&registry, &operations);
-    let path = std::env::temp_dir().join("streamfind-rust-mcp-lifecycle.duckdb");
+    let path = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-mcp-lifecycle.duckdb");
     let _ = std::fs::remove_file(&path);
     let call = |session: &mut streamfind_rust_mcp::Session<'_>, id, name, arguments| {
         session.handle(&json!({"id": id, "method": "tools/call", "params": {"name": name, "arguments": arguments}}))

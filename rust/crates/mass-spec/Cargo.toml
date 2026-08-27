@@ -12,3 +12,6 @@ cfb = "0.14"
 flate2 = { version = "1", default-features = false, features = ["rust_backend"] }
 quick-xml = "0.38"
 regex = "1"
+
+[dev-dependencies]
+streamfind-rust-test-support = { path = "../test-support" }

@@ -176,7 +176,7 @@ fn atp_parameters(analysis: &str) -> Value {
 
 #[test]
 fn assign_transformation_products_appends_to_suspects() {
-    let database = std::env::temp_dir().join("streamfind-rust-nta-lasttwo-atp.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-lasttwo-atp.duckdb");
     let fixture = basic_tof_root().join("00_tof_s_is_pos_cent-r002.mzML");
     let mut project = setup_project(&database, "r002", &fixture);
     let mut methods = MethodRegistry::default();
@@ -243,7 +243,7 @@ fn assign_transformation_products_appends_to_suspects() {
 
 #[test]
 fn metfrag_screening_missing_tools_or_localcsv_run() {
-    let database = std::env::temp_dir().join("streamfind-rust-nta-lasttwo-mf.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-lasttwo-mf.duckdb");
     let fixture = basic_tof_root().join("00_tof_s_is_pos_cent-r002.mzML");
     let mut project = setup_project(&database, "r002", &fixture);
     let mut methods = MethodRegistry::default();
@@ -323,7 +323,7 @@ fn metfrag_screening_missing_tools_or_localcsv_run() {
 
 #[test]
 fn rejects_invalid_last_two_parameters() {
-    let database = std::env::temp_dir().join("streamfind-rust-nta-lasttwo-neg.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-lasttwo-neg.duckdb");
     let fixture = basic_tof_root().join("00_tof_s_is_pos_cent-r002.mzML");
     let mut project = setup_project(&database, "r002", &fixture);
     let mut methods = MethodRegistry::default();

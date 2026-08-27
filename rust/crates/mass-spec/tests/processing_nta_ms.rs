@@ -68,7 +68,7 @@ fn set_pipeline(project: &mut Project, methods: &MethodRegistry, steps: Vec<(&st
 
 #[test]
 fn loads_ms1_and_ms2_spectra_for_basic_tof_features() {
-    let database = std::env::temp_dir().join("streamfind-rust-nta-basic.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-basic.duckdb");
     let mut project = setup_project(database.to_str().unwrap());
     let mut methods = MethodRegistry::default();
     streamfind_rust_mass_spec::register_methods(&mut methods).unwrap();

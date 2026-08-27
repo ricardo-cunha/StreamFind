@@ -6,7 +6,7 @@ use streamfind_rust_mass_spec::reader::{Format, Reader};
 
 #[test]
 fn reads_mzxml_peak_arrays_and_summary() {
-    let path = std::env::temp_dir().join(format!(
+    let path = streamfind_rust_test_support::tmp_projects_dir().join(format!(
         "streamfind-mass-spec-{}.mzXML",
         SystemTime::now()
             .duration_since(UNIX_EPOCH)

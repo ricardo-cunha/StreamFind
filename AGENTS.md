@@ -99,8 +99,14 @@ anything that must be committed.
 - Custom build trees created outside the canonical build presets go to
   `tmp/build/`.
 - Housekeeping before committing on `dev_refactoring`:
-  `scripts\clean-build-temp.cmd` removes `tmp/`, `core/build/`, `rust/target/`,
-  `log/`, and `cache/` — run it so the tree stays free of transient artifacts.
+  `scripts\clean-build-temp.cmd` removes build/test artifacts and disposable
+  scratch (`tmp/build/`, `tmp/projects/`, `tmp/scratch/`, plus the legacy
+  `core/build/`, `rust/target/`, `log/`, `cache/` dirs). It **preserves**
+  `tmp/scripts/` and `tmp/logs/` by default so development-support wrappers and
+  diagnostics survive a routine clean. Run `scripts\clean-build-temp.cmd --all`
+  to also wipe `tmp/scripts/` and `tmp/logs/` — the intended final step once a
+  feature and its development-support scripts are implemented, leaving only the
+  committed convenience scripts under the root `scripts/` folder.
 
 ## Turtle Ontology Formatting
 
