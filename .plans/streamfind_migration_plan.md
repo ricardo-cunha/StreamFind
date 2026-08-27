@@ -291,23 +291,31 @@ The current branch now includes the following completed work:
 ### Next work
 
 With all 16 R NTA method families complete, parity achieved between the C++ and
-Rust backends, and the NTA table query Operations migrated, the remaining units
-are:
+Rust backends, the NTA table query Operations migrated, and build/test artifacts
+centralized under `tmp/` (AGENTS.md), the remaining units are:
 
-1. **CI adoption** — wire the quantized conformance targets + the existing fast
+1. **Semantics as a queryable artifact — `catalogue.duckdb`** (planned; the
+   design is finalized in `.plans/completed/catalogue_duckdb_plan.md`, waiting
+   on implementation in the `duckdb_ontology` worktree). `generate_projection.py`
+   emits `semantic/generated/catalogue.duckdb` (document-per-entry schema,
+   MCP-exposed via a `catalogue_entries` table), C++/Rust MCP servers and
+   registries query it instead of parsing embedded literals, the generated
+   `generated_metadata.hpp`/`.rs` literals are removed, and `catalogue.duckdb`
+   becomes a required installation file.
+2. **CI adoption** — wire the quantized conformance targets + the existing fast
    tests into the repo's CI workflow; decide whether the full 18-file wastewater
    run is a nightly optional gate.
-2. **MCP progress/cancellation boundary** before exposing long-running NTA
+3. **MCP progress/cancellation boundary** before exposing long-running NTA
    Methods through MCP (shared execution context in core, Rust core, and both
    MCP adapters).
-3. **MassSpec reader hardening** — finish the Sciex reader extension
+4. **MassSpec reader hardening** — finish the Sciex reader extension
    (`mass_spec_reader_extension` worktree; multi-analysis WIFF, LCD), then migrate
    the LCT/LCD reader operations.
-4. **Pure transformation-product assignment over supplied records** — after the
+5. **Pure transformation-product assignment over supplied records** — after the
    shared record contract is defined.
-5. **Python distribution + frontend** — build the C++-backed Python binding, then
+6. **Python distribution + frontend** — build the C++-backed Python binding, then
    the frontend; align Cogniflow only after the public Python path is stable.
-6. **Distribution/CI/docs hardening** — packaging, wheel/install-test, semantic
+7. **Distribution/CI/docs hardening** — packaging, wheel/install-test, semantic
    catalogue versioning, and (semi-)generated documentation.
 
 ## Target repository shape
