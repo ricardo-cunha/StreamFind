@@ -1154,8 +1154,14 @@ namespace nta::metfrag_runner
           parse_expl_peaks(row.expl_peaks, row.expl_formulas, db_mz, db_int, db_form);
 
           // Encode explained fragments for SUSPECT storage.
-          std::vector<float> db_mzf(db_mz.begin(), db_mz.end());
-          std::vector<float> db_intf(db_int.begin(), db_int.end());
+          std::vector<float> db_mzf;
+          db_mzf.reserve(db_mz.size());
+          for (const double value : db_mz)
+            db_mzf.push_back(static_cast<float>(value));
+          std::vector<float> db_intf;
+          db_intf.reserve(db_int.size());
+          for (const double value : db_int)
+            db_intf.push_back(static_cast<float>(value));
           std::string db_ms2_mz_enc  = nta::utils::encode_floats_base64(db_mzf);
           std::string db_ms2_int_enc = nta::utils::encode_floats_base64(db_intf);
 

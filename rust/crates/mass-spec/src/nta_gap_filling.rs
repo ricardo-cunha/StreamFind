@@ -689,6 +689,7 @@ struct GapInfo {
 }
 
 /// Observed feature-group boundaries (local analogue of the C++ `GROUP_RANGES`).
+#[allow(dead_code)]
 struct GroupRanges {
     min_rtmin: f32,
     max_rtmax: f32,

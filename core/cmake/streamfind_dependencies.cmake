@@ -165,7 +165,7 @@ function(streamfind_add_openbabel vendor_root)
         endif()
         target_compile_options(${_target} PRIVATE
             $<$<CXX_COMPILER_ID:GNU,Clang>:-w>
-            $<$<CXX_COMPILER_ID:MSVC>:/W0>
+            $<$<CXX_COMPILER_ID:MSVC>:/W0;/wd4244>
         )
     endforeach()
 

@@ -21,7 +21,10 @@
   "buildPresets": [
     {
       "name": "default",
-      "configurePreset": "default"
+      "configurePreset": "default",
+      "nativeToolOptions": [
+        "-p:MSBuildWarningsAsMessages=MSB8029"
+      ]
     }
   ]
 }

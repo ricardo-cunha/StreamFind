@@ -152,6 +152,7 @@ fn duck_value_to_json(value: DuckValue) -> Json {
                 .collect(),
         ),
         DuckValue::Union(value) => duck_value_to_json(*value),
+        value => json!(format!("{value:?}")),
     }
 }
 

@@ -8,6 +8,7 @@
 #include <sstream>
 #include <string>
 #include <cstdlib>
+#include <filesystem>
 #include <mutex>
 
 #ifdef _WIN32
@@ -33,7 +34,14 @@ namespace streamfind::obabel_detail
 
   std::string narrow_path(const std::wstring &path)
   {
-    return std::string(path.begin(), path.end());
+    if (path.empty())
+      return {};
+    const int length = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, path.data(), static_cast<int>(path.size()), nullptr, 0, nullptr, nullptr);
+    if (length <= 0)
+      return {};
+    std::string result(static_cast<std::size_t>(length), '\0');
+    WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, path.data(), static_cast<int>(path.size()), result.data(), length, nullptr, nullptr);
+    return result;
   }
 
   std::wstring parent_directory(const std::wstring &path)
@@ -121,7 +129,7 @@ namespace streamfind::obabel_detail
         configured = SetEnvironmentVariableW(L"BABEL_DATADIR", candidate.c_str()) != 0;
         if (configured)
         {
-          const std::string narrow_candidate(candidate.begin(), candidate.end());
+          const std::string narrow_candidate = narrow_path(candidate);
           configured = _putenv_s("BABEL_DATADIR", narrow_candidate.c_str()) == 0;
         }
         if (configured)

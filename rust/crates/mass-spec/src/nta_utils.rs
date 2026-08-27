@@ -208,7 +208,7 @@ pub fn fit_gaussian(x: &[f32], y: &[f32], mut a: f32, mut mu: f32, mut sigma: f3
             gs += -2.0 * err * a * e * (x[i] - mu) * (x[i] - mu) / (sigma * sigma * sigma);
             gb += -2.0 * err;
         }
-        let mut update = |g: f32, m: &mut f32, v: &mut f32, p: &mut f32| {
+        let update = |g: f32, m: &mut f32, v: &mut f32, p: &mut f32| {
             *m = BETA1 * *m + (1.0 - BETA1) * g;
             *v = BETA2 * *v + (1.0 - BETA2) * g * g;
             let mh = *m / (1.0 - BETA1.powf(iter as f32));

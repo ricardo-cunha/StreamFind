@@ -12,7 +12,7 @@
 //! bsdtar, which handles both `.zip` and `.tar.gz`); no HTTP library needed.
 
 use std::env;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::process::Command;
 
 /// Temurin JDK 21 "latest" binary from the Adoptium API (same source/version

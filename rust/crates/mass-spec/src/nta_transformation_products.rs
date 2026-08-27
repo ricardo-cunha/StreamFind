@@ -11,7 +11,7 @@
 
 use std::collections::HashMap;
 
-use serde_json::{json, Value};
+use serde_json::Value;
 use streamfind_rust_core::{Error, ErrorCode, Project, Result};
 
 use crate::nta::{NtaSuspectRow, ProjectNonTargetAnalysis};

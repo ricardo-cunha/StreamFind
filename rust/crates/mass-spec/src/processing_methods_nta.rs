@@ -100,6 +100,7 @@ fn encode(v: &[f32]) -> String {
     STANDARD.encode(bytes)
 }
 
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Point {
     rt: f32,
@@ -1293,6 +1294,7 @@ pub fn load_features_ms2(project: &mut Project, p: &Value) -> Result<Value> {
 // the processing algorithms run over the same in-memory model as core C++.
 // ---------------------------------------------------------------------------
 
+#[allow(dead_code)]
 pub(crate) const NTA_FEATURES_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_NTA_FEATURES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, feature VARCHAR NOT NULL, feature_component VARCHAR, feature_group VARCHAR, adduct VARCHAR, rt DOUBLE, mz DOUBLE, mass DOUBLE, intensity DOUBLE, noise DOUBLE, sn DOUBLE, area DOUBLE, trace_count INTEGER, rtmin DOUBLE, rtmax DOUBLE, width DOUBLE, mzmin DOUBLE, mzmax DOUBLE, ppm DOUBLE, fwhm_rt DOUBLE, fwhm_mz DOUBLE, gaussian_A DOUBLE, gaussian_mu DOUBLE, gaussian_sigma DOUBLE, gaussian_r2 DOUBLE, jaggedness DOUBLE, sharpness DOUBLE, asymmetry DOUBLE, modality INTEGER, plates DOUBLE, polarity INTEGER, filtered BOOLEAN, filter VARCHAR, filled BOOLEAN, correction DOUBLE, eic_size INTEGER, eic_rt VARCHAR, eic_mz VARCHAR, eic_intensity VARCHAR, eic_baseline VARCHAR, eic_smoothed VARCHAR, ms1_size INTEGER, ms1_mz VARCHAR, ms1_intensity VARCHAR, ms2_size INTEGER, ms2_mz VARCHAR, ms2_intensity VARCHAR, annotation_category VARCHAR, annotation_type VARCHAR, annotation_parent_feature VARCHAR, annotation_element VARCHAR, annotation_mass_error_da DOUBLE, annotation_mass_error_ppm DOUBLE, annotation_rt_error DOUBLE, annotation_rel_intensity DOUBLE, annotation_expected_rel_intensity_min DOUBLE, annotation_expected_rel_intensity_max DOUBLE, annotation_score DOUBLE, component_size INTEGER, component_rt_center DOUBLE, component_rt_spread DOUBLE, component_density DOUBLE, component_mean_correlation DOUBLE, component_best_partner VARCHAR, component_max_correlation DOUBLE, component_mean_correlation_to_component DOUBLE, component_membership_score DOUBLE, component_is_core BOOLEAN, component_bridge_flag BOOLEAN, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, feature))";
 
 const NTA_SUSPECTS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_NTA_SUSPECTS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, feature VARCHAR NOT NULL, feature_group VARCHAR, candidate_rank INTEGER, name VARCHAR, polarity INTEGER, db_mass DOUBLE, exp_mass DOUBLE, error_mass DOUBLE, db_rt DOUBLE, exp_rt DOUBLE, error_rt DOUBLE, intensity DOUBLE, area DOUBLE, id_level INTEGER, score DOUBLE, shared_fragments INTEGER, cosine_similarity DOUBLE, formula VARCHAR, SMILES VARCHAR, InChI VARCHAR, InChIKey VARCHAR, xLogP DOUBLE, database_id VARCHAR, db_ms2_size INTEGER, db_ms2_mz VARCHAR, db_ms2_intensity VARCHAR, db_ms2_formula VARCHAR, db_ms2_smiles VARCHAR, exp_ms2_size INTEGER, exp_ms2_mz VARCHAR, exp_ms2_intensity VARCHAR, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, feature))";
@@ -1302,6 +1304,7 @@ const NTA_INTERNAL_STANDARDS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPE
 const NTA_TRANSFORMATION_PRODUCTS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_NTA_TRANSFORMATION_PRODUCTS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, feature_group VARCHAR, precursor_feature_group VARCHAR, main_precursor_feature_group VARCHAR, assignment_rank INTEGER, name VARCHAR NOT NULL, formula VARCHAR, mass DOUBLE, SMILES VARCHAR, InChI VARCHAR, InChIKey VARCHAR, xLogP DOUBLE, transformation VARCHAR, precursor_name VARCHAR, precursor_formula VARCHAR, precursor_mass DOUBLE, precursor_SMILES VARCHAR, precursor_InChI VARCHAR, precursor_InChIKey VARCHAR, precursor_xLogP DOUBLE, main_precursor_name VARCHAR, main_precursor_formula VARCHAR, main_precursor_mass DOUBLE, main_precursor_SMILES VARCHAR, main_precursor_InChI VARCHAR, main_precursor_InChIKey VARCHAR, main_precursor_xLogP DOUBLE, cosine_similarity DOUBLE, main_precursor_cosine_similarity DOUBLE, rt_plausibility DOUBLE, main_precursor_rt_plausibility DOUBLE, assignment_score DOUBLE, network_level INTEGER, assignment_status VARCHAR, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, feature_group, name))";
 
 
+#[allow(dead_code)]
 pub(crate) fn ensure_nta_schemas(project: &Project) -> Result<()> {
     project.execute_sql(NTA_FEATURES_SCHEMA)?;
     project.execute_sql(NTA_SUSPECTS_SCHEMA)?;

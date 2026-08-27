@@ -3,6 +3,7 @@
 #include "streamfind/external/openbabel/streamfind_openbabel_api.h"
 
 #include <string>
+#include <filesystem>
 
 #ifdef _WIN32
 #include <windows.h>
@@ -11,6 +12,20 @@
 
 namespace sf::obabel
 {
+#ifdef _WIN32
+  std::string narrow_path(const std::wstring &path)
+  {
+    if (path.empty())
+      return {};
+    const int length = WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, path.data(), static_cast<int>(path.size()), nullptr, 0, nullptr, nullptr);
+    if (length <= 0)
+      return {};
+    std::string result(static_cast<std::size_t>(length), '\0');
+    WideCharToMultiByte(CP_UTF8, WC_ERR_INVALID_CHARS, path.data(), static_cast<int>(path.size()), result.data(), length, nullptr, nullptr);
+    return result;
+  }
+#endif
+
   NormalizedStructure from_c_result(
       const streamfind_ob_normalized_result &result)
   {
@@ -128,7 +143,7 @@ namespace sf::obabel
     if (data_dir.empty())
     {
       error = "Could not locate Open Babel data directory relative to " +
-              std::string(dll_path.begin(), dll_path.end());
+              narrow_path(dll_path);
       return false;
     }
 
@@ -199,7 +214,7 @@ namespace sf::obabel
     if (api.module == nullptr)
     {
       api.error = "Could not load openbabel_streamfind.dll from expected locations near " +
-                  std::string(module_dir.begin(), module_dir.end());
+                  narrow_path(module_dir);
       return api;
     }
 
@@ -226,7 +241,7 @@ namespace sf::obabel
     if (api.available == nullptr || api.normalize == nullptr || api.render_svg == nullptr || api.debug_runtime == nullptr)
     {
       api.error = "Could not resolve Open Babel streamfind API exports from " +
-                  std::string(loaded_path.begin(), loaded_path.end());
+                  narrow_path(loaded_path);
       FreeLibrary(api.module);
       api.module = nullptr;
       api.available = nullptr;

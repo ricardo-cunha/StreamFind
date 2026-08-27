@@ -13,6 +13,7 @@
 - Do not add filename-specific branches, sample-specific offsets, compatibility shims, duplicate source trees, or legacy execution paths.
 - Preserve native profile/line arrays; do not centroid unless a separate explicitly requested processing operation does so.
 - Unknown binary grammars and unproven calibration models must fail explicitly with diagnostic context.
+- Real vendor files outside the repository are development fixtures only. Tests that require them support reverse engineering and local validation; they are not part of the distributable/release test suite and must remain conditionally configured or opt-in.
 - Rust tests belong under `rust/crates/mass-spec/tests/`.
 - Before committing on the integration branch, run `scripts\clean-build-temp.cmd` and move completed briefs from `.plans/` to `.plans/completed/` as required by repository workflow.
 
@@ -430,23 +431,25 @@ For C++ native changes, build through the configured Visual Studio CMake build w
 
 ## Relevant temporary diagnostic artifacts
 
-These files are outside production source and may be useful to future agents when reproducing the BAF investigation:
+These files are now under the repository-managed scratch locations:
 
 ```text
-C:\Users\cunha\AppData\Local\Temp\decode-baf-profile-prototype.py
-C:\Users\cunha\AppData\Local\Temp\validate-baf-profile-blocks.py
-C:\Users\cunha\AppData\Local\Temp\validate-baf-profile-oracle.py
-C:\Users\cunha\AppData\Local\Temp\bruker-baf-calfit.py
-C:\Users\cunha\AppData\Local\Temp\bruker-baf-trace-target.py
-C:\Users\cunha\AppData\Local\Temp\signal-baf-event.py
-C:\Users\cunha\AppData\Local\Temp\baf-source-write.cmd
-C:\Users\cunha\AppData\Local\Temp\baf-source-vector.cmd
-C:\Users\cunha\AppData\Local\Temp\baf-decoder-entry.cmd
-C:\Users\cunha\AppData\Local\Temp\bruker-baf-idx-parse.py
-C:\Users\cunha\AppData\Local\Temp\bruker-baf-pointer-probe.py
-C:\Users\cunha\AppData\Local\Temp\bruker-baf-object-records.py
-C:\Users\cunha\AppData\Local\Temp\bruker-baf-map.json
+tmp/scripts/decode-baf-profile-prototype.py
+tmp/scripts/validate-baf-profile-blocks.py
+tmp/scripts/validate-baf-profile-oracle.py
+tmp/scripts/bruker-baf-calfit.py
+tmp/scripts/bruker-baf-trace-target.py
+tmp/scripts/signal-baf-event.py
+tmp/scripts/baf-source-write.cmd
+tmp/scripts/baf-source-vector.cmd
+tmp/scripts/baf-decoder-entry.cmd
+tmp/scripts/bruker-baf-idx-parse.py
+tmp/scripts/bruker-baf-pointer-probe.py
+tmp/scripts/bruker-baf-object-records.py
+tmp/logs/bruker-baf-map.json
 ```
+
+The repository `AGENTS.md` rule is authoritative: future development scripts belong in `tmp/scripts/`, transient reports/logs belong in `tmp/logs/`, and temporary fixtures/projects belong in `tmp/projects/`. These locations are gitignored and are not production dependencies.
 
 Use these only as investigation aids. They may contain fixture-specific assumptions and must not be copied into production dependencies. Stale/invalid trace runs that reported `count=0`, `before_read 0`, heap corruption, or stale ASLR addresses were explicitly discarded and are not evidence.
 

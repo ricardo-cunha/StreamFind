@@ -11,7 +11,7 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-use serde_json::{json, Value};
+use serde_json::Value;
 use streamfind_rust_core::{Error, ErrorCode, Project, Result};
 
 use crate::nta::{NtaSuspectRow, ProjectNonTargetAnalysis};
@@ -118,6 +118,7 @@ fn to_lower_ascii(s: &str) -> String {
     s.to_lowercase()
 }
 
+#[allow(dead_code)]
 fn is_local_database_type(database_type: &str) -> bool {
     database_type == "LocalSDF" || database_type == "LocalPSV" || database_type == "LocalCSV"
 }
@@ -1460,7 +1461,7 @@ pub fn metfrag_screening(project: &mut Project, p: &Value) -> Result<Value> {
     };
 
     let analyses = string_list(p, "analysis_names");
-    let all_analyses = data.analysis_names().to_vec();
+
     metfrag_screening_impl(&mut data, &analyses, &params);
 
     persist_features(project, &data)?;

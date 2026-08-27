@@ -1,3 +1,5 @@
+#![allow(non_snake_case)]
+
 use std::path::Path;
 
 use serde_json::{json, Value};
@@ -970,6 +972,7 @@ fn get_transformation_products_impl(project: &mut Project, p: &Value) -> Result<
     )
 }
 
+#[allow(dead_code)]
 fn parameter_example(name: &str) -> Option<Value> {
     match name {
         "analysis_names" => Some(json!(["sample-r001"])),
@@ -996,6 +999,7 @@ fn parameter_example(name: &str) -> Option<Value> {
     }
 }
 
+#[allow(dead_code)]
 fn parameter(
     name: &str,
     description: &str,
@@ -1094,6 +1098,7 @@ fn table_result(id: &str, result: Result<Value>) -> Result<Value> {
     Ok(json!({"row_count": rows.len(), "columns": columns}))
 }
 
+#[allow(dead_code)]
 fn data_parameters(operation: &str) -> ParameterSchema {
     return ontology_parameters(operation);
     #[allow(unreachable_code)]
