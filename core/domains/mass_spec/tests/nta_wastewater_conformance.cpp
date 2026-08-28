@@ -8,7 +8,7 @@
 
 #include "streamfind/mass_spec/register.hpp"
 #include "streamfind/project.hpp"
-#include "tmp_projects.hpp"
+#include "../../../tests/tmp_projects.hpp"
 
 #ifndef STREAMFIND_WASTEWATER_DATA_ROOT
 #error STREAMFIND_WASTEWATER_DATA_ROOT is required

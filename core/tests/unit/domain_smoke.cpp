@@ -4,35 +4,78 @@
 #include <fstream>
 #include <set>
 #include <sstream>
+#include <map>
 
+#include "streamfind/catalogue.hpp"
 #include "streamfind/mass_spec/register.hpp"
 #include "streamfind/project.hpp"
 #include "streamfind/raman/register.hpp"
 #include "streamfind/sensors/register.hpp"
+#include "../tmp_projects.hpp"
+
+#ifndef STREAMFIND_CATALOGUE_PATH
+#error STREAMFIND_CATALOGUE_PATH is required
+#endif
+
+/// Map of operation id -> parameter name list, derived from the committed
+/// semantic catalogue. Tests compare the registered operations against it, so
+/// counts adapt automatically when the catalogue changes.
+std::map<std::string, std::set<std::string>> catalogue_parameters(const streamfind::Json &entries) {
+    std::map<std::string, std::set<std::string>> parameters;
+    for (const auto &entry : entries) {
+        std::string id = entry.value("canonical_id", "");
+        std::set<std::string> names;
+        for (const auto &parameter : entry.value("parameters", streamfind::Json::array())) {
+            names.insert(parameter.value("name", ""));
+        }
+        parameters.emplace(std::move(id), std::move(names));
+    }
+    return parameters;
+}
 
 int run_domain_smoke() {
     const auto fail = [](const char *check) {
         std::cerr << "domain smoke failed: " << check << "\n";
         return 1;
     };
+    // Expectations are derived from the committed semantic catalogue (the same
+    // contract the registries are generated from), so counts adapt
+    // automatically when operations/methods are added or removed.
+    const auto entries = streamfind::catalogue::load(STREAMFIND_CATALOGUE_PATH);
+    if (!entries) return fail("catalogue load");
+    const auto catalogue = catalogue_parameters(*entries);
+    const auto expected_operations = static_cast<int>(std::count_if(
+        entries->begin(), entries->end(), [](const auto &entry) {
+            return entry.value("kind", "") == "operation" && entry.value("domain", "") == "mass_spec";
+        }));
+    const auto expected_raman_methods = static_cast<int>(std::count_if(
+        entries->begin(), entries->end(), [](const auto &entry) {
+            return entry.value("kind", "") == "method" && entry.value("domain", "") == "raman";
+        }));
+    const auto expected_sensors_methods = static_cast<int>(std::count_if(
+        entries->begin(), entries->end(), [](const auto &entry) {
+            return entry.value("kind", "") == "method" && entry.value("domain", "") == "sensors";
+        }));
+
     streamfind::MethodRegistry registry;
     streamfind::OperationRegistry operations;
     streamfind::mass_spec::register_operations(operations);
     streamfind::mass_spec::register_methods(registry);
     streamfind::raman::register_methods(registry);
     streamfind::sensors::register_methods(registry);
-    if (operations.list("mass_spec").size() != 23) return fail("mass_spec registration");
-    if (operations.find("mass_spec.get_spectra_headers")->definition().parameters.definitions.size() != 3) return fail("spectra headers parameters");
-    if (operations.find("mass_spec.get_chromatograms_headers")->definition().parameters.definitions.size() != 3) return fail("chromatogram headers parameters");
-    if (operations.find("mass_spec.get_spectra_tic")->definition().parameters.definitions.size() != 6) return fail("spectra TIC parameters");
-    if (operations.find("mass_spec.get_chromatograms")->definition().parameters.definitions.size() != 4) return fail("chromatogram parameters");
-    if (operations.find("mass_spec.get_raw_chromatograms")->definition().parameters.definitions.size() != 4) return fail("raw chromatogram parameters");
-    if (operations.find("mass_spec.get_raw_spectra")->definition().parameters.definitions.size() != 9) return fail("raw spectra parameters");
-    if (operations.find("mass_spec.get_raw_spectra_eic")->definition().parameters.definitions.size() != 8) return fail("EIC parameters");
-    if (operations.find("mass_spec.get_raw_spectra_ms1")->definition().parameters.definitions.size() != 11) return fail("MS1 parameters");
-    if (operations.find("mass_spec.get_raw_spectra_ms2")->definition().parameters.definitions.size() != 12) return fail("MS2 parameters");
-    if (operations.find("mass_spec.get_features")->definition().parameters.definitions.size() != 7) return fail("feature parameters");
-    if (registry.list("raman").size() != 2) return fail("raman registration");
+    if (operations.list("mass_spec").size() != static_cast<std::size_t>(expected_operations)) return fail("mass_spec registration");
+    // Parameter shapes: every registered operation's parameter names must match
+    // the catalogue contract (adapted per-operation, not hardcoded counts).
+    for (const auto &definition : operations.list("mass_spec")) {
+            const auto &id = definition.id;
+            const auto expect = catalogue.find(id);
+            if (expect == catalogue.end()) return fail("catalogue entry missing for registered operation");
+            std::set<std::string> actual;
+            for (const auto &parameter : definition.parameters.definitions) actual.insert(parameter.name);
+            if (actual != expect->second) return fail(("parameter mismatch: " + id).c_str());
+        }
+    if (registry.list("raman").size() != static_cast<std::size_t>(expected_raman_methods)) return fail("raman registration");
+    if (registry.list("sensors").size() != static_cast<std::size_t>(expected_sensors_methods)) return fail("sensors registration");
     if (!operations.find("mass_spec.add_analyses")) return fail("mass_spec.add_analyses registration");
     if (!registry.find("mass_spec.load_chromatograms")) return fail("mass_spec.load_chromatograms registration");
     if (!registry.find("mass_spec.filter_chromatograms_retention_time")) return fail("mass_spec.filter_chromatograms_retention_time registration");
@@ -40,14 +83,13 @@ int run_domain_smoke() {
     const auto *find_features = registry.find("mass_spec.find_features");
     if (!find_features->definition().cacheable || !find_features->definition().single_occurrence || !find_features->definition().required_methods.empty()) return fail("find_features lifecycle metadata");
     if (!registry.find("raman.remove_analyses")) return fail("raman.remove_analyses registration");
-    if (!registry.list("sensors").empty()) return fail("sensors registration");
 
     const auto data = std::filesystem::path(STREAMFIND_MASS_SPEC_DATA_ROOT);
     const auto wastewater = data / "wastewater";
     const auto r001 = wastewater / "01_tof_ww_is_pos_blank-r001.mzML";
     const auto r002 = wastewater / "01_tof_ww_is_pos_blank-r002.mzML";
     const auto r003 = wastewater / "01_tof_ww_is_pos_blank-r003.mzML";
-    const auto database = std::filesystem::temp_directory_path() / "streamfind-mass-spec-domain-smoke.duckdb";
+    const auto database = streamfind::test::tmp_projects_dir() / "streamfind-mass-spec-domain-smoke.duckdb";
     std::error_code error;
     std::filesystem::remove(database, error);
     auto project = streamfind::Project::create({database, "mass-spec-smoke", std::nullopt, false, false, "mass_spec"});

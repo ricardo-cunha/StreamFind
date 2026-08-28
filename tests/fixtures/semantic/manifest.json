@@ -7,11 +7,6 @@
       "consumers": ["cpp", "rust"]
     },
     {
-      "id": "mcp_catalogue",
-      "path": "../mcp/generic_mcp_catalogue.json",
-      "consumers": ["cpp", "rust"]
-    },
-    {
       "id": "lifecycle",
       "path": "lifecycle.json",
       "consumers": ["cpp", "rust"]

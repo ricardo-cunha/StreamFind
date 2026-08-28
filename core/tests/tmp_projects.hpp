@@ -14,13 +14,11 @@ namespace streamfind::test {
 
 // Returns <repo-root>/tmp/projects, creating it (and any missing parents) on
 // first use. The repository root is located from this file's expected position
-// (core/domains/mass_spec/tests/) so the helper works regardless of the test
-// executable's working directory.
+// (core/tests/) so the helper works regardless of the test executable's
+// working directory, for every core test target that includes it.
 inline std::filesystem::path tmp_projects_dir() {
     std::filesystem::path here = std::filesystem::path(__FILE__);
-    std::filesystem::path repo = here.parent_path()   // core/domains/mass_spec/tests
-                                     .parent_path()   // core/domains/mass_spec
-                                     .parent_path()   // core/domains
+    std::filesystem::path repo = here.parent_path()   // core/tests
                                      .parent_path()   // core
                                      .parent_path();  // <repo-root>
     std::filesystem::path dir = repo / "tmp" / "projects";

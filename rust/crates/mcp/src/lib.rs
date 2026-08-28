@@ -43,29 +43,33 @@ impl<'a> Session<'a> {
             let mut catalogue = tools().as_array().cloned().unwrap_or_default();
             // Methods (kind='method') are NEVER tools: they are referenced by
             // the workflow operations and discovered via get_available_methods.
-            for definition in self.operations.list("") {
-                let parameters = definition["parameters"]
-                    .as_array()
-                    .cloned()
-                    .unwrap_or_default();
-                let properties =
-                    parameters
-                        .iter()
-                        .fold(serde_json::Map::new(), |mut properties, parameter| {
+            // Domain operations are only advertised while a session is
+            // connected to a project of that domain (mirrors the C++ MCP).
+            if !self.domain.is_empty() {
+                for definition in self.operations.list(&self.domain) {
+                    let parameters = definition["parameters"]
+                        .as_array()
+                        .cloned()
+                        .unwrap_or_default();
+                    let properties = parameters.iter().fold(
+                        serde_json::Map::new(),
+                        |mut properties, parameter| {
                             if let Some(name) = parameter["name"].as_str() {
                                 properties.insert(name.into(), json_schema_type(parameter));
                             }
                             properties
-                        });
-                let required = parameters
-                    .iter()
-                    .filter_map(|parameter| {
-                        (parameter["required"].as_bool() == Some(true))
-                            .then(|| parameter["name"].as_str())
-                            .flatten()
-                    })
-                    .collect::<Vec<_>>();
-                catalogue.push(json!({"name": definition["id"], "description": definition["description"], "inputSchema": {"type": "object", "properties": properties, "required": required}}));
+                        },
+                    );
+                    let required = parameters
+                        .iter()
+                        .filter_map(|parameter| {
+                            (parameter["required"].as_bool() == Some(true))
+                                .then(|| parameter["name"].as_str())
+                                .flatten()
+                        })
+                        .collect::<Vec<_>>();
+                    catalogue.push(json!({"name": definition["id"], "description": definition["description"], "inputSchema": {"type": "object", "properties": properties, "required": required}}));
+                }
             }
             return json!({"jsonrpc":"2.0","id":id,"result":{"tools":catalogue}});
         }

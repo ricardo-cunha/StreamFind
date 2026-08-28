@@ -26,7 +26,7 @@ add_test(NAME streamfind_project_tests COMMAND streamfind_project_tests)
 add_executable(streamfind_mcp_tests unit/mcp_smoke.cpp)
 target_link_libraries(streamfind_mcp_tests PRIVATE streamfind::core streamfind_mass_spec)
 target_compile_definitions(streamfind_mcp_tests PRIVATE
-    STREAMFIND_MCP_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/../../tests/fixtures/mcp/generic_mcp_catalogue.json"
+    STREAMFIND_CATALOGUE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../../semantic/generated/catalogue.duckdb"
 )
 add_test(NAME streamfind_mcp_tests COMMAND streamfind_mcp_tests)
 
@@ -34,6 +34,7 @@ add_executable(streamfind_domain_tests unit/domain_smoke.cpp)
 target_link_libraries(streamfind_domain_tests PRIVATE streamfind::core streamfind_mass_spec streamfind_raman streamfind_sensors)
 target_compile_definitions(streamfind_domain_tests PRIVATE
     STREAMFIND_MASS_SPEC_DATA_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/../../tests/data/mass_spec"
+    STREAMFIND_CATALOGUE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../../semantic/generated/catalogue.duckdb"
 )
 add_test(NAME streamfind_domain_tests COMMAND streamfind_domain_tests)
 

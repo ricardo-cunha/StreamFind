@@ -4,7 +4,8 @@ use streamfind_rust_core::{OperationRegistry, Project, ProjectOptions};
 
 #[test]
 fn mass_spec_operations_persist_lcd_summary_and_ontology_tables() {
-    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-mass-spec-project.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir()
+        .join("streamfind-rust-mass-spec-project.duckdb");
     let _ = fs::remove_file(&database);
     let mut project = Project::create(ProjectOptions {
         database_path: database.clone(),
@@ -53,7 +54,8 @@ fn mass_spec_operations_persist_lcd_summary_and_ontology_tables() {
 
 #[test]
 fn domain_smoke_matches_cpp_mass_spec_operations() {
-    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-mass-spec-domain-smoke.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir()
+        .join("streamfind-rust-mass-spec-domain-smoke.duckdb");
     let _ = fs::remove_file(&database);
     let mut project = Project::create(ProjectOptions {
         database_path: database.clone(),
@@ -65,10 +67,16 @@ fn domain_smoke_matches_cpp_mass_spec_operations() {
     .unwrap();
     let mut operations = OperationRegistry::default();
     streamfind_rust_mass_spec::register_operations(&mut operations).unwrap();
-    // 20 pre-existing operations + the three NTA table query operations
-    // (get_suspects, get_internal_standards, get_transformation_products).
-    assert_eq!(operations.list("mass_spec").len(), 23);
-    let parameter_count = |id: &str| {
+    // Expectations are derived from the committed semantic catalogue (the same
+    // contract the registries are generated from), so counts adapt automatically
+    // when operations are added or removed.
+    let entries = streamfind_rust_test_support::catalogue_entries();
+    let expected_operations = entries
+        .iter()
+        .filter(|entry| entry["kind"] == "operation" && entry["domain"] == "mass_spec")
+        .count();
+    assert_eq!(operations.list("mass_spec").len(), expected_operations);
+    let parameter_names = |id: &str| -> std::collections::BTreeSet<String> {
         operations
             .list("mass_spec")
             .into_iter()
@@ -76,17 +84,27 @@ fn domain_smoke_matches_cpp_mass_spec_operations() {
             .unwrap()["parameters"]
             .as_array()
             .unwrap()
-            .len()
+            .iter()
+            .map(|parameter| parameter["name"].as_str().unwrap().to_owned())
+            .collect()
     };
-    assert_eq!(parameter_count("mass_spec.get_spectra_headers"), 3);
-    assert_eq!(parameter_count("mass_spec.get_chromatograms_headers"), 3);
-    assert_eq!(parameter_count("mass_spec.get_spectra_tic"), 6);
-    assert_eq!(parameter_count("mass_spec.get_chromatograms"), 4);
-    assert_eq!(parameter_count("mass_spec.get_raw_chromatograms"), 4);
-    assert_eq!(parameter_count("mass_spec.get_raw_spectra"), 9);
-    assert_eq!(parameter_count("mass_spec.get_raw_spectra_eic"), 8);
-    assert_eq!(parameter_count("mass_spec.get_raw_spectra_ms1"), 11);
-    assert_eq!(parameter_count("mass_spec.get_raw_spectra_ms2"), 12);
+    for entry in entries
+        .iter()
+        .filter(|entry| entry["kind"] == "operation" && entry["domain"] == "mass_spec")
+    {
+        let id = entry["canonical_id"].as_str().unwrap();
+        let expected: std::collections::BTreeSet<String> = entry["parameters"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|parameter| parameter["name"].as_str().unwrap().to_owned())
+            .collect();
+        assert_eq!(
+            parameter_names(id),
+            expected,
+            "parameter mismatch for registered operation {id}"
+        );
+    }
     assert!(operations
         .list("mass_spec")
         .iter()

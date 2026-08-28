@@ -1,4 +1,5 @@
 use streamfind_rust_core::{MethodRegistry, OperationRegistry};
+use streamfind_rust_test_support::catalogue_entries;
 
 #[test]
 fn composes_all_starting_domains_without_fake_methods() {
@@ -8,11 +9,34 @@ fn composes_all_starting_domains_without_fake_methods() {
     streamfind_rust_mass_spec::register_methods(&mut registry).unwrap();
     streamfind_rust_raman::register_methods(&mut registry).unwrap();
     streamfind_rust_sensors::register_methods(&mut registry).unwrap();
-    assert_eq!(operations.list("mass_spec").len(), 23);
-    assert_eq!(registry.list("raman").len(), 2);
-    // 19 mass_spec methods: 5 base (load_chromatograms, filter_chromatograms_retention_time,
-    // find_features, load_features_ms1, load_features_ms2) + 14 NTA processing methods
-    // (incl. assign_transformation_products and metfrag_screening).
-    assert_eq!(registry.list("mass_spec").len(), 19);
-    assert!(registry.list("sensors").is_empty());
+    // Expectations are derived from the committed semantic catalogue (the same
+    // contract the registries are generated from), so they adapt automatically
+    // when operations/methods are added or removed.
+    let entries = catalogue_entries();
+    let mass_spec_operations = entries
+        .iter()
+        .filter(|entry| entry["kind"] == "operation" && entry["domain"] == "mass_spec")
+        .count();
+    let mass_spec_methods = entries
+        .iter()
+        .filter(|entry| entry["kind"] == "method" && entry["domain"] == "mass_spec")
+        .count();
+    let raman_methods = entries
+        .iter()
+        .filter(|entry| entry["kind"] == "method" && entry["domain"] == "raman")
+        .count();
+    let sensors_methods = entries
+        .iter()
+        .filter(|entry| entry["kind"] == "method" && entry["domain"] == "sensors")
+        .count();
+    assert_eq!(operations.list("mass_spec").len(), mass_spec_operations);
+    assert_eq!(registry.list("raman").len(), raman_methods);
+    assert_eq!(registry.list("mass_spec").len(), mass_spec_methods);
+    assert_eq!(registry.list("sensors").len(), sensors_methods);
+    // No fake methods: every registered method id must exist in the catalogue.
+    for definition in registry.list("") {
+        assert!(entries
+            .iter()
+            .any(|entry| entry["canonical_id"] == definition["id"]));
+    }
 }

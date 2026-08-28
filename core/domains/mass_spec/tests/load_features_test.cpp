@@ -6,7 +6,7 @@
 #include "streamfind/mass_spec/register.hpp"
 #include "streamfind/project.hpp"
 #include "streamfind/external/openbabel_adapter.hpp"
-#include "tmp_projects.hpp"
+#include "../../../tests/tmp_projects.hpp"
 
 #ifndef STREAMFIND_BASIC_TOF_DATA_ROOT
 #error STREAMFIND_BASIC_TOF_DATA_ROOT is required
