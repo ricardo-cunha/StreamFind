@@ -4,6 +4,7 @@
  */
 
 #include "streamfind/api.hpp"
+#include "streamfind/external/tools_resolver.hpp"
 
 #include <algorithm>
 #include <stdexcept>
@@ -113,7 +114,11 @@ ProjectCommand command_from_string(std::string_view name) {
     if (name == "delete_cache") return ProjectCommand::delete_cache;
     if (name == "get_cache_size") return ProjectCommand::get_cache_size;
     if (name == "get_audit_trail") return ProjectCommand::get_audit_trail;
-    if (name == "close") return ProjectCommand::close;
+        if (name == "close") return ProjectCommand::close;
+        if (name == "tools_status") return ProjectCommand::tools_status;
+        if (name == "tools_install") return ProjectCommand::tools_install;
+        if (name == "tools_install_java") return ProjectCommand::tools_install_java;
+        if (name == "tools_install_metfrag") return ProjectCommand::tools_install_metfrag;
     throw Error(ErrorCode::InvalidArgument, "Unknown Project command: " + std::string(name));
 }
 
@@ -216,11 +221,46 @@ Json run(ProjectCommand command, const Json &request, const MethodRegistry &regi
     case ProjectCommand::get_audit_trail:
         return detail::audit_entries(Project::open(detail::options_from_request(request, true)));
     case ProjectCommand::close: {
-        auto project = Project::open(detail::options_from_request(request, true));
-        project.close();
-        return Json{{"status", "finished"}, {"info", "Project closed successfully."}};
-    }
-    }
+            auto project = Project::open(detail::options_from_request(request, true));
+            project.close();
+            return Json{{"status", "finished"}, {"info", "Project closed successfully."}};
+        }
+        case ProjectCommand::tools_status: {
+            // User-scoped external tools (~/.streamfind): no project required.
+            std::string status;
+            try {
+                status = streamfind::tools::tool_status();
+                return {{"status", "finished"}, {"info", status}};
+            } catch (const std::exception &error) {
+                return {{"status", "failed"}, {"info", error.what()}};
+            }
+        }
+        case ProjectCommand::tools_install: {
+            try {
+                const auto java = streamfind::tools::install_java();
+                const auto metfrag = streamfind::tools::install_metfrag();
+                return {{"status", "finished"}, {"info", "java: " + java + "\nmetfrag: " + metfrag}};
+            } catch (const std::exception &error) {
+                return {{"status", "failed"}, {"info", error.what()}};
+            }
+        }
+        case ProjectCommand::tools_install_java: {
+            try {
+                const auto java = streamfind::tools::install_java();
+                return {{"status", "finished"}, {"info", "java: " + java}};
+            } catch (const std::exception &error) {
+                return {{"status", "failed"}, {"info", error.what()}};
+            }
+        }
+        case ProjectCommand::tools_install_metfrag: {
+            try {
+                const auto metfrag = streamfind::tools::install_metfrag();
+                return {{"status", "finished"}, {"info", "metfrag: " + metfrag}};
+            } catch (const std::exception &error) {
+                return {{"status", "failed"}, {"info", error.what()}};
+            }
+        }
+        }
     throw Error(ErrorCode::InvalidArgument, "Unsupported Project command");
 }
 

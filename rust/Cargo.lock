@@ -1116,6 +1116,7 @@ dependencies = [
  "duckdb",
  "serde",
  "serde_json",
+ "streamfind-rust-external",
  "streamfind-rust-test-support",
 ]
 
@@ -1149,6 +1150,7 @@ version = "0.1.0"
 dependencies = [
  "serde_json",
  "streamfind-rust-core",
+ "streamfind-rust-external",
  "streamfind-rust-mass-spec",
  "streamfind-rust-raman",
  "streamfind-rust-sensors",

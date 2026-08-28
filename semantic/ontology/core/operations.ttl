@@ -343,3 +343,47 @@ sfcore:connect
         sfcore:projectIdParameter ;
     sf:returns sfcore:operationStatusResult ;
     sf:mutatesProject false .
+
+sfcore:toolsStatus
+    a sf:Operation ;
+    skos:inScheme sfcore:scheme ;
+    sf:operationId "tools_status" ;
+    skos:prefLabel "External tools status" ;
+    skos:definition "Report the resolution state of the user-scoped external tools (~/.streamfind): the tools home, Java, and MetFrag paths, or not-found markers. No downloads are performed." ;
+    sf:availableInDomain sfcore:streamfind ;
+    sf:toolName "tools_status" ;
+    sf:returns sfcore:toolsStatusResult ;
+    sf:mutatesProject false .
+
+sfcore:toolsInstall
+    a sf:Operation ;
+    skos:inScheme sfcore:scheme ;
+    sf:operationId "tools_install" ;
+    skos:prefLabel "Install external tools" ;
+    skos:definition "Install the external tools stack (Java + MetFrag) into the user-scoped ~/.streamfind layout. Downloads may take minutes; no project change is performed." ;
+    sf:availableInDomain sfcore:streamfind ;
+    sf:toolName "tools_install" ;
+    sf:returns sfcore:toolsStatusResult ;
+    sf:mutatesProject false .
+
+sfcore:toolsInstallJava
+    a sf:Operation ;
+    skos:inScheme sfcore:scheme ;
+    sf:operationId "tools_install_java" ;
+    skos:prefLabel "Install Java" ;
+    skos:definition "Install the Temurin JDK 21 into the user-scoped ~/.streamfind layout. Downloads may take minutes; no project change is performed." ;
+    sf:availableInDomain sfcore:streamfind ;
+    sf:toolName "tools_install_java" ;
+    sf:returns sfcore:toolsStatusResult ;
+    sf:mutatesProject false .
+
+sfcore:toolsInstallMetfrag
+    a sf:Operation ;
+    skos:inScheme sfcore:scheme ;
+    sf:operationId "tools_install_metfrag" ;
+    skos:prefLabel "Install MetFrag" ;
+    skos:definition "Install the MetFrag command-line jar into the user-scoped ~/.streamfind layout. Downloads may take minutes; no project change is performed." ;
+    sf:availableInDomain sfcore:streamfind ;
+    sf:toolName "tools_install_metfrag" ;
+    sf:returns sfcore:toolsStatusResult ;
+    sf:mutatesProject false .

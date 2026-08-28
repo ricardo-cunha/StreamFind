@@ -28,7 +28,10 @@ fn env_path() -> Option<PathBuf> {
 }
 
 fn binary_relative() -> Option<PathBuf> {
-    let candidate = std::env::current_exe().ok()?.parent()?.join("catalogue.duckdb");
+    let candidate = std::env::current_exe()
+        .ok()?
+        .parent()?
+        .join("catalogue.duckdb");
     candidate.exists().then_some(candidate)
 }
 
@@ -40,9 +43,7 @@ fn repo_layout() -> Option<PathBuf> {
 
 /// Resolve `catalogue.duckdb` via the runtime search chain.
 pub fn find_path() -> Option<PathBuf> {
-    env_path()
-        .or_else(binary_relative)
-        .or_else(repo_layout)
+    env_path().or_else(binary_relative).or_else(repo_layout)
 }
 
 fn parse_json(raw: Option<String>, id: &str) -> Result<Value, String> {
@@ -115,7 +116,8 @@ fn load_entries() -> Result<Vec<Value>, String> {
             entry["cacheable"] = json!(row.get::<_, bool>(13).map_err(|e| e.to_string())?);
             entry["single_occurrence"] = json!(row.get::<_, bool>(14).map_err(|e| e.to_string())?);
             entry["required_methods"] = parse_json(
-                row.get::<_, Option<String>>(16).map_err(|e| e.to_string())?,
+                row.get::<_, Option<String>>(16)
+                    .map_err(|e| e.to_string())?,
                 &canonical_id,
             )?;
             entry

@@ -19,6 +19,7 @@ set(STREAMFIND_CORE_SOURCES
     src/project.cpp
     src/mcp.cpp
     src/catalogue.cpp
+    src/tools_resolver.cpp
 )
 
 if(STREAMFIND_BUILD_SHARED)
@@ -121,6 +122,8 @@ endif()
 
 add_executable(streamfind_mcp tools/streamfind-mcp.cpp)
 target_link_libraries(streamfind_mcp PRIVATE streamfind::core streamfind_mass_spec streamfind_raman streamfind_sensors)
+add_executable(streamfind_cli tools/streamfind-cli.cpp)
+target_link_libraries(streamfind_cli PRIVATE streamfind::core)
 if(WIN32)
     add_custom_command(TARGET streamfind_mcp POST_BUILD
         COMMAND ${CMAKE_COMMAND} -E copy_if_different

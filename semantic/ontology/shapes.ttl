@@ -17,8 +17,8 @@ sfcore:OperationShape
     sh:property [ sh:path sf:operationId ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:minLength 1 ] ;
     sh:property [ sh:path sf:toolName ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:pattern "^[a-z][a-z0-9_]*$" ] ;
     sh:property [ sh:path sf:availableInDomain ; sh:minCount 1 ; sh:maxCount 1 ; sh:class sf:Domain ] ;
-    sh:property [ sh:path sf:hasParameter ; sh:minCount 1 ; sh:class sf:Parameter ] ;
-    sh:property [ sh:path sf:returns ; sh:minCount 1 ; sh:maxCount 1 ; sh:class sf:Result ] ;
+        sh:property [ sh:path sf:hasParameter ; sh:class sf:Parameter ] ;
+        sh:property [ sh:path sf:returns ; sh:minCount 1 ; sh:maxCount 1 ; sh:class sf:Result ] ;
     sh:property [ sh:path sf:reads ; sh:class sf:Table ] ;
     sh:property [ sh:path sf:writes ; sh:class sf:Table ] ;
     sh:property [ sh:path sf:mutatesProject ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ;

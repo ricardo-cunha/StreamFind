@@ -18,9 +18,8 @@ add_library(streamfind_mass_spec STATIC
     src/nta_suspect_screening.cpp
     src/nta_assign_transformation_products.cpp
     src/nta_metfrag_runner.cpp
-        src/nta_correction_algorithms.cpp
+    src/nta_correction_algorithms.cpp
     src/openbabel_adapter.cpp
-    src/tools_resolver.cpp
     src/openbabel_c_api.cpp
     "${CMAKE_CURRENT_SOURCE_DIR}/../../vendor/simdutf/simdutf.cpp"
 )

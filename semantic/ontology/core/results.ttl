@@ -132,3 +132,13 @@ sfcore:workflowExecutionEntriesResult
         sfcore:completedAtColumn,
         sfcore:executionErrorColumn,
         sfcore:cacheKeyColumn .
+
+sfcore:toolsStatusResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "External tools status" ;
+    skos:definition "Resolution state of the user-scoped external tools (~/.streamfind): home directory, Java, and MetFrag paths or not-found markers." ;
+    sf:type "object" ;
+    sf:hasProperty
+        sfcore:statusField,
+        sfcore:infoField .

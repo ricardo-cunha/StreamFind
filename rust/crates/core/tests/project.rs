@@ -1,6 +1,9 @@
 use serde_json::json;
 use std::fs;
-use std::sync::{Arc, atomic::{AtomicUsize, Ordering}};
+use std::sync::{
+    atomic::{AtomicUsize, Ordering},
+    Arc,
+};
 use std::time::{SystemTime, UNIX_EPOCH};
 use streamfind_rust_core::{
     api, Method, MethodRegistry, ParameterSchema, ParameterType, Project, ProjectOptions, Table,
@@ -130,7 +133,8 @@ fn workflow_cache_restores_written_tables() {
         domain: "test".into(),
         create_if_missing: false,
         read_only: false,
-    }).unwrap();
+    })
+    .unwrap();
     let runs = Arc::new(AtomicUsize::new(0));
     let runs_for_method = Arc::clone(&runs);
     let mut method = Method::new(
@@ -141,7 +145,9 @@ fn workflow_cache_restores_written_tables() {
         ParameterSchema::default(),
         Box::new(move |project, _| {
             runs_for_method.fetch_add(1, Ordering::SeqCst);
-            project.execute_sql("CREATE TABLE IF NOT EXISTS TEST_OUTPUT (project_id VARCHAR, value VARCHAR)")?;
+            project.execute_sql(
+                "CREATE TABLE IF NOT EXISTS TEST_OUTPUT (project_id VARCHAR, value VARCHAR)",
+            )?;
             project.execute_sql("DELETE FROM TEST_OUTPUT WHERE project_id = 'cache-test'")?;
             project.execute_sql("INSERT INTO TEST_OUTPUT VALUES ('cache-test', 'materialized')")?;
             Ok(json!({"status": "finished"}))
@@ -151,23 +157,47 @@ fn workflow_cache_restores_written_tables() {
     method.writes = vec!["TEST_OUTPUT".into()];
     let mut registry = MethodRegistry::default();
     registry.register(method).unwrap();
-    project.set_workflow(Workflow {
-        domain: "test".into(),
-        steps: vec![WorkflowStep { method: "test.write_table".into(), parameters: json!({}), metadata: None }],
-        ..Workflow::default()
-    }, &registry).unwrap();
+    project
+        .set_workflow(
+            Workflow {
+                domain: "test".into(),
+                steps: vec![WorkflowStep {
+                    method: "test.write_table".into(),
+                    parameters: json!({}),
+                    metadata: None,
+                }],
+                ..Workflow::default()
+            },
+            &registry,
+        )
+        .unwrap();
     let workflow = project.get_workflow().unwrap();
-    project.run_workflow(&workflow, &registry, None, None).unwrap();
-    project.execute_sql("DELETE FROM TEST_OUTPUT WHERE project_id = 'cache-test'").unwrap();
+    project
+        .run_workflow(&workflow, &registry, None, None)
+        .unwrap();
+    project
+        .execute_sql("DELETE FROM TEST_OUTPUT WHERE project_id = 'cache-test'")
+        .unwrap();
     let workflow = project.get_workflow().unwrap();
-    project.run_workflow(&workflow, &registry, None, None).unwrap();
+    project
+        .run_workflow(&workflow, &registry, None, None)
+        .unwrap();
     assert_eq!(runs.load(Ordering::SeqCst), 1);
-    assert_eq!(project.query_json("SELECT value FROM TEST_OUTPUT WHERE project_id = 'cache-test'").unwrap(), json!([{"value": "materialized"}]));
-    assert_eq!(project.get_workflow_execution().unwrap()[0]["status"], "succeeded");
+    assert_eq!(
+        project
+            .query_json("SELECT value FROM TEST_OUTPUT WHERE project_id = 'cache-test'")
+            .unwrap(),
+        json!([{"value": "materialized"}])
+    );
+    assert_eq!(
+        project.get_workflow_execution().unwrap()[0]["status"],
+        "succeeded"
+    );
     let execution_table = api::get_workflow_execution(&json!({
         "database_path": path.to_string_lossy(),
         "project_id": "cache-test"
-    })).unwrap();
+    }))
+    .unwrap();
     assert_eq!(execution_table["row_count"], 1);
     assert!(execution_table["columns"]["step_index"].is_array());
     fs::remove_file(path).unwrap();

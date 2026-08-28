@@ -1,7 +1,9 @@
 //! Minimal MCP JSON-RPC adapter for the Rust Streamfind core.
 
 use serde_json::{json, Value};
-use streamfind_rust_core::{api, catalogue, MethodRegistry, OperationRegistry, Project, ProjectOptions};
+use streamfind_rust_core::{
+    api, catalogue, MethodRegistry, OperationRegistry, Project, ProjectOptions,
+};
 
 fn json_schema_type(parameter: &Value) -> Value {
     let mut schema = parameter["type"].clone();
@@ -209,6 +211,10 @@ pub fn handle(request: &Value, _registry: &MethodRegistry) -> Value {
         "run_method" => api::run_method(args, _registry),
         "copy" => api::copy(args),
         "close" => api::close(args),
+        "tools_status" => api::tools_status(args),
+        "tools_install" => api::tools_install(args),
+        "tools_install_java" => api::tools_install_java(args),
+        "tools_install_metfrag" => api::tools_install_metfrag(args),
         _ => {
             return json!({"jsonrpc":"2.0","id":id,"error":{"code":-32602,"message":"Unknown MCP tool"}})
         }

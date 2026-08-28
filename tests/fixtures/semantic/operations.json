@@ -42,6 +42,10 @@
     "run_workflow",
     "set_metadata",
     "set_workflow",
+    "tools_install",
+    "tools_install_java",
+    "tools_install_metfrag",
+    "tools_status",
     "validate",
     "validate_workflow"
   ]
