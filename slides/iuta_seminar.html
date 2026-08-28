@@ -41,6 +41,30 @@
         <div class="title-logo jrf" aria-hidden="true"></div>
       </section>
 
+      <section class="slide disclosure-slide" id="disclosure-slide">
+        <h2>Disclosure: How this deck was created</h2>
+        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="disclosure-grid">
+          <div class="disclosure-item disclosure-primary">
+            <strong>Vibe coding, locally</strong>
+            <p>Slides were generated and refined through vibe coding with a local Qwen 3.8 27B model, accessed through the Hermes harness and running on an RTX 5090 GPU.</p>
+          </div>
+          <div class="disclosure-item disclosure-primary">
+            <strong>Multimodal evaluation</strong>
+            <p>The local model is multimodal: it could evaluate rendered images and support visual layout refinement during slide development.</p>
+          </div>
+          <div class="disclosure-item">
+            <strong>Occasional external assistance</strong>
+            <p>GPT 5.6 Luna was used occasionally when access to the local model was limited or the workstation was processing data.</p>
+          </div>
+          <div class="disclosure-item">
+            <strong>Image generation</strong>
+            <p>Visual assets were generated with GPT 5.6 SOL via ChatGPT.</p>
+          </div>
+        </div>
+        <div class="disclosure-note">This disclosure describes the tools used to create the presentation; the scientific content remains subject to review by the author.</div>
+      </section>
+
       <!--
         START ORDINARY SLIDES HERE.
         Edit, duplicate, or remove the example slides below. Keep the title slide
@@ -59,15 +83,15 @@
               <li>You review, test, and accept the result.</li>
             </ul>
           </div>
-          <div class="vibe-terminal" id="vibe-demo" role="img" aria-label="Animated example of an agent generating code from two natural language requests, looping until the slide ends">
-<div class="vibe-line"><span class="vibe-prompt">You</span> &gt; Create a function to load a CSV file</div>
-<div class="vibe-line agent-line"><span class="vibe-prompt">Agent</span> &gt; <span class="vibe-caret"></span></div>
+          <div class="vibe-terminal" id="vibe-demo" role="img" aria-label="Animated example of an agent generating code from two natural language requests">
+<div class="vibe-line"><span class="vibe-prompt terminal-user">You</span> &gt; Create a function to load a CSV file</div>
+<div class="vibe-line agent-line"><span class="vibe-prompt terminal-agent">Agent</span> &gt;</div>
 <div class="vibe-line">def load_csv(path):</div>
 <div class="vibe-line">    with open(path) as f:</div>
 <div class="vibe-line">        reader = csv.DictReader(f)</div>
 <div class="vibe-line">        return list(reader)</div>
-<div class="vibe-line"><span class="vibe-prompt">You</span> &gt; Add a summary with row and column counts</div>
-<div class="vibe-line agent-line"><span class="vibe-prompt">Agent</span> &gt; <span class="vibe-caret"></span></div>
+<div class="vibe-line"><span class="vibe-prompt terminal-user">You</span> &gt; Add a summary with row and column counts</div>
+<div class="vibe-line agent-line"><span class="vibe-prompt terminal-agent">Agent</span> &gt;</div>
 <div class="vibe-line">def summarize(rows):</div>
 <div class="vibe-line">    cols = len(rows[0]) if rows else 0</div>
 <div class="vibe-line">    return {"rows": len(rows), "cols": cols}</div>
@@ -128,6 +152,13 @@
         <div class="callout fragment fair-callout">For FAIR analytical data processing, agentic coding needs explicit boundaries, validation, provenance, and human oversight!</div>
       </section>
 
+      <!-- Motivation for the streamfind project -->
+      <section class="slide" id="streamfind-motivation-slide">
+        <h2>Back in 2022...</h2>
+        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <img class="motivation-figure" src="iuta_seminar_assets/iuta_seminar_streamfind_motivation_lab.png" alt="A researcher struggles to reproduce a data-processing workflow across instruments, vendor software, manual clicks, and uncertain results">
+      </section>
+
       <!-- Introducing streamfind as a controlled solution -->
       <section class="slide">
         <h2>BMFTR funded streamFind: 01.09.2022 - 31.08.2025</h2>
@@ -135,9 +166,15 @@
         <img src="iuta_seminar_assets/iuta_seminar_streamfind_project.png" alt="streamfind project logo" style="display: block; height: 78%; left: 50%; object-fit: contain; position: absolute; top: 52%; transform: translate(-50%, -50%); width: 90%;">
       </section>
 
+      <section class="slide" id="streamfind-plan-slide">
+        <h2>The streamfind plan</h2>
+        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <img class="streamfind-plan-figure" src="iuta_seminar_assets/iuta_seminar_streamfind_plan.png" alt="The streamfind project plan">
+      </section>
+
       <!-- StreamFind R package at the end of the initial project -->
       <section class="slide" id="r-package-result-slide">
-        <h2>StreamFind R Package</h2>
+        <h2>Fast-forward to the project end: StreamFind R package</h2>
         <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="card-grid">
           <div class="card">
@@ -152,8 +189,8 @@
           </div>
           <div class="card">
             <img src="iuta_seminar_assets/iuta_seminar_r_package_reproducible_environment.png" alt="A sealed, version-pinned environment with reproducible state and dependencies">
-            <strong>From GUI to audit trail</strong>
-            <span>Shiny UI, Rcpp-native processing, caching, save/load, reports, and audit trails.</span>
+            <strong>Interactive reporting &amp; modular algorithms</strong>
+            <span>Flexible interactive HTML reports and modular expansion of analytical methods.</span>
           </div>
         </div>
         <div class="callout">The project delivered an open, extensible R package for transparent and reproducible analytical data processing.</div>
@@ -204,47 +241,23 @@ project$run()</code></pre>
 
       <!-- DuckDB on-disk persistence as the center of the framework -->
       <section class="slide" id="duckdb-scheme-slide">
-        <h2>DuckDB: On-Disk Persistence at the Center</h2>
+        <h2>DuckDB: Persistent data at the center of R, Shiny, and reporting</h2>
         <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
-        <div class="scheme-caption">Both interfaces read and write the same on-disk project store — metadata, analyses, workflows, results, and audit trail — the anchor the coming framework builds on.</div>
+        <div class="scheme-caption">R scripting, the Shiny GUI, and generated interactive reports all read and write the same on-disk project store — metadata, analyses, workflows, results, and audit trail.</div>
         <img class="scheme-figure" src="iuta_seminar_assets/iuta_seminar_duckdb_center.png" alt="Scheme: the R script and the Shiny GUI converge into one DuckDB project database, which supports save/load, reports, and the audit trail">
+        <div class="report-qr">
+          <img src="iuta_seminar_assets/iuta_seminar_nontarget_report_qr.png" alt="QR code for an interactive Non-Target Screening HTML report">
+          <span>Interactive HTML report<br>Non-Target Screening</span>
+        </div>
       </section>
 
       <!-- Friction points in the R-package interface -->
       <section class="slide" id="r-package-friction-slide">
-        <h2>StreamFind as an R Package: Friction Points</h2>
+        <h2>StreamFind: Still Not Accessible to Everyone</h2>
         <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
-        <div class="friction-map">
-          <div class="friction-core">
-            <strong>StreamFind</strong>
-            <span>package boundary</span>
-          </div>
-          <div class="friction-node friction-node-skills">
-            <span class="friction-icon">R</span>
-            <div><strong>R skills barrier</strong><span>Effective use assumes programming and data-science experience.</span></div>
-          </div>
-          <div class="friction-node friction-node-install">
-            <span class="friction-icon">⚙</span>
-            <div><strong>Toolchain friction</strong><span>Installation depends on RTools, C++, and a difficult dependency chain.</span></div>
-          </div>
-          <div class="friction-node friction-node-cran">
-            <span class="friction-icon">↯</span>
-            <div><strong>CRAN constraints</strong><span>Industry environments may restrict or block CRAN access.</span></div>
-          </div>
-          <div class="friction-node friction-node-gui">
-            <span class="friction-icon">▣</span>
-            <div><strong>GUI is gated</strong><span>The graphical interface is available only after installation succeeds.</span></div>
-          </div>
-          <div class="friction-node friction-node-ai">
-            <span class="friction-icon">✦</span>
-            <div><strong>AI via scripting</strong><span>Interactive AI workflows require an R scripting surface.</span></div>
-          </div>
-          <div class="friction-node friction-node-automation">
-            <span class="friction-icon">⇄</span>
-            <div><strong>Automation ceiling</strong><span>Limited first-class automation beyond scripted execution.</span></div>
-          </div>
+        <div class="friction-summary-figure-wrap">
+          <img class="friction-summary-figure" src="iuta_seminar_assets/iuta_seminar_r_package_friction_summary.png" alt="Graphical summary of the friction points in the StreamFind R package interface">
         </div>
-        <div class="friction-footer-note">The analytical core is valuable — but the interface boundary limits who can install, operate, automate, and extend it!</div>
       </section>
 
       <!-- Cogniflow: the next project begins here -->
@@ -252,14 +265,6 @@ project$run()</code></pre>
         <h2>Cogniflow: 01.10.2025 – 30.09.2028</h2>
         <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <img class="cogniflow-figure" src="iuta_seminar_assets/iuta_seminar_cogniflow_overview_loop.webp" alt="Cogniflow project logo">
-
-      </section>
-
-      <section class="slide cogniflow-slide" id="cogniflow-details-slide">
-        <h2>Cogniflow: 01.10.2025 – 30.09.2028</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
-        <img class="cogniflow-figure cogniflow-transition-figure" src="iuta_seminar_assets/iuta_seminar_cogniflow_transition_to_details.webp" alt="Cogniflow project transition">
-        <img class="cogniflow-figure" src="iuta_seminar_assets/iuta_seminar_cogniflow_details_loop.webp" alt="Cogniflow project capabilities">
         <div class="cogniflow-summary">
           <span>Open-source data platform for comprehensive wastewater-quality monitoring.</span>
           <span>Combines routine parameters, mass spectrometry, and machine learning in reproducible pipelines.</span>
@@ -282,40 +287,26 @@ project$run()</code></pre>
       <section class="slide framework-story-slide" id="ontology-layer-slide">
         <h2>Standardization of data, operations, and processing methods</h2>
         <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
-        <div class="ontology-intro"><strong>How?</strong><span>A shared graph of concepts, relationships, and executable meaning.</span></div>
-        <div class="ontology-map">
-          <div class="ontology-core ontology-revealable"><strong>ONTOLOGY</strong><span>shared semantic contract</span></div>
-          <div class="ontology-node ontology-data ontology-revealable"><b>Data</b><span>entities, samples, results</span></div>
-          <div class="ontology-node ontology-operations ontology-revealable"><b>Operations</b><span>what can be done</span></div>
-          <div class="ontology-node ontology-methods ontology-revealable"><b>Processing methods</b><span>how it is executed</span></div>
-          <div class="ontology-node ontology-provenance ontology-revealable"><b>Provenance</b><span>what happened and why</span></div>
-        </div>
-        <div class="framework-takeaway">Every interface uses the same vocabulary, identifiers, relationships, and constraints.</div>
+        <img class="cogniflow-refactoring-figure" src="iuta_seminar_assets/iuta_seminar_cogniflow_refactoring_plan.png" alt="Streamfind refactoring plan for the Cogniflow project">
       </section>
 
       <section class="slide framework-story-slide" id="ontology-example-slide">
         <h2>What Is an Ontology?</h2>
         <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
-        <div class="ontology-ttl-layout">
-          <pre class="ontology-ttl"><code><span class="ttl-directive">@prefix</span> <span class="ttl-prefix">sf:</span> <span class="ttl-iri">&lt;https://streamfind.dev/vocabulary#&gt;</span> .
-<span class="ttl-directive">@prefix</span> <span class="ttl-prefix">sfcore:</span> <span class="ttl-iri">&lt;https://streamfind.dev/catalogue/core#&gt;</span> .
-<span class="ttl-directive">@prefix</span> <span class="ttl-prefix">skos:</span> <span class="ttl-iri">&lt;http://www.w3.org/2004/02/skos/core#&gt;</span> .
 
-<span class="ttl-subject">sfcore:validate</span>
-    <span class="ttl-predicate">a</span> <span class="ttl-class">sf:Operation</span> ;
-    <span class="ttl-predicate">sf:operationId</span> <span class="ttl-string">"validate"</span> ;
-    <span class="ttl-predicate">skos:prefLabel</span> <span class="ttl-string">"Validate a project"</span> ;
-    <span class="ttl-predicate">skos:definition</span> <span class="ttl-string">"Validate a project's schema and persisted state."</span> ;
-    <span class="ttl-predicate">sf:availableInDomain</span> <span class="ttl-resource">sfcore:streamfind</span> ;
-    <span class="ttl-predicate">sf:hasParameter</span>
-        <span class="ttl-resource">sfcore:databasePathParameter</span>,
-        <span class="ttl-resource">sfcore:projectIdParameter</span> ;
-    <span class="ttl-predicate">sf:reads</span>
-        <span class="ttl-resource">sfcore:projectTable</span>,
-        <span class="ttl-resource">sfcore:cacheTable</span>,
-        <span class="ttl-resource">sfcore:auditTrailTable</span> ;
-    <span class="ttl-predicate">sf:returns</span> <span class="ttl-resource">sfcore:validationResult</span> ;
-    <span class="ttl-predicate">sf:mutatesProject</span> <span class="ttl-boolean">false</span> .</code></pre>
+        <div class="ontology-ttl-layout">
+          <div class="ttl-file-card"><span class="ttl-file-icon"><b>.ttl</b></span><strong>ontology.ttl</strong><span>text file<br>stored on disk</span></div>
+          <pre class="ontology-ttl"><code><span class="ttl-line ttl-comment ttl-group-prefix"># Prefix: short name for an IRI (Internationalized Resource Identifier)</span><span class="ttl-line ttl-group-prefix"><span class="ttl-directive">@prefix</span> <span class="ttl-prefix">ex:</span> <span class="ttl-iri">&lt;https://example.org/&gt;</span> .</span><span class="ttl-highlight-step fragment" data-highlight="subject" aria-hidden="true"></span><span class="ttl-line"> </span><span class="ttl-line ttl-comment ttl-group-subject"># Subject: identify one resource</span><span class="ttl-line ttl-group-subject"><span class="ttl-subject">ex:sample_001</span></span><span class="ttl-highlight-step fragment" data-highlight="predicate" aria-hidden="true"></span><span class="ttl-line ttl-comment ttl-group-predicate"># Predicate → object: complete the RDF triple</span><span class="ttl-line ttl-group-predicate">    <span class="ttl-predicate">a</span> <span class="ttl-class">ex:WastewaterSample</span> ;</span><span class="ttl-line ttl-group-predicate">    <span class="ttl-predicate">ex:hasParameter</span> <span class="ttl-resource">ex:pH</span> ;</span><span class="ttl-line ttl-group-predicate">    <span class="ttl-predicate">ex:hasValue</span> <span class="ttl-string">"7.4"</span> .</span></code></pre>
+        </div>
+      </section>
+
+      <section class="slide framework-story-slide" id="ontology-operation-example-slide">
+        <h2>Ontology in streamfind: An Executable Operation</h2>
+        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+
+        <div class="ontology-ttl-layout">
+          <div class="ttl-file-card"><span class="ttl-file-icon"><b>.ttl</b></span><strong>ontology.ttl</strong><span>text file<br>stored on disk</span></div>
+          <pre class="ontology-ttl"><code><span class="ttl-line ttl-comment ttl-operation-group-prefix"># Prefixes: shared vocabularies</span><span class="ttl-line ttl-operation-group-prefix"><span class="ttl-directive">@prefix</span> <span class="ttl-prefix">sf:</span> <span class="ttl-iri">&lt;https://streamfind.dev/vocabulary#&gt;</span> .</span><span class="ttl-line ttl-operation-group-prefix"><span class="ttl-directive">@prefix</span> <span class="ttl-prefix">sfcore:</span> <span class="ttl-iri">&lt;https://streamfind.dev/catalogue/core#&gt;</span> .</span><span class="ttl-line ttl-operation-group-prefix"><span class="ttl-directive">@prefix</span> <span class="ttl-prefix">skos:</span> <span class="ttl-iri">&lt;http://www.w3.org/2004/02/skos/core#&gt;</span> .</span><span class="ttl-highlight-step fragment" data-highlight-operation="subject" aria-hidden="true"></span><span class="ttl-line"> </span><span class="ttl-line ttl-comment ttl-operation-group-subject"># Subject: the operation being defined</span><span class="ttl-line ttl-operation-group-subject"><span class="ttl-subject">sfcore:validate</span></span><span class="ttl-highlight-step fragment" data-highlight-operation="identity" aria-hidden="true"></span><span class="ttl-line ttl-comment ttl-operation-group-identity"># Identity and human-readable meaning</span><span class="ttl-line ttl-operation-group-identity">    <span class="ttl-predicate">a</span> <span class="ttl-class">sf:Operation</span> ;</span><span class="ttl-line ttl-operation-group-identity">    <span class="ttl-predicate">sf:operationId</span> <span class="ttl-string">"validate"</span> ;</span><span class="ttl-line ttl-operation-group-identity">    <span class="ttl-predicate">skos:prefLabel</span> <span class="ttl-string">"Validate a project"</span> ;</span><span class="ttl-line ttl-operation-group-identity">    <span class="ttl-predicate">skos:definition</span> <span class="ttl-string">"Validate a project's schema and persisted state."</span> ;</span><span class="ttl-highlight-step fragment" data-highlight-operation="availability" aria-hidden="true"></span><span class="ttl-line ttl-comment ttl-operation-group-availability"># Availability and inputs</span><span class="ttl-line ttl-operation-group-availability">    <span class="ttl-predicate">sf:availableInDomain</span> <span class="ttl-resource">sfcore:streamfind</span> ;</span><span class="ttl-line ttl-operation-group-availability">    <span class="ttl-predicate">sf:hasParameter</span></span><span class="ttl-line ttl-operation-group-availability">        <span class="ttl-resource">sfcore:databasePathParameter</span>,</span><span class="ttl-line ttl-operation-group-availability">        <span class="ttl-resource">sfcore:projectIdParameter</span> ;</span><span class="ttl-highlight-step fragment" data-highlight-operation="contract" aria-hidden="true"></span><span class="ttl-line ttl-comment ttl-operation-group-contract"># Data contract: reads, returns, and mutation</span><span class="ttl-line ttl-operation-group-contract">    <span class="ttl-predicate">sf:reads</span></span><span class="ttl-line ttl-operation-group-contract">        <span class="ttl-resource">sfcore:projectTable</span>,</span><span class="ttl-line ttl-operation-group-contract">        <span class="ttl-resource">sfcore:cacheTable</span>,</span><span class="ttl-line ttl-operation-group-contract">        <span class="ttl-resource">sfcore:auditTrailTable</span> ;</span><span class="ttl-line ttl-operation-group-contract">    <span class="ttl-predicate">sf:returns</span> <span class="ttl-resource">sfcore:validationResult</span> ;</span><span class="ttl-line ttl-operation-group-contract">    <span class="ttl-predicate">sf:mutatesProject</span> <span class="ttl-boolean">false</span> .</span></code></pre>
         </div>
       </section>
 
@@ -330,82 +321,130 @@ project$run()</code></pre>
         <div class="ontology-network-wrap"><svg id="ontology-network-svg" role="img" aria-label="Interactive force-directed graph of the streamfind ontology"></svg></div>
       </section>
 
-      <section class="slide framework-story-slide" id="reusable-definitions-slide">
-        <h2>Define Once. Reuse Everywhere.</h2>
+      <section class="slide framework-story-slide" id="mcp-generic-slide">
+        <h2>What Is MCP (Model Context Protocol)?</h2>
         <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
-        <div class="definition-map">
-          <div class="definition-stack">
-            <div class="definition-node"><i>1</i><div><strong>Data definitions</strong><span>What exists and how it relates</span></div></div>
-            <div class="definition-node"><i>2</i><div><strong>Operation definitions</strong><span>What the system can do</span></div></div>
-            <div class="definition-node"><i>3</i><div><strong>Method definitions</strong><span>How a task is processed</span></div></div>
-          </div>
-          <div class="definition-arrow">→</div>
-          <div class="definition-result"><strong>Reusable semantic building blocks</strong><span>One definition can be exposed consistently through every interface.</span></div>
+        <div class="mcp-generic-callout"><strong>MCP standardizes the interface.</strong> The server connects the agent to the actual tool or data source, wherever it runs.</div>
+        <div class="mcp-generic-flow">
+          <div class="mcp-generic-stage"><span class="mcp-generic-icon">✦</span><strong>AI agent</strong><span>“How many samples are in batch_list.csv?”</span></div>
+          <div class="mcp-explainer-arrow">→</div>
+          <div class="mcp-generic-stage mcp-explainer-server"><span class="mcp-generic-icon">M</span><strong>MCP server</strong><span>offers tools the agent can discover</span></div>
+          <div class="mcp-explainer-arrow">→</div>
+          <div class="mcp-generic-stage"><span class="mcp-generic-icon">▣</span><strong>Connected tool / data source</strong><span>returns batch_list.csv for the agent to inspect</span></div>
         </div>
-        <div class="definition-consumers"><span>R binding</span><span>GUI</span><span>MCP server</span><span>Automation</span></div>
+        <pre class="mcp-generic-code"><code>{
+  "method": "tools/call",
+  "params": {
+    "name": "read_file",
+    "arguments": { "path": "batch_list.csv" }
+  }
+}</code></pre>
+
       </section>
 
-      <section class="slide framework-story-slide" id="semantic-core-slide">
-        <h2>One Semantic Core, Many Ways to Work</h2>
+      <section class="slide framework-story-slide" id="mcp-discovery-slide">
+        <h2>How AI Agents Discover Tools via MCP</h2>
         <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
-        <div class="semantic-architecture">
-          <div class="semantic-interface semantic-r"><b>R script</b><span>power users</span></div>
-          <div class="semantic-interface semantic-gui"><b>GUI</b><span>guided users</span></div>
-          <div class="semantic-interface semantic-mcp"><b>MCP server</b><span>AI clients</span></div>
-          <div class="semantic-interface semantic-auto"><b>Automation</b><span>CI / services</span></div>
-          <div class="semantic-core"><strong>Semantic + executable core</strong><span>Ontology · validation · methods · provenance</span></div>
+        <div class="mcp-discovery-takeaway"><strong>The key idea:</strong> the server advertises its available tools and schemas; the agent discovers them instead of hard-coding the integration.</div>
+        <div class="mcp-discovery-flow">
+          <div class="mcp-discovery-stage"><span class="mcp-discovery-icon">✦</span><strong>AI agent</strong><span>starts a connection with initialize</span></div>
+          <div class="mcp-discovery-arrow">→</div>
+          <div class="mcp-discovery-stage"><span class="mcp-discovery-icon">M</span><strong>MCP server</strong><span>loads the tools it can provide</span></div>
+          <div class="mcp-discovery-arrow">→</div>
+          <div class="mcp-discovery-stage mcp-discovery-list"><span class="mcp-discovery-icon">☷</span><strong>tools/list</strong><span>returns names, descriptions, and schemas</span></div>
+          <div class="mcp-discovery-arrow">→</div>
+          <div class="mcp-discovery-stage"><span class="mcp-discovery-icon">✓</span><strong>AI agent</strong><span>selects a tool and calls it</span></div>
         </div>
-        <div class="framework-takeaway">R, the GUI, automation, and AI agents become interfaces to the same framework.</div>
+        <pre class="mcp-discovery-code"><code>{
+  "tools": [
+    "...",
+    {
+      "name": "read_file",
+      "description": "Read a text file",
+      "inputSchema": {
+        "type": "object",
+        "properties": { "path": { "type": "string" } },
+        "required": ["path"]
+      }
+    },
+    "..."
+  ]
+}</code></pre>
       </section>
 
-      <section class="slide framework-story-slide" id="mcp-interface-slide">
-        <h2>MCP Server: An AI-Compatible Control Surface</h2>
+      <section class="slide mcp-step-slide" id="mcp-explainer-slide">
+        <h2>MCP for streamfind: A Concrete Operation</h2>
         <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
-        <div class="mcp-pipeline">
-          <div class="mcp-stage"><span class="mcp-icon">✦</span><b>User / AI agent</b><small>intent</small></div>
-          <div class="mcp-arrow">→</div>
-          <div class="mcp-stage mcp-highlight"><span class="mcp-icon">M</span><b>MCP server</b><small>tools + resources</small></div>
-          <div class="mcp-arrow">→</div>
-          <div class="mcp-stage"><span class="mcp-icon">✓</span><b>Validated operation</b><small>ontology-aware</small></div>
-          <div class="mcp-arrow">→</div>
-          <div class="mcp-stage"><span class="mcp-icon">↗</span><b>Result + provenance</b><small>reproducible output</small></div>
+        <div class="mcp-step-layout">
+          <div class="mcp-step-marker"><b>01</b><span>Agent request</span></div>
+          <div class="mcp-step-content"><div class="mcp-step-terminal"><div><span class="mcp-terminal-prompt terminal-user">user</span> &gt; Can you validate the project demo in the database demo.duckdb using the streamfind tools?</div><div><span class="mcp-terminal-prompt terminal-info">info</span> &gt; The harness is configured with the streamfind MCP server command.</div><div><span class="mcp-terminal-prompt terminal-terminal">terminal</span> &gt; ~/streamfind_mcp.exe</div><div><span class="mcp-terminal-prompt terminal-info">info</span> &gt; It starts the server over stdio and prepares the MCP session.</div><div><span class="mcp-terminal-prompt terminal-agent">agent</span> &gt; sends initialize</div><div>{</div><div>  "jsonrpc": "2.0",</div><div>  "id": 1,</div><div>  "method": "initialize",</div><div>  "params": {}</div><div>}</div><div><span class="mcp-terminal-prompt terminal-server">streamfind-mcp</span> &gt; initialized session</div><div>{</div><div>  "jsonrpc": "2.0",</div><div>  "id": 1,</div><div>  "result": {</div><div>    "protocolVersion": "2025-03-26",</div><div>    "capabilities": { "tools": {} },</div><div>    "serverInfo": { "name": "streamfind-rust", "version": "0.1.0" }</div><div>  }</div><div>}</div></div></div>
         </div>
-        <div class="mcp-boundary">The agent does not invent arbitrary code: it invokes validated operations exposed by the framework.</div>
       </section>
 
-      <section class="slide framework-story-slide" id="deterministic-results-slide">
-        <h2>From Intent to a Deterministic Result</h2>
+      <section class="slide mcp-step-slide" id="mcp-tools-list-slide">
+        <h2>MCP for streamfind: A Concrete Operation</h2>
         <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
-        <div class="deterministic-pipeline">
-          <div><i>1</i><b>Intent</b><span>What should happen?</span></div>
-          <div><i>2</i><b>Ontology resolution</b><span>Which entities and terms?</span></div>
-          <div><i>3</i><b>Validated operation</b><span>Which parameters are allowed?</span></div>
-          <div><i>4</i><b>Method chain</b><span>Which reusable steps?</span></div>
-          <div><i>5</i><b>Result + provenance</b><span>What was produced?</span></div>
+        <div class="mcp-step-layout">
+          <div class="mcp-step-marker"><b>02</b><span>Discover tools</span></div>
+          <div class="mcp-step-content"><div class="mcp-step-terminal mcp-step-tools-terminal"><div><span class="mcp-terminal-prompt terminal-agent">agent</span> &gt; tools/list</div><div><span class="mcp-terminal-prompt terminal-server">streamfind-mcp</span> &gt; result.tools (generated catalogue)</div><div>{</div><div>  "tools": [</div><div>    "...",</div><div>    {</div><div>    "name": "validate",</div><div>    "description": "Validate a project",</div><div>    "inputSchema": {</div><div>      "type": "object",</div><div>      "properties": {</div><div>        "database_path": { "type": "string" },</div><div>        "project_id": { "type": "string" }</div><div>      },</div><div>      "required": ["database_path", "project_id"]</div><div>    },</div><div>    "outputSchema": {</div><div>      "type": "object",</div><div>      "properties": {</div><div>        "valid": { "type": "boolean" },</div><div>        "info": { "type": "string" }</div><div>      }</div><div>    },</div><div>    "..."</div><div>  ]</div><div>}</div></div></div>
         </div>
-        <div class="framework-takeaway">Cogniflow turns flexible intent into standardized, traceable, and reproducible analytical processing.</div>
       </section>
 
-      <!-- Table and code slide -->
-      <section class="slide">
-        <h2>Table and code</h2>
+      <section class="slide mcp-step-slide" id="mcp-call-slide">
+        <h2>MCP for streamfind: A Concrete Operation</h2>
         <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
-        <table>
-          <thead><tr><th>Criterion</th><th>Option A</th><th>Option B</th></tr></thead>
-          <tbody><tr><td>Setup</td><td>Simple</td><td>Advanced</td></tr><tr><td>Best for</td><td>Quick start</td><td>Large teams</td></tr></tbody>
-        </table>
-        <pre><code># Replace this example with your command
-run --input data.csv --output result.json</code></pre>
+        <div class="mcp-step-layout">
+          <div class="mcp-step-marker"><b>03</b><span>Call operation</span></div>
+          <div class="mcp-step-content"><div class="mcp-step-terminal"><div><span class="mcp-terminal-prompt terminal-agent">agent</span> &gt; tools/call · validate</div><div>{</div><div>  "method": "tools/call",</div><div>  "params": {</div><div>    "name": "validate",</div><div>    "arguments": {</div><div>      "database_path": "demo.duckdb",</div><div>      "project_id": "demo"</div><div>    }</div><div>  }</div><div>}</div><div><span class="mcp-terminal-prompt terminal-server">streamfind-mcp</span> &gt; result.content[0].text</div><div>{ "valid": true,</div><div>  "info": "Project validation finished successfully." }</div></div></div>
+        </div>
       </section>
+
 
       <!-- Keep this as the final slide. -->
+      <section class="slide framework-story-slide" id="mcp-live-demo-slide">
+        <h2>Live demonstration: MCP server launched through the host</h2>
+        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="live-demo-flow">
+          <div><span class="live-demo-icon">H</span><strong>Harness</strong><small>Hermes · OpenCode · Claude</small></div>
+          <b>→</b>
+          <div><span class="live-demo-icon terminal">⌘</span><strong>streamfind_mcp.exe</strong><small>launched over stdio</small></div>
+          <b>→</b>
+          <div><span class="live-demo-icon">M</span><strong>MCP interaction</strong><small>initialize · tools/list · tools/call</small></div>
+        </div>
+        <div class="live-demo-command"><span class="live-demo-prompt">terminal</span> &gt; ~/streamfind_mcp.exe</div>
+        <div class="live-demo-caption">The next step uses the real server and real JSON-RPC messages in a live terminal—not a simulated browser panel.</div>
+      </section>
+
+      <section class="slide framework-story-slide" id="take-home-slide">
+        <h2>Take-home message</h2>
+        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <ul class="take-home-points">
+          <li>Vibe coding alone is not enough for FAIR analytical data processing: code needs explicit semantics, validation, and provenance.</li>
+          <li>An ontology standardizes meaning through harmonized definitions and knowledge-network graphs.</li>
+          <li>MCP gives AI agents controlled tools, reducing token-heavy instructions and constraining operations.</li>
+          <li>Ontology enriches MCP tools with semantic context, enabling more informed tool discovery and use.</li>
+          <li><strong>streamfind is in active development</strong>, with ontology and MCP development at its core.</li>
+        </ul>
+        <div class="take-home-statement">One semantic foundation can make analytical work <strong>reproducible, reusable, and AI-accessible.</strong></div>
+      </section>
+
+      <section class="slide framework-story-slide" id="streamfind-relaxed-technician-slide">
+        <h2>From friction to flow</h2>
+        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="relaxed-technician-figure"><img src="iuta_seminar_assets/iuta_seminar_streamfind_relaxed_technician.png" alt="Technician comfortably using streamfind for analytical data work"></div>
+      </section>
+
       <section class="slide thank-you-slide">
         <img class="banner-background" src="assets/title-background.jpg" alt="">
         <h2></h2>
         <p></p>
+        <div class="thank-you-visit">Visit the project in<br><strong>streamfind.odea-project.org/</strong></div>
+        <img class="thank-you-qr" src="iuta_seminar_assets/iuta_seminar_project_qr.png" alt="QR code for the streamfind project">
+        <div class="thank-you-author"><strong></strong><span></span></div>
         <div class="title-logo iuta" aria-hidden="true"></div>
         <div class="title-logo ude" aria-hidden="true"></div>
         <div class="title-logo jrf" aria-hidden="true"></div>
+        <div class="thank-you-funding"><span>Funded by:</span><img src="iuta_seminar_assets/iuta_seminar_funded_by_mkulnv_nrw.svg" alt="Ministerium für Kultur und Wissenschaft des Landes Nordrhein-Westfalen"></div>
       </section>
     </div>
   </div>
@@ -446,6 +485,8 @@ run --input data.csv --output result.json</code></pre>
     document.querySelector('#title-slide .title-affiliations').textContent = presentationMetadata.affiliation;
     document.querySelector('.thank-you-slide h2').textContent = presentationMetadata.thankYou;
     document.querySelector('.thank-you-slide p').textContent = presentationMetadata.thankYouSubtitle;
+    document.querySelector('.thank-you-author strong').textContent = presentationMetadata.footer;
+    document.querySelector('.thank-you-author span').textContent = presentationMetadata.affiliation;
     document.querySelectorAll('.metadata-left').forEach(function (node) {
       node.textContent = [presentationMetadata.date, presentationMetadata.event].filter(Boolean).join(' | ');
     });
@@ -455,7 +496,7 @@ run --input data.csv --output result.json</code></pre>
 
     Reveal.initialize({
       controls: false, progress: false, hash: true, history: true,
-      keyboard: true, overview: true, center: false, transition: 'none',
+      keyboard: true, overview: false, view: 'scroll', center: false, transition: 'none',
       slideNumber: 'c/t', width: 1920, height: 1080, margin: 0.04
     });
 
@@ -472,37 +513,35 @@ run --input data.csv --output result.json</code></pre>
       var current = Reveal.getCurrentSlide();
       return !!slide && (current === slide || (current && current.contains(slide)));
     }
-    function makeStepLoop() {
-      var timers = [];
-      function stop() {
-        timers.forEach(clearTimeout);
-        timers = [];
-      }
-      function run(steps, holds, index, initialHold) {
-        stop();
-        for (var i = 0; i < steps.length; i++) {
-          steps[i].apply(i <= index);
-        }
-        timers.push(setTimeout(function () { run(steps, holds, index < steps.length - 1 ? index + 1 : 0, initialHold); }, index === 0 ? (initialHold || 1200) : holds[index]));
-      }
-      return { run: run, stop: stop };
-    }
-    function toggleStep(element, className) {
-      return { pause: 0, apply: function (on) { element.classList.toggle(className, on); } };
-    }
-
+    var vibeTimers = [];
     function refreshVibeLoop() {
-      vibeLoop.stop();
+      vibeTimers.forEach(clearTimeout);
+      vibeTimers = [];
       if (!slideVisible('vibe-coding-slide')) return;
       var demo = document.getElementById('vibe-demo');
       var lines = demo ? Array.prototype.slice.call(demo.querySelectorAll('.vibe-line')) : [];
-      if (lines.length) {
-        var steps = lines.map(function (line) { return toggleStep(line, 'show'); });
-        var holds = lines.map(function (line) { return line.classList.contains('agent-line') ? 900 : 650; });
-        vibeLoop.run(steps, holds, 0);
-      }
+      lines.forEach(function (line) { line.classList.remove('show'); });
+      lines.forEach(function (line, index) {
+        vibeTimers.push(setTimeout(function () {
+          if (slideVisible('vibe-coding-slide')) line.classList.add('show');
+        }, index * 650));
+      });
     }
-    var vibeLoop = makeStepLoop([], []);
+
+    var mcpStepTimers = [];
+    function refreshMcpStepTerminals() {
+      mcpStepTimers.forEach(clearTimeout);
+      mcpStepTimers = [];
+      document.querySelectorAll('.mcp-step-slide .mcp-step-terminal > div').forEach(function (line) { line.classList.remove('is-visible'); });
+      var current = Reveal.getCurrentSlide();
+      if (!current || !current.classList.contains('mcp-step-slide')) return;
+      var lines = Array.prototype.slice.call(current.querySelectorAll('.mcp-step-terminal > div'));
+      lines.forEach(function (line, index) {
+        mcpStepTimers.push(setTimeout(function () {
+          if (Reveal.getCurrentSlide() === current) line.classList.add('is-visible');
+        }, index * 400));
+      });
+    }
 
     var fairTimers = [];
     function refreshFairRiskLoop() {
@@ -679,6 +718,23 @@ run --input data.csv --output result.json</code></pre>
       tooltip.style.display = 'none';
       wrap.appendChild(tooltip);
       function escapeHtml(value) { return String(value).replace(/[&<>"']/g, function (character) { return ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[character]; }); }
+      var activeQuery = '';
+      var selectedNodeId = null;
+      function selectedNeighbors(nodeId) {
+        var neighbors = new Set([nodeId]);
+        links.forEach(function (l) { if (l.source.id === nodeId) neighbors.add(l.target.id); if (l.target.id === nodeId) neighbors.add(l.source.id); });
+        return neighbors;
+      }
+      function applyGraphState() {
+        if (selectedNodeId) {
+          var selected = selectedNeighbors(selectedNodeId);
+          node.attr('fill-opacity', function (d) { return selected.has(d.id) ? 1 : .1; });
+          link.attr('stroke-opacity', function (l) { return l.source.id === selectedNodeId || l.target.id === selectedNodeId ? .85 : .04; });
+          return;
+        }
+        node.attr('fill-opacity', function (d) { return !activeQuery || d.label.toLowerCase().includes(activeQuery) ? 1 : .12; });
+        link.attr('stroke-opacity', function (l) { return !activeQuery || l.source.label.toLowerCase().includes(activeQuery) || l.target.label.toLowerCase().includes(activeQuery) ? .35 : .05; });
+      }
       node.on('mouseenter', function (event, d) {
         var title = d.prefLabel || d.label;
         var definition = d.definition ? '<span class="ontology-graph-tooltip-definition">' + escapeHtml(d.definition) + '</span>' : '';
@@ -690,10 +746,11 @@ run --input data.csv --output result.json</code></pre>
         links.forEach(function (l) { if (l.source.id === d.id) neighbors.add(l.target.id); if (l.target.id === d.id) neighbors.add(l.source.id); });
         node.attr('fill-opacity', function (n) { return neighbors.has(n.id) ? 1 : .12; });
         link.attr('stroke-opacity', function (l) { return l.source.id === d.id || l.target.id === d.id ? .8 : .05; });
-      }).on('mousemove', function (event) { tooltip.style.left = (event.offsetX + 12) + 'px'; tooltip.style.top = (event.offsetY + 12) + 'px'; }).on('mouseleave', function () { tooltip.style.display = 'none'; node.attr('fill-opacity', .85); link.attr('stroke-opacity', .22); });
+      }).on('mousemove', function (event) { tooltip.style.left = (event.offsetX + 12) + 'px'; tooltip.style.top = (event.offsetY + 12) + 'px'; }).on('mouseleave', function () { tooltip.style.display = 'none'; applyGraphState(); }).on('dblclick', function (event, d) { event.stopPropagation(); selectedNodeId = d.id; applyGraphState(); });
+      svg.on('dblclick', function (event) { if (event.target === svgElement) { selectedNodeId = null; applyGraphState(); } });
       node.call(d3.drag().on('start', function (event, d) { if (!event.active) ontologyGraphSimulation.alphaTarget(.25).restart(); d.fx = d.x; d.fy = d.y; }).on('drag', function (event, d) { d.fx = event.x; d.fy = event.y; }).on('end', function (event, d) { if (!event.active) ontologyGraphSimulation.alphaTarget(0); d.fx = null; d.fy = null; }));
       var input = document.getElementById('ontology-graph-search');
-      if (input) input.addEventListener('input', function () { var query = input.value.trim().toLowerCase(); node.attr('fill-opacity', function (d) { return !query || d.label.toLowerCase().includes(query) ? 1 : .12; }); link.attr('stroke-opacity', function (l) { return !query || l.source.label.toLowerCase().includes(query) || l.target.label.toLowerCase().includes(query) ? .35 : .05; }); });
+      if (input) input.addEventListener('input', function () { activeQuery = input.value.trim().toLowerCase(); selectedNodeId = null; applyGraphState(); });
       ontologyGraphSimulation = d3.forceSimulation(nodes).force('link', d3.forceLink(links).id(function (d) { return d.id; }).distance(36).strength(.22)).force('charge', d3.forceManyBody().strength(-32)).force('center', d3.forceCenter(width / 2, height / 2)).force('collide', d3.forceCollide().radius(function (d) { return 3 + Math.sqrt(d.degree); })).on('tick', function () { link.attr('x1', function (d) { return d.source.x; }).attr('y1', function (d) { return d.source.y; }).attr('x2', function (d) { return d.target.x; }).attr('y2', function (d) { return d.target.y; }); node.attr('cx', function (d) { return d.x = Math.max(4, Math.min(width - 4, d.x)); }).attr('cy', function (d) { return d.y = Math.max(4, Math.min(height - 4, d.y)); }); });
       ontologyGraphInitialized = true;
     }
@@ -714,8 +771,58 @@ run --input data.csv --output result.json</code></pre>
       }, 1000);
     }
 
-    Reveal.on('ready', function () { refreshVibeLoop(); refreshFairRiskLoop(); refreshFrictionLoop(); refreshFrameworkRequirements(); refreshOntologyFlow(); refreshOntologyGraph(); refreshCogniflowSequence(); });
-    Reveal.on('slidechanged', function () { refreshVibeLoop(); refreshFairRiskLoop(); refreshFrictionLoop(); refreshFrameworkRequirements(); refreshOntologyFlow(); refreshOntologyGraph(); refreshCogniflowSequence(); });
+    Reveal.on('ready', function () { refreshVibeLoop(); refreshMcpStepTerminals(); refreshFairRiskLoop(); refreshFrictionLoop(); refreshFrameworkRequirements(); refreshOntologyFlow(); refreshOntologyGraph(); refreshCogniflowSequence(); });
+    Reveal.on('slidechanged', function () { refreshVibeLoop(); refreshMcpStepTerminals(); refreshFairRiskLoop(); refreshFrictionLoop(); refreshFrameworkRequirements(); refreshOntologyFlow(); refreshOntologyGraph(); refreshCogniflowSequence(); });
+
+    function applyTtlHighlight(group) {
+      var slide = document.getElementById('ontology-example-slide');
+      if (!slide) return;
+      slide.querySelectorAll('.ttl-group-prefix, .ttl-group-subject, .ttl-group-predicate').forEach(function (line) {
+        line.classList.remove('ttl-active');
+      });
+      slide.querySelectorAll('.ttl-group-' + group).forEach(function (line) {
+        line.classList.add('ttl-active');
+      });
+    }
+    applyTtlHighlight('prefix');
+    function syncTtlHighlight() {
+      var slide = document.getElementById('ontology-example-slide');
+      if (!slide) return;
+      var group = 'prefix';
+      slide.querySelectorAll('.ttl-highlight-step.visible').forEach(function (fragment) {
+        if (fragment.dataset.highlight) group = fragment.dataset.highlight;
+      });
+      applyTtlHighlight(group);
+    }
+    function applyOperationTtlHighlight(group) {
+      var slide = document.getElementById('ontology-operation-example-slide');
+      if (!slide) return;
+      slide.querySelectorAll('.ttl-operation-group-prefix, .ttl-operation-group-subject, .ttl-operation-group-identity, .ttl-operation-group-availability, .ttl-operation-group-contract').forEach(function (line) {
+        line.classList.remove('ttl-active');
+      });
+      slide.querySelectorAll('.ttl-operation-group-' + group).forEach(function (line) {
+        line.classList.add('ttl-active');
+      });
+    }
+    applyOperationTtlHighlight('prefix');
+    function syncOperationTtlHighlight() {
+      var slide = document.getElementById('ontology-operation-example-slide');
+      if (!slide) return;
+      var group = 'prefix';
+      slide.querySelectorAll('.ttl-highlight-step.visible').forEach(function (fragment) {
+        if (fragment.dataset.highlightOperation) group = fragment.dataset.highlightOperation;
+      });
+      applyOperationTtlHighlight(group);
+    }
+    Reveal.on('fragmentshown', function (event) {
+      var fragment = event.fragment;
+      if (fragment && fragment.dataset && fragment.dataset.highlight) applyTtlHighlight(fragment.dataset.highlight);
+      if (fragment && fragment.dataset && fragment.dataset.highlightOperation) applyOperationTtlHighlight(fragment.dataset.highlightOperation);
+    });
+    Reveal.on('fragmenthidden', function () {
+      syncTtlHighlight();
+      syncOperationTtlHighlight();
+    });
   </script>
 </body>
 </html>
