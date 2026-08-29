@@ -85,6 +85,19 @@ function Get-CTest {
     return $path
 }
 
+function Get-CPack {
+    if ($env:CPACK) {
+        if (Test-Path $env:CPACK) { return $env:CPACK }
+        throw "CPACK override set but not found: $env:CPACK"
+    }
+    $cmake = Get-CMake
+    $sibling = Join-Path (Split-Path -Parent $cmake) 'cpack.exe'
+    if (Test-Path $sibling) { return $sibling }
+    $path = Resolve-Command 'cpack'
+    if (-not $path) { throw 'cpack not found alongside cmake or on PATH; set $env:CPACK' }
+    return $path
+}
+
 function Get-Cargo {
     if ($env:CARGO) {
         if (Test-Path $env:CARGO) { return $env:CARGO }

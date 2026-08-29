@@ -1,0 +1,2 @@
+000175661cff1d8fd20ec327183936b6cbccb09c14529c29cb7c24309408393f  streamfind-core-cpp-0.1.0-Windows-x86_64.zip
+1e546626503290055b34d3331b41770cead05d1854df0ac8a35769a6fd9ff3e1  streamfind-rust-0.1.0-Windows-x86_64.zip

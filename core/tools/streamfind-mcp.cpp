@@ -22,7 +22,7 @@ int main() {
     streamfind::sensors::register_methods(registry);
     streamfind::mcp::Session session(registry, operations);
     while (std::getline(std::cin, line)) {
-        try { std::cout << session.handle(streamfind::Json::parse(line)).dump() << '\n' << std::flush; }
-        catch (const std::exception &error) { std::cout << streamfind::Json{{"jsonrpc", "2.0"}, {"error", {{"code", -32700}, {"message", error.what()}}}}.dump() << '\n' << std::flush; }
-    }
+            try { std::cout << session.handle(streamfind::Json::parse(line)).dump() << '\n' << std::flush; }
+            catch (const std::exception &error) { std::cout << streamfind::Json{{"jsonrpc", "2.0"}, {"error", {{"code", -32700}, {"message", error.what()}}}}.dump() << '\n' << std::flush; }
+        }
 }

@@ -127,6 +127,66 @@ share/streamfind/  catalogue.duckdb
 - `get_metadata` on both reports catalogue hash; hashes match the generated
   catalogue.sha256.
 
+## Local releases workflow (implemented 2026-08-28)
+
+`releases/` holds the committed, versioned archives (one per backend × platform):
+
+```
+releases/
+├── streamfind-core-cpp-0.1.0-Windows-x86_64.zip     (C++ core, CPack ZIP)
+├── streamfind-rust-0.1.0-Windows-x86_64.zip         (Rust, assembled)
+├── streamfind-core-cpp-0.1.0-Linux-x86_64.tgz       (Linux, via WSL)
+├── streamfind-rust-0.1.0-Linux-x86_64.tgz           (Linux, via WSL)
+└── sha256sums.txt
+```
+
+Driven by **`scripts/release.ps1 -Version <ver> [-Core] [-Rust] [-Linux] [-SkipTests]`**:
+
+- C++: Release build → CPack ZIP from the install tree (libs + headers + CMake
+  package + duckdb.dll + catalogue.duckdb + openbabel data). `project(VERSION)`
+  is the single version source; `version.cpp` is generated from
+  `src/version.cpp.in`, and the MCP `initialize` reports it.
+- Rust: `cargo build --release` (workspace profile `strip = true`) → assembled
+  `bin/` + `share/streamfind/catalogue.*` → `Compress-Archive`.
+- Linux (`-Linux`): delegates to **WSL** (`scripts/release-linux.sh` in the
+  distro). WSL2 Ubuntu is a real glibc Linux, so the C++ core (vendored static
+  duckdb/openbabel) and Rust compile natively. The build tree lives on the
+  **ext4 filesystem** (`$HOME/streamfind-release/<ver>`) because building inside
+  `/mnt/c` (drivefs) is 10-50x slower; sources are read from the `/mnt/c`
+  mount and the resulting TGZs are copied back to the Windows `releases/` dir.
+  One-time WSL setup: `apt-get install cmake ninja-build g++ pkg-config curl
+  unzip` + rustup.
+- `sha256sums.txt` computed for every archive (content hash — authoritative,
+  no version bookkeeping).
+
+CMake packaging notes (learned while implementing):
+
+- `cmake_minimum_required` must be ≥ 3.21 for runtime-dependency tooling.
+- `install(TARGETS ... RUNTIME_DEPENDENCY_SET <name>)` in CMake 4.x requires
+  the keyword **before** the artifact-kind groups; on the installed 4.2.1 the
+  exclusion-regex keywords on `install(RUNTIME_DEPENDENCY_SET)` are rejected.
+- Domain targets exporting `target_include_directories(... PUBLIC include)`
+  must use the `$<BUILD_INTERFACE:...>`/`$<INSTALL_INTERFACE:include>` split
+  or the installed CMake package fails with "prefixed in the source directory".
+- The exes link everything static except the DuckDB runtime DLL on Windows;
+  no `RUNTIME_DEPENDENCIES` scan is needed (it pulled in system API-set DLLs).
+  The explicit `install(FILES ${STREAMFIND_DUCKDB_RUNTIME} → bin)` covers it.
+- Catalogue search chain extended with a binary-relative `../share/streamfind`
+  candidate so unpacked archives are relocatable (no compile-time prefix).
+
+Verification (done 2026-08-28, Release, -SkipTests):
+
+```
+streamfind-core-cpp-0.1.0-Windows-x86_64.zip   30.9 MB   bin(2 exes+duckdb.dll)
+                                                         lib(7 .lib + cmake pkg)
+                                                         include (headers)
+                                                         share (catalogue+openbabel)
+streamfind-rust-0.1.0-Windows-x86_64.zip       19.8 MB   bin(2 exes) + share
+```
+
+Both archived servers unpacked and served `initialize` (version `0.1.0`) and
+`tools/list` (26 tools), and the C++ archived CLI ran `tools status`.
+
 ## Out of scope (later)
 
 - DEB/RPM packaging, wide-glibc build matrix, code signing, offline

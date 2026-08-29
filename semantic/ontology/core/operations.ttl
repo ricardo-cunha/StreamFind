@@ -6,14 +6,20 @@ sfcore:streamfind
     a sf:Domain ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "streamfind" ;
-    skos:definition "Generic streamfind project contract." .
+    skos:definition "Generic streamfind project contract." ;
+    sf:guidance "Project entry points: call create once to create a DuckDB-backed project with an immutable domain, then call describe to inspect its identity, metadata, workflow, and schema. Use get_domain and get_metadata for focused inspection. Domain-prefixed operations in tools/list are stateless and require database_path and project_id on every call. The connect operation is only needed before workflow-method operations: call get_available_methods with a domain, add_method or set_workflow, validate_workflow, then run_workflow or run_method. get_available_methods lists workflow methods, not MCP operations." .
 
 sfcore:create
     a sf:Operation ;
     skos:inScheme sfcore:scheme ;
     sf:operationId "create" ;
     skos:prefLabel "Create a project" ;
-    skos:definition "Create a persisted project with an immutable domain." ;
+    skos:definition "Create a new persisted DuckDB project and assign its immutable domain. This is the normal first project-management operation; after it succeeds, call describe to inspect the created project." ;
+    sf:category "project-management" ;
+    sf:invocationModel "stateless" ;
+    sf:requiresConnection false ;
+    sf:guidance "Use create once for a new database/project identifier. Then use describe to inspect it. Do not call create to open an existing project; use describe or connect instead." ;
+    sf:nextOperation sfcore:describe ;
     sf:availableInDomain sfcore:streamfind ;
     sf:toolName "create" ;
     sf:hasParameter
@@ -29,7 +35,12 @@ sfcore:describe
     skos:inScheme sfcore:scheme ;
     sf:operationId "describe" ;
     skos:prefLabel "Describe a project" ;
-    skos:definition "Read a project's identity and persisted metadata." ;
+    skos:definition "Inspect a persisted project's identity, immutable domain, metadata, workflow, schema version, and creation information without changing it. Use this as the normal first read after create or before other work." ;
+    sf:category "project-management" ;
+    sf:invocationModel "stateless" ;
+    sf:requiresConnection false ;
+    sf:guidance "Call describe with the same database_path and project_id used by create. If the project does not exist, do not guess metadata; create it or correct the identifiers." ;
+    sf:nextOperation sfcore:connect ;
     sf:availableInDomain sfcore:streamfind ;
     sf:toolName "describe" ;
     sf:hasParameter
@@ -59,7 +70,10 @@ sfcore:getDomain
     skos:inScheme sfcore:scheme ;
     sf:operationId "get_domain" ;
     skos:prefLabel "Read the project domain" ;
-    skos:definition "Read the immutable domain assigned to a project." ;
+    skos:definition "Read the immutable domain assigned to a persisted project. Use this to confirm which domain-specific operations and workflow methods apply." ;
+    sf:category "project-management" ;
+    sf:invocationModel "stateless" ;
+    sf:requiresConnection false ;
     sf:availableInDomain sfcore:streamfind ;
     sf:toolName "get_domain" ;
     sf:hasParameter
@@ -74,7 +88,10 @@ sfcore:getMetadata
     skos:inScheme sfcore:scheme ;
     sf:operationId "get_metadata" ;
     skos:prefLabel "Read project metadata" ;
-    skos:definition "Return the metadata stored for a project." ;
+    skos:definition "Return the user-defined metadata stored for a project. An empty object is a valid result when no metadata has been set." ;
+    sf:category "project-management" ;
+    sf:invocationModel "stateless" ;
+    sf:requiresConnection false ;
     sf:availableInDomain sfcore:streamfind ;
     sf:toolName "get_metadata" ;
     sf:hasParameter
@@ -89,7 +106,7 @@ sfcore:setMetadata
     skos:inScheme sfcore:scheme ;
     sf:operationId "set_metadata" ;
     skos:prefLabel "Set project metadata" ;
-    skos:definition "Replace the metadata stored for a project." ;
+    skos:definition "Replace the user-defined metadata stored for a project. This changes metadata only; it does not change the immutable domain or analyses." ;
     sf:availableInDomain sfcore:streamfind ;
     sf:toolName "set_metadata" ;
     sf:hasParameter
@@ -105,7 +122,7 @@ sfcore:getWorkflow
     skos:inScheme sfcore:scheme ;
     sf:operationId "get_workflow" ;
     skos:prefLabel "Read the project workflow" ;
-    skos:definition "Return the persisted workflow for a project." ;
+    skos:definition "Return the ordered persisted workflow, including each method identifier and configured parameters." ;
     sf:availableInDomain sfcore:streamfind ;
     sf:toolName "get_workflow" ;
     sf:hasParameter
@@ -135,7 +152,7 @@ sfcore:setWorkflow
     skos:inScheme sfcore:scheme ;
     sf:operationId "set_workflow" ;
     skos:prefLabel "Set the project workflow" ;
-    skos:definition "Validate and persist a project's workflow." ;
+    skos:definition "Validate and replace a project's ordered workflow. Method identifiers, domain compatibility, dependency ordering, and parameters are checked before persistence." ;
     sf:availableInDomain sfcore:streamfind ;
     sf:toolName "set_workflow" ;
     sf:hasParameter
@@ -151,7 +168,11 @@ sfcore:addMethod
     skos:inScheme sfcore:scheme ;
     sf:operationId "add_method" ;
     skos:prefLabel "Add a method to the project workflow" ;
-    skos:definition "Append a validated method object to the ordered project workflow." ;
+    skos:definition "Append one validated workflow method to the ordered project workflow. The method must belong to the project's immutable domain and its parameters must match the method schema returned by get_available_methods." ;
+    sf:category "workflow-planning" ;
+    sf:invocationModel "stateless" ;
+    sf:requiresConnection false ;
+    sf:guidance "Use get_available_methods(domain) first, copy a method id and its parameter names/types, then call add_method. Call validate_workflow before run_workflow." ;
     sf:availableInDomain sfcore:streamfind ;
     sf:toolName "add_method" ;
     sf:hasParameter
@@ -186,7 +207,11 @@ sfcore:validateWorkflow
     skos:inScheme sfcore:scheme ;
     sf:operationId "validate_workflow" ;
     skos:prefLabel "Validate a workflow" ;
-    skos:definition "Validate workflow methods, ordering, domains, and parameters." ;
+    skos:definition "Validate workflow method identifiers, ordering dependencies, project-domain compatibility, occurrence rules, and method parameter values without executing the workflow." ;
+    sf:category "workflow-planning" ;
+    sf:invocationModel "stateless" ;
+    sf:requiresConnection false ;
+    sf:guidance "Use after assembling a workflow and before run_workflow. Fix the returned validation message before executing." ;
     sf:availableInDomain sfcore:streamfind ;
     sf:toolName "validate_workflow" ;
     sf:hasParameter sfcore:workflowParameter ;
@@ -198,7 +223,11 @@ sfcore:runWorkflow
     skos:inScheme sfcore:scheme ;
     sf:operationId "run_workflow" ;
     skos:prefLabel "Run the project workflow" ;
-    skos:definition "Execute the persisted workflow for a project." ;
+    skos:definition "Execute the persisted workflow for a project in order, using the connected project's domain and cached results where valid." ;
+    sf:category "workflow-execution" ;
+    sf:invocationModel "session" ;
+    sf:requiresConnection true ;
+    sf:guidance "Connect to the project first, inspect or validate the workflow, then call run_workflow. For one-step execution use run_method with a connected session." ;
     sf:availableInDomain sfcore:streamfind ;
     sf:toolName "run_workflow" ;
     sf:hasParameter
@@ -273,8 +302,12 @@ sfcore:getAvailableMethods
     a sf:Operation ;
     skos:inScheme sfcore:scheme ;
     sf:operationId "get_available_methods" ;
-    skos:prefLabel "List methods registered for a domain" ;
-    skos:definition "Return workflow methods registered for a domain." ;
+    skos:prefLabel "List workflow methods registered for a domain" ;
+    skos:definition "Return workflow methods registered for a domain. This lists methods that can be added to workflows; it does not list MCP operation tools. Operation names and complete input schemas, including nested target fields, are advertised directly by tools/list." ;
+    sf:category "workflow-planning" ;
+    sf:invocationModel "stateless" ;
+    sf:requiresConnection false ;
+    sf:guidance "Use this when planning a workflow. Select a method id from the result, then inspect its parameter definitions before calling add_method. Do not use this operation to discover callable MCP tools; tools/list is the operation catalogue." ;
     sf:availableInDomain sfcore:streamfind ;
     sf:toolName "get_available_methods" ;
     sf:hasParameter sfcore:domainParameter ;
@@ -286,7 +319,11 @@ sfcore:runMethod
     skos:inScheme sfcore:scheme ;
     sf:operationId "run_method" ;
     skos:prefLabel "Run a planned workflow method" ;
-    skos:definition "Execute only the next pending method already present in the project's workflow." ;
+    skos:definition "Execute one selected workflow method for a connected project. The method must be registered for the project domain and its parameters are validated before execution." ;
+    sf:category "workflow-execution" ;
+    sf:invocationModel "session" ;
+    sf:requiresConnection true ;
+    sf:guidance "Connect first, discover methods with get_available_methods, and use the method's input schema. Use run_workflow instead when the whole persisted workflow should execute." ;
     sf:availableInDomain sfcore:streamfind ;
     sf:toolName "run_method" ;
     sf:hasParameter
@@ -304,7 +341,7 @@ sfcore:copy
     skos:inScheme sfcore:scheme ;
     sf:operationId "copy" ;
     skos:prefLabel "Copy a project" ;
-    skos:definition "Copy a project to another database and project identifier." ;
+    skos:definition "Copy a complete persisted project, including metadata, workflow, analyses, cached tables, and audit information, to a destination database and project identifier." ;
     sf:availableInDomain sfcore:streamfind ;
     sf:toolName "copy" ;
     sf:hasParameter
@@ -321,7 +358,7 @@ sfcore:close
     skos:inScheme sfcore:scheme ;
     sf:operationId "close" ;
     skos:prefLabel "Close a project handle" ;
-    skos:definition "Close the project handle used by an operation." ;
+    skos:definition "Clear the connected project context used for workflow methods. This does not delete the project and does not remove stateless operation tools." ;
     sf:availableInDomain sfcore:streamfind ;
     sf:toolName "close" ;
     sf:hasParameter
@@ -335,7 +372,11 @@ sfcore:connect
     skos:inScheme sfcore:scheme ;
     sf:operationId "connect" ;
     skos:prefLabel "Connect an MCP session to a project" ;
-    skos:definition "Open a project and bind its immutable domain to an MCP session." ;
+        skos:definition "Open an existing project and bind its immutable domain to the MCP session for workflow-method operations. Domain operations remain discoverable and callable without connect; connect establishes the context used by add_method, validate_workflow, run_method, and run_workflow." ;
+    sf:category "session-management" ;
+    sf:invocationModel "session" ;
+    sf:requiresConnection false ;
+    sf:guidance "Call connect only after create or describe confirms the project. It does not add operation tools to tools/list. Use it when planning or executing workflow methods; close clears that session context." ;
     sf:availableInDomain sfcore:streamfind ;
     sf:toolName "connect" ;
     sf:hasParameter

@@ -25,7 +25,7 @@ sfms:targetAnalysesField
     a sf:Field ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Target analyses" ;
-    skos:definition "Analysis names to match." ;
+    skos:definition "Optional canonical analysis names to match. Use names returned by mass_spec.get_analysis_names; omit to search all analyses selected by the operation." ;
     sf:propertyName "analyses" ;
     sf:type "array" ;
     sf:required false ;
@@ -36,7 +36,7 @@ sfms:targetPolarityField
     a sf:Field ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Target polarity" ;
-    skos:definition "Ion polarity." ;
+    skos:definition "Optional ion polarity for this target: 1 for positive ions or -1 for negative ions." ;
     sf:propertyName "polarity" ;
     sf:type "integer" ;
     sf:required false ;
@@ -46,7 +46,7 @@ sfms:targetLevelsField
     a sf:Field ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Target MS levels" ;
-    skos:definition "MS levels to match for this target." ;
+    skos:definition "Optional MS levels to match for this target, normally 1 for precursor/MS1 data or 2 for fragment/MS2 data." ;
     sf:propertyName "levels" ;
     sf:type "array" ;
     sf:required false ;
@@ -57,7 +57,7 @@ sfms:targetMassField
     a sf:Field ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Target neutral mass" ;
-    skos:definition "Exact neutral mass." ;
+    skos:definition "Exact neutral monoisotopic mass in daltons. The operation converts it to m/z using charge and polarity when needed." ;
     sf:propertyName "mass" ;
     sf:type "real" ;
     sf:required false ;
@@ -67,7 +67,7 @@ sfms:targetMassMinField
     a sf:Field ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Minimum target neutral mass" ;
-    skos:definition "Lower neutral-mass bound." ;
+    skos:definition "Inclusive lower neutral monoisotopic-mass bound in daltons." ;
     sf:propertyName "mass_min" ;
     sf:type "real" ;
     sf:required false ;
@@ -77,7 +77,7 @@ sfms:targetMassMaxField
     a sf:Field ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Maximum target neutral mass" ;
-    skos:definition "Upper neutral-mass bound." ;
+    skos:definition "Inclusive upper neutral monoisotopic-mass bound in daltons." ;
     sf:propertyName "mass_max" ;
     sf:type "real" ;
     sf:required false ;
@@ -87,7 +87,7 @@ sfms:targetMzField
     a sf:Field ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Target m/z" ;
-    skos:definition "Exact m/z." ;
+    skos:definition "Exact measured ion m/z in Thomson. The operation expands an exact value by ppm tolerance." ;
     sf:propertyName "mz" ;
     sf:type "real" ;
     sf:required false ;

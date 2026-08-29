@@ -499,11 +499,17 @@ fn decode_array(a: &BinaryArray) -> Result<Vec<f32>> {
         bytes = out;
     }
     let width = if a.precision == 64 { 8 } else { 4 };
-    if bytes.len() % width != 0 {
-        return Err(ReaderError::Invalid(
-            "binary array length is not aligned to its precision".into(),
-        ));
-    }
+        if bytes.len() % width != 0 {
+            return Err(ReaderError::Invalid(format!(
+                "binary array length is not aligned to its precision: len={} width={} precision={} mz={} intensity={} compressed={}",
+                bytes.len(),
+                width,
+                a.precision,
+                a.mz,
+                a.intensity,
+                a.compressed
+            )));
+        }
     Ok(bytes
         .chunks_exact(width)
         .map(|b| {
@@ -548,58 +554,69 @@ fn parse_mzml(bytes: &[u8]) -> Result<Vec<Spectrum>> {
                 }
             }
             Event::Empty(e) | Event::Start(e) if local(e.name().as_ref()) == b"cvParam" => {
-                let accession = attr(&e, b"accession").unwrap_or_default();
-                let name = attr(&e, b"name").unwrap_or_default().to_ascii_lowercase();
-                let value = attr(&e, b"value").unwrap_or_default();
-                if let Some(a) = array.as_mut() {
-                    if accession == "MS:1000574" || name.contains("zlib") {
-                        a.compressed = true;
-                    }
-                    if accession == "MS:1000523" || name.contains("64-bit") {
-                        a.precision = 64;
-                    }
-                    if accession == "MS:1000514" || name.contains("m/z array") {
-                        a.mz = true;
-                    }
-                    if accession == "MS:1000515" || name.contains("intensity array") {
-                        a.intensity = true;
-                    }
-                } else if let Some(s) = current.as_mut() {
-                    match accession.as_str() {
-                        "MS:1000511" => s.level = value.parse().unwrap_or(1),
-                        "MS:1000130" => s.polarity = 1,
-                        "MS:1000129" => s.polarity = -1,
-                        "MS:1000528" => s.low_mz = value.parse().unwrap_or(0.0),
-                        "MS:1000527" => s.high_mz = value.parse().unwrap_or(0.0),
-                        "MS:1000504" => s.base_peak_mz = value.parse().unwrap_or(0.0),
-                        "MS:1000505" => s.base_peak_intensity = value.parse().unwrap_or(0.0),
-                        "MS:1000285" => s.tic = value.parse().unwrap_or(0.0),
-                        "MS:1000744" => s.precursor_mz = value.parse().unwrap_or(0.0),
-                        "MS:1000042" => s.precursor_intensity = value.parse().unwrap_or(0.0),
-                        "MS:1000041" => s.precursor_charge = value.parse().unwrap_or(0),
-                        "MS:1000045" => s.collision_energy = value.parse().unwrap_or(0.0),
-                        _ if accession == "MS:1000016" || name.contains("scan start time") => {
-                            s.retention_time = value.parse().unwrap_or(0.0)
-                                * if name.contains("minute") { 60.0 } else { 1.0 }
+                            let accession = attr(&e, b"accession").unwrap_or_default();
+                            let name = attr(&e, b"name").unwrap_or_default().to_ascii_lowercase();
+                            let value = attr(&e, b"value").unwrap_or_default();
+                            if let Some(a) = array.as_mut() {
+                                if accession == "MS:1000574" || name.contains("zlib") {
+                                    a.compressed = true;
+                                }
+                                if accession == "MS:1000523" || name.contains("64-bit") {
+                                    a.precision = 64;
+                                }
+                                if accession == "MS:1000514" || name.contains("m/z array") {
+                                    a.mz = true;
+                                }
+                                if accession == "MS:1000515" || name.contains("intensity array") {
+                                    a.intensity = true;
+                                }
+                            } else if let Some(s) = current.as_mut() {
+                                match accession.as_str() {
+                                    "MS:1000511" => s.level = value.parse().unwrap_or(1),
+                                    "MS:1000130" => s.polarity = 1,
+                                    "MS:1000129" => s.polarity = -1,
+                                    "MS:1000528" => s.low_mz = value.parse().unwrap_or(0.0),
+                                    "MS:1000527" => s.high_mz = value.parse().unwrap_or(0.0),
+                                    "MS:1000504" => s.base_peak_mz = value.parse().unwrap_or(0.0),
+                                    "MS:1000505" => s.base_peak_intensity = value.parse().unwrap_or(0.0),
+                                    "MS:1000285" => s.tic = value.parse().unwrap_or(0.0),
+                                    "MS:1000744" => s.precursor_mz = value.parse().unwrap_or(0.0),
+                                    "MS:1000042" => s.precursor_intensity = value.parse().unwrap_or(0.0),
+                                    "MS:1000041" => s.precursor_charge = value.parse().unwrap_or(0),
+                                    "MS:1000045" => s.collision_energy = value.parse().unwrap_or(0.0),
+                                    _ if accession == "MS:1000016" || name.contains("scan start time") => {
+                                        s.retention_time = value.parse().unwrap_or(0.0)
+                                            * if name.contains("minute") { 60.0 } else { 1.0 }
+                                    }
+                                    _ if name.contains("mobility") => s.mobility = value.parse().unwrap_or(0.0),
+                                    _ => {}
+                                }
+                            }
                         }
-                        _ if name.contains("mobility") => s.mobility = value.parse().unwrap_or(0.0),
-                        _ => {}
-                    }
-                }
-            }
             Event::End(e) if local(e.name().as_ref()) == b"binary" => in_binary = false,
             Event::End(e) if local(e.name().as_ref()) == b"binaryDataArray" => {
-                if let Some(a) = array.take() {
-                    if let Some(s) = current.as_mut() {
-                        let values = decode_array(&a)?;
-                        if a.mz {
-                            s.mz = values;
-                        } else if a.intensity {
-                            s.intensity = values;
+                            if let Some(a) = array.take() {
+                                if let Some(s) = current.as_mut() {
+                                    let values = decode_array(&a).map_err(|error| {
+                                        ReaderError::Invalid(format!(
+                                            "spectrum index={} scan={} array(len={}, mz={}, intensity={}, compressed={}, precision={}): {error}",
+                                            s.index,
+                                            s.scan,
+                                            a.encoded.len(),
+                                            a.mz,
+                                            a.intensity,
+                                            a.compressed,
+                                            a.precision
+                                        ))
+                                    })?;
+                                    if a.mz {
+                                        s.mz = values;
+                                    } else if a.intensity {
+                                        s.intensity = values;
+                                    }
+                                }
+                            }
                         }
-                    }
-                }
-            }
             Event::End(e) if local(e.name().as_ref()) == b"spectrum" => {
                 if let Some(mut s) = current.take() {
                     finish_spectrum(&mut s);
@@ -651,15 +668,19 @@ fn parse_mzml_chromatograms(bytes: &[u8]) -> Result<Vec<Chromatogram>> {
                 let accession = attr(&e, b"accession").unwrap_or_default();
                 let name = attr(&e, b"name").unwrap_or_default().to_ascii_lowercase();
                 if let Some(a) = array.as_mut() {
-                    a.compressed = accession == "MS:1000574" || name.contains("zlib");
-                    a.precision = if accession == "MS:1000523" || name.contains("64-bit") {
-                        64
-                    } else {
-                        a.precision
-                    };
-                    a.mz = accession == "MS:1000595" || name.contains("time array");
-                    a.intensity = accession == "MS:1000515" || name.contains("intensity array");
-                } else if let Some(c) = current.as_mut() {
+                                    if accession == "MS:1000574" || name.contains("zlib") {
+                                        a.compressed = true;
+                                    }
+                                    if accession == "MS:1000523" || name.contains("64-bit") {
+                                        a.precision = 64;
+                                    }
+                                    if accession == "MS:1000595" || name.contains("time array") {
+                                        a.mz = true;
+                                    }
+                                    if accession == "MS:1000515" || name.contains("intensity array") {
+                                        a.intensity = true;
+                                    }
+                                } else if let Some(c) = current.as_mut() {
                     if accession == "MS:1000235" || name.contains("total ion current") {
                         c.signal_type = name.clone();
                         c.chromatogram_type = "TIC".into();

@@ -33,14 +33,13 @@ std::vector<std::string> expected_core_tools(const streamfind::Json &entries) {
     return names;
 }
 
-/// The full expected tool set after connecting to a mass_spec project: core
-/// tools + registered mass_spec operations (methods are never tools).
-std::vector<std::string> expected_with_mass_spec(const streamfind::Json &entries,
-                                                 const streamfind::OperationRegistry &operations) {
+/// The full expected tool set: core tools + all registered domain operations
+/// (methods are never tools). Operations are always advertised because they
+/// are stateless and carry their own database_path/project_id.
+std::vector<std::string> expected_all_tools(const streamfind::Json &entries,
+                                             const streamfind::OperationRegistry &operations) {
     auto names = expected_core_tools(entries);
-    for (const auto &definition : operations.list("mass_spec")) {
-        names.push_back(definition.id);
-    }
+    for (const auto &definition : operations.list("")) names.push_back(definition.id);
     std::sort(names.begin(), names.end());
     return names;
 }
@@ -65,8 +64,14 @@ int main() {
     const auto expected_core = expected_core_tools(*entries);
 
     const auto response = streamfind::mcp::handle({{"id", 1}, {"method", "tools/list"}});
+
     const auto tools = response.at("result").at("tools");
     assert_advertises(tools, expected_core);
+    const auto initialize = streamfind::mcp::handle({{"id", 0}, {"method", "initialize"}});
+    const auto instructions = initialize.at("result").at("instructions").get<std::string>();
+    for (const auto &term : {"create", "describe", "tools/list", "get_available_methods", "connect"}) {
+        assert(instructions.find(term) != std::string::npos);
+    }
     // A well-known core tool keeps a behavioural contract check: its required
     // parameters are statically meaningful and change only with that operation.
     const auto create = std::find_if(tools.begin(), tools.end(), [](const auto &tool) {
@@ -83,8 +88,20 @@ int main() {
     streamfind::MethodRegistry registry;
     streamfind::OperationRegistry operations;
     streamfind::mass_spec::register_operations(operations);
-    const auto expected_connected = expected_with_mass_spec(*entries, operations);
+    streamfind::mass_spec::register_methods(registry);
+    const auto expected_all = expected_all_tools(*entries, operations);
     streamfind::mcp::Session session(registry, operations);
+    const auto methods_call = session.handle({{"id", 9}, {"method", "tools/call"}, {"params", {
+        {"name", "get_available_methods"}, {"arguments", {{"domain", "mass_spec"}}}
+    }}});
+    const auto methods = streamfind::Json::parse(methods_call.at("result").at("content").at(0).at("text").get<std::string>());
+    const auto find_features = std::find_if(methods.begin(), methods.end(), [](const auto &method) {
+        return method.at("id") == "mass_spec.find_features";
+    });
+    assert(find_features != methods.end());
+    assert(find_features->at("inputSchema").at("type") == "object");
+    assert(find_features->at("inputSchema").at("properties").is_object());
+
     const auto create_call = session.handle({{"id", 2}, {"method", "tools/call"}, {"params", {
         {"name", "create"}, {"arguments", {{"database_path", path.string()}, {"project_id", "mcp"}, {"domain", "mass_spec"}}}
     }}});
@@ -92,24 +109,45 @@ int main() {
         std::cerr << "create failed\n";
         return 1;
     }
-    const auto connect = session.handle({{"id", 3}, {"method", "tools/call"}, {"params", {
+    const auto before_connect = session.handle({{"id", 3}, {"method", "tools/list"}}).at("result").at("tools");
+    assert_advertises(before_connect, expected_all);
+    const auto eic_before_connect = std::find_if(before_connect.begin(), before_connect.end(), [](const auto &tool) {
+        return tool.at("name") == "mass_spec.get_raw_spectra_eic";
+    });
+    assert(eic_before_connect != before_connect.end());
+    assert(eic_before_connect->at("inputSchema").at("properties").at("targets").at("items").contains("properties"));
+    const auto pre_connect_info = session.handle({{"id", 10}, {"method", "tools/call"}, {"params", {
+        {"name", "mass_spec.get_analyses_info"}, {"arguments", {{"database_path", path.string()}, {"project_id", "mcp"}}}
+    }}});
+    assert(!pre_connect_info.at("result").value("isError", false));
+    const auto connect = session.handle({{"id", 4}, {"method", "tools/call"}, {"params", {
         {"name", "connect"}, {"arguments", {{"database_path", path.string()}, {"project_id", "mcp"}}}
     }}});
     if (connect.at("result").value("isError", false)) {
         std::cerr << "connect failed\n";
         return 1;
     }
-    const auto connected_tools = session.handle({{"id", 4}, {"method", "tools/list"}}).at("result").at("tools");
-    assert_advertises(connected_tools, expected_connected);
+    const auto connected_tools = session.handle({{"id", 5}, {"method", "tools/list"}}).at("result").at("tools");
+        assert_advertises(connected_tools, expected_all);
     const auto eic_tool = std::find_if(connected_tools.begin(), connected_tools.end(), [](const auto &tool) {
         return tool.at("name") == "mass_spec.get_raw_spectra_eic";
     });
-    if (eic_tool == connected_tools.end() || eic_tool->at("inputSchema").at("properties").at("targets").at("type") != "array" ||
-        eic_tool->at("inputSchema").at("properties").at("targets").at("items").at("type") != "object" ||
-        eic_tool->at("inputSchema").at("properties").at("rt_tolerance").at("type") != "number" ||
-        eic_tool->at("inputSchema").at("properties").at("targets").at("examples").empty() ||
-        eic_tool->at("inputSchema").at("properties").at("targets").at("examples")[0][0].at("id") != "caffeine") {
-        std::cerr << "mass-spec target schema mismatch\n";
+    if (eic_tool == connected_tools.end()) {
+        std::cerr << "mass-spec target schema mismatch: EIC tool absent\n";
+        return 1;
+    }
+    const auto &eic_schema = eic_tool->at("inputSchema");
+    const auto &targets_schema = eic_schema.at("properties").at("targets");
+    const auto &target_item_schema = targets_schema.at("items");
+    const bool schema_ok = targets_schema.at("type") == "array" &&
+                           target_item_schema.at("type") == "object" &&
+                           eic_schema.at("properties").at("rt_tolerance").at("type") == "number" &&
+                           !targets_schema.at("examples").empty() &&
+                           targets_schema.at("examples")[0][0].at("id") == "caffeine" &&
+                           target_item_schema.contains("properties") &&
+                           target_item_schema.at("properties").contains("mz");
+    if (!schema_ok) {
+        std::cerr << "mass-spec target schema mismatch: " << eic_schema.dump() << '\n';
         return 1;
     }
     const auto info = session.handle({{"id", 5}, {"method", "tools/call"}, {"params", {
@@ -127,6 +165,6 @@ int main() {
         std::cerr << "close failed\n";
         return 1;
     }
-    assert_advertises(session.handle({{"id", 7}, {"method", "tools/list"}}).at("result").at("tools"), expected_core);
+    assert_advertises(session.handle({{"id", 8}, {"method", "tools/list"}}).at("result").at("tools"), expected_all);
     std::filesystem::remove(path, error);
 }

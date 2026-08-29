@@ -101,6 +101,31 @@ sfcore:methodRequiredField
     sf:type "array" ;
      sf:items sfcore:stringItemParameter .
 
+sfcore:methodSingleOccurrenceField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Single occurrence" ;
+    skos:definition "Whether the method may occur only once in a workflow." ;
+    sf:propertyName "single_occurrence" ;
+    sf:type "boolean" .
+
+sfcore:methodInputSchemaField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Method input schema" ;
+    skos:definition "Complete JSON Schema for the method-specific parameter object. Use this schema when constructing add_method or run_method parameters." ;
+    sf:propertyName "inputSchema" ;
+    sf:type "object" .
+
+sfcore:methodWritesField
+    a sf:Field ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Method written tables" ;
+    skos:definition "Persisted tables written by the method." ;
+    sf:propertyName "writes" ;
+    sf:type "array" ;
+    sf:items sfcore:stringItemParameter .
+
 sfcore:analysisFilePathField
     a sf:Field ;
     skos:inScheme sfcore:scheme ;

@@ -22,6 +22,11 @@ sfcore:OperationShape
     sh:property [ sh:path sf:reads ; sh:class sf:Table ] ;
     sh:property [ sh:path sf:writes ; sh:class sf:Table ] ;
     sh:property [ sh:path sf:mutatesProject ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ;
+    sh:property [ sh:path sf:category ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path sf:invocationModel ; sh:maxCount 1 ; sh:datatype xsd:string ; sh:in ( "stateless" "session" "workflow" ) ] ;
+    sh:property [ sh:path sf:requiresConnection ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ;
+    sh:property [ sh:path sf:guidance ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path sf:nextOperation ; sh:class sf:Operation ] ;
     sh:property [ sh:path sf:defaults ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
     sh:sparql [
         sh:message "Operation identifiers must be unique." ;
@@ -133,6 +138,8 @@ sfcore:ParameterShape
     ] ;
     sh:property [ sh:path sf:required ; sh:minCount 1 ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ;
     sh:property [ sh:path sf:example ; sh:minCount 1 ; sh:maxCount 1 ] ;
+    sh:property [ sh:path sf:units ; sh:maxCount 1 ; sh:datatype xsd:string ] ;
+    sh:property [ sh:path sf:nullable ; sh:maxCount 1 ; sh:datatype xsd:boolean ] ;
     sh:property [ sh:path sf:items ; sh:maxCount 1 ; sh:nodeKind sh:IRI ] ;
     sh:property [ sh:path sf:hasProperty ; sh:class sf:Field ] ;
     sh:sparql [

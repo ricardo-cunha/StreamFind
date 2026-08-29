@@ -23,7 +23,10 @@ add_library(streamfind_mass_spec STATIC
     src/openbabel_c_api.cpp
     "${CMAKE_CURRENT_SOURCE_DIR}/../../vendor/simdutf/simdutf.cpp"
 )
-target_include_directories(streamfind_mass_spec PUBLIC include)
+target_include_directories(streamfind_mass_spec PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
 target_link_libraries(streamfind_mass_spec PUBLIC streamfind::core streamfind::zstd)
 target_include_directories(streamfind_mass_spec PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/../../vendor/pugixml-1.14/src"

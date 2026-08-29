@@ -20,6 +20,7 @@ sfms:rtMinParameter
     skos:definition "Optional lower retention-time bound." ;
     sf:type "real" ;
     sf:required false ;
+    sf:units "seconds" ;
     sf:example 900.0 .
 
 sfms:rtMaxParameter
@@ -29,6 +30,7 @@ sfms:rtMaxParameter
     skos:definition "Optional upper retention-time bound." ;
     sf:type "real" ;
     sf:required false ;
+    sf:units "seconds" ;
     sf:example 1200.0 .
 
 sfms:mzMinParameter
@@ -38,6 +40,7 @@ sfms:mzMinParameter
     skos:definition "Optional lower m/z bound." ;
     sf:type "real" ;
     sf:required false ;
+    sf:units "Thomson (m/z)" ;
     sf:example 100.0 .
 
 sfms:mzMaxParameter
@@ -47,6 +50,7 @@ sfms:mzMaxParameter
     skos:definition "Optional upper m/z bound." ;
     sf:type "real" ;
     sf:required false ;
+    sf:units "Thomson (m/z)" ;
     sf:example 1000.0 .
 
 sfms:indicesParameter
@@ -157,7 +161,7 @@ sfms:targetsParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Mass spectrometry targets" ;
-    skos:definition "Array of independent target objects accepted by feature queries and by suspect/internal-standard screening." ;
+    skos:definition "Optional array of independent target objects. Each target should identify one mass-spectrometry query using mass/mass bounds, m/z/m/z bounds, or SMILES/InChI; optional id, analyses, polarity, levels, and retention-time fields refine the match." ;
     sf:type "array" ;
     sf:required false ;
     sf:example "[{\"id\":\"caffeine\",\"mass\":194.0804}]" ;
@@ -167,9 +171,10 @@ sfms:targetRangeParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Mass spectrometry target" ;
-    skos:definition "One independent target object shared by feature queries and suspect/internal-standard screening. Numeric fields (mass, m/z, rt and their bounds) are used directly. Chemical identity fields (SMILES, InChI, formula) are accepted by both consumers: suspect screening normalizes them fully with Open Babel, and numeric operations derive the exact mass with Open Babel when no numeric mass/mz is given, converting to an m/z window with the target polarity adduct (both [M+H]+ and [M-H]- when polarity is unspecified) so the analysis's actual polarity selects the hit." ;
+    skos:definition "One independent target object shared by raw-spectrum/EIC/feature queries and suspect/internal-standard screening. Provide at least one selector: mz for an exact measured m/z, mz_min and/or mz_max for an m/z interval, mass for an exact neutral mass, mass_min and/or mass_max for a neutral-mass interval, or SMILES/InChI for a chemical structure. Optional id labels the returned rows; analyses, polarity, levels, rt, rt_min, and rt_max narrow the match. Numeric fields are used directly. When only SMILES/InChI is supplied, Open Babel derives the exact mass and the selected polarity determines the adduct." ;
     sf:type "object" ;
     sf:required true ;
+    sf:constraints "{\"anyOf\":[{\"required\":[\"mass\"]},{\"required\":[\"mass_min\"]},{\"required\":[\"mass_max\"]},{\"required\":[\"mz\"]},{\"required\":[\"mz_min\"]},{\"required\":[\"mz_max\"]},{\"required\":[\"SMILES\"]},{\"required\":[\"InChI\"]}]}" ;
     sf:example "{\"id\":\"caffeine\",\"SMILES\":\"CN1C=NC2=C1C(=O)N(C(=O)N2C)C\"}" ;
     sf:hasProperty
         sfms:targetIdField,
@@ -202,36 +207,42 @@ sfms:polarityParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Ion polarity" ;
-    skos:definition "Ion polarity, -1 for negative or 1 for positive." ;
+    skos:definition "Ion polarity: use 1 for positive ions, -1 for negative ions, or omit it to use the operation's default polarity handling." ;
     sf:type "integer" ;
     sf:required false ;
+    sf:constraints "-1|1" ;
     sf:example 1 .
 
 sfms:ppmParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Mass tolerance" ;
-    skos:definition "Mass tolerance in parts per million." ;
+    skos:definition "Mass tolerance in parts per million. For an exact mz or mass target, this expands the matching interval around the target." ;
     sf:type "real" ;
     sf:required false ;
+    sf:units "ppm" ;
+    sf:constraints "{\"exclusiveMinimum\":0}" ;
     sf:example 20.0 .
 
 sfms:rtToleranceParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Retention-time tolerance" ;
-    skos:definition "Tolerance applied to an exact target retention time." ;
+    skos:definition "Retention-time tolerance in seconds applied when a target supplies exact rt. It is not a substitute for rt_min/rt_max when an explicit interval is needed." ;
     sf:type "real" ;
     sf:required false ;
+    sf:units "seconds" ;
+    sf:constraints "{\"minimum\":0}" ;
     sf:example 60.0 .
 
 sfms:chargeParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Ion charge" ;
-    skos:definition "Charge used when converting neutral mass to m/z." ;
+    skos:definition "Positive integer charge used when converting a neutral mass target to m/z. Omit it to use charge 1." ;
     sf:type "integer" ;
     sf:required false ;
+    sf:constraints "{\"minimum\":1}" ;
     sf:example 1 .
 
 sfms:mzClustParameter

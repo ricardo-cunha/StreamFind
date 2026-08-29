@@ -1,5 +1,5 @@
-cmake_minimum_required(VERSION 3.20)
-project(streamfind_core LANGUAGES C CXX)
+cmake_minimum_required(VERSION 3.21)
+project(streamfind_core VERSION 0.1.0 LANGUAGES C CXX)
 
 option(STREAMFIND_BUILD_TESTS "Build native tests" ON)
 option(STREAMFIND_BUILD_SHARED "Build shared native libraries" OFF)
@@ -13,8 +13,17 @@ streamfind_configure_dependencies(${CMAKE_CURRENT_SOURCE_DIR}/vendor)
 
 set(STREAMFIND_SEMANTIC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../semantic/generated")
 
+# Version single-source-of-truth: project(VERSION) drives a generated
+# src/version.cpp so the library, the MCP server, and the release archives all
+# report the same version.
+configure_file(
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/version.cpp.in
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/version.cpp
+    @ONLY
+)
+
 set(STREAMFIND_CORE_SOURCES
-    src/version.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/generated/version.cpp
     src/api.cpp
     src/project.cpp
     src/mcp.cpp
@@ -124,13 +133,44 @@ add_executable(streamfind_mcp tools/streamfind-mcp.cpp)
 target_link_libraries(streamfind_mcp PRIVATE streamfind::core streamfind_mass_spec streamfind_raman streamfind_sensors)
 add_executable(streamfind_cli tools/streamfind-cli.cpp)
 target_link_libraries(streamfind_cli PRIVATE streamfind::core)
-if(WIN32)
-    add_custom_command(TARGET streamfind_mcp POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-            "$<TARGET_FILE:streamfind::duckdb>"
-            "$<TARGET_FILE_DIR:streamfind_mcp>"
-    )
-endif()
+
+# Runtime dependencies: the exes link vendored DuckDB, OpenBabel, zstd, inchi
+# and zlib as static libraries on both platforms, so the only runtime
+# dependency shipped next to the binaries is the DuckDB DLL on Windows
+# (installed explicitly above from STREAMFIND_DUCKDB_RUNTIME). No dependency
+# scan is needed — system DLLs/SOs are the OS's responsibility.
+install(
+    TARGETS streamfind_mcp streamfind_cli
+    EXPORT streamfind-core-targets
+    RUNTIME DESTINATION bin
+)
+
+install(
+    TARGETS streamfind_mass_spec streamfind_raman streamfind_sensors
+    EXPORT streamfind-core-targets
+    ARCHIVE DESTINATION lib
+)
+
+install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/domains/mass_spec/include/"
+    DESTINATION include
+)
+install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/domains/raman/include/"
+    DESTINATION include
+)
+install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/domains/sensors/include/"
+    DESTINATION include
+)
+
+# CPack configuration: set variables BEFORE include(CPack) so they reach the
+# cached defaults CPack::Configure writes into CPackConfig.cmake.
+set(CPACK_PACKAGE_NAME "streamfind-core-cpp")
+set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
+set(CPACK_GENERATOR "ZIP")
+set(CPACK_PACKAGE_FILE_NAME "streamfind-core-cpp-${PROJECT_VERSION}-Windows-x86_64")
+include(CPack)
 # Dev-tree catalogue: keep catalogue.duckdb next to the built MCP server so the
 # search chain (env -> next-to-binary -> install data dir) resolves in builds.
 add_custom_command(TARGET streamfind_mcp POST_BUILD

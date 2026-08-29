@@ -1053,24 +1053,33 @@ impl Project {
     }
 
     fn connection(&self) -> Result<Connection> {
-        let extension_directory = self
+        let home_directory = self
             .options
             .database_path
             .parent()
             .unwrap_or_else(|| Path::new("."))
-            .join(".streamfind-duckdb-extensions")
-            .join(
-                self.options
-                    .database_path
-                    .file_name()
-                    .unwrap_or_else(|| std::ffi::OsStr::new("default")),
-            );
+            .to_path_buf();
+        let extension_directory = home_directory.join(".streamfind-duckdb-extensions").join(
+            self.options
+                .database_path
+                .file_name()
+                .unwrap_or_else(|| std::ffi::OsStr::new("default")),
+        );
         fs::create_dir_all(&extension_directory)
             .map_err(|error| Error::new(ErrorCode::DatabaseError, error.to_string()))?;
-        let config = Config::default().with(
-            "extension_directory",
-            extension_directory.to_string_lossy().as_ref(),
-        )?;
+        let config = Config::default()
+            .with(
+                // DuckDB resolves the autoload cache and ~ expansion against
+                // the home directory; MCP subprocesses inherit a filtered env
+                // (no HOME), so pin it to the project directory to keep the
+                // extension autoload working everywhere.
+                "home_directory",
+                home_directory.to_string_lossy().as_ref(),
+            )?
+            .with(
+                "extension_directory",
+                extension_directory.to_string_lossy().as_ref(),
+            )?;
         Ok(Connection::open_with_flags(
             &self.options.database_path,
             config,

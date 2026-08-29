@@ -24,10 +24,16 @@ CREATE TABLE catalogue_entries (
   domain            VARCHAR,               -- streamfind | mass_spec | raman | sensors
   label             VARCHAR,
   definition        VARCHAR,
+  category          VARCHAR,
+  invocation_model  VARCHAR,
+  requires_connection BOOLEAN,
+  guidance          VARCHAR,
+  next_operations   JSON,
+  interface_guidance VARCHAR,
   executable        BOOLEAN,               -- registered in C++ AND Rust
   exposed           BOOLEAN,               -- advertised via MCP (operations) / available-methods (methods)
   mcp_name          VARCHAR,               -- operations: tool name; methods: NULL (never a tool)
-  input_schema      JSON,                  -- operations ONLY: {type:object, properties:(params only), required}
+  input_schema      JSON,                  -- operation/method input schema: {type:object, properties, required}
   parameters        JSON,                  -- ordered param docs incl. description field
   result_schema     JSON,                  -- JSON-Schema table description
   reads_tables      JSON,                  -- DuckDB tables read (same in C++ and Rust)
@@ -66,6 +72,15 @@ def projection():
         definition = graph.value(parameter, SKOS.definition)
         if definition:
             schema["description"] = str(definition)
+        label = graph.value(parameter, SKOS.prefLabel)
+        if label:
+            schema["title"] = str(label)
+        units = graph.value(parameter, SF.units)
+        if units:
+            schema["x-streamfind-units"] = str(units)
+        nullable = graph.value(parameter, SF.nullable)
+        if nullable:
+            schema["x-streamfind-nullable"] = bool(nullable.toPython())
         constraint = graph.value(parameter, SF.constraints)
         if constraint:
             value = str(constraint)
@@ -98,7 +113,23 @@ def projection():
             schema["properties"] = properties
             if required:
                 schema["required"] = required
+            schema["additionalProperties"] = False
         return schema
+
+    def mcp_schema(schema):
+        """Convert semantic type names into standard JSON Schema types."""
+        output = dict(schema)
+        if output.get("type") == "real":
+            output["type"] = "number"
+        elif output.get("type") == "table":
+            output["type"] = "object"
+        if isinstance(output.get("items"), dict):
+            output["items"] = mcp_schema(output["items"])
+        if isinstance(output.get("properties"), dict):
+            output["properties"] = {
+                name: mcp_schema(value) for name, value in output["properties"].items()
+            }
+        return output
 
     parameters = {
         parameter: {
@@ -134,6 +165,12 @@ def projection():
         if result is None:
             return {"type": "object"}
         schema = {"type": result_type(result)}
+        label = graph.value(result, SKOS.prefLabel)
+        definition = graph.value(result, SKOS.definition)
+        if label:
+            schema["title"] = str(label)
+        if definition:
+            schema["description"] = str(definition)
         item = graph.value(result, SF.items)
         if item:
             schema["items"] = result_schema(item)
@@ -189,19 +226,40 @@ def projection():
             "reads": [str(graph.value(table, SF.tableName)) for table in graph.objects(operation, SF.reads)],
             "writes": [str(graph.value(table, SF.tableName)) for table in graph.objects(operation, SF.writes)],
         }
+        domain_resource = graph.value(operation, SF.availableInDomain)
+        domain_guidance = graph.value(domain_resource, SF.guidance) if domain_resource else None
+        invocation = graph.value(operation, SF.invocationModel)
+        invocation_model = str(invocation) if invocation else ("workflow" if kind == "method" else "stateless")
+        requires_connection = graph.value(operation, SF.requiresConnection)
+        requires_connection_value = bool(requires_connection.toPython()) if requires_connection else kind == "method"
+        category = graph.value(operation, SF.category)
+        next_operations = [
+            str(graph.value(value, SF.operationId) or value)
+            for value in graph.objects(operation, SF.nextOperation)
+        ]
         entry = {
             "kind": kind,
             "canonical_id": canonical_id,
             "domain": domain,
             "label": str(graph.value(operation, SKOS.prefLabel)),
             "definition": str(graph.value(operation, SKOS.definition)),
+            "interface": {
+                "category": str(category) if category else ("workflow-method" if kind == "method" else "domain-operation"),
+                "invocation_model": invocation_model,
+                "requires_connection": requires_connection_value,
+                "guidance": str(graph.value(operation, SF.guidance) or ""),
+                "next_operations": next_operations,
+            },
+            "interface_guidance": str(domain_guidance or ""),
             "executable": True,
             "exposed": True,
             "mcp": {
                 "name": str(graph.value(operation, SF.toolName)),
                 "input_schema": {
                     "type": "object",
-                    "properties": {value["name"]: value["schema"] for value in values},
+                    "title": str(graph.value(operation, SKOS.prefLabel)),
+                    "description": str(graph.value(operation, SKOS.definition)),
+                    "properties": {value["name"]: mcp_schema(value["schema"]) for value in values},
                     "required": [value["name"] for value in values if value["required"]],
                 },
             },
@@ -213,7 +271,7 @@ def projection():
             entry.update(method_metadata(operation))
         entries.append(entry)
     entries.sort(key=lambda value: value["canonical_id"])
-    return {"version": 1, "entries": entries}
+    return {"version": 2, "entries": entries}
 
 
 def entry_json(value):
@@ -225,17 +283,22 @@ def entry_row(entry):
     kind = entry["kind"]
     effects = entry["effects"]
     mcp_name = None
-    input_schema = None
+    input_schema = entry.get("mcp", {}).get("input_schema")
     if kind == "operation":
         tool_name = entry["mcp"]["name"]
         mcp_name = tool_name if tool_name != "None" else entry["canonical_id"]
-        input_schema = entry["mcp"]["input_schema"]
     return (
         entry["canonical_id"],
         kind,
         entry["domain"],
         entry["label"],
         entry["definition"],
+        entry["interface"]["category"],
+        entry["interface"]["invocation_model"],
+        entry["interface"]["requires_connection"],
+        entry["interface"]["guidance"],
+        entry_json(entry["interface"]["next_operations"]),
+        entry.get("interface_guidance", ""),
         entry["executable"],
         entry["exposed"],
         mcp_name,
@@ -256,7 +319,7 @@ def build_catalogue_db(entries, path):
     try:
         connection.execute(CATALOGUE_SCHEMA)
         connection.executemany(
-            "INSERT INTO catalogue_entries VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
+            "INSERT INTO catalogue_entries VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)",
             [entry_row(entry) for entry in entries],
         )
     finally:

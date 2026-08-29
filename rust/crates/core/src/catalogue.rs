@@ -17,10 +17,12 @@ use serde_json::{json, Value};
 use std::path::PathBuf;
 use std::sync::OnceLock;
 
-const CATALOGUE_SQL: &str = "SELECT canonical_id, kind, domain, label, definition, executable, \
-     exposed, mcp_name, CAST(input_schema AS VARCHAR), CAST(parameters AS VARCHAR), \
-     CAST(result_schema AS VARCHAR), CAST(reads_tables AS VARCHAR), CAST(writes_tables AS VARCHAR), \
-     cacheable, single_occurrence, mutates_project, CAST(required_methods AS VARCHAR) \
+const CATALOGUE_SQL: &str = "SELECT canonical_id, kind, domain, label, definition, category, \
+     invocation_model, requires_connection, guidance, CAST(next_operations AS VARCHAR), \
+     interface_guidance, executable, exposed, mcp_name, CAST(input_schema AS VARCHAR), \
+     CAST(parameters AS VARCHAR), CAST(result_schema AS VARCHAR), CAST(reads_tables AS VARCHAR), \
+     CAST(writes_tables AS VARCHAR), cacheable, single_occurrence, mutates_project, \
+     CAST(required_methods AS VARCHAR) \
      FROM catalogue_entries ORDER BY canonical_id";
 
 fn env_path() -> Option<PathBuf> {
@@ -35,6 +37,20 @@ fn binary_relative() -> Option<PathBuf> {
     candidate.exists().then_some(candidate)
 }
 
+/// Release/install layout: <prefix>/bin/<exe> + <prefix>/share/streamfind/.
+/// Resolving relative to the executable makes unpacked release archives
+/// relocatable (no compile-time prefix dependency).
+fn binary_relative_share() -> Option<PathBuf> {
+    let candidate = std::env::current_exe()
+        .ok()?
+        .parent()?
+        .parent()?
+        .join("share")
+        .join("streamfind")
+        .join("catalogue.duckdb");
+    candidate.exists().then_some(candidate)
+}
+
 fn repo_layout() -> Option<PathBuf> {
     let candidate = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
         .join("../../../semantic/generated/catalogue.duckdb");
@@ -43,7 +59,10 @@ fn repo_layout() -> Option<PathBuf> {
 
 /// Resolve `catalogue.duckdb` via the runtime search chain.
 pub fn find_path() -> Option<PathBuf> {
-    env_path().or_else(binary_relative).or_else(repo_layout)
+    env_path()
+        .or_else(binary_relative)
+        .or_else(binary_relative_share)
+        .or_else(repo_layout)
 }
 
 fn parse_json(raw: Option<String>, id: &str) -> Result<Value, String> {
@@ -89,34 +108,43 @@ fn load_entries() -> Result<Vec<Value>, String> {
             "domain": row.get::<_, String>(2).map_err(|e| e.to_string())?,
             "label": row.get::<_, String>(3).map_err(|e| e.to_string())?,
             "definition": row.get::<_, String>(4).map_err(|e| e.to_string())?,
-            "executable": row.get::<_, bool>(5).map_err(|e| e.to_string())?,
-            "exposed": row.get::<_, bool>(6).map_err(|e| e.to_string())?,
-            "parameters": parse_json(row.get::<_, Option<String>>(9).map_err(|e| e.to_string())?, &canonical_id)?,
-            "result": json!({"schema": parse_json(row.get::<_, Option<String>>(10).map_err(|e| e.to_string())?, &canonical_id)?}),
+            "interface": json!({
+                "category": row.get::<_, String>(5).map_err(|e| e.to_string())?,
+                "invocation_model": row.get::<_, String>(6).map_err(|e| e.to_string())?,
+                "requires_connection": row.get::<_, bool>(7).map_err(|e| e.to_string())?,
+                "guidance": row.get::<_, String>(8).map_err(|e| e.to_string())?,
+                "next_operations": parse_json(row.get::<_, Option<String>>(9).map_err(|e| e.to_string())?, &canonical_id)?,
+            }),
+            "interface_guidance": row.get::<_, String>(10).map_err(|e| e.to_string())?,
+            "executable": row.get::<_, bool>(11).map_err(|e| e.to_string())?,
+            "exposed": row.get::<_, bool>(12).map_err(|e| e.to_string())?,
+            "parameters": parse_json(row.get::<_, Option<String>>(15).map_err(|e| e.to_string())?, &canonical_id)?,
+            "result": json!({"schema": parse_json(row.get::<_, Option<String>>(16).map_err(|e| e.to_string())?, &canonical_id)?}),
             "effects": json!({
-                "mutates_project": row.get::<_, bool>(15).map_err(|e| e.to_string())?,
-                "reads": parse_json(row.get::<_, Option<String>>(11).map_err(|e| e.to_string())?, &canonical_id)?,
-                "writes": parse_json(row.get::<_, Option<String>>(12).map_err(|e| e.to_string())?, &canonical_id)?,
+                "mutates_project": row.get::<_, bool>(21).map_err(|e| e.to_string())?,
+                "reads": parse_json(row.get::<_, Option<String>>(17).map_err(|e| e.to_string())?, &canonical_id)?,
+                "writes": parse_json(row.get::<_, Option<String>>(18).map_err(|e| e.to_string())?, &canonical_id)?,
             }),
         });
+        let input_schema = parse_json(
+            row.get::<_, Option<String>>(14)
+                .map_err(|error| format!("catalogue: input_schema read failed: {error}"))?,
+            &canonical_id,
+        )?;
         let entry = if kind == "operation" {
             let name: Option<String> = row
-                .get(7)
+                .get(13)
                 .map_err(|error| format!("catalogue: mcp_name read failed: {error}"))?;
-            let input_schema = parse_json(
-                row.get::<_, Option<String>>(8)
-                    .map_err(|error| format!("catalogue: input_schema read failed: {error}"))?,
-                &canonical_id,
-            )?;
             let mut entry = entry;
             entry["mcp"] = json!({"name": name.unwrap_or_else(|| canonical_id.clone()), "input_schema": input_schema});
             entry
         } else {
             let mut entry = entry;
-            entry["cacheable"] = json!(row.get::<_, bool>(13).map_err(|e| e.to_string())?);
-            entry["single_occurrence"] = json!(row.get::<_, bool>(14).map_err(|e| e.to_string())?);
+            entry["method_schema"] = input_schema;
+            entry["cacheable"] = json!(row.get::<_, bool>(19).map_err(|e| e.to_string())?);
+            entry["single_occurrence"] = json!(row.get::<_, bool>(20).map_err(|e| e.to_string())?);
             entry["required_methods"] = parse_json(
-                row.get::<_, Option<String>>(16)
+                row.get::<_, Option<String>>(22)
                     .map_err(|e| e.to_string())?,
                 &canonical_id,
             )?;
@@ -164,11 +192,39 @@ pub fn tools_json() -> Value {
                 && entry["exposed"].as_bool() == Some(true)
         })
         .map(|entry| {
+            let mut description = format!(
+                "{}: {}",
+                entry["label"].as_str().unwrap_or("StreamFind operation"),
+                entry["definition"].as_str().unwrap_or("")
+            );
+            if let Some(guidance) = entry["interface"]["guidance"].as_str() {
+                if !guidance.is_empty() {
+                    description.push_str(" Guidance: ");
+                    description.push_str(guidance);
+                }
+            }
+            if let Some(model) = entry["interface"]["invocation_model"].as_str() {
+                description.push_str(" Invocation model: ");
+                description.push_str(model);
+                description.push('.');
+            }
+            let read_only = entry["effects"]["mutates_project"] == false;
             json!({
                 "name": entry["mcp"]["name"],
-                "description": entry["label"],
+                "description": description,
                 "inputSchema": entry["mcp"]["input_schema"],
-                "outputSchema": entry["result"]["schema"],
+                "annotations": {
+                    "title": entry["label"],
+                    "readOnlyHint": read_only,
+                    "destructiveHint": !read_only,
+                },
+                "_meta": {"streamfind": entry["interface"]},
+                // No outputSchema: MCP requires it to be a JSON-Schema object
+                // AND that every result carries matching structuredContent.
+                // StreamFind results are table-like documents returned as text
+                // content, so omitting outputSchema is the spec-correct shape
+                // (it is optional in MCP). The semantic result schema remains
+                // available via the catalogue query operations.
                 "effects": entry["effects"],
             })
         })
@@ -186,7 +242,18 @@ pub fn methods_json() -> Value {
     Value::Array(methods)
 }
 
-/// Reason the catalogue could not be loaded, if it failed.
+/// Shared project-management and workflow guidance returned by MCP initialize.
+/// It is sourced from the streamfind domain entry in the generated catalogue.
+pub fn interface_guidance() -> String {
+    entries()
+        .iter()
+        .find_map(|entry| entry["interface_guidance"].as_str())
+        .filter(|value| !value.is_empty())
+        .unwrap_or(
+            "Start with create, then describe the project. Domain operations are stateless and require database_path and project_id; connect is only needed for workflow methods.",
+        )
+        .to_owned()
+}
 pub fn load_error() -> Option<&'static str> {
     catalogue().error.as_deref()
 }

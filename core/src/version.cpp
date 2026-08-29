@@ -1,9 +1,0 @@
-#include "streamfind/version.hpp"
-
-namespace streamfind {
-
-std::string_view version() noexcept {
-    return "0.1.0";
-}
-
-}

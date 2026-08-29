@@ -1,6 +1,7 @@
 #include "streamfind/mcp.hpp"
 #include "streamfind/api.hpp"
 #include "streamfind/catalogue.hpp"
+#include "streamfind/version.hpp"
 #include <algorithm>
 #include <array>
 
@@ -34,6 +35,25 @@ const char *command(const std::string &name) {
     };
     return std::find(commands.begin(), commands.end(), name) == commands.end() ? nullptr : name.c_str();
 }
+
+std::string interface_guidance() {
+    if (const auto entries = streamfind::catalogue::entries_json()) {
+        for (const auto &entry : *entries) {
+            const auto guidance = entry.value("interface_guidance", "");
+            if (!guidance.empty()) return guidance;
+        }
+    }
+    return "Start with create, then describe the project. Domain operations are stateless and require database_path and project_id; connect is only needed for workflow methods.";
+}
+
+std::string tool_description(const Json &entry, const std::string &fallback) {
+    std::string description = entry.value("label", fallback) + ": " + entry.value("definition", fallback);
+    const auto guidance = entry.at("interface").value("guidance", "");
+    if (!guidance.empty()) description += " Guidance: " + guidance;
+    const auto model = entry.at("interface").value("invocation_model", "");
+    if (!model.empty()) description += " Invocation model: " + model + ".";
+    return description;
+}
 }
 
 Session::Session(const MethodRegistry &registry, const OperationRegistry &operations) : registry_(registry), operations_(operations) {}
@@ -41,30 +61,44 @@ Session::Session(const MethodRegistry &registry, const OperationRegistry &operat
 Json Session::handle(const Json &request) {
     const auto id = request.value("id", Json(nullptr));
     const auto method = request.value("method", "");
-    if (method == "initialize") return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"protocolVersion", "2025-03-26"}, {"capabilities", {{"tools", Json::object()}}}, {"serverInfo", {{"name", "streamfind-cpp"}, {"version", "0.1.0"}}}}}};
+    if (method == "initialize") return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"protocolVersion", "2025-03-26"}, {"capabilities", {{"tools", Json::object()}}}, {"serverInfo", {{"name", "streamfind-cpp"}, {"version", std::string(streamfind::version())}}}, {"instructions", detail::interface_guidance()}}}};
     if (method == "tools/list") {
-                auto catalogue = detail::tools();
-                // Methods (kind='method') are NEVER tools: they are referenced by the
-                // workflow operations and discovered via get_available_methods.
-                // Domain operations are only advertised while the session is
-                // connected to a project of that domain (empty domain -> core
-                // streamfind tools only).
-                if (!domain_.empty()) {
-                    for (const auto &definition : operations_.list(domain_)) {
-                        Json properties = Json::object();
-                        std::vector<std::string> required;
-                        for (const auto &parameter : definition.parameters.definitions) {
-                            auto type = parameter.type.to_json();
-                            if (type.value("type", "") == "real") type["type"] = "number";
-                            if (!parameter.example.is_null()) type["examples"] = Json::array({parameter.example});
-                            properties[parameter.name] = std::move(type);
-                            if (parameter.required && parameter.default_value.is_null()) required.push_back(parameter.name);
+            auto catalogue = detail::tools();
+            // Methods (kind='method') are NEVER tools: they are referenced by the
+            // workflow operations and discovered via get_available_methods.
+            // All exposed domain operations are always advertised. They are
+            // stateless and carry database_path/project_id, so discovery and
+            // invocation do not depend on connect.
+            const auto entries = streamfind::catalogue::entries_json();
+            for (const auto &definition : operations_.list("")) {
+                const Json *entry = nullptr;
+                if (entries) {
+                    for (const auto &candidate : *entries) {
+                        if (candidate.value("canonical_id", "") == definition.id) {
+                            entry = &candidate;
+                            break;
                         }
-                        catalogue.push_back(detail::tool(definition.id.c_str(), definition.description.c_str(), properties, required));
                     }
                 }
-        return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"tools", catalogue}}}};
-    }
+                if (entry) {
+                    catalogue.push_back(Json{
+                        {"name", entry->value("canonical_id", definition.id)},
+                        {"description", detail::tool_description(*entry, definition.description)},
+                        {"inputSchema", entry->at("mcp").at("input_schema")},
+                        {"annotations", {{"title", entry->value("label", definition.name)},
+                                          {"readOnlyHint", !entry->at("effects").value("mutates_project", false)},
+                                          {"destructiveHint", entry->at("effects").value("mutates_project", false)}}},
+                        {"_meta", {{"streamfind", entry->at("interface")}}},
+                        {"effects", entry->value("effects", Json::array())},
+                    });
+                } else {
+                    // Keep the registered-operation intersection guard: a registry
+                    // entry without a catalogue entry is not advertised.
+                    continue;
+                }
+            }
+            return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"tools", catalogue}}}};
+        }
     if (method != "tools/call") return {{"jsonrpc", "2.0"}, {"id", id}, {"error", {{"code", -32601}, {"message", "Unsupported MCP method"}}}};
     const auto name = request.at("params").value("name", "");
     if (name == "connect") {
@@ -72,7 +106,7 @@ Json Session::handle(const Json &request) {
             const auto arguments = request.at("params").value("arguments", Json::object());
             const auto domain = api::run(api::ProjectCommand::get_domain, arguments, registry_).get<std::string>();
             domain_ = domain;
-            project_ = arguments;
+                        project_ = arguments;
             return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"content", Json::array({{{"type", "text"}, {"text", Json{{{"status", "finished"}, {"info", "Project connected successfully."}}}.dump()}}})}}}};
         } catch (const Error &error) {
             return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"isError", true}, {"content", Json::array({{{"type", "text"}, {"text", error.what()}}})}}}};
@@ -109,18 +143,31 @@ Json Session::handle(const Json &request) {
     }
     if (!command) return {{"jsonrpc", "2.0"}, {"id", id}, {"error", {{"code", -32602}, {"message", "Unknown MCP tool"}}}};
     try {
-        const Json result = api::run(api::command_from_string(command), request.at("params").value("arguments", Json::object()), registry_);
-        if (name == "close") {
-            project_ = Json::object();
-            domain_.clear();
+        Json result = api::run(api::command_from_string(command), request.at("params").value("arguments", Json::object()), registry_);
+        if (name == "get_available_methods" && result.is_array()) {
+            if (const auto entries = streamfind::catalogue::entries_json()) {
+                for (auto &method : result) {
+                    for (const auto &entry : *entries) {
+                        if (entry.value("canonical_id", "") == method.value("id", "")) {
+                            method["inputSchema"] = entry.value("method_schema", Json::object());
+                            method["interface"] = entry.value("interface", Json::object());
+                            break;
+                        }
+                    }
+                }
+            }
         }
+        if (name == "close") {
+                            project_ = Json::object();
+                            domain_.clear();
+                        }
         return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"content", Json::array({{{"type", "text"}, {"text", result.dump()}}})}}}};
     } catch (const Error &error) {
-        return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"isError", true}, {"content", Json::array({{{"type", "text"}, {"text", error.what()}}})}}}};
+            return {{"jsonrpc", "2.0"}, {"id", id}, {"result", {{"isError", true}, {"content", Json::array({{{"type", "text"}, {"text", error.what()}}})}}}};
+        }
     }
-}
 
-Json handle(const Json &request, const MethodRegistry &registry) {
-    return Session(registry).handle(request);
-}
-}
+    Json handle(const Json &request, const MethodRegistry &registry) {
+        return Session(registry).handle(request);
+    }
+    }

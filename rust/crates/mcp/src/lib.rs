@@ -5,15 +5,46 @@ use streamfind_rust_core::{
     api, catalogue, MethodRegistry, OperationRegistry, Project, ProjectOptions,
 };
 
-fn json_schema_type(parameter: &Value) -> Value {
-    let mut schema = parameter["type"].clone();
-    if schema["type"] == "real" {
-        schema["type"] = json!("number");
+fn tool_description(entry: &Value) -> String {
+    let mut description = format!(
+        "{}: {}",
+        entry["label"].as_str().unwrap_or("StreamFind capability"),
+        entry["definition"].as_str().unwrap_or("")
+    );
+    if let Some(guidance) = entry["interface"]["guidance"].as_str() {
+        if !guidance.is_empty() {
+            description.push_str(" Guidance: ");
+            description.push_str(guidance);
+        }
     }
-    if !parameter["example"].is_null() {
-        schema["examples"] = json!([parameter["example"].clone()]);
+    if let Some(model) = entry["interface"]["invocation_model"].as_str() {
+        description.push_str(" Invocation model: ");
+        description.push_str(model);
+        description.push('.');
     }
-    schema
+    description
+}
+
+fn enrich_methods(value: Value) -> Value {
+    let Some(methods) = value.as_array() else {
+        return value;
+    };
+    Value::Array(
+        methods
+            .iter()
+            .map(|method| {
+                let mut method = method.clone();
+                if let Some(entry) = catalogue::entries()
+                    .iter()
+                    .find(|entry| entry["canonical_id"] == method["id"])
+                {
+                    method["inputSchema"] = entry["method_schema"].clone();
+                    method["interface"] = entry["interface"].clone();
+                }
+                method
+            })
+            .collect(),
+    )
 }
 
 pub struct Session<'a> {
@@ -41,34 +72,35 @@ impl<'a> Session<'a> {
             .unwrap_or_default();
         if method == "tools/list" {
             let mut catalogue = tools().as_array().cloned().unwrap_or_default();
-            // Methods (kind='method') are NEVER tools: they are referenced by
-            // the workflow operations and discovered via get_available_methods.
-            // Domain operations are only advertised while a session is
-            // connected to a project of that domain (mirrors the C++ MCP).
-            if !self.domain.is_empty() {
-                for definition in self.operations.list(&self.domain) {
-                    let parameters = definition["parameters"]
-                        .as_array()
-                        .cloned()
-                        .unwrap_or_default();
-                    let properties = parameters.iter().fold(
-                        serde_json::Map::new(),
-                        |mut properties, parameter| {
-                            if let Some(name) = parameter["name"].as_str() {
-                                properties.insert(name.into(), json_schema_type(parameter));
-                            }
-                            properties
+            // All exposed domain operations are advertised from the first
+            // tools/list. Operations are stateless and carry database_path and
+            // project_id, so discovery must not depend on a prior connect.
+            // Methods remain session-scoped and are not tools.
+            for definition in self.operations.list("") {
+                if let Some(entry) = catalogue::entries()
+                    .iter()
+                    .find(|entry| entry["canonical_id"] == definition["id"])
+                {
+                    let description = entry
+                        .get("definition")
+                        .and_then(Value::as_str)
+                        .filter(|value| !value.is_empty())
+                        .map(|_| tool_description(entry))
+                        .unwrap_or_else(|| {
+                            definition["description"].as_str().unwrap_or("").to_owned()
+                        });
+                    catalogue.push(json!({
+                        "name": entry["canonical_id"],
+                        "description": description,
+                        "inputSchema": entry["mcp"]["input_schema"],
+                        "annotations": {
+                            "title": entry["label"],
+                            "readOnlyHint": entry["effects"]["mutates_project"] == false,
+                            "destructiveHint": entry["effects"]["mutates_project"] != false,
                         },
-                    );
-                    let required = parameters
-                        .iter()
-                        .filter_map(|parameter| {
-                            (parameter["required"].as_bool() == Some(true))
-                                .then(|| parameter["name"].as_str())
-                                .flatten()
-                        })
-                        .collect::<Vec<_>>();
-                    catalogue.push(json!({"name": definition["id"], "description": definition["description"], "inputSchema": {"type": "object", "properties": properties, "required": required}}));
+                        "_meta": {"streamfind": entry["interface"]},
+                        "effects": entry["effects"],
+                    }));
                 }
             }
             return json!({"jsonrpc":"2.0","id":id,"result":{"tools":catalogue}});
@@ -161,6 +193,15 @@ impl<'a> Session<'a> {
                 }
                 return result;
             }
+            if name == "get_available_methods" {
+                return match api::get_available_methods(
+                    params.get("arguments").unwrap_or(&json!({})),
+                    self.registry,
+                ) {
+                    Ok(value) => response(id, enrich_methods(value)),
+                    Err(error) => error_response(id, error.to_string()),
+                };
+            }
         }
         handle(request, self.registry)
     }
@@ -179,7 +220,7 @@ pub fn handle(request: &Value, _registry: &MethodRegistry) -> Value {
         .and_then(Value::as_str)
         .unwrap_or_default();
     if method == "initialize" {
-        return json!({"jsonrpc":"2.0","id":id,"result":{"protocolVersion":"2025-03-26","capabilities":{"tools":{}},"serverInfo":{"name":"streamfind-rust","version":"0.1.0"}}});
+        return json!({"jsonrpc":"2.0","id":id,"result":{"protocolVersion":"2025-03-26","capabilities":{"tools":{}},"serverInfo":{"name":"streamfind-rust","version":env!("CARGO_PKG_VERSION")},"instructions":catalogue::interface_guidance()}});
     }
     if method == "tools/list" {
         return json!({"jsonrpc":"2.0","id":id,"result":{"tools":tools()}});

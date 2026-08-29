@@ -1,3 +1,6 @@
 [workspace]
 resolver = "2"
 members = ["crates/core", "crates/cli", "crates/external", "crates/mcp", "crates/mass-spec", "crates/raman", "crates/sensors", "crates/test-support"]
+
+[profile.release]
+strip = true

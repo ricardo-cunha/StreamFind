@@ -49,6 +49,15 @@ std::optional<std::string> binary_relative() {
     return std::nullopt;
 }
 
+/// Release/install layout: <prefix>/bin/<exe> + <prefix>/share/streamfind/.
+/// Resolving relative to the executable makes unpacked release archives
+/// relocatable (no compile-time prefix dependency).
+std::optional<std::string> binary_relative_share() {
+    const auto candidate = executable_dir().parent_path() / "share" / "streamfind" / "catalogue.duckdb";
+    if (std::filesystem::exists(candidate)) return candidate.string();
+    return std::nullopt;
+}
+
 std::optional<std::string> install_data_dir() {
     const std::string prefix = STREAMFIND_INSTALL_PREFIX;
     if (prefix.empty()) return std::nullopt;
@@ -90,9 +99,10 @@ public:
     Json entries() const {
         duckdb_result result{};
         const char *sql =
-            "SELECT canonical_id, kind, domain, label, definition, executable, exposed, "
-            "mcp_name, input_schema, parameters, result_schema, reads_tables, writes_tables, "
-            "cacheable, single_occurrence, mutates_project, required_methods "
+            "SELECT canonical_id, kind, domain, label, definition, category, invocation_model, "
+            "requires_connection, guidance, next_operations, interface_guidance, executable, "
+            "exposed, mcp_name, input_schema, parameters, result_schema, reads_tables, "
+            "writes_tables, cacheable, single_occurrence, mutates_project, required_methods "
             "FROM catalogue_entries ORDER BY canonical_id";
         if (duckdb_query(connection_, sql, &result) == DuckDBError) {
             std::string message = duckdb_result_error(&result) ? duckdb_result_error(&result) : "query failed";
@@ -146,23 +156,34 @@ private:
             {"domain", text(result, 2, row)},
             {"label", text(result, 3, row)},
             {"definition", text(result, 4, row)},
-            {"executable", boolean(result, 5, row)},
-            {"exposed", boolean(result, 6, row)},
+            {"interface", Json{
+                {"category", text(result, 5, row)},
+                {"invocation_model", text(result, 6, row)},
+                {"requires_connection", boolean(result, 7, row)},
+                {"guidance", text(result, 8, row)},
+                {"next_operations", value(result, 9, row)},
+            }},
+            {"interface_guidance", text(result, 10, row)},
+            {"executable", boolean(result, 11, row)},
+            {"exposed", boolean(result, 12, row)},
         };
-        if (!is_null(result, 7, row)) {
-            entry["mcp"] = Json{{"name", text(result, 7, row)}, {"input_schema", value(result, 8, row)}};
+        const auto input_schema = value(result, 14, row);
+        if (!is_null(result, 13, row)) {
+            entry["mcp"] = Json{{"name", text(result, 13, row)}, {"input_schema", value(result, 14, row)}};
+        } else {
+            entry["method_schema"] = input_schema;
         }
-        entry["parameters"] = value(result, 9, row);
-        entry["result"] = Json{{"schema", value(result, 10, row)}};
+        entry["parameters"] = value(result, 15, row);
+        entry["result"] = Json{{"schema", value(result, 16, row)}};
         entry["effects"] = Json{
-            {"mutates_project", boolean(result, 15, row)},
-            {"reads", value(result, 11, row)},
-            {"writes", value(result, 12, row)},
+            {"mutates_project", boolean(result, 21, row)},
+            {"reads", value(result, 17, row)},
+            {"writes", value(result, 18, row)},
         };
         if (kind == "method") {
-            entry["cacheable"] = boolean(result, 13, row);
-            entry["single_occurrence"] = boolean(result, 14, row);
-            entry["required_methods"] = value(result, 16, row);
+            entry["cacheable"] = boolean(result, 19, row);
+            entry["single_occurrence"] = boolean(result, 20, row);
+            entry["required_methods"] = value(result, 22, row);
         }
         return entry;
     }
@@ -176,6 +197,7 @@ private:
 std::optional<std::string> find_path() {
     if (auto path = detail::env_path()) return path;
     if (auto path = detail::binary_relative()) return path;
+    if (auto path = detail::binary_relative_share()) return path;
     if (auto path = detail::install_data_dir()) return path;
     return std::nullopt;
 }
@@ -231,13 +253,29 @@ std::optional<Json> tools_json() {
             !entry.value("exposed", false)) {
             continue;
         }
+        std::string description = entry.value("label", "") + ": " + entry.value("definition", "");
+        const auto guidance = entry.at("interface").value("guidance", "");
+        if (!guidance.empty()) description += " Guidance: " + guidance;
+        const auto model = entry.at("interface").value("invocation_model", "");
+        if (!model.empty()) description += " Invocation model: " + model + ".";
+        const bool read_only = !entry.at("effects").value("mutates_project", false);
         tools.push_back(Json{
-            {"name", entry.at("mcp").at("name")},
-            {"description", entry.value("label", "")},
-            {"inputSchema", entry.at("mcp").at("input_schema")},
-            {"outputSchema", entry.at("result").value("schema", Json::object())},
-            {"effects", entry.at("effects")},
-        });
+                            {"name", entry.at("mcp").at("name")},
+                            {"description", description},
+                            {"inputSchema", entry.at("mcp").at("input_schema")},
+                            {"annotations", {{"title", entry.value("label", "")},
+                                              {"readOnlyHint", read_only},
+                                              {"destructiveHint", !read_only}}},
+                            {"_meta", {{"streamfind", entry.at("interface")}}},
+                            // No outputSchema: MCP requires it to be a JSON-Schema
+                            // object AND that every result carries matching
+                            // structuredContent. StreamFind results are table-like
+                            // documents returned as text content, so omitting
+                            // outputSchema is the spec-correct shape (it is optional
+                            // in MCP). The semantic result schema remains available
+                            // via the catalogue query operations.
+                            {"effects", entry.at("effects")},
+                        });
     }
     return tools;
 }

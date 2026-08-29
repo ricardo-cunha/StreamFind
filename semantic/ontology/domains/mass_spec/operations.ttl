@@ -8,7 +8,11 @@ sfms:addAnalyses
     sf:operationId "mass_spec.add_analyses" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Add mass spectrometry analyses" ;
-    skos:definition "Read mass spectrometry files and persist their analysis metadata in the project." ;
+    skos:definition "Read one or more mass-spectrometry files and persist their analysis metadata, spectra, and chromatograms in the project. This is the normal ingestion operation after project creation." ;
+    sf:category "mass-spec-ingestion" ;
+    sf:invocationModel "stateless" ;
+    sf:requiresConnection false ;
+    sf:guidance "Call with analyses as an array of objects containing path and optional replicate_name/blank_name. After it succeeds, use get_analysis_names or get_analyses_info to verify ingestion before querying spectra." ;
      sf:toolName "add_analyses" ;
     sf:hasParameter
         sfcore:databasePathParameter,
@@ -24,7 +28,7 @@ sfms:removeAnalyses
     sf:operationId "mass_spec.remove_analyses" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Remove mass spectrometry analyses" ;
-    skos:definition "Remove persisted mass spectrometry analyses by analysis name." ;
+    skos:definition "Remove persisted mass-spectrometry analyses by their canonical analysis names and delete their associated spectra/chromatogram data." ;
      sf:toolName "remove_analyses" ;
     sf:hasParameter
         sfcore:databasePathParameter,
@@ -39,7 +43,11 @@ sfms:getAnalysesInfo
     sf:operationId "mass_spec.get_analyses_info" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Get mass spectrometry analysis information" ;
-    skos:definition "Return persisted mass spectrometry analysis metadata from the project." ;
+    skos:definition "Return persisted mass-spectrometry analysis metadata, including analysis names, source paths, replicate/blank labels, and available counts." ;
+    sf:category "mass-spec-inspection" ;
+    sf:invocationModel "stateless" ;
+    sf:requiresConnection false ;
+    sf:guidance "Use after add_analyses to confirm the exact analysis names accepted by later analysis_names parameters." ;
      sf:toolName "get_analyses_info" ;
     sf:hasParameter
         sfcore:databasePathParameter,
@@ -53,7 +61,10 @@ sfms:getAnalysisNames
     sf:operationId "mass_spec.get_analysis_names" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Get mass spectrometry analysis names" ;
-    skos:definition "Read analysis names." ;
+    skos:definition "Return the canonical analysis names registered in the project. Names are normally the source file stem and are passed to analysis_names in later operations and methods." ;
+    sf:category "mass-spec-inspection" ;
+    sf:invocationModel "stateless" ;
+    sf:requiresConnection false ;
      sf:toolName "get_analysis_names" ;
     sf:hasParameter
         sfcore:databasePathParameter,
@@ -67,7 +78,7 @@ sfms:getReplicateNames
     sf:operationId "mass_spec.get_replicate_names" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Get replicate names" ;
-    skos:definition "Read replicate labels." ;
+    skos:definition "Return replicate labels in the same analysis order as get_analysis_names." ;
      sf:toolName "get_replicate_names" ;
     sf:hasParameter
         sfcore:databasePathParameter,
@@ -81,7 +92,7 @@ sfms:getBlankNames
     sf:operationId "mass_spec.get_blank_names" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Get blank names" ;
-    skos:definition "Read blank labels." ;
+    skos:definition "Return blank-analysis labels in the same analysis order as get_analysis_names." ;
      sf:toolName "get_blank_names" ;
     sf:hasParameter
         sfcore:databasePathParameter,
@@ -95,7 +106,7 @@ sfms:getConcentrations
     sf:operationId "mass_spec.get_concentrations" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Get concentrations" ;
-    skos:definition "Read analysis concentrations." ;
+    skos:definition "Return analysis concentrations in the same analysis order as get_analysis_names." ;
      sf:toolName "get_concentrations" ;
     sf:hasParameter
         sfcore:databasePathParameter,
@@ -109,7 +120,7 @@ sfms:setReplicateNames
     sf:operationId "mass_spec.set_replicate_names" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Set replicate names" ;
-    skos:definition "Update replicate labels." ;
+    skos:definition "Replace replicate labels for all persisted analyses; the array must have one value per analysis." ;
      sf:toolName "set_replicate_names" ;
     sf:hasParameter
         sfcore:databasePathParameter,
@@ -124,7 +135,7 @@ sfms:setBlankNames
     sf:operationId "mass_spec.set_blank_names" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Set blank names" ;
-    skos:definition "Update blank labels." ;
+    skos:definition "Replace blank labels for all persisted analyses; the array must have one value per analysis." ;
      sf:toolName "set_blank_names" ;
     sf:hasParameter
         sfcore:databasePathParameter,
@@ -139,7 +150,7 @@ sfms:setConcentrations
     sf:operationId "mass_spec.set_concentrations" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Set concentrations" ;
-    skos:definition "Update analysis concentrations." ;
+    skos:definition "Replace analysis concentrations for all persisted analyses; the array must have one value per analysis." ;
      sf:toolName "set_concentrations" ;
     sf:hasParameter
         sfcore:databasePathParameter,
@@ -154,7 +165,11 @@ sfms:getSpectraHeaders
     sf:operationId "mass_spec.get_spectra_headers" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Get spectra headers" ;
-    skos:definition "Read spectra header rows for selected analyses." ;
+    skos:definition "Read spectrum-header rows for selected analyses, including scan number, retention time, polarity, MS level, precursor information, and point counts. Use this lightweight inspection operation before requesting large point arrays." ;
+    sf:category "mass-spec-query" ;
+    sf:invocationModel "stateless" ;
+    sf:requiresConnection false ;
+    sf:guidance "Use analysis_names from get_analysis_names. An empty analysis_names array means all registered analyses; provide names to reduce work and response size." ;
      sf:toolName "get_spectra_headers" ;
     sf:hasParameter
         sfcore:databasePathParameter,
@@ -170,7 +185,7 @@ sfms:getChromatogramsHeaders
     sf:operationId "mass_spec.get_chromatograms_headers" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Get chromatogram headers" ;
-    skos:definition "Read chromatogram header rows for selected analyses." ;
+    skos:definition "Read chromatogram-header rows for selected analyses, including identifiers, retention-time ranges, polarity, and point counts." ;
      sf:toolName "get_chromatograms_headers" ;
     sf:hasParameter
         sfcore:databasePathParameter,
@@ -186,7 +201,7 @@ sfms:getSpectraTic
     sf:operationId "mass_spec.get_spectra_tic" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Get spectra TIC" ;
-    skos:definition "Read total ion current rows with the shared mass-spec filters." ;
+    skos:definition "Read total-ion-current values from spectrum headers using analysis, MS-level, and retention-time filters." ;
      sf:toolName "get_spectra_tic" ;
     sf:hasParameter
         sfcore:databasePathParameter,
@@ -227,7 +242,11 @@ sfms:getRawSpectraEic
     sf:operationId "mass_spec.get_raw_spectra_eic" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Get extracted ion chromatograms" ;
-    skos:definition "Read MS1 raw points grouped as extracted ion chromatograms for independent target ranges." ;
+    skos:definition "Read MS1 raw points grouped as extracted-ion chromatograms for independent target ranges. Each target must provide mass/mz bounds or a chemical structure; optional id, analysis, polarity, level, and retention-time fields narrow the result." ;
+    sf:category "mass-spec-query" ;
+    sf:invocationModel "stateless" ;
+    sf:requiresConnection false ;
+    sf:guidance "Use mz for a measured ion such as 275.23457, mass for a neutral mass, or SMILES/InChI when the exact mass should be derived. Set polarity to 1 or -1 when known, ppm for mass tolerance, and rt_min/rt_max for an explicit seconds window. Do not use get_available_methods to discover this operation; it is listed directly by tools/list." ;
      sf:toolName "get_raw_spectra_eic" ;
     sf:hasParameter
         sfcore:databasePathParameter,
@@ -297,7 +316,7 @@ sfms:getChromatograms
     sf:operationId "mass_spec.get_chromatograms" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Get chromatograms" ;
-    skos:definition "Read chromatogram arrays for selected analyses and indices." ;
+    skos:definition "Read persisted chromatogram arrays for selected analyses and zero-based chromatogram indices." ;
      sf:toolName "get_chromatograms" ;
     sf:hasParameter
         sfcore:databasePathParameter,
