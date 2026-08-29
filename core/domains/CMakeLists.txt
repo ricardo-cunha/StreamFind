@@ -105,6 +105,90 @@ if(STREAMFIND_AGILENT_D_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_D_FIXTURE}")
     add_test(NAME streamfind_mass_spec_agilent_reader_tests COMMAND streamfind_mass_spec_agilent_reader_tests)
 endif()
 
+set(STREAMFIND_AGILENT_CHEMSTATION_MS_FIXTURE "" CACHE FILEPATH "Path to an Agilent ChemStation MSD1.MS file")
+if(STREAMFIND_AGILENT_CHEMSTATION_MS_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_CHEMSTATION_MS_FIXTURE}")
+    add_executable(streamfind_mass_spec_agilent_chemstation_reader_tests mass_spec/tests/reader_agilent_chemstation_smoke.cpp)
+    target_link_libraries(streamfind_mass_spec_agilent_chemstation_reader_tests PRIVATE streamfind_mass_spec)
+    add_test(NAME streamfind_mass_spec_agilent_chemstation_reader_tests COMMAND streamfind_mass_spec_agilent_chemstation_reader_tests)
+    set_tests_properties(streamfind_mass_spec_agilent_chemstation_reader_tests PROPERTIES
+        ENVIRONMENT "STREAMFIND_AGILENT_CHEMSTATION_MS_FIXTURE=${STREAMFIND_AGILENT_CHEMSTATION_MS_FIXTURE}"
+    )
+    if(WIN32)
+        add_custom_command(TARGET streamfind_mass_spec_agilent_chemstation_reader_tests POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:streamfind::duckdb>"
+                "$<TARGET_FILE_DIR:streamfind_mass_spec_agilent_chemstation_reader_tests>"
+        )
+    endif()
+endif()
+
+set(STREAMFIND_AGILENT_WIDE_FIXTURE "" CACHE PATH "Path to a wider-range Agilent MassHunter .d directory")
+if(STREAMFIND_AGILENT_WIDE_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_WIDE_FIXTURE}")
+    add_executable(streamfind_mass_spec_agilent_wide_reader_tests mass_spec/tests/reader_agilent_wide_smoke.cpp)
+    target_link_libraries(streamfind_mass_spec_agilent_wide_reader_tests PRIVATE streamfind_mass_spec)
+    add_test(NAME streamfind_mass_spec_agilent_wide_reader_tests COMMAND streamfind_mass_spec_agilent_wide_reader_tests)
+    set_tests_properties(streamfind_mass_spec_agilent_wide_reader_tests PROPERTIES
+        ENVIRONMENT "STREAMFIND_AGILENT_WIDE_FIXTURE=${STREAMFIND_AGILENT_WIDE_FIXTURE}"
+    )
+    if(WIN32)
+        add_custom_command(TARGET streamfind_mass_spec_agilent_wide_reader_tests POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:streamfind::duckdb>"
+                "$<TARGET_FILE_DIR:streamfind_mass_spec_agilent_wide_reader_tests>"
+        )
+    endif()
+endif()
+
+set(STREAMFIND_AGILENT_IMS_FIXTURE "" CACHE PATH "Path to a MassHunter ion-mobility .d directory")
+if(STREAMFIND_AGILENT_IMS_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_IMS_FIXTURE}")
+    add_executable(streamfind_mass_spec_agilent_ims_reader_tests mass_spec/tests/reader_agilent_ims_smoke.cpp)
+    target_link_libraries(streamfind_mass_spec_agilent_ims_reader_tests PRIVATE streamfind_mass_spec)
+    add_test(NAME streamfind_mass_spec_agilent_ims_reader_tests COMMAND streamfind_mass_spec_agilent_ims_reader_tests)
+    set_tests_properties(streamfind_mass_spec_agilent_ims_reader_tests PROPERTIES
+        ENVIRONMENT "STREAMFIND_AGILENT_IMS_FIXTURE=${STREAMFIND_AGILENT_IMS_FIXTURE}"
+    )
+    if(WIN32)
+        add_custom_command(TARGET streamfind_mass_spec_agilent_ims_reader_tests POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:streamfind::duckdb>"
+                "$<TARGET_FILE_DIR:streamfind_mass_spec_agilent_ims_reader_tests>"
+        )
+    endif()
+endif()
+
+if(STREAMFIND_AGILENT_IMS_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_IMS_FIXTURE}")
+    add_executable(streamfind_mass_spec_agilent_ims_public_reader_tests mass_spec/tests/reader_agilent_ims_public_smoke.cpp)
+    target_link_libraries(streamfind_mass_spec_agilent_ims_public_reader_tests PRIVATE streamfind_mass_spec)
+    add_test(NAME streamfind_mass_spec_agilent_ims_public_reader_tests COMMAND streamfind_mass_spec_agilent_ims_public_reader_tests)
+    set_tests_properties(streamfind_mass_spec_agilent_ims_public_reader_tests PROPERTIES
+        ENVIRONMENT "STREAMFIND_AGILENT_IMS_FIXTURE=${STREAMFIND_AGILENT_IMS_FIXTURE}"
+    )
+    if(WIN32)
+        add_custom_command(TARGET streamfind_mass_spec_agilent_ims_public_reader_tests POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:streamfind::duckdb>"
+                "$<TARGET_FILE_DIR:streamfind_mass_spec_agilent_ims_public_reader_tests>"
+        )
+    endif()
+endif()
+
+set(STREAMFIND_AGILENT_UV_FIXTURE "" CACHE FILEPATH "Path to an Agilent ChemStation .UV file")
+if(STREAMFIND_AGILENT_UV_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_UV_FIXTURE}")
+    add_executable(streamfind_mass_spec_agilent_uv_reader_tests mass_spec/tests/reader_agilent_uv_smoke.cpp)
+    target_link_libraries(streamfind_mass_spec_agilent_uv_reader_tests PRIVATE streamfind_mass_spec)
+    add_test(NAME streamfind_mass_spec_agilent_uv_reader_tests COMMAND streamfind_mass_spec_agilent_uv_reader_tests)
+    set_tests_properties(streamfind_mass_spec_agilent_uv_reader_tests PROPERTIES
+        ENVIRONMENT "STREAMFIND_AGILENT_UV_FIXTURE=${STREAMFIND_AGILENT_UV_FIXTURE}"
+    )
+    if(WIN32)
+        add_custom_command(TARGET streamfind_mass_spec_agilent_uv_reader_tests POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:streamfind::duckdb>"
+                "$<TARGET_FILE_DIR:streamfind_mass_spec_agilent_uv_reader_tests>"
+        )
+    endif()
+endif()
+
 set(STREAMFIND_SCIEX_MULTI_WIFF_FIXTURE "" CACHE FILEPATH "Path to a multi-experiment Sciex WIFF fixture")
 if(STREAMFIND_SCIEX_MULTI_WIFF_FIXTURE AND EXISTS "${STREAMFIND_SCIEX_MULTI_WIFF_FIXTURE}")
     add_executable(streamfind_mass_spec_sciex_multi_reader_tests mass_spec/tests/reader_sciex_multi_smoke.cpp)

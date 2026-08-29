@@ -12,12 +12,14 @@
       -Clean    wipe the build tree first
       -Tests    after building, run ctest --output-on-failure
       -Target   a specific CMake target to build (default: all)
+      -CMakeArgs additional configure arguments, e.g. -CMakeArgs '-DNAME=value'
       -Config   Debug|Release (default Debug)
 #>
 param(
     [switch]$Clean,
     [switch]$Tests,
     [string]$Target = '',
+    [string[]]$CMakeArgs = @(),
     [string]$Config = 'Debug'
 )
 
@@ -44,12 +46,14 @@ Invoke-VcvarsAll x64
 
 $configureArgs = @(
     '-G', 'Ninja',
+    '-Wno-dev',
     "-DCMAKE_MAKE_PROGRAM=$ninja",
     "-DCMAKE_BUILD_TYPE=$Config",
     '-DSTREAMFIND_BUILD_TESTS=ON',
     '-DSTREAMFIND_BUILD_SHARED=OFF',
     "-B $buildDir", "-S $srcDir"
 )
+$configureArgs += $CMakeArgs
 Write-Log "Configuring: cmake $($configureArgs -join ' ')"
 & $cmake @configureArgs
 if ($LASTEXITCODE -ne 0) { throw "CMake configure failed ($LASTEXITCODE)" }

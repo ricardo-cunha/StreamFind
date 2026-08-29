@@ -3,6 +3,7 @@
 
 #include "streamfind/mass_spec/reader.hpp"
 #include "streamfind/mass_spec/reader_agilent.hpp"
+#include "streamfind/mass_spec/reader_agilent_chemstation.hpp"
 #include "streamfind/mass_spec/reader_bruker.hpp"
 #include "streamfind/mass_spec/reader_sciex.hpp"
 #include <simdutf.h>
@@ -3755,6 +3756,8 @@ namespace mass_spec
     {
       if (agilent::is_agilent_mass_hunter_directory(file_path))
         return "AgilentMassHunterD";
+      if (agilent_chemstation::is_chemstation_directory(file_path))
+        return "AgilentChemStationD";
       if (bruker::detect_family(file_path) == bruker::Family::Tsf)
         return "BrukerTSF";
       std::string lower = file_path;
@@ -3845,6 +3848,8 @@ namespace mass_spec
         return mass_spec::reader::bruker::create_tsf_reader(file_path);
       if (format == "AgilentMassHunterD")
         return agilent::create_reader(file_path);
+      if (format == "AgilentChemStationD")
+        return agilent_chemstation::create_reader(file_path);
       throw std::runtime_error("Unsupported file format: " + format);
     }
 

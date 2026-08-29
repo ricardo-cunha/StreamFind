@@ -1104,7 +1104,13 @@ pub fn load_features_ms1(project: &mut Project, p: &Value) -> Result<Value> {
             };
 
             let mut points: Vec<(f32, f32, f32, Option<f32>)> = Vec::new();
-            for s in reader.spectra().iter().filter(|s| s.level == 1) {
+            for index in 0..reader.spectra().len() {
+                let s = reader
+                    .spectrum_data(index)
+                    .map_err(|error| invalid(error.to_string()))?;
+                if s.level != 1 {
+                    continue;
+                }
                 if polarity != 0 && s.polarity != polarity {
                     continue;
                 }

@@ -28,11 +28,21 @@ $Script:REPO_ROOT = Split-Path -Parent $PSScriptRoot   # scripts/ is at repo roo
 $Script:TMP_DIR    = Join-Path $Script:REPO_ROOT 'tmp'
 $Script:TMP_BUILD  = Join-Path $Script:TMP_DIR 'build'
 $Script:TMP_LOGS   = Join-Path $Script:TMP_DIR 'logs'
+$Script:TMP_SCRATCH = Join-Path $Script:TMP_DIR 'scratch'
 
 function New-TmpDirs {
-    foreach ($d in @($Script:TMP_BUILD, $Script:TMP_LOGS)) {
+    foreach ($d in @($Script:TMP_BUILD, $Script:TMP_LOGS, $Script:TMP_SCRATCH)) {
         if (-not (Test-Path $d)) { New-Item -ItemType Directory -Path $d -Force | Out-Null }
     }
+}
+
+function Set-RepositoryTemp {
+    # MSVC and Cargo require valid Windows paths. Some agent shells export
+    # colliding TMP/tmp or TEMP/temp values (often /tmp); use the managed
+    # repository scratch directory for child tool processes instead.
+    New-TmpDirs
+    $env:TEMP = $Script:TMP_SCRATCH
+    $env:TMP = $Script:TMP_SCRATCH
 }
 
 # ---- logging ----------------------------------------------------------------
@@ -171,6 +181,8 @@ function Invoke-VcvarsAll {
             [Environment]::SetEnvironmentVariable($name, $value, 'Process')
         }
     }
+    Set-RepositoryTemp
 }
 
+Set-RepositoryTemp
 New-TmpDirs

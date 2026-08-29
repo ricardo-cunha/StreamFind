@@ -24,6 +24,8 @@ pub mod processing_methods_chromatograms;
 pub mod processing_methods_nta;
 pub mod reader;
 pub mod reader_agilent;
+pub mod reader_agilent_chemstation;
+pub mod reader_agilent_ims;
 pub mod reader_bruker;
 pub mod reader_sciex;
 
@@ -75,6 +77,7 @@ fn format_name(format: reader::Format) -> &'static str {
         reader::Format::ShimadzuLcd => "ShimadzuLCD",
         reader::Format::SciexWiff => "SciexWIFF",
         reader::Format::AgilentMassHunterD => "AgilentMassHunterD",
+        reader::Format::AgilentChemStationD => "AgilentChemStationD",
         reader::Format::BrukerTsf => "BrukerTSF",
     }
 }
@@ -485,7 +488,8 @@ fn get_spectra_headers_impl(project: &mut Project, parameters: &Value) -> Result
         let mut reader =
             reader::Reader::open(text(&row["file_path"])).map_err(|e| invalid(e.to_string()))?;
         reader.select_analysis(row["analysis_index"].as_i64().unwrap_or(0) as usize).map_err(|e| invalid(e.to_string()))?;
-        for spectrum in reader.spectra() {
+        for index in 0..reader.spectra().len() {
+            let spectrum = reader.spectrum_data(index).map_err(|error| invalid(error.to_string()))?;
             let tic: f64 = spectrum.intensity.iter().map(|v| *v as f64).sum();
             let (bpmz, bpint) = spectrum
                 .mz
@@ -545,7 +549,8 @@ fn get_raw_spectra_impl(
         let mut reader =
             reader::Reader::open(text(&row["file_path"])).map_err(|e| invalid(e.to_string()))?;
         reader.select_analysis(row["analysis_index"].as_i64().unwrap_or(0) as usize).map_err(|e| invalid(e.to_string()))?;
-        for spectrum in reader.spectra() {
+        for index in 0..reader.spectra().len() {
+            let spectrum = reader.spectrum_data(index).map_err(|error| invalid(error.to_string()))?;
             if forced_level.is_some() && forced_level != Some(spectrum.level) {
                 continue;
             }

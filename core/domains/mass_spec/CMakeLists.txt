@@ -2,6 +2,8 @@ add_library(streamfind_mass_spec STATIC
     src/register.cpp
     src/reader.cpp
     src/reader_agilent.cpp
+    src/reader_agilent_ims.cpp
+    src/reader_agilent_chemstation.cpp
     src/reader_bruker.cpp
     src/reader_sciex.cpp
     src/mass_spec.cpp

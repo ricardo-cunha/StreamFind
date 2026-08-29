@@ -558,6 +558,193 @@ source_analysis_number = absent/null
 
 Do not treat time segments as separate analyses without evidence. Do not infer analyses from the `.d` suffix because Bruker also uses `.d`.
 
+Validated ChemStation chromatogram support now covers `.ch` version 130 (big-endian delta segments with 32-bit escape values) and `.UV` version 131 (little-endian per-time wavelength segments with delta or label-70 float64 bodies). The public C++ and Rust readers expose one chromatogram per `.ch` file or UV wavelength, including detector/channel/units/wavelength/interval/start/end metadata. Tests pass for a 33,601-point `DAD1A.ch`, a 12,003-time-point/106-wavelength `DAD1.UV`, and a DAD-only `.D` directory containing four `.ch` plus 106 `.UV` chromatograms. Unsupported versions remain explicit errors.
+
+### Current expanded Agilent corpus
+
+Inventory under `tmp/scripts/inventory-agilent-variants.py` found 263 `.D` directories: 254 legacy ChemStation directories and 9 MassHunter directories. ChemStation is a separate legacy family: representative `MSD1.MS` files have `MSD Spectral File` at offset 5, big-endian word-based directory offsets, and packed abundance records; 2DLC runs add `MSD2.MS` and distinct 1D/2D pump, MCT, and DAD streams. The native C++ `MSD1.MS` slice is implemented and its conditional 2DLC smoke test passes with 672 spectra and 20 points in the first spectrum. `MSD2.MS`, 2D correlation, DAD/UV/pump traces, and broader ChemStation variants remain open work.
+
+MassHunter wide-range files such as `BVCZ_Intra-Day_1.d` add `MSPeak.bin` alongside `MSProfile.bin`, `MSScan.bin`, `MSMassCal.bin`, and `MSPeriodicActuals.bin`. The smallest ion-mobility target is `E:/example_files/raw_vendor_files/agilent_mass_hunter/ion_mobility/calibrant.d`, which adds `IMSFrame.bin`, `IMSFrame.xsd`, `IMSFrameMeth.xml`, `DefaultImsCal.xml`, and `OverrideImsCal.xml`. Its `IMSFrame.xsd` defines drift-bin, frame TIC/base-abundance, isolation, IMS pressure/temperature/field/trap-time, mass-calibration offset, and transient-count fields; the fixture has 103 scans from approximately 0.0514 to 1.9981 minutes. `OverrideImsCal.xml` provides nitrogen single-field CCS calibration values `TFix=0.05180056157601598` and `Beta=0.12420626303137353`. First implement IMS frame metadata and linkage to `MSScan.bin`; validate CCS/mobility calibration separately against `calibrant.mzML`.
+
+Supporting inventory and binary reports are kept in `tmp/logs/` and the inspection scripts in `tmp/scripts/`; all are development-only and must remain outside release inputs.
+
+
+### Current expansion findings
+
+The initial inventory script found 263 `.D` directories:
+
+```text
+254 legacy ChemStation directories
+9 MassHunter directories
+```
+
+The legacy ChemStation family is not compatible with the current MassHunter `AcqData` parser. A representative `MSD1.MS` begins with:
+
+```text
+offset 5: "MSD Spectral File"
+embedded method text, for example "MSD1, Initial Ions=..."
+```
+
+ChemStation 2DLC runs add distinct data streams such as `MSD2.MS` and method-described 1D/2D pump, MCT, and DAD components. Their `.MS`, `.ch`, `.UV`, `.REG`, and method files require a separate reader family.
+
+MassHunter wide-range files include `MSPeak.bin` alongside the existing `MSProfile.bin`, `MSScan.bin`, `MSMassCal.bin`, and `MSPeriodicActuals.bin`. They need broader spectrum-format and calibration dispatch rather than a filename-specific branch.
+
+The smallest MassHunter ion-mobility fixture is:
+
+```text
+E:/example_files/raw_vendor_files/agilent_mass_hunter/ion_mobility/calibrant.d
+```
+
+It adds:
+
+```text
+IMSFrame.bin
+IMSFrame.xsd
+IMSFrameMeth.xml
+DefaultImsCal.xml
+OverrideImsCal.xml
+```
+
+`IMSFrame.xsd` defines frame metadata fields including `FrameId`, `FrameMethodId`, `TimeSegmentId`, `ActualsOffset`, `CycleNumber`, `FirstNonzeroDriftBin`, `FrameBaseAbund`, `FrameBaseDriftBin`, `FrameBaseMsBin`, `FrameScanTime`, `FrameTic`, `ImsField`, `ImsPressure`, `ImsTemperature`, `ImsTrapTime`, isolation m/z fields, `MassCalOffset`, and `NumTransients`. The fixture has a 103-scan segment from approximately `0.0514` to `1.9981` minutes.
+
+`IMSFrameMeth.xml` reports `FrameSpecFmtId=1`, `FrameType=1`, `NumTransients=19`, drift-bin limits, `MaxMsBin=239360`, `MinMsBin=59552`, `ImsField=18.560290983623`, nitrogen drift gas, `ImsTrapTime=20000 ms`, and `TfsStorageMode=1`. `OverrideImsCal.xml` contains a single-field CCS calibration with nitrogen mass `28.006148`, `TFix=0.05180056157601598`, and `Beta=0.12420626303137353`.
+
+The ion-mobility implementation parses IMS frame metadata, the expanded 296-byte-header/106-byte-record `MSScan.bin` layout, and native RLE `MSProfile.bin` blocks. It exposes native mobility through the existing `mobility` field as `DriftBin * FrameDtPeriod`; it does not add a CCS field or perform CCS conversion. `OverrideImsCal.xml` remains reserved for a later validated processing-stage CCS conversion, and mobility must not be inferred from CCS calibration parameters.
+
+The initial native ChemStation C++ slice is now implemented for `MSD1.MS`/`DATA.MS`. It reads the legacy big-endian header, word-based directory offsets, retention-time index records, and packed abundance values, and exposes the decoded spectra through `MASS_SPEC_FILE` as `AgilentChemStationD`. The conditional development smoke test passes for the supplied 2DLC `MSD1.MS` fixture with 672 spectra and 20 points in the first spectrum. This does not yet claim support for `MSD2.MS`, 2D-specific correlation, DAD/UV/pump traces, or all ChemStation acquisition variants.
+
+### Expanded fixture inventory
+
+A repository-local inventory under `tmp/scripts/inventory-agilent-variants.py` found 263 Agilent `.D` directories across the supplied roots:
+
+```text
+E:/example_files/raw_vendor_files/agilent_chemstation
+E:/example_files/raw_vendor_files/agilent_mass_hunter
+```
+
+The inventory includes 254 legacy ChemStation directories and 9 MassHunter directories, including:
+
+```text
+E:/example_files/raw_vendor_files/agilent_chemstation/2DLC/
+E:/example_files/raw_vendor_files/agilent_mass_hunter/BVCZ_Intra-Day_1.d
+E:/example_files/raw_vendor_files/agilent_mass_hunter/ion_mobility/calibrant.d
+E:/example_files/raw_vendor_files/agilent_mass_hunter/ion_mobility/mix1.d
+```
+
+ChemStation is structurally distinct from MassHunter. Representative ChemStation files include:
+
+```text
+MSD1.MS
+MSD2.MS                 optional second-dimension detector
+DAD1A.ch / DAD1B.ch / DAD1C.ch / DAD1D.ch
+DAD1.UV
+MSACQINF.REG
+MSDIAG.REG
+MSPARMS.txt
+acq.txt
+SAMPLE.XML
+acq.macaml / da.macaml
+```
+
+The 2DLC method text explicitly identifies separate `1D Pump`, `2D Pump`, `1D MCT`, `2D MCT`, `1D DAD`, and `2D DAD` components. It is not safe to treat 2DLC as ordinary 1D ChemStation data.
+
+Observed legacy `MSD1.MS` evidence:
+
+```text
+header signature: offset 5 = "MSD Spectral File"
+embedded acquisition/method text, including "MSD1, Initial Ions=..."
+legacy flat binary layout; no AcqData/MSScan.bin or MSProfile.bin
+```
+
+Representative MassHunter extensions:
+
+```text
+BVCZ_Intra-Day_1.d:
+    MSProfile.bin
+    MSPeak.bin
+    MSScan.bin
+    MSMassCal.bin
+    MSPeriodicActuals.bin
+    Results/Qual and Results/BioConfirm data
+
+ion_mobility/calibrant.d:
+    IMSFrame.bin
+    IMSFrame.xsd
+    IMSFrameMeth.xml
+    DefaultImsCal.xml
+    OverrideImsCal.xml
+    MSProfile.bin
+    MSPeak.bin
+    MSScan.bin
+```
+
+The smallest ion-mobility target is:
+
+```text
+E:/example_files/raw_vendor_files/agilent_mass_hunter/ion_mobility/calibrant.d
+```
+
+Its first implementation slice should decode `IMSFrame.xsd`/`IMSFrame.bin` metadata and relate IMS frame records to `MSScan.bin` spectra before attempting CCS or mobility calibration. `OverrideImsCal.xml` and `DefaultImsCal.xml` are calibration inputs, not optional decorative files.
+
+Inventory and binary-inspection outputs are kept under:
+
+```text
+tmp/logs/agilent-variants-inventory.json
+tmp/logs/agilent-variant-headers.json
+tmp/logs/chemstation-ms-inspection.txt
+tmp/logs/chemstation-records.txt
+tmp/scripts/inventory-agilent-variants.py
+tmp/scripts/inspect-agilent-variant-headers.py
+tmp/scripts/inspect-chemstation-ms.py
+tmp/scripts/inspect-chemstation-records.py
+```
+
+These are development-only artifacts. Do not place the external vendor files, generated reports, or system-temp copies into the repository's tracked source tree.
+
+### Current expansion findings
+
+The initial inventory script found 263 `.D` directories:
+
+```text
+254 legacy ChemStation directories
+9 MassHunter directories
+```
+
+The legacy ChemStation family is not compatible with the current MassHunter `AcqData` parser. A representative `MSD1.MS` begins with:
+
+```text
+offset 5: "MSD Spectral File"
+embedded method text, for example "MSD1, Initial Ions=..."
+```
+
+ChemStation 2DLC runs add distinct data streams such as `MSD2.MS` and method-described 1D/2D pump, MCT, and DAD components. Their `.MS`, `.ch`, `.UV`, `.REG`, and method files require a separate reader family.
+
+MassHunter wide-range files include `MSPeak.bin` alongside the existing `MSProfile.bin`, `MSScan.bin`, `MSMassCal.bin`, and `MSPeriodicActuals.bin`. They need broader spectrum-format and calibration dispatch rather than a filename-specific branch.
+
+The smallest MassHunter ion-mobility fixture is:
+
+```text
+E:/example_files/raw_vendor_files/agilent_mass_hunter/ion_mobility/calibrant.d
+```
+
+It adds:
+
+```text
+IMSFrame.bin
+IMSFrame.xsd
+IMSFrameMeth.xml
+DefaultImsCal.xml
+OverrideImsCal.xml
+```
+
+`IMSFrame.xsd` defines frame metadata fields including `FrameId`, `FrameMethodId`, `TimeSegmentId`, `ActualsOffset`, `CycleNumber`, `FirstNonzeroDriftBin`, `FrameBaseAbund`, `FrameBaseDriftBin`, `FrameBaseMsBin`, `FrameScanTime`, `FrameTic`, `ImsField`, `ImsPressure`, `ImsTemperature`, `ImsTrapTime`, isolation m/z fields, `MassCalOffset`, and `NumTransients`. The fixture has a 103-scan segment from approximately `0.0514` to `1.9981` minutes.
+
+`IMSFrameMeth.xml` reports `FrameSpecFmtId=1`, `FrameType=1`, `NumTransients=19`, drift-bin limits, `MaxMsBin=239360`, `MinMsBin=59552`, `ImsField=18.560290983623`, nitrogen drift gas, `ImsTrapTime=20000 ms`, and `TfsStorageMode=1`. `OverrideImsCal.xml` contains a single-field CCS calibration with nitrogen mass `28.006148`, `TFix=0.05180056157601598`, and `Beta=0.12420626303137353`.
+
+The ion-mobility implementation parses IMS frame metadata, the expanded 296-byte-header/106-byte-record `MSScan.bin` layout, and native RLE `MSProfile.bin` blocks. It exposes native mobility through the existing `mobility` field as `DriftBin * FrameDtPeriod`; it does not add a CCS field or perform CCS conversion. `OverrideImsCal.xml` remains reserved for a later validated processing-stage CCS conversion, and mobility must not be inferred from CCS calibration parameters.
+
+### Current expansion findings
+
 ---
 
 ## Additional Bruker evidence retained from the original plan
