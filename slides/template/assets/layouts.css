@@ -1,0 +1,74 @@
+/* ============================================================================
+   5. Reusable example layouts
+   ============================================================================ */
+.centered {
+   left: var(--side-gap);
+   position: absolute;
+   right: var(--side-gap);
+   top: 52%;
+   transform: translateY(-50%);
+}
+
+.callout {
+   background: #eef5fb;
+   border-left: 6px solid var(--blue);
+   border-radius: 8px;
+   color: #274560;
+   font-weight: 700;
+   margin-top: 1.5em;
+   padding: .7em .9em;
+}
+
+.columns {
+   display: grid;
+   gap: 1.3rem;
+   grid-template-columns: 1fr 1fr;
+   margin-top: 1.5em;
+}
+
+.card-grid {
+   display: grid;
+   gap: 18px;
+   grid-template-columns: repeat(3, 1fr);
+   margin-top: 4em;
+}
+
+.card {
+   background: #f7fbff;
+   border: 3px solid #c8d9ea;
+   border-radius: 16px;
+   box-shadow: 0 8px 20px rgba(0, 76, 147, .1);
+   min-height: 150px;
+   padding: 18px 20px;
+}
+
+.card strong {
+   color: var(--blue);
+   display: block;
+   margin-bottom: 9px;
+}
+
+.card span {
+   display: block;
+   font-size: .78em;
+   line-height: 1.35;
+}
+
+.flow {
+   align-items: center;
+   display: grid;
+   gap: 18px;
+   grid-template-columns: 1fr 70px 1fr 70px 1fr;
+   margin-top: 5em;
+}
+
+.flow .card {
+   text-align: center;
+}
+
+.arrow {
+   color: var(--blue);
+   font-size: 1.8em;
+   font-weight: 700;
+   text-align: center;
+}
