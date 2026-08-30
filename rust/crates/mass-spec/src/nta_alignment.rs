@@ -349,8 +349,16 @@ pub fn group_features(
 ) {
     // Sort features by polarity, mass, and RT for efficient grouping.
     features.sort_unstable_by(|a, b| {
-        let rt_a = if a.rt_corrected.is_nan() { a.rt } else { a.rt_corrected };
-        let rt_b = if b.rt_corrected.is_nan() { b.rt } else { b.rt_corrected };
+        let rt_a = if a.rt_corrected.is_nan() {
+            a.rt
+        } else {
+            a.rt_corrected
+        };
+        let rt_b = if b.rt_corrected.is_nan() {
+            b.rt
+        } else {
+            b.rt_corrected
+        };
         a.polarity
             .cmp(&b.polarity)
             .then_with(|| a.mass.total_cmp(&b.mass))
@@ -418,14 +426,20 @@ pub fn group_features(
 
     for feature in features.iter() {
         if feature.group_id > 0 {
-            group_masses.entry(feature.group_id).or_default().push(feature.mass);
+            group_masses
+                .entry(feature.group_id)
+                .or_default()
+                .push(feature.mass);
             // Use uncorrected RT if rt_corrected is NaN.
             let rt_value = if feature.rt_corrected.is_nan() {
                 feature.rt
             } else {
                 feature.rt_corrected
             };
-            group_rts.entry(feature.group_id).or_default().push(rt_value);
+            group_rts
+                .entry(feature.group_id)
+                .or_default()
+                .push(rt_value);
             group_polarities.insert(feature.group_id, feature.polarity);
         }
     }
@@ -482,7 +496,10 @@ pub fn group_features(
         // Assign feature group names (empty for invalid groups).
         for feature in features.iter_mut() {
             if feature.group_id > 0 && valid_groups.contains(&feature.group_id) {
-                feature.feature_group = group_names.get(&feature.group_id).cloned().unwrap_or_default();
+                feature.feature_group = group_names
+                    .get(&feature.group_id)
+                    .cloned()
+                    .unwrap_or_default();
             } else {
                 feature.feature_group = String::new();
             }
@@ -491,7 +508,10 @@ pub fn group_features(
         // Assign all feature group names.
         for feature in features.iter_mut() {
             if feature.group_id > 0 {
-                feature.feature_group = group_names.get(&feature.group_id).cloned().unwrap_or_default();
+                feature.feature_group = group_names
+                    .get(&feature.group_id)
+                    .cloned()
+                    .unwrap_or_default();
             } else {
                 feature.feature_group = String::new();
             }
@@ -575,7 +595,10 @@ pub fn group_features_impl(
             let istd_data = &internal_standard_buffers[a];
             for i in 0..istd_data.size() {
                 let exp_rt = istd_data.exp_rt[i] as f32;
-                let avg_rt = avg_rt_by_name.get(&istd_data.name[i]).copied().unwrap_or(0.0);
+                let avg_rt = avg_rt_by_name
+                    .get(&istd_data.name[i])
+                    .copied()
+                    .unwrap_or(0.0);
                 internal_standards.push(InternalStandard {
                     analysis: istd_data.analysis[i].clone(),
                     name: istd_data.name[i].clone(),

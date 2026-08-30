@@ -264,6 +264,91 @@ std::vector<ScanPoint> read_scan_points(const std::string &wiff_path, const IdxR
   return decode_scan_payload(std::vector<std::uint8_t>(bytes.begin() + payload_start, bytes.begin() + end));
 }
 
+struct TofMetadata
+{
+  std::vector<IdxRecord> records;
+  double slope = 0.0;
+  double intercept = 0.0;
+  std::size_t experiment_count = 1;
+  std::vector<float> dde_precursors;
+};
+
+TofMetadata read_tof_metadata(const std::string &wiff_path, int source_analysis_number)
+{
+  const auto index_bytes = ole::read_stream(wiff_path, "SampleSubtree/Sample" + std::to_string(source_analysis_number) + "/Idx");
+  const auto calibration = ole::read_stream(wiff_path, "SampleSubtree/Sample" + std::to_string(source_analysis_number) + "/TOFCalibrationData");
+  if (calibration.size() < 48)
+    throw std::runtime_error("SCIEX TOF calibration stream is missing or incomplete.");
+  TofMetadata metadata;
+  std::memcpy(&metadata.slope, calibration.data() + 32, sizeof(double));
+  std::memcpy(&metadata.intercept, calibration.data() + 40, sizeof(double));
+  metadata.records = read_idx_records(wiff_path, source_analysis_number);
+  if (metadata.records.size() >= 2)
+  {
+    metadata.records.erase(metadata.records.begin());
+    metadata.records.pop_back();
+  }
+  for (std::size_t i = 1; i < index_bytes.size() / 54 && i <= 128; ++i)
+    if (i * 54 + 4 <= index_bytes.size() && detail::read_u32_le(index_bytes, 32 + i * 54) != 0)
+    {
+      metadata.experiment_count = i;
+      break;
+    }
+  try
+  {
+    const auto dde_bytes = ole::read_stream(wiff_path, "SampleSubtree/Sample" + std::to_string(source_analysis_number) + "/DDERealTimeDataEx");
+    for (std::size_t offset = 32; offset + 76 <= dde_bytes.size(); offset += 76)
+      metadata.dde_precursors.push_back(static_cast<float>(detail::read_f64_le(dde_bytes, offset + 4)));
+  }
+  catch (const std::exception &)
+  {
+  }
+  return metadata;
+}
+
+MASS_SPEC_SPECTRUM decode_tof_spectrum(const std::string &wiff_path, const TofMetadata &metadata, std::size_t position)
+{
+  const auto &record = metadata.records.at(position);
+  const auto points = read_scan_points(wiff_path, record, position + 1 < metadata.records.size() ? &metadata.records[position + 1] : nullptr);
+  MASS_SPEC_SPECTRUM spectrum{};
+  const bool is_ms1 = metadata.experiment_count > 1 ? position % metadata.experiment_count == 0 : record.ms_level_flag == 1;
+  spectrum.index = static_cast<int>(position);
+  spectrum.scan = static_cast<int>(position);
+  spectrum.array_length = static_cast<int>(points.size());
+  spectrum.level = is_ms1 ? 1 : 2;
+  spectrum.polarity = 1;
+  spectrum.rt = record.retention_time_minutes;
+  spectrum.tic = 0.0f;
+  spectrum.bpint = 0.0f;
+  spectrum.bpmz = 0.0f;
+  spectrum.binary_arrays_count = 2;
+  spectrum.binary_names = {"m/z", "intensity"};
+  spectrum.binary_data.resize(2);
+  spectrum.binary_data[0].reserve(points.size());
+  spectrum.binary_data[1].reserve(points.size());
+  if (!is_ms1 && position > 0 && position - 1 < metadata.dde_precursors.size())
+    spectrum.precursor_mz = metadata.dde_precursors[position - 1];
+  for (const auto &point : points)
+  {
+    const float mz = static_cast<float>(metadata.slope * point.raw_mz_bin + metadata.intercept);
+    const float intensity = static_cast<float>(point.raw_intensity);
+    spectrum.binary_data[0].push_back(mz);
+    spectrum.binary_data[1].push_back(intensity);
+    spectrum.tic += intensity;
+    if (intensity > spectrum.bpint)
+    {
+      spectrum.bpint = intensity;
+      spectrum.bpmz = mz;
+    }
+  }
+  if (!spectrum.binary_data[0].empty())
+  {
+    spectrum.lowmz = spectrum.binary_data[0].front();
+    spectrum.highmz = spectrum.binary_data[0].back();
+  }
+  return spectrum;
+}
+
 std::vector<ScanBlock> read_scan_blocks(const std::string &wiff_path)
 {
   const auto bytes = detail::read_file(scan_path_for_wiff(wiff_path));
@@ -831,71 +916,82 @@ MASS_SPEC_CHROMATOGRAMS_HEADERS select_chromatogram_headers(
 class SciexReader final : public MASS_SPEC_READER
 {
 public:
-  explicit SciexReader(const std::string &file, int source_analysis_number) : MASS_SPEC_READER(file)
+  explicit SciexReader(const std::string &file, int source_analysis_number) : MASS_SPEC_READER(file), file_(file), mrm_source_analysis_number_(source_analysis_number)
   {
     const auto catalog = read_analysis_catalog(file);
     if (catalog.empty()) throw std::runtime_error("SCIEX WIFF has no analyses.");
     try {
       const auto calibration = ole::read_stream(file, "SampleSubtree/Sample" + std::to_string(source_analysis_number) + "/TOFCalibrationData");
-      if (calibration.size() >= 48) { spectra_ = read_tof_spectra(file, source_analysis_number); return; }
-    } catch (const std::exception &) {
-    }
-    std::vector<MrmExperimentSeries> series_list;
-    try {
-      const auto transitions = read_transitions(file, source_analysis_number);
-      const auto pairs = read_compact_mrm_pairs(file, source_analysis_number);
-      series_list.push_back(build_compact_mrm_series(file, source_analysis_number, 0, transitions, pairs));
-    } catch (const std::exception &) {
-      try {
-        series_list = read_compact_mrm_experiments(file, source_analysis_number);
-      } catch (const std::exception &) {
-        const auto transitions = read_transitions(file, source_analysis_number);
-        const auto fragments = read_idx_float_records(file, source_analysis_number);
-        const auto record_marker = detect_tagged_mrm_record_marker(fragments, transitions.size());
-        if (!record_marker.has_value()) throw;
-        series_list.push_back(read_sparse_tagged_mrm_series(file, source_analysis_number,
-                                                            *record_marker,
-                                                            static_cast<int>(std::lround(-*record_marker))));
+      if (calibration.size() >= 48)
+      {
+        tof_metadata_ = read_tof_metadata(file, source_analysis_number);
+        tof_ = true;
+        spectra_.resize(tof_metadata_.records.size());
+        for (std::size_t i = 0; i < spectra_.size(); ++i)
+        {
+          auto &spectrum = spectra_[i];
+          spectrum.index = static_cast<int>(i);
+          spectrum.scan = static_cast<int>(i);
+          spectrum.array_length = -1;
+          spectrum.level = tof_metadata_.experiment_count > 1 ? i % tof_metadata_.experiment_count == 0 ? 1 : 2 : tof_metadata_.records[i].ms_level_flag == 1 ? 1 : 2;
+          spectrum.polarity = 1;
+          spectrum.rt = tof_metadata_.records[i].retention_time_minutes;
+          spectrum.tic = static_cast<float>(tof_metadata_.records[i].tic);
+          spectrum.binary_arrays_count = 2;
+          spectrum.binary_names = {"m/z", "intensity"};
+        }
+        return;
       }
+    } catch (const std::exception &) {
     }
-    if (series_list.empty()) throw std::runtime_error("Unsupported native SCIEX MRM payload grammar.");
-    std::vector<float> tic;
-    std::vector<float> bpc;
-    std::vector<float> combined_time;
-    for (const auto &series : series_list)
+    // MRM construction is metadata-only. Payload records are decoded on demand.
+    mrm_metadata_.experiments.push_back({0, read_transitions_for_experiment(file, source_analysis_number, 0, 0)});
+    for (int experiment = 1; experiment < 128; ++experiment)
     {
-      if (!series.retention_times.empty())
-        combined_time.insert(combined_time.end(), series.retention_times.front().begin(), series.retention_times.front().end());
-      for (std::size_t point = 0; point < series.intensities.front().size(); ++point) {
-        float sum = 0.0f, maximum = 0.0f;
-        for (const auto &trace : series.intensities) { sum += trace[point]; maximum = std::max(maximum, trace[point]); }
-        tic.push_back(sum); bpc.push_back(maximum);
+      try
+      {
+        auto transitions = read_transitions_for_experiment(file, source_analysis_number, 0, experiment);
+        if (transitions.empty()) break;
+        mrm_metadata_.experiments.push_back({experiment, std::move(transitions)});
+      }
+      catch (const std::exception &)
+      {
+        break;
       }
     }
-    const auto count = 2 + std::accumulate(series_list.begin(), series_list.end(), std::size_t{0}, [](std::size_t total, const auto &s) { return total + s.transitions.size(); });
+    if (mrm_metadata_.experiments.front().transitions.empty())
+      throw std::runtime_error("Unsupported native SCIEX MRM payload grammar.");
+    mrm_metadata_.sparse_tagged = mrm_metadata_.experiments.size() == 1 &&
+                                  mrm_metadata_.experiments.front().transitions.size() != 2;
+    const auto count = 2 + std::accumulate(mrm_metadata_.experiments.begin(), mrm_metadata_.experiments.end(), std::size_t{0},
+                                           [](std::size_t total, const auto &experiment) { return total + experiment.transitions.size(); });
     headers_.resize_all(count);
     arrays_.resize(count);
-    for (std::size_t i = 0; i < count; ++i) headers_.index[i] = static_cast<int>(i);
+    for (std::size_t i = 0; i < count; ++i)
+    {
+      headers_.index[i] = static_cast<int>(i);
+      headers_.array_length[i] = -1;
+    }
     headers_.chromatogram_id[0] = "TIC"; headers_.chromatogram_id[1] = "BPC";
-    headers_.array_length[0] = static_cast<int>(tic.size()); headers_.array_length[1] = static_cast<int>(bpc.size());
     headers_.signal_type[0] = "MS"; headers_.signal_type[1] = "MS";
     headers_.chromatogram_type[0] = "TIC"; headers_.chromatogram_type[1] = "BPC";
     headers_.detector[0] = "SCIEX"; headers_.detector[1] = "SCIEX";
     headers_.units[0] = "counts"; headers_.units[1] = "counts";
-    arrays_[0] = {combined_time, tic}; arrays_[1] = {combined_time, bpc};
     std::size_t output = 2;
-    for (const auto &series : series_list) for (std::size_t i = 0; i < series.transitions.size(); ++i, ++output) {
-      const auto &transition = series.transitions[i];
-      std::vector<float> time;
-      std::vector<float> intensity;
-      for (std::size_t point = 0; point < series.intensities[i].size(); ++point) {
-        const float rt = series.retention_times[i][point];
-        if (transition.start_time < transition.end_time && (rt < transition.start_time || rt > transition.end_time)) continue;
-        time.push_back(rt);
-        intensity.push_back(series.intensities[i][point]);
+    for (const auto &experiment : mrm_metadata_.experiments)
+      for (const auto &transition : experiment.transitions)
+      {
+        headers_.chromatogram_id[output] = transition.name;
+        headers_.signal_type[output] = "MS"; headers_.chromatogram_type[output] = "SRM";
+        headers_.detector[output] = "SCIEX"; headers_.units[output] = "counts";
+        headers_.precursor_mz[output] = transition.precursor_mz;
+        headers_.product_mz[output] = transition.product_mz;
+        headers_.activation_ce[output] = transition.collision_energy;
+        headers_.start_time[output] = transition.start_time;
+        headers_.end_time[output] = transition.end_time;
+        ++output;
       }
-      headers_.chromatogram_id[output] = transition.name; headers_.array_length[output] = static_cast<int>(intensity.size()); headers_.signal_type[output] = "MS"; headers_.chromatogram_type[output] = "SRM"; headers_.detector[output] = "SCIEX"; headers_.units[output] = "counts"; headers_.precursor_mz[output] = transition.precursor_mz; headers_.product_mz[output] = transition.product_mz; headers_.activation_ce[output] = transition.collision_energy; headers_.start_time[output] = transition.start_time; headers_.end_time[output] = transition.end_time; arrays_[output] = {time, intensity};
-    }
+    return;
   }
   ~SciexReader() override = default;
   int get_number_spectra() override { return static_cast<int>(spectra_.size()); }
@@ -908,9 +1004,9 @@ public:
   std::vector<int> get_mode() override { return std::vector<int>(arrays_.size(), 0); }
   std::vector<int> get_level() override { return std::vector<int>(arrays_.size(), 0); }
   std::vector<int> get_configuration() override { return std::vector<int>(arrays_.size(), 0); }
-  float get_min_mz() override { float value = std::numeric_limits<float>::infinity(); for (const auto &s : spectra_) for (float mz : s.binary_data.empty() ? std::vector<float>{} : s.binary_data[0]) if (mz > 0.0f) value = std::min(value, mz); return std::isfinite(value) ? value : 0.0f; }
-  float get_max_mz() override { float value = 0.0f; for (const auto &s : spectra_) for (float mz : s.binary_data.empty() ? std::vector<float>{} : s.binary_data[0]) value = std::max(value, mz); return value; }
-  float get_start_rt() override { return spectra_.empty() ? arrays_[0][0].front() : spectra_.front().rt; } float get_end_rt() override { return spectra_.empty() ? arrays_[0][0].back() : spectra_.back().rt; }
+  float get_min_mz() override { if (tof_) return 0.0f; float value = std::numeric_limits<float>::infinity(); for (std::size_t i = 0; i < spectra_.size(); ++i) { const auto spectrum = spectra_[i]; for (float mz : spectrum.binary_data.empty() ? std::vector<float>{} : spectrum.binary_data[0]) if (mz > 0.0f) value = std::min(value, mz); } return std::isfinite(value) ? value : 0.0f; }
+  float get_max_mz() override { if (tof_) return 0.0f; float value = 0.0f; for (const auto &spectrum : spectra_) for (float mz : spectrum.binary_data.empty() ? std::vector<float>{} : spectrum.binary_data[0]) value = std::max(value, mz); return value; }
+  float get_start_rt() override { if (!spectra_.empty()) return spectra_.front().rt; for (const auto &experiment : mrm_metadata_.experiments) for (const auto &transition : experiment.transitions) if (transition.start_time < transition.end_time) return transition.start_time; return 0.0f; } float get_end_rt() override { if (!spectra_.empty()) return spectra_.back().rt; float value = 0.0f; for (const auto &experiment : mrm_metadata_.experiments) for (const auto &transition : experiment.transitions) value = std::max(value, transition.end_time); return value; }
   bool has_ion_mobility() override { return false; }
   MASS_SPEC_SUMMARY get_summary() override { MASS_SPEC_SUMMARY s{}; s.number_spectra = static_cast<int>(spectra_.size()); s.number_chromatograms = static_cast<int>(arrays_.size()); s.number_spectra_binary_arrays = static_cast<int>(spectra_.size() * 2); s.min_mz = get_min_mz(); s.max_mz = get_max_mz(); s.start_rt = get_start_rt(); s.end_rt = get_end_rt(); return s; }
   std::vector<int> get_spectra_index(std::vector<int> indices = {}) override { if (indices.empty()) for (std::size_t i = 0; i < spectra_.size(); ++i) indices.push_back(static_cast<int>(i)); std::vector<int> out; for (int i : indices) out.push_back(spectra_.at(i).index); return out; } std::vector<int> get_spectra_scan_number(std::vector<int> indices = {}) override { if (indices.empty()) for (std::size_t i = 0; i < spectra_.size(); ++i) indices.push_back(static_cast<int>(i)); std::vector<int> out; for (int i : indices) out.push_back(spectra_.at(i).scan); return out; }
@@ -925,13 +1021,82 @@ public:
   std::vector<float> get_spectra_precursor_window_mzhigh(std::vector<int> = {}) override { return {}; } std::vector<float> get_spectra_collision_energy(std::vector<int> = {}) override { return {}; }
   MASS_SPEC_SPECTRA_HEADERS get_spectra_headers(std::vector<int> indices = {}, bool = false) override { MASS_SPEC_SPECTRA_HEADERS out; if (indices.empty()) for (std::size_t i = 0; i < spectra_.size(); ++i) indices.push_back(static_cast<int>(i)); out.resize_all(indices.size()); for (std::size_t i = 0; i < indices.size(); ++i) { const auto &s = spectra_.at(indices[i]); out.index[i] = s.index; out.scan[i] = s.scan; out.array_length[i] = s.array_length; out.level[i] = s.level; out.polarity[i] = s.polarity; out.lowmz[i] = s.lowmz; out.highmz[i] = s.highmz; out.bpmz[i] = s.bpmz; out.bpint[i] = s.bpint; out.tic[i] = s.tic; out.rt[i] = s.rt; } return out; }
   MASS_SPEC_CHROMATOGRAMS_HEADERS get_chromatograms_headers(std::vector<int> indices = {}) override { if (indices.empty()) return headers_; return select_chromatogram_headers(headers_, indices); }
-  std::vector<std::vector<std::vector<float>>> get_spectra(std::vector<int> indices = {}) override { std::vector<std::vector<std::vector<float>>> out; if (indices.empty()) for (std::size_t i = 0; i < spectra_.size(); ++i) indices.push_back(static_cast<int>(i)); for (int i : indices) out.push_back(spectra_.at(i).binary_data); return out; }
-  std::vector<std::vector<std::vector<float>>> get_chromatograms(std::vector<int> indices = {}) override { std::vector<std::vector<std::vector<float>>> out; if (indices.empty()) { for (std::size_t i = 0; i < arrays_.size(); ++i) indices.push_back(static_cast<int>(i)); } for (int i: indices) out.push_back(arrays_.at(i)); return out; }
+  std::vector<std::vector<std::vector<float>>> get_spectra(std::vector<int> indices = {}) override { std::vector<std::vector<std::vector<float>>> out; if (indices.empty()) for (std::size_t i = 0; i < spectra_.size(); ++i) indices.push_back(static_cast<int>(i)); for (int i : indices) out.push_back(tof_ ? decode_tof_spectrum(file_, tof_metadata_, static_cast<std::size_t>(i)).binary_data : spectra_.at(i).binary_data); return out; }
+  std::vector<std::vector<std::vector<float>>> get_chromatograms(std::vector<int> indices = {}) override
+  {
+    if (indices.empty())
+      for (std::size_t i = 0; i < arrays_.size(); ++i) indices.push_back(static_cast<int>(i));
+    if (!tof_)
+      ensure_mrm_arrays();
+    std::vector<std::vector<std::vector<float>>> out;
+    for (const int index : indices) out.push_back(arrays_.at(static_cast<std::size_t>(index)));
+    return out;
+  }
   std::vector<std::vector<std::string>> get_software() override { return {}; } std::vector<std::vector<std::string>> get_hardware() override { return {}; }
-  MASS_SPEC_SPECTRUM get_spectrum(const int &index) override { return spectra_.at(index); }
+  MASS_SPEC_SPECTRUM get_spectrum(const int &index) override { return tof_ ? decode_tof_spectrum(file_, tof_metadata_, static_cast<std::size_t>(index)) : spectra_.at(index); }
 private:
+  void ensure_mrm_arrays()
+  {
+    if (mrm_arrays_ready_) return;
+    std::vector<MrmExperimentSeries> series_list;
+    if (mrm_metadata_.sparse_tagged)
+    {
+      const auto fragments = read_idx_float_records(file_, mrm_source_analysis_number_);
+      const auto marker = detect_tagged_mrm_record_marker(fragments, mrm_metadata_.experiments.front().transitions.size());
+      if (!marker.has_value()) throw std::runtime_error("Unsupported native SCIEX MRM payload grammar.");
+      mrm_metadata_.record_marker = *marker;
+      series_list.push_back(read_sparse_tagged_mrm_series(file_, mrm_source_analysis_number_, *marker,
+                                                          static_cast<int>(mrm_metadata_.experiments.front().transitions.size())));
+    }
+    else if (mrm_metadata_.experiments.size() == 1)
+    {
+      const auto pairs = read_compact_mrm_pairs(file_, mrm_source_analysis_number_);
+      series_list.push_back(build_compact_mrm_series(file_, mrm_source_analysis_number_, 0,
+                                                     mrm_metadata_.experiments.front().transitions, pairs));
+    }
+    else
+      series_list = read_compact_mrm_experiments(file_, mrm_source_analysis_number_);
+    if (series_list.empty()) throw std::runtime_error("Unsupported native SCIEX MRM payload grammar.");
+    std::vector<float> time, tic, bpc;
+    std::size_t output = 2;
+    for (const auto &series : series_list)
+    {
+      if (!series.retention_times.empty())
+        time.insert(time.end(), series.retention_times.front().begin(), series.retention_times.front().end());
+      for (std::size_t point = 0; point < series.intensities.front().size(); ++point)
+      {
+        float sum = 0.0f, maximum = 0.0f;
+        for (const auto &trace : series.intensities) { sum += trace[point]; maximum = std::max(maximum, trace[point]); }
+        tic.push_back(sum); bpc.push_back(maximum);
+      }
+      for (std::size_t channel = 0; channel < series.transitions.size(); ++channel, ++output)
+      {
+        std::vector<float> channel_time, intensity;
+        for (std::size_t point = 0; point < series.intensities[channel].size(); ++point)
+        {
+          const float rt = series.retention_times[channel][point];
+          const auto &transition = series.transitions[channel];
+          if (transition.start_time < transition.end_time && (rt < transition.start_time || rt > transition.end_time)) continue;
+          channel_time.push_back(rt); intensity.push_back(series.intensities[channel][point]);
+        }
+        arrays_[output] = {std::move(channel_time), std::move(intensity)};
+        headers_.array_length[output] = static_cast<int>(arrays_[output][0].size());
+      }
+    }
+    arrays_[0] = {time, tic}; arrays_[1] = {time, bpc};
+    headers_.array_length[0] = static_cast<int>(tic.size());
+    headers_.array_length[1] = static_cast<int>(bpc.size());
+    mrm_arrays_ready_ = true;
+  }
+
+  std::string file_;
+  int mrm_source_analysis_number_ = 1;
+  bool tof_ = false;
+  TofMetadata tof_metadata_;
   MASS_SPEC_CHROMATOGRAMS_HEADERS headers_;
   std::vector<std::vector<std::vector<float>>> arrays_;
+  MrmMetadata mrm_metadata_;
+  bool mrm_arrays_ready_ = false;
   std::vector<MASS_SPEC_SPECTRUM> spectra_;
 };
 

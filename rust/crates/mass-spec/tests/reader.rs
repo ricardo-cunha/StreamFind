@@ -106,13 +106,16 @@ fn opens_tagged_sciex_mrm_with_native_chromatograms() {
     assert_eq!(reader.chromatograms().len(), 61);
     assert_eq!(reader.chromatograms()[0].id, "TIC");
     assert_eq!(reader.chromatograms()[1].id, "BPC");
-    assert_eq!(reader.chromatograms()[0].intensity[9], 4822.0);
-    assert_eq!(reader.chromatograms()[1].intensity[9], 4574.0);
-    assert_eq!(reader.chromatograms()[40].intensity.len(), 392);
-    assert_eq!(reader.chromatograms()[41].intensity.len(), 392);
-    assert!((reader.chromatograms()[40].time[0] - 0.708483).abs() < 0.00001);
-    assert_eq!(reader.chromatograms()[40].intensity[0], 3943.0);
-    assert_eq!(reader.chromatograms()[41].intensity[0], 203.0);
+    assert!(reader.chromatograms()[0].time.is_empty());
+    assert!(reader.chromatograms()[40].time.is_empty());
+    let chromatograms = reader.chromatograms_data(&[]).unwrap();
+    assert_eq!(chromatograms[0].intensity[9], 4822.0);
+    assert_eq!(chromatograms[1].intensity[9], 4574.0);
+    assert_eq!(chromatograms[40].intensity.len(), 392);
+    assert_eq!(chromatograms[41].intensity.len(), 392);
+    assert!((chromatograms[40].time[0] - 0.708483).abs() < 0.00001);
+    assert_eq!(chromatograms[40].intensity[0], 3943.0);
+    assert_eq!(chromatograms[41].intensity[0], 203.0);
     assert!(reader.summary().start_rt > 0.0);
     assert!(reader.summary().end_rt > reader.summary().start_rt);
 }
@@ -126,11 +129,13 @@ fn opens_mix1_holdout_with_schedule_constrained_chromatograms() {
     let mut reader = Reader::open(path).unwrap();
     reader.select_analysis(3).unwrap();
     assert_eq!(reader.chromatograms().len(), 61);
-    assert_eq!(reader.chromatograms()[40].intensity.len(), 392);
-    assert_eq!(reader.chromatograms()[41].intensity.len(), 392);
-    assert!((reader.chromatograms()[40].time[0] - 0.7085667).abs() < 0.00001);
-    assert_eq!(reader.chromatograms()[40].intensity[0], 10074.0);
-    assert_eq!(reader.chromatograms()[41].intensity[0], 699.0);
+    assert!(reader.chromatograms()[40].intensity.is_empty());
+    let chromatograms = reader.chromatograms_data(&[]).unwrap();
+    assert_eq!(chromatograms[40].intensity.len(), 392);
+    assert_eq!(chromatograms[41].intensity.len(), 392);
+    assert!((chromatograms[40].time[0] - 0.7085667).abs() < 0.00001);
+    assert_eq!(chromatograms[40].intensity[0], 10074.0);
+    assert_eq!(chromatograms[41].intensity[0], 699.0);
 }
 
 #[test]
@@ -145,7 +150,9 @@ fn opens_sparse_tagged_sciex_mrm_with_native_chromatograms() {
     assert_eq!(reader.chromatograms().len(), 35);
     assert_eq!(reader.chromatograms()[0].id, "TIC");
     assert_eq!(reader.chromatograms()[1].id, "BPC");
-    assert_eq!(reader.chromatograms()[2].time.len(), 3366);
+    assert!(reader.chromatograms()[2].time.is_empty());
+    let chromatograms = reader.chromatograms_data(&[2]).unwrap();
+    assert_eq!(chromatograms[0].time.len(), 3366);
 }
 
 #[test]
@@ -157,11 +164,17 @@ fn opens_sciex_tof_with_native_spectra() {
     let reader = Reader::open(path).unwrap();
     assert_eq!(reader.format(), Format::SciexWiff);
     assert_eq!(reader.spectra().len(), 8964);
-    let spectrum = reader.spectrum(0).unwrap();
+    let header = reader.spectrum(0).unwrap();
+    assert!(header.mz.is_empty());
+    assert!(header.intensity.is_empty());
+    let spectrum = reader.spectrum_data(0).unwrap();
     assert_eq!(spectrum.mz.len(), spectrum.intensity.len());
     assert!(!spectrum.mz.is_empty());
     assert!(spectrum.mz.iter().all(|mz| mz.is_finite()));
     assert!(spectrum.mz.iter().any(|mz| *mz > 0.0));
     assert!(spectrum.intensity.iter().all(|intensity| *intensity >= 0.0));
-    assert!(reader.spectra().iter().any(|candidate| candidate.level == 2));
+    assert!(reader
+        .spectra()
+        .iter()
+        .any(|candidate| candidate.level == 2));
 }

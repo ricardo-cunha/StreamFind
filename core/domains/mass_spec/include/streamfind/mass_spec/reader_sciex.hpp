@@ -82,6 +82,21 @@ struct MrmExperimentSeries
   std::vector<std::vector<float>> intensities;
 };
 
+// Metadata retained by SciexReader while an MRM file is open. Payload records
+// are decoded by get_chromatograms() only for requested public indices.
+struct MrmExperimentMetadata
+{
+  int experiment_index = 0;
+  std::vector<Transition> transitions;
+};
+
+struct MrmMetadata
+{
+  std::vector<MrmExperimentMetadata> experiments;
+  bool sparse_tagged = false;
+  float record_marker = 0.0f;
+};
+
 std::string scan_path_for_wiff(const std::string &wiff_path);
 std::vector<ScanBlock> read_scan_blocks(const std::string &wiff_path);
 std::vector<IdxRecord> read_idx_records(const std::string &wiff_path, int source_analysis_number);

@@ -487,10 +487,13 @@ namespace streamfind::mass_spec
         create_schema();
         Json out = Json::array();
         const auto targets = detail::normalize_targets_for_operation(parameters);
-        const auto rows = project_.query_json("SELECT analysis, file_path, replicate FROM MASS_SPEC_ANALYSES WHERE project_id = " + detail::sql(project_.get_project_id()) + " ORDER BY analysis");
+        const auto rows = project_.query_json("SELECT analysis, file_path, analysis_index, replicate FROM MASS_SPEC_ANALYSES WHERE project_id = " + detail::sql(project_.get_project_id()) + " ORDER BY analysis");
         for (const auto &row : rows)
         {
             const auto analysis = row.at("analysis").get<std::string>();
+            if (!targets.empty() && std::all_of(targets.begin(), targets.end(), [&](const auto &target) { return !target.analyses.empty(); }) &&
+                std::none_of(targets.begin(), targets.end(), [&](const auto &target) { return std::find(target.analyses.begin(), target.analyses.end(), analysis) != target.analyses.end(); }))
+                continue;
             ::mass_spec::reader::MASS_SPEC_FILE file(row.at("file_path").get<std::string>());
                 file.select_analysis(detail::integer_column(row, "analysis_index"));
             const auto headers = file.get_spectra_headers();
@@ -534,13 +537,14 @@ namespace streamfind::mass_spec
 
     Json Project::get_chromatograms(const Json &parameters)
     {
-        project_.execute_sql("CREATE TABLE IF NOT EXISTS MASS_SPEC_CHROMATOGRAMS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, index INTEGER NOT NULL DEFAULT 0, chromatogram_id VARCHAR NOT NULL, polarity INTEGER, precursor_mz DOUBLE, activation_ce DOUBLE, product_mz DOUBLE, rt DOUBLE NOT NULL, raw_intensity DOUBLE NOT NULL, baseline DOUBLE NOT NULL DEFAULT 0, intensity DOUBLE NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, chromatogram_id, rt))");
+        project_.execute_sql("CREATE TABLE IF NOT EXISTS MASS_SPEC_CHROMATOGRAMS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, index INTEGER NOT NULL DEFAULT 0, chromatogram_id VARCHAR NOT NULL, polarity INTEGER, precursor_mz DOUBLE, activation_ce DOUBLE, product_mz DOUBLE, wavelength_nm DOUBLE NOT NULL DEFAULT 0, rt DOUBLE NOT NULL, raw_intensity DOUBLE NOT NULL, baseline DOUBLE NOT NULL DEFAULT 0, intensity DOUBLE NOT NULL, created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, chromatogram_id, rt))");
         project_.execute_sql("ALTER TABLE MASS_SPEC_CHROMATOGRAMS ADD COLUMN IF NOT EXISTS index INTEGER");
         project_.execute_sql("ALTER TABLE MASS_SPEC_CHROMATOGRAMS ADD COLUMN IF NOT EXISTS polarity INTEGER");
         project_.execute_sql("ALTER TABLE MASS_SPEC_CHROMATOGRAMS ADD COLUMN IF NOT EXISTS precursor_mz DOUBLE");
         project_.execute_sql("ALTER TABLE MASS_SPEC_CHROMATOGRAMS ADD COLUMN IF NOT EXISTS activation_ce DOUBLE");
         project_.execute_sql("ALTER TABLE MASS_SPEC_CHROMATOGRAMS ADD COLUMN IF NOT EXISTS product_mz DOUBLE");
-        std::string query = "SELECT c.project_id, c.analysis, a.replicate, c.index, c.chromatogram_id, c.polarity, c.precursor_mz, c.activation_ce, c.product_mz, c.rt, c.raw_intensity, c.baseline, c.intensity FROM MASS_SPEC_CHROMATOGRAMS c LEFT JOIN MASS_SPEC_ANALYSES a ON c.project_id = a.project_id AND c.analysis = a.analysis WHERE c.project_id = " + detail::sql(project_.get_project_id());
+        project_.execute_sql("ALTER TABLE MASS_SPEC_CHROMATOGRAMS ADD COLUMN IF NOT EXISTS wavelength_nm DOUBLE DEFAULT 0");
+        std::string query = "SELECT c.project_id, c.analysis, a.replicate, c.index, c.chromatogram_id, c.polarity, c.precursor_mz, c.activation_ce, c.product_mz, c.wavelength_nm, c.rt, c.raw_intensity, c.baseline, c.intensity FROM MASS_SPEC_CHROMATOGRAMS c LEFT JOIN MASS_SPEC_ANALYSES a ON c.project_id = a.project_id AND c.analysis = a.analysis WHERE c.project_id = " + detail::sql(project_.get_project_id());
         const auto wanted = detail::names(parameters, "analysis_names");
         if (!wanted.empty()) {
             query += " AND c.analysis IN (";
@@ -556,6 +560,7 @@ namespace streamfind::mass_spec
             if (row.at("precursor_mz").is_null()) row["precursor_mz"] = Json(nullptr); else row["precursor_mz"] = std::stod(row.at("precursor_mz").get<std::string>());
             if (row.at("activation_ce").is_null()) row["activation_ce"] = Json(nullptr); else row["activation_ce"] = std::stod(row.at("activation_ce").get<std::string>());
             if (row.at("product_mz").is_null()) row["product_mz"] = Json(nullptr); else row["product_mz"] = std::stod(row.at("product_mz").get<std::string>());
+            if (row.at("wavelength_nm").is_null()) row["wavelength_nm"] = 0.0; else row["wavelength_nm"] = std::stod(row.at("wavelength_nm").get<std::string>());
             row["rt"] = std::stod(row.at("rt").get<std::string>());
             row["raw_intensity"] = std::stod(row.at("raw_intensity").get<std::string>());
             row["baseline"] = std::stod(row.at("baseline").get<std::string>());
@@ -595,7 +600,7 @@ namespace streamfind::mass_spec
                                       {"polarity", headers.polarity[i]},
                                       {"precursor_mz", precursor_mz},
                                       {"activation_ce", activation_ce},
-                                      {"product_mz", product_mz},
+                                      {"product_mz", product_mz}, {"wavelength_nm", headers.wavelength_nm[i]},
                                       {"rt", times[j]},
                                       {"raw_intensity", intensities[j]}, {"baseline", 0.0},
                                       {"intensity", intensities[j]}});

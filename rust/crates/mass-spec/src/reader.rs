@@ -8,7 +8,7 @@ use base64::{engine::general_purpose::STANDARD, Engine as _};
 use flate2::read::ZlibDecoder;
 use quick_xml::{events::Event, Reader as XmlReader};
 use std::{
-    collections::{BTreeMap, BTreeSet},
+    collections::BTreeSet,
     fs,
     io::{self, Read},
     path::{Path, PathBuf},
@@ -57,6 +57,7 @@ pub enum Format {
     AgilentMassHunterD,
     AgilentChemStationD,
     BrukerTsf,
+    BrukerBaf,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -89,6 +90,7 @@ pub struct Chromatogram {
     pub detector: String,
     pub channel: String,
     pub units: String,
+    pub wavelength_nm: f32,
 
     pub polarity: i32,
     pub interval_ms: f32,
@@ -134,6 +136,11 @@ pub struct Reader {
     agilent_records: Option<Vec<crate::reader_agilent::ScanRecord>>,
     agilent_ims_records: Option<Vec<crate::reader_agilent_ims::ScanRecord>>,
     chemstation_data: Option<crate::reader_agilent_chemstation::DataFile>,
+    bruker_baf_spectra: Option<Vec<crate::reader_bruker::BafSpectrumMetadata>>,
+    bruker_tsf_frames: Option<Vec<crate::reader_bruker::TsfFrame>>,
+    bruker_tsf_msms: Option<Vec<crate::reader_bruker::TsfMsMsInfo>>,
+    sciex_tof_metadata: Option<crate::reader_sciex::TofMetadata>,
+    sciex_mrm_metadata: Option<crate::reader_sciex::MrmMetadata>,
 }
 
 impl Reader {
@@ -145,7 +152,9 @@ impl Reader {
         let chemstation = crate::reader_agilent_chemstation::is_chemstation_directory(&path);
         let bruker_tsf =
             crate::reader_bruker::detect_family(&path) == crate::reader_bruker::Family::Tsf;
-        let bytes = if agilent || agilent_ims || chemstation || bruker_tsf {
+        let bruker_baf =
+            crate::reader_bruker::detect_family(&path) == crate::reader_bruker::Family::Baf;
+        let bytes = if agilent || agilent_ims || chemstation || bruker_tsf || bruker_baf {
             Vec::new()
         } else {
             fs::read(&path)?
@@ -156,6 +165,8 @@ impl Reader {
             Format::AgilentChemStationD
         } else if bruker_tsf {
             Format::BrukerTsf
+        } else if bruker_baf {
+            Format::BrukerBaf
         } else {
             detect_format(&path, &bytes)?
         };
@@ -167,7 +178,8 @@ impl Reader {
             Format::SciexWiff => (Vec::new(), Vec::new()),
             Format::AgilentMassHunterD => (Vec::new(), Vec::new()),
             Format::AgilentChemStationD => (Vec::new(), Vec::new()),
-            Format::BrukerTsf => (load_bruker_tsf_spectra(&path)?, Vec::new()),
+            Format::BrukerTsf => (Vec::new(), Vec::new()),
+            Format::BrukerBaf => (Vec::new(), Vec::new()),
         };
         let analysis_name = path
             .file_stem()
@@ -194,6 +206,24 @@ impl Reader {
                 crate::reader_agilent_chemstation::open_directory(&path)
                     .map_err(ReaderError::Invalid)?,
             )
+        } else {
+            None
+        };
+        let bruker_baf_spectra = if bruker_baf {
+            Some(
+                crate::reader_bruker::read_baf_spectra_metadata(&path)
+                    .map_err(ReaderError::Invalid)?,
+            )
+        } else {
+            None
+        };
+        let bruker_tsf_frames = if bruker_tsf {
+            Some(crate::reader_bruker::read_tsf_frames(&path).map_err(ReaderError::Invalid)?)
+        } else {
+            None
+        };
+        let bruker_tsf_msms = if bruker_tsf {
+            Some(crate::reader_bruker::read_tsf_msms_info(&path).map_err(ReaderError::Invalid)?)
         } else {
             None
         };
@@ -287,6 +317,64 @@ impl Reader {
                 })
                 .collect::<Result<Vec<_>>>()?;
         }
+        if let Some(metadata) = &bruker_baf_spectra {
+            spectra = metadata
+                .iter()
+                .enumerate()
+                .map(|(index, value)| -> Result<Spectrum> {
+                    Ok(Spectrum {
+                        index: index as i32,
+                        scan: value.id as i32,
+                        array_length: crate::reader_bruker::read_baf_profile_point_count(
+                            &path,
+                            value.profile_intensity_id,
+                        )
+                        .map_err(ReaderError::Invalid)?
+                            as i32,
+                        level: value.ms_level,
+                        polarity: value.polarity,
+                        low_mz: value.mz_lower as f32,
+                        high_mz: value.mz_upper as f32,
+                        base_peak_intensity: value.maximum_intensity as f32,
+                        tic: value.summed_intensity as f32,
+                        retention_time: value.retention_time as f32,
+                        ..Default::default()
+                    })
+                })
+                .collect::<Result<Vec<_>>>()?;
+        }
+        if let Some(frames) = &bruker_tsf_frames {
+            let msms = bruker_tsf_msms.as_deref().unwrap_or_default();
+            spectra = frames
+                .iter()
+                .enumerate()
+                .map(|(index, frame)| {
+                    let info = msms.iter().find(|value| value.frame == frame.id);
+                    Spectrum {
+                        index: index as i32,
+                        scan: frame.id as i32,
+                        array_length: frame.num_peaks,
+                        level: if frame.msms_type == 0 { 1 } else { 2 },
+                        polarity: match frame.polarity.as_str() {
+                            "+" => 1,
+                            "-" => -1,
+                            _ => 0,
+                        },
+                        low_mz: 95.0,
+                        high_mz: 2505.0,
+                        base_peak_intensity: frame.max_intensity as f32,
+                        tic: frame.summed_intensities as f32,
+                        retention_time: frame.retention_time as f32,
+                        precursor_mz: info.map(|value| value.trigger_mass as f32).unwrap_or(0.0),
+                        precursor_charge: info.map(|value| value.precursor_charge).unwrap_or(0),
+                        collision_energy: info
+                            .map(|value| value.collision_energy as f32)
+                            .unwrap_or(0.0),
+                        ..Default::default()
+                    }
+                })
+                .collect();
+        }
         let analysis_catalog = if format == Format::SciexWiff {
             read_sciex_analysis_catalog(&path)?
         } else {
@@ -297,17 +385,60 @@ impl Reader {
                 analysis_count: 1,
             }]
         };
-        if format == Format::SciexWiff {
-            if let Ok(tof_spectra) = crate::reader_sciex::read_tof_spectra(
-                &path,
-                analysis_catalog[0].source_analysis_number.unwrap_or(1),
-            ) {
-                spectra = tof_spectra;
-                chromatograms = Vec::new();
-            } else {
-                chromatograms = load_sciex_chromatograms(&path, &analysis_catalog[0])?;
+        let sciex_tof_metadata = if format == Format::SciexWiff {
+            let source = analysis_catalog[0].source_analysis_number.unwrap_or(1);
+            match crate::reader_sciex::read_tof_metadata(&path, source) {
+                Ok(metadata) => {
+                    spectra = metadata
+                        .public_indices
+                        .iter()
+                        .enumerate()
+                        .map(|(index, source_index)| {
+                            let record = &metadata.records[*source_index];
+                            Spectrum {
+                                index: index as i32,
+                                scan: *source_index as i32,
+                                array_length: -1,
+                                level: if metadata.experiment_count > 1
+                                    && source_index % metadata.experiment_count == 0
+                                {
+                                    1
+                                } else {
+                                    2
+                                },
+                                polarity: 1,
+                                retention_time: record.retention_time_minutes,
+                                tic: record.tic as f32,
+                                ..Default::default()
+                            }
+                        })
+                        .collect();
+                    chromatograms = Vec::new();
+                    Some(metadata)
+                }
+                Err(_) => {
+                    chromatograms = load_sciex_chromatograms(&path, &analysis_catalog[0])?;
+                    None
+                }
             }
-        }
+        } else {
+            None
+        };
+        let sciex_mrm_metadata = if format == Format::SciexWiff && sciex_tof_metadata.is_none() {
+            let source = analysis_catalog[0].source_analysis_number.unwrap_or(1);
+            match crate::reader_sciex::read_mrm_metadata(&path, source) {
+                Ok(metadata) => {
+                    chromatograms = render_sciex_mrm_headers(&metadata.transitions);
+                    Some(metadata)
+                }
+                Err(_) => {
+                    chromatograms = load_sciex_chromatograms(&path, &analysis_catalog[0])?;
+                    None
+                }
+            }
+        } else {
+            None
+        };
         Ok(Self {
             path,
             format,
@@ -318,6 +449,11 @@ impl Reader {
             agilent_records,
             agilent_ims_records,
             chemstation_data,
+            bruker_baf_spectra,
+            bruker_tsf_frames,
+            bruker_tsf_msms,
+            sciex_tof_metadata,
+            sciex_mrm_metadata,
         })
     }
 
@@ -335,17 +471,54 @@ impl Reader {
         }
         self.selected_analysis = index;
         if self.format == Format::SciexWiff {
-            if let Ok(tof_spectra) = crate::reader_sciex::read_tof_spectra(
-                &self.path,
-                self.analysis_catalog[index]
-                    .source_analysis_number
-                    .unwrap_or(1),
-            ) {
-                self.spectra = tof_spectra;
-                self.chromatograms.clear();
-            } else {
-                self.chromatograms =
-                    load_sciex_chromatograms(&self.path, &self.analysis_catalog[index])?;
+            let source = self.analysis_catalog[index]
+                .source_analysis_number
+                .unwrap_or(1);
+            match crate::reader_sciex::read_tof_metadata(&self.path, source) {
+                Ok(metadata) => {
+                    self.spectra = metadata
+                        .public_indices
+                        .iter()
+                        .enumerate()
+                        .map(|(public_index, source_index)| {
+                            let record = &metadata.records[*source_index];
+                            Spectrum {
+                                index: public_index as i32,
+                                scan: *source_index as i32,
+                                array_length: -1,
+                                level: if metadata.experiment_count > 1
+                                    && source_index % metadata.experiment_count == 0
+                                {
+                                    1
+                                } else {
+                                    2
+                                },
+                                polarity: 1,
+                                retention_time: record.retention_time_minutes,
+                                tic: record.tic as f32,
+                                ..Default::default()
+                            }
+                        })
+                        .collect();
+                    self.sciex_tof_metadata = Some(metadata);
+                    self.chromatograms.clear();
+                }
+                Err(_) => {
+                    self.sciex_tof_metadata = None;
+                    match crate::reader_sciex::read_mrm_metadata(&self.path, source) {
+                        Ok(metadata) => {
+                            self.chromatograms = render_sciex_mrm_headers(&metadata.transitions);
+                            self.sciex_mrm_metadata = Some(metadata);
+                        }
+                        Err(_) => {
+                            self.sciex_mrm_metadata = None;
+                            self.chromatograms = load_sciex_chromatograms(
+                                &self.path,
+                                &self.analysis_catalog[index],
+                            )?;
+                        }
+                    }
+                }
             }
         }
         Ok(())
@@ -359,6 +532,37 @@ impl Reader {
     pub fn chromatograms(&self) -> &[Chromatogram] {
         &self.chromatograms
     }
+
+    pub fn chromatograms_data(&self, indices: &[usize]) -> Result<Vec<Chromatogram>> {
+        if let Some(metadata) = &self.sciex_mrm_metadata {
+            let all = load_sciex_chromatograms(
+                &self.path,
+                &Analysis {
+                    analysis_index: self.selected_analysis,
+                    source_analysis_number: Some(metadata.source_analysis_number),
+                    name: String::new(),
+                    analysis_count: 1,
+                },
+            )?;
+            return Ok(if indices.is_empty() {
+                all
+            } else {
+                indices
+                    .iter()
+                    .filter_map(|index| all.get(*index).cloned())
+                    .collect()
+            });
+        }
+        Ok(if indices.is_empty() {
+            self.chromatograms.clone()
+        } else {
+            indices
+                .iter()
+                .filter_map(|index| self.chromatograms.get(*index).cloned())
+                .collect()
+        })
+    }
+
     pub fn spectrum(&self, index: usize) -> Option<&Spectrum> {
         self.spectra.get(index)
     }
@@ -438,6 +642,112 @@ impl Reader {
                 ..Default::default()
             });
         }
+        if let Some(metadata) = &self.sciex_tof_metadata {
+            return crate::reader_sciex::read_tof_spectrum(&self.path, metadata, index)
+                .map_err(|error| error);
+        }
+        if let Some(frames) = &self.bruker_tsf_frames {
+            let frame = frames.get(index).ok_or_else(|| {
+                ReaderError::Invalid(format!("spectrum index is out of range: {index}"))
+            })?;
+            let raw = crate::reader_bruker::read_tsf_line_spectrum(&self.path, frame)
+                .map_err(ReaderError::Invalid)?;
+            let calibration = crate::reader_bruker::read_tsf_calibration(&self.path, frame)
+                .map_err(ReaderError::Invalid)?;
+            let mz = crate::reader_bruker::tsf_tof_to_mz(&calibration, &raw.tof);
+            let info = self
+                .bruker_tsf_msms
+                .as_deref()
+                .unwrap_or_default()
+                .iter()
+                .find(|value| value.frame == frame.id);
+            let (base_peak_mz, base_peak_intensity) = raw
+                .intensity
+                .iter()
+                .enumerate()
+                .max_by(|(_, left), (_, right)| left.total_cmp(right))
+                .map(|(point, intensity)| (mz[point] as f32, *intensity as f32))
+                .unwrap_or((0.0, 0.0));
+            let polarity = match frame.polarity.as_str() {
+                "+" => 1,
+                "-" => -1,
+                _ => 0,
+            };
+            return Ok(Spectrum {
+                index: index as i32,
+                scan: frame.id as i32,
+                array_length: mz.len() as i32,
+                level: if frame.msms_type == 0 { 1 } else { 2 },
+                polarity,
+                low_mz: mz.first().copied().unwrap_or(0.0) as f32,
+                high_mz: mz.last().copied().unwrap_or(0.0) as f32,
+                base_peak_mz,
+                base_peak_intensity,
+                tic: raw.intensity.iter().map(|value| *value as f32).sum(),
+                retention_time: frame.retention_time as f32,
+                precursor_mz: info.map(|value| value.trigger_mass as f32).unwrap_or(0.0),
+                precursor_charge: info.map(|value| value.precursor_charge).unwrap_or(0),
+                collision_energy: info
+                    .map(|value| value.collision_energy as f32)
+                    .unwrap_or(0.0),
+                mz: mz.into_iter().map(|value| value as f32).collect(),
+                intensity: raw
+                    .intensity
+                    .into_iter()
+                    .map(|value| value as f32)
+                    .collect(),
+                ..Default::default()
+            });
+        }
+        if let Some(metadata) = &self.bruker_baf_spectra {
+            let value = metadata.get(index).ok_or_else(|| {
+                ReaderError::Invalid(format!("spectrum index is out of range: {index}"))
+            })?;
+            let profile = crate::reader_bruker::read_baf_profile_spectrum(
+                &self.path,
+                value.profile_intensity_id,
+            )
+            .map_err(ReaderError::Invalid)?;
+            let length = profile.intensity.len();
+            let step = if length > 1 {
+                (value.mz_upper - value.mz_lower) as f64 / (length - 1) as f64
+            } else {
+                0.0
+            };
+            let mz = (0..length)
+                .map(|point| (value.mz_lower as f64 + step * point as f64) as f32)
+                .collect::<Vec<_>>();
+            let mut spectrum = Spectrum {
+                index: index as i32,
+                scan: value.id as i32,
+                array_length: length as i32,
+                level: value.ms_level,
+                polarity: value.polarity,
+                low_mz: value.mz_lower as f32,
+                high_mz: value.mz_upper as f32,
+                base_peak_intensity: value.maximum_intensity as f32,
+                tic: value.summed_intensity as f32,
+                retention_time: value.retention_time as f32,
+                mz,
+                intensity: profile
+                    .intensity
+                    .into_iter()
+                    .map(|value| value as f32)
+                    .collect(),
+                ..Default::default()
+            };
+            if let Some((peak, intensity)) = spectrum
+                .intensity
+                .iter()
+                .enumerate()
+                .max_by(|(_, left), (_, right)| left.total_cmp(right))
+            {
+                spectrum.base_peak_intensity = *intensity;
+                spectrum.base_peak_mz = spectrum.mz[peak];
+                spectrum.tic = spectrum.intensity.iter().sum();
+            }
+            return Ok(spectrum);
+        }
         if self.format != Format::AgilentMassHunterD {
             return self.spectra.get(index).cloned().ok_or_else(|| {
                 ReaderError::Invalid(format!("spectrum index is out of range: {index}"))
@@ -456,7 +766,7 @@ impl Reader {
             crate::reader_agilent::read_profile_spectrum(&self.path, record)
         }
         .map_err(ReaderError::Invalid)?;
-        Ok(Spectrum {
+        let mut spectrum = Spectrum {
             index: index as i32,
             scan: record.scan_id as i32,
             array_length: profile.mz.len() as i32,
@@ -472,7 +782,22 @@ impl Reader {
             mz: profile.mz.into_iter().map(|value| value as f32).collect(),
             intensity: profile.intensity,
             ..Default::default()
-        })
+        };
+        if !spectrum.mz.is_empty() {
+            spectrum.low_mz = spectrum.mz[0];
+            spectrum.high_mz = *spectrum.mz.last().unwrap_or(&spectrum.high_mz);
+            spectrum.tic = spectrum.intensity.iter().sum();
+            if let Some((peak, intensity)) = spectrum
+                .intensity
+                .iter()
+                .enumerate()
+                .max_by(|(_, left), (_, right)| left.total_cmp(right))
+            {
+                spectrum.base_peak_intensity = *intensity;
+                spectrum.base_peak_mz = spectrum.mz[peak];
+            }
+        }
+        Ok(spectrum)
     }
 
     pub fn summary(&self) -> Summary {
@@ -490,7 +815,7 @@ impl Reader {
         let (min_mz, max_mz) = mzs.fold((f32::INFINITY, 0.0f32), |(lo, hi), v| {
             (lo.min(v), hi.max(v))
         });
-        let times = self
+        let mut times = self
             .spectra
             .iter()
             .map(|s| s.retention_time)
@@ -499,10 +824,20 @@ impl Reader {
                     .iter()
                     .flat_map(|chromatogram| chromatogram.time.iter().copied()),
             )
-            .filter(|v| *v > 0.0);
-        let (start_rt, end_rt) = times.fold((f32::INFINITY, 0.0f32), |(lo, hi), v| {
-            (lo.min(v), hi.max(v))
-        });
+            .filter(|v| *v > 0.0)
+            .collect::<Vec<_>>();
+        if let Some(metadata) = &self.sciex_mrm_metadata {
+            for transition in &metadata.transitions {
+                times.push(transition.start_time);
+                times.push(transition.end_time);
+            }
+        }
+        let (start_rt, end_rt) = times
+            .into_iter()
+            .filter(|v| *v > 0.0)
+            .fold((f32::INFINITY, 0.0f32), |(lo, hi), v| {
+                (lo.min(v), hi.max(v))
+            });
         Summary {
             file_name: self
                 .path
@@ -524,78 +859,35 @@ impl Reader {
     }
 }
 
-fn load_bruker_tsf_spectra(path: &Path) -> Result<Vec<Spectrum>> {
-    let frames = crate::reader_bruker::read_tsf_frames(path).map_err(ReaderError::Invalid)?;
-    let msms = crate::reader_bruker::read_tsf_msms_info(path).map_err(ReaderError::Invalid)?;
-    let mut calibrations = BTreeMap::new();
-    let mut spectra = Vec::with_capacity(frames.len());
-    for (index, frame) in frames.iter().enumerate() {
-        let raw = crate::reader_bruker::read_tsf_line_spectrum(path, frame)
-            .map_err(ReaderError::Invalid)?;
-        if !calibrations.contains_key(&frame.mz_calibration) {
-            let calibration = crate::reader_bruker::read_tsf_calibration(path, frame)
-                .map_err(ReaderError::Invalid)?;
-            calibrations.insert(frame.mz_calibration, calibration);
-        }
-        let calibration = calibrations
-            .get(&frame.mz_calibration)
-            .expect("calibration inserted above");
-        let mz = crate::reader_bruker::tsf_tof_to_mz(&calibration, &raw.tof);
-        let info = msms.iter().find(|value| value.frame == frame.id);
-        let (precursor_mz, precursor_charge, collision_energy) = info
-            .map(|value| {
-                (
-                    Some(value.trigger_mass as f32),
-                    value.precursor_charge,
-                    value.collision_energy as f32,
-                )
-            })
-            .unwrap_or((None, 0, 0.0));
-        let polarity = match frame.polarity.as_str() {
-            "+" => 1,
-            "-" => -1,
-            _ => 0,
-        };
-        let level = if frame.msms_type == 0 { 1 } else { 2 };
-        spectra.push(Spectrum {
-            index: index as i32,
-            scan: frame.id as i32,
-            array_length: mz.len() as i32,
-            level,
-            polarity,
-            low_mz: mz
-                .iter()
-                .copied()
-                .fold(f32::INFINITY, |lo, value| lo.min(value as f32)),
-            high_mz: mz
-                .iter()
-                .copied()
-                .fold(0.0, |hi, value| hi.max(value as f32)),
-            base_peak_mz: raw
-                .intensity
-                .iter()
-                .enumerate()
-                .max_by(|(_, left), (_, right)| {
-                    left.partial_cmp(right).unwrap_or(std::cmp::Ordering::Equal)
-                })
-                .map(|(point, _)| mz[point] as f32)
-                .unwrap_or(0.0),
-            base_peak_intensity: frame.max_intensity as f32,
-            tic: frame.summed_intensities as f32,
-            retention_time: frame.retention_time as f32,
-            precursor_mz: precursor_mz.unwrap_or(0.0),
-            precursor_charge,
-            collision_energy,
-            mz: mz.into_iter().map(|value| value as f32).collect(),
-            intensity: raw
-                .intensity
-                .into_iter()
-                .map(|value| value as f32)
-                .collect(),
+fn render_sciex_mrm_headers(transitions: &[crate::reader_sciex::Transition]) -> Vec<Chromatogram> {
+    let mut output = Vec::with_capacity(transitions.len() + 2);
+    for (index, (id, kind)) in [("TIC", "TIC"), ("BPC", "BPC")].into_iter().enumerate() {
+        output.push(Chromatogram {
+            id: id.into(),
+            signal_type: "MS".into(),
+            chromatogram_type: kind.into(),
+            detector: "SCIEX".into(),
+            units: "counts".into(),
             ..Default::default()
         });
+        let _ = index;
     }
-    Ok(spectra)
+    output.extend(transitions.iter().map(|transition| Chromatogram {
+        id: transition.name.clone(),
+        signal_type: "MS".into(),
+        chromatogram_type: "SRM".into(),
+        detector: "SCIEX".into(),
+        channel: transition.product_mz.to_string(),
+        units: "counts".into(),
+        polarity: 0,
+        start_time: Some(transition.start_time),
+        end_time: Some(transition.end_time),
+        precursor_mz: Some(transition.precursor_mz),
+        product_mz: Some(transition.product_mz),
+        activation_ce: Some(transition.collision_energy),
+        ..Default::default()
+    }));
+    output
 }
 
 fn load_sciex_chromatograms(path: &Path, analysis: &Analysis) -> Result<Vec<Chromatogram>> {
@@ -670,6 +962,7 @@ fn render_sciex_mrm_chromatograms(
                 detector: "SCIEX".into(),
                 channel: transition.product_mz.to_string(),
                 units: "counts".into(),
+                wavelength_nm: 0.0,
 
                 polarity: 0,
                 interval_ms,
@@ -783,8 +1076,8 @@ fn decode_array(a: &BinaryArray) -> Result<Vec<f32>> {
         bytes = out;
     }
     let width = if a.precision == 64 { 8 } else { 4 };
-        if bytes.len() % width != 0 {
-            return Err(ReaderError::Invalid(format!(
+    if bytes.len() % width != 0 {
+        return Err(ReaderError::Invalid(format!(
                 "binary array length is not aligned to its precision: len={} width={} precision={} mz={} intensity={} compressed={}",
                 bytes.len(),
                 width,
@@ -793,7 +1086,7 @@ fn decode_array(a: &BinaryArray) -> Result<Vec<f32>> {
                 a.intensity,
                 a.compressed
             )));
-        }
+    }
     Ok(bytes
         .chunks_exact(width)
         .map(|b| {
@@ -838,50 +1131,50 @@ fn parse_mzml(bytes: &[u8]) -> Result<Vec<Spectrum>> {
                 }
             }
             Event::Empty(e) | Event::Start(e) if local(e.name().as_ref()) == b"cvParam" => {
-                            let accession = attr(&e, b"accession").unwrap_or_default();
-                            let name = attr(&e, b"name").unwrap_or_default().to_ascii_lowercase();
-                            let value = attr(&e, b"value").unwrap_or_default();
-                            if let Some(a) = array.as_mut() {
-                                if accession == "MS:1000574" || name.contains("zlib") {
-                                    a.compressed = true;
-                                }
-                                if accession == "MS:1000523" || name.contains("64-bit") {
-                                    a.precision = 64;
-                                }
-                                if accession == "MS:1000514" || name.contains("m/z array") {
-                                    a.mz = true;
-                                }
-                                if accession == "MS:1000515" || name.contains("intensity array") {
-                                    a.intensity = true;
-                                }
-                            } else if let Some(s) = current.as_mut() {
-                                match accession.as_str() {
-                                    "MS:1000511" => s.level = value.parse().unwrap_or(1),
-                                    "MS:1000130" => s.polarity = 1,
-                                    "MS:1000129" => s.polarity = -1,
-                                    "MS:1000528" => s.low_mz = value.parse().unwrap_or(0.0),
-                                    "MS:1000527" => s.high_mz = value.parse().unwrap_or(0.0),
-                                    "MS:1000504" => s.base_peak_mz = value.parse().unwrap_or(0.0),
-                                    "MS:1000505" => s.base_peak_intensity = value.parse().unwrap_or(0.0),
-                                    "MS:1000285" => s.tic = value.parse().unwrap_or(0.0),
-                                    "MS:1000744" => s.precursor_mz = value.parse().unwrap_or(0.0),
-                                    "MS:1000042" => s.precursor_intensity = value.parse().unwrap_or(0.0),
-                                    "MS:1000041" => s.precursor_charge = value.parse().unwrap_or(0),
-                                    "MS:1000045" => s.collision_energy = value.parse().unwrap_or(0.0),
-                                    _ if accession == "MS:1000016" || name.contains("scan start time") => {
-                                        s.retention_time = value.parse().unwrap_or(0.0)
-                                            * if name.contains("minute") { 60.0 } else { 1.0 }
-                                    }
-                                    _ if name.contains("mobility") => s.mobility = value.parse().unwrap_or(0.0),
-                                    _ => {}
-                                }
-                            }
+                let accession = attr(&e, b"accession").unwrap_or_default();
+                let name = attr(&e, b"name").unwrap_or_default().to_ascii_lowercase();
+                let value = attr(&e, b"value").unwrap_or_default();
+                if let Some(a) = array.as_mut() {
+                    if accession == "MS:1000574" || name.contains("zlib") {
+                        a.compressed = true;
+                    }
+                    if accession == "MS:1000523" || name.contains("64-bit") {
+                        a.precision = 64;
+                    }
+                    if accession == "MS:1000514" || name.contains("m/z array") {
+                        a.mz = true;
+                    }
+                    if accession == "MS:1000515" || name.contains("intensity array") {
+                        a.intensity = true;
+                    }
+                } else if let Some(s) = current.as_mut() {
+                    match accession.as_str() {
+                        "MS:1000511" => s.level = value.parse().unwrap_or(1),
+                        "MS:1000130" => s.polarity = 1,
+                        "MS:1000129" => s.polarity = -1,
+                        "MS:1000528" => s.low_mz = value.parse().unwrap_or(0.0),
+                        "MS:1000527" => s.high_mz = value.parse().unwrap_or(0.0),
+                        "MS:1000504" => s.base_peak_mz = value.parse().unwrap_or(0.0),
+                        "MS:1000505" => s.base_peak_intensity = value.parse().unwrap_or(0.0),
+                        "MS:1000285" => s.tic = value.parse().unwrap_or(0.0),
+                        "MS:1000744" => s.precursor_mz = value.parse().unwrap_or(0.0),
+                        "MS:1000042" => s.precursor_intensity = value.parse().unwrap_or(0.0),
+                        "MS:1000041" => s.precursor_charge = value.parse().unwrap_or(0),
+                        "MS:1000045" => s.collision_energy = value.parse().unwrap_or(0.0),
+                        _ if accession == "MS:1000016" || name.contains("scan start time") => {
+                            s.retention_time = value.parse().unwrap_or(0.0)
+                                * if name.contains("minute") { 60.0 } else { 1.0 }
                         }
+                        _ if name.contains("mobility") => s.mobility = value.parse().unwrap_or(0.0),
+                        _ => {}
+                    }
+                }
+            }
             Event::End(e) if local(e.name().as_ref()) == b"binary" => in_binary = false,
             Event::End(e) if local(e.name().as_ref()) == b"binaryDataArray" => {
-                            if let Some(a) = array.take() {
-                                if let Some(s) = current.as_mut() {
-                                    let values = decode_array(&a).map_err(|error| {
+                if let Some(a) = array.take() {
+                    if let Some(s) = current.as_mut() {
+                        let values = decode_array(&a).map_err(|error| {
                                         ReaderError::Invalid(format!(
                                             "spectrum index={} scan={} array(len={}, mz={}, intensity={}, compressed={}, precision={}): {error}",
                                             s.index,
@@ -893,14 +1186,14 @@ fn parse_mzml(bytes: &[u8]) -> Result<Vec<Spectrum>> {
                                             a.precision
                                         ))
                                     })?;
-                                    if a.mz {
-                                        s.mz = values;
-                                    } else if a.intensity {
-                                        s.intensity = values;
-                                    }
-                                }
-                            }
+                        if a.mz {
+                            s.mz = values;
+                        } else if a.intensity {
+                            s.intensity = values;
                         }
+                    }
+                }
+            }
             Event::End(e) if local(e.name().as_ref()) == b"spectrum" => {
                 if let Some(mut s) = current.take() {
                     finish_spectrum(&mut s);
@@ -952,19 +1245,19 @@ fn parse_mzml_chromatograms(bytes: &[u8]) -> Result<Vec<Chromatogram>> {
                 let accession = attr(&e, b"accession").unwrap_or_default();
                 let name = attr(&e, b"name").unwrap_or_default().to_ascii_lowercase();
                 if let Some(a) = array.as_mut() {
-                                    if accession == "MS:1000574" || name.contains("zlib") {
-                                        a.compressed = true;
-                                    }
-                                    if accession == "MS:1000523" || name.contains("64-bit") {
-                                        a.precision = 64;
-                                    }
-                                    if accession == "MS:1000595" || name.contains("time array") {
-                                        a.mz = true;
-                                    }
-                                    if accession == "MS:1000515" || name.contains("intensity array") {
-                                        a.intensity = true;
-                                    }
-                                } else if let Some(c) = current.as_mut() {
+                    if accession == "MS:1000574" || name.contains("zlib") {
+                        a.compressed = true;
+                    }
+                    if accession == "MS:1000523" || name.contains("64-bit") {
+                        a.precision = 64;
+                    }
+                    if accession == "MS:1000595" || name.contains("time array") {
+                        a.mz = true;
+                    }
+                    if accession == "MS:1000515" || name.contains("intensity array") {
+                        a.intensity = true;
+                    }
+                } else if let Some(c) = current.as_mut() {
                     if accession == "MS:1000235" || name.contains("total ion current") {
                         c.signal_type = name.clone();
                         c.chromatogram_type = "TIC".into();

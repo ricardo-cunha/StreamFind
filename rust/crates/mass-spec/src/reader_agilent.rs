@@ -569,6 +569,11 @@ pub fn read_dad_chromatograms(
                     .into_owned(),
                 channel: signal.letter,
                 units: signal.units,
+                wavelength_nm: signal
+                    .description
+                    .split_once("Sig=")
+                    .and_then(|(_, value)| value.trim().parse().ok())
+                    .unwrap_or(0.0),
                 polarity: 0,
                 interval_ms: (interval * 60000.0) as f32,
                 time: (0..count)

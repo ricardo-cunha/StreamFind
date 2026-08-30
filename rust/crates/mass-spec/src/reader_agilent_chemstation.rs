@@ -111,9 +111,16 @@ pub fn has_ms_data_file(path: &Path) -> bool {
         && fs::read_dir(path)
             .map(|entries| {
                 entries.flatten().any(|entry| {
-                    entry.file_type().map(|kind| kind.is_file()).unwrap_or(false)
+                    entry
+                        .file_type()
+                        .map(|kind| kind.is_file())
+                        .unwrap_or(false)
                         && matches!(
-                            entry.file_name().to_string_lossy().to_ascii_uppercase().as_str(),
+                            entry
+                                .file_name()
+                                .to_string_lossy()
+                                .to_ascii_uppercase()
+                                .as_str(),
                             "DATA.MS" | "MSD1.MS"
                         )
                 })
@@ -264,36 +271,67 @@ pub fn read_spectrum(data_file: &DataFile, index: usize) -> Result<Spectrum, Str
 }
 
 fn be32(bytes: &[u8], offset: usize) -> Result<i32, String> {
-    bytes.get(offset..offset + 4).and_then(|value| value.try_into().ok()).map(i32::from_be_bytes).ok_or_else(|| "Agilent ChemStation chromatogram field is truncated".into())
+    bytes
+        .get(offset..offset + 4)
+        .and_then(|value| value.try_into().ok())
+        .map(i32::from_be_bytes)
+        .ok_or_else(|| "Agilent ChemStation chromatogram field is truncated".into())
 }
 
 fn be64(bytes: &[u8], offset: usize) -> Result<f64, String> {
-    bytes.get(offset..offset + 8).and_then(|value| value.try_into().ok()).map(u64::from_be_bytes).map(f64::from_bits).ok_or_else(|| "Agilent ChemStation chromatogram double is truncated".into())
+    bytes
+        .get(offset..offset + 8)
+        .and_then(|value| value.try_into().ok())
+        .map(u64::from_be_bytes)
+        .map(f64::from_bits)
+        .ok_or_else(|| "Agilent ChemStation chromatogram double is truncated".into())
 }
 
 fn le16(bytes: &[u8], offset: usize) -> Result<u16, String> {
-    bytes.get(offset..offset + 2).and_then(|value| value.try_into().ok()).map(u16::from_le_bytes).ok_or_else(|| "Agilent ChemStation chromatogram field is truncated".into())
+    bytes
+        .get(offset..offset + 2)
+        .and_then(|value| value.try_into().ok())
+        .map(u16::from_le_bytes)
+        .ok_or_else(|| "Agilent ChemStation chromatogram field is truncated".into())
 }
 
 fn le32(bytes: &[u8], offset: usize) -> Result<u32, String> {
-    bytes.get(offset..offset + 4).and_then(|value| value.try_into().ok()).map(u32::from_le_bytes).ok_or_else(|| "Agilent ChemStation chromatogram field is truncated".into())
+    bytes
+        .get(offset..offset + 4)
+        .and_then(|value| value.try_into().ok())
+        .map(u32::from_le_bytes)
+        .ok_or_else(|| "Agilent ChemStation chromatogram field is truncated".into())
 }
 
 fn le64(bytes: &[u8], offset: usize) -> Result<f64, String> {
-    bytes.get(offset..offset + 8).and_then(|value| value.try_into().ok()).map(u64::from_le_bytes).map(f64::from_bits).ok_or_else(|| "Agilent ChemStation chromatogram double is truncated".into())
+    bytes
+        .get(offset..offset + 8)
+        .and_then(|value| value.try_into().ok())
+        .map(u64::from_le_bytes)
+        .map(f64::from_bits)
+        .ok_or_else(|| "Agilent ChemStation chromatogram double is truncated".into())
 }
 
 fn pascal_ascii(bytes: &[u8], offset: usize) -> String {
-    let Some(&length) = bytes.get(offset) else { return String::new(); };
+    let Some(&length) = bytes.get(offset) else {
+        return String::new();
+    };
     let end = offset.saturating_add(1 + length as usize);
-    bytes.get(offset + 1..end).map(|value| String::from_utf8_lossy(value).into_owned()).unwrap_or_default()
+    bytes
+        .get(offset + 1..end)
+        .map(|value| String::from_utf8_lossy(value).into_owned())
+        .unwrap_or_default()
 }
 
 fn pascal_utf16(bytes: &[u8], offset: usize) -> String {
-    let Some(&length) = bytes.get(offset) else { return String::new(); };
+    let Some(&length) = bytes.get(offset) else {
+        return String::new();
+    };
     let mut value = String::new();
     for index in 0..length as usize {
-        let Ok(code) = le16(bytes, offset + 1 + index * 2) else { break; };
+        let Ok(code) = le16(bytes, offset + 1 + index * 2) else {
+            break;
+        };
         value.push(char::from_u32(code as u32).unwrap_or('?'));
     }
     value
@@ -318,13 +356,26 @@ fn decode_ch(bytes: &[u8], mut offset: usize) -> Result<Vec<i32>, String> {
     Ok(values)
 }
 
-fn decode_delta(bytes: &[u8], mut offset: usize, count: usize, little: bool) -> Result<Vec<i32>, String> {
+fn decode_delta(
+    bytes: &[u8],
+    mut offset: usize,
+    count: usize,
+    little: bool,
+) -> Result<Vec<i32>, String> {
     let mut values = Vec::with_capacity(count);
     for _ in 0..count {
-        let delta = if little { le16(bytes, offset)? as i16 } else { be16s(bytes, offset)? };
+        let delta = if little {
+            le16(bytes, offset)? as i16
+        } else {
+            be16s(bytes, offset)?
+        };
         offset += 2;
         if delta == i16::MIN {
-            values.push(if little { le32(bytes, offset)? as i32 } else { be32(bytes, offset)? });
+            values.push(if little {
+                le32(bytes, offset)? as i32
+            } else {
+                be32(bytes, offset)?
+            });
             offset += 4;
         } else {
             values.push(values.last().copied().unwrap_or(0) + delta as i32);
@@ -333,33 +384,84 @@ fn decode_delta(bytes: &[u8], mut offset: usize, count: usize, little: bool) -> 
     Ok(values)
 }
 
-pub fn read_chromatograms(path: impl AsRef<Path>) -> Result<Vec<crate::reader::Chromatogram>, String> {
+pub fn read_chromatograms(
+    path: impl AsRef<Path>,
+) -> Result<Vec<crate::reader::Chromatogram>, String> {
     let root = path.as_ref();
     let mut output = Vec::new();
-    for entry in fs::read_dir(root).map_err(|error| error.to_string())?.flatten() {
-        if !entry.file_type().map(|kind| kind.is_file()).unwrap_or(false) { continue; }
+    for entry in fs::read_dir(root)
+        .map_err(|error| error.to_string())?
+        .flatten()
+    {
+        if !entry
+            .file_type()
+            .map(|kind| kind.is_file())
+            .unwrap_or(false)
+        {
+            continue;
+        }
         let name = entry.file_name().to_string_lossy().into_owned();
         let upper = name.to_ascii_uppercase();
         let bytes = fs::read(entry.path()).map_err(|error| error.to_string())?;
         if upper.ends_with(".CH") {
-            if pascal_ascii(&bytes, 0) != "130" { return Err(format!("Unsupported Agilent ChemStation .ch version in {}", entry.path().display())); }
+            if pascal_ascii(&bytes, 0) != "130" {
+                return Err(format!(
+                    "Unsupported Agilent ChemStation .ch version in {}",
+                    entry.path().display()
+                ));
+            }
             const HEADER: usize = 0x1800;
             let scale = be64(&bytes, 0x127c)?;
             let start = be32(&bytes, 0x11a)?;
             let end = be32(&bytes, 0x11e)?;
             let raw = decode_ch(&bytes, HEADER)?;
-            if raw.is_empty() { continue; }
-            let step = if raw.len() > 1 { (end - start) as f32 / (raw.len() - 1) as f32 } else { 0.0 };
-            output.push(crate::reader::Chromatogram { id: name.clone(), signal_type: "UV".into(), chromatogram_type: "UV".into(), detector: "UV".into(), channel: name, units: pascal_utf16(&bytes, 0x104c), interval_ms: step, time: (0..raw.len()).map(|index| (start as f32 + index as f32 * step) / 60000.0).collect(), intensity: raw.into_iter().map(|value| value as f32 * scale as f32).collect(), ..Default::default() });
-            output.last_mut().unwrap().start_time = output.last().and_then(|value| value.time.first().copied());
-            output.last_mut().unwrap().end_time = output.last().and_then(|value| value.time.last().copied());
+            if raw.is_empty() {
+                continue;
+            }
+            let step = if raw.len() > 1 {
+                (end - start) as f32 / (raw.len() - 1) as f32
+            } else {
+                0.0
+            };
+            output.push(crate::reader::Chromatogram {
+                id: name.clone(),
+                signal_type: "UV".into(),
+                chromatogram_type: "UV".into(),
+                detector: "UV".into(),
+                channel: name,
+                units: pascal_utf16(&bytes, 0x104c),
+                wavelength_nm: pascal_utf16(&bytes, 0x104c)
+                    .split_whitespace()
+                    .find_map(|value| value.parse().ok())
+                    .unwrap_or(0.0),
+                interval_ms: step,
+                time: (0..raw.len())
+                    .map(|index| (start as f32 + index as f32 * step) / 60000.0)
+                    .collect(),
+                intensity: raw
+                    .into_iter()
+                    .map(|value| value as f32 * scale as f32)
+                    .collect(),
+                ..Default::default()
+            });
+            output.last_mut().unwrap().start_time =
+                output.last().and_then(|value| value.time.first().copied());
+            output.last_mut().unwrap().end_time =
+                output.last().and_then(|value| value.time.last().copied());
             output.last_mut().unwrap().interval_ms = step * 60000.0;
         } else if upper.ends_with(".UV") {
-            if pascal_ascii(&bytes, 0) != "131" { return Err(format!("Unsupported Agilent ChemStation .UV version in {}", entry.path().display())); }
+            if pascal_ascii(&bytes, 0) != "131" {
+                return Err(format!(
+                    "Unsupported Agilent ChemStation .UV version in {}",
+                    entry.path().display()
+                ));
+            }
             const HEADER: usize = 0x1000;
             let scale = be64(&bytes, 0x0c0d)?;
             let count = be32(&bytes, 0x116)?;
-            if count <= 0 { continue; }
+            if count <= 0 {
+                continue;
+            }
             let mut offset = HEADER;
             let mut times = Vec::new();
             let mut rows: Vec<Vec<f32>> = Vec::new();
@@ -371,16 +473,65 @@ pub fn read_chromatograms(path: impl AsRef<Path>) -> Result<Vec<crate::reader::C
                 let low = le16(&bytes, offset + 8)?;
                 let high = le16(&bytes, offset + 10)?;
                 let step = le16(&bytes, offset + 12)?;
-                if step == 0 || high < low { return Err("Agilent ChemStation .UV segment has an invalid wavelength grid".into()); }
+                if step == 0 || high < low {
+                    return Err(
+                        "Agilent ChemStation .UV segment has an invalid wavelength grid".into(),
+                    );
+                }
                 let channels = ((high - low) / step + 1) as usize;
-                if wavelengths.is_empty() { wavelengths = (0..channels).map(|index| (low + index as u16 * step) as f32 / 20.0).collect(); }
-                if channels != wavelengths.len() { return Err("Agilent ChemStation .UV wavelength grids change between segments".into()); }
+                if wavelengths.is_empty() {
+                    wavelengths = (0..channels)
+                        .map(|index| (low + index as u16 * step) as f32 / 20.0)
+                        .collect();
+                }
+                if channels != wavelengths.len() {
+                    return Err(
+                        "Agilent ChemStation .UV wavelength grids change between segments".into(),
+                    );
+                }
                 let body = offset + 22;
-                let row = if label == 70 { (0..channels).map(|index| le64(&bytes, body + index * 8).map(|value| value as f32 * scale as f32)).collect::<Result<Vec<_>, _>>()? } else { decode_delta(&bytes, body, channels, true)?.into_iter().map(|value| value as f32 * scale as f32).collect() };
-                times.push(time); rows.push(row); offset += if segment_length > 0 { segment_length } else { 22 };
+                let row = if label == 70 {
+                    (0..channels)
+                        .map(|index| {
+                            le64(&bytes, body + index * 8).map(|value| value as f32 * scale as f32)
+                        })
+                        .collect::<Result<Vec<_>, _>>()?
+                } else {
+                    decode_delta(&bytes, body, channels, true)?
+                        .into_iter()
+                        .map(|value| value as f32 * scale as f32)
+                        .collect()
+                };
+                times.push(time);
+                rows.push(row);
+                offset += if segment_length > 0 {
+                    segment_length
+                } else {
+                    22
+                };
             }
-            let interval_ms = if times.len() > 1 { (times[1] - times[0]) * 60000.0 } else { 0.0 };
-            for channel in 0..wavelengths.len() { output.push(crate::reader::Chromatogram { id: format!("{}:{}", name, wavelengths[channel]), signal_type: "UV".into(), chromatogram_type: "UV".into(), detector: "UV".into(), channel: name.clone(), units: pascal_utf16(&bytes, 0xc15), interval_ms, start_time: times.first().copied(), end_time: times.last().copied(), time: times.clone(), intensity: rows.iter().map(|row| row[channel]).collect(), ..Default::default() }); }
+            let interval_ms = if times.len() > 1 {
+                (times[1] - times[0]) * 60000.0
+            } else {
+                0.0
+            };
+            for channel in 0..wavelengths.len() {
+                output.push(crate::reader::Chromatogram {
+                    id: format!("{}:{}", name, wavelengths[channel]),
+                    signal_type: "UV".into(),
+                    chromatogram_type: "UV".into(),
+                    detector: "UV".into(),
+                    channel: name.clone(),
+                    units: pascal_utf16(&bytes, 0xc15),
+                    wavelength_nm: wavelengths[channel],
+                    interval_ms,
+                    start_time: times.first().copied(),
+                    end_time: times.last().copied(),
+                    time: times.clone(),
+                    intensity: rows.iter().map(|row| row[channel]).collect(),
+                    ..Default::default()
+                });
+            }
         }
     }
     Ok(output)

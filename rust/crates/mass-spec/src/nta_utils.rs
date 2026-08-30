@@ -80,7 +80,12 @@ fn reorder_int(v: &mut Vec<i32>, order: &[usize]) {
 }
 
 /// nta::utils::reorder_multiple_vectors (3 float vectors).
-pub fn reorder_multiple_vectors3(order: &[usize], a: &mut Vec<f32>, b: &mut Vec<f32>, c: &mut Vec<f32>) {
+pub fn reorder_multiple_vectors3(
+    order: &[usize],
+    a: &mut Vec<f32>,
+    b: &mut Vec<f32>,
+    c: &mut Vec<f32>,
+) {
     reorder_float(a, order);
     reorder_float(b, order);
     reorder_float(c, order);
@@ -189,7 +194,14 @@ pub fn gaussian_function_with_baseline(a: f32, mu: f32, sigma: f32, base: f32, x
 
 /// nta::utils::fit_gaussian — RMSProp-style gradient descent over up to 500
 /// iterations. Returns (A, mu, sigma, base).
-pub fn fit_gaussian(x: &[f32], y: &[f32], mut a: f32, mut mu: f32, mut sigma: f32, mut base: f32) -> (f32, f32, f32, f32) {
+pub fn fit_gaussian(
+    x: &[f32],
+    y: &[f32],
+    mut a: f32,
+    mut mu: f32,
+    mut sigma: f32,
+    mut base: f32,
+) -> (f32, f32, f32, f32) {
     const ALPHA: f32 = 0.01;
     const BETA1: f32 = 0.9;
     const BETA2: f32 = 0.999;
@@ -227,7 +239,14 @@ pub fn fit_gaussian(x: &[f32], y: &[f32], mut a: f32, mut mu: f32, mut sigma: f3
 }
 
 /// nta::utils::calculate_gaussian_rsquared.
-pub fn calculate_gaussian_rsquared(x: &[f32], y: &[f32], a: f32, mu: f32, sigma: f32, base: f32) -> f32 {
+pub fn calculate_gaussian_rsquared(
+    x: &[f32],
+    y: &[f32],
+    a: f32,
+    mu: f32,
+    sigma: f32,
+    base: f32,
+) -> f32 {
     if y.is_empty() {
         return 0.0;
     }
@@ -367,11 +386,7 @@ pub fn calculate_fwhm_rt(rt: &[f32], intensity: &[f32]) -> f32 {
 }
 
 /// `nta::deconvolution::calculate_fwhm_combined` — (fwhm_rt, fwhm_mz, mean_mz_fwhm).
-pub fn calculate_fwhm_combined(
-    rt: &[f32],
-    mz: &[f32],
-    intensity: &[f32],
-) -> (f32, f32, f32) {
+pub fn calculate_fwhm_combined(rt: &[f32], mz: &[f32], intensity: &[f32]) -> (f32, f32, f32) {
     if rt.len() != intensity.len() || mz.len() != intensity.len() || rt.is_empty() {
         return (0.0, 0.0, 0.0);
     }
@@ -413,7 +428,11 @@ pub fn calculate_fwhm_combined(
             count += 1;
         }
         fwhm_mz = max_mz - min_mz;
-        mean_mz_fwhm = if count > 0 { sum_mz / count as f32 } else { mz[max_idx] };
+        mean_mz_fwhm = if count > 0 {
+            sum_mz / count as f32
+        } else {
+            mz[max_idx]
+        };
     } else {
         fwhm_mz = mz[mz.len() - 1] - mz[0];
         mean_mz_fwhm = mz[max_idx];

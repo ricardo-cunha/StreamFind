@@ -392,7 +392,7 @@ std::uint32_t read_le32(const std::vector<std::uint8_t> &bytes, const std::size_
 }
 }
 
-BafProfileSpectrum read_baf_profile_spectrum(const std::string &path, const std::uint64_t profile_array_id)
+BafProfileSpectrum read_baf_profile_spectrum_variant(const std::string &path, const std::uint64_t profile_array_id, const bool base_inside_sign)
 {
   if (detect_family(path) != Family::Baf)
     throw std::runtime_error("Not a Bruker BAF directory: " + path);
@@ -469,7 +469,9 @@ BafProfileSpectrum read_baf_profile_spectrum(const std::string &path, const std:
       {
         const auto raw = reader.read(width + 1);
         const auto magnitude = (raw >> 1) + bases[slot];
-        const auto delta = (raw & 1u) == 0 ? static_cast<std::int64_t>(magnitude) : -static_cast<std::int64_t>(magnitude);
+        const auto delta = base_inside_sign
+                               ? ((raw & 1u) == 0 ? static_cast<std::int64_t>(magnitude) : -static_cast<std::int64_t>(magnitude))
+                               : ((raw & 1u) == 0 ? static_cast<std::int64_t>(raw >> 1) : -static_cast<std::int64_t>(raw >> 1)) + static_cast<std::int64_t>(bases[slot]);
         const auto value = static_cast<std::int64_t>(previous) + delta;
         if (value < 0 || value > std::numeric_limits<std::uint32_t>::max())
           throw std::runtime_error("BAF profile delta exceeds uint32 range.");
@@ -487,6 +489,25 @@ BafProfileSpectrum read_baf_profile_spectrum(const std::string &path, const std:
   return spectrum;
 }
 
+BafProfileSpectrum read_baf_profile_spectrum(const std::string &path, const std::uint64_t profile_array_id)
+{
+  try
+  {
+    return read_baf_profile_spectrum_variant(path, profile_array_id, true);
+  }
+  catch (const std::runtime_error &first)
+  {
+    try
+    {
+      return read_baf_profile_spectrum_variant(path, profile_array_id, false);
+    }
+    catch (const std::runtime_error &second)
+    {
+      throw std::runtime_error(std::string("BAF profile decode failed with both native delta encodings: ") + first.what() + "; alternate: " + second.what());
+    }
+  }
+}
+
 class TsfReader final : public MASS_SPEC_READER
 {
 public:
@@ -500,7 +521,7 @@ public:
   std::vector<int> get_polarity() override { return metadata_int([](const TsfFrame &f) { return f.polarity == "+" ? 1 : f.polarity == "-" ? -1 : 0; }); }
   std::vector<int> get_mode() override { return metadata_int([](const TsfFrame &f) { return f.scan_mode; }); }
   std::vector<int> get_level() override { return metadata_int([](const TsfFrame &f) { return f.msms_type == 0 ? 1 : 2; }); }
-  std::vector<int> get_configuration() override { return {}; }
+  std::vector<int> get_configuration() override { return std::vector<int>(frames_.size(), 0); }
   float get_min_mz() override { return 95.0f; }
   float get_max_mz() override { return 2505.0f; }
   float get_start_rt() override { return frames_.empty() ? 0.0f : static_cast<float>(frames_.front().retention_time); }
@@ -511,13 +532,13 @@ public:
     MASS_SPEC_SUMMARY s{}; s.number_spectra = get_number_spectra(); s.number_chromatograms = 0;
     s.number_spectra_binary_arrays = get_number_spectra_binary_arrays(); s.format = get_format(); s.type = get_type();
     s.min_mz = get_min_mz(); s.max_mz = get_max_mz(); s.start_rt = get_start_rt(); s.end_rt = get_end_rt();
-    s.has_ion_mobility = false; s.polarity = get_polarity(); s.mode = get_mode(); s.level = get_level(); return s;
+    s.has_ion_mobility = false; s.polarity = get_polarity(); s.mode = get_mode(); s.level = get_level(); s.configuration = get_configuration(); return s;
   }
   std::vector<int> get_spectra_index(std::vector<int> indices = {}) override { return normalize(indices); }
   std::vector<int> get_spectra_scan_number(std::vector<int> indices = {}) override { return values(indices, [](const TsfFrame &f) { return static_cast<int>(f.id); }); }
   std::vector<int> get_spectra_array_length(std::vector<int> indices = {}) override { return values(indices, [](const TsfFrame &f) { return f.num_peaks; }); }
   std::vector<int> get_spectra_level(std::vector<int> indices = {}) override { return values(indices, [](const TsfFrame &f) { return f.msms_type == 0 ? 1 : 2; }); }
-  std::vector<int> get_spectra_configuration(std::vector<int> = {}) override { return {}; }
+  std::vector<int> get_spectra_configuration(std::vector<int> indices = {}) override { return std::vector<int>(normalize(std::move(indices)).size(), 0); }
   std::vector<int> get_spectra_mode(std::vector<int> indices = {}) override { return values(indices, [](const TsfFrame &f) { return f.scan_mode; }); }
   std::vector<int> get_spectra_polarity(std::vector<int> indices = {}) override { return values(indices, [](const TsfFrame &f) { return f.polarity == "+" ? 1 : f.polarity == "-" ? -1 : 0; }); }
   std::vector<float> get_spectra_lowmz(std::vector<int> indices = {}) override { return values_float(indices, [](const TsfFrame &) { return 95.0f; }); }
@@ -526,7 +547,7 @@ public:
   std::vector<float> get_spectra_bpint(std::vector<int> indices = {}) override { return values_float(indices, [](const TsfFrame &f) { return static_cast<float>(f.max_intensity); }); }
   std::vector<float> get_spectra_tic(std::vector<int> indices = {}) override { return values_float(indices, [](const TsfFrame &f) { return static_cast<float>(f.summed_intensities); }); }
   std::vector<float> get_spectra_rt(std::vector<int> indices = {}) override { return values_float(indices, [](const TsfFrame &f) { return static_cast<float>(f.retention_time); }); }
-  std::vector<float> get_spectra_mobility(std::vector<int> = {}) override { return {}; }
+  std::vector<float> get_spectra_mobility(std::vector<int> indices = {}) override { return std::vector<float>(normalize(std::move(indices)).size(), 0.0f); }
   std::vector<int> get_spectra_precursor_scan(std::vector<int> indices = {}) override { return values(indices, [this](const TsfFrame &f) { const auto *i = find_msms(f.id); return i ? static_cast<int>(i->parent) : 0; }); }
   std::vector<float> get_spectra_precursor_mz(std::vector<int> indices = {}) override { return values_float(indices, [this](const TsfFrame &f) { const auto *i = find_msms(f.id); return i ? static_cast<float>(i->trigger_mass) : 0.0f; }); }
   std::vector<float> get_spectra_precursor_window_mz(std::vector<int> indices = {}) override { return get_spectra_precursor_mz(indices); }
@@ -563,6 +584,20 @@ std::unique_ptr<MASS_SPEC_READER> create_tsf_reader(const std::string &path)
   return std::make_unique<TsfReader>(path);
 }
 
+std::size_t baf_profile_point_count(const std::string &path, const std::uint64_t profile_array_id)
+{
+  const auto offset = profile_array_id & 0x00FFFFFFFFFFFFFFull;
+  std::ifstream input(std::filesystem::path(path) / "analysis.baf", std::ios::binary);
+  if (!input)
+    throw std::runtime_error("Unable to open BAF payload: " + path);
+  input.seekg(static_cast<std::streamoff>(offset + 0x30), std::ios::beg);
+  std::uint32_t count = 0;
+  input.read(reinterpret_cast<char *>(&count), sizeof(count));
+  if (!input)
+    throw std::runtime_error("BAF profile-array point count is outside analysis.baf.");
+  return static_cast<std::size_t>(count);
+}
+
 class BafReader final : public MASS_SPEC_READER
 {
 public:
@@ -595,7 +630,7 @@ public:
   }
   std::vector<int> get_spectra_index(std::vector<int> indices = {}) override { return normalize(indices); }
   std::vector<int> get_spectra_scan_number(std::vector<int> indices = {}) override { return selected(indices, [](const auto &s) { return static_cast<int>(s.id); }); }
-  std::vector<int> get_spectra_array_length(std::vector<int> indices = {}) override { return selected(indices, [this](const auto &s) { return static_cast<int>(read_baf_profile_spectrum(file_, s.profile_intensity_id).intensity.size()); }); }
+  std::vector<int> get_spectra_array_length(std::vector<int> indices = {}) override { return selected(indices, [this](const auto &s) { return static_cast<int>(baf_profile_point_count(file_, s.profile_intensity_id)); }); }
   std::vector<int> get_spectra_level(std::vector<int> indices = {}) override { return selected(indices, [](const auto &s) { return s.ms_level; }); }
   std::vector<int> get_spectra_configuration(std::vector<int> indices = {}) override { return selected(indices, [](const auto &s) { return s.acquisition_mode; }); }
   std::vector<int> get_spectra_mode(std::vector<int> indices = {}) override { return selected(indices, [](const auto &s) { return s.scan_mode; }); }
@@ -606,7 +641,7 @@ public:
   std::vector<float> get_spectra_bpint(std::vector<int> indices = {}) override { return selected_float(indices, [](const auto &s) { return static_cast<float>(s.maximum_intensity); }); }
   std::vector<float> get_spectra_tic(std::vector<int> indices = {}) override { return selected_float(indices, [](const auto &s) { return static_cast<float>(s.summed_intensity); }); }
   std::vector<float> get_spectra_rt(std::vector<int> indices = {}) override { return selected_float(indices, [](const auto &s) { return static_cast<float>(s.retention_time); }); }
-  std::vector<float> get_spectra_mobility(std::vector<int> = {}) override { return {}; }
+  std::vector<float> get_spectra_mobility(std::vector<int> indices = {}) override { return std::vector<float>(normalize(std::move(indices)).size(), 0.0f); }
   std::vector<int> get_spectra_precursor_scan(std::vector<int> indices = {}) override { return selected(indices, [](const auto &s) { return static_cast<int>(s.parent); }); }
   std::vector<float> get_spectra_precursor_mz(std::vector<int> indices = {}) override { return std::vector<float>(normalize(indices).size(), 0.0f); }
   std::vector<float> get_spectra_precursor_window_mz(std::vector<int> indices = {}) override { return get_spectra_precursor_mz(indices); }
@@ -618,7 +653,7 @@ public:
     const auto selected_indices = normalize(indices); MASS_SPEC_SPECTRA_HEADERS out; out.resize_all(selected_indices.size());
     for (std::size_t n = 0; n < selected_indices.size(); ++n)
     {
-      const auto &s = spectra_.at(selected_indices[n]); const auto length = get_spectra_array_length({static_cast<int>(selected_indices[n])})[0];
+      const auto &s = spectra_.at(selected_indices[n]); const auto length = static_cast<int>(baf_profile_point_count(file_, s.profile_intensity_id));
       out.index[n] = static_cast<int>(selected_indices[n]); out.scan[n] = static_cast<int>(s.id); out.array_length[n] = length;
       out.level[n] = s.ms_level; out.mode[n] = s.scan_mode; out.polarity[n] = s.polarity; out.configuration[n] = s.acquisition_mode;
       out.lowmz[n] = static_cast<float>(s.mz_lower); out.highmz[n] = static_cast<float>(s.mz_upper); out.bpint[n] = static_cast<float>(s.maximum_intensity);

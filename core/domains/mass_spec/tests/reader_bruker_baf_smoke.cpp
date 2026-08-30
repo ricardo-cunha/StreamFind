@@ -34,7 +34,8 @@ int main()
     if (public_file.get_format() != "BrukerBAF" || public_file.get_number_spectra() <= 0)
       return 6;
     const auto headers = public_file.get_spectra_headers({0});
-    if (headers.size() != 1 || headers.scan[0] != 1 || headers.array_length[0] != 513287 || headers.level[0] != 0)
+    if (headers.size() != 1 || headers.scan[0] != 1 || headers.array_length[0] != 513287 || headers.level[0] != 0 ||
+        headers.tic[0] <= 0.0f || headers.bpint[0] <= 0.0f)
       return 7;
     const auto public_spectrum = public_file.get_spectrum(0);
     if (public_spectrum.binary_arrays_count != 2 || public_spectrum.binary_data.size() != 2 ||

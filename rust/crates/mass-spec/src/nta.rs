@@ -366,12 +366,16 @@ impl NtaFeatures {
         self.ms2_intensity.push(r.ms2_intensity.clone());
         self.annotation_category.push(r.annotation_category.clone());
         self.annotation_type.push(r.annotation_type.clone());
-        self.annotation_parent_feature.push(r.annotation_parent_feature.clone());
+        self.annotation_parent_feature
+            .push(r.annotation_parent_feature.clone());
         self.annotation_element.push(r.annotation_element.clone());
-        self.annotation_mass_error_da.push(r.annotation_mass_error_da as f32);
-        self.annotation_mass_error_ppm.push(r.annotation_mass_error_ppm as f32);
+        self.annotation_mass_error_da
+            .push(r.annotation_mass_error_da as f32);
+        self.annotation_mass_error_ppm
+            .push(r.annotation_mass_error_ppm as f32);
         self.annotation_rt_error.push(r.annotation_rt_error as f32);
-        self.annotation_rel_intensity.push(r.annotation_rel_intensity as f32);
+        self.annotation_rel_intensity
+            .push(r.annotation_rel_intensity as f32);
         self.annotation_expected_rel_intensity_min
             .push(r.annotation_expected_rel_intensity_min as f32);
         self.annotation_expected_rel_intensity_max
@@ -381,12 +385,16 @@ impl NtaFeatures {
         self.component_rt_center.push(r.component_rt_center as f32);
         self.component_rt_spread.push(r.component_rt_spread as f32);
         self.component_density.push(r.component_density as f32);
-        self.component_mean_correlation.push(r.component_mean_correlation as f32);
-        self.component_best_partner.push(r.component_best_partner.clone());
-        self.component_max_correlation.push(r.component_max_correlation as f32);
+        self.component_mean_correlation
+            .push(r.component_mean_correlation as f32);
+        self.component_best_partner
+            .push(r.component_best_partner.clone());
+        self.component_max_correlation
+            .push(r.component_max_correlation as f32);
         self.component_mean_correlation_to_component
             .push(r.component_mean_correlation_to_component as f32);
-        self.component_membership_score.push(r.component_membership_score as f32);
+        self.component_membership_score
+            .push(r.component_membership_score as f32);
         self.component_is_core.push(r.component_is_core);
         self.component_bridge_flag.push(r.component_bridge_flag);
     }
@@ -951,7 +959,11 @@ pub fn get_spectra_targets(
             if scan.mz.len() < 2 {
                 continue;
             }
-            let scan_pre_mz = if precursor { scan.precursor_mz } else { mzcenter };
+            let scan_pre_mz = if precursor {
+                scan.precursor_mz
+            } else {
+                mzcenter
+            };
             let scan_mobility = scan.mobility;
             let scan_ce = scan.collision_energy;
             for k in 0..scan.mz.len() {

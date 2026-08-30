@@ -96,7 +96,11 @@ fn candidate_priority(cat: &str, ty: &str) -> i32 {
         return 4;
     }
     if cat == "adduct" {
-        return if ty.contains("[2M+") || ty.contains("[2M-") { 2 } else { 3 };
+        return if ty.contains("[2M+") || ty.contains("[2M-") {
+            2
+        } else {
+            3
+        };
     }
     if cat == "loss" {
         return 1;
@@ -531,15 +535,7 @@ pub struct Isotope {
 }
 
 impl Isotope {
-    fn new(
-        e: &str,
-        i: &str,
-        md: f32,
-        ab: f32,
-        ab_mono: f32,
-        mi: i32,
-        ma: i32,
-    ) -> Self {
+    fn new(e: &str, i: &str, md: f32, ab: f32, ab_mono: f32, mi: i32, ma: i32) -> Self {
         Self {
             element: e.to_string(),
             isotope: i.to_string(),
@@ -660,8 +656,7 @@ impl IsotopeCombinations {
 
         for n in 1..=max_number_elements {
             let mut new_combinations_set: BTreeSet<Vec<String>> = BTreeSet::new();
-            let existing: Vec<Vec<String>> =
-                combinations_set.iter().cloned().collect();
+            let existing: Vec<Vec<String>> = combinations_set.iter().cloned().collect();
 
             for mut combination in existing {
                 if combination[0] == "2H" || combination[0] == "17O" {
@@ -670,9 +665,7 @@ impl IsotopeCombinations {
                 if n > 1 && (combination[0] == "15N" || combination[0] == "33S") {
                     continue;
                 }
-                if combination.len() >= 2
-                    && (combination[1] == "15N" || combination[1] == "33S")
-                {
+                if combination.len() >= 2 && (combination[1] == "15N" || combination[1] == "33S") {
                     continue;
                 }
                 for iso in &isotopes_str {
@@ -699,10 +692,8 @@ impl IsotopeCombinations {
         let isotopes_mass_distances: Vec<f32> =
             isotopes.data.iter().map(|iso| iso.mass_distance).collect();
 
-        let mut tensor_mass_distances_unordered: Vec<Vec<f32>> =
-            vec![Vec::new(); length as usize];
-        let mut tensor_abundances_unordered: Vec<Vec<f32>> =
-            vec![Vec::new(); length as usize];
+        let mut tensor_mass_distances_unordered: Vec<Vec<f32>> = vec![Vec::new(); length as usize];
+        let mut tensor_abundances_unordered: Vec<Vec<f32>> = vec![Vec::new(); length as usize];
         let mut mass_distances_unordered: Vec<f32> = vec![0.0; length as usize];
 
         for i in 0..length as usize {
@@ -723,23 +714,18 @@ impl IsotopeCombinations {
         }
 
         let mut order_idx: Vec<usize> = (0..length as usize).collect();
-        order_idx.sort_by(|&i, &j| {
-            mass_distances_unordered[i].total_cmp(&mass_distances_unordered[j])
-        });
+        order_idx
+            .sort_by(|&i, &j| mass_distances_unordered[i].total_cmp(&mass_distances_unordered[j]));
 
-        let mut tensor_combinations: Vec<Vec<String>> =
-            vec![Vec::new(); length as usize];
-        let mut tensor_mass_distances: Vec<Vec<f32>> =
-            vec![Vec::new(); length as usize];
-        let mut tensor_abundances: Vec<Vec<f32>> =
-            vec![Vec::new(); length as usize];
+        let mut tensor_combinations: Vec<Vec<String>> = vec![Vec::new(); length as usize];
+        let mut tensor_mass_distances: Vec<Vec<f32>> = vec![Vec::new(); length as usize];
+        let mut tensor_abundances: Vec<Vec<f32>> = vec![Vec::new(); length as usize];
         let mut mass_distances: Vec<f32> = vec![0.0; length as usize];
         let mut step: Vec<i32> = vec![0; length as usize];
 
         for i in 0..length as usize {
             tensor_combinations[i] = tensor_combinations_unordered[order_idx[i]].clone();
-            tensor_mass_distances[i] =
-                tensor_mass_distances_unordered[order_idx[i]].clone();
+            tensor_mass_distances[i] = tensor_mass_distances_unordered[order_idx[i]].clone();
             tensor_abundances[i] = tensor_abundances_unordered[order_idx[i]].clone();
             mass_distances[i] = mass_distances_unordered[order_idx[i]];
             step[i] = mass_distances[i].round() as i32;
@@ -1237,8 +1223,8 @@ impl CandidateChain {
                         for c in 0..number_combinations {
                             let candidate_mass_distance_error =
                                 (mass_distances[c] - candidate_mass_distance).abs();
-                            let combination = &combinations.tensor_combinations
-                                [which_combinations[c]];
+                            let combination =
+                                &combinations.tensor_combinations[which_combinations[c]];
 
                             // Build combination string "a/b/c"
                             let mut concat_combination = combination[0].clone();
@@ -1256,10 +1242,7 @@ impl CandidateChain {
                             }
 
                             for (iso, iso_n) in &isotope_map {
-                                let iso_idx = isotopes_str_index(
-                                    &combinations.isotopes_str,
-                                    iso,
-                                );
+                                let iso_idx = isotopes_str_index(&combinations.isotopes_str, iso);
                                 let iso_ab = combinations.abundances[iso_idx];
                                 let mono_ab = combinations.abundances_monoisotopic[iso_idx];
                                 let mut min_el_num = combinations.min[iso_idx] as f32;
@@ -1304,26 +1287,24 @@ impl CandidateChain {
                                         fact = fact.wrapping_mul(a as u32);
                                     }
 
-                                    let mut min_coef: f64 = ((mono_ab.powf(
-                                        min_el_num - *iso_n as f32,
-                                    ) * iso_ab.powi(*iso_n))
+                                    let mut min_coef: f64 = ((mono_ab
+                                        .powf(min_el_num - *iso_n as f32)
+                                        * iso_ab.powi(*iso_n))
                                         / fact as f32)
                                         as f64;
-                                    let mut max_coef: f64 = ((mono_ab.powf(
-                                        max_el_num - *iso_n as f32,
-                                    ) * iso_ab.powi(*iso_n))
+                                    let mut max_coef: f64 = ((mono_ab
+                                        .powf(max_el_num - *iso_n as f32)
+                                        * iso_ab.powi(*iso_n))
                                         / fact as f32)
                                         as f64;
 
                                     min_coef = min_coef / mono_ab.powf(min_el_num) as f64;
                                     max_coef = max_coef / mono_ab.powf(max_el_num) as f64;
 
-                                    min_coef = min_coef
-                                        * min_el_num as f64
-                                        * (min_el_num - 1.0) as f64;
-                                    max_coef = max_coef
-                                        * max_el_num as f64
-                                        * (max_el_num - 1.0) as f64;
+                                    min_coef =
+                                        min_coef * min_el_num as f64 * (min_el_num - 1.0) as f64;
+                                    max_coef =
+                                        max_coef * max_el_num as f64 * (max_el_num - 1.0) as f64;
 
                                     for t in 2..=*iso_n - 1 {
                                         min_coef *= (min_el_num - t as f32) as f64;
@@ -1386,20 +1367,14 @@ impl CandidateChain {
                                     iso_chain.mzr.push(mzr);
                                     iso_chain.isotope.push(concat_combination);
                                     iso_chain.mass_distance.push(candidate_mass_distance);
-                                    iso_chain
-                                        .theoretical_mass_distance
-                                        .push(mass_distances[c]);
+                                    iso_chain.theoretical_mass_distance.push(mass_distances[c]);
                                     iso_chain
                                         .mass_distance_error
                                         .push(candidate_mass_distance_error);
                                     iso_chain.time_error.push(candidate_time_error);
                                     iso_chain.abundance.push(rel_int);
-                                    iso_chain
-                                        .theoretical_abundance_min
-                                        .push(min_rel_int);
-                                    iso_chain
-                                        .theoretical_abundance_max
-                                        .push(max_rel_int);
+                                    iso_chain.theoretical_abundance_min.push(min_rel_int);
+                                    iso_chain.theoretical_abundance_max.push(max_rel_int);
                                     iso_chain.length += 1;
                                 }
                             }
@@ -1452,26 +1427,18 @@ impl CandidateChain {
             if sel_iso_chain.length > 1 {
                 for i in 1..sel_iso_chain.chain.len() {
                     let candidate_idx = sel_iso_chain.candidate_indices[i];
-                    self.isotope_theoretical_mass_distance.insert(
-                        candidate_idx,
-                        sel_iso_chain.theoretical_mass_distance[i],
-                    );
-                    self.isotope_theoretical_abundance_min.insert(
-                        candidate_idx,
-                        sel_iso_chain.theoretical_abundance_min[i],
-                    );
-                    self.isotope_theoretical_abundance_max.insert(
-                        candidate_idx,
-                        sel_iso_chain.theoretical_abundance_max[i],
-                    );
+                    self.isotope_theoretical_mass_distance
+                        .insert(candidate_idx, sel_iso_chain.theoretical_mass_distance[i]);
+                    self.isotope_theoretical_abundance_min
+                        .insert(candidate_idx, sel_iso_chain.theoretical_abundance_min[i]);
+                    self.isotope_theoretical_abundance_max
+                        .insert(candidate_idx, sel_iso_chain.theoretical_abundance_max[i]);
 
                     // Format: isotope MZXXX EL [M+n] where XXX=monoisotopic mass,
                     // EL=element, n=step
                     let label = format!(
                         "isotope MZ{} {} [M+{}]",
-                        mono_mz_rounded,
-                        sel_iso_chain.isotope[i],
-                        sel_iso_chain.step[i]
+                        mono_mz_rounded, sel_iso_chain.isotope[i], sel_iso_chain.step[i]
                     );
                     self.chain[candidate_idx as usize].adduct = label;
                 }
@@ -1689,11 +1656,7 @@ impl Default for AnnotationCandidate {
 // is_max_gap_reached
 // ---------------------------------------------------------------------------
 
-pub fn is_max_gap_reached(
-    current_step: i32,
-    max_gaps: i32,
-    steps: &[i32],
-) -> bool {
+pub fn is_max_gap_reached(current_step: i32, max_gaps: i32, steps: &[i32]) -> bool {
     if steps.is_empty() {
         return false;
     }
@@ -1796,9 +1759,8 @@ pub fn annotate_components_impl(
             }
 
             let mut sorted_indices: Vec<i32> = component_indices.clone();
-            sorted_indices.sort_by(|&lhs, &rhs| {
-                fts.mz[lhs as usize].total_cmp(&fts.mz[rhs as usize])
-            });
+            sorted_indices
+                .sort_by(|&lhs, &rhs| fts.mz[lhs as usize].total_cmp(&fts.mz[rhs as usize]));
 
             let mut final_candidate: HashMap<i32, AnnotationCandidate> = HashMap::new();
             for &idx in &sorted_indices {
@@ -1866,8 +1828,7 @@ pub fn annotate_components_impl(
                                 .isotope_theoretical_mass_distance
                                 .contains_key(&child_idx)
                             {
-                                isotope_chain.isotope_theoretical_mass_distance
-                                    [&child_idx] as f64
+                                isotope_chain.isotope_theoretical_mass_distance[&child_idx] as f64
                             } else {
                                 isotope_mass_delta(&candidate.element_or_delta)
                             };
@@ -1882,26 +1843,22 @@ pub fn annotate_components_impl(
                         } else {
                             0.0
                         };
-                        candidate.expected_rel_intensity_min =
-                            if isotope_chain
-                                .isotope_theoretical_abundance_min
-                                .contains_key(&child_idx)
-                            {
-                                isotope_chain.isotope_theoretical_abundance_min
-                                    [&child_idx] as f64
-                            } else {
-                                0.0
-                            };
-                        candidate.expected_rel_intensity_max =
-                            if isotope_chain
-                                .isotope_theoretical_abundance_max
-                                .contains_key(&child_idx)
-                            {
-                                isotope_chain.isotope_theoretical_abundance_max
-                                    [&child_idx] as f64
-                            } else {
-                                1.5
-                            };
+                        candidate.expected_rel_intensity_min = if isotope_chain
+                            .isotope_theoretical_abundance_min
+                            .contains_key(&child_idx)
+                        {
+                            isotope_chain.isotope_theoretical_abundance_min[&child_idx] as f64
+                        } else {
+                            0.0
+                        };
+                        candidate.expected_rel_intensity_max = if isotope_chain
+                            .isotope_theoretical_abundance_max
+                            .contains_key(&child_idx)
+                        {
+                            isotope_chain.isotope_theoretical_abundance_max[&child_idx] as f64
+                        } else {
+                            1.5
+                        };
                         candidate.priority = candidate_priority(&candidate.cat, &candidate.ty);
                         candidate.score = candidate_score(&candidate, ppm as f64);
                         if candidate.score < 0.0 {
@@ -1975,8 +1932,7 @@ pub fn annotate_components_impl(
                 }
             }
 
-            let mut relation_candidates: HashMap<i32, Vec<AnnotationCandidate>> =
-                HashMap::new();
+            let mut relation_candidates: HashMap<i32, Vec<AnnotationCandidate>> = HashMap::new();
             for &anchor_idx in &non_isotope_indices {
                 let anchor = fts.get_feature(anchor_idx as usize);
                 let adducts = all_adducts.adducts(anchor.polarity);
@@ -1996,14 +1952,17 @@ pub fn annotate_components_impl(
                         0.0
                     };
 
-                    let base_adduct = if anchor.polarity == 1 { "[M+H]+" } else { "[M-H]-" };
+                    let base_adduct = if anchor.polarity == 1 {
+                        "[M+H]+"
+                    } else {
+                        "[M-H]-"
+                    };
 
                     for adduct in &adducts {
                         if adduct.ty == base_adduct {
                             continue;
                         }
-                        let theoretical_mz =
-                            theoretical_mz_from_adduct(neutral_mass, adduct);
+                        let theoretical_mz = theoretical_mz_from_adduct(neutral_mass, adduct);
                         let mass_error_ppm_value = ppm_error(child.mz, theoretical_mz);
                         if mass_error_ppm_value > (10.0f64).max(ppm as f64 * 1.5) {
                             continue;
@@ -2022,14 +1981,10 @@ pub fn annotate_components_impl(
                         candidate.rel_intensity = rel_intensity;
                         candidate.expected_rel_intensity_min = 0.0;
                         candidate.expected_rel_intensity_max = 2.0;
-                        candidate.priority =
-                            candidate_priority(&candidate.cat, &candidate.ty);
+                        candidate.priority = candidate_priority(&candidate.cat, &candidate.ty);
                         candidate.score = candidate_score(&candidate, ppm as f64);
                         candidate.label = make_annotation_label(&candidate);
-                        relation_candidates
-                            .entry(idx)
-                            .or_default()
-                            .push(candidate);
+                        relation_candidates.entry(idx).or_default().push(candidate);
                     }
 
                     for loss in &losses {
@@ -2055,14 +2010,10 @@ pub fn annotate_components_impl(
                         candidate.rel_intensity = rel_intensity;
                         candidate.expected_rel_intensity_min = 0.0;
                         candidate.expected_rel_intensity_max = 1.0;
-                        candidate.priority =
-                            candidate_priority(&candidate.cat, &candidate.ty);
+                        candidate.priority = candidate_priority(&candidate.cat, &candidate.ty);
                         candidate.score = candidate_score(&candidate, ppm as f64);
                         candidate.label = make_annotation_label(&candidate);
-                        relation_candidates
-                            .entry(idx)
-                            .or_default()
-                            .push(candidate);
+                        relation_candidates.entry(idx).or_default().push(candidate);
                     }
                 }
             }
@@ -2081,8 +2032,7 @@ pub fn annotate_components_impl(
             });
 
             let mut relation_changed = true;
-            let max_relation_iterations =
-                (non_isotope_indices.len() as i32).max(1);
+            let max_relation_iterations = (non_isotope_indices.len() as i32).max(1);
             for _iter in 0..max_relation_iterations {
                 if !relation_changed {
                     break;
@@ -2091,11 +2041,10 @@ pub fn annotate_components_impl(
                 let mut next_state = relation_state.clone();
 
                 for &feature_idx in &relation_update_order {
-                    let feature_candidates =
-                        match relation_candidates.get(&feature_idx) {
-                            Some(fc) => fc,
-                            None => continue,
-                        };
+                    let feature_candidates = match relation_candidates.get(&feature_idx) {
+                        Some(fc) => fc,
+                        None => continue,
+                    };
 
                     let current_it = relation_state.get(&feature_idx);
                     let mut best = final_candidate[&feature_idx].clone();
@@ -2136,14 +2085,9 @@ pub fn annotate_components_impl(
 
             let mut derived_anchor_indices: Vec<i32> = Vec::new();
             for (feature_idx, candidate) in &final_candidate {
-                if !candidate.is_default && (candidate.cat == "adduct" || candidate.cat == "loss")
-                {
+                if !candidate.is_default && (candidate.cat == "adduct" || candidate.cat == "loss") {
                     let mut visited: HashSet<i32> = HashSet::new();
-                    if relation_chain_reaches_root(
-                        *feature_idx,
-                        &final_candidate,
-                        &mut visited,
-                    ) {
+                    if relation_chain_reaches_root(*feature_idx, &final_candidate, &mut visited) {
                         derived_anchor_indices.push(*feature_idx);
                     }
                 }
@@ -2199,8 +2143,7 @@ pub fn annotate_components_impl(
                             .isotope_theoretical_mass_distance
                             .contains_key(&child_idx)
                         {
-                            isotope_chain.isotope_theoretical_mass_distance[&child_idx]
-                                as f64
+                            isotope_chain.isotope_theoretical_mass_distance[&child_idx] as f64
                         } else {
                             isotope_mass_delta(&candidate.element_or_delta)
                         };
@@ -2215,26 +2158,22 @@ pub fn annotate_components_impl(
                     } else {
                         0.0
                     };
-                    candidate.expected_rel_intensity_min =
-                        if isotope_chain
-                            .isotope_theoretical_abundance_min
-                            .contains_key(&child_idx)
-                        {
-                            isotope_chain.isotope_theoretical_abundance_min[&child_idx]
-                                as f64
-                        } else {
-                            0.0
-                        };
-                    candidate.expected_rel_intensity_max =
-                        if isotope_chain
-                            .isotope_theoretical_abundance_max
-                            .contains_key(&child_idx)
-                        {
-                            isotope_chain.isotope_theoretical_abundance_max[&child_idx]
-                                as f64
-                        } else {
-                            1.5
-                        };
+                    candidate.expected_rel_intensity_min = if isotope_chain
+                        .isotope_theoretical_abundance_min
+                        .contains_key(&child_idx)
+                    {
+                        isotope_chain.isotope_theoretical_abundance_min[&child_idx] as f64
+                    } else {
+                        0.0
+                    };
+                    candidate.expected_rel_intensity_max = if isotope_chain
+                        .isotope_theoretical_abundance_max
+                        .contains_key(&child_idx)
+                    {
+                        isotope_chain.isotope_theoretical_abundance_max[&child_idx] as f64
+                    } else {
+                        1.5
+                    };
                     candidate.priority = candidate_priority(&candidate.cat, &candidate.ty);
                     candidate.score = candidate_score(&candidate, ppm as f64);
                     if candidate.score < 0.0 {
@@ -2282,10 +2221,8 @@ pub fn annotate_components_impl(
                     ft.annotation_mass_error_ppm = candidate.mass_error_ppm;
                     ft.annotation_rt_error = candidate.rt_error;
                     ft.annotation_rel_intensity = candidate.rel_intensity;
-                    ft.annotation_expected_rel_intensity_min =
-                        candidate.expected_rel_intensity_min;
-                    ft.annotation_expected_rel_intensity_max =
-                        candidate.expected_rel_intensity_max;
+                    ft.annotation_expected_rel_intensity_min = candidate.expected_rel_intensity_min;
+                    ft.annotation_expected_rel_intensity_max = candidate.expected_rel_intensity_max;
                     ft.annotation_score = candidate.score;
                 }
                 fts.set_feature(idx as usize, &ft);

@@ -43,11 +43,12 @@ int main() {
         if (reader.get_format() != "SciexWIFF") return 17;
         if (reader.get_number_chromatograms() != 61) return 18;
 
-        const auto headers = reader.get_chromatograms_headers({0, 1});
-        if (headers.size() != 2) return 15;
+        const auto headers = reader.get_chromatograms_headers();
+        if (headers.size() != 61) return 15;
         if (headers.chromatogram_id[0] != "TIC" || headers.chromatogram_id[1] != "BPC") return 16;
-        if (headers.array_length[0] == 0 || headers.array_length[1] == 0) return 17;
-        const auto initial = reader.get_chromatograms();
+        if (headers.array_length[0] != -1 || headers.array_length[1] != -1 || headers.array_length[40] != -1) return 17;
+        const auto initial = reader.get_chromatograms({0, 1, 40, 41});
+        if (initial.size() != 4 || initial[0][1].empty() || initial[2][1].size() != 392) return 18;
         reader.select_analysis(3);
         const auto selected = reader.get_chromatograms();
         if (selected.size() != 61 || selected[0][1][9] != 4822.0f || selected[1][1][9] != 4574.0f || selected[40][1].size() != 392 || selected[41][1].size() != 392 || std::fabs(selected[40][0][0] - 0.708483f) > 0.00001f || selected[40][1][0] != 3943.0f || selected[41][1][0] != 203.0f) return 18;
@@ -55,7 +56,7 @@ int main() {
         if (selected_headers.size() != 1 || !std::isfinite(selected_headers.start_time[0]) || !std::isfinite(selected_headers.end_time[0]) || std::fabs(selected_headers.start_time[0] - scheduled[38].start_time) > 0.00001f || std::fabs(selected_headers.end_time[0] - scheduled[38].end_time) > 0.00001f) return 19;
         reader.select_analysis(0);
         const auto restored = reader.get_chromatograms();
-        if (restored.size() != initial.size() || restored[0][1][9] != initial[0][1][9]) return 20;
+        if (restored.size() != 61 || restored[0][1][9] != initial[0][1][9]) return 20;
     } catch (const std::exception &error) {
         std::cerr << error.what() << "\n";
         return 10;

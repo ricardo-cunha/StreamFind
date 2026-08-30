@@ -56,6 +56,22 @@ pub struct BafProfileSpectrum {
 }
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct BafSpectrumMetadata {
+    pub id: i64,
+    pub retention_time: f64,
+    pub parent: i64,
+    pub mz_lower: i32,
+    pub mz_upper: i32,
+    pub summed_intensity: f64,
+    pub maximum_intensity: f64,
+    pub profile_intensity_id: u64,
+    pub polarity: i32,
+    pub scan_mode: i32,
+    pub acquisition_mode: i32,
+    pub ms_level: i32,
+}
+
+#[derive(Debug, Clone, PartialEq)]
 pub struct TsfCalibration {
     pub id: i32,
     pub model_type: i32,
@@ -90,6 +106,49 @@ pub fn detect_family(path: &Path) -> Family {
     } else {
         Family::Unknown
     }
+}
+
+pub fn read_baf_spectra_metadata(
+    path: impl AsRef<Path>,
+) -> Result<Vec<BafSpectrumMetadata>, String> {
+    let path = path.as_ref();
+    if detect_family(path) != Family::Baf {
+        return Err(format!("Not a Bruker BAF directory: {}", path.display()));
+    }
+    let connection = Connection::open_in_memory().map_err(|error| error.to_string())?;
+    connection
+        .execute_batch("LOAD sqlite")
+        .map_err(|error| error.to_string())?;
+    let table = sqlite_scan(&connection, &path.join("analysis.sqlite"), "Spectra")?;
+    let acquisitions = sqlite_scan(
+        &connection,
+        &path.join("analysis.sqlite"),
+        "AcquisitionKeys",
+    )?;
+    let query = format!("SELECT s.Id,s.Rt,COALESCE(s.Parent,0),s.MzAcqRangeLower,s.MzAcqRangeUpper,s.SumIntensity,s.MaxIntensity,s.ProfileIntensityId,COALESCE(a.Polarity,0),COALESCE(a.ScanMode,0),COALESCE(a.AcquisitionMode,0),COALESCE(a.MsLevel,0) FROM {table} s LEFT JOIN {acquisitions} a ON a.Id=s.AcquisitionKey ORDER BY s.Id");
+    let mut statement = connection
+        .prepare(&query)
+        .map_err(|error| error.to_string())?;
+    let rows = statement
+        .query_map([], |row| {
+            Ok(BafSpectrumMetadata {
+                id: row.get(0)?,
+                retention_time: row.get(1)?,
+                parent: row.get(2)?,
+                mz_lower: row.get(3)?,
+                mz_upper: row.get(4)?,
+                summed_intensity: row.get(5)?,
+                maximum_intensity: row.get(6)?,
+                profile_intensity_id: row.get::<_, i64>(7)? as u64,
+                polarity: row.get(8)?,
+                scan_mode: row.get(9)?,
+                acquisition_mode: row.get(10)?,
+                ms_level: row.get(11)?,
+            })
+        })
+        .map_err(|error| error.to_string())?;
+    rows.map(|row| row.map_err(|error| error.to_string()))
+        .collect()
 }
 
 fn sql_quote(path: &Path) -> String {
@@ -180,37 +239,62 @@ pub fn read_tsf_line_spectrum(
     let mut input = File::open(path.join("analysis.tsf_bin")).map_err(|error| error.to_string())?;
     let file_size = input.metadata().map_err(|error| error.to_string())?.len();
     let offset = frame.tims_id as u64;
-    if offset.checked_add(8).filter(|end| *end <= file_size).is_none() {
+    if offset
+        .checked_add(8)
+        .filter(|end| *end <= file_size)
+        .is_none()
+    {
         return Err("TSF frame offset is outside analysis.tsf_bin".into());
     }
-    input.seek(SeekFrom::Start(offset)).map_err(|error| error.to_string())?;
+    input
+        .seek(SeekFrom::Start(offset))
+        .map_err(|error| error.to_string())?;
     let mut header = [0u8; 8];
-    input.read_exact(&mut header).map_err(|error| error.to_string())?;
+    input
+        .read_exact(&mut header)
+        .map_err(|error| error.to_string())?;
     let block_size = u32::from_le_bytes(header[0..4].try_into().unwrap()) as u64;
     let compressed_size = u32::from_le_bytes(header[4..8].try_into().unwrap()) as u64;
     if block_size < 8 || compressed_size > block_size - 8 {
         return Err("Invalid TSF frame block header".into());
     }
-    if offset.checked_add(8).and_then(|value| value.checked_add(compressed_size)).filter(|end| *end <= file_size).is_none() {
+    if offset
+        .checked_add(8)
+        .and_then(|value| value.checked_add(compressed_size))
+        .filter(|end| *end <= file_size)
+        .is_none()
+    {
         return Err("TSF compressed frame exceeds analysis.tsf_bin".into());
     }
     let mut compressed = vec![0u8; compressed_size as usize];
-    input.read_exact(&mut compressed).map_err(|error| error.to_string())?;
+    input
+        .read_exact(&mut compressed)
+        .map_err(|error| error.to_string())?;
     let expected = (frame.num_peaks as usize)
         .checked_mul(16)
         .ok_or_else(|| "TSF frame is too large".to_string())?;
-    let decoded = zstd::bulk::decompress(&compressed, expected).map_err(|error| error.to_string())?;
+    let decoded =
+        zstd::bulk::decompress(&compressed, expected).map_err(|error| error.to_string())?;
     if decoded.len() != expected {
-        return Err(format!("Unexpected TSF type-3 decompressed size: {}", decoded.len()));
+        return Err(format!(
+            "Unexpected TSF type-3 decompressed size: {}",
+            decoded.len()
+        ));
     }
     let count = frame.num_peaks as usize;
     let mut tof = Vec::with_capacity(count);
     let mut intensity = Vec::with_capacity(count);
     for index in 0..count {
         let tof_start = index * 8;
-        tof.push(f64::from_le_bytes(decoded[tof_start..tof_start + 8].try_into().unwrap()));
+        tof.push(f64::from_le_bytes(
+            decoded[tof_start..tof_start + 8].try_into().unwrap(),
+        ));
         let intensity_start = count * 8 + index * 4;
-        intensity.push(f32::from_le_bytes(decoded[intensity_start..intensity_start + 4].try_into().unwrap()) as f64);
+        intensity.push(f32::from_le_bytes(
+            decoded[intensity_start..intensity_start + 4]
+                .try_into()
+                .unwrap(),
+        ) as f64);
     }
     Ok(TsfLineSpectrum { tof, intensity })
 }
@@ -229,48 +313,94 @@ pub fn read_tsf_calibration(
         .map_err(|error| error.to_string())?;
     let database = sqlite_scan(&connection, &path.join("analysis.tsf"), "MzCalibration")?;
     let sql = format!("SELECT CAST(Id AS VARCHAR),CAST(ModelType AS VARCHAR),CAST(DigitizerTimebase AS VARCHAR),CAST(DigitizerDelay AS VARCHAR),CAST(T1 AS VARCHAR),CAST(T2 AS VARCHAR),CAST(dC1 AS VARCHAR),CAST(dC2 AS VARCHAR),CAST(C0 AS VARCHAR),CAST(C1 AS VARCHAR),CAST(C2 AS VARCHAR),CAST(C3 AS VARCHAR),CAST(C4 AS VARCHAR) FROM {database} WHERE Id = {}", frame.mz_calibration);
-    let calibration = connection
-        .query_row(&sql, [], |row| {
-            Ok(TsfCalibration {
-                id: row.get::<_, String>(0)?.parse().map_err(|_| duckdb::Error::ToSqlConversionFailure("invalid TSF calibration id".into()))?,
-                model_type: row.get::<_, String>(1)?.parse().map_err(|_| duckdb::Error::ToSqlConversionFailure("invalid TSF calibration model".into()))?,
-                digitizer_timebase: row.get::<_, String>(2)?.parse().map_err(|_| duckdb::Error::ToSqlConversionFailure("invalid TSF timebase".into()))?,
-                digitizer_delay: row.get::<_, String>(3)?.parse().map_err(|_| duckdb::Error::ToSqlConversionFailure("invalid TSF delay".into()))?,
-                t1: row.get::<_, String>(4)?.parse().map_err(|_| duckdb::Error::ToSqlConversionFailure("invalid TSF T1".into()))?,
-                t2: row.get::<_, String>(5)?.parse().map_err(|_| duckdb::Error::ToSqlConversionFailure("invalid TSF T2".into()))?,
-                dc1: row.get::<_, String>(6)?.parse().map_err(|_| duckdb::Error::ToSqlConversionFailure("invalid TSF dC1".into()))?,
-                dc2: row.get::<_, String>(7)?.parse().map_err(|_| duckdb::Error::ToSqlConversionFailure("invalid TSF dC2".into()))?,
-                c0: row.get::<_, String>(8)?.parse().map_err(|_| duckdb::Error::ToSqlConversionFailure("invalid TSF C0".into()))?,
-                c1: row.get::<_, String>(9)?.parse().map_err(|_| duckdb::Error::ToSqlConversionFailure("invalid TSF C1".into()))?,
-                c2: row.get::<_, String>(10)?.parse().map_err(|_| duckdb::Error::ToSqlConversionFailure("invalid TSF C2".into()))?,
-                c3: row.get::<_, String>(11)?.parse().map_err(|_| duckdb::Error::ToSqlConversionFailure("invalid TSF C3".into()))?,
-                c4: row.get::<_, String>(12)?.parse().map_err(|_| duckdb::Error::ToSqlConversionFailure("invalid TSF C4".into()))?,
-                mz_min: 0.0,
-                mz_max: 0.0,
-                tof_max: 0,
-                otof_control: false,
+    let calibration =
+        connection
+            .query_row(&sql, [], |row| {
+                Ok(TsfCalibration {
+                    id: row.get::<_, String>(0)?.parse().map_err(|_| {
+                        duckdb::Error::ToSqlConversionFailure("invalid TSF calibration id".into())
+                    })?,
+                    model_type: row.get::<_, String>(1)?.parse().map_err(|_| {
+                        duckdb::Error::ToSqlConversionFailure(
+                            "invalid TSF calibration model".into(),
+                        )
+                    })?,
+                    digitizer_timebase: row.get::<_, String>(2)?.parse().map_err(|_| {
+                        duckdb::Error::ToSqlConversionFailure("invalid TSF timebase".into())
+                    })?,
+                    digitizer_delay: row.get::<_, String>(3)?.parse().map_err(|_| {
+                        duckdb::Error::ToSqlConversionFailure("invalid TSF delay".into())
+                    })?,
+                    t1: row.get::<_, String>(4)?.parse().map_err(|_| {
+                        duckdb::Error::ToSqlConversionFailure("invalid TSF T1".into())
+                    })?,
+                    t2: row.get::<_, String>(5)?.parse().map_err(|_| {
+                        duckdb::Error::ToSqlConversionFailure("invalid TSF T2".into())
+                    })?,
+                    dc1: row.get::<_, String>(6)?.parse().map_err(|_| {
+                        duckdb::Error::ToSqlConversionFailure("invalid TSF dC1".into())
+                    })?,
+                    dc2: row.get::<_, String>(7)?.parse().map_err(|_| {
+                        duckdb::Error::ToSqlConversionFailure("invalid TSF dC2".into())
+                    })?,
+                    c0: row.get::<_, String>(8)?.parse().map_err(|_| {
+                        duckdb::Error::ToSqlConversionFailure("invalid TSF C0".into())
+                    })?,
+                    c1: row.get::<_, String>(9)?.parse().map_err(|_| {
+                        duckdb::Error::ToSqlConversionFailure("invalid TSF C1".into())
+                    })?,
+                    c2: row.get::<_, String>(10)?.parse().map_err(|_| {
+                        duckdb::Error::ToSqlConversionFailure("invalid TSF C2".into())
+                    })?,
+                    c3: row.get::<_, String>(11)?.parse().map_err(|_| {
+                        duckdb::Error::ToSqlConversionFailure("invalid TSF C3".into())
+                    })?,
+                    c4: row.get::<_, String>(12)?.parse().map_err(|_| {
+                        duckdb::Error::ToSqlConversionFailure("invalid TSF C4".into())
+                    })?,
+                    mz_min: 0.0,
+                    mz_max: 0.0,
+                    tof_max: 0,
+                    otof_control: false,
+                })
             })
-        })
-        .map_err(|error| error.to_string())?;
+            .map_err(|error| error.to_string())?;
     let metadata = sqlite_scan(&connection, &path.join("analysis.tsf"), "GlobalMetadata")?;
     let mut statement = connection
         .prepare(&format!("SELECT Key,Value FROM {metadata} WHERE Key IN ('MzAcqRangeLower','MzAcqRangeUpper','DigitizerNumSamples','AcquisitionSoftware')"))
         .map_err(|error| error.to_string())?;
     let rows = statement
-        .query_map([], |row| Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?)))
+        .query_map([], |row| {
+            Ok((row.get::<_, String>(0)?, row.get::<_, String>(1)?))
+        })
         .map_err(|error| error.to_string())?;
     let mut calibration = calibration;
     for row in rows {
         let (key, value) = row.map_err(|error| error.to_string())?;
         match key.as_str() {
-            "MzAcqRangeLower" => calibration.mz_min = value.parse().map_err(|_| "Invalid TSF lower m/z".to_string())?,
-            "MzAcqRangeUpper" => calibration.mz_max = value.parse().map_err(|_| "Invalid TSF upper m/z".to_string())?,
-            "DigitizerNumSamples" => calibration.tof_max = value.parse().map_err(|_| "Invalid TSF digitizer sample count".to_string())?,
+            "MzAcqRangeLower" => {
+                calibration.mz_min = value
+                    .parse()
+                    .map_err(|_| "Invalid TSF lower m/z".to_string())?
+            }
+            "MzAcqRangeUpper" => {
+                calibration.mz_max = value
+                    .parse()
+                    .map_err(|_| "Invalid TSF upper m/z".to_string())?
+            }
+            "DigitizerNumSamples" => {
+                calibration.tof_max = value
+                    .parse()
+                    .map_err(|_| "Invalid TSF digitizer sample count".to_string())?
+            }
             "AcquisitionSoftware" => calibration.otof_control = value == "Bruker otofControl",
             _ => {}
         }
     }
-    if !(calibration.mz_min > 0.0 && calibration.mz_max > calibration.mz_min && calibration.tof_max > 0) {
+    if !(calibration.mz_min > 0.0
+        && calibration.mz_max > calibration.mz_min
+        && calibration.tof_max > 0)
+    {
         return Err("Incomplete TSF calibration metadata".into());
     }
     Ok(calibration)
@@ -285,7 +415,9 @@ pub fn tsf_tof_to_mz(calibration: &TsfCalibration, tof: &[f64]) -> Vec<f64> {
     }
     let intercept = mz_min.sqrt();
     let slope = (mz_max.sqrt() - intercept) / f64::from(calibration.tof_max);
-    tof.iter().map(|value| (intercept + slope * value).powi(2)).collect()
+    tof.iter()
+        .map(|value| (intercept + slope * value).powi(2))
+        .collect()
 }
 
 pub fn tsf_database_path(path: impl AsRef<Path>) -> PathBuf {
@@ -307,35 +439,61 @@ pub fn read_baf_line_spectrum(
     let offset = line_array_id & 0x00ff_ffff_ffff_ffff;
     let mut input = File::open(path.join("analysis.baf")).map_err(|error| error.to_string())?;
     let file_size = input.metadata().map_err(|error| error.to_string())?.len();
-    if offset.checked_add(92).filter(|end| *end <= file_size).is_none() {
+    if offset
+        .checked_add(92)
+        .filter(|end| *end <= file_size)
+        .is_none()
+    {
         return Err("BAF line-array offset is outside analysis.baf".into());
     }
-    input.seek(SeekFrom::Start(offset)).map_err(|error| error.to_string())?;
+    input
+        .seek(SeekFrom::Start(offset))
+        .map_err(|error| error.to_string())?;
     let mut header = [0u8; 92];
-    input.read_exact(&mut header).map_err(|error| error.to_string())?;
+    input
+        .read_exact(&mut header)
+        .map_err(|error| error.to_string())?;
     let block_size = u32::from_le_bytes(header[0..4].try_into().unwrap()) as u64;
     let block_type = u32::from_le_bytes(header[4..8].try_into().unwrap());
     let count = u32::from_le_bytes(header[24..28].try_into().unwrap()) as usize;
     let expected = 92u64
-        .checked_add((count as u64).checked_mul(16).ok_or_else(|| "BAF line block is too large".to_string())?)
+        .checked_add(
+            (count as u64)
+                .checked_mul(16)
+                .ok_or_else(|| "BAF line block is too large".to_string())?,
+        )
         .ok_or_else(|| "BAF line block is too large".to_string())?;
-    if block_type != 0xbfa0_1002 || block_size != expected || offset.checked_add(block_size).filter(|end| *end <= file_size).is_none() {
-    return Err(format!("Invalid BAF LineSpectrumBlock: offset={offset} size={block_size} type=0x{block_type:08x} count={count} expected={expected} file_size={file_size}"));
+    if block_type != 0xbfa0_1002
+        || block_size != expected
+        || offset
+            .checked_add(block_size)
+            .filter(|end| *end <= file_size)
+            .is_none()
+    {
+        return Err(format!("Invalid BAF LineSpectrumBlock: offset={offset} size={block_size} type=0x{block_type:08x} count={count} expected={expected} file_size={file_size}"));
     }
     let mut payload = vec![0u8; (expected - 92) as usize];
-    input.read_exact(&mut payload).map_err(|error| error.to_string())?;
+    input
+        .read_exact(&mut payload)
+        .map_err(|error| error.to_string())?;
     let mut coordinate = Vec::with_capacity(count);
     let mut intensity = Vec::with_capacity(count);
     let mut width = Vec::with_capacity(count);
     for index in 0..count {
         let start = index * 8;
-        coordinate.push(f64::from_le_bytes(payload[start..start + 8].try_into().unwrap()));
+        coordinate.push(f64::from_le_bytes(
+            payload[start..start + 8].try_into().unwrap(),
+        ));
         let start = count * 8 + index * 4;
         intensity.push(f32::from_le_bytes(payload[start..start + 4].try_into().unwrap()) as f64);
         let start = count * 12 + index * 4;
         width.push(f32::from_le_bytes(payload[start..start + 4].try_into().unwrap()) as f64);
     }
-    Ok(BafLineSpectrum { coordinate, intensity, width })
+    Ok(BafLineSpectrum {
+        coordinate,
+        intensity,
+        width,
+    })
 }
 
 struct BafBitReader<'a> {
@@ -347,7 +505,12 @@ struct BafBitReader<'a> {
 
 impl<'a> BafBitReader<'a> {
     fn new(bytes: &'a [u8], position: usize) -> Self {
-        Self { bytes, position, buffer: 0, bits: 0 }
+        Self {
+            bytes,
+            position,
+            buffer: 0,
+            bits: 0,
+        }
     }
 
     fn read(&mut self, count: u32) -> Result<u32, String> {
@@ -358,15 +521,28 @@ impl<'a> BafBitReader<'a> {
         let mut remaining = count;
         while remaining != 0 {
             if self.bits == 0 {
-                if self.position.checked_add(4).filter(|end| *end <= self.bytes.len()).is_none() {
+                if self
+                    .position
+                    .checked_add(4)
+                    .filter(|end| *end <= self.bytes.len())
+                    .is_none()
+                {
                     return Err("BAF profile bitstream ended during refill".into());
                 }
-                self.buffer = u32::from_be_bytes(self.bytes[self.position..self.position + 4].try_into().unwrap());
+                self.buffer = u32::from_be_bytes(
+                    self.bytes[self.position..self.position + 4]
+                        .try_into()
+                        .unwrap(),
+                );
                 self.position += 4;
                 self.bits = 32;
             }
             let take = remaining.min(self.bits);
-            value = if take == 32 { self.buffer } else { (value << take) | (self.buffer >> (32 - take)) };
+            value = if take == 32 {
+                self.buffer
+            } else {
+                (value << take) | (self.buffer >> (32 - take))
+            };
             self.buffer = if take == 32 { 0 } else { self.buffer << take };
             self.bits -= take;
             remaining -= take;
@@ -375,9 +551,10 @@ impl<'a> BafBitReader<'a> {
     }
 }
 
-pub fn read_baf_profile_spectrum(
+fn read_baf_profile_spectrum_variant(
     path: impl AsRef<Path>,
     profile_array_id: u64,
+    base_inside_sign: bool,
 ) -> Result<BafProfileSpectrum, String> {
     let path = path.as_ref();
     if detect_family(path) != Family::Baf {
@@ -388,12 +565,22 @@ pub fn read_baf_profile_spectrum(
     }
     let offset = (profile_array_id & 0x00ff_ffff_ffff_ffff) as usize;
     let bytes = std::fs::read(path.join("analysis.baf")).map_err(|error| error.to_string())?;
-    if offset.checked_add(0x34).filter(|end| *end <= bytes.len()).is_none() {
+    if offset
+        .checked_add(0x34)
+        .filter(|end| *end <= bytes.len())
+        .is_none()
+    {
         return Err("BAF profile-array offset is outside analysis.baf".into());
     }
     let block_size = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap()) as usize;
     let block_type = u32::from_le_bytes(bytes[offset + 4..offset + 8].try_into().unwrap());
-    if block_type != 0xbfa0_1001 || block_size < 0x52 || offset.checked_add(block_size).filter(|end| *end <= bytes.len()).is_none() {
+    if block_type != 0xbfa0_1001
+        || block_size < 0x52
+        || offset
+            .checked_add(block_size)
+            .filter(|end| *end <= bytes.len())
+            .is_none()
+    {
         return Err("Invalid BAF DataVectorBlock".into());
     }
     let block = &bytes[offset..offset + block_size];
@@ -421,25 +608,47 @@ pub fn read_baf_profile_spectrum(
         loop {
             let marker = reader.read(1)?;
             control += 1;
-            if marker == 0 { continue; }
-            if control == 16 { return Err("invalid BAF profile control terminator".into()); }
+            if marker == 0 {
+                continue;
+            }
+            if control == 16 {
+                return Err("invalid BAF profile control terminator".into());
+            }
             if control == 10 {
                 let run = reader.read(32)? as usize;
-                if run == 0 { break; }
-                if run > count - position { return Err("BAF profile zero run exceeds output length".into()); }
+                if run == 0 {
+                    continue;
+                }
+                if run > count - position {
+                    return Err("BAF profile zero run exceeds output length".into());
+                }
                 position += run;
                 break;
             }
-            let slot = *slots.get(control).ok_or_else(|| "BAF profile control index is outside decoder tables".to_string())?;
+            let slot = *slots
+                .get(control)
+                .ok_or_else(|| "BAF profile control index is outside decoder tables".to_string())?;
             let width = widths[slot] as u32;
             if width == 0 {
                 intensity[position] = previous;
             } else if width < 32 {
                 let raw = reader.read(width + 1)?;
                 let magnitude = (raw >> 1) as i64 + bases[slot];
-                let delta = if raw & 1 == 0 { magnitude } else { -magnitude };
+                let delta = if base_inside_sign {
+                    if raw & 1 == 0 {
+                        magnitude
+                    } else {
+                        -magnitude
+                    }
+                } else if raw & 1 == 0 {
+                    (raw >> 1) as i64 + bases[slot]
+                } else {
+                    -((raw >> 1) as i64) + bases[slot]
+                };
                 let value = previous as i64 + delta;
-                if !(0..=u32::MAX as i64).contains(&value) { return Err("BAF profile delta exceeds u32 range".into()); }
+                if !(0..=u32::MAX as i64).contains(&value) {
+                    return Err("BAF profile delta exceeds u32 range".into());
+                }
                 previous = value as u32;
                 intensity[position] = previous;
             } else {
@@ -451,4 +660,38 @@ pub fn read_baf_profile_spectrum(
         }
     }
     Ok(BafProfileSpectrum { intensity })
+}
+
+pub fn read_baf_profile_spectrum(
+    path: impl AsRef<Path>,
+    profile_array_id: u64,
+) -> Result<BafProfileSpectrum, String> {
+    match read_baf_profile_spectrum_variant(&path, profile_array_id, true) {
+        Ok(spectrum) => Ok(spectrum),
+        Err(first) => read_baf_profile_spectrum_variant(path, profile_array_id, false)
+            .map_err(|second| format!("BAF profile decode failed with both native delta encodings: {first}; alternate: {second}")),
+    }
+}
+
+pub fn read_baf_profile_point_count(
+    path: impl AsRef<Path>,
+    profile_array_id: u64,
+) -> Result<usize, String> {
+    let path = path.as_ref();
+    if detect_family(path) != Family::Baf {
+        return Err(format!("Not a Bruker BAF directory: {}", path.display()));
+    }
+    if (profile_array_id >> 56) as u8 != 0x42 {
+        return Err("BAF array ID is not a ProfileIntensityId".into());
+    }
+    let offset = (profile_array_id & 0x00ff_ffff_ffff_ffff) as usize;
+    let bytes = std::fs::read(path.join("analysis.baf")).map_err(|error| error.to_string())?;
+    if offset
+        .checked_add(0x34)
+        .filter(|end| *end <= bytes.len())
+        .is_none()
+    {
+        return Err("BAF profile-array offset is outside analysis.baf".into());
+    }
+    Ok(u32::from_le_bytes(bytes[offset + 0x30..offset + 0x34].try_into().unwrap()) as usize)
 }

@@ -172,6 +172,37 @@ if(STREAMFIND_AGILENT_IMS_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_IMS_FIXTURE}"
     endif()
 endif()
 
+set(STREAMFIND_AGILENT_PROJECT_MASS_HUNTER_FIXTURE "" CACHE FILEPATH "Path to an Agilent MassHunter .d project fixture")
+set(STREAMFIND_AGILENT_PROJECT_CHEMSTATION_FIXTURE "" CACHE PATH "Path to an Agilent ChemStation .D project fixture")
+if(STREAMFIND_AGILENT_PROJECT_MASS_HUNTER_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_PROJECT_MASS_HUNTER_FIXTURE}" AND STREAMFIND_AGILENT_PROJECT_CHEMSTATION_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_PROJECT_CHEMSTATION_FIXTURE}")
+    add_executable(streamfind_mass_spec_agilent_project_parity_tests mass_spec/tests/agilent_project_parity.cpp)
+    target_link_libraries(streamfind_mass_spec_agilent_project_parity_tests PRIVATE streamfind_mass_spec)
+    target_compile_definitions(streamfind_mass_spec_agilent_project_parity_tests PRIVATE
+        STREAMFIND_AGILENT_MASS_HUNTER_PROJECT_FIXTURE="${STREAMFIND_AGILENT_PROJECT_MASS_HUNTER_FIXTURE}"
+        STREAMFIND_AGILENT_CHEMSTATION_PROJECT_FIXTURE="${STREAMFIND_AGILENT_PROJECT_CHEMSTATION_FIXTURE}"
+    )
+    add_test(NAME streamfind_mass_spec_agilent_project_parity_tests COMMAND streamfind_mass_spec_agilent_project_parity_tests)
+endif()
+
+set(STREAMFIND_MZML_PARITY_FIXTURE "" CACHE FILEPATH "Path to an mzML parity fixture")
+set(STREAMFIND_MZXML_PARITY_FIXTURE "" CACHE FILEPATH "Path to an mzXML parity fixture")
+if(STREAMFIND_MZML_PARITY_FIXTURE AND EXISTS "${STREAMFIND_MZML_PARITY_FIXTURE}" AND STREAMFIND_MZXML_PARITY_FIXTURE AND EXISTS "${STREAMFIND_MZXML_PARITY_FIXTURE}")
+    add_executable(streamfind_mass_spec_mzml_mzxml_project_parity_tests mass_spec/tests/mzml_mzxml_project_parity.cpp)
+    target_link_libraries(streamfind_mass_spec_mzml_mzxml_project_parity_tests PRIVATE streamfind_mass_spec)
+    target_compile_definitions(streamfind_mass_spec_mzml_mzxml_project_parity_tests PRIVATE
+        STREAMFIND_MZML_PARITY_FIXTURE="${STREAMFIND_MZML_PARITY_FIXTURE}"
+        STREAMFIND_MZXML_PARITY_FIXTURE="${STREAMFIND_MZXML_PARITY_FIXTURE}"
+    )
+    add_test(NAME streamfind_mass_spec_mzml_mzxml_project_parity_tests COMMAND streamfind_mass_spec_mzml_mzxml_project_parity_tests)
+    if(WIN32)
+        add_custom_command(TARGET streamfind_mass_spec_mzml_mzxml_project_parity_tests POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy_if_different
+                "$<TARGET_FILE:streamfind::duckdb>"
+                "$<TARGET_FILE_DIR:streamfind_mass_spec_mzml_mzxml_project_parity_tests>"
+        )
+    endif()
+endif()
+
 set(STREAMFIND_AGILENT_UV_FIXTURE "" CACHE FILEPATH "Path to an Agilent ChemStation .UV file")
 if(STREAMFIND_AGILENT_UV_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_UV_FIXTURE}")
     add_executable(streamfind_mass_spec_agilent_uv_reader_tests mass_spec/tests/reader_agilent_uv_smoke.cpp)
