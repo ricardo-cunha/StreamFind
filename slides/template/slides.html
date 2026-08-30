@@ -13,20 +13,22 @@
   <meta name="presentation-event" content="Event name">
   <meta name="presentation-affiliation" content="Your organisation">
   <meta name="presentation-thank-you" content="Thank you for your attention">
-  <meta name="presentation-thank-you-subtitle" content="Questions?">
+  <meta name="presentation-thank-you-subtitle" content="Visit the project in">
+  <meta name="presentation-project-link" content="project.example.org">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title></title>
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css">
-  <link rel="stylesheet" href="assets/template.css">
+  <link rel="stylesheet" href="./assets/template.css">
+  <link rel="stylesheet" href="./assets/layouts.css">
 </head>
 <body>
   <div class="reveal">
     <div class="slides">
       <!-- Metadata is defined at the top of this file. Keep the structure. -->
       <section id="title-slide" class="quarto-title-block">
-        <img class="banner-background" src="assets/title-background.jpg" alt="">
+        <img class="banner-background" src="./assets/title-background.jpg" alt="">
         <h1 class="title"></h1>
         <div class="title-date"></div>
         <div class="title-event"></div>
@@ -45,7 +47,7 @@
       <!-- Basic text slide -->
       <section class="slide">
         <h2>Basic text slide</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <p>Use this layout for an introduction, summary, or short explanation.</p>
         <ul>
           <li>Keep the main message short and easy to scan.</li>
@@ -58,7 +60,7 @@
       <!-- Two-column slide -->
       <section class="slide">
         <h2>Two-column layout</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="columns">
           <div><h3>Left column</h3><p>Use columns to compare two ideas, show before and after, or pair text with a small list.</p></div>
           <div><h3>Right column</h3><p>Each column can contain headings, lists, images, tables, or other HTML content.</p></div>
@@ -68,7 +70,7 @@
       <!-- Cards and process slides -->
       <section class="slide">
         <h2>Cards and a process</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="card-grid">
           <div class="card"><strong>Card one</strong><span>Short supporting text for a concept or option.</span></div>
           <div class="card"><strong>Card two</strong><span>Cards work well for features, properties, or comparisons.</span></div>
@@ -84,7 +86,7 @@
       <!-- Table and code slide -->
       <section class="slide">
         <h2>Table and code</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <table>
           <thead><tr><th>Criterion</th><th>Option A</th><th>Option B</th></tr></thead>
           <tbody><tr><td>Setup</td><td>Simple</td><td>Advanced</td></tr><tr><td>Best for</td><td>Quick start</td><td>Large teams</td></tr></tbody>
@@ -95,12 +97,16 @@ run --input data.csv --output result.json</code></pre>
 
       <!-- Keep this as the final slide. -->
       <section class="slide thank-you-slide">
-        <img class="banner-background" src="assets/title-background.jpg" alt="">
+        <img class="banner-background" src="./assets/title-background.jpg" alt="">
         <h2></h2>
         <p></p>
+        <div class="thank-you-visit"><span></span><br><strong></strong></div>
+        <div class="thank-you-qr-placeholder" aria-label="QR code placeholder">QR</div>
+        <div class="thank-you-author"><strong></strong><span></span></div>
         <div class="title-logo iuta" aria-hidden="true"></div>
         <div class="title-logo ude" aria-hidden="true"></div>
         <div class="title-logo jrf" aria-hidden="true"></div>
+        <div class="thank-you-funding"><span>Funded by:</span><div class="funding-logo-placeholder">Funding logo</div></div>
       </section>
     </div>
   </div>
@@ -120,7 +126,8 @@ run --input data.csv --output result.json</code></pre>
       affiliation: metadata('presentation-affiliation'),
       footer: [metadata('author'), metadata('author-email')].filter(Boolean).join(' | '),
       thankYou: metadata('presentation-thank-you'),
-      thankYouSubtitle: metadata('presentation-thank-you-subtitle')
+      thankYouSubtitle: metadata('presentation-thank-you-subtitle'),
+      projectLink: metadata('presentation-project-link')
     };
 
     document.title = presentationMetadata.title;
@@ -131,6 +138,10 @@ run --input data.csv --output result.json</code></pre>
     document.querySelector('#title-slide .title-affiliations').textContent = presentationMetadata.affiliation;
     document.querySelector('.thank-you-slide h2').textContent = presentationMetadata.thankYou;
     document.querySelector('.thank-you-slide p').textContent = presentationMetadata.thankYouSubtitle;
+    document.querySelector('.thank-you-slide .thank-you-visit span').textContent = presentationMetadata.thankYouSubtitle;
+    document.querySelector('.thank-you-slide .thank-you-visit strong').textContent = presentationMetadata.projectLink;
+    document.querySelector('.thank-you-slide .thank-you-author strong').textContent = presentationMetadata.footer;
+    document.querySelector('.thank-you-slide .thank-you-author span').textContent = presentationMetadata.affiliation;
     document.querySelectorAll('.metadata-left').forEach(function (node) {
       node.textContent = [presentationMetadata.date, presentationMetadata.event].filter(Boolean).join(' | ');
     });
@@ -140,7 +151,7 @@ run --input data.csv --output result.json</code></pre>
 
     Reveal.initialize({
       controls: false, progress: false, hash: true, history: true,
-      keyboard: true, overview: true, center: false, transition: 'none',
+      keyboard: true, overview: false, view: 'scroll', center: false, transition: 'none',
       slideNumber: 'c/t', width: 1920, height: 1080, margin: 0.04
     });
 

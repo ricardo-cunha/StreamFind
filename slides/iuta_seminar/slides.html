@@ -20,17 +20,17 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reset.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/reveal.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@5.1.0/dist/theme/white.css">
-  <link rel="stylesheet" href="assets/template.css">
-  <link rel="stylesheet" href="iuta_seminar_assets/iuta_seminar_custom.css">
+  <link rel="stylesheet" href="./assets/iuta_seminar_template.css">
+  <link rel="stylesheet" href="./assets/iuta_seminar_custom.css">
   <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
-  <script src="iuta_seminar_assets/iuta_seminar_ontology_graph.js"></script>
+  <script src="./assets/iuta_seminar_ontology_graph.js"></script>
 </head>
 <body>
   <div class="reveal">
     <div class="slides">
       <!-- Metadata is defined at the top of this file. Keep the structure. -->
       <section id="title-slide" class="quarto-title-block">
-        <img class="banner-background" src="assets/title-background.jpg" alt="">
+        <img class="banner-background" src="./assets/title-background.jpg" alt="">
         <h1 class="title"></h1>
         <div class="title-date"></div>
         <div class="title-event"></div>
@@ -43,7 +43,7 @@
 
       <section class="slide disclosure-slide" id="disclosure-slide">
         <h2>Disclosure: How this deck was created</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="disclosure-grid">
           <div class="disclosure-item disclosure-primary">
             <strong>Vibe coding, locally</strong>
@@ -73,7 +73,7 @@
       <!-- What is vibe coding? -->
       <section class="slide" id="vibe-coding-slide">
         <h2>What Is Vibe Coding?</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="columns" style="margin-top: 1em;">
           <div>
             <p>Describe the desired result in natural language, and let an AI agent generate and modify the code.</p>
@@ -102,13 +102,13 @@
       <!-- What is analytical data processing? -->
       <section class="slide">
         <h2>What Is Analytical Data Processing?</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="columns">
           <div>
             <p>Analytical data processing should turn instrument measurements and experiment metadata into <strong>validated, FAIR results</strong> — a goal that is hard to achieve consistently today.</p>
           </div>
           <div>
-            <img class="slide-figure" src="iuta_seminar_assets/iuta_seminar_fair_data_flow.png" alt="Mass spec instrument in a lab, with data flowing from the instrument into FAIR-organized results">
+            <img class="slide-figure" src="./assets/iuta_seminar_fair_data_flow.png" alt="Mass spec instrument in a lab, with data flowing from the instrument into FAIR-organized results">
           </div>
         </div>
         <div class="fair-chips">
@@ -122,7 +122,7 @@
       <!-- Why uncontrolled agent behavior is a problem -->
       <section class="slide" id="fair-risk-slide">
         <h2>Why Control Matters for FAIR Data</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="fair-flow">
           <div class="fair-node instrument">
             <svg viewBox="0 0 48 48" aria-hidden="true"><path d="M14 6h14l8 8v26a4 4 0 0 1-4 4H18a4 4 0 0 1-4-4V6z" fill="none" stroke="currentColor" stroke-width="3"/><path d="M21 20h8v16h-8z" fill="currentColor" opacity=".4"/></svg>
@@ -155,40 +155,40 @@
       <!-- Motivation for the streamfind project -->
       <section class="slide" id="streamfind-motivation-slide">
         <h2>Back in 2022...</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
-        <img class="motivation-figure" src="iuta_seminar_assets/iuta_seminar_streamfind_motivation_lab.png" alt="A researcher struggles to reproduce a data-processing workflow across instruments, vendor software, manual clicks, and uncertain results">
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <img class="motivation-figure" src="./assets/iuta_seminar_streamfind_motivation_lab.png" alt="A researcher struggles to reproduce a data-processing workflow across instruments, vendor software, manual clicks, and uncertain results">
       </section>
 
       <!-- Introducing streamfind as a controlled solution -->
       <section class="slide">
         <h2>BMFTR funded streamFind: 01.09.2022 - 31.08.2025</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
-        <img src="iuta_seminar_assets/iuta_seminar_streamfind_project.png" alt="streamfind project logo" style="display: block; height: 78%; left: 50%; object-fit: contain; position: absolute; top: 52%; transform: translate(-50%, -50%); width: 90%;">
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <img src="./assets/iuta_seminar_streamfind_project.png" alt="streamfind project logo" style="display: block; height: 78%; left: 50%; object-fit: contain; position: absolute; top: 52%; transform: translate(-50%, -50%); width: 90%;">
       </section>
 
       <section class="slide" id="streamfind-plan-slide">
         <h2>The streamfind plan</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
-        <img class="streamfind-plan-figure" src="iuta_seminar_assets/iuta_seminar_streamfind_plan.png" alt="The streamfind project plan">
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <img class="streamfind-plan-figure" src="./assets/iuta_seminar_streamfind_plan.png" alt="The streamfind project plan">
       </section>
 
       <!-- StreamFind R package at the end of the initial project -->
       <section class="slide" id="r-package-result-slide">
         <h2>Fast-forward to the project end: StreamFind R package</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="card-grid">
           <div class="card">
-            <img src="iuta_seminar_assets/iuta_seminar_r_package_modular_data_model.png" alt="Modular data model: interlocking data-model modules around the R logo">
+            <img src="./assets/iuta_seminar_r_package_modular_data_model.png" alt="Modular data model: interlocking data-model modules around the R logo">
             <strong>Modular data model</strong>
             <span>R6 engines with harmonized S3 classes for the full project lifecycle.</span>
           </div>
           <div class="card">
-            <img src="iuta_seminar_assets/iuta_seminar_r_package_analytical_workflows.png" alt="Analytical workflow stages flowing into the R logo">
+            <img src="./assets/iuta_seminar_r_package_analytical_workflows.png" alt="Analytical workflow stages flowing into the R logo">
             <strong>Analytical workflows</strong>
             <span>Validated, reusable workflows for MS, Raman, chromatography, and statistics.</span>
           </div>
           <div class="card">
-            <img src="iuta_seminar_assets/iuta_seminar_r_package_reproducible_environment.png" alt="A sealed, version-pinned environment with reproducible state and dependencies">
+            <img src="./assets/iuta_seminar_r_package_reproducible_environment.png" alt="A sealed, version-pinned environment with reproducible state and dependencies">
             <strong>Interactive reporting &amp; modular algorithms</strong>
             <span>Flexible interactive HTML reports and modular expansion of analytical methods.</span>
           </div>
@@ -199,7 +199,7 @@
       <!-- R scripting and the Shiny GUI -->
       <section class="slide" id="r-script-gui-slide">
         <h2>Using StreamFind: R Script and Shiny GUI</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="columns">
           <div>
             <h3>R scripting interface</h3>
@@ -227,7 +227,7 @@ project$run()</code></pre>
           </div>
           <div>
             <h3>R Shiny GUI</h3>
-            <img class="shiny-gui-screenshot" src="iuta_seminar_assets/iuta_seminar_shiny_gui_screenshot.jpeg" alt="StreamFind Shiny application interface">
+            <img class="shiny-gui-screenshot" src="./assets/iuta_seminar_shiny_gui_screenshot.jpeg" alt="StreamFind Shiny application interface">
             <p class="shiny-gui-summary"><strong>Same project model through a guided interface:</strong></p>
             <ul class="shiny-gui-points">
               <li>Configure metadata and working directory</li>
@@ -242,11 +242,11 @@ project$run()</code></pre>
       <!-- DuckDB on-disk persistence as the center of the framework -->
       <section class="slide" id="duckdb-scheme-slide">
         <h2>DuckDB: Persistent data at the center of R, Shiny, and reporting</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="scheme-caption">R scripting, the Shiny GUI, and generated interactive reports all read and write the same on-disk project store — metadata, analyses, workflows, results, and audit trail.</div>
-        <img class="scheme-figure" src="iuta_seminar_assets/iuta_seminar_duckdb_center.png" alt="Scheme: the R script and the Shiny GUI converge into one DuckDB project database, which supports save/load, reports, and the audit trail">
+        <img class="scheme-figure" src="./assets/iuta_seminar_duckdb_center.png" alt="Scheme: the R script and the Shiny GUI converge into one DuckDB project database, which supports save/load, reports, and the audit trail">
         <div class="report-qr">
-          <img src="iuta_seminar_assets/iuta_seminar_nontarget_report_qr.png" alt="QR code for an interactive Non-Target Screening HTML report">
+          <img src="./assets/iuta_seminar_nontarget_report_qr.png" alt="QR code for an interactive Non-Target Screening HTML report">
           <span>Interactive HTML report<br>Non-Target Screening</span>
         </div>
       </section>
@@ -254,17 +254,17 @@ project$run()</code></pre>
       <!-- Friction points in the R-package interface -->
       <section class="slide" id="r-package-friction-slide">
         <h2>StreamFind: Still Not Accessible to Everyone</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="friction-summary-figure-wrap">
-          <img class="friction-summary-figure" src="iuta_seminar_assets/iuta_seminar_r_package_friction_summary.png" alt="Graphical summary of the friction points in the StreamFind R package interface">
+          <img class="friction-summary-figure" src="./assets/iuta_seminar_r_package_friction_summary.png" alt="Graphical summary of the friction points in the StreamFind R package interface">
         </div>
       </section>
 
       <!-- Cogniflow: the next project begins here -->
       <section class="slide cogniflow-slide" id="cogniflow-start-slide">
         <h2>Cogniflow: 01.10.2025 – 30.09.2028</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
-        <img class="cogniflow-figure" src="iuta_seminar_assets/iuta_seminar_cogniflow_overview_loop.webp" alt="Cogniflow project logo">
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <img class="cogniflow-figure" src="./assets/iuta_seminar_cogniflow_overview_loop.webp" alt="Cogniflow project logo">
         <div class="cogniflow-summary">
           <span>Open-source data platform for comprehensive wastewater-quality monitoring.</span>
           <span>Combines routine parameters, mass spectrometry, and machine learning in reproducible pipelines.</span>
@@ -275,7 +275,7 @@ project$run()</code></pre>
       <!-- Framework storyline: from R-package friction to deterministic AI access -->
       <section class="slide framework-story-slide" id="framework-requirements-slide">
         <h2>From R Package Friction to a New Framework</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="requirements-flow">
           <div class="requirement-row"><span class="requirement-source"><i>×</i>Installation + R skills</span><b>→</b><strong><i>✓</i>Accessible</strong></div>
           <div class="requirement-row"><span class="requirement-source"><i>×</i>GUI + scripted workflows</span><b>→</b><strong><i>✓</i>Automatable</strong></div>
@@ -286,13 +286,13 @@ project$run()</code></pre>
 
       <section class="slide framework-story-slide" id="ontology-layer-slide">
         <h2>Standardization of data, operations, and processing methods</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
-        <img class="cogniflow-refactoring-figure" src="iuta_seminar_assets/iuta_seminar_cogniflow_refactoring_plan.png" alt="Streamfind refactoring plan for the Cogniflow project">
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <img class="cogniflow-refactoring-figure" src="./assets/iuta_seminar_cogniflow_refactoring_plan.png" alt="Streamfind refactoring plan for the Cogniflow project">
       </section>
 
       <section class="slide framework-story-slide" id="ontology-example-slide">
         <h2>What Is an Ontology?</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
 
         <div class="ontology-ttl-layout">
           <div class="ttl-file-card"><span class="ttl-file-icon"><b>.ttl</b></span><strong>ontology.ttl</strong><span>text file<br>stored on disk</span></div>
@@ -302,7 +302,7 @@ project$run()</code></pre>
 
       <section class="slide framework-story-slide" id="ontology-operation-example-slide">
         <h2>Ontology in streamfind: An Executable Operation</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
 
         <div class="ontology-ttl-layout">
           <div class="ttl-file-card"><span class="ttl-file-icon"><b>.ttl</b></span><strong>ontology.ttl</strong><span>text file<br>stored on disk</span></div>
@@ -312,7 +312,7 @@ project$run()</code></pre>
 
       <section class="slide framework-story-slide" id="ontology-network-slide">
         <h2>streamfind Ontology: Entities and Relationships</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="ontology-graph-toolbar">
           <span><strong id="ontology-graph-count">385 entities · 1,451 relationships</strong></span>
           <label>Find <input id="ontology-graph-search" type="search" placeholder="operation, method, table…"></label>
@@ -323,7 +323,7 @@ project$run()</code></pre>
 
       <section class="slide framework-story-slide" id="mcp-generic-slide">
         <h2>What Is MCP (Model Context Protocol)?</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="mcp-generic-callout"><strong>MCP standardizes the interface.</strong> The server connects the agent to the actual tool or data source, wherever it runs.</div>
         <div class="mcp-generic-flow">
           <div class="mcp-generic-stage"><span class="mcp-generic-icon">✦</span><strong>AI agent</strong><span>“How many samples are in batch_list.csv?”</span></div>
@@ -344,7 +344,7 @@ project$run()</code></pre>
 
       <section class="slide framework-story-slide" id="mcp-discovery-slide">
         <h2>How AI Agents Discover Tools via MCP</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="mcp-discovery-takeaway"><strong>The key idea:</strong> the server advertises its available tools and schemas; the agent discovers them instead of hard-coding the integration.</div>
         <div class="mcp-discovery-flow">
           <div class="mcp-discovery-stage"><span class="mcp-discovery-icon">✦</span><strong>AI agent</strong><span>starts a connection with initialize</span></div>
@@ -374,7 +374,7 @@ project$run()</code></pre>
 
       <section class="slide mcp-step-slide" id="mcp-explainer-slide">
         <h2>MCP for streamfind: A Concrete Operation</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="mcp-step-layout">
           <div class="mcp-step-marker"><b>01</b><span>Agent request</span></div>
           <div class="mcp-step-content"><div class="mcp-step-terminal"><div><span class="mcp-terminal-prompt terminal-user">user</span> &gt; Can you validate the project demo in the database demo.duckdb using the streamfind tools?</div><div><span class="mcp-terminal-prompt terminal-info">info</span> &gt; The harness is configured with the streamfind MCP server command.</div><div><span class="mcp-terminal-prompt terminal-terminal">terminal</span> &gt; ~/streamfind_mcp.exe</div><div><span class="mcp-terminal-prompt terminal-info">info</span> &gt; It starts the server over stdio and prepares the MCP session.</div><div><span class="mcp-terminal-prompt terminal-agent">agent</span> &gt; sends initialize</div><div>{</div><div>  "jsonrpc": "2.0",</div><div>  "id": 1,</div><div>  "method": "initialize",</div><div>  "params": {}</div><div>}</div><div><span class="mcp-terminal-prompt terminal-server">streamfind-mcp</span> &gt; initialized session</div><div>{</div><div>  "jsonrpc": "2.0",</div><div>  "id": 1,</div><div>  "result": {</div><div>    "protocolVersion": "2025-03-26",</div><div>    "capabilities": { "tools": {} },</div><div>    "serverInfo": { "name": "streamfind-rust", "version": "0.1.0" }</div><div>  }</div><div>}</div></div></div>
@@ -383,7 +383,7 @@ project$run()</code></pre>
 
       <section class="slide mcp-step-slide" id="mcp-tools-list-slide">
         <h2>MCP for streamfind: A Concrete Operation</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="mcp-step-layout">
           <div class="mcp-step-marker"><b>02</b><span>Discover tools</span></div>
           <div class="mcp-step-content"><div class="mcp-step-terminal mcp-step-tools-terminal"><div><span class="mcp-terminal-prompt terminal-agent">agent</span> &gt; tools/list</div><div><span class="mcp-terminal-prompt terminal-server">streamfind-mcp</span> &gt; result.tools (generated catalogue)</div><div>{</div><div>  "tools": [</div><div>    "...",</div><div>    {</div><div>    "name": "validate",</div><div>    "description": "Validate a project",</div><div>    "inputSchema": {</div><div>      "type": "object",</div><div>      "properties": {</div><div>        "database_path": { "type": "string" },</div><div>        "project_id": { "type": "string" }</div><div>      },</div><div>      "required": ["database_path", "project_id"]</div><div>    },</div><div>    "outputSchema": {</div><div>      "type": "object",</div><div>      "properties": {</div><div>        "valid": { "type": "boolean" },</div><div>        "info": { "type": "string" }</div><div>      }</div><div>    },</div><div>    "..."</div><div>  ]</div><div>}</div></div></div>
@@ -392,7 +392,7 @@ project$run()</code></pre>
 
       <section class="slide mcp-step-slide" id="mcp-call-slide">
         <h2>MCP for streamfind: A Concrete Operation</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="mcp-step-layout">
           <div class="mcp-step-marker"><b>03</b><span>Call operation</span></div>
           <div class="mcp-step-content"><div class="mcp-step-terminal"><div><span class="mcp-terminal-prompt terminal-agent">agent</span> &gt; tools/call · validate</div><div>{</div><div>  "method": "tools/call",</div><div>  "params": {</div><div>    "name": "validate",</div><div>    "arguments": {</div><div>      "database_path": "demo.duckdb",</div><div>      "project_id": "demo"</div><div>    }</div><div>  }</div><div>}</div><div><span class="mcp-terminal-prompt terminal-server">streamfind-mcp</span> &gt; result.content[0].text</div><div>{ "valid": true,</div><div>  "info": "Project validation finished successfully." }</div></div></div>
@@ -403,7 +403,7 @@ project$run()</code></pre>
       <!-- Keep this as the final slide. -->
       <section class="slide framework-story-slide" id="mcp-live-demo-slide">
         <h2>Live demonstration: MCP server launched through the host</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="live-demo-flow">
           <div><span class="live-demo-icon">H</span><strong>Harness</strong><small>Hermes · OpenCode · Claude</small></div>
           <b>→</b>
@@ -417,7 +417,7 @@ project$run()</code></pre>
 
       <section class="slide framework-story-slide" id="take-home-slide">
         <h2>Take-home message</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <ul class="take-home-points">
           <li>Vibe coding alone is not enough for FAIR analytical data processing: code needs explicit semantics, validation, and provenance.</li>
           <li>An ontology standardizes meaning through harmonized definitions and knowledge-network graphs.</li>
@@ -430,21 +430,21 @@ project$run()</code></pre>
 
       <section class="slide framework-story-slide" id="streamfind-relaxed-technician-slide">
         <h2>From friction to flow</h2>
-        <div class="slide-chrome"><img class="slide-logo" src="assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
-        <div class="relaxed-technician-figure"><img src="iuta_seminar_assets/iuta_seminar_streamfind_relaxed_technician.png" alt="Technician comfortably using streamfind for analytical data work"></div>
+        <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
+        <div class="relaxed-technician-figure"><img src="./assets/iuta_seminar_streamfind_relaxed_technician.png" alt="Technician comfortably using streamfind for analytical data work"></div>
       </section>
 
       <section class="slide thank-you-slide">
-        <img class="banner-background" src="assets/title-background.jpg" alt="">
+        <img class="banner-background" src="./assets/title-background.jpg" alt="">
         <h2></h2>
         <p></p>
         <div class="thank-you-visit">Visit the project in<br><strong>streamfind.odea-project.org/</strong></div>
-        <img class="thank-you-qr" src="iuta_seminar_assets/iuta_seminar_project_qr.png" alt="QR code for the streamfind project">
+        <img class="thank-you-qr" src="./assets/iuta_seminar_project_qr.png" alt="QR code for the streamfind project">
         <div class="thank-you-author"><strong></strong><span></span></div>
         <div class="title-logo iuta" aria-hidden="true"></div>
         <div class="title-logo ude" aria-hidden="true"></div>
         <div class="title-logo jrf" aria-hidden="true"></div>
-        <div class="thank-you-funding"><span>Funded by:</span><img src="iuta_seminar_assets/iuta_seminar_funded_by_mkulnv_nrw.svg" alt="Ministerium für Kultur und Wissenschaft des Landes Nordrhein-Westfalen"></div>
+        <div class="thank-you-funding"><span>Funded by:</span><img src="./assets/iuta_seminar_funded_by_mkulnv_nrw.svg" alt="Ministerium für Kultur und Wissenschaft des Landes Nordrhein-Westfalen"></div>
       </section>
     </div>
   </div>
