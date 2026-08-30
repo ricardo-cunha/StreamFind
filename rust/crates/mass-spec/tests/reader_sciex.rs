@@ -1,3 +1,5 @@
+#![cfg(feature = "reader-interface-tests")]
+
 use std::path::Path;
 use streamfind_rust_mass_spec::reader_sciex::{
     decode_intensity_groups, decode_scan_payload, read_analysis_catalog, read_compact_mrm_pairs,

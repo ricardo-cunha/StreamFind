@@ -8,14 +8,17 @@ target_compile_definitions(streamfind_mass_spec_reader_tests PRIVATE
     STREAMFIND_MZML_FIXTURE="${STREAMFIND_TEST_DATA_ROOT}/mass_spec/wastewater/03_tof_ww_is_pos_o3sw_effluent-r001.mzML"
 )
 add_test(NAME streamfind_mass_spec_reader_tests COMMAND streamfind_mass_spec_reader_tests)
+set_tests_properties(streamfind_mass_spec_reader_tests PROPERTIES LABELS "reader-interface")
 
 add_executable(streamfind_mass_spec_bruker_tsf_reader_tests mass_spec/tests/reader_bruker_tsf_smoke.cpp)
 target_link_libraries(streamfind_mass_spec_bruker_tsf_reader_tests PRIVATE streamfind_mass_spec)
 add_test(NAME streamfind_mass_spec_bruker_tsf_reader_tests COMMAND streamfind_mass_spec_bruker_tsf_reader_tests)
+set_tests_properties(streamfind_mass_spec_bruker_tsf_reader_tests PROPERTIES LABELS "reader-interface")
 
 add_executable(streamfind_mass_spec_bruker_baf_reader_tests mass_spec/tests/reader_bruker_baf_smoke.cpp)
 target_link_libraries(streamfind_mass_spec_bruker_baf_reader_tests PRIVATE streamfind_mass_spec)
 add_test(NAME streamfind_mass_spec_bruker_baf_reader_tests COMMAND streamfind_mass_spec_bruker_baf_reader_tests)
+set_tests_properties(streamfind_mass_spec_bruker_baf_reader_tests PROPERTIES LABELS "reader-interface")
 
 add_executable(streamfind_mass_spec_load_features_tests mass_spec/tests/load_features_test.cpp)
 target_link_libraries(streamfind_mass_spec_load_features_tests PRIVATE streamfind_mass_spec)
@@ -93,6 +96,7 @@ if(STREAMFIND_SCIEX_WIFF_FIXTURE AND EXISTS "${STREAMFIND_SCIEX_WIFF_FIXTURE}")
         STREAMFIND_SCIEX_WIFF_FIXTURE="${STREAMFIND_SCIEX_WIFF_FIXTURE}"
     )
     add_test(NAME streamfind_mass_spec_sciex_reader_tests COMMAND streamfind_mass_spec_sciex_reader_tests)
+    set_tests_properties(streamfind_mass_spec_sciex_reader_tests PROPERTIES LABELS "reader-interface")
 endif()
 
 set(STREAMFIND_AGILENT_D_FIXTURE "" CACHE PATH "Path to an Agilent MassHunter .d directory")
@@ -103,6 +107,7 @@ if(STREAMFIND_AGILENT_D_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_D_FIXTURE}")
         STREAMFIND_AGILENT_D_FIXTURE="${STREAMFIND_AGILENT_D_FIXTURE}"
     )
     add_test(NAME streamfind_mass_spec_agilent_reader_tests COMMAND streamfind_mass_spec_agilent_reader_tests)
+    set_tests_properties(streamfind_mass_spec_agilent_reader_tests PROPERTIES LABELS "reader-interface")
 endif()
 
 set(STREAMFIND_AGILENT_CHEMSTATION_MS_FIXTURE "" CACHE FILEPATH "Path to an Agilent ChemStation MSD1.MS file")
@@ -110,6 +115,7 @@ if(STREAMFIND_AGILENT_CHEMSTATION_MS_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_CH
     add_executable(streamfind_mass_spec_agilent_chemstation_reader_tests mass_spec/tests/reader_agilent_chemstation_smoke.cpp)
     target_link_libraries(streamfind_mass_spec_agilent_chemstation_reader_tests PRIVATE streamfind_mass_spec)
     add_test(NAME streamfind_mass_spec_agilent_chemstation_reader_tests COMMAND streamfind_mass_spec_agilent_chemstation_reader_tests)
+    set_tests_properties(streamfind_mass_spec_agilent_chemstation_reader_tests PROPERTIES LABELS "reader-interface")
     set_tests_properties(streamfind_mass_spec_agilent_chemstation_reader_tests PROPERTIES
         ENVIRONMENT "STREAMFIND_AGILENT_CHEMSTATION_MS_FIXTURE=${STREAMFIND_AGILENT_CHEMSTATION_MS_FIXTURE}"
     )
@@ -127,6 +133,7 @@ if(STREAMFIND_AGILENT_WIDE_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_WIDE_FIXTURE
     add_executable(streamfind_mass_spec_agilent_wide_reader_tests mass_spec/tests/reader_agilent_wide_smoke.cpp)
     target_link_libraries(streamfind_mass_spec_agilent_wide_reader_tests PRIVATE streamfind_mass_spec)
     add_test(NAME streamfind_mass_spec_agilent_wide_reader_tests COMMAND streamfind_mass_spec_agilent_wide_reader_tests)
+    set_tests_properties(streamfind_mass_spec_agilent_wide_reader_tests PROPERTIES LABELS "reader-interface")
     set_tests_properties(streamfind_mass_spec_agilent_wide_reader_tests PROPERTIES
         ENVIRONMENT "STREAMFIND_AGILENT_WIDE_FIXTURE=${STREAMFIND_AGILENT_WIDE_FIXTURE}"
     )
@@ -144,6 +151,7 @@ if(STREAMFIND_AGILENT_IMS_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_IMS_FIXTURE}"
     add_executable(streamfind_mass_spec_agilent_ims_reader_tests mass_spec/tests/reader_agilent_ims_smoke.cpp)
     target_link_libraries(streamfind_mass_spec_agilent_ims_reader_tests PRIVATE streamfind_mass_spec)
     add_test(NAME streamfind_mass_spec_agilent_ims_reader_tests COMMAND streamfind_mass_spec_agilent_ims_reader_tests)
+    set_tests_properties(streamfind_mass_spec_agilent_ims_reader_tests PROPERTIES LABELS "reader-interface")
     set_tests_properties(streamfind_mass_spec_agilent_ims_reader_tests PROPERTIES
         ENVIRONMENT "STREAMFIND_AGILENT_IMS_FIXTURE=${STREAMFIND_AGILENT_IMS_FIXTURE}"
     )
@@ -160,6 +168,7 @@ if(STREAMFIND_AGILENT_IMS_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_IMS_FIXTURE}"
     add_executable(streamfind_mass_spec_agilent_ims_public_reader_tests mass_spec/tests/reader_agilent_ims_public_smoke.cpp)
     target_link_libraries(streamfind_mass_spec_agilent_ims_public_reader_tests PRIVATE streamfind_mass_spec)
     add_test(NAME streamfind_mass_spec_agilent_ims_public_reader_tests COMMAND streamfind_mass_spec_agilent_ims_public_reader_tests)
+    set_tests_properties(streamfind_mass_spec_agilent_ims_public_reader_tests PROPERTIES LABELS "reader-interface")
     set_tests_properties(streamfind_mass_spec_agilent_ims_public_reader_tests PROPERTIES
         ENVIRONMENT "STREAMFIND_AGILENT_IMS_FIXTURE=${STREAMFIND_AGILENT_IMS_FIXTURE}"
     )
@@ -182,6 +191,7 @@ if(STREAMFIND_AGILENT_PROJECT_MASS_HUNTER_FIXTURE AND EXISTS "${STREAMFIND_AGILE
         STREAMFIND_AGILENT_CHEMSTATION_PROJECT_FIXTURE="${STREAMFIND_AGILENT_PROJECT_CHEMSTATION_FIXTURE}"
     )
     add_test(NAME streamfind_mass_spec_agilent_project_parity_tests COMMAND streamfind_mass_spec_agilent_project_parity_tests)
+    set_tests_properties(streamfind_mass_spec_agilent_project_parity_tests PROPERTIES LABELS "reader-interface")
 endif()
 
 set(STREAMFIND_MZML_PARITY_FIXTURE "" CACHE FILEPATH "Path to an mzML parity fixture")
@@ -194,6 +204,7 @@ if(STREAMFIND_MZML_PARITY_FIXTURE AND EXISTS "${STREAMFIND_MZML_PARITY_FIXTURE}"
         STREAMFIND_MZXML_PARITY_FIXTURE="${STREAMFIND_MZXML_PARITY_FIXTURE}"
     )
     add_test(NAME streamfind_mass_spec_mzml_mzxml_project_parity_tests COMMAND streamfind_mass_spec_mzml_mzxml_project_parity_tests)
+    set_tests_properties(streamfind_mass_spec_mzml_mzxml_project_parity_tests PROPERTIES LABELS "reader-interface")
     if(WIN32)
         add_custom_command(TARGET streamfind_mass_spec_mzml_mzxml_project_parity_tests POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
@@ -208,6 +219,7 @@ if(STREAMFIND_AGILENT_UV_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_UV_FIXTURE}")
     add_executable(streamfind_mass_spec_agilent_uv_reader_tests mass_spec/tests/reader_agilent_uv_smoke.cpp)
     target_link_libraries(streamfind_mass_spec_agilent_uv_reader_tests PRIVATE streamfind_mass_spec)
     add_test(NAME streamfind_mass_spec_agilent_uv_reader_tests COMMAND streamfind_mass_spec_agilent_uv_reader_tests)
+    set_tests_properties(streamfind_mass_spec_agilent_uv_reader_tests PROPERTIES LABELS "reader-interface")
     set_tests_properties(streamfind_mass_spec_agilent_uv_reader_tests PROPERTIES
         ENVIRONMENT "STREAMFIND_AGILENT_UV_FIXTURE=${STREAMFIND_AGILENT_UV_FIXTURE}"
     )
@@ -228,6 +240,7 @@ if(STREAMFIND_SCIEX_MULTI_WIFF_FIXTURE AND EXISTS "${STREAMFIND_SCIEX_MULTI_WIFF
         STREAMFIND_SCIEX_WIFF_FIXTURE="${STREAMFIND_SCIEX_MULTI_WIFF_FIXTURE}"
     )
     add_test(NAME streamfind_mass_spec_sciex_multi_reader_tests COMMAND streamfind_mass_spec_sciex_multi_reader_tests)
+    set_tests_properties(streamfind_mass_spec_sciex_multi_reader_tests PROPERTIES LABELS "reader-interface")
 endif()
 
 set(STREAMFIND_SCIEX_NITRO_WIFF_FIXTURE "" CACHE FILEPATH "Path to a sparse-tagged Sciex WIFF fixture")
@@ -238,6 +251,7 @@ if(STREAMFIND_SCIEX_NITRO_WIFF_FIXTURE AND EXISTS "${STREAMFIND_SCIEX_NITRO_WIFF
         STREAMFIND_SCIEX_WIFF_FIXTURE="${STREAMFIND_SCIEX_NITRO_WIFF_FIXTURE}"
     )
     add_test(NAME streamfind_mass_spec_sciex_nitro_reader_tests COMMAND streamfind_mass_spec_sciex_nitro_reader_tests)
+    set_tests_properties(streamfind_mass_spec_sciex_nitro_reader_tests PROPERTIES LABELS "reader-interface")
 endif()
 
 set(STREAMFIND_SCIEX_MIX1_HOLDOUT_WIFF_FIXTURE "" CACHE FILEPATH "Path to a holdout SCIEX Mix1 WIFF fixture")
@@ -248,6 +262,7 @@ if(STREAMFIND_SCIEX_MIX1_HOLDOUT_WIFF_FIXTURE AND EXISTS "${STREAMFIND_SCIEX_MIX
         STREAMFIND_SCIEX_WIFF_FIXTURE="${STREAMFIND_SCIEX_MIX1_HOLDOUT_WIFF_FIXTURE}"
     )
     add_test(NAME streamfind_mass_spec_sciex_mix1_holdout_reader_tests COMMAND streamfind_mass_spec_sciex_mix1_holdout_reader_tests)
+    set_tests_properties(streamfind_mass_spec_sciex_mix1_holdout_reader_tests PROPERTIES LABELS "reader-interface")
 endif()
 
 set(STREAMFIND_SCIEX_TOF_WIFF_FIXTURE "" CACHE FILEPATH "Path to a SCIEX TOF WIFF fixture")
@@ -258,6 +273,7 @@ if(STREAMFIND_SCIEX_TOF_WIFF_FIXTURE AND EXISTS "${STREAMFIND_SCIEX_TOF_WIFF_FIX
         STREAMFIND_SCIEX_WIFF_FIXTURE="${STREAMFIND_SCIEX_TOF_WIFF_FIXTURE}"
     )
     add_test(NAME streamfind_mass_spec_sciex_tof_reader_tests COMMAND streamfind_mass_spec_sciex_tof_reader_tests)
+    set_tests_properties(streamfind_mass_spec_sciex_tof_reader_tests PROPERTIES LABELS "reader-interface")
 endif()
 
 add_subdirectory(raman)

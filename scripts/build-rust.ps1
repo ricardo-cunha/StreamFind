@@ -12,12 +12,14 @@
       -Tests    also run cargo test (all targets)
       -Package  build/test a single workspace package (default: all)
       -Release  use the release profile (default: debug)
+      -Features comma-separated Cargo features to enable
 #>
 param(
     [switch]$Clean,
     [switch]$Tests,
     [string]$Package = '',
-    [switch]$Release
+    [switch]$Release,
+    [string]$Features = ''
 )
 
 . "$PSScriptRoot\build-common.ps1"
@@ -45,6 +47,7 @@ if ($Tests) {
     $testArgs = @('test', '--manifest-path', $manifest)
     if ($Package)  { $testArgs += @('-p', $Package) }
     if ($Release)  { $testArgs += '--release' }
+    if ($Features) { $testArgs += @('--features', $Features) }
     Write-Log "cargo $($testArgs -join ' ')"
     & $cargo @testArgs
     if ($LASTEXITCODE -ne 0) { throw "cargo test failed ($LASTEXITCODE)" }
@@ -52,6 +55,7 @@ if ($Tests) {
     $buildArgs = @('build', '--manifest-path', $manifest)
     if ($Package)  { $buildArgs += @('-p', $Package) }
     if ($Release)  { $buildArgs += '--release' }
+    if ($Features) { $buildArgs += @('--features', $Features) }
     Write-Log "cargo $($buildArgs -join ' ')"
     & $cargo @buildArgs
     if ($LASTEXITCODE -ne 0) { throw "cargo build failed ($LASTEXITCODE)" }

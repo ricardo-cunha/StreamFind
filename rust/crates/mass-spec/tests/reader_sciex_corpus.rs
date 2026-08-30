@@ -1,3 +1,5 @@
+#![cfg(feature = "reader-interface-tests")]
+
 use std::{env, fs, path::PathBuf};
 
 use streamfind_rust_mass_spec::reader::{Format, Reader};

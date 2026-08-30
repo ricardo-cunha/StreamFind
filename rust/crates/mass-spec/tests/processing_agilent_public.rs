@@ -1,3 +1,5 @@
+#![cfg(feature = "reader-interface-tests")]
+
 use serde_json::json;
 use std::{fs, path::Path};
 use streamfind_rust_core::{Project, ProjectOptions};

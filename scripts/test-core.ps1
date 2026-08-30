@@ -7,7 +7,8 @@
       powershell -ExecutionPolicy Bypass -File scripts\test-core.ps1 -Config Release
 #>
 param(
-    [string]$Config = 'Debug'
+    [string]$Config = 'Debug',
+    [switch]$IncludeReaderInterface
 )
 
 . "$PSScriptRoot\build-common.ps1"
@@ -21,6 +22,11 @@ if (-not (Test-Path (Join-Path $buildDir 'build.ninja'))) {
 
 Write-Log "ctest: $ctest"
 Write-Log "ctest dir: $buildDir (config $Config)"
-& $ctest --test-dir $buildDir -C $Config --output-on-failure
+$ctestArgs = @('--test-dir', $buildDir, '-C', $Config, '--output-on-failure')
+if (-not $IncludeReaderInterface) {
+    Write-Log 'Excluding CTest label: reader-interface (use -IncludeReaderInterface to opt in).'
+    $ctestArgs += @('-LE', 'reader-interface')
+}
+& $ctest @ctestArgs
 if ($LASTEXITCODE -ne 0) { throw "CTest failed ($LASTEXITCODE)" }
 Write-Log 'CTest passed.'

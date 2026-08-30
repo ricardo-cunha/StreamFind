@@ -29,7 +29,7 @@ fn project(name: &str) -> Project {
 }
 
 fn analysed_project(name: &str, replicate: &str) -> Project {
-    let mut project = project(name);
+    let project = project(name);
     project
         .execute_sql(
             "CREATE TABLE MASS_SPEC_ANALYSES (project_id VARCHAR, analysis VARCHAR, file_path VARCHAR, analysis_index INTEGER DEFAULT 0, replicate VARCHAR)",

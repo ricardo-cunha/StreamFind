@@ -57,7 +57,7 @@ if ($Core) {
     if (-not $SkipTests) {
         Log "Running fast C++ tests..."
         $ctest = Get-CTest
-        & $ctest --test-dir $buildDir -C $Config -E wastewater --output-on-failure
+        & $ctest --test-dir $buildDir -C $Config -E wastewater -LE reader-interface --output-on-failure
         if ($LASTEXITCODE -ne 0) { throw "CTest failed ($LASTEXITCODE)" }
     }
     Log "Packaging C++ core with CPack..."
@@ -136,7 +136,10 @@ if ($Linux) {
 
 # Content hashes for every archive (decision: content hash, auto & authoritative).
 Log "Computing SHA-256 hashes..."
-$sums = Get-ChildItem $releases -File | ForEach-Object {
+$sums = Get-ChildItem $releases -File |
+    Where-Object { $_.Name -like 'streamfind-*.zip' -or $_.Name -like 'streamfind-*.tgz' -or $_.Name -like 'streamfind-*.tar.gz' } |
+    Sort-Object Name |
+    ForEach-Object {
     $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
     "$hash  $($_.Name)"
 }

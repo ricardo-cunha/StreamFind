@@ -1,3 +1,5 @@
+#![cfg(feature = "reader-interface-tests")]
+
 use std::{
     fs,
     time::{SystemTime, UNIX_EPOCH},

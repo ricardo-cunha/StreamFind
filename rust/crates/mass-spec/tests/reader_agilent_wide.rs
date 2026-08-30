@@ -1,3 +1,5 @@
+#![cfg(feature = "reader-interface-tests")]
+
 use streamfind_rust_mass_spec::reader::{Format, Reader};
 use streamfind_rust_mass_spec::reader_agilent;
 

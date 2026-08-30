@@ -1,2 +1,2 @@
-000175661cff1d8fd20ec327183936b6cbccb09c14529c29cb7c24309408393f  streamfind-core-cpp-0.1.0-Windows-x86_64.zip
-1e546626503290055b34d3331b41770cead05d1854df0ac8a35769a6fd9ff3e1  streamfind-rust-0.1.0-Windows-x86_64.zip
+cfcd1b58f26e2e56816dbb353f461a81a862a9cb538db5966fe7e7aa14feb468  streamfind-core-cpp-0.1.0-Windows-x86_64.zip
+89fb929dffa659a7e28f268031cfd20e1e9ef545c034482ea432c2f44bf56ba4  streamfind-rust-0.1.0-Windows-x86_64.zip

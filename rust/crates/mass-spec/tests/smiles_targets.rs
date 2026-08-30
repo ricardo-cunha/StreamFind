@@ -16,7 +16,7 @@ fn fixtures() -> [std::path::PathBuf; 2] {
 fn setup(tag: &str) -> (Project, OperationRegistry) {
     let database = streamfind_rust_test_support::tmp_projects_dir().join(format!("streamfind-rust-smiles-{tag}.duckdb"));
     let _ = fs::remove_file(&database);
-    let mut project = Project::create(ProjectOptions {
+    let project = Project::create(ProjectOptions {
         database_path: database.clone(),
         project_id: "rust-smiles".into(),
         domain: "mass_spec".into(),
