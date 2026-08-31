@@ -2164,7 +2164,8 @@
 }
 
 #disclosure-slide .disclosure-item strong { color: #a24e3c; font-size: .9em; }
-#disclosure-slide .disclosure-item p { color: #274560; font-size: .7em; line-height: 1.35; margin: .45em 0 0; }
+#disclosure-slide .disclosure-item ul { color: #274560; font-size: .7em; line-height: 1.35; margin: .45em 0 0; padding-left: 1.2em; }
+#disclosure-slide .disclosure-item li { margin-bottom: .45em; }
 
 #disclosure-slide .disclosure-note {
    bottom: 112px;

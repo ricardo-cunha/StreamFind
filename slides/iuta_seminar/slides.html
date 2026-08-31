@@ -42,27 +42,24 @@
       </section>
 
       <section class="slide disclosure-slide" id="disclosure-slide">
-        <h2>Disclosure: How this deck was created</h2>
+        <h2>Disclosure</h2>
         <div class="slide-chrome"><img class="slide-logo" src="./assets/iuta-logo.png" alt="IUTA"><div class="slide-footer"><span class="metadata-left"></span><span class="center metadata-footer"></span><span class="number"></span></div></div>
         <div class="disclosure-grid">
           <div class="disclosure-item disclosure-primary">
             <strong>Vibe coding, locally</strong>
-            <p>Slides were generated and refined through vibe coding with a local Qwen 3.8 27B model, accessed through the Hermes harness and running on an RTX 5090 GPU.</p>
-          </div>
-          <div class="disclosure-item disclosure-primary">
-            <strong>Multimodal evaluation</strong>
-            <p>The local model is multimodal: it could evaluate rendered images and support visual layout refinement during slide development.</p>
-          </div>
-          <div class="disclosure-item">
-            <strong>Occasional external assistance</strong>
-            <p>GPT 5.6 Luna was used occasionally when access to the local model was limited or the workstation was processing data.</p>
+            <ul>
+              <li>Slides were generated and refined through vibe coding with a local Qwen 3.8 27B model (i.e., a multimodal model), accessed through the Hermes harness and running on an RTX 5090 GPU.</li>
+              <li>GPT 5.6 Luna was used occasionally when access to the local model was limited or the workstation was processing data.</li>
+            </ul>
           </div>
           <div class="disclosure-item">
             <strong>Image generation</strong>
-            <p>Visual assets were generated with GPT 5.6 SOL via ChatGPT.</p>
+            <ul>
+              <li>Visual assets were generated with GPT 5.6 SOL via ChatGPT.</li>
+              <li>Initial figure-generation prompts were produced by the local model.</li>
+            </ul>
           </div>
         </div>
-        <div class="disclosure-note">This disclosure describes the tools used to create the presentation; the scientific content remains subject to review by the author.</div>
       </section>
 
       <!--
@@ -743,7 +740,8 @@ project$run()</code></pre>
       node.on('mouseenter', function (event, d) {
         var title = d.prefLabel || d.label;
         var definition = d.definition ? '<span class="ontology-graph-tooltip-definition">' + escapeHtml(d.definition) + '</span>' : '';
-        tooltip.innerHTML = '<strong>' + escapeHtml(title) + '</strong><span class="ontology-graph-tooltip-id">' + escapeHtml(d.label) + '</span>' + definition + '<span>' + escapeHtml(d.group) + ' · ' + d.degree + ' relationships</span>';
+        var nodeClass = d.class || 'Entity';
+        tooltip.innerHTML = '<strong>' + escapeHtml(title) + '</strong><span class="ontology-graph-tooltip-id">' + escapeHtml(d.label + ' - ' + nodeClass) + '</span>' + definition + '<span>' + escapeHtml(d.group) + ' · ' + d.degree + ' relationships</span>';
         tooltip.style.display = 'block';
         tooltip.style.left = (event.offsetX + 12) + 'px';
         tooltip.style.top = (event.offsetY + 12) + 'px';
