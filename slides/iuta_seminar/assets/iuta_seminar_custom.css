@@ -1962,7 +1962,7 @@
    display: flex;
    gap: 1.3em;
    justify-content: center;
-   margin: 6em auto 0;
+   margin: 3em auto 0;
    max-width: 82%;
 }
 
@@ -2014,6 +2014,21 @@
 }
 
 #mcp-live-demo-slide .live-demo-prompt { color: #8f2d2d; font-weight: 700; }
+#mcp-live-demo-slide .live-demo-config {
+   background: #202a35;
+   border-radius: 12px;
+   box-sizing: border-box;
+   color: #d7e3f0;
+   font-family: Consolas, monospace;
+   font-size: .68em;
+   line-height: 1.35;
+   margin: 1.2em auto 0;
+   padding: .9em 1.3em;
+   text-align: left;
+   white-space: pre-wrap;
+   width: 48%;
+}
+#mcp-live-demo-slide .live-demo-config code { color: inherit; }
 #mcp-live-demo-slide .live-demo-caption { color: #4a5a6a; font-size: .7em; margin: 2em auto 0; text-align: center; }
 
 #take-home-slide .take-home-statement {

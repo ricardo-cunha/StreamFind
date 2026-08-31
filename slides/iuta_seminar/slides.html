@@ -411,8 +411,13 @@ project$run()</code></pre>
           <b>→</b>
           <div><span class="live-demo-icon">M</span><strong>MCP interaction</strong><small>initialize · tools/list · tools/call</small></div>
         </div>
-        <div class="live-demo-command"><span class="live-demo-prompt">terminal</span> &gt; ~/streamfind_mcp.exe</div>
-        <div class="live-demo-caption">The next step uses the real server and real JSON-RPC messages in a live terminal—not a simulated browser panel.</div>
+        <pre class="live-demo-config"><code>"streamfind": {
+  "type": "local",
+  "command": [
+    "~\\streamfind-rust-mcp.exe"
+  ],
+  "enabled": true
+},</code></pre>
       </section>
 
       <section class="slide framework-story-slide" id="take-home-slide">
