@@ -51,9 +51,9 @@ int main() {
         if (initial.size() != 4 || initial[0][1].empty() || initial[2][1].size() != 392) return 18;
         reader.select_analysis(3);
         const auto selected = reader.get_chromatograms();
-        if (selected.size() != 61 || selected[0][1][9] != 4822.0f || selected[1][1][9] != 4574.0f || selected[40][1].size() != 392 || selected[41][1].size() != 392 || std::fabs(selected[40][0][0] - 0.708483f) > 0.00001f || selected[40][1][0] != 3943.0f || selected[41][1][0] != 203.0f) return 18;
+        if (selected.size() != 61 || selected[0][1][9] != 4822.0f || selected[1][1][9] != 4574.0f || selected[40][1].size() != 392 || selected[41][1].size() != 392 || std::fabs(selected[40][0][0] - 42.509f) > 0.00001f || selected[40][1][0] != 3943.0f || selected[41][1][0] != 203.0f) return 18;
         const auto selected_headers = reader.get_chromatograms_headers({40});
-        if (selected_headers.size() != 1 || !std::isfinite(selected_headers.start_time[0]) || !std::isfinite(selected_headers.end_time[0]) || std::fabs(selected_headers.start_time[0] - scheduled[38].start_time) > 0.00001f || std::fabs(selected_headers.end_time[0] - scheduled[38].end_time) > 0.00001f) return 19;
+        if (selected_headers.size() != 1 || !std::isfinite(selected_headers.start_time[0]) || !std::isfinite(selected_headers.end_time[0]) || std::fabs(selected_headers.start_time[0] - scheduled[38].start_time * 60.0f) > 0.00001f || std::fabs(selected_headers.end_time[0] - scheduled[38].end_time * 60.0f) > 0.00001f) return 19;
         reader.select_analysis(0);
         const auto restored = reader.get_chromatograms();
         if (restored.size() != 61 || restored[0][1][9] != initial[0][1][9]) return 20;

@@ -220,19 +220,20 @@ sfms:getRawSpectra
     sf:operationId "mass_spec.get_raw_spectra" ;
     sf:availableInDomain sfcore:mass_spec ;
     skos:prefLabel "Get raw spectra" ;
-    skos:definition "Read raw spectrum points using independent target ranges and shared mass-spec filters." ;
+    skos:definition "Read flattened raw spectrum points. analysis_names selects analyses first; non-empty indices selects spectra and takes priority over targets; targets are used when indices are omitted or empty." ;
      sf:toolName "get_raw_spectra" ;
     sf:hasParameter
         sfcore:databasePathParameter,
         sfcore:projectIdParameter,
         sfcore:analysisNamesParameter,
+        sfms:indicesParameter,
         sfms:levelsParameter,
         sfms:targetsParameter,
         sfms:polarityParameter,
         sfms:ppmParameter,
         sfms:rtToleranceParameter,
         sfms:chargeParameter ;
-      sf:defaults "{\"analysis_names\":[],\"levels\":[]}" ;
+      sf:defaults "{\"analysis_names\":[],\"indices\":[],\"levels\":[]}" ;
     sf:returns sfms:spectraResult ;
     sf:reads sfms:analysesTable ;
     sf:mutatesProject false .

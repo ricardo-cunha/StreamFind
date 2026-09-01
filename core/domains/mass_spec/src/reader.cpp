@@ -713,6 +713,13 @@ namespace mass_spec
         std::vector<float> intensity;
       };
 
+      void convert_minutes_to_seconds(Block &block)
+      {
+        for (auto &value : block.time) value *= 60.0f;
+        if (!std::isnan(block.start_time)) block.start_time *= 60.0f;
+        if (!std::isnan(block.end_time)) block.end_time *= 60.0f;
+      }
+
       std::string trim(const std::string &value)
       {
         const auto begin = std::find_if_not(value.begin(), value.end(), [](unsigned char c)
@@ -1712,8 +1719,9 @@ namespace mass_spec
           auto precursor = prec_list.child("precursor");
           if (precursor)
           {
-            for (auto cv : precursor.children("cvParam"))
+            for (auto match : precursor.select_nodes(".//cvParam"))
             {
+              auto cv = match.node();
               const std::string_view accession = cv.attribute("accession").as_string();
               if ((!accession.empty() && accession == accession_collision_energy) ||
                   (accession.empty() &&
@@ -1798,8 +1806,9 @@ namespace mass_spec
                   out.precursor_mz[i] = cv.attribute("value").as_float(0.0f);
               }
             }
-            for (auto cv : prec.children("cvParam"))
+            for (auto match : prec.select_nodes(".//cvParam"))
             {
+              auto cv = match.node();
               const std::string_view accession = cv.attribute("accession").as_string();
               if ((!accession.empty() && accession == accession_collision_energy) ||
                   (accession.empty() &&
@@ -2494,6 +2503,7 @@ namespace mass_spec
             blocks.push_back(std::move(block));
           }
         }
+        for (auto &block : blocks) convert_minutes_to_seconds(block);
         return blocks;
       }
 
@@ -3038,6 +3048,7 @@ namespace mass_spec
             }
           }
         }
+        for (auto &block : blocks) convert_minutes_to_seconds(block);
         return blocks;
       }
 
@@ -3285,7 +3296,7 @@ namespace mass_spec
             spectrum.lowmz = std::min(spectrum.lowmz, mz);
             spectrum.highmz = std::max(spectrum.highmz, mz);
             spectrum.tic += intensity;
-            if (intensity > spectrum.bpint)
+            if (intensity >= spectrum.bpint)
             {
               spectrum.bpint = intensity;
               spectrum.bpmz = mz;

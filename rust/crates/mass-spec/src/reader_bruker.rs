@@ -65,6 +65,7 @@ pub struct BafSpectrumMetadata {
     pub summed_intensity: f64,
     pub maximum_intensity: f64,
     pub profile_intensity_id: u64,
+    pub profile_point_count: usize,
     pub polarity: i32,
     pub scan_mode: i32,
     pub acquisition_mode: i32,
@@ -140,6 +141,7 @@ pub fn read_baf_spectra_metadata(
                 summed_intensity: row.get(5)?,
                 maximum_intensity: row.get(6)?,
                 profile_intensity_id: row.get::<_, i64>(7)? as u64,
+                profile_point_count: 0,
                 polarity: row.get(8)?,
                 scan_mode: row.get(9)?,
                 acquisition_mode: row.get(10)?,
@@ -147,8 +149,51 @@ pub fn read_baf_spectra_metadata(
             })
         })
         .map_err(|error| error.to_string())?;
-    rows.map(|row| row.map_err(|error| error.to_string()))
-        .collect()
+    let mut records = rows
+        .map(|row| row.map_err(|error| error.to_string()))
+        .collect::<Result<Vec<_>, _>>()?;
+    let profile_ids = records
+        .iter()
+        .map(|record| record.profile_intensity_id)
+        .collect::<Vec<_>>();
+    let counts = read_baf_profile_point_counts(path, &profile_ids)?;
+    for (record, count) in records.iter_mut().zip(counts) {
+        record.profile_point_count = count;
+    }
+    Ok(records)
+}
+
+fn read_baf_profile_point_counts(
+    path: impl AsRef<Path>,
+    profile_array_ids: &[u64],
+) -> Result<Vec<usize>, String> {
+    let path = path.as_ref();
+    let mut file = File::open(path.join("analysis.baf")).map_err(|error| error.to_string())?;
+    let file_size = file.metadata().map_err(|error| error.to_string())?.len();
+    let mut counts = Vec::with_capacity(profile_array_ids.len());
+    for &profile_array_id in profile_array_ids {
+        if (profile_array_id >> 56) as u8 != 0x42 {
+            return Err("BAF array ID is not a ProfileIntensityId".into());
+        }
+        let offset = profile_array_id & 0x00ff_ffff_ffff_ffff;
+        let count_offset = offset
+            .checked_add(0x30)
+            .ok_or_else(|| "BAF profile count offset overflow".to_string())?;
+        if count_offset
+            .checked_add(4)
+            .filter(|end| *end <= file_size)
+            .is_none()
+        {
+            return Err("BAF profile count is outside analysis.baf".into());
+        }
+        file.seek(SeekFrom::Start(count_offset))
+            .map_err(|error| error.to_string())?;
+        let mut count = [0u8; 4];
+        file.read_exact(&mut count)
+            .map_err(|error| error.to_string())?;
+        counts.push(u32::from_le_bytes(count) as usize);
+    }
+    Ok(counts)
 }
 
 fn sql_quote(path: &Path) -> String {
@@ -564,26 +609,35 @@ fn read_baf_profile_spectrum_variant(
         return Err("BAF array ID is not a ProfileIntensityId".into());
     }
     let offset = (profile_array_id & 0x00ff_ffff_ffff_ffff) as usize;
-    let bytes = std::fs::read(path.join("analysis.baf")).map_err(|error| error.to_string())?;
+    let mut file = File::open(path.join("analysis.baf")).map_err(|error| error.to_string())?;
+    let file_size = file.metadata().map_err(|error| error.to_string())?.len() as usize;
     if offset
-        .checked_add(0x34)
-        .filter(|end| *end <= bytes.len())
+        .checked_add(0x38)
+        .filter(|end| *end <= file_size)
         .is_none()
     {
         return Err("BAF profile-array offset is outside analysis.baf".into());
     }
-    let block_size = u32::from_le_bytes(bytes[offset..offset + 4].try_into().unwrap()) as usize;
-    let block_type = u32::from_le_bytes(bytes[offset + 4..offset + 8].try_into().unwrap());
+    file.seek(SeekFrom::Start(offset as u64))
+        .map_err(|error| error.to_string())?;
+    let mut prefix = [0u8; 0x38];
+    file.read_exact(&mut prefix)
+        .map_err(|error| error.to_string())?;
+    let block_size = u32::from_le_bytes(prefix[0..4].try_into().unwrap()) as usize;
+    let block_type = u32::from_le_bytes(prefix[4..8].try_into().unwrap());
     if block_type != 0xbfa0_1001
         || block_size < 0x52
         || offset
             .checked_add(block_size)
-            .filter(|end| *end <= bytes.len())
+            .filter(|end| *end <= file_size)
             .is_none()
     {
         return Err("Invalid BAF DataVectorBlock".into());
     }
-    let block = &bytes[offset..offset + block_size];
+    let mut block = vec![0u8; block_size];
+    block[..prefix.len()].copy_from_slice(&prefix);
+    file.read_exact(&mut block[prefix.len()..])
+        .map_err(|error| error.to_string())?;
     if u32::from_le_bytes(block[0x2c..0x30].try_into().unwrap()) != 0xee77 {
         return Err("Invalid BAF profile decoder header".into());
     }
@@ -599,7 +653,7 @@ fn read_baf_profile_spectrum_variant(
     if table[..9] != widths || table[25] != 10 {
         return Err("Unsupported BAF profile decoder table values".into());
     }
-    let mut reader = BafBitReader::new(block, 0x34 + 4 + table_size);
+    let mut reader = BafBitReader::new(&block, 0x34 + 4 + table_size);
     let mut intensity = vec![0u32; count];
     let mut position = 0usize;
     let mut previous = 0u32;
@@ -684,14 +738,20 @@ pub fn read_baf_profile_point_count(
     if (profile_array_id >> 56) as u8 != 0x42 {
         return Err("BAF array ID is not a ProfileIntensityId".into());
     }
-    let offset = (profile_array_id & 0x00ff_ffff_ffff_ffff) as usize;
-    let bytes = std::fs::read(path.join("analysis.baf")).map_err(|error| error.to_string())?;
+    let offset = (profile_array_id & 0x00ff_ffff_ffff_ffff) as u64;
+    let mut file = File::open(path.join("analysis.baf")).map_err(|error| error.to_string())?;
+    let file_size = file.metadata().map_err(|error| error.to_string())?.len();
     if offset
         .checked_add(0x34)
-        .filter(|end| *end <= bytes.len())
+        .filter(|end| *end <= file_size)
         .is_none()
     {
         return Err("BAF profile-array offset is outside analysis.baf".into());
     }
-    Ok(u32::from_le_bytes(bytes[offset + 0x30..offset + 0x34].try_into().unwrap()) as usize)
+    file.seek(SeekFrom::Start(offset + 0x30))
+        .map_err(|error| error.to_string())?;
+    let mut count = [0u8; 4];
+    file.read_exact(&mut count)
+        .map_err(|error| error.to_string())?;
+    Ok(u32::from_le_bytes(count) as usize)
 }

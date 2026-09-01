@@ -508,7 +508,11 @@ fn get_spectra_headers_impl(project: &mut Project, parameters: &Value) -> Result
         for index in 0..reader.spectra().len() {
             let spectrum = if matches!(
                 reader.format(),
-                reader::Format::BrukerBaf | reader::Format::BrukerTsf | reader::Format::SciexWiff
+                reader::Format::MzMl
+                    | reader::Format::BrukerBaf
+                    | reader::Format::BrukerTsf
+                    | reader::Format::SciexWiff
+                    | reader::Format::AgilentMassHunterD
             ) {
                 reader
                     .spectrum(index)
@@ -525,9 +529,9 @@ fn get_spectra_headers_impl(project: &mut Project, parameters: &Value) -> Result
                 "scan": spectrum.scan,
                 "array_length": spectrum.array_length,
                 "level": spectrum.level,
-                "mode": 0,
+                "mode": spectrum.mode,
                 "polarity": spectrum.polarity,
-                "configuration": 0,
+                "configuration": spectrum.configuration,
                 "lowmz": spectrum.low_mz,
                 "highmz": spectrum.high_mz,
                 "bpmz": spectrum.base_peak_mz,
@@ -535,9 +539,9 @@ fn get_spectra_headers_impl(project: &mut Project, parameters: &Value) -> Result
                 "tic": spectrum.tic,
                 "rt": spectrum.retention_time,
                 "mobility": spectrum.mobility,
-                "window_mz": 0.0,
-                "window_mzlow": 0.0,
-                "window_mzhigh": 0.0,
+                "window_mz": spectrum.window_mz,
+                "window_mzlow": spectrum.window_mzlow,
+                "window_mzhigh": spectrum.window_mzhigh,
                 "precursor_mz": spectrum.precursor_mz,
                 "precursor_intensity": spectrum.precursor_intensity,
                 "precursor_charge": spectrum.precursor_charge,
@@ -566,7 +570,10 @@ fn get_chromatograms_headers_impl(project: &mut Project, parameters: &Value) -> 
         reader
             .select_analysis(row["analysis_index"].as_i64().unwrap_or(0) as usize)
             .map_err(|e| invalid(e.to_string()))?;
-        for (index, chromatogram) in reader.chromatograms().iter().enumerate() {
+        let chromatograms = reader
+            .chromatograms_data(&[])
+            .map_err(|error| invalid(error.to_string()))?;
+        for (index, chromatogram) in chromatograms.iter().enumerate() {
             out.push(json!({"analysis": analysis, "index": index, "chromatogram_id": chromatogram.id, "array_length": chromatogram.time.len().min(chromatogram.intensity.len()), "polarity": chromatogram.polarity, "precursor_mz": chromatogram.precursor_mz.unwrap_or(0.0), "activation_ce": chromatogram.activation_ce.unwrap_or(0.0), "product_mz": chromatogram.product_mz.unwrap_or(0.0), "signal_type": chromatogram.signal_type, "chromatogram_type": chromatogram.chromatogram_type, "detector": chromatogram.detector, "channel": chromatogram.channel, "units": chromatogram.units, "wavelength_nm": chromatogram.wavelength_nm, "interval_ms": chromatogram.interval_ms, "start_time": chromatogram.time.first().copied().unwrap_or(0.0), "end_time": chromatogram.time.last().copied().unwrap_or(0.0), "intensity_multiplier": 1.0}));
         }
     }
@@ -626,7 +633,37 @@ fn get_raw_spectra_impl(
         reader
             .select_analysis(row["analysis_index"].as_i64().unwrap_or(0) as usize)
             .map_err(|e| invalid(e.to_string()))?;
-        for index in 0..reader.spectra().len() {
+        let requested_indices = parameters
+            .get("indices")
+            .and_then(Value::as_array)
+            .map(|values| {
+                values
+                    .iter()
+                    .map(|value| {
+                        value
+                            .as_i64()
+                            .ok_or_else(|| invalid("indices must contain integers"))
+                            .and_then(|index| {
+                                usize::try_from(index)
+                                    .map_err(|_| invalid("indices must be non-negative"))
+                            })
+                    })
+                    .collect::<Result<Vec<_>>>()
+            })
+            .transpose()?
+            .unwrap_or_default();
+        let indexed = !requested_indices.is_empty();
+        let selected_indices = if indexed {
+            for index in &requested_indices {
+                if *index >= reader.spectra().len() {
+                    return Err(invalid(format!("spectrum index is out of range: {index}")));
+                }
+            }
+            requested_indices
+        } else {
+            (0..reader.spectra().len()).collect()
+        };
+        for index in selected_indices {
             let spectrum = reader.spectrum_data(index).map_err(|error| {
                 invalid(format!(
                     "analysis={analysis} spectrum_index={index}: {error}"
@@ -644,6 +681,10 @@ fn get_raw_spectra_impl(
                 if (*intensity as f64) < minimum_intensity {
                     continue;
                 }
+                if indexed {
+                    out.push(json!({"analysis": analysis, "replicate": row["replicate"], "target_id": format!("spectrum:{}", spectrum.index), "id": format!("{}:{}", analysis, spectrum.index), "polarity": spectrum.polarity, "level": spectrum.level, "pre_mz": spectrum.precursor_mz, "pre_mzlow": spectrum.window_mzlow, "pre_mzhigh": spectrum.window_mzhigh, "pre_ce": spectrum.collision_energy, "rt": spectrum.retention_time, "mobility": spectrum.mobility, "mz": mz, "intensity": intensity}));
+                    continue;
+                }
                 let matches = query
                     .targets
                     .iter()
@@ -659,7 +700,7 @@ fn get_raw_spectra_impl(
                     })
                     .collect::<Vec<_>>();
                 for target in matches {
-                    out.push(json!({"analysis": analysis, "replicate": row["replicate"], "target_id": target.id, "id": format!("{}:{}", analysis, spectrum.index), "polarity": spectrum.polarity, "level": spectrum.level, "pre_mz": spectrum.precursor_mz, "pre_mzlow": 0.0, "pre_mzhigh": 0.0, "pre_ce": spectrum.collision_energy, "rt": spectrum.retention_time, "mobility": spectrum.mobility, "mz": mz, "intensity": intensity}));
+                    out.push(json!({"analysis": analysis, "replicate": row["replicate"], "target_id": target.id, "id": format!("{}:{}", analysis, spectrum.index), "polarity": spectrum.polarity, "level": spectrum.level, "pre_mz": spectrum.precursor_mz, "pre_mzlow": spectrum.window_mzlow, "pre_mzhigh": spectrum.window_mzhigh, "pre_ce": spectrum.collision_energy, "rt": spectrum.retention_time, "mobility": spectrum.mobility, "mz": mz, "intensity": intensity}));
                 }
             }
         }
@@ -870,9 +911,9 @@ fn get_raw_chromatograms_impl(project: &mut Project, parameters: &Value) -> Resu
                     "index": index,
                     "chromatogram_id": chromatogram.id,
                     "polarity": chromatogram.polarity,
-                    "precursor_mz": chromatogram.precursor_mz,
-                    "activation_ce": chromatogram.activation_ce,
-                    "product_mz": chromatogram.product_mz,
+                    "precursor_mz": chromatogram.precursor_mz.unwrap_or(0.0),
+                    "activation_ce": chromatogram.activation_ce.unwrap_or(0.0),
+                    "product_mz": chromatogram.product_mz.unwrap_or(0.0),
                     "wavelength_nm": chromatogram.wavelength_nm,
                     "rt": *rt as f64,
                     "raw_intensity": *intensity as f64,

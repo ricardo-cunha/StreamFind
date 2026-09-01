@@ -105,6 +105,11 @@ path = "tests/project_mzml_mzxml_parity.rs"
 required-features = ["reader-interface-tests"]
 
 [[test]]
+name = "project_indexed_persistence"
+path = "tests/project_indexed_persistence.rs"
+required-features = ["reader-interface-tests"]
+
+[[test]]
 name = "project_agilent_parity"
 path = "tests/project_agilent_parity.rs"
 required-features = ["reader-interface-tests"]

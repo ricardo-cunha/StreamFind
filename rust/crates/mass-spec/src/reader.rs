@@ -66,6 +66,11 @@ pub struct Spectrum {
     pub scan: i32,
     pub array_length: i32,
     pub level: i32,
+    pub mode: i32,
+    pub configuration: i32,
+    pub window_mz: f32,
+    pub window_mzlow: f32,
+    pub window_mzhigh: f32,
     pub polarity: i32,
     pub low_mz: f32,
     pub high_mz: f32,
@@ -118,6 +123,20 @@ pub struct Summary {
     pub has_ion_mobility: bool,
 }
 
+fn convert_chromatogram_minutes_to_seconds(chromatograms: &mut [Chromatogram]) {
+    for chromatogram in chromatograms {
+        for value in &mut chromatogram.time {
+            *value *= 60.0;
+        }
+        if let Some(value) = &mut chromatogram.start_time {
+            *value *= 60.0;
+        }
+        if let Some(value) = &mut chromatogram.end_time {
+            *value *= 60.0;
+        }
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Analysis {
     pub analysis_index: usize,
@@ -141,6 +160,8 @@ pub struct Reader {
     bruker_tsf_msms: Option<Vec<crate::reader_bruker::TsfMsMsInfo>>,
     sciex_tof_metadata: Option<crate::reader_sciex::TofMetadata>,
     sciex_mrm_metadata: Option<crate::reader_sciex::MrmMetadata>,
+    mzml_bytes: Option<Vec<u8>>,
+    mzml_spectrum_offsets: Vec<(usize, usize)>,
 }
 
 impl Reader {
@@ -171,7 +192,10 @@ impl Reader {
             detect_format(&path, &bytes)?
         };
         let (mut spectra, mut chromatograms) = match format {
-            Format::MzMl => (parse_mzml(&bytes)?, parse_mzml_chromatograms(&bytes)?),
+            Format::MzMl => (
+                parse_mzml_with_arrays(&bytes, false)?,
+                parse_mzml_chromatograms(&bytes)?,
+            ),
             Format::MzXml => (parse_mzxml(&bytes)?, Vec::new()),
             Format::Asc => (Vec::new(), parse_asc(&bytes)),
             Format::ShimadzuLcd => parse_lcd(&path)?,
@@ -230,6 +254,7 @@ impl Reader {
         if format == Format::AgilentChemStationD {
             chromatograms = crate::reader_agilent_chemstation::read_chromatograms(&path)
                 .map_err(ReaderError::Invalid)?;
+            convert_chromatogram_minutes_to_seconds(&mut chromatograms);
         }
         if let Some(records) = &agilent_records {
             spectra = records
@@ -244,13 +269,15 @@ impl Reader {
                         record.spectrum_point_count
                     } as i32,
                     level: record.ms_level,
+                    polarity: record.polarity,
                     low_mz: record.spectrum_min_x as f32,
                     high_mz: record.spectrum_max_x as f32,
                     base_peak_mz: record.base_peak_mz as f32,
                     base_peak_intensity: record.base_peak_value as f32,
                     tic: record.tic as f32,
-                    retention_time: record.scan_time_minutes as f32,
+                    retention_time: record.scan_time_minutes as f32 * 60.0,
                     precursor_mz: record.precursor_mz as f32,
+                    precursor_intensity: record.precursor_intensity as f32,
                     collision_energy: record.collision_energy as f32,
                     ..Default::default()
                 })
@@ -273,7 +300,7 @@ impl Reader {
                     base_peak_mz: record.base_peak_mz as f32,
                     base_peak_intensity: record.base_peak_abundance as f32,
                     tic: record.tic as f32,
-                    retention_time: record.scan_time_minutes as f32,
+                    retention_time: record.scan_time_minutes as f32 * 60.0,
                     mobility: record.mobility as f32,
                     ..Default::default()
                 })
@@ -311,7 +338,7 @@ impl Reader {
                         base_peak_mz,
                         base_peak_intensity,
                         tic: raw.intensity.iter().sum(),
-                        retention_time: entry.retention_time_ms as f32 / 60000.0,
+                        retention_time: entry.retention_time_ms as f32 / 1000.0,
                         ..Default::default()
                     })
                 })
@@ -325,13 +352,10 @@ impl Reader {
                     Ok(Spectrum {
                         index: index as i32,
                         scan: value.id as i32,
-                        array_length: crate::reader_bruker::read_baf_profile_point_count(
-                            &path,
-                            value.profile_intensity_id,
-                        )
-                        .map_err(ReaderError::Invalid)?
-                            as i32,
+                        array_length: value.profile_point_count as i32,
                         level: value.ms_level,
+                        mode: value.scan_mode,
+                        configuration: value.acquisition_mode,
                         polarity: value.polarity,
                         low_mz: value.mz_lower as f32,
                         high_mz: value.mz_upper as f32,
@@ -355,6 +379,8 @@ impl Reader {
                         scan: frame.id as i32,
                         array_length: frame.num_peaks,
                         level: if frame.msms_type == 0 { 1 } else { 2 },
+                        mode: frame.scan_mode,
+                        configuration: 0,
                         polarity: match frame.polarity.as_str() {
                             "+" => 1,
                             "-" => -1,
@@ -366,6 +392,13 @@ impl Reader {
                         tic: frame.summed_intensities as f32,
                         retention_time: frame.retention_time as f32,
                         precursor_mz: info.map(|value| value.trigger_mass as f32).unwrap_or(0.0),
+                        window_mz: info.map(|value| value.trigger_mass as f32).unwrap_or(0.0),
+                        window_mzlow: info
+                            .map(|value| (value.trigger_mass - value.isolation_width / 2.0) as f32)
+                            .unwrap_or(0.0),
+                        window_mzhigh: info
+                            .map(|value| (value.trigger_mass + value.isolation_width / 2.0) as f32)
+                            .unwrap_or(0.0),
                         precursor_charge: info.map(|value| value.precursor_charge).unwrap_or(0),
                         collision_energy: info
                             .map(|value| value.collision_energy as f32)
@@ -407,7 +440,14 @@ impl Reader {
                                     2
                                 },
                                 polarity: 1,
-                                retention_time: record.retention_time_minutes,
+                                retention_time: record.retention_time_minutes * 60.0,
+                                precursor_mz: crate::reader_sciex::tof_precursor_for_index(
+                                    &metadata, index,
+                                ),
+                                precursor_intensity:
+                                    crate::reader_sciex::tof_precursor_intensity_for_index(
+                                        &metadata, index,
+                                    ),
                                 tic: record.tic as f32,
                                 ..Default::default()
                             }
@@ -439,6 +479,12 @@ impl Reader {
         } else {
             None
         };
+        let mzml_spectrum_offsets = if format == Format::MzMl {
+            mzml_spectrum_offsets(&bytes)?
+        } else {
+            Vec::new()
+        };
+        let mzml_bytes = (format == Format::MzMl).then_some(bytes);
         Ok(Self {
             path,
             format,
@@ -454,6 +500,8 @@ impl Reader {
             bruker_tsf_msms,
             sciex_tof_metadata,
             sciex_mrm_metadata,
+            mzml_bytes,
+            mzml_spectrum_offsets,
         })
     }
 
@@ -494,7 +542,16 @@ impl Reader {
                                     2
                                 },
                                 polarity: 1,
-                                retention_time: record.retention_time_minutes,
+                                retention_time: record.retention_time_minutes * 60.0,
+                                precursor_mz: crate::reader_sciex::tof_precursor_for_index(
+                                    &metadata,
+                                    public_index,
+                                ),
+                                precursor_intensity:
+                                    crate::reader_sciex::tof_precursor_intensity_for_index(
+                                        &metadata,
+                                        public_index,
+                                    ),
                                 tic: record.tic as f32,
                                 ..Default::default()
                             }
@@ -568,6 +625,19 @@ impl Reader {
     }
 
     pub fn spectrum_data(&self, index: usize) -> Result<Spectrum> {
+        if let Some(bytes) = &self.mzml_bytes {
+            let (start, end) = self
+                .mzml_spectrum_offsets
+                .get(index)
+                .copied()
+                .ok_or_else(|| {
+                    ReaderError::Invalid(format!("spectrum index is out of range: {index}"))
+                })?;
+            return parse_mzml_with_arrays(&bytes[start..end], true)?
+                .into_iter()
+                .next()
+                .ok_or_else(|| ReaderError::Invalid(format!("mzML spectrum is empty: {index}")));
+        }
         if self.format == Format::AgilentChemStationD {
             let data = self.chemstation_data.as_ref().ok_or_else(|| {
                 ReaderError::Invalid("Agilent ChemStation data is not loaded".into())
@@ -598,7 +668,7 @@ impl Reader {
                 base_peak_mz,
                 base_peak_intensity,
                 tic: raw.intensity.iter().sum(),
-                retention_time: raw.retention_time_ms as f32 / 60000.0,
+                retention_time: raw.retention_time_ms as f32 / 1000.0,
                 mz: raw.mz,
                 intensity: raw.intensity,
                 ..Default::default()
@@ -635,7 +705,7 @@ impl Reader {
                 base_peak_mz,
                 base_peak_intensity,
                 tic: profile.intensity.iter().sum(),
-                retention_time: record.scan_time_minutes as f32,
+                retention_time: record.scan_time_minutes as f32 * 60.0,
                 mobility: record.mobility as f32,
                 mz: profile.mz,
                 intensity: profile.intensity,
@@ -678,6 +748,8 @@ impl Reader {
                 scan: frame.id as i32,
                 array_length: mz.len() as i32,
                 level: if frame.msms_type == 0 { 1 } else { 2 },
+                mode: frame.scan_mode,
+                configuration: 0,
                 polarity,
                 low_mz: mz.first().copied().unwrap_or(0.0) as f32,
                 high_mz: mz.last().copied().unwrap_or(0.0) as f32,
@@ -686,6 +758,13 @@ impl Reader {
                 tic: raw.intensity.iter().map(|value| *value as f32).sum(),
                 retention_time: frame.retention_time as f32,
                 precursor_mz: info.map(|value| value.trigger_mass as f32).unwrap_or(0.0),
+                window_mz: info.map(|value| value.trigger_mass as f32).unwrap_or(0.0),
+                window_mzlow: info
+                    .map(|value| (value.trigger_mass - value.isolation_width / 2.0) as f32)
+                    .unwrap_or(0.0),
+                window_mzhigh: info
+                    .map(|value| (value.trigger_mass + value.isolation_width / 2.0) as f32)
+                    .unwrap_or(0.0),
                 precursor_charge: info.map(|value| value.precursor_charge).unwrap_or(0),
                 collision_energy: info
                     .map(|value| value.collision_energy as f32)
@@ -771,13 +850,15 @@ impl Reader {
             scan: record.scan_id as i32,
             array_length: profile.mz.len() as i32,
             level: record.ms_level,
+            polarity: record.polarity,
             low_mz: record.spectrum_min_x as f32,
             high_mz: record.spectrum_max_x as f32,
             base_peak_mz: record.base_peak_mz as f32,
             base_peak_intensity: record.base_peak_value as f32,
             tic: record.tic as f32,
-            retention_time: record.scan_time_minutes as f32,
+            retention_time: record.scan_time_minutes as f32 * 60.0,
             precursor_mz: record.precursor_mz as f32,
+            precursor_intensity: record.precursor_intensity as f32,
             collision_energy: record.collision_energy as f32,
             mz: profile.mz.into_iter().map(|value| value as f32).collect(),
             intensity: profile.intensity,
@@ -880,8 +961,8 @@ fn render_sciex_mrm_headers(transitions: &[crate::reader_sciex::Transition]) -> 
         channel: transition.product_mz.to_string(),
         units: "counts".into(),
         polarity: 0,
-        start_time: Some(transition.start_time),
-        end_time: Some(transition.end_time),
+        start_time: Some(transition.start_time * 60.0),
+        end_time: Some(transition.end_time * 60.0),
         precursor_mz: Some(transition.precursor_mz),
         product_mz: Some(transition.product_mz),
         activation_ce: Some(transition.collision_energy),
@@ -930,7 +1011,7 @@ fn render_sciex_mrm_chromatograms(
                 "SCIEX MRM time and intensity arrays have unequal lengths".into(),
             ));
         }
-        tic_time.extend_from_slice(time);
+        tic_time.extend(time.iter().map(|value| *value * 60.0));
         for point in 0..point_count {
             let values = series.intensities.iter().map(|trace| trace[point]);
             tic.push(values.clone().sum());
@@ -942,7 +1023,7 @@ fn render_sciex_mrm_chromatograms(
             .zip(series.retention_times)
             .zip(series.intensities)
         {
-            let (time, intensity): (Vec<_>, Vec<_>) = time
+            let (mut time, intensity): (Vec<_>, Vec<_>) = time
                 .into_iter()
                 .zip(intensity)
                 .filter(|(rt, _)| {
@@ -950,8 +1031,11 @@ fn render_sciex_mrm_chromatograms(
                         || (*rt >= transition.start_time && *rt <= transition.end_time)
                 })
                 .unzip();
+            for value in &mut time {
+                *value *= 60.0;
+            }
             let interval_ms = if time.len() > 1 {
-                (time[1] - time[0]) * 60_000.0
+                (time[1] - time[0]) * 1_000.0
             } else {
                 0.0
             };
@@ -976,6 +1060,8 @@ fn render_sciex_mrm_chromatograms(
             });
         }
     }
+    let tic_start = tic_time.first().copied();
+    let tic_end = tic_time.last().copied();
     let mut output = Vec::with_capacity(traces.len() + 2);
     output.push(Chromatogram {
         id: "TIC".into(),
@@ -985,6 +1071,8 @@ fn render_sciex_mrm_chromatograms(
         units: "counts".into(),
         time: tic_time.clone(),
         intensity: tic,
+        start_time: tic_start,
+        end_time: tic_end,
         ..Default::default()
     });
     output.push(Chromatogram {
@@ -995,6 +1083,8 @@ fn render_sciex_mrm_chromatograms(
         units: "counts".into(),
         time: tic_time,
         intensity: bpc,
+        start_time: tic_start,
+        end_time: tic_end,
         ..Default::default()
     });
     output.extend(traces);
@@ -1099,7 +1189,7 @@ fn decode_array(a: &BinaryArray) -> Result<Vec<f32>> {
         .collect())
 }
 
-fn parse_mzml(bytes: &[u8]) -> Result<Vec<Spectrum>> {
+fn parse_mzml_with_arrays(bytes: &[u8], decode_arrays: bool) -> Result<Vec<Spectrum>> {
     let mut xml = XmlReader::from_reader(bytes);
     xml.config_mut().trim_text(false);
     let mut buf = Vec::new();
@@ -1172,9 +1262,10 @@ fn parse_mzml(bytes: &[u8]) -> Result<Vec<Spectrum>> {
             }
             Event::End(e) if local(e.name().as_ref()) == b"binary" => in_binary = false,
             Event::End(e) if local(e.name().as_ref()) == b"binaryDataArray" => {
-                if let Some(a) = array.take() {
-                    if let Some(s) = current.as_mut() {
-                        let values = decode_array(&a).map_err(|error| {
+                if decode_arrays {
+                    if let Some(a) = array.take() {
+                        if let Some(s) = current.as_mut() {
+                            let values = decode_array(&a).map_err(|error| {
                                         ReaderError::Invalid(format!(
                                             "spectrum index={} scan={} array(len={}, mz={}, intensity={}, compressed={}, precision={}): {error}",
                                             s.index,
@@ -1186,12 +1277,15 @@ fn parse_mzml(bytes: &[u8]) -> Result<Vec<Spectrum>> {
                                             a.precision
                                         ))
                                     })?;
-                        if a.mz {
-                            s.mz = values;
-                        } else if a.intensity {
-                            s.intensity = values;
+                            if a.mz {
+                                s.mz = values;
+                            } else if a.intensity {
+                                s.intensity = values;
+                            }
                         }
                     }
+                } else {
+                    array.take();
                 }
             }
             Event::End(e) if local(e.name().as_ref()) == b"spectrum" => {
@@ -1206,6 +1300,30 @@ fn parse_mzml(bytes: &[u8]) -> Result<Vec<Spectrum>> {
         buf.clear();
     }
     Ok(out)
+}
+
+fn mzml_spectrum_offsets(bytes: &[u8]) -> Result<Vec<(usize, usize)>> {
+    let mut xml = XmlReader::from_reader(bytes);
+    let mut buf = Vec::new();
+    let mut start = None;
+    let mut offsets = Vec::new();
+    loop {
+        let position = xml.buffer_position();
+        match xml.read_event_into(&mut buf)? {
+            Event::Start(e) if local(e.name().as_ref()) == b"spectrum" => {
+                start = Some(position);
+            }
+            Event::End(e) if local(e.name().as_ref()) == b"spectrum" => {
+                if let Some(begin) = start.take() {
+                    offsets.push((begin as usize, xml.buffer_position() as usize));
+                }
+            }
+            Event::Eof => break,
+            _ => {}
+        }
+        buf.clear();
+    }
+    Ok(offsets)
 }
 
 fn parse_mzml_chromatograms(bytes: &[u8]) -> Result<Vec<Chromatogram>> {
@@ -1636,12 +1754,9 @@ fn add_lcd_chromatogram(out: &mut Vec<Chromatogram>, path: &str, bytes: &[u8], v
         };
     let values = with_initial_point(values);
     let time = (0..values.len())
-        .map(|i| i as f32 * interval_ms / 60000.0)
+        .map(|i| i as f32 * interval_ms / 60000.0 * 60.0)
         .collect();
-    let intensity = values
-        .into_iter()
-        .map(|v| v as f32 * factor as f32)
-        .collect();
+    let intensity = values.into_iter().map(|v| (v * factor) as f32).collect();
     out.push(Chromatogram {
         id: id.into(),
         signal_type: signal_type.into(),
@@ -1649,6 +1764,7 @@ fn add_lcd_chromatogram(out: &mut Vec<Chromatogram>, path: &str, bytes: &[u8], v
         detector: detector.into(),
         channel: channel.into(),
         units: units.into(),
+        wavelength_nm: if id == "Detector A-Ch1" { 280.0 } else { 0.0 },
         interval_ms,
         time,
         intensity,
@@ -1658,10 +1774,16 @@ fn add_lcd_chromatogram(out: &mut Vec<Chromatogram>, path: &str, bytes: &[u8], v
 
 #[derive(Default)]
 struct TlmTransitionSet {
+    group_id: i32,
+    transition_id: i32,
+    label: String,
+    window_start: f32,
+    window_end: f32,
     polarity: i32,
     precursor_mz: f32,
     activation_ce: f32,
     product_mz: Vec<f32>,
+    product_ce: Vec<f32>,
 }
 
 fn read_lcd_stream(path: &Path, wanted: &str) -> Result<Option<Vec<u8>>> {
@@ -1801,6 +1923,10 @@ fn parse_tlm_method(path: &Path) -> Result<Vec<TlmTransitionSet>> {
         let base = 256 + compound * 760;
         let count = read_u32_le(&bytes, base + 156).min(2) as usize;
         let mut set = TlmTransitionSet {
+            transition_id: compound as i32 + 1,
+            label: read_ascii_z(&bytes, base + 16, 128),
+            window_start: read_u32_le(&bytes, base + 144) as f32 / 1000.0,
+            window_end: read_u32_le(&bytes, base + 148) as f32 / 1000.0,
             precursor_mz: 0.0,
             ..Default::default()
         };
@@ -1821,6 +1947,7 @@ fn parse_tlm_method(path: &Path) -> Result<Vec<TlmTransitionSet>> {
                 set.precursor_mz
             };
             set.product_mz.push(product);
+            set.product_ce.push(read_u32_le(&bytes, pos + 14) as f32);
             set.activation_ce = if set.activation_ce == 0.0 {
                 read_u32_le(&bytes, pos + 14) as f32
             } else {
@@ -1830,6 +1957,14 @@ fn parse_tlm_method(path: &Path) -> Result<Vec<TlmTransitionSet>> {
         }
         if !set.product_mz.is_empty() {
             set.polarity = if polarity_score > 0 { -1 } else { 1 };
+            set.group_id = sets
+                .iter()
+                .find(|value: &&TlmTransitionSet| {
+                    (value.window_start - set.window_start).abs() < 0.0001
+                        && (value.window_end - set.window_end).abs() < 0.0001
+                })
+                .map(|value| value.group_id)
+                .unwrap_or_else(|| sets.iter().map(|value| value.group_id).max().unwrap_or(0) + 1);
             sets.push(set);
         }
     }
@@ -1910,6 +2045,110 @@ fn parse_tlm_spectra(path: &Path, methods: &[TlmTransitionSet]) -> Result<Vec<Sp
     Ok(spectra)
 }
 
+fn build_tlm_chromatograms(
+    spectra: &[Spectrum],
+    methods: &[TlmTransitionSet],
+) -> Vec<Chromatogram> {
+    let mut output = Vec::new();
+    let mut ordered_methods = methods.iter().collect::<Vec<_>>();
+    ordered_methods.sort_by_key(|method| {
+        spectra
+            .iter()
+            .position(|spectrum| {
+                (method.precursor_mz - spectrum.precursor_mz).abs() <= 0.05
+                    && method.product_mz.len() == spectrum.mz.len()
+                    && method
+                        .product_mz
+                        .iter()
+                        .zip(&spectrum.mz)
+                        .all(|(a, b)| (a - b).abs() < 0.0001)
+            })
+            .unwrap_or(usize::MAX)
+    });
+    for method in ordered_methods {
+        let items = spectra
+            .iter()
+            .filter(|spectrum| {
+                (method.precursor_mz - spectrum.precursor_mz).abs() <= 0.05
+                    && method.product_mz.len() == spectrum.mz.len()
+                    && method
+                        .product_mz
+                        .iter()
+                        .zip(&spectrum.mz)
+                        .all(|(a, b)| (a - b).abs() < 0.0001)
+            })
+            .collect::<Vec<_>>();
+        if items.is_empty() {
+            continue;
+        }
+        let prefix = format!(
+            "{}-{}MS({})",
+            method.group_id,
+            method.transition_id,
+            if method.polarity < 0 { "E-" } else { "E+" }
+        );
+        let label = if method.label.is_empty() {
+            prefix.clone()
+        } else {
+            method.label.clone()
+        };
+        let time = items
+            .iter()
+            .map(|spectrum| spectrum.retention_time)
+            .collect::<Vec<_>>();
+        let interval_ms = time
+            .windows(2)
+            .next()
+            .map(|pair| (pair[1] - pair[0]) * 1000.0)
+            .unwrap_or(0.0);
+        let mut add = |id: String, kind: &str, product: Option<usize>| {
+            let intensity = items
+                .iter()
+                .map(|spectrum| {
+                    if kind == "BPC" {
+                        spectrum.base_peak_intensity
+                    } else {
+                        product.map_or(spectrum.tic, |index| {
+                            spectrum.intensity.get(index).copied().unwrap_or(0.0)
+                        })
+                    }
+                })
+                .collect();
+            output.push(Chromatogram {
+                id,
+                signal_type: "MS".into(),
+                chromatogram_type: kind.into(),
+                detector: "MS".into(),
+                channel: label.clone(),
+                units: "counts".into(),
+                polarity: method.polarity,
+                interval_ms,
+                time: time.clone(),
+                intensity,
+                precursor_mz: Some(method.precursor_mz),
+                product_mz: product.map(|index| method.product_mz[index]),
+                activation_ce: product
+                    .and_then(|index| method.product_ce.get(index).copied())
+                    .or(Some(method.activation_ce)),
+                start_time: time.first().copied(),
+                end_time: time.last().copied(),
+                ..Default::default()
+            });
+        };
+        add(format!("{prefix} TIC"), "TIC", None);
+        add(format!("{prefix} BPC"), "BPC", None);
+
+        for (index, product) in method.product_mz.iter().enumerate() {
+            add(
+                format!("{prefix}m/z {:.4}>{:.4}", method.precursor_mz, product),
+                "MRM",
+                Some(index),
+            );
+        }
+    }
+    output
+}
+
 fn parse_lcd(path: &Path) -> Result<(Vec<Spectrum>, Vec<Chromatogram>)> {
     let mut file = cfb::open(path)?;
     let mut chromatograms = Vec::new();
@@ -1929,7 +2168,22 @@ fn parse_lcd(path: &Path) -> Result<(Vec<Spectrum>, Vec<Chromatogram>)> {
                 || path.starts_with("LC Raw Data/StatusLog Ch")
                 || path.starts_with("LSS Raw Data/StatusLog Ch")
         })
-        .collect();
+        .collect::<Vec<_>>();
+    let stream_rank = |path: &str| {
+        if path.contains("/Chromatogram Ch") {
+            0
+        } else {
+            1
+        }
+    };
+    let mut stream_paths = stream_paths;
+    stream_paths.sort_by_key(|path| {
+        (
+            stream_rank(path),
+            trailing_channel(path).unwrap_or(i32::MAX),
+            path.clone(),
+        )
+    });
     for stream_path in stream_paths {
         let is_chrom = stream_path.starts_with("LC Raw Data/Chromatogram Ch")
             || stream_path.starts_with("LSS Raw Data/Chromatogram Ch");
@@ -1957,12 +2211,9 @@ fn parse_lcd(path: &Path) -> Result<(Vec<Spectrum>, Vec<Chromatogram>)> {
                     units: units.into(),
                     interval_ms,
                     time: (0..values.len())
-                        .map(|i| i as f32 * interval_ms / 60000.0)
+                        .map(|i| i as f32 * interval_ms / 60000.0 * 60.0)
                         .collect(),
-                    intensity: values
-                        .into_iter()
-                        .map(|v| v as f32 * factor as f32)
-                        .collect(),
+                    intensity: values.into_iter().map(|v| (v * factor) as f32).collect(),
                     ..Default::default()
                 });
             }
@@ -1970,5 +2221,6 @@ fn parse_lcd(path: &Path) -> Result<(Vec<Spectrum>, Vec<Chromatogram>)> {
     }
     let methods = parse_tlm_method(path)?;
     let spectra = parse_tlm_spectra(path, &methods)?;
+    chromatograms.extend(build_tlm_chromatograms(&spectra, &methods));
     Ok((spectra, chromatograms))
 }

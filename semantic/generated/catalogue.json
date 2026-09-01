@@ -11269,7 +11269,7 @@
       "canonical_id": "mass_spec.get_raw_spectra",
       "domain": "mass_spec",
       "label": "Get raw spectra",
-      "definition": "Read raw spectrum points using independent target ranges and shared mass-spec filters.",
+      "definition": "Read flattened raw spectrum points. analysis_names selects analyses first; non-empty indices selects spectra and takes priority over targets; targets are used when indices are omitted or empty.",
       "interface": {
         "category": "domain-operation",
         "invocation_model": "stateless",
@@ -11285,7 +11285,7 @@
         "input_schema": {
           "type": "object",
           "title": "Get raw spectra",
-          "description": "Read raw spectrum points using independent target ranges and shared mass-spec filters.",
+          "description": "Read flattened raw spectrum points. analysis_names selects analyses first; non-empty indices selects spectra and takes priority over targets; targets are used when indices are omitted or empty.",
           "properties": {
             "database_path": {
               "type": "string",
@@ -11319,6 +11319,26 @@
                 "title": "String array item",
                 "examples": [
                   "sample"
+                ]
+              },
+              "default": []
+            },
+            "indices": {
+              "type": "array",
+              "description": "Optional zero-based data row indices.",
+              "title": "Indices",
+              "examples": [
+                [
+                  0,
+                  2
+                ]
+              ],
+              "items": {
+                "type": "integer",
+                "description": "One integer value in an integer array parameter.",
+                "title": "Integer array item",
+                "examples": [
+                  1
                 ]
               },
               "default": []
@@ -11787,6 +11807,40 @@
             "blank"
           ],
           "description": "Array of analysis file names without filename extensions.",
+          "default": []
+        },
+        {
+          "name": "indices",
+          "type": "array",
+          "required": false,
+          "constraints": {},
+          "items": "integerItem",
+          "extensions": [],
+          "schema": {
+            "type": "array",
+            "description": "Optional zero-based data row indices.",
+            "title": "Indices",
+            "examples": [
+              [
+                0,
+                2
+              ]
+            ],
+            "items": {
+              "type": "integer",
+              "description": "One integer value in an integer array parameter.",
+              "title": "Integer array item",
+              "examples": [
+                1
+              ]
+            },
+            "default": []
+          },
+          "example": [
+            0,
+            2
+          ],
+          "description": "Optional zero-based data row indices.",
           "default": []
         },
         {

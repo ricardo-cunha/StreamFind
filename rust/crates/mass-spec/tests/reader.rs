@@ -92,7 +92,7 @@ fn opens_multi_experiment_sciex_wiff_with_native_chromatograms() {
     assert_eq!(reader.chromatograms()[1].id, "BPC");
     assert_eq!(reader.chromatograms()[2].time.len(), 800);
     assert_eq!(reader.chromatograms()[12].time.len(), 900);
-    assert!((reader.chromatograms()[2].time[1] - 0.0025).abs() < 0.00001);
+    assert!((reader.chromatograms()[2].time[1] - 0.15).abs() < 0.00001);
     assert!(reader.chromatograms()[12].time[0] > 2.0);
 }
 
@@ -115,7 +115,7 @@ fn opens_tagged_sciex_mrm_with_native_chromatograms() {
     assert_eq!(chromatograms[1].intensity[9], 4574.0);
     assert_eq!(chromatograms[40].intensity.len(), 392);
     assert_eq!(chromatograms[41].intensity.len(), 392);
-    assert!((chromatograms[40].time[0] - 0.708483).abs() < 0.00001);
+    assert!((chromatograms[40].time[0] - 42.509).abs() < 0.00001);
     assert_eq!(chromatograms[40].intensity[0], 3943.0);
     assert_eq!(chromatograms[41].intensity[0], 203.0);
     assert!(reader.summary().start_rt > 0.0);
@@ -135,7 +135,7 @@ fn opens_mix1_holdout_with_schedule_constrained_chromatograms() {
     let chromatograms = reader.chromatograms_data(&[]).unwrap();
     assert_eq!(chromatograms[40].intensity.len(), 392);
     assert_eq!(chromatograms[41].intensity.len(), 392);
-    assert!((chromatograms[40].time[0] - 0.7085667).abs() < 0.00001);
+    assert!((chromatograms[40].time[0] - 42.514002).abs() < 0.00001);
     assert_eq!(chromatograms[40].intensity[0], 10074.0);
     assert_eq!(chromatograms[41].intensity[0], 699.0);
 }
