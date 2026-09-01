@@ -55,7 +55,7 @@ int main()
     if (reader->get_number_spectra() != 7870 || reader->get_type() != "MS")
       return 10;
     const auto headers = reader->get_spectra_headers({0});
-    if (headers.size() != 1 || headers.scan[0] != 182612 || headers.array_length[0] != 165344)
+    if (headers.size() != 1 || headers.scan[0] != 182612 || headers.array_length[0] != 165344 || std::fabs(headers.rt[0] - 182.604f) > 0.001f)
       return 11;
     const auto spectrum = reader->get_spectrum(0);
     if (spectrum.binary_data.size() != 2 || spectrum.binary_data[0].size() != 165344 ||
@@ -63,7 +63,7 @@ int main()
       return 12;
     mass_spec::reader::MASS_SPEC_FILE file(STREAMFIND_AGILENT_D_FIXTURE);
     if (file.get_format() != "AgilentMassHunterD" || file.get_number_spectra() != 7870 ||
-        file.get_spectra_headers({0}).scan[0] != 182612)
+        file.get_spectra_headers({0}).scan[0] != 182612 || std::fabs(file.get_spectra_headers({0}).rt[0] - 182.604f) > 0.001f)
       return 13;
     if (file.get_spectrum(0).binary_data[1].size() != 165344)
       return 14;

@@ -38,7 +38,9 @@ struct ScanRecord
   std::uint32_t centroid_point_count = 0;
   std::uint32_t record_index = 0;
   double precursor_mz = 0.0;
+  double precursor_intensity = 0.0;
   double collision_energy = 0.0;
+  std::int32_t polarity = 0;
 };
 
 struct ProfileSpectrum

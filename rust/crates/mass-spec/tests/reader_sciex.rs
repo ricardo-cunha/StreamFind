@@ -2,17 +2,27 @@
 
 use std::path::Path;
 use streamfind_rust_mass_spec::reader_sciex::{
-    decode_intensity_groups, decode_scan_payload, read_analysis_catalog, read_compact_mrm_pairs,
-    read_event_records, read_idx_event_records, read_idx_float_records, read_idx_records, read_scan_blocks,
-    read_scan_points, read_tagged_mrm_series, read_transitions, build_compact_mrm_series, ScanPoint,
+    build_compact_mrm_series, decode_intensity_groups, decode_scan_payload, read_analysis_catalog,
+    read_compact_mrm_pairs, read_event_records, read_idx_event_records, read_idx_float_records,
+    read_idx_records, read_scan_blocks, read_scan_points, read_tagged_mrm_series,
+    read_tof_metadata, read_tof_spectrum, read_transitions, ScanPoint,
 };
 
 #[test]
 fn decodes_sciex_byte_tokens() {
-    assert_eq!(decode_scan_payload(&[0x29, 0x81, 0xfd, 0x55, 0x01, 0xff, 0xff, 0xff, 0xff]), vec![
-        ScanPoint { raw_mz_bin: 41, raw_intensity: 1 },
-        ScanPoint { raw_mz_bin: 41, raw_intensity: 341 },
-    ]);
+    assert_eq!(
+        decode_scan_payload(&[0x29, 0x81, 0xfd, 0x55, 0x01, 0xff, 0xff, 0xff, 0xff]),
+        vec![
+            ScanPoint {
+                raw_mz_bin: 41,
+                raw_intensity: 1
+            },
+            ScanPoint {
+                raw_mz_bin: 41,
+                raw_intensity: 341
+            },
+        ]
+    );
 }
 
 #[test]
@@ -33,16 +43,23 @@ fn reads_sciex_catalog_transitions_and_event_groups() {
 
     let idx = read_idx_records(path, 4).unwrap();
     assert!(!idx.is_empty());
-    assert!(idx.windows(2).all(|pair| pair[0].scan_offset <= pair[1].scan_offset));
+    assert!(idx
+        .windows(2)
+        .all(|pair| pair[0].scan_offset <= pair[1].scan_offset));
     assert!((idx[0].retention_time_minutes - 0.7005).abs() < 0.00001);
     let points = read_scan_points(path, &idx[0], idx.get(1));
     assert!(!points.unwrap().is_empty());
     let fragments = read_idx_float_records(path, 4).unwrap();
     assert_eq!(fragments.len(), 3421);
-    assert!(fragments.iter().any(|record| record.fields.iter().any(|value| (*value + 59.01).abs() < 0.001)));
+    assert!(fragments.iter().any(|record| record
+        .fields
+        .iter()
+        .any(|value| (*value + 59.01).abs() < 0.001)));
     let indexed_events = read_idx_event_records(path, 4).unwrap();
     assert!(indexed_events.len() > 3400);
-    assert!(indexed_events.iter().all(|event| event.retention_time_minutes > 0.0));
+    assert!(indexed_events
+        .iter()
+        .all(|event| event.retention_time_minutes > 0.0));
 
     let transitions = read_transitions(path, 4).unwrap();
     assert_eq!(transitions.len(), 59);
@@ -64,6 +81,27 @@ fn reads_sciex_catalog_transitions_and_event_groups() {
     assert!((tagged.retention_times[38][8] - 0.708483).abs() < 0.00001);
     assert_eq!(tagged.intensities[38][8], 3943.0);
     assert_eq!(tagged.intensities[39][8], 203.0);
+}
+
+#[test]
+fn reads_tof_dda_precursor_from_native_dde_data() {
+    let path = Path::new(r"E:\example_files\raw_vendor_files\sciex\tof\220104_1_1.wiff");
+    if !path.exists() {
+        return;
+    }
+    let metadata = read_tof_metadata(path, 1).unwrap();
+    let (index, _) = metadata
+        .public_indices
+        .iter()
+        .enumerate()
+        .find(|(_, source_index)| {
+            metadata.experiment_count > 1 && **source_index % metadata.experiment_count != 0
+        })
+        .unwrap();
+    let spectrum = read_tof_spectrum(path, &metadata, index).unwrap();
+    assert_eq!(spectrum.level, 2);
+    assert!((spectrum.precursor_mz - 430.3862).abs() < 0.001);
+    assert!((spectrum.precursor_intensity - 404.0).abs() < 0.001);
 }
 
 #[test]

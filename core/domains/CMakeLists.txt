@@ -20,6 +20,14 @@ target_link_libraries(streamfind_mass_spec_bruker_baf_reader_tests PRIVATE strea
 add_test(NAME streamfind_mass_spec_bruker_baf_reader_tests COMMAND streamfind_mass_spec_bruker_baf_reader_tests)
 set_tests_properties(streamfind_mass_spec_bruker_baf_reader_tests PROPERTIES LABELS "reader-interface")
 
+add_executable(streamfind_mass_spec_indexed_persistence_tests mass_spec/tests/project_indexed_persistence.cpp)
+target_link_libraries(streamfind_mass_spec_indexed_persistence_tests PRIVATE streamfind_mass_spec)
+target_compile_definitions(streamfind_mass_spec_indexed_persistence_tests PRIVATE
+    STREAMFIND_TEST_DATA_ROOT="${STREAMFIND_TEST_DATA_ROOT}"
+)
+add_test(NAME streamfind_mass_spec_indexed_persistence_tests COMMAND streamfind_mass_spec_indexed_persistence_tests)
+set_tests_properties(streamfind_mass_spec_indexed_persistence_tests PROPERTIES LABELS "reader-interface")
+
 add_executable(streamfind_mass_spec_load_features_tests mass_spec/tests/load_features_test.cpp)
 target_link_libraries(streamfind_mass_spec_load_features_tests PRIVATE streamfind_mass_spec)
 target_compile_definitions(streamfind_mass_spec_load_features_tests PRIVATE
@@ -108,6 +116,20 @@ if(STREAMFIND_AGILENT_D_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_D_FIXTURE}")
     )
     add_test(NAME streamfind_mass_spec_agilent_reader_tests COMMAND streamfind_mass_spec_agilent_reader_tests)
     set_tests_properties(streamfind_mass_spec_agilent_reader_tests PROPERTIES LABELS "reader-interface")
+endif()
+
+set(STREAMFIND_AGILENT_POS_D_FIXTURE "" CACHE PATH "Path to an Agilent positive MassHunter .d directory")
+set(STREAMFIND_AGILENT_NEG_D_FIXTURE "" CACHE PATH "Path to an Agilent negative MassHunter .d directory")
+if(STREAMFIND_AGILENT_POS_D_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_POS_D_FIXTURE}" AND
+   STREAMFIND_AGILENT_NEG_D_FIXTURE AND EXISTS "${STREAMFIND_AGILENT_NEG_D_FIXTURE}")
+    add_executable(streamfind_mass_spec_agilent_polarity_tests mass_spec/tests/reader_agilent_polarity_smoke.cpp)
+    target_link_libraries(streamfind_mass_spec_agilent_polarity_tests PRIVATE streamfind_mass_spec)
+    target_compile_definitions(streamfind_mass_spec_agilent_polarity_tests PRIVATE
+        STREAMFIND_AGILENT_POS_D_FIXTURE="${STREAMFIND_AGILENT_POS_D_FIXTURE}"
+        STREAMFIND_AGILENT_NEG_D_FIXTURE="${STREAMFIND_AGILENT_NEG_D_FIXTURE}"
+    )
+    add_test(NAME streamfind_mass_spec_agilent_polarity_tests COMMAND streamfind_mass_spec_agilent_polarity_tests)
+    set_tests_properties(streamfind_mass_spec_agilent_polarity_tests PROPERTIES LABELS "reader-interface")
 endif()
 
 set(STREAMFIND_AGILENT_CHEMSTATION_MS_FIXTURE "" CACHE FILEPATH "Path to an Agilent ChemStation MSD1.MS file")

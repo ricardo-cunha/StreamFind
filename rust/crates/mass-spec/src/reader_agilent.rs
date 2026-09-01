@@ -31,7 +31,9 @@ pub struct ScanRecord {
     pub centroid_point_count: u32,
     pub record_index: usize,
     pub precursor_mz: f64,
+    pub precursor_intensity: f64,
     pub collision_energy: f64,
+    pub polarity: i32,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -65,6 +67,162 @@ fn f64_at(bytes: &[u8], offset: usize) -> Result<f64, String> {
         .get(offset..offset + 8)
         .ok_or_else(|| "Agilent binary double field is truncated".to_string())?;
     Ok(f64::from_le_bytes(slice.try_into().unwrap()))
+}
+
+fn read_method_polarity(path: &Path) -> Result<i32, String> {
+    let xml = fs::read_to_string(path.join("AcqData/AcqMethod.xml"))
+        .map_err(|error| error.to_string())?;
+    let id = xml
+        .find("ionPolarity")
+        .ok_or_else(|| "Agilent method has no ion polarity field".to_string())?;
+    let (prefix, suffix) = if let Some(offset) = xml[id..].find("&lt;Value&gt;") {
+        (id + offset + "&lt;Value&gt;".len(), "&lt;/Value&gt;")
+    } else if let Some(offset) = xml[id..].find("<Value>") {
+        (id + offset + "<Value>".len(), "</Value>")
+    } else {
+        return Err("Agilent ion polarity value is missing".to_string());
+    };
+    let end = xml[prefix..]
+        .find(suffix)
+        .map(|offset| prefix + offset)
+        .ok_or_else(|| "Agilent ion polarity value is malformed".to_string())?;
+    let value = &xml[prefix..end];
+    if value.contains("Positive") {
+        Ok(1)
+    } else if value.contains("Negative") {
+        Ok(-1)
+    } else {
+        Ok(0)
+    }
+}
+
+fn read_periodic_precursors(path: &Path, records: &[ScanRecord]) -> Vec<f64> {
+    let bytes = match fs::read(path.join("AcqData/MSPeriodicActuals.bin")) {
+        Ok(bytes) => bytes,
+        Err(_) => return vec![0.0; records.len()],
+    };
+    let mut candidates = Vec::new();
+    for offset in (8..bytes.len().saturating_sub(39)).step_by(40) {
+        let time = match f64_at(&bytes, offset + 8) {
+            Ok(value) if value > 0.0 && value < 100.0 => value,
+            _ => continue,
+        };
+        let mut candidate = None;
+        for field in (0..=36).step_by(4) {
+            if field == 8 {
+                continue;
+            }
+            let Ok(value) = f64_at(&bytes, offset + field) else {
+                continue;
+            };
+            if value.is_finite()
+                && (100.0..3000.0).contains(&value)
+                && (value - value.round()).abs() > 0.001
+            {
+                candidate = Some(value);
+                break;
+            }
+        }
+        if let Some(value) = candidate {
+            candidates.push((time, value));
+        }
+    }
+    let mut result = vec![0.0; records.len()];
+    let mut precursor = 0.0;
+    for (index, record) in records.iter().enumerate() {
+        if record.ms_level >= 2 {
+            let position = candidates.partition_point(|(time, _)| *time < record.scan_time_minutes);
+            let nearest = [
+                position.checked_sub(1),
+                (position < candidates.len()).then_some(position),
+            ]
+            .into_iter()
+            .flatten()
+            .min_by(|left, right| {
+                (candidates[*left].0 - record.scan_time_minutes)
+                    .abs()
+                    .total_cmp(&(candidates[*right].0 - record.scan_time_minutes).abs())
+            });
+            if let Some(position) = nearest.filter(|position| {
+                (candidates[*position].0 - record.scan_time_minutes).abs() < 1e-5
+            }) {
+                precursor = candidates[position].1;
+            }
+            result[index] = precursor;
+        } else {
+            precursor = 0.0;
+        }
+    }
+    result
+}
+
+fn read_periodic_collision_energies(path: &Path, records: &[ScanRecord]) -> Vec<f64> {
+    let bytes = match fs::read(path.join("AcqData/MSPeriodicActuals.bin")) {
+        Ok(bytes) => bytes,
+        Err(_) => return vec![0.0; records.len()],
+    };
+    let mut groups: Vec<(f64, usize, usize)> = Vec::new();
+    for offset in (8..bytes.len().saturating_sub(39)).step_by(40) {
+        let Ok(time) = f64_at(&bytes, offset + 8) else {
+            continue;
+        };
+        if !(time > 0.0 && time < 100.0) {
+            continue;
+        }
+        if groups
+            .last()
+            .is_none_or(|(last, _, _)| (last - time).abs() > 1e-7)
+        {
+            groups.push((time, offset, offset + 40));
+        } else if let Some(group) = groups.last_mut() {
+            group.2 = offset + 40;
+        }
+    }
+    let mut actuals = Vec::with_capacity(groups.len());
+    for (time, begin, end) in groups {
+        let mut collision_energy = 0.0;
+        for offset in (begin..end).step_by(4) {
+            let Ok(value) = f64_at(&bytes, offset) else {
+                continue;
+            };
+            if value.is_finite()
+                && (5.0..=50.0).contains(&value)
+                && (value / 5.0 - (value / 5.0).round()).abs() < 0.001
+            {
+                collision_energy = value;
+            }
+        }
+        actuals.push((time, collision_energy));
+    }
+    let mut result = vec![0.0; records.len()];
+    let mut collision_energy = 0.0;
+    for (index, record) in records.iter().enumerate() {
+        if record.ms_level >= 2 {
+            let position = actuals.partition_point(|(time, _)| *time < record.scan_time_minutes);
+            let nearest = [
+                position.checked_sub(1),
+                (position < actuals.len()).then_some(position),
+            ]
+            .into_iter()
+            .flatten()
+            .min_by(|left, right| {
+                (actuals[*left].0 - record.scan_time_minutes)
+                    .abs()
+                    .total_cmp(&(actuals[*right].0 - record.scan_time_minutes).abs())
+            });
+            if let Some(position) = nearest
+                .filter(|position| (actuals[*position].0 - record.scan_time_minutes).abs() < 1e-5)
+            {
+                if actuals[position].1 > 0.0 {
+                    collision_energy = actuals[position].1;
+                }
+            }
+            result[index] = collision_energy;
+        } else {
+            collision_energy = 0.0;
+        }
+    }
+    result
 }
 
 fn detect_scan_record_size(bytes: &[u8]) -> Result<usize, String> {
@@ -140,6 +298,7 @@ pub fn read_scan_records(path: impl AsRef<Path>) -> Result<Vec<ScanRecord>, Stri
     let bytes = fs::read(PathBuf::from(path).join("AcqData/MSScan.bin"))
         .map_err(|error| error.to_string())?;
     let scan_record_size = detect_scan_record_size(&bytes)?;
+    let polarity = read_method_polarity(path).unwrap_or(0);
     let mut records = Vec::with_capacity((bytes.len() - SCAN_PREAMBLE_SIZE) / scan_record_size);
     for offset in (SCAN_PREAMBLE_SIZE..bytes.len()).step_by(scan_record_size) {
         records.push(ScanRecord {
@@ -192,12 +351,38 @@ pub fn read_scan_records(path: impl AsRef<Path>) -> Result<Vec<ScanRecord>, Stri
             } else {
                 0.0
             },
+            precursor_intensity: 0.0,
             collision_energy: if scan_record_size >= 284 && u32_at(&bytes, offset + 20)? >= 2 {
                 f64_at(&bytes, offset + 76)?
             } else {
                 0.0
             },
+            polarity,
         });
+    }
+    let periodic_precursors = read_periodic_precursors(path, &records);
+    let periodic_collision_energies = read_periodic_collision_energies(path, &records);
+    for ((record, precursor), collision_energy) in records
+        .iter_mut()
+        .zip(periodic_precursors)
+        .zip(periodic_collision_energies)
+    {
+        if record.ms_level >= 2 {
+            record.precursor_intensity = record.tic;
+            if record.precursor_mz == 0.0 {
+                record.precursor_mz = precursor;
+            }
+            if record.collision_energy == 0.0 {
+                record.collision_energy = collision_energy;
+            }
+        }
+    }
+    for record in &mut records {
+        record.precursor_intensity = if record.ms_level >= 2 {
+            record.tic
+        } else {
+            0.0
+        };
     }
     Ok(records)
 }
@@ -577,13 +762,15 @@ pub fn read_dad_chromatograms(
                 polarity: 0,
                 interval_ms: (interval * 60000.0) as f32,
                 time: (0..count)
-                    .map(|index| (first_time + index as f64 * interval) as f32)
+                    .map(|index| ((first_time + index as f64 * interval) * 60.0) as f32)
                     .collect(),
                 intensity: (0..count)
                     .map(|index| f64_at(&data, start + 16 + index * 8).unwrap_or(0.0) as f32)
                     .collect(),
-                start_time: Some(first_time as f32),
-                end_time: Some((first_time + (count.saturating_sub(1)) as f64 * interval) as f32),
+                start_time: Some((first_time * 60.0) as f32),
+                end_time: Some(
+                    ((first_time + (count.saturating_sub(1)) as f64 * interval) * 60.0) as f32,
+                ),
                 ..Default::default()
             });
         }

@@ -444,7 +444,7 @@ namespace streamfind::mass_spec
                 file.select_analysis(detail::integer_column(row, "analysis_index"));
                 const auto h = file.get_spectra_headers();
                 for (std::size_t i = 0; i < h.index.size(); ++i)
-                    out.push_back({{"analysis", row.at("analysis")}, {"index", h.index[i]}, {"scan", h.scan[i]}, {"array_length", h.array_length[i]}, {"level", h.level[i]}, {"mode", h.mode[i]}, {"polarity", h.polarity[i]}, {"configuration", h.configuration[i]}, {"lowmz", h.lowmz[i]}, {"highmz", h.highmz[i]}, {"bpmz", h.bpmz[i]}, {"bpint", h.bpint[i]}, {"tic", h.tic[i]}, {"rt", h.rt[i]}, {"mobility", h.mobility[i]}, {"window_mz", h.window_mz[i]}, {"window_mzlow", h.window_mzlow[i]}, {"window_mzhigh", h.window_mzhigh[i]}, {"precursor_mz", h.precursor_mz[i]}, {"precursor_intensity", h.precursor_intensity[i]}, {"precursor_charge", h.precursor_charge[i]}, {"activation_ce", h.activation_ce[i]}});
+                    out.push_back({{"analysis", row.at("analysis")}, {"index", h.index[i]}, {"scan", h.scan[i]}, {"array_length", h.array_length[i]}, {"level", h.level[i]}, {"mode", h.mode[i]}, {"polarity", h.polarity[i]}, {"configuration", h.configuration[i]}, {"lowmz", h.lowmz[i]}, {"highmz", h.highmz[i]}, {"bpmz", h.bpmz[i]}, {"bpint", h.bpint[i]}, {"tic", h.tic[i]}, {"rt", h.rt[i]}, {"mobility", h.mobility[i]}, {"window_mz", h.window_mz[i]}, {"window_mzlow", h.window_mzlow[i]}, {"window_mzhigh", h.window_mzhigh[i]}, {"precursor_mz", h.precursor_mz[i] == h.precursor_mz[i] ? h.precursor_mz[i] : 0.0f}, {"precursor_intensity", h.precursor_intensity[i]}, {"precursor_charge", h.precursor_charge[i]}, {"activation_ce", h.activation_ce[i] == h.activation_ce[i] ? h.activation_ce[i] : 0.0f}});
             }
         return out;
     }
@@ -462,7 +462,7 @@ namespace streamfind::mass_spec
                 file.select_analysis(detail::integer_column(row, "analysis_index"));
                 const auto h = file.get_chromatograms_headers();
                 for (std::size_t i = 0; i < h.index.size(); ++i)
-                    out.push_back({{"analysis", row.at("analysis")}, {"index", h.index[i]}, {"chromatogram_id", h.chromatogram_id[i]}, {"array_length", h.array_length[i]}, {"polarity", h.polarity[i]}, {"precursor_mz", h.precursor_mz[i]}, {"activation_ce", h.activation_ce[i]}, {"product_mz", h.product_mz[i]}, {"signal_type", h.signal_type[i]}, {"chromatogram_type", h.chromatogram_type[i]}, {"detector", h.detector[i]}, {"channel", h.channel[i]}, {"units", h.units[i]}, {"wavelength_nm", h.wavelength_nm[i]}, {"interval_ms", h.interval_ms[i]}, {"start_time", h.start_time[i]}, {"end_time", h.end_time[i]}, {"intensity_multiplier", h.intensity_multiplier[i]}});
+                    out.push_back({{"analysis", row.at("analysis")}, {"index", h.index[i]}, {"chromatogram_id", h.chromatogram_id[i]}, {"array_length", h.array_length[i]}, {"polarity", h.polarity[i]}, {"precursor_mz", h.precursor_mz[i] == h.precursor_mz[i] ? h.precursor_mz[i] : 0.0f}, {"activation_ce", h.activation_ce[i] == h.activation_ce[i] ? h.activation_ce[i] : 0.0f}, {"product_mz", h.product_mz[i] == h.product_mz[i] ? h.product_mz[i] : 0.0f}, {"signal_type", h.signal_type[i]}, {"chromatogram_type", h.chromatogram_type[i]}, {"detector", h.detector[i]}, {"channel", h.channel[i]}, {"units", h.units[i]}, {"wavelength_nm", h.wavelength_nm[i] == h.wavelength_nm[i] ? h.wavelength_nm[i] : 0.0f}, {"interval_ms", h.interval_ms[i]}, {"start_time", h.start_time[i]}, {"end_time", h.end_time[i]}, {"intensity_multiplier", h.intensity_multiplier[i]}});
             }
         return out;
     }
@@ -487,6 +487,8 @@ namespace streamfind::mass_spec
         create_schema();
         Json out = Json::array();
         const auto targets = detail::normalize_targets_for_operation(parameters);
+        const auto requested_indices = detail::indices(parameters);
+        const bool indexed = !requested_indices.empty();
         const auto rows = project_.query_json("SELECT analysis, file_path, analysis_index, replicate FROM MASS_SPEC_ANALYSES WHERE project_id = " + detail::sql(project_.get_project_id()) + " ORDER BY analysis");
         for (const auto &row : rows)
         {
@@ -496,8 +498,15 @@ namespace streamfind::mass_spec
                 continue;
             ::mass_spec::reader::MASS_SPEC_FILE file(row.at("file_path").get<std::string>());
                 file.select_analysis(detail::integer_column(row, "analysis_index"));
-            const auto headers = file.get_spectra_headers();
-            const auto spectra = file.get_spectra();
+            if (indexed)
+            {
+                const auto all_headers = file.get_spectra_headers();
+                for (const auto index : requested_indices)
+                    if (index < 0 || static_cast<std::size_t>(index) >= all_headers.index.size())
+                        throw std::out_of_range("mass spectrometry spectrum index is out of range: " + std::to_string(index));
+            }
+            const auto headers = indexed ? file.get_spectra_headers(requested_indices) : file.get_spectra_headers();
+            const auto spectra = indexed ? file.get_spectra(requested_indices) : file.get_spectra();
             for (std::size_t i = 0; i < spectra.size() && i < headers.index.size(); ++i)
             {
                 if (spectra[i].size() < 2)
@@ -508,6 +517,18 @@ namespace streamfind::mass_spec
                     if ((headers.level[i] == 1 && intensity < parameters.value("min_intensity_ms1", 0.0)) ||
                         (headers.level[i] >= 2 && intensity < parameters.value("min_intensity_ms2", 0.0)))
                         continue;
+                    if (indexed)
+                    {
+                        out.push_back({{"analysis", analysis}, {"replicate", row.value("replicate", "")},
+                                       {"target_id", "spectrum:" + std::to_string(headers.index[i])},
+                                       {"id", analysis + ":" + std::to_string(headers.index[i])},
+                                       {"polarity", headers.polarity[i]}, {"level", headers.level[i]},
+                                       {"pre_mz", headers.precursor_mz[i]}, {"pre_mzlow", headers.window_mzlow[i]},
+                                       {"pre_mzhigh", headers.window_mzhigh[i]}, {"pre_ce", headers.activation_ce[i]},
+                                       {"rt", headers.rt[i]}, {"mobility", headers.mobility[i]},
+                                       {"mz", spectra[i][0][j]}, {"intensity", spectra[i][1][j]}});
+                        continue;
+                    }
                     for (const auto &target : targets)
                         if (detail::target_matches(target, analysis, headers.polarity[i], headers.level[i], headers.rt[i], spectra[i][0][j]))
                             out.push_back({{"analysis", analysis}, {"replicate", row.value("replicate", "")}, {"target_id", target.id}, {"id", analysis + ":" + std::to_string(headers.index[i])}, {"polarity", headers.polarity[i]}, {"level", headers.level[i]}, {"pre_mz", headers.precursor_mz[i]}, {"pre_mzlow", headers.window_mzlow[i]}, {"pre_mzhigh", headers.window_mzhigh[i]}, {"pre_ce", headers.activation_ce[i]}, {"rt", headers.rt[i]}, {"mobility", headers.mobility[i]}, {"mz", spectra[i][0][j]}, {"intensity", spectra[i][1][j]}});
@@ -598,9 +619,9 @@ namespace streamfind::mass_spec
                                       {"index", headers.index[i]},
                                       {"chromatogram_id", headers.chromatogram_id[i]},
                                       {"polarity", headers.polarity[i]},
-                                      {"precursor_mz", precursor_mz},
-                                      {"activation_ce", activation_ce},
-                                      {"product_mz", product_mz}, {"wavelength_nm", headers.wavelength_nm[i]},
+                                      {"precursor_mz", precursor_mz.is_null() ? Json(0.0f) : precursor_mz},
+                                      {"activation_ce", activation_ce.is_null() ? Json(0.0f) : activation_ce},
+                                      {"product_mz", product_mz.is_null() ? Json(0.0f) : product_mz}, {"wavelength_nm", headers.wavelength_nm[i] == headers.wavelength_nm[i] ? headers.wavelength_nm[i] : 0.0f},
                                       {"rt", times[j]},
                                       {"raw_intensity", intensities[j]}, {"baseline", 0.0},
                                       {"intensity", intensities[j]}});

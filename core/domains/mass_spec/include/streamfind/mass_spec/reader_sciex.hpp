@@ -18,6 +18,7 @@ struct ScanBlock
 
 struct IdxRecord
 {
+  std::size_t source_index = 0;
   std::uint32_t sample_number = 0;
   std::uint32_t scan_offset = 0;
   std::uint32_t scan_size = 0;

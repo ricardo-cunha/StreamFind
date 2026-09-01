@@ -1,7 +1,7 @@
 use std::{
     collections::{BTreeMap, BTreeSet},
-    fs,
-    io::Read,
+    fs::{self, File},
+    io::{Read, Seek, SeekFrom},
     path::{Path, PathBuf},
 };
 
@@ -52,7 +52,94 @@ pub struct TofMetadata {
     pub slope: f64,
     pub intercept: f64,
     pub dde_precursors: Vec<f32>,
+    pub dde_precursor_intensities: Vec<f32>,
     pub experiment_count: usize,
+}
+
+pub fn tof_precursor_for_index(metadata: &TofMetadata, index: usize) -> f32 {
+    let Some(&source_index) = metadata.public_indices.get(index) else {
+        return 0.0;
+    };
+    if metadata.experiment_count > 1 && source_index % metadata.experiment_count == 0 {
+        return 0.0;
+    }
+    let ms2_index = metadata.public_indices[..=index]
+        .iter()
+        .filter(|source_index| {
+            let source_index = **source_index;
+            !(metadata.experiment_count > 1 && source_index % metadata.experiment_count == 0)
+        })
+        .count()
+        .saturating_sub(1);
+    metadata
+        .dde_precursors
+        .get(ms2_index)
+        .copied()
+        .unwrap_or(0.0)
+}
+
+pub fn tof_precursor_intensity_for_index(metadata: &TofMetadata, index: usize) -> f32 {
+    let Some(&source_index) = metadata.public_indices.get(index) else {
+        return 0.0;
+    };
+    if metadata.experiment_count > 1 && source_index % metadata.experiment_count == 0 {
+        return 0.0;
+    }
+    let ms2_index = metadata.public_indices[..=index]
+        .iter()
+        .filter(|source_index| {
+            let source_index = **source_index;
+            !(metadata.experiment_count > 1 && source_index % metadata.experiment_count == 0)
+        })
+        .count()
+        .saturating_sub(1);
+    metadata
+        .dde_precursor_intensities
+        .get(ms2_index)
+        .copied()
+        .unwrap_or(0.0)
+}
+
+fn read_tof_dde_metadata(path: &Path, source_analysis_number: usize) -> (Vec<f32>, Vec<f32>) {
+    let stream = read_stream(
+        path,
+        &format!("SampleSubtree/Sample{source_analysis_number}/DDERealTimeDataEx"),
+    )
+    .or_else(|_| {
+        read_stream(
+            path,
+            &format!("SampleSubtree/Sample{source_analysis_number}/DDERealTimeData"),
+        )
+    });
+    let Ok(bytes) = stream else {
+        return (Vec::new(), Vec::new());
+    };
+    let stride = if bytes.len() >= 32 && (bytes.len() - 32) % 32 == 0 {
+        32
+    } else {
+        76
+    };
+    let value_offset = if stride == 32 { 0 } else { 4 };
+    let mut precursors = Vec::new();
+    let mut intensities = Vec::new();
+    for offset in (32..=bytes.len().saturating_sub(stride)).step_by(stride) {
+        let Ok(value) = read_f64(&bytes, offset + value_offset) else {
+            continue;
+        };
+        if value.is_finite() && value > 0.0 && value < 5000.0 {
+            precursors.push(value as f32);
+            intensities.push(if stride == 32 {
+                read_f64(&bytes, offset + 16).unwrap_or(0.0) as f32
+            } else {
+                0.0
+            });
+        }
+    }
+    (precursors, intensities)
+}
+
+fn read_tof_dde_precursors(path: &Path, source_analysis_number: usize) -> Vec<f32> {
+    read_tof_dde_metadata(path, source_analysis_number).0
 }
 
 pub fn read_tof_metadata(path: &Path, source_analysis_number: usize) -> Result<TofMetadata> {
@@ -92,18 +179,8 @@ pub fn read_tof_metadata(path: &Path, source_analysis_number: usize) -> Result<T
         .skip(1)
         .find_map(|(index, record)| (record.scan_size > 0 && index <= 128).then_some(index))
         .unwrap_or(1);
-    let dde_precursors = read_stream(
-        path,
-        &format!("SampleSubtree/Sample{source_analysis_number}/DDERealTimeDataEx"),
-    )
-    .ok()
-    .map(|bytes| {
-        (32..=bytes.len().saturating_sub(76))
-            .step_by(76)
-            .filter_map(|offset| read_f64(&bytes, offset + 4).ok().map(|value| value as f32))
-            .collect()
-    })
-    .unwrap_or_default();
+    let (dde_precursors, dde_precursor_intensities) =
+        read_tof_dde_metadata(path, source_analysis_number);
     let public_indices = records
         .iter()
         .enumerate()
@@ -119,6 +196,7 @@ pub fn read_tof_metadata(path: &Path, source_analysis_number: usize) -> Result<T
         slope: read_f64(&calibration, 32)?,
         intercept: read_f64(&calibration, 40)?,
         dde_precursors,
+        dde_precursor_intensities,
         experiment_count,
     })
 }
@@ -141,19 +219,23 @@ pub fn read_tof_spectrum(
             "SCIEX TOF spectrum index has no scan payload: {index}"
         )));
     }
-    let scan_bytes = fs::read(scan_path_for_wiff(path))?;
+    let mut scan_file = File::open(scan_path_for_wiff(path))?;
+    let scan_size = scan_file.metadata()?.len() as usize;
     let payload_start = metadata.sample_base + record.scan_offset as usize + 56;
     let next_end = metadata
         .records
         .get(source_index + 1)
-        .map_or(scan_bytes.len(), |next| {
+        .map_or(scan_size, |next| {
             metadata.sample_base + next.scan_offset as usize + 64
         });
     let own_end =
         metadata.sample_base + record.scan_offset as usize + record.scan_size as usize + 64;
-    let end = next_end.min(own_end).min(scan_bytes.len());
+    let end = next_end.min(own_end).min(scan_size);
     let points = if end > payload_start {
-        decode_scan_payload(&scan_bytes[payload_start..end])
+        let mut payload = vec![0u8; end - payload_start];
+        scan_file.seek(SeekFrom::Start(payload_start as u64))?;
+        scan_file.read_exact(&mut payload)?;
+        decode_scan_payload(&payload)
     } else {
         Vec::new()
     };
@@ -164,11 +246,12 @@ pub fn read_tof_spectrum(
         array_length: points.len() as i32,
         level: if is_ms1 { 1 } else { 2 },
         polarity: 1,
-        retention_time: record.retention_time_minutes,
+        retention_time: record.retention_time_minutes * 60.0,
         ..Default::default()
     };
     if !is_ms1 {
-        spectrum.precursor_mz = metadata.dde_precursors.first().copied().unwrap_or(0.0);
+        spectrum.precursor_mz = tof_precursor_for_index(metadata, index);
+        spectrum.precursor_intensity = tof_precursor_intensity_for_index(metadata, index);
     }
     for point in points {
         spectrum
@@ -230,19 +313,8 @@ pub fn read_tof_spectra(
         .skip(1)
         .find_map(|(index, record)| (record.scan_size > 0 && index <= 64).then_some(index))
         .unwrap_or(1);
-    let dde_precursors = read_stream(
-        path,
-        &format!("SampleSubtree/Sample{source_analysis_number}/DDERealTimeDataEx"),
-    )
-    .ok()
-    .map(|bytes| {
-        (32..=bytes.len().saturating_sub(76))
-            .step_by(76)
-            .filter_map(|offset| read_f64(&bytes, offset + 4).ok().map(|value| value as f32))
-            .collect::<Vec<_>>()
-    })
-    .unwrap_or_default();
-    let mut ms1_count = 0usize;
+    let dde_precursors = read_tof_dde_precursors(path, source_analysis_number);
+    let mut ms2_count = 0usize;
     let mut spectra = Vec::new();
     for (i, record) in records.iter().enumerate() {
         if i == 0 || i + 1 == records.len() {
@@ -263,22 +335,20 @@ pub fn read_tof_spectra(
             Vec::new()
         };
         let is_ms1 = experiment_count > 1 && i % experiment_count == 0;
-        if is_ms1 {
-            ms1_count += 1;
-        }
         let mut spectrum = crate::reader::Spectrum {
             index: spectra.len() as i32,
             scan: i as i32,
             array_length: points.len() as i32,
             level: if is_ms1 { 1 } else { 2 },
             polarity: 1,
-            retention_time: record.retention_time_minutes,
+            retention_time: record.retention_time_minutes * 60.0,
             ..Default::default()
         };
         if !is_ms1 {
-            if let Some(precursor) = dde_precursors.get(ms1_count.saturating_sub(1)) {
+            if let Some(precursor) = dde_precursors.get(ms2_count) {
                 spectrum.precursor_mz = *precursor;
             }
+            ms2_count += 1;
         }
         for point in points {
             spectrum

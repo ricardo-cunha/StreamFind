@@ -8,6 +8,7 @@
 #include <fstream>
 #include <iterator>
 #include <limits>
+#include <map>
 #include <numeric>
 
 #include <stdexcept>
@@ -27,6 +28,90 @@ std::vector<std::uint8_t> read_file(const std::filesystem::path &path)
   if (!input)
     throw std::runtime_error("Unable to open Agilent MassHunter file: " + path.string());
   return {std::istreambuf_iterator<char>(input), std::istreambuf_iterator<char>()};
+}
+
+double le_double(const std::vector<std::uint8_t> &bytes, std::size_t offset);
+
+std::int32_t read_method_polarity(const std::string &path)
+{
+  const auto bytes = read_file(std::filesystem::path(path) / "AcqData" / "AcqMethod.xml");
+  const std::string xml(bytes.begin(), bytes.end());
+
+  const auto id = xml.find("ionPolarity");
+  if (id != std::string::npos)
+  {
+    const auto escaped_value = xml.find("&lt;Value&gt;", id);
+    const auto plain_value = xml.find("<Value>", id);
+    const auto value = escaped_value != std::string::npos ? escaped_value : plain_value;
+    if (value != std::string::npos)
+    {
+      const auto prefix_length = escaped_value != std::string::npos ? std::string("&lt;Value&gt;").size() : std::string("<Value>").size();
+      const auto suffix = escaped_value != std::string::npos ? "&lt;/Value&gt;" : "</Value>";
+      const auto start = value + prefix_length;
+      const auto end = xml.find(suffix, start);
+      if (end == std::string::npos) return 0;
+      const auto text = xml.substr(start, end - start);
+      if (text.find("Positive") != std::string::npos) return 1;
+      if (text.find("Negative") != std::string::npos) return -1;
+    }
+  }
+  return 0;
+}
+
+struct PeriodicActuals
+{
+  double precursor_mz = 0.0;
+  double collision_energy = 0.0;
+};
+
+std::vector<PeriodicActuals> read_periodic_actuals(const std::string &path, const std::vector<ScanRecord> &records)
+{
+  const auto bytes = read_file(std::filesystem::path(path) / "AcqData/MSPeriodicActuals.bin");
+  struct Group { double time; std::size_t begin; std::size_t end; };
+  std::vector<Group> groups;
+  for (std::size_t offset = 8; offset + 40 <= bytes.size(); offset += 40)
+  {
+    const auto time = le_double(bytes, offset + 8);
+    if (!(time > 0.0 && time < 100.0)) continue;
+    if (groups.empty() || std::fabs(groups.back().time - time) > 1e-7)
+      groups.push_back({time, offset, offset + 40});
+    else
+      groups.back().end = offset + 40;
+  }
+  std::vector<std::pair<double, PeriodicActuals>> actuals;
+  for (const auto &group : groups)
+  {
+    PeriodicActuals values;
+    for (std::size_t offset = group.begin; offset < group.end; offset += 4)
+    {
+      const auto value = le_double(bytes, offset);
+      if (values.precursor_mz == 0.0 && std::isfinite(value) && value > 100.0 && value < 3000.0 && std::fabs(value - std::round(value)) > 0.001)
+        values.precursor_mz = value;
+      if (std::isfinite(value) && value >= 5.0 && value <= 50.0 && std::fabs(value / 5.0 - std::round(value / 5.0)) < 0.001)
+        values.collision_energy = value;
+    }
+    actuals.push_back({group.time, values});
+  }
+  std::vector<PeriodicActuals> result(records.size());
+  PeriodicActuals current;
+  for (std::size_t index = 0; index < records.size(); ++index)
+  {
+    if (records[index].ms_level >= 2)
+      {
+      const auto it = std::lower_bound(actuals.begin(), actuals.end(), records[index].scan_time_minutes,
+                                       [](const auto &item, double time) { return item.first < time; });
+      const auto match = it != actuals.end() && std::fabs(it->first - records[index].scan_time_minutes) < 1e-5 ? it : (it != actuals.begin() && std::fabs((it - 1)->first - records[index].scan_time_minutes) < 1e-5 ? it - 1 : actuals.end());
+      if (match != actuals.end())
+      {
+        if (match->second.precursor_mz > 0.0) current.precursor_mz = match->second.precursor_mz;
+        if (match->second.collision_energy > 0.0) current.collision_energy = match->second.collision_energy;
+      }
+      result[index] = current;
+    }
+    else
+      current = {};
+  }
+  return result;
 }
 
 std::size_t detect_scan_record_size(const std::vector<std::uint8_t> &bytes)
@@ -440,6 +525,8 @@ std::vector<ScanRecord> read_scan_records(const std::string &path)
     throw std::runtime_error("Not an Agilent MassHunter .d directory: " + path);
   const auto bytes = detail::read_file(std::filesystem::path(path) / "AcqData" / "MSScan.bin");
   const auto scan_record_size = detail::detect_scan_record_size(bytes);
+  std::int32_t polarity = 0;
+  try { polarity = detail::read_method_polarity(path); } catch (const std::exception &) {}
 
   std::vector<ScanRecord> records;
   records.reserve((bytes.size() - detail::scan_preamble_size) / scan_record_size);
@@ -478,10 +565,23 @@ std::vector<ScanRecord> read_scan_records(const std::string &path)
       {
         record.collision_energy = detail::f64(bytes, offset + 76);
         record.precursor_mz = detail::f64(bytes, offset + 84);
-      }
-    }
+          }
+        }
+        record.polarity = polarity;
     records.push_back(record);
   }
+  const auto periodic_actuals = detail::read_periodic_actuals(path, records);
+  for (std::size_t index = 0; index < records.size(); ++index)
+    if (records[index].ms_level >= 2 && index < periodic_actuals.size())
+    {
+      records[index].precursor_intensity = records[index].tic;
+      if (records[index].precursor_mz == 0.0)
+        records[index].precursor_mz = periodic_actuals[index].precursor_mz;
+      if (records[index].collision_energy == 0.0)
+        records[index].collision_energy = periodic_actuals[index].collision_energy;
+    }
+  for (auto &record : records)
+    record.precursor_intensity = record.ms_level >= 2 ? record.tic : 0.0;
   return records;
 }
 
@@ -731,7 +831,7 @@ std::vector<Chromatogram> read_dad_chromatograms(const std::string &path)
       chromatogram.time.reserve(signal.point_count); chromatogram.intensity.reserve(signal.point_count);
       for (std::uint32_t index = 0; index < signal.point_count; ++index)
       {
-        chromatogram.time.push_back(static_cast<float>(first_time + index * interval));
+        chromatogram.time.push_back(static_cast<float>((first_time + index * interval) * 60.0));
         chromatogram.intensity.push_back(static_cast<float>(detail::f64(data, signal.offset + 16 + index * 8)));
       }
       output.push_back(std::move(chromatogram));
@@ -772,8 +872,8 @@ public:
     for (const auto &record : records_) value = std::max(value, static_cast<float>(record.spectrum_max_x));
     return value;
   }
-  float get_start_rt() override { return records_.empty() ? 0.0f : static_cast<float>(records_.front().scan_time_minutes); }
-  float get_end_rt() override { return records_.empty() ? 0.0f : static_cast<float>(records_.back().scan_time_minutes); }
+  float get_start_rt() override { return records_.empty() ? 0.0f : static_cast<float>(records_.front().scan_time_minutes * 60.0); }
+  float get_end_rt() override { return records_.empty() ? 0.0f : static_cast<float>(records_.back().scan_time_minutes * 60.0); }
   bool has_ion_mobility() override { return false; }
   MASS_SPEC_SUMMARY get_summary() override
   {
@@ -816,14 +916,16 @@ public:
   std::vector<int> get_spectra_mode(std::vector<int> indices = {}) override { return std::vector<int>(normalize(std::move(indices)).size(), 0); }
   std::vector<int> get_spectra_polarity(std::vector<int> indices = {}) override
   {
-    return std::vector<int>(normalize(indices).size(), 0);
+    auto selected = normalize(indices); std::vector<int> out;
+    for (const auto index : selected) out.push_back(records_.at(index).polarity);
+    return out;
   }
   std::vector<float> get_spectra_lowmz(std::vector<int> indices = {}) override { return metadata_float(indices, [](const ScanRecord &r) { return static_cast<float>(r.spectrum_min_x); }); }
   std::vector<float> get_spectra_highmz(std::vector<int> indices = {}) override { return metadata_float(indices, [](const ScanRecord &r) { return static_cast<float>(r.spectrum_max_x); }); }
   std::vector<float> get_spectra_bpmz(std::vector<int> indices = {}) override { return metadata_float(indices, [](const ScanRecord &r) { return static_cast<float>(r.base_peak_mz); }); }
   std::vector<float> get_spectra_bpint(std::vector<int> indices = {}) override { return metadata_float(indices, [](const ScanRecord &r) { return static_cast<float>(r.base_peak_value); }); }
   std::vector<float> get_spectra_tic(std::vector<int> indices = {}) override { return metadata_float(indices, [](const ScanRecord &r) { return static_cast<float>(r.tic); }); }
-  std::vector<float> get_spectra_rt(std::vector<int> indices = {}) override { return metadata_float(indices, [](const ScanRecord &r) { return static_cast<float>(r.scan_time_minutes); }); }
+  std::vector<float> get_spectra_rt(std::vector<int> indices = {}) override { return metadata_float(indices, [](const ScanRecord &r) { return static_cast<float>(r.scan_time_minutes * 60.0); }); }
   std::vector<float> get_spectra_mobility(std::vector<int> indices = {}) override { return std::vector<float>(normalize(std::move(indices)).size(), 0.0f); }
   std::vector<int> get_spectra_precursor_scan(std::vector<int> indices = {}) override { return std::vector<int>(normalize(std::move(indices)).size(), 0); }
   std::vector<float> get_spectra_precursor_mz(std::vector<int> indices = {}) override { return metadata_float(indices, [](const ScanRecord &record) { return static_cast<float>(record.precursor_mz); }); }
@@ -838,11 +940,11 @@ public:
     {
       const auto &record = records_.at(selected[output]);
       out.index[output] = static_cast<int>(selected[output]); out.scan[output] = static_cast<int>(record.scan_id);
-      out.array_length[output] = static_cast<int>(has_centroid(record) ? record.centroid_point_count : record.spectrum_point_count); out.level[output] = record.ms_level;
+      out.array_length[output] = static_cast<int>(has_centroid(record) ? record.centroid_point_count : record.spectrum_point_count); out.level[output] = record.ms_level; out.polarity[output] = record.polarity;
       out.lowmz[output] = static_cast<float>(record.spectrum_min_x); out.highmz[output] = static_cast<float>(record.spectrum_max_x);
       out.bpmz[output] = static_cast<float>(record.base_peak_mz); out.bpint[output] = static_cast<float>(record.base_peak_value);
-      out.tic[output] = static_cast<float>(record.tic); out.rt[output] = static_cast<float>(record.scan_time_minutes);
-      out.precursor_mz[output] = static_cast<float>(record.precursor_mz); out.activation_ce[output] = static_cast<float>(record.collision_energy);
+      out.tic[output] = static_cast<float>(record.tic); out.rt[output] = static_cast<float>(record.scan_time_minutes * 60.0);
+      out.precursor_mz[output] = static_cast<float>(record.precursor_mz); out.precursor_intensity[output] = static_cast<float>(record.precursor_intensity); out.activation_ce[output] = static_cast<float>(record.collision_energy);
       if (has_centroid(record))
       {
         const auto spectrum = get_spectrum(selected[output]);
@@ -889,11 +991,11 @@ public:
     const auto profile = has_centroid(record) ? read_centroid_spectrum(file_, record) : read_profile_spectrum(file_, record);
     MASS_SPEC_SPECTRUM spectrum{};
     spectrum.index = index; spectrum.scan = static_cast<int>(record.scan_id); spectrum.array_length = static_cast<int>(profile.mz.size());
-    spectrum.level = record.ms_level; spectrum.polarity = 0; spectrum.lowmz = static_cast<float>(record.spectrum_min_x);
+    spectrum.level = record.ms_level; spectrum.polarity = record.polarity; spectrum.lowmz = static_cast<float>(record.spectrum_min_x);
     spectrum.highmz = static_cast<float>(record.spectrum_max_x); spectrum.bpmz = static_cast<float>(record.base_peak_mz);
     spectrum.bpint = static_cast<float>(record.base_peak_value); spectrum.tic = static_cast<float>(record.tic);
-    spectrum.rt = static_cast<float>(record.scan_time_minutes); spectrum.binary_arrays_count = 2;
-    spectrum.precursor_mz = static_cast<float>(record.precursor_mz); spectrum.activation_ce = static_cast<float>(record.collision_energy);
+    spectrum.rt = static_cast<float>(record.scan_time_minutes * 60.0); spectrum.binary_arrays_count = 2;
+    spectrum.precursor_mz = static_cast<float>(record.precursor_mz); spectrum.precursor_intensity = static_cast<float>(record.precursor_intensity); spectrum.activation_ce = static_cast<float>(record.collision_energy);
     spectrum.binary_names = {"m/z", "intensity"}; spectrum.binary_data = {std::move(profile.mz), std::move(profile.intensity)};
     if (!spectrum.binary_data[0].empty())
     {

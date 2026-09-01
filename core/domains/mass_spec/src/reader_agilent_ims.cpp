@@ -40,8 +40,8 @@ public:
   std::vector<int> get_configuration() override { return std::vector<int>(records_.size(), 0); }
   float get_min_mz() override { return records_.empty() ? 0.0f : static_cast<float>(records_.front().peak_min_x); }
   float get_max_mz() override { return records_.empty() ? 0.0f : static_cast<float>(records_.front().peak_max_x); }
-  float get_start_rt() override { return records_.empty() ? 0.0f : static_cast<float>(records_.front().scan_time_minutes); }
-  float get_end_rt() override { return records_.empty() ? 0.0f : static_cast<float>(records_.back().scan_time_minutes); }
+  float get_start_rt() override { return records_.empty() ? 0.0f : static_cast<float>(records_.front().scan_time_minutes * 60.0); }
+  float get_end_rt() override { return records_.empty() ? 0.0f : static_cast<float>(records_.back().scan_time_minutes * 60.0); }
   bool has_ion_mobility() override { return true; }
   MASS_SPEC_SUMMARY get_summary() override
   {
@@ -59,7 +59,7 @@ public:
   std::vector<float> get_spectra_bpmz(std::vector<int> indices = {}) override { const auto selected = detail_ims_reader::normalize(std::move(indices), records_.size()); std::vector<float> result; for (const auto index : selected) result.push_back(static_cast<float>(records_[index].base_peak_mz)); return result; }
   std::vector<float> get_spectra_bpint(std::vector<int> indices = {}) override { const auto selected = detail_ims_reader::normalize(std::move(indices), records_.size()); std::vector<float> result; for (const auto index : selected) result.push_back(static_cast<float>(records_[index].base_peak_abundance)); return result; }
   std::vector<float> get_spectra_tic(std::vector<int> indices = {}) override { const auto selected = detail_ims_reader::normalize(std::move(indices), records_.size()); std::vector<float> result; for (const auto index : selected) result.push_back(static_cast<float>(records_[index].tic)); return result; }
-  std::vector<float> get_spectra_rt(std::vector<int> indices = {}) override { const auto selected = detail_ims_reader::normalize(std::move(indices), records_.size()); std::vector<float> result; for (const auto index : selected) result.push_back(static_cast<float>(records_[index].scan_time_minutes)); return result; }
+  std::vector<float> get_spectra_rt(std::vector<int> indices = {}) override { const auto selected = detail_ims_reader::normalize(std::move(indices), records_.size()); std::vector<float> result; for (const auto index : selected) result.push_back(static_cast<float>(records_[index].scan_time_minutes * 60.0)); return result; }
   std::vector<float> get_spectra_mobility(std::vector<int> indices = {}) override { const auto selected = detail_ims_reader::normalize(std::move(indices), records_.size()); std::vector<float> result; for (const auto index : selected) result.push_back(static_cast<float>(records_[index].mobility)); return result; }
   std::vector<int> get_spectra_precursor_scan(std::vector<int> indices = {}) override { return std::vector<int>(detail_ims_reader::normalize(std::move(indices), records_.size()).size(), 0); }
   std::vector<float> get_spectra_precursor_mz(std::vector<int> indices = {}) override { return std::vector<float>(detail_ims_reader::normalize(std::move(indices), records_.size()).size(), 0.0f); }
@@ -70,7 +70,7 @@ public:
   MASS_SPEC_SPECTRA_HEADERS get_spectra_headers(std::vector<int> indices = {}, bool = false) override
   {
     const auto selected = detail_ims_reader::normalize(std::move(indices), records_.size()); MASS_SPEC_SPECTRA_HEADERS result; result.resize_all(selected.size());
-    for (std::size_t output = 0; output < selected.size(); ++output) { const auto &record = records_[selected[output]]; result.index[output] = static_cast<int>(selected[output]); result.scan[output] = static_cast<int>(record.scan_id); result.array_length[output] = static_cast<int>(record.profile_point_count); result.level[output] = 1; result.polarity[output] = 1; result.rt[output] = static_cast<float>(record.scan_time_minutes); result.mobility[output] = static_cast<float>(record.mobility); result.tic[output] = static_cast<float>(record.tic); result.bpint[output] = static_cast<float>(record.base_peak_abundance); result.bpmz[output] = static_cast<float>(record.base_peak_mz); }
+    for (std::size_t output = 0; output < selected.size(); ++output) { const auto &record = records_[selected[output]]; result.index[output] = static_cast<int>(selected[output]); result.scan[output] = static_cast<int>(record.scan_id); result.array_length[output] = static_cast<int>(record.profile_point_count); result.level[output] = 1; result.polarity[output] = 1; result.rt[output] = static_cast<float>(record.scan_time_minutes * 60.0); result.mobility[output] = static_cast<float>(record.mobility); result.tic[output] = static_cast<float>(record.tic); result.bpint[output] = static_cast<float>(record.base_peak_abundance); result.bpmz[output] = static_cast<float>(record.base_peak_mz); }
     return result;
   }
   MASS_SPEC_CHROMATOGRAMS_HEADERS get_chromatograms_headers(std::vector<int> indices = {}) override
@@ -87,7 +87,7 @@ public:
   MASS_SPEC_SPECTRUM get_spectrum(const int &index) override
   {
     if (index < 0 || static_cast<std::size_t>(index) >= records_.size()) return {};
-    const auto &record = records_[static_cast<std::size_t>(index)]; const auto profile = read_ims_profile_spectrum(file_, record); MASS_SPEC_SPECTRUM result{}; result.index = index; result.scan = static_cast<int>(record.scan_id); result.array_length = static_cast<int>(profile.mz.size()); result.level = 1; result.polarity = 1; result.rt = static_cast<float>(record.scan_time_minutes); result.mobility = static_cast<float>(record.mobility); result.binary_arrays_count = 2; result.binary_names = {"m/z", "intensity"}; result.binary_data = {profile.mz, profile.intensity}; result.lowmz = profile.mz.empty() ? 0.0f : profile.mz.front(); result.highmz = profile.mz.empty() ? 0.0f : profile.mz.back(); result.tic = std::accumulate(profile.intensity.begin(), profile.intensity.end(), 0.0f); auto peak = std::max_element(profile.intensity.begin(), profile.intensity.end()); if (peak != profile.intensity.end()) { result.bpint = *peak; result.bpmz = profile.mz[static_cast<std::size_t>(std::distance(profile.intensity.begin(), peak))]; } return result;
+    const auto &record = records_[static_cast<std::size_t>(index)]; const auto profile = read_ims_profile_spectrum(file_, record); MASS_SPEC_SPECTRUM result{}; result.index = index; result.scan = static_cast<int>(record.scan_id); result.array_length = static_cast<int>(profile.mz.size()); result.level = 1; result.polarity = 1; result.rt = static_cast<float>(record.scan_time_minutes * 60.0); result.mobility = static_cast<float>(record.mobility); result.binary_arrays_count = 2; result.binary_names = {"m/z", "intensity"}; result.binary_data = {profile.mz, profile.intensity}; result.lowmz = profile.mz.empty() ? 0.0f : profile.mz.front(); result.highmz = profile.mz.empty() ? 0.0f : profile.mz.back(); result.tic = std::accumulate(profile.intensity.begin(), profile.intensity.end(), 0.0f); auto peak = std::max_element(profile.intensity.begin(), profile.intensity.end()); if (peak != profile.intensity.end()) { result.bpint = *peak; result.bpmz = profile.mz[static_cast<std::size_t>(std::distance(profile.intensity.begin(), peak))]; } return result;
   }
 private:
   std::vector<ImsScanRecord> records_;
