@@ -1,19 +1,19 @@
 /* ============================================================================
-   1. Theme variables
+   MARK: 1. Theme variables
    ============================================================================ */
 :root {
    --blue: #004c93;
    --green: #009f45;
    --text: #6f6f6f;
    --side-gap: 52px;
-   --top-rule: 78px;
+   --top-rule: 84px;
    --bottom-rule: 60px;
    --footer-bottom: 24px;
    --title-bg: url("title-background.jpg");
 }
 
 /* ============================================================================
-   2. Reveal base and slide surfaces
+   MARK: 2. Reveal base and slide surfaces
    ============================================================================ */
 code {
    white-space: pre-wrap;
@@ -54,7 +54,7 @@ code {
 }
 
 /* ============================================================================
-   3. Body-slide chrome and footer
+   MARK: 3. Body-slide chrome and footer
    Keep this markup on every ordinary slide.
    ============================================================================ */
 .slide-chrome {
@@ -111,6 +111,25 @@ code {
    text-align: right;
 }
 
+.reveal .slides section.slide > .slide-body {
+   box-sizing: border-box;
+   bottom: calc(var(--bottom-rule) + 2px);
+   display: flex;
+   flex-direction: column;
+   gap: 2em;
+   justify-content: center;
+   left: var(--side-gap);
+   overflow: hidden;
+   padding: 1.5em 0 0;
+   position: absolute;
+   right: var(--side-gap);
+   top: calc(var(--top-rule) + 2px);
+}
+
+.reveal .slides section.slide:not(#basic-slide):not(.thank-you-slide) > .slide-body > * {
+   flex: 0 0 auto;
+}
+
 .slide-logo {
    height: 56px;
    position: absolute;
@@ -120,7 +139,7 @@ code {
 }
 
 /* ============================================================================
-   4. Typography and standard content
+   MARK: 4. Typography and standard content
    ============================================================================ */
 .reveal h1,
 .reveal h2,
@@ -206,7 +225,7 @@ code {
 }
 
 /* ============================================================================
-   5. Title and thank-you slides
+   MARK: 5. Title and thank-you slides
    Same branded treatment as slides.html.
    ============================================================================ */
 .reveal .slides #title-slide {
@@ -474,7 +493,7 @@ code {
 }
 
 /* ============================================================================
-   6. Responsive overrides
+   MARK: 6. Responsive overrides
    ============================================================================ */
 @media (max-width: 900px) {
    :root {
