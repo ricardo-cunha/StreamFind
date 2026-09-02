@@ -1,11 +1,11 @@
 <#
-    release.ps1 — create local, versioned release archives in <repo-root>/releases/.
+    release.ps1 — create local, versioned release archives in <repo-root>/tmp/release-output/.
 
     Produces strictly separate, self-contained archives per backend:
-      releases/streamfind-core-cpp-<ver>-Windows-<arch>.zip   (CPack ZIP; libs+headers+DLLs+catalogue)
-      releases/streamfind-rust-<ver>-Windows-<arch>.zip       (assembled: bin/ + share/streamfind)
+      tmp/release-output/streamfind-core-cpp-<ver>-Windows-<arch>.zip (CPack ZIP; libs+headers+DLLs+catalogue)
+      tmp/release-output/streamfind-rust-<ver>-Windows-<arch>.zip     (assembled: bin/ + share/streamfind)
     With -Linux, additionally builds in WSL and copies the Linux TGZs into
-    releases/ (see scripts/release-linux.sh, which runs inside WSL).
+    tmp/release-output/ (see scripts/release-linux.sh, which runs inside WSL).
 
     Usage:
       powershell -ExecutionPolicy Bypass -File scripts\release.ps1 -Version 0.1.0
@@ -30,7 +30,7 @@ param(
 
 $ErrorActionPreference = 'Stop'
 $root = Split-Path -Parent $PSScriptRoot
-$releases = Join-Path $root 'releases'
+$releases = Join-Path $root 'tmp\release-output'
 New-Item -ItemType Directory -Force -Path $releases | Out-Null
 
 function Log([string]$message) {
@@ -63,8 +63,8 @@ if ($Core) {
     Log "Packaging C++ core with CPack..."
     $cpack = Get-CPack
     # CPack writes its staging tree + the final archive into CPackPackageDir;
-    # the archive is then moved into releases/ and the staging is deleted so
-    # releases/ contains only the real artifacts (no _CPack_Packages leftovers).
+    # the archive is then moved into the temporary output directory and the
+    # staging tree is deleted so no CPack internals leak into the output.
     $cpackDir = Join-Path $root "tmp\build\cpack-out"
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $cpackDir
     & $cpack -G ZIP -C $Config -B $cpackDir --config $buildDir/CPackConfig.cmake

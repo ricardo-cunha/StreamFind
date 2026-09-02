@@ -33,6 +33,7 @@ rem Build/test artifacts and disposable scratch under tmp\ (always removed).
 call :remove_dir "%ROOT%\tmp\build" "temporary build trees (CMake/Cargo)"
 call :remove_dir "%ROOT%\tmp\projects" "temporary test project files (DuckDB fixtures)"
 call :remove_dir "%ROOT%\tmp\scratch" "temporary scratch files"
+call :remove_dir "%ROOT%\tmp\release-output" "temporary release packages"
 
 rem Development-support scripts and logs are kept by default.
 rem --all also wipes them (call once a supported feature is implemented).
