@@ -1,77 +1,101 @@
 # Development status
 
-streamfind is in an **active architecture migration**. The repository is
-building the long-term semantic, C++, and Rust foundations while preserving
-the existing R package. It is not yet a single, stable release across all
-languages.
+streamfind is in an active backend and interface transition. The current native
+C++ and Rust implementations are usable development releases, while the
+existing R package remains a separate preserved workflow path.
 
-## What users can use today
+## What is available today
 
 | Path | Maturity | Best use today |
 | --- | --- | --- |
-| **R package** | Preserved and functional | Production-oriented R workflows, non-target screening, and the Shiny application |
-| **C++ backend** | Developer preview / active foundation | Native development, project persistence, workflow execution, and MCP integration |
-| **Rust backend** | Developer preview / active foundation | Independent backend development, interoperability testing, CLI, and MCP integration |
-| **MCP servers** | Working foundation | Experimenting with generic project tools and the currently registered domain capabilities |
-| **Python package** | Not available yet | No public installation path yet; the package boundary is reserved |
-| **Cogniflow integration** | Deferred | Not part of the current supported path |
+| **C++ backend** | Version 0.1.0 development release | Native project persistence, mass-spec operations, workflow execution, and MCP integration |
+| **Rust backend** | Version 0.1.0 development release | Independent backend development, native readers, CLI, interoperability testing, and MCP integration |
+| **MCP servers** | Working catalogue-driven interface | AI-agent and client integration through the C++ or Rust stdio server |
+| **Semantic catalogue** | Authoritative shared contract | Discovering operations, methods, parameters, schemas, and interface guidance |
+| **R package** | Preserved and functional | Existing R workflows, non-target screening, and the Shiny application |
+| **Python package** | Not released | No public installation path |
+| **Cogniflow integration** | Not part of the current native path | Do not use it as the native C++/Rust release interface |
 
-For an existing analytical workflow, use the [R package](components/bindings-r.md).
-For backend or MCP development, use the [C++](components/core-cpp.md) or
-[Rust](components/rust.md) documentation and the matching quickstart.
+Download the current native packages from [Releases](releases.md). For an
+existing R workflow, use the [R package](components/bindings-r.md). For new
+backend or agent integration, use the [C++](components/core-cpp.md) or
+[Rust](components/rust.md) documentation.
 
-## Implemented foundation
+## Implemented native foundation
 
-The active refactoring branch currently provides:
+The current branch provides:
 
-- a Turtle/SKOS/SHACL semantic catalogue with a deterministic generated
+- a Turtle/SKOS/SHACL semantic catalogue and deterministic JSON/DuckDB
   projection;
+- 70 catalogue entries, including 49 callable Operations and 21 workflow
+  Methods;
 - independent C++ and Rust project backends using the shared DuckDB schema and
   JSON contracts;
 - project lifecycle, metadata, workflow, cache, audit, validation, and
   cancellation/progress foundations;
-- generic, registry-driven C++ and Rust MCP servers;
-- MassSpec analysis management, metadata/query operations, raw and persisted
-  spectra/chromatogram access, and the first migrated feature-processing
-  methods;
-- initial Raman registration boundaries and shared conformance fixtures.
-
-The [architecture](architecture.md) page explains how semantic declarations,
-backend registries, and MCP tool exposure fit together.
+- catalogue-driven C++ and Rust MCP servers with complete input schemas,
+  nested target schemas, annotations, and agent-facing initialization guidance;
+- 23 mass-spectrometry Operations and 19 mass-spectrometry workflow Methods;
+- native mzML and vendor-container reader implementations, with reader parity
+  and vendor-fixture validation kept separate from the default distribution
+  test suite;
+- mass-spectrometry analysis management, metadata/query operations, raw and
+  persisted spectra/chromatogram access, and migrated feature-processing
+  methods.
 
 ## Current limitations
 
-The following are intentionally unfinished or not yet supported as part of the
-new public backend path:
+The native packages are development releases, not compatibility-stable SDKs.
+In particular:
 
-- the complete non-target-analysis processing graph, including feature loading,
-  grouping, filling, filtering, annotation, suspect screening, and
-  transformation-product assignment;
-- a public Python distribution, service layer, or frontend;
-- a release and compatibility guarantee for the new C++/Rust APIs;
-- a production-ready Cogniflow integration on top of the new public Python
-  boundary;
-- automatic installation or discovery of all external analytical tools.
+- no stable cross-version C++ ABI or Rust API guarantee is provided yet;
+- vendor-reader validation depends on local fixtures for some formats and is
+  not evidence that every vendor format is available on every installation;
+- optional tools such as Java and MetFrag are explicit user-installed
+  components and are not downloaded automatically;
+- the public Python package, service layer, and frontend are not released;
+- the Cogniflow adapter is not part of the current native release path;
+- the R package and native C++/Rust packages are separate interfaces and should
+  not be treated as interchangeable installation formats.
 
-The R package remains the functional reference for capabilities that have not
-yet crossed the migration boundary. New work should be implemented directly in
-`semantic/`, `core/`, and `rust/`; the R implementation should not be wrapped as
-a compatibility layer for the new backends.
+## MCP interface status
 
-## How the migration progresses
+Both native servers expose the same catalogue-backed interface:
 
-A capability is considered migrated when it has all of the following:
+1. call `initialize`;
+2. call `tools/list` to discover callable Operations;
+3. call `create` and then `describe` for a new project;
+4. call stateless domain Operations with explicit `database_path` and
+   `project_id`;
+5. call `connect` before workflow Methods;
+6. call `get_available_methods` to discover Method schemas;
+7. build and validate a workflow, then call `run_workflow` or `run_method`;
+8. call `close` when the connected session ends.
 
-1. a semantic declaration with parameters, results, errors, and mutation/cache
-   contracts;
-2. backend-neutral fixtures where appropriate;
-3. an independent C++ implementation and registry entry;
-4. an independent Rust implementation and registry entry; and
-5. conformance and component tests.
+Operations are always discoverable through `tools/list`. Methods are returned
+by `get_available_methods`, not advertised as MCP tools. The semantic catalogue
+is the source of the descriptions and JSON schemas used by both servers.
 
-The [living roadmap](https://github.com/odea-project/StreamFind/blob/master/.plans/streamfind_migration_plan.md)
-tracks the detailed inventory and ordering. Status labels on this site describe
-the current development stage, not a promise of API stability.
+## Test boundaries
+
+The default distribution-facing tests intentionally exclude direct
+reader-interface and vendor-parity tests because they require local proprietary
+fixtures or have substantially different runtimes. Those tests remain
+available explicitly for reader development.
+
+```powershell
+# Default C++ tests: excludes the reader-interface label
+scripts\test-core.cmd
+
+# Include reader-interface tests explicitly
+scripts\test-core.cmd -IncludeReaderInterface
+
+# Default Rust workspace tests: excludes feature-gated reader tests
+scripts\test-rust.cmd
+
+# Include Rust reader and vendor-parity tests explicitly
+scripts\test-rust.cmd -Package streamfind-rust-mass-spec -IncludeReaderInterface
+```
 
 ## Development commands
 
@@ -85,15 +109,23 @@ Validate the semantic contract and generated projection:
 Build and test the C++ backend:
 
 ```powershell
-# Run these commands from core/
-cmake --preset default
-cmake --build --preset default --config Debug
-ctest --test-dir build/cmake/default -C Debug --output-on-failure
+scripts\build-core.cmd
+scripts\test-core.cmd
 ```
 
-Test the Rust workspace:
+Build and test the Rust workspace:
 
 ```powershell
-cargo fmt --manifest-path rust/Cargo.toml --all -- --check
-cargo test --manifest-path rust/Cargo.toml --workspace
+scripts\build-rust.ps1
+scripts\test-rust.cmd
 ```
+
+Build both Windows release packages:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\release.ps1 -Version 0.1.0
+```
+
+The [living roadmap](https://github.com/odea-project/StreamFind/blob/master/.plans/streamfind_migration_plan.md)
+tracks work beyond the current release. Status labels describe the current
+implementation state, not a promise of API stability.

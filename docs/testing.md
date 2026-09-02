@@ -1,60 +1,101 @@
 # Testing
 
-Tests are organized per component against the shared backend-neutral fixtures
-in `tests/`.
+Tests are organized per component against shared backend-neutral fixtures in
+`tests/`. The C++ and Rust backends are tested independently; interoperability
+comes from the shared schema, semantic catalogue, and fixtures rather than a
+shared native implementation.
 
-## Shared fixtures
+## Semantic contract
 
-- `tests/data/` — analytical sample data (mass spectrometry, Raman, sensors)
-  plus project conformance fixtures such as
-  `tests/data/project/project_conformance.json`.
-- `tests/fixtures/` — semantic and MCP JSON fixtures.
-
-Both backends run the same conformance fixtures to prove shared behaviour
-without sharing native code.
-
-## Semantic
+From the repository root:
 
 ```powershell
-& .\semantic\validate.ps1
+& .\.venv\Scripts\python.exe semantic\validate_semantic.py
+& .\.venv\Scripts\python.exe semantic\generate_projection.py --check
 ```
 
-Validates the Turtle catalogue with SHACL. After changing the ontology,
-regenerate the projection and ensure it is committed:
+After editing `semantic/ontology/`, regenerate the committed projection:
 
 ```powershell
-& .\.venv\Scripts\python.exe .\semantic\generate_projection.py
+& .\.venv\Scripts\python.exe semantic\generate_projection.py
 ```
 
 ## C++ core
 
+The source build uses the `core/CMakePresets.json` preset and writes to
+`tmp/build/core-default`:
+
 ```powershell
-cmake --preset default
-cmake --build --preset default --config Debug
-ctest --test-dir build/cmake/default -C Debug --output-on-failure
+scripts\build-core.cmd
+scripts\test-core.cmd
 ```
 
-Conformance tests live in `core/tests/`, including the project conformance
-test in `core/tests/unit/conformance.cpp`.
+The default CTest command excludes tests labelled `reader-interface`. Those are
+direct reader/vendor-fixture tests and are not part of the distribution-facing
+suite. Run them explicitly when the local fixtures are available:
+
+```powershell
+scripts\test-core.cmd -IncludeReaderInterface
+```
+
+Equivalent CTest commands:
+
+```powershell
+ctest --test-dir tmp\build\core-default -C Debug `
+  -LE reader-interface --output-on-failure
+ctest --test-dir tmp\build\core-default -C Debug `
+  -L reader-interface --output-on-failure
+```
 
 ## Rust backend
 
 From `rust/`:
 
 ```powershell
-cargo fmt --all -- --check
+cargo build --workspace
 cargo test --workspace
 ```
 
-Conformance tests live in `rust/crates/core/tests/`.
+The default workspace suite excludes direct reader-interface and vendor-parity
+integration-test targets. They are explicit Cargo targets requiring the
+`reader-interface-tests` feature:
 
-## Interoperability
-
-The C++ and Rust implementations are validated against each other through the
-shared fixtures, not through a shared runtime:
-
-```text
-tests/data/project/project_conformance.json
-core/tests/unit/conformance.cpp
-rust/crates/core/tests/conformance.rs
+```powershell
+cargo test -p streamfind-rust-mass-spec `
+  --features reader-interface-tests
 ```
+
+The repository helpers provide the same boundary:
+
+```powershell
+scripts\test-rust.cmd
+scripts\test-rust.cmd `
+  -Package streamfind-rust-mass-spec `
+  -IncludeReaderInterface
+```
+
+The full default Rust suite includes the long NTA wastewater conformance test.
+For fast feedback on MCP changes, run only the MCP package tests:
+
+```powershell
+cargo test -p streamfind-rust-mcp
+```
+
+## Shared fixtures and release validation
+
+Shared project fixtures live under `tests/data/project/` and are consumed by
+both backends. Mass-spectrometry fixtures live under
+`tests/data/mass_spec/`. Some proprietary vendor-reader tests require local
+fixture paths and are intentionally separate from the default distribution
+suite.
+
+Build both current Windows packages with:
+
+```powershell
+powershell -ExecutionPolicy Bypass `
+  -File scripts\release.ps1 -Version 0.1.0
+```
+
+The release script runs the default C++ and Rust suites before packaging. The
+resulting archives and checksums are documented on the [Releases](releases.md)
+page.

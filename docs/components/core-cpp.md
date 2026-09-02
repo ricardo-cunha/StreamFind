@@ -1,22 +1,58 @@
 # C++ core
 
 `core/` is the standalone C++20 backend (`streamfind-core`) for project
-persistence and generic workflow execution. It does not depend on R, Python,
-FastAPI, or React. Domain libraries depend on the generic core; the generic
-core never depends on domains.
+persistence, native domain operations, and generic workflow execution. It does
+not depend on R, Python, FastAPI, or React. Domain libraries depend on the
+generic core; the generic core never depends on domains.
 
-!!! note "Maturity"
-    The C++ backend is an active developer-preview foundation, not yet a
-    released compatibility-stable library. It is the native backend planned
-    for the future public Python distribution.
+!!! note "Release status"
+    The current Windows x64 package is version **0.1.0**. It is a self-contained
+    development release for integration and testing, not a compatibility-stable
+    C++ SDK or ABI promise.
 
-## Build and test
+Download it from [Releases](../releases.md).
+
+## Build and test from source
+
+From `core/`:
 
 ```powershell
 cmake --preset default
 cmake --build --preset default --config Debug
-ctest --test-dir build/cmake/default -C Debug --output-on-failure
+ctest --test-dir ../tmp/build/core-default -C Debug --output-on-failure
 ```
+
+The repository helper is the preferred path because it uses the configured
+Windows toolchain and the repository-local temporary build directory:
+
+```powershell
+scripts\build-core.cmd
+scripts\test-core.cmd
+```
+
+The default test helper excludes tests labelled `reader-interface`. To include
+them explicitly:
+
+```powershell
+scripts\test-core.cmd -IncludeReaderInterface
+```
+
+## Release package layout
+
+After extracting `streamfind-core-cpp-0.1.0-Windows-x86_64.zip`:
+
+```text
+streamfind-core-cpp-0.1.0-Windows-x86_64/
+├── bin/
+│   └── streamfind_mcp.exe
+├── include/
+├── lib/
+└── share/streamfind/
+    └── catalogue.duckdb
+```
+
+The catalogue is required by the MCP server. Do not distribute or move the MCP
+executable without its package data and native runtime dependencies.
 
 ## Project API
 
@@ -32,51 +68,26 @@ auto project = streamfind::Project::create(options);
 
 Canonical methods use these prefixes:
 
-- `get_*` — read project state, metadata, workflow, cache, audit, identity,
-  or database path.
-- `set_*` — mutate metadata, workflow, or cache entries.
-- `run_*` — execute one method or the persisted workflow.
+- `get_*` — read project state, metadata, workflow, cache, audit, identity, or
+  database path;
+- `set_*` — mutate metadata, workflow, or cache entries;
+- `run_*` — execute one method or the persisted workflow;
 - `delete_*` — remove project-owned cache data.
 
 `Project` is move-only and owns its native DuckDB state. `close()` marks the
 handle closed; later operations fail. Domains are assigned at creation and
 cannot be changed afterward.
 
-## JSON API
+## MCP and JSON interfaces
 
-`streamfind::api::run()` exposes the same operations through
-`streamfind::api::ProjectCommand`. Requests select a project with:
+The [C++ MCP quickstart](../quickstart/cpp-mcp.md) documents the stdio server.
+The server exposes catalogue-backed Operations immediately through `tools/list`.
+Workflow Methods are discovered by `get_available_methods` after `connect` and
+are not MCP tools.
 
-```json
-{"database_path": "project.duckdb", "project_id": "demo"}
-```
+`streamfind::api::run()` exposes the same generic project operations through the
+C++ JSON API. Direct domain Operations remain stateless and require
+`database_path` and `project_id` in every request.
 
-Canonical commands:
-
-```text
-create, describe, validate
-get_metadata, set_metadata
-get_domain
-get_workflow, set_workflow, validate_workflow, run_workflow
-get_methods, run_method
-copy
-get_cache, get_cache_size, delete_cache
-get_audit_trail
-close
-```
-
-Mutating commands require a writable project; `get_*`, `describe`, and
-validation commands are read-only.
-
-## Execution and persistence contracts
-
-Workflow execution returns an `ExecutionResult` envelope; long-running
-callers may provide a `CancellationToken` and `ProgressCallback`. Errors use
-the stable `ErrorCode` enum. The core uses the shared `PROJECT`, `CACHE`, and
-`AUDIT_TRAIL` DuckDB tables and is tested against the Rust implementation
-using the shared fixtures in `tests/data`.
-
-See `core/README.md` for the full contracts.
-
-The [development status](../status.md) lists the currently migrated domain
-capabilities and the remaining migration boundary.
+The C++ and Rust backends use the same semantic catalogue, DuckDB schema, and
+JSON contracts, but remain independent implementations.

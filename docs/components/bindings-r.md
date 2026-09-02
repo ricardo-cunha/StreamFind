@@ -8,9 +8,9 @@ analysis; its data processing is implemented as an independent R package, with
 the package root at `bindings/r`.
 
 !!! success "Current user path"
-    This is the preserved and functional user-facing path today. The new C++
-    and Rust backends are being developed alongside it; they do not yet replace
-    the complete R non-target-analysis workflow.
+    This is the preserved and functional R user-facing path. The C++ and Rust
+    development releases provide separate native backend and MCP interfaces;
+    they do not replace this R package installation or API.
 
 The package is a DuckDB-backed workflow framework of persistent `Project`
 child classes — `ProjectMassSpec`, `ProjectNonTargetAnalysis`, and related
