@@ -9,6 +9,11 @@ autotests = false
 # part of the normal/distribution workspace test suite. Opt in explicitly:
 # cargo test -p streamfind-rust-mass-spec --features reader-interface-tests
 reader-interface-tests = []
+# NTA processing and query conformance tests consume the large external
+# example datasets and are not part of the normal/distribution test suite.
+# Opt in explicitly:
+# cargo test -p streamfind-rust-mass-spec --features nta-conformance-tests --tests
+nta-conformance-tests = []
 
 [dependencies]
 streamfind-rust-core = { path = "../core" }
@@ -122,18 +127,22 @@ required-features = ["reader-interface-tests"]
 [[test]]
 name = "smiles_targets"
 path = "tests/smiles_targets.rs"
+required-features = ["nta-conformance-tests"]
 
 [[test]]
 name = "processing_nta_ms"
 path = "tests/processing_nta_ms.rs"
+required-features = ["nta-conformance-tests"]
 
 [[test]]
 name = "processing_nta"
 path = "tests/processing_nta.rs"
+required-features = ["nta-conformance-tests"]
 
 [[test]]
 name = "nta_query_ops"
 path = "tests/nta_query_ops.rs"
+required-features = ["nta-conformance-tests"]
 
 [[test]]
 name = "processing_chromatograms"
@@ -143,10 +152,12 @@ required-features = ["reader-interface-tests"]
 [[test]]
 name = "nta_last_two"
 path = "tests/nta_last_two.rs"
+required-features = ["nta-conformance-tests"]
 
 [[test]]
 name = "nta_conformance"
 path = "tests/nta_conformance.rs"
+required-features = ["nta-conformance-tests"]
 
 [[test]]
 name = "project"

@@ -128,11 +128,10 @@ if [ "${STREAMFIND_BUILD_RUST:-1}" != "0" ]; then
 
     if [ "${STREAMFIND_RUN_TESTS:-1}" != "0" ]; then
         echo "[release-linux] running Rust tests..."
+        (cd "$REPO_ROOT/rust" && cargo test --workspace)
         if [ "${STREAMFIND_RUN_NTA_CONFORMANCE:-0}" = "1" ]; then
-            (cd "$REPO_ROOT/rust" && cargo test --workspace)
-        else
-            echo "[release-linux] skipping full NTA conformance (set STREAMFIND_RUN_NTA_CONFORMANCE=1 to run it)"
-            (cd "$REPO_ROOT/rust" && cargo test --workspace -- --skip nta_quantized_wastewater_pipeline)
+            echo "[release-linux] running opt-in full NTA conformance tests..."
+            (cd "$REPO_ROOT/rust" && cargo test -p streamfind-rust-mass-spec --features nta-conformance-tests --tests)
         fi
     fi
 

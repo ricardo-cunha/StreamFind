@@ -112,13 +112,14 @@ if ($Rust) {
         & $cargo build --release --workspace --exclude streamfind-rust-test-support
         if ($LASTEXITCODE -ne 0) { throw "cargo build --release failed ($LASTEXITCODE)" }
         if (-not $SkipTests) {
-            Log "Running Rust test suite... (this takes several minutes)"
-            if ($FullNtaTests) {
-                & $cargo test --workspace
-            } else {
-                & $cargo test --workspace -- --skip nta_quantized_wastewater_pipeline
-            }
+            Log "Running Rust release test suite..."
+            & $cargo test --workspace
             if ($LASTEXITCODE -ne 0) { throw "cargo test failed ($LASTEXITCODE)" }
+            if ($FullNtaTests) {
+                Log "Running opt-in full NTA conformance tests..."
+                & $cargo test -p streamfind-rust-mass-spec --features nta-conformance-tests --tests
+                if ($LASTEXITCODE -ne 0) { throw "full NTA conformance tests failed ($LASTEXITCODE)" }
+            }
         }
     } finally {
         Pop-Location
