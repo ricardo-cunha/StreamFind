@@ -7,6 +7,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 pub type Json = Value;
+const FRAMEWORK_VERSION: &str = env!("CARGO_PKG_VERSION");
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ErrorCode {
@@ -1038,13 +1039,13 @@ impl Project {
                 domain: String::new(),
                 metadata: json!({}),
                 schema_version: 1,
-                framework_version: "0.1.0".into(),
+                framework_version: FRAMEWORK_VERSION.into(),
                 created_at: String::new(),
             },
         };
         let connection = project.connection()?;
         if !project.options.read_only {
-            connection.execute_batch("CREATE TABLE IF NOT EXISTS PROJECT (project_id VARCHAR NOT NULL PRIMARY KEY, domain VARCHAR, metadata JSON, workflow JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, schema_version INTEGER NOT NULL DEFAULT 1, framework_version VARCHAR NOT NULL DEFAULT '0.1.0'); CREATE TABLE IF NOT EXISTS CACHE (project_id VARCHAR NOT NULL, name VARCHAR NOT NULL, description VARCHAR NOT NULL, hash VARCHAR NOT NULL, data BLOB NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, hash)); CREATE TABLE IF NOT EXISTS AUDIT_TRAIL (project_id VARCHAR NOT NULL, operation_type VARCHAR NOT NULL, object_type VARCHAR NOT NULL, operation_details JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); CREATE TABLE IF NOT EXISTS WORKFLOW_EXECUTION (project_id VARCHAR NOT NULL, workflow_revision INTEGER NOT NULL, step_index INTEGER NOT NULL, method VARCHAR NOT NULL, parameter_hash VARCHAR NOT NULL, status VARCHAR NOT NULL, started_at TIMESTAMP, completed_at TIMESTAMP, error VARCHAR, cache_key VARCHAR NOT NULL, PRIMARY KEY(project_id, workflow_revision, step_index));")?;
+            connection.execute_batch(&format!("CREATE TABLE IF NOT EXISTS PROJECT (project_id VARCHAR NOT NULL PRIMARY KEY, domain VARCHAR, metadata JSON, workflow JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, schema_version INTEGER NOT NULL DEFAULT 1, framework_version VARCHAR NOT NULL DEFAULT '{FRAMEWORK_VERSION}'); CREATE TABLE IF NOT EXISTS CACHE (project_id VARCHAR NOT NULL, name VARCHAR NOT NULL, description VARCHAR NOT NULL, hash VARCHAR NOT NULL, data BLOB NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, hash)); CREATE TABLE IF NOT EXISTS AUDIT_TRAIL (project_id VARCHAR NOT NULL, operation_type VARCHAR NOT NULL, object_type VARCHAR NOT NULL, operation_details JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP); CREATE TABLE IF NOT EXISTS WORKFLOW_EXECUTION (project_id VARCHAR NOT NULL, workflow_revision INTEGER NOT NULL, step_index INTEGER NOT NULL, method VARCHAR NOT NULL, parameter_hash VARCHAR NOT NULL, status VARCHAR NOT NULL, started_at TIMESTAMP, completed_at TIMESTAMP, error VARCHAR, cache_key VARCHAR NOT NULL, PRIMARY KEY(project_id, workflow_revision, step_index));"))?;
             connection.execute("INSERT INTO PROJECT (project_id, domain, metadata, workflow) VALUES (?1, ?2, '{}', '[]') ON CONFLICT(project_id) DO NOTHING", params![project.options.project_id, project.options.domain])?;
         }
         let row = connection.query_row("SELECT project_id, COALESCE(domain, ''), COALESCE(metadata, '{}'), schema_version, framework_version, CAST(created_at AS VARCHAR) FROM PROJECT WHERE project_id = ?1", params![project.options.project_id], |row| Ok(ProjectInfo { id: row.get(0)?, domain: row.get(1)?, metadata: serde_json::from_str(&row.get::<_, String>(2)?).unwrap_or_else(|_| json!({})), schema_version: row.get(3)?, framework_version: row.get(4)?, created_at: row.get(5)? }))?;

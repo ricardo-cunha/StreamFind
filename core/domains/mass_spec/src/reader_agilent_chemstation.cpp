@@ -1,6 +1,7 @@
 #include "streamfind/mass_spec/reader_agilent_chemstation.hpp"
 
 #include <algorithm>
+#include <cstring>
 #include <filesystem>
 #include <fstream>
 #include <iterator>

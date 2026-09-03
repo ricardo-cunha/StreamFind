@@ -1261,7 +1261,16 @@ pub fn load_features_ms2(project: &mut Project, p: &Value) -> Result<Value> {
             let mmax = ft_mz + isolation_window / 2.0;
 
             let mut points: Vec<(f32, f32, f32, Option<f32>)> = Vec::new();
-            for s in reader.spectra().iter().filter(|s| s.level == 2) {
+            let ms2_indices: Vec<usize> = reader
+                .spectra()
+                .iter()
+                .enumerate()
+                .filter_map(|(index, spectrum)| (spectrum.level == 2).then_some(index))
+                .collect();
+            for spectrum_index in ms2_indices {
+                let s = reader
+                    .spectrum_data(spectrum_index)
+                    .map_err(|e| invalid(e.to_string()))?;
                 if polarity != 0 && s.polarity != polarity {
                     continue;
                 }

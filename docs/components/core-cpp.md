@@ -1,58 +1,23 @@
-# C++ core
+# C++ API
 
-`core/` is the standalone C++20 backend (`streamfind-core`) for project
-persistence, native domain operations, and generic workflow execution. It does
-not depend on R, Python, FastAPI, or React. Domain libraries depend on the
-generic core; the generic core never depends on domains.
+The C++ backend provides a native project API and a C++ MCP server. The current
+Windows x64 and Linux x86_64 packages are listed on [Releases](../releases.md).
 
-!!! note "Release status"
-    The current Windows x64 package is version **0.1.0**. It is a self-contained
-    development release for integration and testing, not a compatibility-stable
-    C++ SDK or ABI promise.
+!!! note "Compatibility"
+    The native C++ package is a versioned preview release. It is suitable
+    for applications and integration testing, but does not yet promise a stable
+    cross-version ABI.
 
-Download it from [Releases](../releases.md).
+## Package contents
 
-## Build and test from source
+The C++ package includes:
 
-From `core/`:
+- `streamfind_mcp` / `streamfind_mcp.exe`;
+- the C++ libraries and public headers;
+- DuckDB and other native runtime dependencies;
+- `share/streamfind/catalogue.duckdb`.
 
-```powershell
-cmake --preset default
-cmake --build --preset default --config Debug
-ctest --test-dir ../tmp/build/core-default -C Debug --output-on-failure
-```
-
-The repository helper is the preferred path because it uses the configured
-Windows toolchain and the repository-local temporary build directory:
-
-```powershell
-scripts\build-core.cmd
-scripts\test-core.cmd
-```
-
-The default test helper excludes tests labelled `reader-interface`. To include
-them explicitly:
-
-```powershell
-scripts\test-core.cmd -IncludeReaderInterface
-```
-
-## Release package layout
-
-After extracting `streamfind-core-cpp-0.1.0-Windows-x86_64.zip`:
-
-```text
-streamfind-core-cpp-0.1.0-Windows-x86_64/
-├── bin/
-│   └── streamfind_mcp.exe
-├── include/
-├── lib/
-└── share/streamfind/
-    └── catalogue.duckdb
-```
-
-The catalogue is required by the MCP server. Do not distribute or move the MCP
-executable without its package data and native runtime dependencies.
+The catalogue is required by the MCP server and must remain with the package.
 
 ## Project API
 
@@ -66,28 +31,25 @@ streamfind::ProjectOptions options{
 auto project = streamfind::Project::create(options);
 ```
 
-Canonical methods use these prefixes:
+Common project operations include:
 
-- `get_*` — read project state, metadata, workflow, cache, audit, identity, or
-  database path;
-- `set_*` — mutate metadata, workflow, or cache entries;
-- `run_*` — execute one method or the persisted workflow;
-- `delete_*` — remove project-owned cache data.
+```text
+create, describe, validate
+get_metadata, set_metadata
+get_domain
+get_workflow, set_workflow, validate_workflow, run_workflow
+get_methods, run_method
+get_cache, get_cache_size, delete_cache
+get_audit_trail
+copy, close
+```
 
-`Project` is move-only and owns its native DuckDB state. `close()` marks the
-handle closed; later operations fail. Domains are assigned at creation and
-cannot be changed afterward.
+Domains are assigned when a project is created and are immutable afterward.
 
-## MCP and JSON interfaces
+## MCP
 
-The [C++ MCP quickstart](../quickstart/cpp-mcp.md) documents the stdio server.
-The server exposes catalogue-backed Operations immediately through `tools/list`.
-Workflow Methods are discovered by `get_available_methods` after `connect` and
-are not MCP tools.
+The [C++ MCP quickstart](../quickstart/cpp-mcp.md) documents the stdio server
+and the stateless Operation/workflow Method distinction.
 
-`streamfind::api::run()` exposes the same generic project operations through the
-C++ JSON API. Direct domain Operations remain stateless and require
-`database_path` and `project_id` in every request.
-
-The C++ and Rust backends use the same semantic catalogue, DuckDB schema, and
-JSON contracts, but remain independent implementations.
+The C++ and Rust MCP servers use the same semantic operation names and input
+schemas. They remain separate native implementations.

@@ -63,7 +63,7 @@ int run() {
     auto project = streamfind::Project::create({path, "smoke", std::nullopt, false, false, "test"});
     streamfind::Workflow unavailable_workflow;
     unavailable_workflow.domain = "test";
-    unavailable_workflow.steps.push_back({"test.unavailable", {}});
+    unavailable_workflow.steps.push_back({"test.unavailable", streamfind::ParameterValues{streamfind::Json::object()}});
     try {
         project.set_workflow(unavailable_workflow, registry);
         std::cerr << "unimplemented method was accepted into workflow\n";
@@ -123,7 +123,7 @@ int run() {
     }
     streamfind::Workflow table_workflow;
     table_workflow.domain = "test";
-    table_workflow.steps.push_back({"test.table", {}});
+    table_workflow.steps.push_back({"test.table", streamfind::ParameterValues{streamfind::Json::object()}});
     project.set_workflow(table_workflow, registry);
     project.run_workflow(registry);
     project.execute_sql("DELETE FROM TEST_OUTPUT WHERE project_id = 'smoke'");

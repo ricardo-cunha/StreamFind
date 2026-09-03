@@ -58,32 +58,38 @@ if(MSVC)
     target_link_options(streamfind_vendor_tests PRIVATE
         "/WHOLEARCHIVE:$<TARGET_FILE:streamfind_openbabel>"
     )
+elseif(UNIX)
+    target_link_options(streamfind_vendor_tests PRIVATE
+        "-Wl,--whole-archive"
+        "$<TARGET_FILE:streamfind_openbabel>"
+        "-Wl,--no-whole-archive"
+    )
 endif()
 add_test(NAME streamfind_vendor_tests COMMAND streamfind_vendor_tests)
 set_tests_properties(streamfind_vendor_tests PROPERTIES
     WORKING_DIRECTORY "${STREAMFIND_OPENBABEL_DATA_DIR}"
 )
 
-if(WIN32)
-    foreach(_test_target IN ITEMS
-        streamfind_core_tests
-        streamfind_project_tests
-        streamfind_mcp_tests
-        streamfind_domain_tests
-        streamfind_conformance_tests
-        streamfind_vendor_tests
+foreach(_test_target IN ITEMS
+    streamfind_core_tests
+    streamfind_project_tests
+    streamfind_mcp_tests
+    streamfind_domain_tests
+    streamfind_conformance_tests
+    streamfind_vendor_tests
+)
+    # Test binaries consume the runtime knowledge base via the
+    # next-to-binary hop of the catalogue search chain on every platform.
+    add_custom_command(TARGET ${_test_target} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_if_different
+            "${STREAMFIND_SEMANTIC_DIR}/catalogue.duckdb"
+            "$<TARGET_FILE_DIR:${_test_target}>"
     )
+    if(WIN32)
         add_custom_command(TARGET ${_test_target} POST_BUILD
             COMMAND ${CMAKE_COMMAND} -E copy_if_different
                 "$<TARGET_FILE:streamfind::duckdb>"
                 "$<TARGET_FILE_DIR:${_test_target}>"
         )
-        # Test binaries consume the runtime knowledge base via the
-        # next-to-binary hop of the catalogue search chain.
-        add_custom_command(TARGET ${_test_target} POST_BUILD
-            COMMAND ${CMAKE_COMMAND} -E copy_if_different
-                "${STREAMFIND_SEMANTIC_DIR}/catalogue.duckdb"
-                "$<TARGET_FILE_DIR:${_test_target}>"
-        )
-    endforeach()
-endif()
+    endif()
+endforeach()

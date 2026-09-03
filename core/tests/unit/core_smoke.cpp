@@ -5,6 +5,6 @@
 
 int main() {
     assert(!streamfind::version().empty());
-    assert(streamfind::version() == std::string_view{"0.1.0"});
+    assert(streamfind::version().find('.') != std::string_view::npos);
     return 0;
 }

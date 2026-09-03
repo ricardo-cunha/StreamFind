@@ -162,13 +162,13 @@ bool has_column(duckdb_connection connection, const char *table, const char *col
 void ensure_schema(duckdb_connection connection,
                    const ProjectOptions &options) {
     query(connection,
-          "CREATE TABLE IF NOT EXISTS PROJECT (project_id VARCHAR NOT NULL PRIMARY KEY, domain VARCHAR, metadata JSON, workflow JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, schema_version INTEGER NOT NULL DEFAULT 1, framework_version VARCHAR NOT NULL DEFAULT '0.1.0')",
+          "CREATE TABLE IF NOT EXISTS PROJECT (project_id VARCHAR NOT NULL PRIMARY KEY, domain VARCHAR, metadata JSON, workflow JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, schema_version INTEGER NOT NULL DEFAULT 1, framework_version VARCHAR NOT NULL DEFAULT '" STREAMFIND_FRAMEWORK_VERSION "')",
           "create PROJECT table");
     if (!has_column(connection, "PROJECT", "schema_version")) {
         query(connection, "ALTER TABLE PROJECT ADD COLUMN schema_version INTEGER DEFAULT 1", "upgrade PROJECT schema");
     }
     if (!has_column(connection, "PROJECT", "framework_version")) {
-        query(connection, "ALTER TABLE PROJECT ADD COLUMN framework_version VARCHAR DEFAULT '0.1.0'", "upgrade PROJECT schema");
+        query(connection, "ALTER TABLE PROJECT ADD COLUMN framework_version VARCHAR DEFAULT '" STREAMFIND_FRAMEWORK_VERSION "'", "upgrade PROJECT schema");
     }
     query(connection,
           "CREATE TABLE IF NOT EXISTS CACHE (project_id VARCHAR NOT NULL, name VARCHAR NOT NULL, description VARCHAR NOT NULL, hash VARCHAR NOT NULL, data BLOB NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, hash))",

@@ -3,7 +3,8 @@
 Machine-independent helpers for building and testing the standalone C++ core
 (`core/`) and the Rust workspace (`rust/`). All transient artifacts land under
 the repository-local `tmp/` folder (see AGENTS.md "Repository Scratch, Build,
-and Log Locations"): build trees in `tmp/build/`, logs in `tmp/logs/`.
+and Log Locations"): build trees in `tmp/build/`, release packages in
+`tmp/release-output/`, and logs in `tmp/logs/`.
 
 ## Quick start
 
@@ -15,6 +16,8 @@ and Log Locations"): build trees in `tmp/build/`, logs in `tmp/logs/`.
 | Build the Rust workspace | `scripts\build-rust.cmd` |
 | Rust workspace + run tests | `scripts\build-rust.cmd -Tests` |
 | Run Rust tests only | `scripts\test-rust.cmd` |
+| Build release archives | `scripts\release.ps1 -Version <version>` |
+| Publish a prepared GitHub Release | `scripts\publish-release.ps1 -Version <version>` |
 | Clean build/test artifacts | `scripts\clean-build-temp.cmd` (keeps `tmp/scripts`, `tmp/logs`; use `--all` to wipe them) |
 
 Every `.cmd` is a thin wrapper over its `.ps1`; use either form.
@@ -52,6 +55,12 @@ install method.
   the workspace (or one `-Package`). Flags: `-Clean`, `-Tests`,
   `-Package <name>`, `-Release`.
 - `test-rust.ps1` — `build-rust.ps1 -Tests` shorthand.
+- `release.ps1` — builds, tests, packages, and hashes the C++ and Rust release
+  archives into `tmp/release-output/`; it does not create or upload a GitHub
+  Release.
+- `publish-release.ps1` — validates the versioned archives and checksums in
+  `tmp/release-output/`, then creates a GitHub Release. Pass `-Replace` only
+  when intentionally replacing assets in an existing release.
 
 ## Notes
 

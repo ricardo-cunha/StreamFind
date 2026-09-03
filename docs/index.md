@@ -4,75 +4,59 @@
   <img src="assets/streamfind.png" width="70%" />
 </p>
 
-streamfind is a DuckDB-backed workflow framework for analytical data
-processing. The repository contains a shared **semantic catalogue**, independent
-**C++ and Rust backends**, native mass-spectrometry readers, MCP servers, the
-preserved R package, and related integration boundaries.
+streamfind is a DuckDB-backed framework for analytical data processing. It
+provides native C++ and Rust backends, mass-spectrometry data access, a shared
+semantic catalogue, and MCP servers for applications and AI agents.
 
-!!! note "Current release status"
-    Version **0.1.0** development releases are available for the Windows x64
-    C++ core and Rust backend. They are suitable for testing and integration,
-    but do not yet promise stable cross-version APIs or ABIs.
+## Start here
 
-The central contract is the **semantic catalogue**: a backend-neutral
-declaration of domains, operations, workflow methods, parameters, results,
-errors, and agent-facing interface guidance. C++ and Rust implement that
-contract independently and share behavior through schemas and conformance
-fixtures, not through a shared runtime.
+- [Download the current native packages](releases.md).
+- [Use the C++ MCP server](quickstart/cpp-mcp.md).
+- [Use the Rust MCP server](quickstart/rust-mcp.md).
+- [Check supported interfaces and limitations](status.md).
+- [Use the existing R package](components/bindings-r.md).
 
-## Components
+!!! note "Version {{ streamfind_version }}"
+    The native C++ and Rust project version is now **{{ streamfind_version }}**. The latest
+    downloadable archives are currently the `v0.1.0` Windows and Linux preview
+    packages; the [Releases](releases.md) page will be updated when the `v{{ streamfind_version }}`
+    archives are published. Cross-version API and ABI stability is not yet
+    guaranteed.
 
-| Component | What it provides | Current status |
+## Interfaces
+
+| Interface | Provides | Availability |
 | --- | --- | --- |
-| [Semantic catalogue](components/semantic.md) | Turtle/SKOS/SHACL source plus generated JSON and DuckDB projections | Authoritative contract |
-| [C++ core](components/core-cpp.md) | Native C++20 project backend, mass-spec domain, CLI/API support, and MCP server | Windows x64 development release |
-| [Rust backend](components/rust.md) | Independent Rust project backend, native readers, CLI, and MCP server | Windows x64 development release |
-| [R package](components/bindings-r.md) | Existing R workflows and Shiny application | Preserved and functional |
-| [Python binding](components/bindings-python.md) | Public Python package boundary | Not released |
-| [Cogniflow integration](components/cf-streamfind.md) | Separate Cogniflow adapter boundary | Not part of the current native release path |
+| C++ core | Native project API, mass-spectrometry operations, and MCP server | Available as a native package |
+| Rust backend | Native project API, CLI, mass-spectrometry operations, and MCP server | Available as a native package |
+| MCP | JSON-RPC over stdio for applications and AI agents | Available through both native backends |
+| R package | Existing R workflows, non-target screening, and Shiny application | Preserved and functional |
+| Python package | Public Python API | Not released |
+| Cogniflow integration | Cogniflow adapter | Separate future integration path |
 
-## Where to start
+## MCP at a glance
 
-- **Download the native packages** → [Releases](releases.md).
-- **Use C++ through MCP** → [C++ MCP quickstart](quickstart/cpp-mcp.md).
-- **Use Rust through MCP** → [Rust MCP quickstart](quickstart/rust-mcp.md).
-- **Understand current capabilities and limitations** → [Development status](status.md).
-- **Understand the catalogue, registries, and MCP composition** → [Architecture](architecture.md).
-- **Develop or validate the backends** → [Testing](testing.md).
-- **Use the existing R workflow path** → [R package](components/bindings-r.md).
+The C++ and Rust MCP servers expose the same catalogue-backed interface.
 
-## Current MCP contract
+1. Call `initialize` to receive the server capabilities and usage guidance.
+2. Call `tools/list` to discover callable Operations.
+3. Use `create`, then `describe`, `get_domain`, or `get_metadata` for a new
+   project.
+4. Use domain Operations with explicit `database_path` and `project_id`.
+5. Use `connect` only when running workflow Methods.
+6. Call `get_available_methods` to discover workflow Methods and their schemas.
+7. Build and validate a workflow, then run it with `run_workflow` or
+   `run_method`.
 
-Both native MCP servers communicate over line-delimited JSON-RPC on standard
-input/output and use the generated semantic catalogue for tool names,
-descriptions, parameter schemas, annotations, and interface metadata.
+Operations are stateless. Workflow Methods are session-bound and are not
+advertised as MCP tools. See the [MCP quickstarts](quickstart/cpp-mcp.md) for
+request examples.
 
-- `initialize` returns agent-facing instructions for project creation,
-  inspection, stateless domain operations, and workflow execution.
-- `tools/list` advertises callable **Operations**, including domain operations,
-  before a project is connected.
-- Direct domain Operations are stateless and require `database_path` and
-  `project_id` on every call.
-- Workflow **Methods** are not MCP tools. Discover them with
-  `get_available_methods` and execute them through a connected project session.
-- `connect` is required for workflow Methods; `close` ends that session.
+## Shared contract
 
-The [MCP quickstarts](quickstart/cpp-mcp.md) show the complete
-`create → inspect → operate` and `connect → discover methods → run workflow`
-paths.
+The semantic catalogue defines operation names, parameters, nested input
+schemas, results, units, constraints, and agent-facing guidance. C++ and Rust
+implement the contract independently but expose the same public concepts.
 
-## Capability boundaries
-
-| Capability | Current status |
-| --- | --- |
-| Native C++ and Rust project backends | Available as development releases |
-| Native mass-spectrometry readers and project operations | Available in the current backend implementations; vendor-fixture coverage varies |
-| Generic C++ and Rust MCP servers | Working catalogue-driven interfaces |
-| Semantic catalogue and generated projection | Authoritative and shared by both backends |
-| Existing R package and Shiny application | Preserved and functional, separate from the native release packages |
-| Public Python package and frontend | Not released |
-| Cogniflow integration on the native public-Python path | Not part of the current supported path |
-
-The native releases are intended for backend and MCP integration testing. The
-R package remains the existing user-facing path for workflows that have not yet
-been validated as part of the native release contract.
+The [architecture](architecture.md) page explains the relationship between
+the catalogue, native APIs, and MCP.

@@ -108,6 +108,51 @@ anything that must be committed.
   feature and its development-support scripts are implemented, leaving only the
   committed convenience scripts under the root `scripts/` folder.
 
+## GitHub Releases
+
+Release archives are not committed under a repository `releases/` directory.
+The release builder writes temporary packages and checksums to
+`tmp/release-output/`; the GitHub Release is the authoritative distribution
+location.
+
+When a version is ready:
+
+1. Update and commit the C++/Rust version metadata and any release notes.
+2. Run `scripts/release.ps1 -Version <version>` (add `-Linux` when Linux
+   packages are required). This builds, tests, packages, and hashes the
+   archives under `tmp/release-output/`.
+3. Create and push the annotated tag to the official repository:
+
+   ```powershell
+   git tag -a v<version> -m "StreamFind <version>"
+   git push upstream dev_refactoring
+   git push upstream v<version>
+   ```
+
+4. Publish the generated assets with the guarded helper:
+
+   ```powershell
+   scripts/publish-release.ps1 -Version <version>
+   ```
+
+   The helper requires authenticated `gh`, verifies every archive against
+   `sha256sums.txt`, and refuses to overwrite an existing release by default.
+
+To replace assets in an existing release intentionally, rebuild the same
+version and pass the explicit replacement switch:
+
+```powershell
+scripts/publish-release.ps1 -Version <version> -Replace
+```
+
+This uses `gh release upload --clobber`. Do not move an already-published tag
+for a materially different code revision; create a new version instead.
+
+The current official repository is `odea-project/streamfind`. Use
+`-Repository <owner>/<repo>` only when publishing to a deliberately different
+repository. GitHub Release assets are separate from commits and do not update
+automatically when `scripts/release.ps1` is run.
+
 ## Turtle Ontology Formatting
 
 Use this style for every edit to `semantic/ontology/**/*.ttl`.

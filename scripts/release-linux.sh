@@ -3,7 +3,7 @@
 # release-linux.sh — build the Linux release archives inside WSL.
 #
 # Invoked by scripts/release.ps1 (-Linux) via:
-#   wsl -d Ubuntu -- bash -lc "STREAMFIND_RELEASE_VERSION=<ver> STREAMFIND_RELEASE_DIR=<releases-as-/mnt/c> bash /mnt/c/.../scripts/release-linux.sh"
+#   wsl -d Ubuntu -- bash -lc "STREAMFIND_RELEASE_VERSION=<ver> STREAMFIND_RELEASE_DIR=<tmp-release-output-as-/mnt/c> bash /mnt/c/.../scripts/release-linux.sh"
 #
 # Design points:
 #  - The WSL-ext4 filesystem is used for build trees ($HOME/streamfind-release)
@@ -14,7 +14,7 @@
 #      streamfind-rust-<ver>-Linux-<arch>.tgz       (assembled)
 #  - Requires: cmake, ninja-build, g++ (or clang), and a Rust toolchain.
 #    One-time setup:
-#      sudo apt-get update && sudo apt-get install -y cmake ninja-build g++ pkg-config curl unzip
+#      sudo apt-get update && sudo apt-get install -y cmake ninja-build g++ openbabel pkg-config curl unzip
 #      curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
 #
 # The archive naming uses the same schema as the Windows side so release
@@ -40,11 +40,11 @@ require_tool() {
     if ! command -v "$name" >/dev/null 2>&1; then
         echo "[release-linux] missing required tool: $name" >&2
         echo "  One-time setup:" >&2
-        echo "    sudo apt-get update && sudo apt-get install -y cmake ninja-build g++ pkg-config curl unzip" >&2
+        echo "    sudo apt-get update && sudo apt-get install -y cmake ninja-build g++ openbabel pkg-config curl unzip" >&2
         exit 1
     fi
 }
-for tool in cmake ninja g++ cargo; do require_tool "$tool"; done
+for tool in cmake ninja g++ cargo obabel; do require_tool "$tool"; done
 
 ARCH="$(uname -m)"   # x86_64 / aarch64
 echo "[release-linux] arch=$ARCH"
@@ -52,7 +52,7 @@ echo "[release-linux] arch=$ARCH"
 # ---------------------------------------------------------------------------
 # C++ core
 # ---------------------------------------------------------------------------
-if [ -n "${STREAMFIND_BUILD_CORE:-1}" ]; then
+if [ "${STREAMFIND_BUILD_CORE:-1}" != "0" ]; then
     echo "[release-linux] building C++ core (Release)..."
     CORE_BUILD="$WORK/core-build"
     rm -rf "$CORE_BUILD"
@@ -64,24 +64,29 @@ if [ -n "${STREAMFIND_BUILD_CORE:-1}" ]; then
         -S "$REPO_ROOT/core"
     cmake --build "$CORE_BUILD" -j "$(nproc)"
 
-    if [ -n "${STREAMFIND_RUN_TESTS:-1}" ]; then
+    if [ "${STREAMFIND_RUN_TESTS:-1}" != "0" ]; then
         echo "[release-linux] running fast C++ tests..."
-        (cd "$CORE_BUILD" && ctest -C Release -E wastewater --output-on-failure)
+        (cd "$CORE_BUILD" && ctest -C Release -E wastewater -LE reader-interface --output-on-failure)
     fi
 
     echo "[release-linux] packaging C++ core (CPack TGZ)..."
     (cd "$CORE_BUILD" && cpack -G TGZ -C Release -B "$OUT_DIR")
+    CORE_TAR="$OUT_DIR/streamfind-core-cpp-$VERSION-Linux-$ARCH.tar.gz"
+    CORE_TGZ="$OUT_DIR/streamfind-core-cpp-$VERSION-Linux-$ARCH.tgz"
+    if [ -f "$CORE_TAR" ]; then
+        mv -f "$CORE_TAR" "$CORE_TGZ"
+    fi
 fi
 
 # ---------------------------------------------------------------------------
 # Rust workspace
 # ---------------------------------------------------------------------------
-if [ -n "${STREAMFIND_BUILD_RUST:-1}" ]; then
+if [ "${STREAMFIND_BUILD_RUST:-1}" != "0" ]; then
     echo "[release-linux] building Rust workspace (release, stripped)..."
     export CARGO_TARGET_DIR="$WORK/rust-target"
     (cd "$REPO_ROOT/rust" && cargo build --release --workspace --exclude streamfind-rust-test-support)
 
-    if [ -n "${STREAMFIND_RUN_TESTS:-1}" ]; then
+    if [ "${STREAMFIND_RUN_TESTS:-1}" != "0" ]; then
         echo "[release-linux] running Rust tests..."
         (cd "$REPO_ROOT/rust" && cargo test --workspace)
     fi

@@ -8,11 +8,11 @@
     tmp/release-output/ (see scripts/release-linux.sh, which runs inside WSL).
 
     Usage:
-      powershell -ExecutionPolicy Bypass -File scripts\release.ps1 -Version 0.1.0
-      powershell -ExecutionPolicy Bypass -File scripts\release.ps1 -Version 0.1.0 -Rust -Linux
+      powershell -ExecutionPolicy Bypass -File scripts\release.ps1 -Version 0.2.0
+      powershell -ExecutionPolicy Bypass -File scripts\release.ps1 -Version 0.2.0 -Rust -Linux
 
     Args:
-      -Version    required; the release version (e.g. 0.1.0).
+      -Version    required; the release version (e.g. 0.2.0).
       -Core       build + package the C++ core (default: on)
       -Rust       build + package the Rust workspace (default: on)
       -Linux      also produce the Linux archives via WSL (default: off)

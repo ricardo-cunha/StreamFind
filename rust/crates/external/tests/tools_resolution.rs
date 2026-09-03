@@ -5,6 +5,7 @@ use std::{env, fs, path::PathBuf};
 
 /// Tests mutate process environment; serialize them (cargo runs in parallel).
 static ENV_LOCK: Mutex<()> = Mutex::new(());
+const JAVA_EXECUTABLE: &str = if cfg!(windows) { "java.exe" } else { "java" };
 
 fn fixture_home() -> PathBuf {
     let root = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-tools-fixture");
@@ -12,7 +13,7 @@ fn fixture_home() -> PathBuf {
     fs::create_dir_all(root.join("tools/metfrag")).unwrap();
     fs::create_dir_all(root.join("tools/java/jdk-21.0.5/bin")).unwrap();
     fs::write(
-        root.join("tools/java/jdk-21.0.5/bin/java.exe"),
+        root.join(format!("tools/java/jdk-21.0.5/bin/{JAVA_EXECUTABLE}")),
         b"",
     )
     .unwrap();
@@ -30,7 +31,10 @@ fn resolves_streamfind_layout() {
     env::set_var("PATH", "");
     let java = resolve_java().expect("fixture java");
     env::remove_var("PATH");
-    assert!(java.ends_with("jdk-21.0.5/bin/java.exe"), "{java:?}");
+    assert!(
+        java.ends_with(&format!("jdk-21.0.5/bin/{JAVA_EXECUTABLE}")),
+        "{java:?}"
+    );
     let jar = resolve_metfrag_jar().expect("fixture jar");
     assert!(jar.ends_with("metfrag/MetFragCL.jar"), "{jar:?}");
     assert!(resolve_metfrag().is_some(), "java+jar pair expected");
@@ -56,7 +60,7 @@ fn java_home_fallback_is_tried() {
         return;
     }
     let java = resolve_java().expect("JAVA_HOME java");
-    assert!(java.ends_with("bin/java.exe"), "{java:?}");
+    assert!(java.ends_with(&format!("bin/{JAVA_EXECUTABLE}")), "{java:?}");
     env::remove_var("JAVA_HOME");
     let _ = fs::remove_dir_all(&root);
 }

@@ -1,101 +1,34 @@
-# Testing
+# Compatibility and support
 
-Tests are organized per component against shared backend-neutral fixtures in
-`tests/`. The C++ and Rust backends are tested independently; interoperability
-comes from the shared schema, semantic catalogue, and fixtures rather than a
-shared native implementation.
+The native C++ and Rust packages are preview releases for Windows x64 and
+Linux x86_64. The existing R package is a separate preserved interface.
 
-## Semantic contract
+## Native package scope
 
-From the repository root:
+The native packages provide:
 
-```powershell
-& .\.venv\Scripts\python.exe semantic\validate_semantic.py
-& .\.venv\Scripts\python.exe semantic\generate_projection.py --check
-```
+- project creation and inspection;
+- metadata, workflow, cache, and audit operations;
+- catalogue-backed MCP Operations and workflow Method schemas;
+- mass-spectrometry analysis, spectrum, and chromatogram access;
+- native readers for supported mzML and vendor-container formats.
 
-After editing `semantic/ontology/`, regenerate the committed projection:
+Support varies by backend, domain, file format, and platform. Vendor-reader
+availability should be confirmed for the specific format and dataset.
 
-```powershell
-& .\.venv\Scripts\python.exe semantic\generate_projection.py
-```
+## Runtime requirements
 
-## C++ core
+Keep the package's catalogue files with the executable. Optional scientific
+tools such as Open Babel, Java, and MetFrag are separate dependencies and are
+not automatically installed by the native packages.
 
-The source build uses the `core/CMakePresets.json` preset and writes to
-`tmp/build/core-default`:
+## Interface selection
 
-```powershell
-scripts\build-core.cmd
-scripts\test-core.cmd
-```
+- Use the C++ package for native C++ applications or the C++ MCP server.
+- Use the Rust package for native Rust applications, the Rust CLI, or the Rust
+  MCP server.
+- Use the R package for existing R and Shiny workflows.
+- The Python package and Cogniflow integration are not currently released.
 
-The default CTest command excludes tests labelled `reader-interface`. Those are
-direct reader/vendor-fixture tests and are not part of the distribution-facing
-suite. Run them explicitly when the local fixtures are available:
-
-```powershell
-scripts\test-core.cmd -IncludeReaderInterface
-```
-
-Equivalent CTest commands:
-
-```powershell
-ctest --test-dir tmp\build\core-default -C Debug `
-  -LE reader-interface --output-on-failure
-ctest --test-dir tmp\build\core-default -C Debug `
-  -L reader-interface --output-on-failure
-```
-
-## Rust backend
-
-From `rust/`:
-
-```powershell
-cargo build --workspace
-cargo test --workspace
-```
-
-The default workspace suite excludes direct reader-interface and vendor-parity
-integration-test targets. They are explicit Cargo targets requiring the
-`reader-interface-tests` feature:
-
-```powershell
-cargo test -p streamfind-rust-mass-spec `
-  --features reader-interface-tests
-```
-
-The repository helpers provide the same boundary:
-
-```powershell
-scripts\test-rust.cmd
-scripts\test-rust.cmd `
-  -Package streamfind-rust-mass-spec `
-  -IncludeReaderInterface
-```
-
-The full default Rust suite includes the long NTA wastewater conformance test.
-For fast feedback on MCP changes, run only the MCP package tests:
-
-```powershell
-cargo test -p streamfind-rust-mcp
-```
-
-## Shared fixtures and release validation
-
-Shared project fixtures live under `tests/data/project/` and are consumed by
-both backends. Mass-spectrometry fixtures live under
-`tests/data/mass_spec/`. Some proprietary vendor-reader tests require local
-fixture paths and are intentionally separate from the default distribution
-suite.
-
-Build both current Windows packages with:
-
-```powershell
-powershell -ExecutionPolicy Bypass `
-  -File scripts\release.ps1 -Version 0.1.0
-```
-
-The release script runs the default C++ and Rust suites before packaging. The
-resulting archives and checksums are documented on the [Releases](releases.md)
-page.
+The native packages do not yet provide stable cross-version C++ ABI or Rust API
+compatibility guarantees.

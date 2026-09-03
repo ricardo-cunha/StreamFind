@@ -1,85 +1,71 @@
-# Quickstart: Rust MCP server
+# Rust MCP server
 
-The Rust MCP server (`streamfind-rust-mcp`) is a line-delimited JSON-RPC stdio
-server with the same catalogue-backed interface as the C++ server.
+The Rust MCP server is included in the
+[Windows x64 and Linux x86_64 Rust packages](../releases.md). It communicates
+with MCP clients using JSON-RPC messages over standard input/output.
 
-## 1. Obtain or build the server
+## Package paths
 
-### Use the Windows release
-
-Download and extract the [Rust release](../releases.md):
+After extracting a release package, launch:
 
 ```text
-streamfind-rust-0.1.0-Windows-x86_64/bin/streamfind-rust-mcp.exe
-streamfind-rust-0.1.0-Windows-x86_64/share/streamfind/catalogue.duckdb
+Windows: <package>\bin\streamfind-rust-mcp.exe
+Linux:   <package>/bin/streamfind-rust-mcp
 ```
 
-### Build from source
+Keep `share/streamfind/catalogue.duckdb` and `catalogue.json` with the
+package. The DuckDB catalogue is required runtime data for the MCP server.
 
-From `rust/`:
+## Project and Operation flow
 
-```powershell
-cargo build --release -p streamfind-rust-mcp
-```
+A typical client or AI agent uses this sequence:
 
-Or from the repository root:
-
-```powershell
-scripts\build-rust.ps1 -Release
-```
-
-## 2. Run stateless Operations
-
-```powershell
-@(
-  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}',
-  '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}',
-  '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"create","arguments":{"database_path":"demo.duckdb","project_id":"demo","domain":"mass_spec"}}}',
-  '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"mass_spec.get_analyses_info","arguments":{"database_path":"demo.duckdb","project_id":"demo"}}}'
-) | & .\rust\target\release\streamfind-rust-mcp.exe
-```
-
-The normal project entry path is:
-
-1. call `initialize` and read its agent-facing instructions;
+1. call `initialize` and read its usage instructions;
 2. call `tools/list` to discover callable Operations;
 3. call `create` for a new project;
-4. inspect it with `describe`, `get_domain`, or `get_metadata`;
+4. call `describe`, `get_domain`, or `get_metadata`;
 5. call domain Operations with explicit `database_path` and `project_id`.
 
-Direct domain Operations are stateless. The server opens and closes the
-selected project for that request, so `connect` and `close` are not needed.
+Example requests, one JSON object per line:
 
-## 3. Run workflow Methods
-
-Workflow Methods are not MCP tools. For a workflow:
-
-1. call `connect` with `database_path` and `project_id` for an existing project;
-2. call `get_available_methods` to discover Methods and their complete schemas;
-3. use `add_method` or `set_workflow` to construct the ordered workflow;
-4. call `validate_workflow`, then `run_workflow` or `run_method`;
-5. call `close` when finished.
-
-`tools/list` already exposes the callable Operations before `connect`; it is not
-the Method-discovery endpoint.
-
-## 4. Configure an MCP client
-
-Configure an MCP client to launch the extracted release executable over stdio:
-
-```text
-<extract-dir>\streamfind-rust-0.1.0-Windows-x86_64\bin\streamfind-rust-mcp.exe
+```json
+{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}
+{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}
+{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"create","arguments":{"database_path":"demo.duckdb","project_id":"demo","domain":"mass_spec"}}}
+{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"mass_spec.get_analyses_info","arguments":{"database_path":"demo.duckdb","project_id":"demo"}}}
 ```
 
-Keep `share/streamfind/catalogue.duckdb` and `catalogue.json` with the package.
-The catalogue search order is:
+Direct domain Operations are stateless and do not require `connect` or
+`close`.
 
-1. `STREAMFIND_CATALOGUE`, when explicitly set;
-2. `catalogue.duckdb` next to the executable;
-3. the repository source-tree catalogue for development/test runs.
+## Workflow Methods
 
-## Also on this backend
+Workflow Methods are processing steps, not MCP tools. To use them:
 
-Create and inspect projects without MCP with
-[`streamfind-rust-cli`](../components/rust.md#cli). Optional external tools are
-resolved from the process `PATH`; the backend does not download or install them.
+1. call `connect` with an existing `database_path` and `project_id`;
+2. call `get_available_methods` to discover Methods and their complete schemas;
+3. use `add_method` or `set_workflow` to create the ordered workflow;
+4. call `validate_workflow`;
+5. call `run_workflow` or `run_method`;
+6. call `close` when finished.
+
+`tools/list` exposes Operations before connection; it is not the Method
+discovery endpoint.
+
+## Rust CLI
+
+The Rust package also includes a CLI for project creation and inspection:
+
+```text
+streamfind-rust-cli create --help
+streamfind-rust-cli describe --help
+```
+
+## MCP client configuration
+
+Configure an MCP client to launch the extracted Rust executable over stdio.
+If the catalogue is stored separately, set `STREAMFIND_CATALOGUE` to the path
+of `catalogue.duckdb`; otherwise keep the packaged catalogue in place.
+
+Optional tools such as Open Babel, Java, and MetFrag are separate dependencies
+and are not installed automatically by the native package.

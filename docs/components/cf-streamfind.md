@@ -1,15 +1,12 @@
 # Cogniflow integration
 
-`integrations/cf-streamfind` is a separate Cogniflow adapter boundary. It is not
-part of the current C++ or Rust native release packages and is not a supported
-replacement for either MCP server.
+The Cogniflow integration is a separate future-facing asset. It is not included
+in the current C++ or Rust native packages and is not an alternative MCP server.
 
-!!! note "Not part of the current release path"
-    Do not use this integration as the installation or runtime entry point for
-    the native backends. Use the versioned packages on the [Releases](../releases.md)
-    page for C++ and Rust MCP usage.
+!!! note "Separate availability"
+    Use the native packages on [Releases](../releases.md) for current C++ and
+    Rust API or MCP usage. A Cogniflow installation should not be inferred from
+    the presence of this repository component.
 
-The integration remains separately scoped while the native C++/Rust contracts,
-semantic catalogue, and public language boundaries evolve. Its presence in the
-repository does not imply that a public Python package or a Cogniflow runtime
-based on the new backend path is available.
+When a supported Cogniflow package becomes available, its installation and
+usage instructions will be documented here.

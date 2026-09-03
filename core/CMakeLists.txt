@@ -1,5 +1,12 @@
 cmake_minimum_required(VERSION 3.21)
-project(streamfind_core VERSION 0.1.0 LANGUAGES C CXX)
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/../rust/Cargo.toml" STREAMFIND_CARGO_VERSION_LINE
+    REGEX "^version = \"[0-9]+\\.[0-9]+\\.[0-9]+\"$" LIMIT_COUNT 1)
+string(REGEX MATCH "[0-9]+\\.[0-9]+\\.[0-9]+" STREAMFIND_PROJECT_VERSION
+    "${STREAMFIND_CARGO_VERSION_LINE}")
+if(NOT STREAMFIND_PROJECT_VERSION MATCHES "^[0-9]+\\.[0-9]+\\.[0-9]+$")
+    message(FATAL_ERROR "rust/Cargo.toml workspace package version is missing or invalid")
+endif()
+project(streamfind_core VERSION ${STREAMFIND_PROJECT_VERSION} LANGUAGES C CXX)
 
 option(STREAMFIND_BUILD_TESTS "Build native tests" ON)
 option(STREAMFIND_BUILD_SHARED "Build shared native libraries" OFF)
@@ -51,6 +58,7 @@ set_target_properties(streamfind_core PROPERTIES
 # installed share/streamfind data directory when STREAMFIND_CATALOGUE is unset.
 target_compile_definitions(streamfind_core PRIVATE
     STREAMFIND_INSTALL_PREFIX="${CMAKE_INSTALL_PREFIX}"
+    STREAMFIND_FRAMEWORK_VERSION=\"${PROJECT_VERSION}\"
 )
 
 target_compile_features(streamfind_core PUBLIC cxx_std_20)
@@ -61,6 +69,13 @@ target_link_libraries(streamfind_core
         streamfind::openbabel
         streamfind::zlib
 )
+if(UNIX)
+    target_link_options(streamfind_core INTERFACE
+        "-Wl,--whole-archive"
+        "$<TARGET_FILE:streamfind_openbabel>"
+        "-Wl,--no-whole-archive"
+    )
+endif()
 
 target_include_directories(streamfind_core
     PUBLIC
@@ -80,6 +95,10 @@ install(
     LIBRARY DESTINATION lib
     RUNTIME DESTINATION bin
 )
+
+if(STREAMFIND_DUCKDB_STATIC_LIBRARIES)
+    install(TARGETS streamfind_duckdb EXPORT streamfind-core-targets)
+endif()
 
 install(
     TARGETS streamfind_inchi streamfind_openbabel streamfind_zlib
@@ -107,6 +126,11 @@ if(STREAMFIND_DUCKDB_RUNTIME AND EXISTS "${STREAMFIND_DUCKDB_RUNTIME}")
     else()
         install(FILES "${STREAMFIND_DUCKDB_RUNTIME}" DESTINATION lib)
     endif()
+endif()
+
+if(STREAMFIND_DUCKDB_STATIC_LIBRARIES)
+    install(FILES ${STREAMFIND_DUCKDB_STATIC_LIBRARIES} DESTINATION lib)
+    install(DIRECTORY "${STREAMFIND_DUCKDB_INCLUDE_DIR}/" DESTINATION include)
 endif()
 
 if(STREAMFIND_DUCKDB_IMPORT_LIBRARY AND EXISTS "${STREAMFIND_DUCKDB_IMPORT_LIBRARY}")
@@ -168,8 +192,13 @@ install(
 # cached defaults CPack::Configure writes into CPackConfig.cmake.
 set(CPACK_PACKAGE_NAME "streamfind-core-cpp")
 set(CPACK_PACKAGE_VERSION "${PROJECT_VERSION}")
-set(CPACK_GENERATOR "ZIP")
-set(CPACK_PACKAGE_FILE_NAME "streamfind-core-cpp-${PROJECT_VERSION}-Windows-x86_64")
+if(WIN32)
+    set(CPACK_GENERATOR "ZIP")
+    set(CPACK_PACKAGE_FILE_NAME "streamfind-core-cpp-${PROJECT_VERSION}-Windows-x86_64")
+else()
+    set(CPACK_GENERATOR "TGZ")
+    set(CPACK_PACKAGE_FILE_NAME "streamfind-core-cpp-${PROJECT_VERSION}-Linux-${CMAKE_SYSTEM_PROCESSOR}")
+endif()
 include(CPack)
 # Dev-tree catalogue: keep catalogue.duckdb next to the built MCP server so the
 # search chain (env -> next-to-binary -> install data dir) resolves in builds.
