@@ -135,7 +135,7 @@ if [ "${STREAMFIND_BUILD_RUST:-1}" != "0" ]; then
         fi
     fi
 
-    STAGING="$WORK/streamfind-rust-$VERSION-$ARCH"
+    STAGING="$WORK/streamfind-rust-$VERSION-Linux-$ARCH"
     rm -rf "$STAGING"
     mkdir -p "$STAGING/bin" "$STAGING/share/streamfind"
     cp "$CARGO_TARGET_DIR/release/streamfind-rust-cli" "$STAGING/bin/"
