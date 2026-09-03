@@ -1,4 +1,4 @@
-"""Inject the canonical StreamFind version into Markdown pages."""
+"""Inject the canonical streamfind version into Markdown pages."""
 
 from pathlib import Path
 import re

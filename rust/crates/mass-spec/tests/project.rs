@@ -17,9 +17,13 @@ fn mass_spec_operations_persist_lcd_summary_and_ontology_tables() {
     .unwrap();
     let mut operations = OperationRegistry::default();
     streamfind_rust_mass_spec::register_operations(&mut operations).unwrap();
-    let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../..")
-        .join("tests/data/mass_spec/shimadzu/adc.lcd");
+    let Some(source) =
+        streamfind_rust_test_support::shimadzu_data_dir().map(|path| path.join("adc.lcd"))
+    else {
+        eprintln!("Shimadzu fixtures unavailable; skipping LCD project test");
+        fs::remove_file(database).unwrap();
+        return;
+    };
 
     let added = project
         .run_operation(

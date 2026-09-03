@@ -194,22 +194,42 @@ fn run_operations_assert(project: &mut Project, operations: &OperationRegistry) 
     let all = project
         .run_operation("mass_spec.get_suspects", &json!({}), operations)
         .unwrap();
-    assert!(all["row_count"].as_i64().unwrap_or(-1) >= 0, "get_suspects failed: {all}");
+    assert!(
+        all["row_count"].as_i64().unwrap_or(-1) >= 0,
+        "get_suspects failed: {all}"
+    );
     assert_eq!(all["row_count"].as_i64().unwrap(), suspect_count(project));
     // Emitted keys match the suspectsResult catalogue schema.
     let columns = all["columns"].as_object().unwrap();
     for key in [
-        "project_id", "analysis", "feature", "feature_group", "candidate_rank", "name",
-        "polarity", "db_mass", "exp_mass", "db_rt", "exp_rt", "SMILES", "InChI", "InChIKey",
-        "xLogP", "created_at",
+        "project_id",
+        "analysis",
+        "feature",
+        "feature_group",
+        "candidate_rank",
+        "name",
+        "polarity",
+        "db_mass",
+        "exp_mass",
+        "db_rt",
+        "exp_rt",
+        "SMILES",
+        "InChI",
+        "InChIKey",
+        "xLogP",
+        "created_at",
     ] {
-        assert!(columns.contains_key(key), "get_suspects missing column key {key}");
+        assert!(
+            columns.contains_key(key),
+            "get_suspects missing column key {key}"
+        );
     }
 }
 
 #[test]
 fn get_suspects_and_transformation_products_query_persisted_rows() {
-    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-query-ops.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir()
+        .join("streamfind-rust-nta-query-ops.duckdb");
     let fixture = basic_tof_root().join("00_tof_s_is_pos_cent-r002.mzML");
     let mut project = setup_project(&database, "r002", &fixture);
     let mut methods = MethodRegistry::default();
@@ -223,7 +243,10 @@ fn get_suspects_and_transformation_products_query_persisted_rows() {
         vec![
             ("mass_spec.find_features", find_parameters("r002")),
             ("mass_spec.suspect_screening", screening_parameters("r002")),
-            ("mass_spec.assign_transformation_products", atp_parameters("r002")),
+            (
+                "mass_spec.assign_transformation_products",
+                atp_parameters("r002"),
+            ),
         ],
     );
 
@@ -310,23 +333,56 @@ fn get_suspects_and_transformation_products_query_persisted_rows() {
     let tp_rows = tp_rows.as_array().unwrap();
     assert_eq!(tp_rows.len(), 3, "expected 3 persisted TP rows");
     let tp_all = project
-        .run_operation("mass_spec.get_transformation_products", &json!({}), &operations)
+        .run_operation(
+            "mass_spec.get_transformation_products",
+            &json!({}),
+            &operations,
+        )
         .unwrap();
     assert_eq!(tp_all["row_count"].as_i64().unwrap(), 3);
     let tp_columns = tp_all["columns"].as_object().unwrap();
     for key in [
-        "project_id", "analysis", "feature_group", "precursor_feature_group",
-        "main_precursor_feature_group", "assignment_rank", "name", "formula", "mass",
-        "SMILES", "InChI", "InChIKey", "xLogP", "transformation", "precursor_name",
-        "precursor_formula", "precursor_mass", "precursor_SMILES", "precursor_InChI",
-        "precursor_InChIKey", "precursor_xLogP", "main_precursor_name",
-        "main_precursor_formula", "main_precursor_mass", "main_precursor_SMILES",
-        "main_precursor_InChI", "main_precursor_InChIKey", "main_precursor_xLogP",
-        "cosine_similarity", "main_precursor_cosine_similarity", "rt_plausibility",
-        "main_precursor_rt_plausibility", "assignment_score", "network_level",
-        "assignment_status", "created_at",
+        "project_id",
+        "analysis",
+        "feature_group",
+        "precursor_feature_group",
+        "main_precursor_feature_group",
+        "assignment_rank",
+        "name",
+        "formula",
+        "mass",
+        "SMILES",
+        "InChI",
+        "InChIKey",
+        "xLogP",
+        "transformation",
+        "precursor_name",
+        "precursor_formula",
+        "precursor_mass",
+        "precursor_SMILES",
+        "precursor_InChI",
+        "precursor_InChIKey",
+        "precursor_xLogP",
+        "main_precursor_name",
+        "main_precursor_formula",
+        "main_precursor_mass",
+        "main_precursor_SMILES",
+        "main_precursor_InChI",
+        "main_precursor_InChIKey",
+        "main_precursor_xLogP",
+        "cosine_similarity",
+        "main_precursor_cosine_similarity",
+        "rt_plausibility",
+        "main_precursor_rt_plausibility",
+        "assignment_score",
+        "network_level",
+        "assignment_status",
+        "created_at",
     ] {
-        assert!(tp_columns.contains_key(key), "get_transformation_products missing key {key}");
+        assert!(
+            tp_columns.contains_key(key),
+            "get_transformation_products missing key {key}"
+        );
     }
     // The transformation-products result schema has no polarity/rt columns:
     // the op must read the NEW table, not the suspects `_transform_` rows.
@@ -343,11 +399,12 @@ fn get_suspects_and_transformation_products_query_persisted_rows() {
             &operations,
         )
         .unwrap();
-    assert_eq!(named["row_count"].as_i64().unwrap(), 1, "mass window must isolate one TP row");
     assert_eq!(
-        named["columns"]["name"].as_array().unwrap()[0],
-        name
+        named["row_count"].as_i64().unwrap(),
+        1,
+        "mass window must isolate one TP row"
     );
+    assert_eq!(named["columns"]["name"].as_array().unwrap()[0], name);
     // RT targets are dropped for the TP table (no rt column): the target is
     // inert and the whole table is returned, matching the get_features rule
     // that targets without matchers do not restrict.
@@ -376,7 +433,8 @@ fn get_suspects_and_transformation_products_query_persisted_rows() {
 
 #[test]
 fn get_internal_standards_query_after_is_pipeline() {
-    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-query-ops-is.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir()
+        .join("streamfind-rust-nta-query-ops-is.duckdb");
     let fixture = basic_tof_root().join("00_tof_s_is_pos_cent-r002.mzML");
     let mut project = setup_project(&database, "r002", &fixture);
     let mut methods = MethodRegistry::default();
@@ -444,7 +502,10 @@ fn get_internal_standards_query_after_is_pipeline() {
                     "min_traces_intensity": 10.0, "isolation_window": 1.3, "mz_clust": 0.008, "presence": 0.5
                 }),
             ),
-            ("mass_spec.find_internal_standards", is_screening_parameters.clone()),
+            (
+                "mass_spec.find_internal_standards",
+                is_screening_parameters.clone(),
+            ),
         ],
     );
 
@@ -469,7 +530,10 @@ fn get_internal_standards_query_after_is_pipeline() {
                 "min_traces_intensity": 10.0, "isolation_window": 1.3, "mz_clust": 0.008, "presence": 0.5
             }),
         ),
-        ("mass_spec.find_internal_standards", is_screening_parameters.clone()),
+        (
+            "mass_spec.find_internal_standards",
+            is_screening_parameters.clone(),
+        ),
     ] {
         let result = project.run_method(method, &params, &methods).unwrap();
         assert_eq!(result["status"], "finished", "{method} failed: {result}");
@@ -489,11 +553,29 @@ fn get_internal_standards_query_after_is_pipeline() {
     assert_eq!(result["row_count"].as_i64().unwrap(), is_found);
     let columns = result["columns"].as_object().unwrap();
     for key in [
-        "project_id", "analysis", "feature", "feature_group", "feature_component", "adduct",
-        "candidate_rank", "name", "polarity", "db_mass", "exp_mass", "db_rt", "exp_rt",
-        "SMILES", "InChI", "InChIKey", "xLogP", "created_at",
+        "project_id",
+        "analysis",
+        "feature",
+        "feature_group",
+        "feature_component",
+        "adduct",
+        "candidate_rank",
+        "name",
+        "polarity",
+        "db_mass",
+        "exp_mass",
+        "db_rt",
+        "exp_rt",
+        "SMILES",
+        "InChI",
+        "InChIKey",
+        "xLogP",
+        "created_at",
     ] {
-        assert!(columns.contains_key(key), "get_internal_standards missing key {key}");
+        assert!(
+            columns.contains_key(key),
+            "get_internal_standards missing key {key}"
+        );
     }
     if is_found > 0 {
         // A named analysis filter keeps the rows; mass window matches.
@@ -523,7 +605,8 @@ fn get_internal_standards_query_after_is_pipeline() {
 
 #[test]
 fn transformation_products_table_creatable_and_queryable_when_empty() {
-    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-query-ops-empty.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir()
+        .join("streamfind-rust-nta-query-ops-empty.duckdb");
     let fixture = basic_tof_root().join("00_tof_s_is_pos_cent-r002.mzML");
     let mut project = setup_project(&database, "r002", &fixture);
     let mut methods = MethodRegistry::default();
@@ -558,7 +641,11 @@ fn transformation_products_table_creatable_and_queryable_when_empty() {
     // The TP table is created by the assignment persist step and is queryable
     // even when no transformation products were supplied (empty result).
     let result = project
-        .run_operation("mass_spec.get_transformation_products", &json!({}), &operations)
+        .run_operation(
+            "mass_spec.get_transformation_products",
+            &json!({}),
+            &operations,
+        )
         .unwrap();
     assert_eq!(result["row_count"].as_i64().unwrap(), 0);
     assert!(result["columns"]["name"].is_array());

@@ -30,9 +30,9 @@ fn reads_mzxml_peak_arrays_and_summary() {
 
 #[test]
 fn reads_shimadzu_lcd_chromatograms() {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../..")
-        .join("tests/data/mass_spec/shimadzu/adc.lcd");
+    let path = streamfind_rust_test_support::shimadzu_data_dir()
+        .expect("Shimadzu fixtures unavailable; set STREAMFIND_SHIMADZU_DATA_ROOT")
+        .join("adc.lcd");
     let mut reader = Reader::open(path).unwrap();
     assert_eq!(reader.format(), Format::ShimadzuLcd);
     assert_eq!(reader.analysis_catalog().len(), 1);
@@ -49,9 +49,9 @@ fn reads_shimadzu_lcd_chromatograms() {
 
 #[test]
 fn reads_shimadzu_lcd_tlm_spectra() {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../..")
-        .join("tests/data/mass_spec/shimadzu/karl.lcd");
+    let path = streamfind_rust_test_support::shimadzu_data_dir()
+        .expect("Shimadzu fixtures unavailable; set STREAMFIND_SHIMADZU_DATA_ROOT")
+        .join("karl.lcd");
     let reader = Reader::open(path).unwrap();
     assert_eq!(reader.format(), Format::ShimadzuLcd);
     assert!(reader.summary().number_spectra > 0);

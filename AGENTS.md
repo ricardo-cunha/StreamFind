@@ -1,4 +1,4 @@
-# StreamFind Agent Instructions
+# streamfind Agent Instructions
 
 ## General Guidance
 
@@ -20,7 +20,7 @@
 
 ## Legacy-Free Development
 
-During the active StreamFind refactor, the codebase must move toward the target architecture without accumulating legacy scaffolding.
+During the active streamfind refactor, the codebase must move toward the target architecture without accumulating legacy scaffolding.
 
 ### Required Rules
 
@@ -124,7 +124,7 @@ When a version is ready:
 3. Create and push the annotated tag to the official repository:
 
    ```powershell
-   git tag -a v<version> -m "StreamFind <version>"
+   git tag -a v<version> -m "streamfind <version>"
    git push upstream dev_refactoring
    git push upstream v<version>
    ```

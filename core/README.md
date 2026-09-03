@@ -3,16 +3,18 @@
 Standalone C++20 core for project persistence and generic workflow execution.
 The core does not depend on R, Python, FastAPI, or React.
 
-## Build And Test
+## Vendor compatibility and trademarks
 
-```powershell
-cmake --preset default
-cmake --build --preset default --config Debug
-ctest --test-dir ../tmp/build/core-default -C Debug --output-on-failure
-```
+streamfind is independent of the instrument vendors named in its compatibility
+documentation. Vendor and product names identify file-format compatibility only;
+they do not indicate endorsement or affiliation. streamfind does not redistribute
+vendor software, SDKs, DLLs, or proprietary runtime components.
 
-The build tree and test outputs live under the repository `tmp/` folder
-(gitignored, removed by `scripts\clean-build-temp.cmd`).
+See the root [`NOTICE.md`](../NOTICE.md) for distribution and support
+boundaries.
+
+Native C++ preview packages are available from the
+[release documentation](../docs/releases.md).
 
 ## Project API
 

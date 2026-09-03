@@ -64,6 +64,23 @@ The native packages are preview releases. They do not currently promise:
 The R package is a separate interface and installation path. Native C++/Rust
 packages should not be installed as replacements for the R package.
 
+## Vendor compatibility and trademarks
+
+streamfind is an independent open-source project and is not affiliated
+with, sponsored by, or endorsed by Agilent, SCIEX, Bruker, Shimadzu,
+Waters, or any other vendor referenced in the compatibility documentation.
+
+Vendor names, product names, trademarks, and file-format names identify
+compatibility only. streamfind does not redistribute vendor software, vendor
+SDKs, vendor DLLs, or vendor proprietary runtime components.
+
+Compatibility is based on native file structures and datasets validated by the
+project. Support for a vendor format, instrument family, acquisition mode, or
+calibration variant is not implied merely because a reader exists.
+
+See the root [`NOTICE.md`](https://github.com/odea-project/streamfind/blob/dev_refactoring/NOTICE.md)
+for the distribution notice and compatibility boundaries.
+
 ## Future interfaces
 
 The [Python package](components/bindings-python.md) and

@@ -37,6 +37,20 @@ function Log([string]$message) {
     Write-Host ("[{0}] {1}" -f (Get-Date -Format 'HH:mm:ss'), $message)
 }
 
+function Assert-DistributionPayload([string]$root, [string]$licensePayload = 'licenses') {
+    foreach ($required in @('NOTICE.md', 'LICENSE.md', $licensePayload)) {
+        if (-not (Test-Path (Join-Path $root $required))) {
+            throw "Distribution payload is missing $required"
+        }
+    }
+    $forbidden = Get-ChildItem -Recurse -File $root | Where-Object {
+        $_.FullName -match '(?i)(ClearCore|ProteoWizard|msconvert|baf2sql|WinDbg|CDB|vendor[-_ ]?(sdk|dll)|confidential|oracle)'
+    }
+    if ($forbidden) {
+        throw "Distribution payload contains development-only material: $($forbidden.FullName -join ', ')"
+    }
+}
+
 . (Join-Path $PSScriptRoot 'build-common.ps1')
 
 if ($Core) {
@@ -71,6 +85,12 @@ if ($Core) {
     if ($LASTEXITCODE -ne 0) { throw "CPack failed ($LASTEXITCODE)" }
     $built = Get-ChildItem (Join-Path $cpackDir "streamfind-core-cpp-$Version-Windows-*.zip") | Select-Object -First 1
     if (-not $built) { throw "CPack archive not produced for core-cpp-$Version" }
+    $verifyDir = Join-Path $root "tmp\build\package-verify\cpp"
+    Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $verifyDir
+    Expand-Archive -Path $built.FullName -DestinationPath $verifyDir
+    $packageRoot = Get-ChildItem -Path $verifyDir -Directory | Select-Object -First 1
+    if (-not $packageRoot) { throw "CPack archive has no top-level package directory" }
+    Assert-DistributionPayload $packageRoot.FullName
     Move-Item $built.FullName (Join-Path $releases $built.Name) -Force
     Remove-Item -Recurse -Force -ErrorAction SilentlyContinue $cpackDir
     $archive = Get-Item (Join-Path $releases $built.Name)
@@ -108,6 +128,10 @@ if ($Rust) {
     New-Item -ItemType Directory -Force -Path $share | Out-Null
     Copy-Item (Join-Path $root 'semantic\generated\catalogue.duckdb') $share
     Copy-Item (Join-Path $root 'semantic\generated\catalogue.json')   $share
+    Copy-Item (Join-Path $root 'LICENSE.md') $packagedRoot
+    Copy-Item (Join-Path $root 'NOTICE.md') $packagedRoot
+    Copy-Item (Join-Path $rustDir 'LICENSES.md') $packagedRoot
+    Assert-DistributionPayload $packagedRoot 'LICENSES.md'
     Log "Compressing Rust archive..."
     $zip = Join-Path $releases "streamfind-rust-$Version-Windows-x86_64.zip"
     Remove-Item -Force -ErrorAction SilentlyContinue $zip

@@ -14,7 +14,8 @@ fn fixtures() -> [std::path::PathBuf; 2] {
 }
 
 fn setup(tag: &str) -> (Project, OperationRegistry) {
-    let database = streamfind_rust_test_support::tmp_projects_dir().join(format!("streamfind-rust-smiles-{tag}.duckdb"));
+    let database = streamfind_rust_test_support::tmp_projects_dir()
+        .join(format!("streamfind-rust-smiles-{tag}.duckdb"));
     let _ = fs::remove_file(&database);
     let project = Project::create(ProjectOptions {
         database_path: database.clone(),
@@ -76,7 +77,10 @@ fn smiles_target_yields_raw_spectra_eic() {
             &operations,
         )
         .unwrap();
-    eprintln!("CONTROL rows: {}", control.as_array().map(|v| v.len()).unwrap_or(0));
+    eprintln!(
+        "CONTROL rows: {}",
+        control.as_array().map(|v| v.len()).unwrap_or(0)
+    );
     let all = project
         .run_operation(
             "mass_spec.get_raw_spectra",

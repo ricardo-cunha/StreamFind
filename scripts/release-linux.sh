@@ -44,6 +44,43 @@ require_tool() {
         exit 1
     fi
 }
+
+assert_distribution_payload() {
+    local root="$1"
+    local license_payload="${2:-licenses}"
+    test -f "$root/NOTICE.md" || { echo "[release-linux] missing NOTICE.md" >&2; exit 1; }
+    test -f "$root/LICENSE.md" || { echo "[release-linux] missing LICENSE.md" >&2; exit 1; }
+    if [ "$license_payload" = "licenses" ]; then
+        test -d "$root/licenses" || { echo "[release-linux] missing licenses/" >&2; exit 1; }
+    else
+        test -f "$root/$license_payload" || { echo "[release-linux] missing $license_payload" >&2; exit 1; }
+    fi
+    shopt -s globstar nullglob
+    local path rel
+    for path in "$root"/**; do
+        rel="${path#"$root/"}"
+        case "$rel" in
+            *ClearCore*|*ProteoWizard*|*msconvert*|*baf2sql*|*WinDbg*|*CDB*|*vendor-sdk*|*vendor-dll*|*confidential*|*oracle*)
+                echo "[release-linux] development-only material in package: $rel" >&2
+                exit 1
+                ;;
+        esac
+    done
+}
+
+assert_archive_payload() {
+    local archive="$1"
+    local license_payload="${2:-licenses}"
+    local listing="$WORK/$(basename "$archive").list"
+    tar -tzf "$archive" > "$listing"
+    grep -Eq '(^|/)NOTICE[.]md$' "$listing" || { echo "[release-linux] archive missing NOTICE.md" >&2; exit 1; }
+    grep -Eq '(^|/)LICENSE[.]md$' "$listing" || { echo "[release-linux] archive missing LICENSE.md" >&2; exit 1; }
+    if [ "$license_payload" = "licenses" ]; then
+        grep -Eq '(^|/)licenses/' "$listing" || { echo "[release-linux] archive missing licenses/" >&2; exit 1; }
+    else
+        grep -Eq "(^|/)$license_payload$" "$listing" || { echo "[release-linux] archive missing $license_payload" >&2; exit 1; }
+    fi
+}
 for tool in cmake ninja g++ cargo obabel; do require_tool "$tool"; done
 
 ARCH="$(uname -m)"   # x86_64 / aarch64
@@ -76,6 +113,7 @@ if [ "${STREAMFIND_BUILD_CORE:-1}" != "0" ]; then
     if [ -f "$CORE_TAR" ]; then
         mv -f "$CORE_TAR" "$CORE_TGZ"
     fi
+    assert_archive_payload "$CORE_TGZ" licenses
 fi
 
 # ---------------------------------------------------------------------------
@@ -98,9 +136,14 @@ if [ "${STREAMFIND_BUILD_RUST:-1}" != "0" ]; then
     cp "$CARGO_TARGET_DIR/release/streamfind-rust-mcp"  "$STAGING/bin/"
     cp "$REPO_ROOT/semantic/generated/catalogue.duckdb" "$STAGING/share/streamfind/"
     cp "$REPO_ROOT/semantic/generated/catalogue.json"   "$STAGING/share/streamfind/"
+    cp "$REPO_ROOT/LICENSE.md" "$STAGING/"
+    cp "$REPO_ROOT/NOTICE.md" "$STAGING/"
+    cp "$REPO_ROOT/rust/LICENSES.md" "$STAGING/"
+    assert_distribution_payload "$STAGING" LICENSES.md
 
     RUST_TGZ="$OUT_DIR/streamfind-rust-$VERSION-Linux-$ARCH.tgz"
     (cd "$STAGING" && tar czf "$RUST_TGZ" .)
+    assert_archive_payload "$RUST_TGZ" LICENSES.md
     echo "[release-linux] rust archive: $(basename "$RUST_TGZ") ($(du -h "$RUST_TGZ" | cut -f1))"
 fi
 

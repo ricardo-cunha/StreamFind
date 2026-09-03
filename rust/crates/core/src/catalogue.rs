@@ -194,7 +194,7 @@ pub fn tools_json() -> Value {
         .map(|entry| {
             let mut description = format!(
                 "{}: {}",
-                entry["label"].as_str().unwrap_or("StreamFind operation"),
+                entry["label"].as_str().unwrap_or("streamfind operation"),
                 entry["definition"].as_str().unwrap_or("")
             );
             if let Some(guidance) = entry["interface"]["guidance"].as_str() {
@@ -221,7 +221,7 @@ pub fn tools_json() -> Value {
                 "_meta": {"streamfind": entry["interface"]},
                 // No outputSchema: MCP requires it to be a JSON-Schema object
                 // AND that every result carries matching structuredContent.
-                // StreamFind results are table-like documents returned as text
+                // streamfind results are table-like documents returned as text
                 // content, so omitting outputSchema is the spec-correct shape
                 // (it is optional in MCP). The semantic result schema remains
                 // available via the catalogue query operations.

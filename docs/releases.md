@@ -13,6 +13,11 @@ The native C++ and Rust project metadata now targets version **{{ streamfind_ver
 latest downloadable GitHub assets remain version **0.1.0** until the new
 versioned archives are published.
 
+The currently listed `v0.1.0` archives predate the expanded attribution
+payload. New archives built from the current source are expected to include
+`NOTICE.md`, `LICENSE.md`, and the backend-specific attribution payload
+(`licenses/` for C++ or `LICENSES.md` for Rust) at the package root.
+
 ## Latest downloadable release: 0.1.0
 
 | Backend | Archive | Size | SHA-256 |
@@ -48,6 +53,26 @@ The Rust archives contain:
 
 The catalogue files are required runtime data. Do not remove them from the
 package or distribute the MCP executable without them.
+
+## Legal and attribution files
+
+Native archives should be distributed together with the project notice and
+the backend-specific attribution payload:
+
+```text
+NOTICE.md
+LICENSE.md
+C++: vendor licence texts from `core/vendor/`
+Rust: LICENSES.md
+```
+
+These files identify streamfind's licence, bundled third-party components, and
+the licence terms that apply to the packaged runtime. Native archives do not
+include vendor SDKs, vendor DLLs, proprietary vendor software, development-only
+oracle tools, or external vendor sample files.
+
+See the repository [`NOTICE.md`](https://github.com/odea-project/streamfind/blob/dev_refactoring/NOTICE.md)
+for the current attribution and legal-review boundary.
 
 ## Extract and run
 

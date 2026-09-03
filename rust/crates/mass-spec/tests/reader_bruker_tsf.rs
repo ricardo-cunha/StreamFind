@@ -32,15 +32,21 @@ fn reads_bruker_tsf_metadata_with_duckdb_sqlite_extension() {
     assert!((mz[0] - 95.0).abs() < 1e-12);
     assert!((mz[1] - 95.52835104408595).abs() < 1e-9);
     assert!((mz[2] - 2505.0).abs() < 1e-9);
-    for (frame_index, expected_count, expected_max, expected_tof) in
-        [(0, 1561, 908.0, 344.7142857142857), (1, 1414, 692.0, 455.0),
-         (2, 1570, 642.0, 39.0), (97, 1521, 44732.0, 133.94230769230768),
-         (99, 786, 2270.0, 678.5135135135135), (4450, 3087, 280.0, 121.0)]
-    {
+    for (frame_index, expected_count, expected_max, expected_tof) in [
+        (0, 1561, 908.0, 344.7142857142857),
+        (1, 1414, 692.0, 455.0),
+        (2, 1570, 642.0, 39.0),
+        (97, 1521, 44732.0, 133.94230769230768),
+        (99, 786, 2270.0, 678.5135135135135),
+        (4450, 3087, 280.0, 121.0),
+    ] {
         let line = reader_bruker::read_tsf_line_spectrum(path, &frames[frame_index]).unwrap();
         assert_eq!(line.tof.len(), expected_count);
         assert_eq!(line.intensity.len(), expected_count);
         assert!((line.tof[0] - expected_tof).abs() < 1e-12);
-        assert_eq!(line.intensity.iter().copied().fold(0.0, f64::max), expected_max);
+        assert_eq!(
+            line.intensity.iter().copied().fold(0.0, f64::max),
+            expected_max
+        );
     }
 }

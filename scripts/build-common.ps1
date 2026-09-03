@@ -1,5 +1,5 @@
 <#
-    build-common.ps1 — shared toolchain detection + logging for the StreamFind
+    build-common.ps1 — shared toolchain detection + logging for the streamfind
     build/test scripts (build-core.ps1, test-core.ps1, build-rust.ps1,
     test-rust.ps1).
 

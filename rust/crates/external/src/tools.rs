@@ -70,7 +70,9 @@ pub fn resolve_java() -> Option<PathBuf> {
         return Some(path);
     }
     if let Some(java_home) = env::var_os("JAVA_HOME") {
-        let candidate = PathBuf::from(java_home).join("bin").join(executable("java"));
+        let candidate = PathBuf::from(java_home)
+            .join("bin")
+            .join(executable("java"));
         if candidate.is_file() {
             return Some(candidate);
         }
@@ -107,7 +109,9 @@ pub fn resolve_metfrag() -> Option<(PathBuf, PathBuf)> {
 }
 
 fn run(command: &mut Command) -> Result<(), String> {
-    let status = command.status().map_err(|error| format!("failed to run {:?}: {error}", command.get_program()))?;
+    let status = command
+        .status()
+        .map_err(|error| format!("failed to run {:?}: {error}", command.get_program()))?;
     if status.success() {
         Ok(())
     } else {
@@ -147,14 +151,24 @@ pub fn install_java() -> Result<PathBuf, String> {
     } else {
         ("linux", "x64")
     };
-    let url = JAVA_JDK_URL_TEMPLATE.replace("{os}", os).replace("{arch}", arch);
-    let archive = java_root.join(if cfg!(windows) { "temurin21.zip" } else { "temurin21.tar.gz" });
+    let url = JAVA_JDK_URL_TEMPLATE
+        .replace("{os}", os)
+        .replace("{arch}", arch);
+    let archive = java_root.join(if cfg!(windows) {
+        "temurin21.zip"
+    } else {
+        "temurin21.tar.gz"
+    });
     let _ = std::fs::remove_file(&archive);
     run(Command::new("curl")
         .args(["-L", "--fail", "--silent", "--show-error", "-o"])
         .arg(&archive)
         .arg(&url))?;
-    run(Command::new("tar").arg("-xf").arg(&archive).arg("-C").arg(&java_root))?;
+    run(Command::new("tar")
+        .arg("-xf")
+        .arg(&archive)
+        .arg("-C")
+        .arg(&java_root))?;
     let _ = std::fs::remove_file(&archive);
     resolve_java().ok_or_else(|| "JDK extracted but no jdk-* java executable found".to_owned())
 }

@@ -27,6 +27,13 @@ fn reads_native_baf_line_spectrum_blocks() {
     assert_eq!(profile.intensity[33], 16);
     assert_eq!(profile.intensity[166..169], [42, 60, 40]);
     assert_eq!(profile.intensity[432..435], [30, 48, 38]);
-    assert_eq!(profile.intensity.iter().filter(|value| **value != 0).count(), 3499);
+    assert_eq!(
+        profile
+            .intensity
+            .iter()
+            .filter(|value| **value != 0)
+            .count(),
+        3499
+    );
     assert_eq!(profile.intensity.iter().copied().max(), Some(2140));
 }

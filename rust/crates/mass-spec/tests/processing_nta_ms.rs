@@ -1,8 +1,6 @@
 use serde_json::{json, Value};
 use std::{fs, path::Path};
-use streamfind_rust_core::{
-    MethodRegistry, Project, ProjectOptions, Workflow, WorkflowStep,
-};
+use streamfind_rust_core::{MethodRegistry, Project, ProjectOptions, Workflow, WorkflowStep};
 
 fn fixtures() -> [std::path::PathBuf; 3] {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
@@ -68,7 +66,8 @@ fn set_pipeline(project: &mut Project, methods: &MethodRegistry, steps: Vec<(&st
 
 #[test]
 fn loads_ms1_and_ms2_spectra_for_basic_tof_features() {
-    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-basic.duckdb");
+    let database =
+        streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-basic.duckdb");
     let mut project = setup_project(database.to_str().unwrap());
     let mut methods = MethodRegistry::default();
     streamfind_rust_mass_spec::register_methods(&mut methods).unwrap();
@@ -114,13 +113,28 @@ fn loads_ms1_and_ms2_spectra_for_basic_tof_features() {
             ("mass_spec.load_features_ms2", load_ms2_parameters.clone()),
         ],
     );
-    run_method(&mut project, &methods, "mass_spec.find_features", find_parameters);
+    run_method(
+        &mut project,
+        &methods,
+        "mass_spec.find_features",
+        find_parameters,
+    );
     let counts = project
         .query_json("SELECT analysis, COUNT(*) AS count FROM MASS_SPEC_NTA_FEATURES GROUP BY analysis ORDER BY analysis")
         .unwrap();
     println!("FEATURE COUNTS: {counts}");
-    run_method(&mut project, &methods, "mass_spec.load_features_ms1", load_ms1_parameters);
-    run_method(&mut project, &methods, "mass_spec.load_features_ms2", load_ms2_parameters);
+    run_method(
+        &mut project,
+        &methods,
+        "mass_spec.load_features_ms1",
+        load_ms1_parameters,
+    );
+    run_method(
+        &mut project,
+        &methods,
+        "mass_spec.load_features_ms2",
+        load_ms2_parameters,
+    );
 
     // Inspect the persisted columns.
     let ms1 = project
@@ -133,8 +147,14 @@ fn loads_ms1_and_ms2_spectra_for_basic_tof_features() {
     println!("MS2 POPULATED: {ms2}");
 
     // Both methods must populate at least some rows.
-    assert!(ms1.as_array().map(|a| !a.is_empty()).unwrap_or(false), "no MS1 rows populated");
-    assert!(ms2.as_array().map(|a| !a.is_empty()).unwrap_or(false), "no MS2 rows populated");
+    assert!(
+        ms1.as_array().map(|a| !a.is_empty()).unwrap_or(false),
+        "no MS1 rows populated"
+    );
+    assert!(
+        ms2.as_array().map(|a| !a.is_empty()).unwrap_or(false),
+        "no MS2 rows populated"
+    );
 
     // The Metoprolol-D7 feature (~m/z 268.19, positive) must carry both an MS1
     // and an MS2 joined spectrum in every replicate where it was detected.
@@ -148,14 +168,38 @@ fn loads_ms1_and_ms2_spectra_for_basic_tof_features() {
         let ms1_size = row["ms1_size"].as_i64().unwrap_or(0);
         let ms1_mz = row["ms1_mz"].as_str().unwrap_or("");
         let ms1_int = row["ms1_intensity"].as_str().unwrap_or("");
-        assert!(ms1_size > 0, "feature {} ms1_size not populated", row["feature"]);
-        assert!(!ms1_mz.is_empty(), "feature {} ms1_mz empty", row["feature"]);
-        assert!(!ms1_int.is_empty(), "feature {} ms1_intensity empty", row["feature"]);
+        assert!(
+            ms1_size > 0,
+            "feature {} ms1_size not populated",
+            row["feature"]
+        );
+        assert!(
+            !ms1_mz.is_empty(),
+            "feature {} ms1_mz empty",
+            row["feature"]
+        );
+        assert!(
+            !ms1_int.is_empty(),
+            "feature {} ms1_intensity empty",
+            row["feature"]
+        );
         let ms2_size = row["ms2_size"].as_i64().unwrap_or(0);
         let ms2_mz = row["ms2_mz"].as_str().unwrap_or("");
         let ms2_int = row["ms2_intensity"].as_str().unwrap_or("");
-        assert!(ms2_size > 0, "feature {} ms2_size not populated", row["feature"]);
-        assert!(!ms2_mz.is_empty(), "feature {} ms2_mz empty", row["feature"]);
-        assert!(!ms2_int.is_empty(), "feature {} ms2_intensity empty", row["feature"]);
+        assert!(
+            ms2_size > 0,
+            "feature {} ms2_size not populated",
+            row["feature"]
+        );
+        assert!(
+            !ms2_mz.is_empty(),
+            "feature {} ms2_mz empty",
+            row["feature"]
+        );
+        assert!(
+            !ms2_int.is_empty(),
+            "feature {} ms2_intensity empty",
+            row["feature"]
+        );
     }
 }

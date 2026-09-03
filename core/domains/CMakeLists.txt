@@ -1,4 +1,4 @@
-set(STREAMFIND_TEST_DATA_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../tests/data" CACHE PATH "Path to StreamFind test data")
+set(STREAMFIND_TEST_DATA_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../tests/data" CACHE PATH "Path to streamfind test data")
 
 add_subdirectory(mass_spec)
 

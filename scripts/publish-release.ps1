@@ -91,7 +91,7 @@ if ($Replace) {
 } else {
     Write-Host "Creating GitHub Release $tag..."
     $notes = "Development release of the independent native C++ and Rust backends. See the documentation for package contents and compatibility scope."
-    & $gh.Path release create $tag @assets --repo $Repository --title "StreamFind $Version" --notes $notes --generate-notes
+    & $gh.Path release create $tag @assets --repo $Repository --title "streamfind $Version" --notes $notes --generate-notes
     if ($LASTEXITCODE -ne 0) { throw "GitHub Release creation failed ($LASTEXITCODE)." }
 }
 

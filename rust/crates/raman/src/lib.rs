@@ -10,28 +10,31 @@ pub fn register_methods(registry: &mut MethodRegistry) -> Result<()> {
         } else {
             "analyses"
         };
-        registry.register(Method::new(
-            id,
-            id,
-            "Placeholder Raman analysis operation",
-            "raman",
-            ParameterSchema {
-                definitions: vec![ParameterDefinition {
-                    name: parameter.into(),
-                    description: "Analysis file records or names".into(),
-                    kind: TypeDescriptor::scalar(ParameterType::Array),
-                    default: None,
-                    required: true,
-                    example: None,
-                }],
-            },
-            Box::new(|_, _| {
-                Err(Error::new(
-                    ErrorCode::MethodExecution,
-                    "raman analysis operation is not implemented",
-                ))
-            }),
-        ).unimplemented())?;
+        registry.register(
+            Method::new(
+                id,
+                id,
+                "Placeholder Raman analysis operation",
+                "raman",
+                ParameterSchema {
+                    definitions: vec![ParameterDefinition {
+                        name: parameter.into(),
+                        description: "Analysis file records or names".into(),
+                        kind: TypeDescriptor::scalar(ParameterType::Array),
+                        default: None,
+                        required: true,
+                        example: None,
+                    }],
+                },
+                Box::new(|_, _| {
+                    Err(Error::new(
+                        ErrorCode::MethodExecution,
+                        "raman analysis operation is not implemented",
+                    ))
+                }),
+            )
+            .unimplemented(),
+        )?;
     }
     Ok(())
 }

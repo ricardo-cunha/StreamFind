@@ -11,7 +11,9 @@ use std::{fs, path::Path};
 use streamfind_rust_core::{MethodRegistry, Project, ProjectOptions, Workflow, WorkflowStep};
 
 fn wastewater_root() -> std::path::PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..").join("tests/data/mass_spec/wastewater")
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../..")
+        .join("tests/data/mass_spec/wastewater")
 }
 
 /// Minimal RFC-4180-ish CSV parse: rows including the header row as element 0.
@@ -182,7 +184,8 @@ fn nta_quantized_wastewater_pipeline() {
         "02_tof_ww_is_pos_influent-r001.mzML",
         "03_tof_ww_is_pos_o3sw_effluent-r001.mzML",
     ];
-    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-ww.duckdb");
+    let database =
+        streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-ww.duckdb");
     let mut project = setup_project(&database);
     let mut methods = MethodRegistry::default();
     streamfind_rust_mass_spec::register_methods(&mut methods).unwrap();
@@ -202,17 +205,35 @@ fn nta_quantized_wastewater_pipeline() {
     }
     let analysis_names: Vec<Value> = files
         .iter()
-        .map(|f| json!(Path::new(f).file_stem().unwrap().to_string_lossy().to_string()))
+        .map(|f| {
+            json!(Path::new(f)
+                .file_stem()
+                .unwrap()
+                .to_string_lossy()
+                .to_string())
+        })
         .collect();
 
     let is_csv = ww.join("internal_standards.csv");
     let is_targets = targets_from_csv(&is_csv);
-    assert!(!is_targets.as_array().unwrap().is_empty(), "no IS targets parsed");
-    eprintln!("internal standard targets parsed: {}", is_targets.as_array().unwrap().len());
+    assert!(
+        !is_targets.as_array().unwrap().is_empty(),
+        "no IS targets parsed"
+    );
+    eprintln!(
+        "internal standard targets parsed: {}",
+        is_targets.as_array().unwrap().len()
+    );
     let suspects_csv = ww.join("suspects.csv");
     let suspect_targets = targets_from_csv(&suspects_csv);
-    assert!(!suspect_targets.as_array().unwrap().is_empty(), "no suspect targets parsed");
-    eprintln!("suspect targets parsed: {}", suspect_targets.as_array().unwrap().len());
+    assert!(
+        !suspect_targets.as_array().unwrap().is_empty(),
+        "no suspect targets parsed"
+    );
+    eprintln!(
+        "suspect targets parsed: {}",
+        suspect_targets.as_array().unwrap().len()
+    );
 
     // One full ordered pipeline: required_methods ordering is validated once at
     // set_workflow time, then every step runs via run_method in the same revision.
@@ -220,51 +241,84 @@ fn nta_quantized_wastewater_pipeline() {
         &mut project,
         &methods,
         vec![
-            ("mass_spec.find_features", json!({
-                "analysis_names": analysis_names,
-                "rt_windows_min": [850.0],
-                "rt_windows_max": [1100.0],
-                "ppm_threshold": 10.0, "noise_threshold": 250.0, "min_snr": 3.0,
-                "min_traces": 3, "baseline_window": 200.0, "max_feature_width": 100.0, "base_quantile": 0.99
-            })),
-            ("mass_spec.create_components", json!({
-                "analysis_names": analysis_names,
-                "rt_window": [-2.5, 2.5],
-                "min_correlation": 0.85
-            })),
-            ("mass_spec.annotate_components", json!({
-                "analysis_names": analysis_names,
-                "max_isotopes": 8, "max_charge": 1, "max_gaps": 1, "ppm": 10.0,
-                "isotope_elements": ["C:1-80", "N:0-10", "O:0-20", "S:0-4", "Cl:0-6", "Br:0-4"]
-            })),
-            ("mass_spec.load_features_ms2", json!({
-                "analysis_names": analysis_names, "filtered": false,
-                "min_traces_intensity": 10.0, "isolation_window": 1.3, "mz_clust": 0.008, "presence": 0.5
-            })),
-            ("mass_spec.find_internal_standards", json!({
-                "analysis_names": analysis_names, "targets": is_targets,
-                "ppm": 10.0, "sec": 15.0, "ppm_ms2": 10.0, "mzr_ms2": 0.008,
-                "min_cosine_similarity": 0.7, "min_shared_fragments": 3, "filtered": true
-            })),
-            ("mass_spec.filter_internal_standards", json!({ "analysis_names": analysis_names, "id_levels": [1, 2, 3] })),
-            ("mass_spec.group_features", json!({
-                "analysis_names": analysis_names, "method": "internal_standards",
-                "rt_deviation": 5.0, "ppm": 10.0, "min_samples": 1, "bin_size": 5.0
-            })),
-            ("mass_spec.subtract_blank", json!({
-                "analysis_names": analysis_names, "blank_threshold": 5.0, "rt_expand": 10.0, "mz_expand": 0.005
-            })),
-            ("mass_spec.filter_features", json!({
-                "analysis_names": analysis_names,
-                "min_intensity": 10000.0,
-                "remove_isotopes": true, "remove_adducts": true, "remove_losses": true
-            })),
-            ("mass_spec.suspect_screening", json!({
-                "analysis_names": analysis_names, "targets": suspect_targets,
-                "ppm": 10.0, "sec": 15.0, "ppm_ms2": 10.0, "mzr_ms2": 0.008,
-                "min_cosine_similarity": 0.7, "min_shared_fragments": 3, "filtered": true
-            })),
-            ("mass_spec.filter_suspects", json!({ "analysis_names": analysis_names, "id_levels": [1, 2] })),
+            (
+                "mass_spec.find_features",
+                json!({
+                    "analysis_names": analysis_names,
+                    "rt_windows_min": [850.0],
+                    "rt_windows_max": [1100.0],
+                    "ppm_threshold": 10.0, "noise_threshold": 250.0, "min_snr": 3.0,
+                    "min_traces": 3, "baseline_window": 200.0, "max_feature_width": 100.0, "base_quantile": 0.99
+                }),
+            ),
+            (
+                "mass_spec.create_components",
+                json!({
+                    "analysis_names": analysis_names,
+                    "rt_window": [-2.5, 2.5],
+                    "min_correlation": 0.85
+                }),
+            ),
+            (
+                "mass_spec.annotate_components",
+                json!({
+                    "analysis_names": analysis_names,
+                    "max_isotopes": 8, "max_charge": 1, "max_gaps": 1, "ppm": 10.0,
+                    "isotope_elements": ["C:1-80", "N:0-10", "O:0-20", "S:0-4", "Cl:0-6", "Br:0-4"]
+                }),
+            ),
+            (
+                "mass_spec.load_features_ms2",
+                json!({
+                    "analysis_names": analysis_names, "filtered": false,
+                    "min_traces_intensity": 10.0, "isolation_window": 1.3, "mz_clust": 0.008, "presence": 0.5
+                }),
+            ),
+            (
+                "mass_spec.find_internal_standards",
+                json!({
+                    "analysis_names": analysis_names, "targets": is_targets,
+                    "ppm": 10.0, "sec": 15.0, "ppm_ms2": 10.0, "mzr_ms2": 0.008,
+                    "min_cosine_similarity": 0.7, "min_shared_fragments": 3, "filtered": true
+                }),
+            ),
+            (
+                "mass_spec.filter_internal_standards",
+                json!({ "analysis_names": analysis_names, "id_levels": [1, 2, 3] }),
+            ),
+            (
+                "mass_spec.group_features",
+                json!({
+                    "analysis_names": analysis_names, "method": "internal_standards",
+                    "rt_deviation": 5.0, "ppm": 10.0, "min_samples": 1, "bin_size": 5.0
+                }),
+            ),
+            (
+                "mass_spec.subtract_blank",
+                json!({
+                    "analysis_names": analysis_names, "blank_threshold": 5.0, "rt_expand": 10.0, "mz_expand": 0.005
+                }),
+            ),
+            (
+                "mass_spec.filter_features",
+                json!({
+                    "analysis_names": analysis_names,
+                    "min_intensity": 10000.0,
+                    "remove_isotopes": true, "remove_adducts": true, "remove_losses": true
+                }),
+            ),
+            (
+                "mass_spec.suspect_screening",
+                json!({
+                    "analysis_names": analysis_names, "targets": suspect_targets,
+                    "ppm": 10.0, "sec": 15.0, "ppm_ms2": 10.0, "mzr_ms2": 0.008,
+                    "min_cosine_similarity": 0.7, "min_shared_fragments": 3, "filtered": true
+                }),
+            ),
+            (
+                "mass_spec.filter_suspects",
+                json!({ "analysis_names": analysis_names, "id_levels": [1, 2] }),
+            ),
         ],
     );
 
@@ -319,8 +373,14 @@ fn nta_quantized_wastewater_pipeline() {
 
     let is_csv = ww.join("internal_standards.csv");
     let is_targets = targets_from_csv(&is_csv);
-    assert!(!is_targets.as_array().unwrap().is_empty(), "no IS targets parsed");
-    eprintln!("internal standard targets parsed: {}", is_targets.as_array().unwrap().len());
+    assert!(
+        !is_targets.as_array().unwrap().is_empty(),
+        "no IS targets parsed"
+    );
+    eprintln!(
+        "internal standard targets parsed: {}",
+        is_targets.as_array().unwrap().len()
+    );
     run_method(
         &mut project,
         &methods,
@@ -384,8 +444,14 @@ fn nta_quantized_wastewater_pipeline() {
     );
     let suspects_csv = ww.join("suspects.csv");
     let suspect_targets = targets_from_csv(&suspects_csv);
-    assert!(!suspect_targets.as_array().unwrap().is_empty(), "no suspect targets parsed");
-    eprintln!("suspect targets parsed: {}", suspect_targets.as_array().unwrap().len());
+    assert!(
+        !suspect_targets.as_array().unwrap().is_empty(),
+        "no suspect targets parsed"
+    );
+    eprintln!(
+        "suspect targets parsed: {}",
+        suspect_targets.as_array().unwrap().len()
+    );
     run_method(
         &mut project,
         &methods,
@@ -404,5 +470,5 @@ fn nta_quantized_wastewater_pipeline() {
     );
 
     let _ = fs::remove_file(database);
-        eprintln!("NTA wastewater QUANTIZED conformance pipeline completed successfully.");
+    eprintln!("NTA wastewater QUANTIZED conformance pipeline completed successfully.");
 }

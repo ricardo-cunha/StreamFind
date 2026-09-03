@@ -31,6 +31,9 @@ rust/.cargo/
 # Nested git repositories (have their own .git file); local developer state.
 .worktrees/
 
+# Hermes session and workspace metadata ----------------------------------------
+.hermes/
+
 # DuckDB runtime/import libraries are vendored for native builds ----------------
 !/core/vendor/duckdb/lib/
 !/core/vendor/duckdb/lib/**

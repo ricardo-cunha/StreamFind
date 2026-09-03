@@ -34,7 +34,20 @@ fn reads_agilent_masshunter_scan_index() {
     assert_eq!(profile.intensity.iter().copied().fold(0.0, f32::max), 302.0);
     for record in &records[..3] {
         let check = reader_agilent::read_profile_spectrum(path, record).unwrap();
-        assert!((check.intensity.iter().map(|value| *value as f64).sum::<f64>() - record.tic).abs() < 0.5);
-        assert!((check.intensity.iter().copied().fold(0.0, f32::max) as f64 - record.base_peak_value).abs() < 0.5);
+        assert!(
+            (check
+                .intensity
+                .iter()
+                .map(|value| *value as f64)
+                .sum::<f64>()
+                - record.tic)
+                .abs()
+                < 0.5
+        );
+        assert!(
+            (check.intensity.iter().copied().fold(0.0, f32::max) as f64 - record.base_peak_value)
+                .abs()
+                < 0.5
+        );
     }
 }

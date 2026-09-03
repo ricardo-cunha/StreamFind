@@ -37,28 +37,41 @@ fn opens_every_configured_sciex_wiff_with_consistent_native_surface() {
     assert!(!paths.is_empty(), "SCIEX corpus has no WIFF files");
 
     for path in paths {
-        let reader = Reader::open(&path)
-            .unwrap_or_else(|error| panic!("{}: {error}", path.display()));
+        let reader =
+            Reader::open(&path).unwrap_or_else(|error| panic!("{}: {error}", path.display()));
         assert_eq!(reader.format(), Format::SciexWiff, "{}", path.display());
         assert!(!reader.analysis_catalog().is_empty(), "{}", path.display());
-        assert!(reader
-            .analysis_catalog()
-            .iter()
-            .enumerate()
-            .all(|(index, analysis)| analysis.analysis_index == index), "{}", path.display());
+        assert!(
+            reader
+                .analysis_catalog()
+                .iter()
+                .enumerate()
+                .all(|(index, analysis)| analysis.analysis_index == index),
+            "{}",
+            path.display()
+        );
 
         if reader.spectra().is_empty() {
             assert!(reader.chromatograms().len() >= 2, "{}", path.display());
-            assert!(reader.chromatograms().iter().all(|trace| {
-                trace.time.len() == trace.intensity.len()
-            }), "{}", path.display());
+            assert!(
+                reader
+                    .chromatograms()
+                    .iter()
+                    .all(|trace| { trace.time.len() == trace.intensity.len() }),
+                "{}",
+                path.display()
+            );
         } else {
             assert!(reader.chromatograms().is_empty(), "{}", path.display());
-            assert!(reader.spectra().iter().all(|spectrum| {
-                spectrum.mz.len() == spectrum.intensity.len()
-                    && spectrum.mz.iter().all(|mz| mz.is_finite())
-                    && spectrum.intensity.iter().all(|intensity| *intensity >= 0.0)
-            }), "{}", path.display());
+            assert!(
+                reader.spectra().iter().all(|spectrum| {
+                    spectrum.mz.len() == spectrum.intensity.len()
+                        && spectrum.mz.iter().all(|mz| mz.is_finite())
+                        && spectrum.intensity.iter().all(|intensity| *intensity >= 0.0)
+                }),
+                "{}",
+                path.display()
+            );
         }
     }
 }

@@ -1,6 +1,8 @@
 use serde_json::json;
 use std::{fs, path::Path};
-use streamfind_rust_core::{ErrorCode, MethodRegistry, OperationRegistry, Project, ProjectOptions, Workflow, WorkflowStep};
+use streamfind_rust_core::{
+    ErrorCode, MethodRegistry, OperationRegistry, Project, ProjectOptions, Workflow, WorkflowStep,
+};
 
 fn fixtures() -> [std::path::PathBuf; 3] {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
@@ -13,7 +15,8 @@ fn fixtures() -> [std::path::PathBuf; 3] {
 
 #[test]
 fn finds_wastewater_features() {
-    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-wastewater.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir()
+        .join("streamfind-rust-nta-wastewater.duckdb");
     let _ = fs::remove_file(&database);
     let mut project = Project::create(ProjectOptions {
         database_path: database,
@@ -89,12 +92,18 @@ fn finds_wastewater_features() {
     );
     let mut operations = OperationRegistry::default();
     streamfind_rust_mass_spec::register_operations(&mut operations).unwrap();
-    let features = project.run_operation("mass_spec.get_features", &json!({
-        "analysis_names": ["r001", "r002", "r003"],
-        "targets": [{"id": "Metoprolol-D7", "mass": 274.227, "rt": 915.0, "polarity": 1}],
-        "ppm": 20.0,
-        "rt_tolerance": 5.0
-    }), &operations).unwrap();
+    let features = project
+        .run_operation(
+            "mass_spec.get_features",
+            &json!({
+                "analysis_names": ["r001", "r002", "r003"],
+                "targets": [{"id": "Metoprolol-D7", "mass": 274.227, "rt": 915.0, "polarity": 1}],
+                "ppm": 20.0,
+                "rt_tolerance": 5.0
+            }),
+            &operations,
+        )
+        .unwrap();
     assert_eq!(features["row_count"], 3);
     assert!(features["columns"].get("feature").is_some());
     assert!(features["columns"].get("component_bridge_flag").is_some());
@@ -102,7 +111,8 @@ fn finds_wastewater_features() {
 
 #[test]
 fn rejects_invalid_nta_parameters() {
-    let database = streamfind_rust_test_support::tmp_projects_dir().join("streamfind-rust-nta-validator.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir()
+        .join("streamfind-rust-nta-validator.duckdb");
     let _ = fs::remove_file(&database);
     let mut project = Project::create(ProjectOptions {
         database_path: database,
@@ -184,9 +194,9 @@ fn rejects_invalid_nta_parameters() {
         .unwrap_err();
     assert_eq!(error.code, ErrorCode::WorkflowValidation);
     assert!(
-        error
-            .message
-            .contains("mass_spec.suspect_screening: invalid parameters: targets[0] must provide at least one"),
+        error.message.contains(
+            "mass_spec.suspect_screening: invalid parameters: targets[0] must provide at least one"
+        ),
         "unexpected error: {error}"
     );
 

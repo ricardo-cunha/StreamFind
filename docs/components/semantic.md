@@ -1,6 +1,6 @@
 # Semantic catalogue
 
-The semantic catalogue is the shared public description of StreamFind's
+The semantic catalogue is the shared public description of streamfind's
 interfaces. It defines operation names, workflow Methods, domains, parameters,
 input constraints, result fields, units, nullability, and agent-facing usage
 guidance.

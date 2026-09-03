@@ -61,7 +61,7 @@ sfcore:frameworkVersionColumn
     a sf:Column ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Framework version" ;
-    skos:definition "StreamFind framework version." ;
+    skos:definition "streamfind framework version." ;
     sf:columnName "framework_version" ;
     sf:type "string" ;
     sf:storageType "VARCHAR" .

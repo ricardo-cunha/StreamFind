@@ -8,7 +8,7 @@ use streamfind_rust_core::{
 fn tool_description(entry: &Value) -> String {
     let mut description = format!(
         "{}: {}",
-        entry["label"].as_str().unwrap_or("StreamFind capability"),
+        entry["label"].as_str().unwrap_or("streamfind capability"),
         entry["definition"].as_str().unwrap_or("")
     );
     if let Some(guidance) = entry["interface"]["guidance"].as_str() {

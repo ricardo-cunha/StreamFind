@@ -1,4 +1,4 @@
-# StreamFind build & test scripts
+# streamfind build & test scripts
 
 Machine-independent helpers for building and testing the standalone C++ core
 (`core/`) and the Rust workspace (`rust/`). All transient artifacts land under

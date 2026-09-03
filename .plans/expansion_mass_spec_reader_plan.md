@@ -410,3 +410,256 @@ Before declaring the expansion complete:
 - no speculative calibration equation presented as exact;
 - no secrets, credentials, API keys, passwords, tokens, or connection strings in source, plan, logs, or summaries;
 - external fixtures, generated reports, build trees, and benchmark artifacts remain under `tmp/` and are not committed.
+
+# Legal Notice for Docs
+
+I performed a static provenance and originality audit of the native mass-spectrometry implementation.
+
+## Conclusion
+
+I found **no obvious copied vendor implementation code** in the production C++ or Rust readers.
+
+The implementation appears to be independently authored:
+
+- the changed commits are authored by Ricardo Cunha;
+- production code uses StreamFind-owned namespaces and data structures;
+- there are no vendor SDK headers or vendor source files in the reader paths;
+- no production references to ClearCore, ProteoWizard, `msconvert`, `baf2sql`, or vendor DLLs were found;
+- C++ and Rust contain separate implementations rather than one copied/wrapped implementation;
+- error handling, bounds checks, file access, and metadata models are written in the project’s own style;
+- third-party algorithms such as LZF, Zstandard, OLE parsing, base64, and zlib are implemented or consumed through normal independent/library interfaces rather than copied vendor code.
+
+This is a **technical originality assessment**, not a legal certification. A static code review cannot prove that no restricted source, documentation, or confidential information influenced the implementation.
+
+## Items that deserve provenance review
+
+### 1. Binary offsets and field layouts
+
+Examples include:
+
+```text
+SCIEX Idx record sizes and offsets
+SCIEX DDERealTimeData layouts
+Agilent MSScan.bin record sizes
+Bruker BAF DataVectorBlock offsets
+Shimadzu TLM record layouts
+```
+
+These appear to be functional format facts rather than copied expression. However, document where each was learned:
+
+```text
+public documentation
+legally obtained sample files
+independent byte-level analysis
+development-only oracle comparison
+```
+
+Avoid citing restricted vendor documentation as the source unless legal counsel confirms that use is permitted.
+
+### 2. Calibration equations
+
+The Bruker TSF and provisional BAF calibration logic deserves additional review.
+
+The plan correctly describes the TSF equation as an approximation and records the observed ppm error. It should not be represented as a vendor-exact implementation unless independently validated.
+
+For every calibration rule, record:
+
+```text
+equation provenance
+whether it was independently derived
+whether it came from public literature
+whether it was inferred from observed data
+validation error and fixture set
+```
+
+### 3. Decoder algorithms
+
+The following are common technical algorithms or format mechanisms:
+
+```text
+LZF decompression
+Zstandard decompression
+base64 decoding
+zlib decompression
+OLE compound-file traversal
+bit-packed delta decoding
+```
+
+I did not find copied vendor source for these in the production reader paths. The BAF bit reader and delta decoder are project-owned implementations, but their provenance should still be documented as:
+
+```text
+clean-room implementation from observed format behavior
+```
+
+rather than implying they were copied from vendor software.
+
+### 4. Development-only oracle material
+
+The plan and temporary development history refer to:
+
+```text
+ClearCore
+ProteoWizard
+vendor DLLs
+baf2sql_c.dll
+WinDbg/CDB
+paired mzML files
+```
+
+These references are acceptable in development documentation if they are not distributed as production dependencies. The release package should not include:
+
+- vendor DLLs;
+- vendor SDK headers;
+- decompiled output;
+- proprietary documentation;
+- external vendor files;
+- oracle conversion scripts;
+- confidential traces.
+
+## Third-party code found
+
+The repository contains third-party components that require their own licence audit:
+
+```text
+core/vendor/zstd
+core/vendor/zlib
+core/vendor/pugixml-1.14
+core/vendor/simdutf
+core/vendor/openbabel/openbabel-3-2-0
+core/vendor/json-schema-validator
+```
+
+The relevant licences appear to be retained in the repository:
+
+- Zstandard: BSD/GPL dual licensing;
+- pugixml: MIT;
+- Open Babel: GPL;
+- zlib and other dependencies: review their individual licence files.
+
+The Open Babel resources are clearly third-party GPL material and must remain separated from the originality assessment of the vendor readers. Preserve their original copyright and licence files in every distributed package.
+
+Also audit the Rust dependency tree, especially:
+
+```text
+cfb
+quick-xml
+duckdb
+zstd
+flate2
+base64
+regex
+```
+
+The fact that a crate is commonly used does not replace checking its exact licence and transitive dependencies.
+
+## Where the disclaimer should go
+
+### Primary location: root `README.md`
+
+Add a section near the existing development-status section, preferably before `## Repository layout`:
+
+```markdown
+## Vendor-format compatibility and trademarks
+
+streamfind is an independent open-source project and is not affiliated
+with, sponsored by, or endorsed by Agilent, SCIEX, Bruker, Shimadzu,
+Waters, or any other vendor referenced in the compatibility documentation.
+
+Vendor names, product names, trademarks, and file-format names are used
+solely to identify compatibility with files produced by those systems.
+streamfind does not redistribute vendor software, vendor SDKs, vendor DLLs,
+or vendor proprietary runtime components.
+
+Compatibility is based on the native file structures and datasets validated
+by the project. Support for a particular vendor format, instrument family,
+acquisition mode, or calibration variant is not implied merely because a
+reader exists.
+```
+
+This is the most important placement because it is visible from the repository landing page and applies to all components.
+
+### Package-facing documentation
+
+Also add a shorter version to:
+
+```text
+core/README.md
+rust/README.md
+docs/status.md
+```
+
+For `docs/status.md`, place it immediately after the “Compatibility scope” section. This matters because users may read the documentation site without first visiting the repository README.
+
+### Distribution metadata
+
+Add a `NOTICE.md` or equivalent distribution notice if the release archives are distributed independently from the source repository. It should list:
+
+- third-party libraries;
+- their licences;
+- any required attribution;
+- the independent-vendor compatibility notice.
+
+The existing root `LICENSE.md` is the GPLv3 licence text, but it is not a substitute for a third-party attribution notice.
+
+## Where not to put it
+
+Do not put the vendor non-affiliation disclaimer only:
+
+- inside individual parser source files;
+- inside C++/Rust namespaces;
+- in test files;
+- only in the development plan;
+- only in the MCP response;
+- only in release notes.
+
+Those locations are too easy to miss and do not adequately cover binary distributions.
+
+## Recommended provenance file
+
+Before public release, create a maintained internal or public document such as:
+
+```text
+.plans/provenance/mass-spec-format-provenance.md
+```
+
+For each format, use a table like:
+
+```markdown
+| Format | Knowledge source | Restricted material used | Production dependency |
+|---|---|---|---|
+| Agilent MassHunter | Public/sample-file analysis | None known | None |
+| SCIEX WIFF | Public/sample-file analysis | None known | None |
+| Bruker TSF/BAF | Public/sample-file analysis | None known | None |
+| Shimadzu LCD | Public/sample-file analysis | None known | None |
+| mzML/mzXML | Public specifications | None known | None |
+```
+
+For each row, add:
+
+```text
+- sample-file provenance;
+- whether an NDA or SDK licence applied;
+- whether reverse engineering was contractually restricted;
+- whether an oracle was used;
+- whether the production implementation was independently rewritten;
+- known calibration limitations;
+- unsupported variants.
+```
+
+## Overall risk assessment
+
+Based on the code structure alone:
+
+| Area | Assessment |
+|---|---|
+| Original StreamFind parser code | No obvious copying found |
+| Vendor source/header inclusion | None found in production reader paths |
+| Vendor runtime dependency | None found in production reader paths |
+| Functional binary layout facts | Usually lower risk, jurisdiction-dependent |
+| Reverse-engineering contractual restrictions | Requires human/legal review |
+| Calibration provenance | Needs explicit documentation |
+| Third-party library licensing | Requires release audit |
+| Trademark/non-affiliation notice | Should be added to README/docs |
+| Legal release clearance | Not established by this audit |
+
+The engineering approach is consistent with a clean-room native-reader distribution, but counsel should review the provenance of the format discoveries, any vendor agreements, and the final dependency/licence inventory before commercial or public redistribution.

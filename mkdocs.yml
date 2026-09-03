@@ -4,7 +4,7 @@ site_description: >-
   processing, spanning a semantic catalogue, independent C++ and Rust
   backends, native MCP servers, and language bindings.
 site_url: https://streamfind.odea-project.org/
-repo_url: https://github.com/odea-project/StreamFind
+repo_url: https://github.com/odea-project/streamfind
 edit_uri: edit/master/docs/
 
 theme:
@@ -52,6 +52,7 @@ nav:
   - Home: index.md
   - Availability: status.md
   - Releases: releases.md
+
   - How streamfind works: architecture.md
   - Components:
       - Semantic catalogue: components/semantic.md

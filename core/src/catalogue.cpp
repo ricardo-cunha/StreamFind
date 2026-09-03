@@ -269,7 +269,7 @@ std::optional<Json> tools_json() {
                             {"_meta", {{"streamfind", entry.at("interface")}}},
                             // No outputSchema: MCP requires it to be a JSON-Schema
                             // object AND that every result carries matching
-                            // structuredContent. StreamFind results are table-like
+                            // structuredContent. streamfind results are table-like
                             // documents returned as text content, so omitting
                             // outputSchema is the spec-correct shape (it is optional
                             // in MCP). The semantic result schema remains available

@@ -1,7 +1,7 @@
 //! `~/.streamfind` tool-layout resolution tests (mirrors `bindings/r`).
-use streamfind_external::tools::{resolve_java, resolve_metfrag, resolve_metfrag_jar};
 use std::sync::Mutex;
 use std::{env, fs, path::PathBuf};
+use streamfind_external::tools::{resolve_java, resolve_metfrag, resolve_metfrag_jar};
 
 /// Tests mutate process environment; serialize them (cargo runs in parallel).
 static ENV_LOCK: Mutex<()> = Mutex::new(());
@@ -54,13 +54,20 @@ fn java_home_fallback_is_tried() {
         p.to_str()
             .unwrap_or("")
             .split(if cfg!(windows) { ';' } else { ':' })
-            .any(|d| PathBuf::from(d).join(if cfg!(windows) { "java.exe" } else { "java" }).is_file())
+            .any(|d| {
+                PathBuf::from(d)
+                    .join(if cfg!(windows) { "java.exe" } else { "java" })
+                    .is_file()
+            })
     }) {
         // java on PATH shadows JAVA_HOME by design (R rule: PATH first)
         return;
     }
     let java = resolve_java().expect("JAVA_HOME java");
-    assert!(java.ends_with(&format!("bin/{JAVA_EXECUTABLE}")), "{java:?}");
+    assert!(
+        java.ends_with(&format!("bin/{JAVA_EXECUTABLE}")),
+        "{java:?}"
+    );
     env::remove_var("JAVA_HOME");
     let _ = fs::remove_dir_all(&root);
 }

@@ -1,5 +1,5 @@
 use serde_json::json;
-use std::{fs, path::Path};
+use std::fs;
 use streamfind_rust_core::{Project, ProjectOptions};
 use streamfind_rust_mass_spec::{
     processing_methods_chromatograms::{
@@ -10,13 +10,14 @@ use streamfind_rust_mass_spec::{
 };
 
 fn fixture() -> std::path::PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../..")
-        .join("tests/data/mass_spec/shimadzu/karl.mzML")
+    streamfind_rust_test_support::shimadzu_data_dir()
+        .expect("Shimadzu fixtures unavailable; set STREAMFIND_SHIMADZU_DATA_ROOT")
+        .join("karl.mzML")
 }
 
 fn project(name: &str) -> Project {
-    let database = streamfind_rust_test_support::tmp_projects_dir().join(format!("streamfind-{name}.duckdb"));
+    let database =
+        streamfind_rust_test_support::tmp_projects_dir().join(format!("streamfind-{name}.duckdb"));
     let _ = fs::remove_file(&database);
     Project::create(ProjectOptions {
         database_path: database,
@@ -215,7 +216,16 @@ fn replicas_stay_out_of_the_chromatograms_table() {
         !names.contains(&"replicate"),
         "replicate must not be a MASS_SPEC_CHROMATOGRAMS column: {names:?}"
     );
-    for expected in ["index", "polarity", "precursor_mz", "activation_ce", "product_mz"] {
-        assert!(names.contains(&expected), "missing column {expected}: {names:?}");
+    for expected in [
+        "index",
+        "polarity",
+        "precursor_mz",
+        "activation_ce",
+        "product_mz",
+    ] {
+        assert!(
+            names.contains(&expected),
+            "missing column {expected}: {names:?}"
+        );
     }
 }

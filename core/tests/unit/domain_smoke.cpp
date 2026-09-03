@@ -171,7 +171,13 @@ int run_domain_smoke() {
         return 1;
     }
 
-    const auto karl = data / "shimadzu" / "karl.mzML";
+    const auto shimadzu = std::filesystem::path(STREAMFIND_SHIMADZU_DATA_ROOT);
+    const auto karl = shimadzu / "karl.mzML";
+    if (shimadzu.empty() || !std::filesystem::exists(karl)) {
+        std::cerr << "Shimadzu external fixtures unavailable; skipping Shimadzu domain checks\n";
+        std::filesystem::remove(database, error);
+        return 0;
+    }
     project.run_operation("mass_spec.add_analyses", { {"analyses", streamfind::Json::array({streamfind::Json{{"path", karl.string()}}})} }, operations);
     const auto raw_chromatograms = project.run_operation("mass_spec.get_raw_chromatograms", {{"analysis_names", streamfind::Json::array({"karl"})}, {"indices", streamfind::Json::array({0})}}, operations);
     if (raw_chromatograms.at("row_count") != 695) return fail("raw chromatograms");

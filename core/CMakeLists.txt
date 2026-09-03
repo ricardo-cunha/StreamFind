@@ -114,6 +114,31 @@ install(
 )
 
 install(
+    FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/../LICENSE.md"
+        "${CMAKE_CURRENT_SOURCE_DIR}/../NOTICE.md"
+    DESTINATION .
+)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/vendor/duckdb/LICENSE"
+    DESTINATION licenses RENAME duckdb-LICENSE.txt)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/vendor/openbabel/openbabel-3-2-0/COPYING"
+    DESTINATION licenses RENAME openbabel-COPYING.txt)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/vendor/zstd/LICENSE"
+    DESTINATION licenses RENAME zstd-LICENSE.txt)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/vendor/zstd/COPYING"
+    DESTINATION licenses RENAME zstd-COPYING.txt)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/vendor/zlib/zlib-develop/LICENSE"
+    DESTINATION licenses RENAME zlib-LICENSE.txt)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/vendor/pugixml-1.14/LICENSE"
+    DESTINATION licenses RENAME pugixml-LICENSE.txt)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/vendor/simdutf/LICENSE"
+    DESTINATION licenses RENAME simdutf-LICENSE.txt)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/vendor/nlohmann/LICENSE"
+    DESTINATION licenses RENAME nlohmann-json-LICENSE.txt)
+install(FILES "${CMAKE_CURRENT_SOURCE_DIR}/vendor/json-schema-validator/LICENSE"
+    DESTINATION licenses RENAME json-schema-validator-LICENSE.txt)
+
+install(
     EXPORT streamfind-core-targets
     FILE streamfind-core-targets.cmake
     NAMESPACE streamfind::

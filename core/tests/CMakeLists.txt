@@ -32,8 +32,17 @@ add_test(NAME streamfind_mcp_tests COMMAND streamfind_mcp_tests)
 
 add_executable(streamfind_domain_tests unit/domain_smoke.cpp)
 target_link_libraries(streamfind_domain_tests PRIVATE streamfind::core streamfind_mass_spec streamfind_raman streamfind_sensors)
+set(STREAMFIND_SHIMADZU_DATA_ROOT "" CACHE PATH "Path to external Shimadzu example files")
+if(NOT STREAMFIND_SHIMADZU_DATA_ROOT)
+    if(WIN32 AND EXISTS "E:/example_files/raw_vendor_files/shimadzu")
+        set(STREAMFIND_SHIMADZU_DATA_ROOT "E:/example_files/raw_vendor_files/shimadzu")
+    elseif(UNIX AND EXISTS "/mnt/e/example_files/raw_vendor_files/shimadzu")
+        set(STREAMFIND_SHIMADZU_DATA_ROOT "/mnt/e/example_files/raw_vendor_files/shimadzu")
+    endif()
+endif()
 target_compile_definitions(streamfind_domain_tests PRIVATE
     STREAMFIND_MASS_SPEC_DATA_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/../../tests/data/mass_spec"
+    STREAMFIND_SHIMADZU_DATA_ROOT="${STREAMFIND_SHIMADZU_DATA_ROOT}"
     STREAMFIND_CATALOGUE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../../semantic/generated/catalogue.duckdb"
 )
 add_test(NAME streamfind_domain_tests COMMAND streamfind_domain_tests)

@@ -1,6 +1,6 @@
 # Python package
 
-A public Python package is not currently released by StreamFind.
+A public Python package is not currently released by streamfind.
 
 !!! warning "Not currently available"
     The C++ and Rust native packages do not provide a public Python import

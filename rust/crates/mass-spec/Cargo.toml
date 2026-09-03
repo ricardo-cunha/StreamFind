@@ -138,6 +138,7 @@ path = "tests/nta_query_ops.rs"
 [[test]]
 name = "processing_chromatograms"
 path = "tests/processing_chromatograms.rs"
+required-features = ["reader-interface-tests"]
 
 [[test]]
 name = "nta_last_two"
