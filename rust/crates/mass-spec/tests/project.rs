@@ -114,9 +114,9 @@ fn domain_smoke_matches_cpp_mass_spec_operations() {
         .iter()
         .any(|operation| operation["id"] == "mass_spec.add_analyses"));
 
-    let data = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../..")
-        .join("tests/data/mass_spec/wastewater");
+    let data = streamfind_rust_test_support::example_data_dir()
+        .expect("streamfind.data unavailable; set STREAMFIND_EXAMPLE_DATA_ROOT")
+        .join("mass_spec/wastewater");
     let paths = [
         data.join("01_tof_ww_is_pos_blank-r001.mzML"),
         data.join("01_tof_ww_is_pos_blank-r002.mzML"),
@@ -219,9 +219,9 @@ fn domain_smoke_matches_cpp_mass_spec_operations() {
         .unwrap()
         .iter()
         .all(|value| value == "01_tof_ww_is_pos_blank-r001:0"));
-    let targets =
-        include_str!("../../../../tests/data/mass_spec/wastewater/internal_standards.csv")
-            .lines()
+    let targets = fs::read_to_string(data.join("internal_standards.csv"))
+        .unwrap()
+        .lines()
             .skip(1)
             .filter_map(|line| {
                 let fields = line.splitn(5, ',').collect::<Vec<_>>();

@@ -38,22 +38,29 @@ pub fn repo_root() -> PathBuf {
         .to_path_buf()
 }
 
-/// Returns the external Shimadzu example directory when it is available.
+/// Returns the external streamfind.data example directory when it is available.
 ///
-/// `STREAMFIND_SHIMADZU_DATA_ROOT` is the portable override for developer
+/// `STREAMFIND_EXAMPLE_DATA_ROOT` is the portable override for developer
 /// machines. The E: location is the default on Windows; WSL sees that drive at
 /// `/mnt/e`.
-pub fn shimadzu_data_dir() -> Option<PathBuf> {
-    if let Ok(path) = std::env::var("STREAMFIND_SHIMADZU_DATA_ROOT") {
+pub fn example_data_dir() -> Option<PathBuf> {
+    if let Ok(path) = std::env::var("STREAMFIND_EXAMPLE_DATA_ROOT") {
         let path = PathBuf::from(path);
         return path.is_dir().then_some(path);
     }
     [
-        PathBuf::from(r"E:\example_files\raw_vendor_files\shimadzu"),
-        PathBuf::from("/mnt/e/example_files/raw_vendor_files/shimadzu"),
+        PathBuf::from(r"E:\example_files\streamfind.data"),
+        PathBuf::from("/mnt/e/example_files/streamfind.data"),
     ]
     .into_iter()
     .find(|path| path.is_dir())
+}
+
+/// Returns the external Shimadzu example directory when it is available.
+pub fn shimadzu_data_dir() -> Option<PathBuf> {
+    example_data_dir()
+        .map(|path| path.join("shimadzu"))
+        .filter(|path| path.is_dir())
 }
 
 /// Parses the committed semantic catalogue (`semantic/generated/catalogue.json`)

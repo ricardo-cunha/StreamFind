@@ -1,7 +1,7 @@
 # streamfind
 
 <p align="center">
-  <img src="bindings/r/inst/app/www/streamfind.png" width="70%" />
+  <img src="docs\assets\streamfind.png" width="70%" />
 </p>
 
 streamfind is a DuckDB-backed framework for analytical data processing. It
@@ -85,7 +85,7 @@ options(timeout = 600)
 if (!requireNamespace("remotes", quietly = TRUE)) {
   install.packages("remotes")
 }
-remotes::install_github("odea-project/streamfind", subdir = "bindings/r")
+remotes::install_github("ricardo-cunha/streamfind", subdir = "bindings/r")
 ```
 
 See [`docs/components/bindings-r.md`](docs/components/bindings-r.md) for the R

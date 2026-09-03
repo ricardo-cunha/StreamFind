@@ -78,7 +78,7 @@ Compatibility is based on native file structures and datasets validated by the
 project. Support for a vendor format, instrument family, acquisition mode, or
 calibration variant is not implied merely because a reader exists.
 
-See the root [`NOTICE.md`](https://github.com/odea-project/streamfind/blob/dev_refactoring/NOTICE.md)
+See the root [`NOTICE.md`](https://github.com/ricardo-cunha/streamfind/blob/dev_refactoring/NOTICE.md)
 for the distribution notice and compatibility boundaries.
 
 ## Future interfaces

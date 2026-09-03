@@ -2,14 +2,15 @@
 //! only must yield an EIC — the exact mass is derived with Open Babel and
 //! converted to an m/z window with the polarity-aware adduct.
 use serde_json::{json, Value};
-use std::{fs, path::Path};
+use std::fs;
 use streamfind_rust_core::{OperationRegistry, Project, ProjectOptions};
 
 fn fixtures() -> [std::path::PathBuf; 2] {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+    let root = streamfind_rust_test_support::example_data_dir()
+        .expect("streamfind.data unavailable; set STREAMFIND_EXAMPLE_DATA_ROOT");
     [
-        root.join("tests/data/mass_spec/basic_tof/00_tof_s_is_pos_cent-r002.mzML"),
-        root.join("tests/data/mass_spec/basic_tof/00_tof_s_is_pos_cent-r003.mzML"),
+        root.join("mass_spec/basic_tof/00_tof_s_is_pos_cent-r002.mzML"),
+        root.join("mass_spec/basic_tof/00_tof_s_is_pos_cent-r003.mzML"),
     ]
 }
 

@@ -148,7 +148,7 @@ scripts/publish-release.ps1 -Version <version> -Replace
 This uses `gh release upload --clobber`. Do not move an already-published tag
 for a materially different code revision; create a new version instead.
 
-The current official repository is `odea-project/streamfind`. Use
+The current official repository is `ricardo-cunha/streamfind`. Use
 `-Repository <owner>/<repo>` only when publishing to a deliberately different
 repository. GitHub Release assets are separate from commits and do not update
 automatically when `scripts/release.ps1` is run.

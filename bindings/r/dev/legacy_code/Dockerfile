@@ -54,7 +54,7 @@ RUN R -e "remotes::install_github('rickhelmus/patRoonExt')"
 RUN R -e "remotes::install_github('rickhelmus/patRoonInst')"
 RUN R -e "patRoonInst::install()"
 RUN R -e "BiocManager::install('odea-project/StreamFindData', dependencies = TRUE)"
-RUN R -e "BiocManager::install('odea-project/streamfind', dependencies = TRUE)"
+RUN R -e "BiocManager::install('ricardo-cunha/streamfind', dependencies = TRUE)"
 
 # Added directly to dockerfile to avoid missing file at startup
 # Copy the start.sh script to the container

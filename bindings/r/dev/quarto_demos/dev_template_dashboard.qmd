@@ -8,7 +8,7 @@ format:
     embed-resources: true
     nav-buttons:
       - icon: github
-        href: https://github.com/odea-project/streamfind
+        href: https://github.com/ricardo-cunha/streamfind
 editor_options:
   chunk_output_type: console
 ---

@@ -1,5 +1,3 @@
-set(STREAMFIND_TEST_DATA_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../../tests/data" CACHE PATH "Path to streamfind test data")
-
 add_subdirectory(mass_spec)
 
 add_executable(streamfind_mass_spec_reader_tests mass_spec/tests/reader_smoke.cpp)

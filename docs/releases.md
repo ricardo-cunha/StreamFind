@@ -7,6 +7,11 @@ compatibility-stable SDK releases.
 
 The GitHub Release is the authoritative distribution location.
 
+The project source is maintained at
+<https://github.com/ricardo-cunha/streamfind>. The `v0.1.0` assets listed below
+are historical downloads that remain hosted at their original release location;
+new releases will be published from the current repository.
+
 ## Project version: {{ streamfind_version }}
 
 The native C++ and Rust project metadata now targets version **{{ streamfind_version }}**. The
@@ -71,7 +76,7 @@ the licence terms that apply to the packaged runtime. Native archives do not
 include vendor SDKs, vendor DLLs, proprietary vendor software, development-only
 oracle tools, or external vendor sample files.
 
-See the repository [`NOTICE.md`](https://github.com/odea-project/streamfind/blob/dev_refactoring/NOTICE.md)
+See the repository [`NOTICE.md`](https://github.com/ricardo-cunha/streamfind/blob/dev_refactoring/NOTICE.md)
 for the current attribution and legal-review boundary.
 
 ## Extract and run

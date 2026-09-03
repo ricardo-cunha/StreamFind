@@ -7,8 +7,9 @@ use std::{
 };
 use streamfind_rust_core::{OperationRegistry, Project, ProjectOptions};
 
-fn root() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../..")
+fn root() -> std::path::PathBuf {
+    streamfind_rust_test_support::example_data_dir()
+        .expect("streamfind.data unavailable; set STREAMFIND_EXAMPLE_DATA_ROOT")
 }
 
 fn create_project(name: &str) -> (Project, PathBuf, OperationRegistry) {
@@ -49,9 +50,9 @@ fn columns(result: &Value, name: &str) -> Vec<Value> {
 #[test]
 fn persists_multiple_files_and_reopens_indexed_analysis_selection() {
     let files = [
-        root().join("tests/data/mass_spec/wastewater/01_tof_ww_is_pos_blank-r001.mzML"),
-        root().join("tests/data/mass_spec/wastewater/01_tof_ww_is_pos_blank-r002.mzML"),
-        root().join("tests/data/mass_spec/wastewater/01_tof_ww_is_pos_blank-r003.mzML"),
+        root().join("mass_spec/wastewater/01_tof_ww_is_pos_blank-r001.mzML"),
+        root().join("mass_spec/wastewater/01_tof_ww_is_pos_blank-r002.mzML"),
+        root().join("mass_spec/wastewater/01_tof_ww_is_pos_blank-r003.mzML"),
     ];
     let (mut project, database, operations) = create_project("mass-spec-multi-file-indexed");
     add_sources(

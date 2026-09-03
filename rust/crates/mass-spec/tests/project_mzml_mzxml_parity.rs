@@ -49,12 +49,13 @@ const RAW_COLUMNS: [&str; 14] = [
 fn fixture_paths() -> [(String, PathBuf); 2] {
     let shimadzu = streamfind_rust_test_support::shimadzu_data_dir()
         .expect("Shimadzu fixtures unavailable; set STREAMFIND_SHIMADZU_DATA_ROOT");
-    let root = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../..");
+    let root = streamfind_rust_test_support::example_data_dir()
+        .expect("streamfind.data unavailable; set STREAMFIND_EXAMPLE_DATA_ROOT");
     [
         ("mzml".into(), shimadzu.join("karl.mzML")),
         (
             "mzxml".into(),
-            root.join("tests/data/mass_spec/basic_tof/00_tof_s_is_pos_mzxml_cent-r001.mzXML"),
+            root.join("mass_spec/basic_tof/00_tof_s_is_pos_mzxml_cent-r001.mzXML"),
         ),
     ]
 }

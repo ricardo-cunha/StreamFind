@@ -10,9 +10,9 @@ use streamfind_rust_core::{
 };
 
 fn basic_tof_root() -> std::path::PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../..")
-        .join("tests/data/mass_spec/basic_tof")
+    streamfind_rust_test_support::example_data_dir()
+        .expect("streamfind.data unavailable; set STREAMFIND_EXAMPLE_DATA_ROOT")
+        .join("mass_spec/basic_tof")
 }
 
 fn setup_project(database: &Path, analysis: &str, fixture: &Path) -> Project {
@@ -75,7 +75,7 @@ fn suspect_count(project: &Project) -> i64 {
         .unwrap_or(0)
 }
 
-// Metoprolol row from tests/data/mass_spec/basic_tof/suspects.csv.
+// Metoprolol row from streamfind.data/mass_spec/basic_tof/suspects.csv.
 const METOPROLOL_SMILES: &str = "COCCc1ccc(cc1)OCC(CNC(C)C)O";
 const METOPROLOL_INCHI: &str =
     "InChI=1S/C15H25NO3/c1-12(2)16-10-14(17)11-19-15-6-4-13(5-7-15)8-9-18-3/h4-7,12,14,16-17H,8-11H2,1-3H3";

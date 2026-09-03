@@ -21,7 +21,7 @@ options(timeout = 600)
 if (!requireNamespace("remotes", quietly = TRUE)) {
   install.packages("remotes")
 }
-remotes::install_github("odea-project/streamfind", subdir = "bindings/r")
+remotes::install_github("ricardo-cunha/streamfind", subdir = "bindings/r")
 ```
 
 The companion example-data package can be installed separately:

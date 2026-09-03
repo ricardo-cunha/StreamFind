@@ -22,6 +22,31 @@ and Log Locations"): build trees in `tmp/build/`, release packages in
 
 Every `.cmd` is a thin wrapper over its `.ps1`; use either form.
 
+## External example data
+
+Large mass-spectrometry and Raman example datasets are maintained outside the
+repository under the local `streamfind.data` directory:
+
+```text
+E:/example_files/streamfind.data
+```
+
+The C++ tests detect this location automatically when it exists. To use a
+different location, configure CMake with:
+
+```text
+-DSTREAMFIND_TEST_DATA_ROOT=<path-to-streamfind.data>
+```
+
+Rust tests use the same layout and accept:
+
+```text
+STREAMFIND_EXAMPLE_DATA_ROOT=<path-to-streamfind.data>
+```
+
+Only small backend-neutral fixtures remain under `tests/fixtures/`; large
+example datasets are not release contents.
+
 ## Toolchain detection (recommended standards)
 
 `scripts/build-common.ps1` resolves the toolchain with no hardcoded machine

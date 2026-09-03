@@ -18,7 +18,7 @@ param(
     [Parameter(Mandatory = $true)]
     [ValidatePattern('^\d+\.\d+\.\d+(?:[-+][0-9A-Za-z.-]+)?$')]
     [string]$Version,
-    [string]$Repository = 'odea-project/streamfind',
+    [string]$Repository = 'ricardo-cunha/streamfind',
     [switch]$Replace
 )
 

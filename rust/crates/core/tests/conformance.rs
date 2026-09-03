@@ -5,7 +5,7 @@ use streamfind_rust_core::{Project, ProjectOptions};
 
 fn fixture() -> Value {
     serde_json::from_str(include_str!(
-        "../../../../tests/data/project/project_conformance.json"
+        "../../../../tests/fixtures/project/project_conformance.json"
     ))
     .unwrap()
 }

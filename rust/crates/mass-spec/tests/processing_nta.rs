@@ -1,15 +1,16 @@
 use serde_json::json;
-use std::{fs, path::Path};
+use std::fs;
 use streamfind_rust_core::{
     ErrorCode, MethodRegistry, OperationRegistry, Project, ProjectOptions, Workflow, WorkflowStep,
 };
 
 fn fixtures() -> [std::path::PathBuf; 3] {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../..");
+    let root = streamfind_rust_test_support::example_data_dir()
+        .expect("streamfind.data unavailable; set STREAMFIND_EXAMPLE_DATA_ROOT");
     [
-        root.join("tests/data/mass_spec/wastewater/01_tof_ww_is_pos_blank-r001.mzML"),
-        root.join("tests/data/mass_spec/wastewater/01_tof_ww_is_pos_blank-r002.mzML"),
-        root.join("tests/data/mass_spec/wastewater/01_tof_ww_is_pos_blank-r003.mzML"),
+        root.join("mass_spec/wastewater/01_tof_ww_is_pos_blank-r001.mzML"),
+        root.join("mass_spec/wastewater/01_tof_ww_is_pos_blank-r002.mzML"),
+        root.join("mass_spec/wastewater/01_tof_ww_is_pos_blank-r003.mzML"),
     ]
 }
 

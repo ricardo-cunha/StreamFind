@@ -2,7 +2,7 @@
   "fixtures": [
     {
       "id": "project_conformance",
-      "path": "../../data/project/project_conformance.json",
+      "path": "../project/project_conformance.json",
       "domain": "mass_spec",
       "consumers": ["cpp", "rust"]
     },

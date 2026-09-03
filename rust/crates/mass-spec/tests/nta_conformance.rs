@@ -11,9 +11,9 @@ use std::{fs, path::Path};
 use streamfind_rust_core::{MethodRegistry, Project, ProjectOptions, Workflow, WorkflowStep};
 
 fn wastewater_root() -> std::path::PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../..")
-        .join("tests/data/mass_spec/wastewater")
+    streamfind_rust_test_support::example_data_dir()
+        .expect("streamfind.data unavailable; set STREAMFIND_EXAMPLE_DATA_ROOT")
+        .join("mass_spec/wastewater")
 }
 
 /// Minimal RFC-4180-ish CSV parse: rows including the header row as element 0.

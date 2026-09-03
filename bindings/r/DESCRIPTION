@@ -21,8 +21,8 @@ Description: streamfind provides a DuckDB-backed project framework for
     to support transparent, reusable processing pipelines for research
     and routine analytical work.
 License: GPL-3
-URL: https://github.com/odea-project/streamfind, https://odea-project.github.io/streamfind/
-BugReports: https://github.com/odea-project/streamfind/issues
+URL: https://github.com/ricardo-cunha/streamfind, https://odea-project.github.io/streamfind/
+BugReports: https://github.com/ricardo-cunha/streamfind/issues
 Depends: R (>= 4.3.0)
 Imports:
     R6,

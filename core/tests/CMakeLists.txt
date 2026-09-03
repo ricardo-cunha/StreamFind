@@ -41,7 +41,7 @@ if(NOT STREAMFIND_SHIMADZU_DATA_ROOT)
     endif()
 endif()
 target_compile_definitions(streamfind_domain_tests PRIVATE
-    STREAMFIND_MASS_SPEC_DATA_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/../../tests/data/mass_spec"
+    STREAMFIND_MASS_SPEC_DATA_ROOT="${STREAMFIND_TEST_DATA_ROOT}/mass_spec"
     STREAMFIND_SHIMADZU_DATA_ROOT="${STREAMFIND_SHIMADZU_DATA_ROOT}"
     STREAMFIND_CATALOGUE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/../../semantic/generated/catalogue.duckdb"
 )
@@ -50,7 +50,7 @@ add_test(NAME streamfind_domain_tests COMMAND streamfind_domain_tests)
 add_executable(streamfind_conformance_tests unit/conformance.cpp)
 target_link_libraries(streamfind_conformance_tests PRIVATE streamfind::core)
 target_compile_definitions(streamfind_conformance_tests PRIVATE
-    STREAMFIND_CONFORMANCE_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/../../tests/data/project/project_conformance.json"
+    STREAMFIND_CONFORMANCE_FIXTURE="${CMAKE_CURRENT_SOURCE_DIR}/../../tests/fixtures/project/project_conformance.json"
 )
 add_test(NAME streamfind_conformance_tests COMMAND streamfind_conformance_tests)
 

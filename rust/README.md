@@ -115,7 +115,7 @@ The Rust and C++ implementations share the `PROJECT`, `CACHE`, and
 audit representation. Shared fixtures and interoperability tests live in:
 
 ```text
-tests/data/project/project_conformance.json
+tests/fixtures/project/project_conformance.json
 core/tests/unit/conformance.cpp
 rust/crates/core/tests/conformance.rs
 ```
