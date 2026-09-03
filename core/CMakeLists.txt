@@ -171,9 +171,15 @@ if(STREAMFIND_DUCKDB_IMPORT_LIBRARY AND EXISTS "${STREAMFIND_DUCKDB_IMPORT_LIBRA
     install(FILES "${STREAMFIND_DUCKDB_IMPORT_LIBRARY}" DESTINATION lib)
 endif()
 
-# catalogue.duckdb is a required installation artifact (the runtime knowledge
-# base of the MCP servers); install it next to the DuckDB runtime under share.
-install(FILES "${STREAMFIND_SEMANTIC_DIR}/catalogue.duckdb" DESTINATION share/streamfind)
+# Catalogue files are required installation artifacts (the runtime knowledge
+# base and JSON projection used by the MCP servers); install them together
+# under share/streamfind.
+install(
+    FILES
+        "${STREAMFIND_SEMANTIC_DIR}/catalogue.duckdb"
+        "${STREAMFIND_SEMANTIC_DIR}/catalogue.json"
+    DESTINATION share/streamfind
+)
 
 add_subdirectory(domains)
 
