@@ -127,7 +127,6 @@ if ($Rust) {
     $share = Join-Path $packagedRoot 'share\streamfind'
     New-Item -ItemType Directory -Force -Path $share | Out-Null
     Copy-Item (Join-Path $root 'semantic\generated\catalogue.duckdb') $share
-    Copy-Item (Join-Path $root 'semantic\generated\catalogue.json')   $share
     Copy-Item (Join-Path $root 'LICENSE.md') $packagedRoot
     Copy-Item (Join-Path $root 'NOTICE.md') $packagedRoot
     Copy-Item (Join-Path $rustDir 'LICENSES.md') $packagedRoot

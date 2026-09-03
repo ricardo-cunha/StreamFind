@@ -135,7 +135,6 @@ if [ "${STREAMFIND_BUILD_RUST:-1}" != "0" ]; then
     cp "$CARGO_TARGET_DIR/release/streamfind-rust-cli" "$STAGING/bin/"
     cp "$CARGO_TARGET_DIR/release/streamfind-rust-mcp"  "$STAGING/bin/"
     cp "$REPO_ROOT/semantic/generated/catalogue.duckdb" "$STAGING/share/streamfind/"
-    cp "$REPO_ROOT/semantic/generated/catalogue.json"   "$STAGING/share/streamfind/"
     cp "$REPO_ROOT/LICENSE.md" "$STAGING/"
     cp "$REPO_ROOT/NOTICE.md" "$STAGING/"
     cp "$REPO_ROOT/rust/LICENSES.md" "$STAGING/"

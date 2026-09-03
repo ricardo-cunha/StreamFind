@@ -54,10 +54,11 @@ The Rust archives contain:
 - `bin/streamfind-rust-cli.exe` or `bin/streamfind-rust-cli`;
 - `bin/streamfind-rust-mcp.exe` or `bin/streamfind-rust-mcp`;
 - `share/streamfind/catalogue.duckdb`;
-- `share/streamfind/catalogue.json`.
+- the native runtime dependencies assembled for the package.
 
-The catalogue files are required runtime data. Do not remove them from the
-package or distribute the MCP executable without them.
+`share/streamfind/catalogue.duckdb` is required runtime data for both native
+backends. Do not remove it from the package or distribute an MCP executable
+without it.
 
 ## Legal and attribution files
 
@@ -94,8 +95,7 @@ streamfind-rust-0.1.0-Windows-x86_64/
 │   ├── streamfind-rust-cli.exe
 │   └── streamfind-rust-mcp.exe
 └── share/streamfind/
-    ├── catalogue.duckdb
-    └── catalogue.json
+    └── catalogue.duckdb
 ```
 
 ## Release scope
