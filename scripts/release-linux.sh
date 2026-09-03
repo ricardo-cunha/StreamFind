@@ -136,7 +136,7 @@ if [ "${STREAMFIND_BUILD_RUST:-1}" != "0" ]; then
         fi
     fi
 
-    STAGING="$WORK/rust-staging"
+    STAGING="$WORK/streamfind-rust-$VERSION-$ARCH"
     rm -rf "$STAGING"
     mkdir -p "$STAGING/bin" "$STAGING/share/streamfind"
     cp "$CARGO_TARGET_DIR/release/streamfind-rust-cli" "$STAGING/bin/"
@@ -148,7 +148,7 @@ if [ "${STREAMFIND_BUILD_RUST:-1}" != "0" ]; then
     assert_distribution_payload "$STAGING" LICENSES.md
 
     RUST_TGZ="$OUT_DIR/streamfind-rust-$VERSION-Linux-$ARCH.tgz"
-    (cd "$STAGING" && tar czf "$RUST_TGZ" .)
+    (cd "$WORK" && tar czf "$RUST_TGZ" "$(basename "$STAGING")")
     assert_archive_payload "$RUST_TGZ" LICENSES.md
     echo "[release-linux] rust archive: $(basename "$RUST_TGZ") ($(du -h "$RUST_TGZ" | cut -f1))"
 fi
