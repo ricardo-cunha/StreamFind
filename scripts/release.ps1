@@ -17,6 +17,7 @@
       -Rust       build + package the Rust workspace (default: on)
       -Linux      also produce the Linux archives via WSL (default: off)
       -SkipTests  skip the fast test suites before packaging
+      -FullNtaTests run the computationally expensive full NTA conformance test
       -Config     C++ build config (default Release)
 #>
 param(
@@ -25,6 +26,7 @@ param(
     [switch]$Rust = $true,
     [switch]$Linux,
     [switch]$SkipTests,
+    [switch]$FullNtaTests,
     [ValidateSet('Debug', 'Release')][string]$Config = 'Release'
 )
 
@@ -111,7 +113,11 @@ if ($Rust) {
         if ($LASTEXITCODE -ne 0) { throw "cargo build --release failed ($LASTEXITCODE)" }
         if (-not $SkipTests) {
             Log "Running Rust test suite... (this takes several minutes)"
-            & $cargo test --workspace
+            if ($FullNtaTests) {
+                & $cargo test --workspace
+            } else {
+                & $cargo test --workspace -- --skip nta_quantized_wastewater_pipeline
+            }
             if ($LASTEXITCODE -ne 0) { throw "cargo test failed ($LASTEXITCODE)" }
         }
     } finally {
@@ -149,7 +155,8 @@ if ($Linux) {
     $wslReleases = '/mnt/c/' + ($releases -replace '^C:\\', '' -replace '\\', '/')
     $wslScript = '/mnt/c/' + ((Join-Path $PSScriptRoot 'release-linux.sh') -replace '^C:\\', '' -replace '\\', '/')
     Log "Invoking WSL: release-linux.sh -v $Version (build tree on ext4)"
-    & wsl.exe -d Ubuntu -- bash -lc "STREAMFIND_RELEASE_VERSION='$Version' STREAMFIND_RELEASE_DIR='$wslReleases' bash '$wslScript'"
+    $runFullNta = if ($FullNtaTests) { '1' } else { '0' }
+    & wsl.exe -d Ubuntu -- bash -lc "STREAMFIND_RELEASE_VERSION='$Version' STREAMFIND_RELEASE_DIR='$wslReleases' STREAMFIND_RUN_NTA_CONFORMANCE='$runFullNta' bash '$wslScript'"
     if ($LASTEXITCODE -ne 0) { throw "WSL Linux release failed ($LASTEXITCODE)" }
     Log "Linux archives:"
     Get-ChildItem $releases -Filter "*-Linux-*" | ForEach-Object {

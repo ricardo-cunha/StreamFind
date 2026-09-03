@@ -80,9 +80,11 @@ install method.
   the workspace (or one `-Package`). Flags: `-Clean`, `-Tests`,
   `-Package <name>`, `-Release`.
 - `test-rust.ps1` — `build-rust.ps1 -Tests` shorthand.
-- `release.ps1` — builds, tests, packages, and hashes the C++ and Rust release
-  archives into `tmp/release-output/`; it does not create or upload a GitHub
-  Release.
+- `release.ps1` — builds, runs the release test gates, packages, and hashes the
+  C++ and Rust release archives into `tmp/release-output/`; the computationally
+  expensive full NTA conformance test is skipped by default. Pass
+  `-FullNtaTests` to request it explicitly. The script does not create or
+  upload a GitHub Release.
 - `publish-release.ps1` — validates the versioned archives and checksums in
   `tmp/release-output/`, then creates a GitHub Release. Pass `-Replace` only
   when intentionally replacing assets in an existing release.

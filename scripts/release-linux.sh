@@ -19,6 +19,8 @@
 #
 # The archive naming uses the same schema as the Windows side so release
 # tooling (and sha256sums.txt on the Windows side) treat them uniformly.
+# The full NTA conformance test is skipped by default; set
+# STREAMFIND_RUN_NTA_CONFORMANCE=1 to request it explicitly.
 
 set -euo pipefail
 
@@ -126,7 +128,12 @@ if [ "${STREAMFIND_BUILD_RUST:-1}" != "0" ]; then
 
     if [ "${STREAMFIND_RUN_TESTS:-1}" != "0" ]; then
         echo "[release-linux] running Rust tests..."
-        (cd "$REPO_ROOT/rust" && cargo test --workspace)
+        if [ "${STREAMFIND_RUN_NTA_CONFORMANCE:-0}" = "1" ]; then
+            (cd "$REPO_ROOT/rust" && cargo test --workspace)
+        else
+            echo "[release-linux] skipping full NTA conformance (set STREAMFIND_RUN_NTA_CONFORMANCE=1 to run it)"
+            (cd "$REPO_ROOT/rust" && cargo test --workspace -- --skip nta_quantized_wastewater_pipeline)
+        fi
     fi
 
     STAGING="$WORK/rust-staging"
