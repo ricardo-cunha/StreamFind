@@ -36,6 +36,7 @@ function(streamfind_configure_duckdb vendor_root)
             INTERFACE_INCLUDE_DIRECTORIES "${_include}"
         )
         set(_import_library "${_imported}")
+        set(_static_libraries "")
     else()
         find_file(_shared
             NAMES libduckdb.so libduckdb.dylib
@@ -55,15 +56,33 @@ function(streamfind_configure_duckdb vendor_root)
                 INTERFACE_INCLUDE_DIRECTORIES "${_include}"
             )
             set(_runtime "${_shared}")
+            set(_static_libraries "")
         elseif(_static)
             find_package(Threads REQUIRED)
-            add_library(streamfind_duckdb STATIC IMPORTED GLOBAL)
-            set_target_properties(streamfind_duckdb PROPERTIES
-                IMPORTED_LOCATION "${_static}"
-                INTERFACE_INCLUDE_DIRECTORIES "${_include}"
-                INTERFACE_LINK_LIBRARIES "Threads::Threads;${CMAKE_DL_LIBS}"
+            set(_extension_loader "${_root}/lib/${_platform}/libduckdb_generated_extension_loader.a")
+            if(NOT EXISTS "${_extension_loader}")
+                message(FATAL_ERROR
+                    "Complete DuckDB static package required: ${_extension_loader} is missing")
+            endif()
+            file(GLOB _static_extensions CONFIGURE_DEPENDS
+                "${_root}/lib/${_platform}/lib*.a"
             )
-            set(_runtime "${_static}")
+            list(REMOVE_ITEM _static_extensions "${_static}")
+            list(SORT _static_extensions)
+            set(_static_libraries "${_static};${_static_extensions}")
+            add_library(streamfind_duckdb INTERFACE)
+            target_include_directories(streamfind_duckdb INTERFACE
+                "$<BUILD_INTERFACE:${_include}>"
+                "$<INSTALL_INTERFACE:include>"
+            )
+            target_link_libraries(streamfind_duckdb INTERFACE
+                "-Wl,--start-group"
+                ${_static_libraries}
+                "-Wl,--end-group"
+                Threads::Threads
+                ${CMAKE_DL_LIBS}
+            )
+            set(_runtime "")
         else()
             message(FATAL_ERROR "DuckDB library not found under ${_root}/lib/${_platform}")
         endif()
@@ -72,8 +91,32 @@ function(streamfind_configure_duckdb vendor_root)
     add_library(streamfind::duckdb ALIAS streamfind_duckdb)
     set(STREAMFIND_DUCKDB_RUNTIME "${_runtime}" PARENT_SCOPE)
     set(STREAMFIND_DUCKDB_IMPORT_LIBRARY "${_import_library}" PARENT_SCOPE)
+    set(STREAMFIND_DUCKDB_STATIC_LIBRARIES "${_static_libraries}" PARENT_SCOPE)
     set(STREAMFIND_DUCKDB_INCLUDE_DIR "${_include}" PARENT_SCOPE)
     set(STREAMFIND_PLATFORM_TAG "${_platform}" PARENT_SCOPE)
+endfunction()
+
+function(streamfind_configure_zstd vendor_root)
+    set(_root "${vendor_root}/zstd")
+    if(NOT EXISTS "${_root}/build/cmake/CMakeLists.txt")
+        message(FATAL_ERROR "Vendored Zstandard sources not found under ${_root}")
+    endif()
+
+    set(ZSTD_BUILD_PROGRAMS OFF CACHE BOOL "" FORCE)
+    set(ZSTD_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+    set(ZSTD_BUILD_CONTRIB OFF CACHE BOOL "" FORCE)
+    set(ZSTD_BUILD_STATIC ON CACHE BOOL "" FORCE)
+    set(ZSTD_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+
+    add_subdirectory(
+        "${_root}/build/cmake"
+        "${CMAKE_BINARY_DIR}/streamfind-zstd"
+        EXCLUDE_FROM_ALL
+    )
+
+    if(NOT TARGET streamfind::zstd)
+        add_library(streamfind::zstd ALIAS libzstd_static)
+    endif()
 endfunction()
 
 function(streamfind_add_openbabel vendor_root)
@@ -81,6 +124,7 @@ function(streamfind_add_openbabel vendor_root)
     set(_ob_root "${_root}/openbabel-3-2-0")
     set(_inchi_root "${_root}/inchi-iupac-1.07.5")
     set(_inchi_base "${_root}/INCHI_BASE")
+    set(STREAMFIND_OPENBABEL_DATA_DIR "${_ob_root}/data")
     file(GLOB _ob_sources CONFIGURE_DEPENDS
         "${_ob_root}/src/*.cpp"
         "${_ob_root}/src/math/matrix3x3.cpp"
@@ -101,6 +145,21 @@ function(streamfind_add_openbabel vendor_root)
     list(FILTER _ob_sources EXCLUDE REGEX
         "/(RDKitConv|conformersearch|confsearch|distgeom|dlhandler_unix|doxygen_pages)\\.cpp$"
     )
+    if(WIN32)
+        set(STREAMFIND_OB_HAVE_CONIO_H 1)
+        set(STREAMFIND_OB_MODULE_EXTENSION ".obf")
+    else()
+        set(STREAMFIND_OB_HAVE_CONIO_H 0)
+        set(STREAMFIND_OB_MODULE_EXTENSION ".so")
+        list(FILTER _ob_sources EXCLUDE REGEX "/dlhandler_win32\\.cpp$")
+    endif()
+    set(STREAMFIND_OPENBABEL_CONFIG_DIR "${CMAKE_CURRENT_BINARY_DIR}/streamfind-openbabel-config")
+    file(MAKE_DIRECTORY "${STREAMFIND_OPENBABEL_CONFIG_DIR}/openbabel")
+    configure_file(
+        "${CMAKE_CURRENT_FUNCTION_LIST_DIR}/openbabel_babelconfig.h.in"
+        "${STREAMFIND_OPENBABEL_CONFIG_DIR}/openbabel/babelconfig.h"
+        @ONLY
+    )
     file(GLOB _inchi_sources CONFIGURE_DEPENDS
         "${_ob_root}/src/formats/libinchi/*.c"
         "${_inchi_root}/src/ichilnct.c"
@@ -110,6 +169,7 @@ function(streamfind_add_openbabel vendor_root)
     )
 
     set(_includes
+        "${STREAMFIND_OPENBABEL_CONFIG_DIR}"
         "${_ob_root}/include"
         "${_ob_root}/include/inchi"
         "${_ob_root}/src"
@@ -142,7 +202,7 @@ function(streamfind_add_openbabel vendor_root)
         endif()
         target_compile_options(${_target} PRIVATE
             $<$<CXX_COMPILER_ID:GNU,Clang>:-w>
-            $<$<CXX_COMPILER_ID:MSVC>:/W0>
+            $<$<CXX_COMPILER_ID:MSVC>:/W0;/wd4244>
         )
     endforeach()
 
@@ -156,6 +216,7 @@ endfunction()
 function(streamfind_configure_dependencies vendor_root)
     set(_vendor_root "${vendor_root}")
     streamfind_configure_duckdb("${_vendor_root}")
+    streamfind_configure_zstd("${_vendor_root}")
     streamfind_add_openbabel("${_vendor_root}")
 
     if(NOT TARGET streamfind::zlib)
@@ -169,6 +230,7 @@ function(streamfind_configure_dependencies vendor_root)
     set(STREAMFIND_VENDOR_DIR "${_vendor_root}" PARENT_SCOPE)
     set(STREAMFIND_DUCKDB_RUNTIME "${STREAMFIND_DUCKDB_RUNTIME}" PARENT_SCOPE)
     set(STREAMFIND_DUCKDB_IMPORT_LIBRARY "${STREAMFIND_DUCKDB_IMPORT_LIBRARY}" PARENT_SCOPE)
+    set(STREAMFIND_DUCKDB_STATIC_LIBRARIES "${STREAMFIND_DUCKDB_STATIC_LIBRARIES}" PARENT_SCOPE)
     set(STREAMFIND_DUCKDB_INCLUDE_DIR "${STREAMFIND_DUCKDB_INCLUDE_DIR}" PARENT_SCOPE)
     set(STREAMFIND_PLATFORM_TAG "${STREAMFIND_PLATFORM_TAG}" PARENT_SCOPE)
     set(STREAMFIND_OPENBABEL_DATA_DIR "${STREAMFIND_OPENBABEL_DATA_DIR}" PARENT_SCOPE)

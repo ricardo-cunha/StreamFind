@@ -26,7 +26,7 @@ fn noise_levels(intensities: &[f32], noise_threshold: f32, base_quantile: f32) -
         &nonzero
     };
     let m = mean(values);
-    let cv = sd(values, m) / m.max(1e-8);
+    let cv = if m != 0. { sd(values, m) / m } else { 0. };
     let snr = if q(values, 0.25) > 0. {
         q(values, 0.9) / q(values, 0.25)
     } else {
@@ -100,6 +100,7 @@ fn encode(v: &[f32]) -> String {
     STANDARD.encode(bytes)
 }
 
+#[allow(dead_code)]
 #[derive(Clone)]
 struct Point {
     rt: f32,
@@ -164,31 +165,6 @@ fn smooth(y: &[f32]) -> Vec<f32> {
     }
     z
 }
-fn fwhm(x: &[f32], y: &[f32]) -> f32 {
-    if x.is_empty() {
-        return 0.;
-    }
-    let k = y
-        .iter()
-        .enumerate()
-        .max_by(|a, b| a.1.total_cmp(b.1))
-        .unwrap()
-        .0;
-    let h = y[k] / 2.;
-    let mut l = k;
-    while l > 0 && y[l] > h {
-        l -= 1
-    }
-    let mut r = k;
-    while r + 1 < y.len() && y[r] > h {
-        r += 1
-    }
-    if l < r {
-        x[r] - x[l]
-    } else {
-        x[x.len() - 1] - x[0]
-    }
-}
 fn fit(
     x: &[f32],
     y: &[f32],
@@ -240,56 +216,6 @@ fn r2(x: &[f32], y: &[f32], a: f32, mu: f32, s: f32, b: f32) -> f32 {
         0.
     }
 }
-fn area(x: &[f32], y: &[f32]) -> f32 {
-    x.windows(2)
-        .zip(y.windows(2))
-        .map(|(a, b)| (a[1] - a[0]) * (b[1] + b[0]) / 2.)
-        .sum::<f32>()
-        .max(0.)
-}
-fn metrics(x: &[f32], y: &[f32], ar: f32) -> (f32, f32, f32, i32, f32) {
-    let m = y.iter().copied().fold(0., f32::max);
-    let jag = if y.len() > 2 {
-        y[1..y.len() - 1]
-            .iter()
-            .enumerate()
-            .map(|(i, v)| (v - (y[i] + y[i + 2]) / 2.).abs())
-            .sum::<f32>()
-            / ((y.len() - 2) as f32 * m.max(1.))
-    } else {
-        0.
-    };
-    let sharp = if ar != 0. {
-        m / ((x[x.len() - 1] - x[0]) * ar.abs().sqrt())
-    } else {
-        0.
-    };
-    let k = y
-        .iter()
-        .enumerate()
-        .max_by(|a, b| a.1.total_cmp(b.1))
-        .unwrap()
-        .0;
-    let base = y[0].min(*y.last().unwrap());
-    let level = base + (m - base) * 0.1;
-    let l = (0..=k).rev().find(|&i| y[i] <= level).unwrap_or(0);
-    let r = (k..y.len()).find(|&i| y[i] <= level).unwrap_or(y.len() - 1);
-    let asym = if l < k && r > k {
-        (x[r] - x[k]) / (x[k] - x[l])
-    } else {
-        1.
-    };
-    let modality = (1..y.len().saturating_sub(1))
-        .filter(|&i| y[i] > y[i - 1] && y[i] > y[i + 1] && y[i] >= m * 0.1)
-        .count()
-        .max(1) as i32;
-    let plates = if x[x.len() - 1] != 0. {
-        5.54 * (x[k] / (x[x.len() - 1] - x[0])).powi(2)
-    } else {
-        0.
-    };
-    (jag, sharp, asym, modality, plates)
-}
 
 fn make_feature(
     analysis: &str,
@@ -312,63 +238,155 @@ fn make_feature(
     let sy = &sm[left..=right];
     let by = &base[left..=right];
     let ai = apex - left;
-    let max = y.iter().copied().fold(0., f32::max);
+
+    // Max intensity within the allowed window around the candidate apex
+    // (mirrors core process_polarity_clusters: allowed_shift = width * 0.5).
+    let center_rt = x[ai];
+    let allowed_shift = (x[x.len() - 1] - x[0]) * 0.5;
+    let mut max_position = 0usize;
+    let mut peak_max = f32::NEG_INFINITY;
+    for (j, &rj) in x.iter().enumerate() {
+        if (rj - center_rt).abs() <= allowed_shift && y[j] > peak_max {
+            peak_max = y[j];
+            max_position = j;
+        }
+    }
+    if !peak_max.is_finite() {
+        peak_max = y[ai];
+        max_position = ai;
+    }
+    let rt_at_max = x[max_position];
+    let mz_at_max = mm[max_position];
+
     let noise = if sy.len() >= 4 {
         (sy[0].min(sy[1]) + sy[sy.len() - 2].min(*sy.last().unwrap())) / 2.
     } else {
         sy.iter().copied().fold(f32::INFINITY, f32::min)
     };
-    let (fwhm_rt, fwhm_mz) = {
-        let h = max / 2.;
-        let k = y
-            .iter()
-            .enumerate()
-            .max_by(|a, b| a.1.total_cmp(b.1))
-            .unwrap()
-            .0;
-        let mut l = k;
-        while l > 0 && y[l] > h {
-            l -= 1
+    let sn = if noise > 0. { peak_max / noise } else { 0. };
+
+    // FWHM (RT + m/z) and mean m/z over the FWHM RT region (core uses
+    // calculate_fwhm_combined for the feature's m/z and FWHM columns).
+    let (fwhm_rt, fwhm_mz, mean_mz_fwhm) = crate::nta_utils::calculate_fwhm_combined(x, mm, y);
+
+    // Slope-check outlier interpolation before the gaussian fit (core lines
+    // 1545-1667): mark non-rising (left of apex) / non-falling (right of apex)
+    // smoothed points and linearly interpolate each consecutive run.
+    let mut needs = vec![false; sy.len()];
+    let mut interp_left = 0usize;
+    let mut interp_right = 0usize;
+    let si = sy
+        .iter()
+        .enumerate()
+        .max_by(|a, b| a.1.total_cmp(b.1))
+        .map(|(i, _)| i)
+        .unwrap_or(ai);
+    if si > 1 {
+        for i in 0..si - 1 {
+            if needs[i] {
+                continue;
+            }
+            let cur = sy[i];
+            for j in i + 1..si {
+                if sy[j] <= cur {
+                    needs[j] = true;
+                    interp_left += 1;
+                } else {
+                    break;
+                }
+            }
         }
-        let mut r = k;
-        while r + 1 < y.len() && y[r] > h {
-            r += 1
+    }
+    if si < sy.len().saturating_sub(2) {
+        for i in si + 1..sy.len() - 1 {
+            if needs[i] {
+                continue;
+            }
+            let cur = sy[i];
+            for j in i + 1..sy.len() {
+                if sy[j] >= cur {
+                    needs[j] = true;
+                    interp_right += 1;
+                } else {
+                    break;
+                }
+            }
         }
-        (
-            (x[r] - x[l]),
-            mm[l..=r].iter().copied().fold(f32::NEG_INFINITY, f32::max)
-                - mm[l..=r].iter().copied().fold(f32::INFINITY, f32::min),
-        )
-    };
-    let mzmean = mm.iter().sum::<f32>() / mm.len() as f32;
-    let ga0 = max - sy[0].min(*sy.last().unwrap());
-    let (ga, gmu, gs, gb) = fit(
-        x,
-        sy,
-        ga0,
-        x[ai],
-        fwhm(x, sy) / 2.355,
-        sy[0].min(*sy.last().unwrap()),
-    );
-    let ar = area(x, y);
-    let (jag, sharp, asym, modality, plates) = metrics(x, y, ar);
+    }
+    let mut fit_sy = sy.to_vec();
+    if interp_left + interp_right > 0 {
+        let mut k = 0usize;
+        while k < needs.len() {
+            if needs[k] {
+                let start = k;
+                let mut end = k;
+                while end < needs.len() && needs[end] {
+                    end += 1;
+                }
+                end -= 1;
+                if start >= 1 && end + 1 < sy.len() {
+                    let ib = sy[start - 1];
+                    let ia = sy[end + 1];
+                    let rb = x[start - 1];
+                    let ra = x[end + 1];
+                    for j in start..=end {
+                        let t = (x[j] - rb) / (ra - rb);
+                        fit_sy[j] = ib + t * (ia - ib);
+                    }
+                }
+                k = end + 1;
+            } else {
+                k += 1;
+            }
+        }
+    }
+
+    // Gaussian fit on the corrected profile, initialised from the corrected
+    // apex (mirrors core lines 1669-1715).
+    let fwhm_peak_rt = crate::nta_utils::calculate_fwhm_rt(x, &fit_sy);
+    let fit_max_position = fit_sy
+        .iter()
+        .enumerate()
+        .max_by(|a, b| a.1.total_cmp(b.1))
+        .map(|(i, _)| i)
+        .unwrap_or(0);
+    let fit_max = fit_sy[fit_max_position];
+    let fit_rt_at_max = x[fit_max_position];
+    let gbin = fit_sy[0].min(*fit_sy.last().unwrap());
+    let mut gsig = fwhm_peak_rt / 2.355;
+    if gsig <= 0. {
+        gsig = (x[x.len() - 1] - x[0]) / 4.;
+    }
+    let (ga, gmu, gs, gb) = fit(x, &fit_sy, fit_max - gbin, fit_rt_at_max, gsig, gbin);
+    let g_r2 = r2(x, &fit_sy, ga, gmu, gs, gb);
+
+    // Quality metrics on the same sources as core: area/jaggedness/sharpness/
+    // asymmetry on raw intensity, modality on smoothed, plates from rt_at_max
+    // and the FWHM RT value.
+    let ar = crate::nta_utils::calculate_area(x, y);
+    let jag = crate::nta_utils::calculate_jaggedness(y);
+    let sharp = crate::nta_utils::calculate_sharpness(x, y, ar);
+    let asym = crate::nta_utils::calculate_asymmetry(x, y);
+    let modality = crate::nta_utils::calculate_modality(sy, 0.1);
+    let plates = crate::nta_utils::calculate_theoretical_plates(rt_at_max, fwhm_rt);
+
     Feature {
         analysis: analysis.into(),
         feature: format!(
             "CL{}_PK{}_MZ{}_RT{}_{}",
             cluster,
             apex,
-            mz[apex].round() as i32,
-            rt[apex].round() as i32,
+            mz_at_max.round() as i32,
+            rt_at_max.round() as i32,
             if polarity > 0 { "POS" } else { "NEG" }
         ),
         adduct: adduct.into(),
-        rt: rt[apex],
-        mz: mzmean,
-        mass: mzmean + correction,
-        intensity: max,
+        rt: rt_at_max,
+        mz: mean_mz_fwhm,
+        mass: mean_mz_fwhm + correction,
+        intensity: peak_max,
         noise,
-        sn: if noise > 0. { max / noise } else { 0. },
+        sn,
         area: ar,
         rtmin: x[0],
         rtmax: *x.last().unwrap(),
@@ -377,14 +395,14 @@ fn make_feature(
         mzmax: mm.iter().copied().fold(f32::NEG_INFINITY, f32::max),
         ppm: (mm.iter().copied().fold(f32::NEG_INFINITY, f32::max)
             - mm.iter().copied().fold(f32::INFINITY, f32::min))
-            / mzmean
+            / mean_mz_fwhm
             * 1e6,
         fwhm_rt,
         fwhm_mz,
         ga,
         gmu,
         gs,
-        r2: r2(x, sy, ga, gmu, gs, gb),
+        r2: g_r2,
         jag,
         sharp,
         asym,
@@ -525,16 +543,16 @@ fn detect(
         g.sort_by(|a, b| a.rt.total_cmp(&b.rt));
         let (rt, mz, y): (Vec<_>, Vec<_>, Vec<_>) =
             g.iter().map(|p| (p.rt, p.mz, p.intensity)).unzip3();
+        let cycle_time = if rt.len() > 1 {
+            let mut diffs: Vec<f32> = rt.windows(2).map(|w| w[1] - w[0]).collect();
+            diffs.sort_by(f32::total_cmp);
+            diffs[diffs.len() / 2]
+        } else {
+            1.
+        };
         let b = baseline(
             &y,
-            (baseline_window
-                / (if rt.len() > 1 {
-                    (rt[1] - rt[0]).abs()
-                } else {
-                    1.
-                }))
-            .max(min_traces as f32) as usize
-                / 2,
+            (baseline_window / cycle_time).max(min_traces as f32) as usize / 2,
         );
         let sm = smooth(&y);
         let d: Vec<_> = sm.windows(2).map(|w| w[1] - w[0]).collect();
@@ -543,8 +561,7 @@ fn detect(
             if i < min_traces / 2 || i >= rt.len() - min_traces / 2 {
                 continue;
             }
-            // C++ currently receives max_feature_width as max_width and falls back to 30.
-            let (left, right) = boundaries(i, &rt, &sm, &b, max_width.min(30.) / 2.);
+            let (left, right) = boundaries(i, &rt, &sm, &b, max_width / 2.);
             if left < right {
                 peaks.push((i, left, right));
             }
@@ -570,6 +587,32 @@ fn detect(
                         let remove = if keep == i { j } else { i };
                         peaks[keep].1 = peaks[keep].1.min(peaks[remove].1);
                         peaks[keep].2 = peaks[keep].2.max(peaks[remove].2);
+                        // Post-merge boundary re-shrink (core: recalc against
+                        // baseline and 1% of apex on the raw intensity).
+                        let kp = peaks[keep].0;
+                        let p1 = y[kp] * 0.01;
+                        let mut nl = peaks[keep].1;
+                        for k in (0..=kp).rev() {
+                            if k < nl {
+                                break;
+                            }
+                            if y[k] <= b[k] || y[k] <= p1 {
+                                nl = k + 1;
+                                break;
+                            }
+                        }
+                        let mut nr = peaks[keep].2;
+                        for k in kp..y.len() {
+                            if k > nr {
+                                break;
+                            }
+                            if y[k] <= b[k] || y[k] <= p1 {
+                                nr = k - 1;
+                                break;
+                            }
+                        }
+                        peaks[keep].1 = nl.max(0);
+                        peaks[keep].2 = nr.min(y.len() - 1);
                         peaks.remove(remove);
                         merged = true;
                         break 'outer;
@@ -652,7 +695,9 @@ fn row_sql(project: &str, f: &Feature) -> String {
         f.noise,
         f.sn,
         f.area,
-        STANDARD.decode(&f.eic[0].1).map_or(0, |bytes| bytes.len() / 4) as f32,
+        STANDARD
+            .decode(&f.eic[0].1)
+            .map_or(0, |bytes| bytes.len() / 4) as f32,
         f.rtmin,
         f.rtmax,
         f.width,
@@ -683,7 +728,10 @@ fn row_sql(project: &str, f: &Feature) -> String {
         "NULL".into(),
         "FALSE".into(),
         "1.0".into(),
-        STANDARD.decode(&f.eic[0].1).map_or(0, |bytes| bytes.len() / 4).to_string(),
+        STANDARD
+            .decode(&f.eic[0].1)
+            .map_or(0, |bytes| bytes.len() / 4)
+            .to_string(),
     ]);
     for (_, v) in &f.eic {
         vals.push(sql(v));
@@ -756,7 +804,7 @@ pub fn find_features(project: &mut Project, p: &Value) -> Result<Value> {
         .and_then(Value::as_f64)
         .unwrap_or(0.1) as f32;
     let project_id = project.get_project_id();
-     let schema="CREATE TABLE IF NOT EXISTS MASS_SPEC_NTA_FEATURES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, feature VARCHAR NOT NULL, feature_component VARCHAR, feature_group VARCHAR, adduct VARCHAR, rt DOUBLE, mz DOUBLE, mass DOUBLE, intensity DOUBLE, noise DOUBLE, sn DOUBLE, area DOUBLE, trace_count INTEGER, rtmin DOUBLE, rtmax DOUBLE, width DOUBLE, mzmin DOUBLE, mzmax DOUBLE, ppm DOUBLE, fwhm_rt DOUBLE, fwhm_mz DOUBLE, gaussian_A DOUBLE, gaussian_mu DOUBLE, gaussian_sigma DOUBLE, gaussian_r2 DOUBLE, jaggedness DOUBLE, sharpness DOUBLE, asymmetry DOUBLE, modality INTEGER, plates DOUBLE, polarity INTEGER, filtered BOOLEAN, filter VARCHAR, filled BOOLEAN, correction DOUBLE, eic_size INTEGER, eic_rt VARCHAR, eic_mz VARCHAR, eic_intensity VARCHAR, eic_baseline VARCHAR, eic_smoothed VARCHAR, ms1_size INTEGER, ms1_mz VARCHAR, ms1_intensity VARCHAR, ms2_size INTEGER, ms2_mz VARCHAR, ms2_intensity VARCHAR, annotation_category VARCHAR, annotation_type VARCHAR, annotation_parent_feature VARCHAR, annotation_element VARCHAR, annotation_mass_error_da DOUBLE, annotation_mass_error_ppm DOUBLE, annotation_rt_error DOUBLE, annotation_rel_intensity DOUBLE, annotation_expected_rel_intensity_min DOUBLE, annotation_expected_rel_intensity_max DOUBLE, annotation_score DOUBLE, component_size INTEGER, component_rt_center DOUBLE, component_rt_spread DOUBLE, component_density DOUBLE, component_mean_correlation DOUBLE, component_best_partner VARCHAR, component_max_correlation DOUBLE, component_mean_correlation_to_component DOUBLE, component_membership_score DOUBLE, component_is_core BOOLEAN, component_bridge_flag BOOLEAN, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, feature))";
+    let schema="CREATE TABLE IF NOT EXISTS MASS_SPEC_NTA_FEATURES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, feature VARCHAR NOT NULL, feature_component VARCHAR, feature_group VARCHAR, adduct VARCHAR, rt DOUBLE, mz DOUBLE, mass DOUBLE, intensity DOUBLE, noise DOUBLE, sn DOUBLE, area DOUBLE, trace_count INTEGER, rtmin DOUBLE, rtmax DOUBLE, width DOUBLE, mzmin DOUBLE, mzmax DOUBLE, ppm DOUBLE, fwhm_rt DOUBLE, fwhm_mz DOUBLE, gaussian_A DOUBLE, gaussian_mu DOUBLE, gaussian_sigma DOUBLE, gaussian_r2 DOUBLE, jaggedness DOUBLE, sharpness DOUBLE, asymmetry DOUBLE, modality INTEGER, plates DOUBLE, polarity INTEGER, filtered BOOLEAN, filter VARCHAR, filled BOOLEAN, correction DOUBLE, eic_size INTEGER, eic_rt VARCHAR, eic_mz VARCHAR, eic_intensity VARCHAR, eic_baseline VARCHAR, eic_smoothed VARCHAR, ms1_size INTEGER, ms1_mz VARCHAR, ms1_intensity VARCHAR, ms2_size INTEGER, ms2_mz VARCHAR, ms2_intensity VARCHAR, annotation_category VARCHAR, annotation_type VARCHAR, annotation_parent_feature VARCHAR, annotation_element VARCHAR, annotation_mass_error_da DOUBLE, annotation_mass_error_ppm DOUBLE, annotation_rt_error DOUBLE, annotation_rel_intensity DOUBLE, annotation_expected_rel_intensity_min DOUBLE, annotation_expected_rel_intensity_max DOUBLE, annotation_score DOUBLE, component_size INTEGER, component_rt_center DOUBLE, component_rt_spread DOUBLE, component_density DOUBLE, component_mean_correlation DOUBLE, component_best_partner VARCHAR, component_max_correlation DOUBLE, component_mean_correlation_to_component DOUBLE, component_membership_score DOUBLE, component_is_core BOOLEAN, component_bridge_flag BOOLEAN, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, feature))";
     project.execute_sql(schema)?;
     project.execute_sql(&format!(
         "DELETE FROM MASS_SPEC_NTA_FEATURES WHERE project_id={}",
@@ -768,7 +816,7 @@ pub fn find_features(project: &mut Project, p: &Value) -> Result<Value> {
         .cloned()
         .unwrap_or_default();
     let rows = project.query_json(&format!(
-        "SELECT analysis,file_path FROM MASS_SPEC_ANALYSES WHERE project_id={} ORDER BY analysis",
+        "SELECT analysis,file_path,analysis_index FROM MASS_SPEC_ANALYSES WHERE project_id={} ORDER BY analysis",
         sql(&project_id)
     ))?;
     for row in rows.as_array().into_iter().flatten() {
@@ -776,15 +824,19 @@ pub fn find_features(project: &mut Project, p: &Value) -> Result<Value> {
         if !wanted.is_empty() && !wanted.iter().any(|x| x.as_str() == Some(name)) {
             continue;
         }
-        let file = Reader::open(row["file_path"].as_str().unwrap_or_default())
+        let mut file = Reader::open(row["file_path"].as_str().unwrap_or_default())
+            .map_err(|e| invalid(e.to_string()))?;
+        file.select_analysis(row["analysis_index"].as_i64().unwrap_or(0) as usize)
             .map_err(|e| invalid(e.to_string()))?;
         for polarity in [-1, 1] {
             let mut points = Vec::new();
-            for s in file
-                .spectra()
-                .iter()
-                .filter(|s| s.level == 1 && s.polarity == polarity)
-            {
+            for index in 0..file.spectra().len() {
+                let s = file
+                    .spectrum_data(index)
+                    .map_err(|error| invalid(error.to_string()))?;
+                if s.level != 1 || s.polarity != polarity {
+                    continue;
+                }
                 if !mins.is_empty()
                     && !mins.iter().zip(maxs).any(|(lo, hi)| {
                         s.retention_time >= lo.as_f64().unwrap_or(f32::NEG_INFINITY as f64) as f32
@@ -846,4 +898,1676 @@ pub fn find_features(project: &mut Project, p: &Value) -> Result<Value> {
         }
     }
     Ok(json!({"status":"finished","info":"Features detected."}))
+}
+
+/// Port of `merge_NTA_FEATURE_SPECTRA` from bindings/r/src/core/nta/nta.cpp.
+/// Each input point is `(mz, intensity, rt, pre_ce)`. Returns clustered
+/// `(mz, intensity)` pairs in ascending m/z order.
+fn merge_feature_spectra(
+    points: &[(f32, f32, f32, Option<f32>)],
+    mz_clust: f32,
+    presence: f32,
+) -> Vec<(f32, f32)> {
+    let n = points.len();
+    if n == 0 {
+        return Vec::new();
+    }
+    let mut sorted: Vec<(f32, f32, f32, Option<f32>)> = points.to_vec();
+    sorted.sort_by(|a, b| a.0.total_cmp(&b.0));
+
+    let mut sorted_rt: Vec<f32> = sorted.iter().map(|p| p.2).collect();
+    sorted_rt.sort_by(f32::total_cmp);
+    sorted_rt.dedup();
+    let total_unique_rt = sorted_rt.len();
+
+    let mut all_finite_ce: Vec<f32> = sorted.iter().filter_map(|p| p.3).collect();
+    all_finite_ce.sort_by(f32::total_cmp);
+    all_finite_ce.dedup();
+    let total_unique_pre_ce = all_finite_ce.len();
+
+    let mz_tol = mz_clust.max(0.0);
+    let presence_thresh = presence.clamp(0.0, 1.0);
+
+    let mut out: Vec<(f32, f32)> = Vec::new();
+    let mut start = 0;
+    while start < n {
+        let mut end = start + 1;
+        while end < n && (sorted[end].0 - sorted[end - 1].0) <= mz_tol {
+            end += 1;
+        }
+
+        // Group the m/z cluster by RT (same scan == same RT must not merge).
+        let mut rt_groups: std::collections::BTreeMap<u32, Vec<usize>> =
+            std::collections::BTreeMap::new();
+        for i in start..end {
+            rt_groups.entry(sorted[i].2.to_bits()).or_default().push(i);
+        }
+
+        if rt_groups.len() <= 1 {
+            for i in start..end {
+                out.push((sorted[i].0, sorted[i].1));
+            }
+            start = end;
+            continue;
+        }
+
+        let mut reps_mz: Vec<f32> = Vec::new();
+        let mut reps_int: Vec<f32> = Vec::new();
+        let mut reps_pre_ce: Vec<f32> = Vec::new();
+        for (_rt_bits, indices) in rt_groups {
+            let mut best = indices[0];
+            let mut best_int = sorted[best].1;
+            for &ji in &indices {
+                if sorted[ji].1 > best_int {
+                    best = ji;
+                    best_int = sorted[ji].1;
+                }
+            }
+            reps_mz.push(sorted[best].0);
+            reps_int.push(best_int);
+            if let Some(ce) = sorted[best].3 {
+                reps_pre_ce.push(ce);
+            }
+        }
+
+        let mut pass = true;
+        if presence_thresh > 0.0 && total_unique_rt > 0 {
+            let mut required = presence_thresh * total_unique_rt as f32;
+            if total_unique_pre_ce > 0 && !reps_pre_ce.is_empty() {
+                reps_pre_ce.sort_by(f32::total_cmp);
+                reps_pre_ce.dedup();
+                let uniq_ce = reps_pre_ce.len();
+                if (uniq_ce as f32) < total_unique_pre_ce as f32 {
+                    required *= uniq_ce as f32 / total_unique_pre_ce as f32;
+                }
+            }
+            if (reps_mz.len() as f32) < required {
+                pass = false;
+            }
+        }
+        if !pass {
+            start = end;
+            continue;
+        }
+
+        let mut best_rep = 0;
+        let mut best_rep_int = reps_int[0];
+        for i in 1..reps_mz.len() {
+            if reps_int[i] > best_rep_int {
+                best_rep = i;
+                best_rep_int = reps_int[i];
+            }
+        }
+        out.push((reps_mz[best_rep], reps_int[best_rep]));
+        start = end;
+    }
+    out
+}
+
+/// Resolve and cluster MS1 spectra for each persisted feature and store the
+/// joined MS1 spectrum (`ms1_size`, `ms1_mz`, `ms1_intensity`) on the row.
+///
+/// Parameters (see semantic/generated/catalogue.json `mass_spec.load_features_ms1`):
+/// `analysis_names` (array, optional — empty means all), `filtered` (bool,
+/// default false), `rt_window` (array[2], optional), `mz_window` (array[2],
+/// optional), `min_traces_intensity` (real, default 250.0), `mz_clust` (real,
+/// default 0.005), `presence` (real, default 0.8).
+pub fn load_features_ms1(project: &mut Project, p: &Value) -> Result<Value> {
+    let filtered = p.get("filtered").and_then(Value::as_bool).unwrap_or(false);
+    let rt_window: Vec<f32> = p
+        .get("rt_window")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_f64())
+                .map(|x| x as f32)
+                .collect()
+        })
+        .unwrap_or_default();
+    let mz_window: Vec<f32> = p
+        .get("mz_window")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(|v| v.as_f64())
+                .map(|x| x as f32)
+                .collect()
+        })
+        .unwrap_or_default();
+    let min_traces_intensity = p
+        .get("min_traces_intensity")
+        .and_then(Value::as_f64)
+        .unwrap_or(250.0) as f32;
+    let mz_clust = p.get("mz_clust").and_then(Value::as_f64).unwrap_or(0.005) as f32;
+    let presence = p.get("presence").and_then(Value::as_f64).unwrap_or(0.8) as f32;
+    let has_rt = rt_window.len() >= 2;
+    let has_mz = mz_window.len() >= 2;
+
+    let project_id = project.get_project_id();
+    let wanted = p
+        .get("analysis_names")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let rows = project.query_json(&format!(
+        "SELECT analysis, feature, rt, mz, rtmin, rtmax, mzmin, mzmax, polarity, filtered FROM MASS_SPEC_NTA_FEATURES WHERE project_id={} ORDER BY analysis, feature",
+        sql(&project_id)
+    ))?;
+    let mut updated = 0usize;
+    let mut per_analysis: std::collections::BTreeMap<String, Vec<Value>> =
+        std::collections::BTreeMap::new();
+    for row in rows.as_array().into_iter().flatten() {
+        let analysis = row["analysis"].as_str().unwrap_or_default().to_string();
+        if !wanted.is_empty() && !wanted.iter().any(|x| x.as_str() == Some(&analysis)) {
+            continue;
+        }
+        per_analysis.entry(analysis).or_default().push(row.clone());
+    }
+    for (analysis, frows) in per_analysis {
+        let fs = project.query_json(&format!(
+            "SELECT file_path, analysis_index FROM MASS_SPEC_ANALYSES WHERE project_id={} AND analysis={}",
+            sql(&project_id),
+            sql(&analysis)
+        ))?;
+        let (file, analysis_index) = match fs.as_array().and_then(|a| a.first()) {
+            Some(r) => (
+                r["file_path"].as_str().unwrap_or_default().to_string(),
+                r["analysis_index"].as_i64().unwrap_or(0) as usize,
+            ),
+            None => (String::new(), 0),
+        };
+        if file.is_empty() {
+            continue;
+        }
+        let mut reader = Reader::open(&file).map_err(|e| invalid(e.to_string()))?;
+        reader
+            .select_analysis(analysis_index)
+            .map_err(|e| invalid(e.to_string()))?;
+        for row in &frows {
+            let feature = row["feature"].as_str().unwrap_or_default().to_string();
+            let row_filtered = row["filtered"].as_bool().unwrap_or(false);
+            if row_filtered && !filtered {
+                continue;
+            }
+            if row["ms1_size"].as_i64().unwrap_or(0) > 0
+                && !row["ms1_mz"].as_str().unwrap_or("").is_empty()
+                && !row["ms1_intensity"].as_str().unwrap_or("").is_empty()
+            {
+                continue;
+            }
+            let ft_rtmin = row["rtmin"].as_f64().unwrap_or(0.0) as f32;
+            let ft_rtmax = row["rtmax"].as_f64().unwrap_or(0.0) as f32;
+            let ft_mzmin = row["mzmin"].as_f64().unwrap_or(0.0) as f32;
+            let ft_mzmax = row["mzmax"].as_f64().unwrap_or(0.0) as f32;
+            let ft_mz = row["mz"].as_f64().unwrap_or(0.0) as f32;
+            let polarity = row["polarity"].as_i64().unwrap_or(0) as i32;
+
+            let (rtmin, rtmax) = if has_rt {
+                (ft_rtmin + rt_window[0], ft_rtmax + rt_window[1])
+            } else {
+                (ft_rtmin, ft_rtmax)
+            };
+            let (mzmin, mzmax) = if has_mz {
+                (ft_mzmin + mz_window[0], ft_mzmax + mz_window[1])
+            } else {
+                (ft_mzmin, ft_mzmax)
+            };
+            let mmin = if mzmin == 0.0 && mzmax == 0.0 {
+                ft_mz - 0.01
+            } else {
+                mzmin
+            };
+            let mmax = if mzmin == 0.0 && mzmax == 0.0 {
+                ft_mz + 0.01
+            } else {
+                mzmax
+            };
+
+            let mut points: Vec<(f32, f32, f32, Option<f32>)> = Vec::new();
+            for index in 0..reader.spectra().len() {
+                let s = reader
+                    .spectrum_data(index)
+                    .map_err(|error| invalid(error.to_string()))?;
+                if s.level != 1 {
+                    continue;
+                }
+                if polarity != 0 && s.polarity != polarity {
+                    continue;
+                }
+                if rtmin != 0.0 && s.retention_time < rtmin {
+                    continue;
+                }
+                if rtmax != 0.0 && s.retention_time > rtmax {
+                    continue;
+                }
+                if s.mz.len() < 2 {
+                    continue;
+                }
+                for k in 0..s.mz.len() {
+                    let mzv = s.mz[k];
+                    let inv = s.intensity[k];
+                    if inv < min_traces_intensity {
+                        continue;
+                    }
+                    if mzv < mmin || mzv > mmax {
+                        continue;
+                    }
+                    points.push((mzv, inv, s.retention_time, None));
+                }
+            }
+            let clustered = merge_feature_spectra(&points, mz_clust, presence);
+            if clustered.is_empty() {
+                continue;
+            }
+            let mzs: Vec<f32> = clustered.iter().map(|x| x.0).collect();
+            let ints: Vec<f32> = clustered.iter().map(|x| x.1).collect();
+            let n = mzs.len();
+            project.execute_sql(&format!(
+                "UPDATE MASS_SPEC_NTA_FEATURES SET ms1_size={}, ms1_mz={}, ms1_intensity={} WHERE project_id={} AND analysis={} AND feature={}",
+                n,
+                sql(&encode(&mzs)),
+                sql(&encode(&ints)),
+                sql(&project_id),
+                sql(&analysis),
+                sql(&feature)
+            ))?;
+            updated += 1;
+        }
+    }
+    Ok(json!({"status": "finished", "info": format!("MS1 spectra loaded for {updated} features.")}))
+}
+
+/// Resolve and cluster MS2 spectra for each persisted feature and store the
+/// joined MS2 spectrum (`ms2_size`, `ms2_mz`, `ms2_intensity`) on the row.
+///
+/// Parameters (see semantic/generated/catalogue.json `mass_spec.load_features_ms2`):
+/// `analysis_names` (array, optional — empty means all), `filtered` (bool,
+/// default false), `min_traces_intensity` (real, default 10.0),
+/// `isolation_window` (real, default 1.3), `mz_clust` (real, default 0.005),
+/// `presence` (real, default 0.8).
+pub fn load_features_ms2(project: &mut Project, p: &Value) -> Result<Value> {
+    let filtered = p.get("filtered").and_then(Value::as_bool).unwrap_or(false);
+    let min_traces_intensity = p
+        .get("min_traces_intensity")
+        .and_then(Value::as_f64)
+        .unwrap_or(10.0) as f32;
+    let isolation_window = p
+        .get("isolation_window")
+        .and_then(Value::as_f64)
+        .unwrap_or(1.3) as f32;
+    let mz_clust = p.get("mz_clust").and_then(Value::as_f64).unwrap_or(0.005) as f32;
+    let presence = p.get("presence").and_then(Value::as_f64).unwrap_or(0.8) as f32;
+
+    let project_id = project.get_project_id();
+    let wanted = p
+        .get("analysis_names")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let rows = project.query_json(&format!(
+        "SELECT analysis, feature, rt, mz, rtmin, rtmax, polarity, filtered FROM MASS_SPEC_NTA_FEATURES WHERE project_id={} ORDER BY analysis, feature",
+        sql(&project_id)
+    ))?;
+    let mut updated = 0usize;
+    let mut per_analysis: std::collections::BTreeMap<String, Vec<Value>> =
+        std::collections::BTreeMap::new();
+    for row in rows.as_array().into_iter().flatten() {
+        let analysis = row["analysis"].as_str().unwrap_or_default().to_string();
+        if !wanted.is_empty() && !wanted.iter().any(|x| x.as_str() == Some(&analysis)) {
+            continue;
+        }
+        per_analysis.entry(analysis).or_default().push(row.clone());
+    }
+    for (analysis, frows) in per_analysis {
+        let fs = project.query_json(&format!(
+            "SELECT file_path, analysis_index FROM MASS_SPEC_ANALYSES WHERE project_id={} AND analysis={}",
+            sql(&project_id),
+            sql(&analysis)
+        ))?;
+        let (file, analysis_index) = match fs.as_array().and_then(|a| a.first()) {
+            Some(r) => (
+                r["file_path"].as_str().unwrap_or_default().to_string(),
+                r["analysis_index"].as_i64().unwrap_or(0) as usize,
+            ),
+            None => (String::new(), 0),
+        };
+        if file.is_empty() {
+            continue;
+        }
+        let mut reader = Reader::open(&file).map_err(|e| invalid(e.to_string()))?;
+        reader
+            .select_analysis(analysis_index)
+            .map_err(|e| invalid(e.to_string()))?;
+        for row in &frows {
+            let feature = row["feature"].as_str().unwrap_or_default().to_string();
+            let row_filtered = row["filtered"].as_bool().unwrap_or(false);
+            if row_filtered && !filtered {
+                continue;
+            }
+            if row["ms2_size"].as_i64().unwrap_or(0) > 0
+                && !row["ms2_mz"].as_str().unwrap_or("").is_empty()
+                && !row["ms2_intensity"].as_str().unwrap_or("").is_empty()
+            {
+                continue;
+            }
+            let ft_rtmin = row["rtmin"].as_f64().unwrap_or(0.0) as f32;
+            let ft_rtmax = row["rtmax"].as_f64().unwrap_or(0.0) as f32;
+            let ft_mz = row["mz"].as_f64().unwrap_or(0.0) as f32;
+            let polarity = row["polarity"].as_i64().unwrap_or(0) as i32;
+
+            let rtmin = ft_rtmin;
+            let rtmax = ft_rtmax;
+            let mmin = ft_mz - isolation_window / 2.0;
+            let mmax = ft_mz + isolation_window / 2.0;
+
+            let mut points: Vec<(f32, f32, f32, Option<f32>)> = Vec::new();
+            let ms2_indices: Vec<usize> = reader
+                .spectra()
+                .iter()
+                .enumerate()
+                .filter_map(|(index, spectrum)| (spectrum.level == 2).then_some(index))
+                .collect();
+            for spectrum_index in ms2_indices {
+                let s = reader
+                    .spectrum_data(spectrum_index)
+                    .map_err(|e| invalid(e.to_string()))?;
+                if polarity != 0 && s.polarity != polarity {
+                    continue;
+                }
+                if rtmin != 0.0 && s.retention_time < rtmin {
+                    continue;
+                }
+                if rtmax != 0.0 && s.retention_time > rtmax {
+                    continue;
+                }
+                if (mmin != 0.0 || mmax != 0.0) && (s.precursor_mz < mmin || s.precursor_mz > mmax)
+                {
+                    continue;
+                }
+                if s.mz.len() < 2 {
+                    continue;
+                }
+                for k in 0..s.mz.len() {
+                    let mzv = s.mz[k];
+                    let inv = s.intensity[k];
+                    if inv < min_traces_intensity {
+                        continue;
+                    }
+                    let ce = if s.collision_energy.is_finite() {
+                        Some(s.collision_energy)
+                    } else {
+                        None
+                    };
+                    points.push((mzv, inv, s.retention_time, ce));
+                }
+            }
+            let clustered = merge_feature_spectra(&points, mz_clust, presence);
+            if clustered.is_empty() {
+                continue;
+            }
+            let mzs: Vec<f32> = clustered.iter().map(|x| x.0).collect();
+            let ints: Vec<f32> = clustered.iter().map(|x| x.1).collect();
+            let n = mzs.len();
+            project.execute_sql(&format!(
+                "UPDATE MASS_SPEC_NTA_FEATURES SET ms2_size={}, ms2_mz={}, ms2_intensity={} WHERE project_id={} AND analysis={} AND feature={}",
+                n,
+                sql(&encode(&mzs)),
+                sql(&encode(&ints)),
+                sql(&project_id),
+                sql(&analysis),
+                sql(&feature)
+            ))?;
+            updated += 1;
+        }
+    }
+    Ok(json!({"status": "finished", "info": format!("MS2 spectra loaded for {updated} features.")}))
+}
+
+// ---------------------------------------------------------------------------
+// NTA processing context (ported from core/domains/mass_spec/src/
+// processing_methods_nta.cpp `streamfind::mass_spec::processing_methods::detail`).
+// Loads/persists the columnar feature, suspect, and internal-standard state so
+// the processing algorithms run over the same in-memory model as core C++.
+// ---------------------------------------------------------------------------
+
+#[allow(dead_code)]
+pub(crate) const NTA_FEATURES_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_NTA_FEATURES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, feature VARCHAR NOT NULL, feature_component VARCHAR, feature_group VARCHAR, adduct VARCHAR, rt DOUBLE, mz DOUBLE, mass DOUBLE, intensity DOUBLE, noise DOUBLE, sn DOUBLE, area DOUBLE, trace_count INTEGER, rtmin DOUBLE, rtmax DOUBLE, width DOUBLE, mzmin DOUBLE, mzmax DOUBLE, ppm DOUBLE, fwhm_rt DOUBLE, fwhm_mz DOUBLE, gaussian_A DOUBLE, gaussian_mu DOUBLE, gaussian_sigma DOUBLE, gaussian_r2 DOUBLE, jaggedness DOUBLE, sharpness DOUBLE, asymmetry DOUBLE, modality INTEGER, plates DOUBLE, polarity INTEGER, filtered BOOLEAN, filter VARCHAR, filled BOOLEAN, correction DOUBLE, eic_size INTEGER, eic_rt VARCHAR, eic_mz VARCHAR, eic_intensity VARCHAR, eic_baseline VARCHAR, eic_smoothed VARCHAR, ms1_size INTEGER, ms1_mz VARCHAR, ms1_intensity VARCHAR, ms2_size INTEGER, ms2_mz VARCHAR, ms2_intensity VARCHAR, annotation_category VARCHAR, annotation_type VARCHAR, annotation_parent_feature VARCHAR, annotation_element VARCHAR, annotation_mass_error_da DOUBLE, annotation_mass_error_ppm DOUBLE, annotation_rt_error DOUBLE, annotation_rel_intensity DOUBLE, annotation_expected_rel_intensity_min DOUBLE, annotation_expected_rel_intensity_max DOUBLE, annotation_score DOUBLE, component_size INTEGER, component_rt_center DOUBLE, component_rt_spread DOUBLE, component_density DOUBLE, component_mean_correlation DOUBLE, component_best_partner VARCHAR, component_max_correlation DOUBLE, component_mean_correlation_to_component DOUBLE, component_membership_score DOUBLE, component_is_core BOOLEAN, component_bridge_flag BOOLEAN, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, feature))";
+
+const NTA_SUSPECTS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_NTA_SUSPECTS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, feature VARCHAR NOT NULL, feature_group VARCHAR, candidate_rank INTEGER, name VARCHAR, polarity INTEGER, db_mass DOUBLE, exp_mass DOUBLE, error_mass DOUBLE, db_rt DOUBLE, exp_rt DOUBLE, error_rt DOUBLE, intensity DOUBLE, area DOUBLE, id_level INTEGER, score DOUBLE, shared_fragments INTEGER, cosine_similarity DOUBLE, formula VARCHAR, SMILES VARCHAR, InChI VARCHAR, InChIKey VARCHAR, xLogP DOUBLE, database_id VARCHAR, db_ms2_size INTEGER, db_ms2_mz VARCHAR, db_ms2_intensity VARCHAR, db_ms2_formula VARCHAR, db_ms2_smiles VARCHAR, exp_ms2_size INTEGER, exp_ms2_mz VARCHAR, exp_ms2_intensity VARCHAR, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, feature))";
+
+const NTA_INTERNAL_STANDARDS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_NTA_INTERNAL_STANDARDS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, feature VARCHAR NOT NULL, feature_group VARCHAR, feature_component VARCHAR, adduct VARCHAR, candidate_rank INTEGER, name VARCHAR, polarity INTEGER, db_mass DOUBLE, exp_mass DOUBLE, error_mass DOUBLE, db_rt DOUBLE, exp_rt DOUBLE, error_rt DOUBLE, intensity DOUBLE, area DOUBLE, id_level INTEGER, score DOUBLE, shared_fragments INTEGER, cosine_similarity DOUBLE, formula VARCHAR, SMILES VARCHAR, InChI VARCHAR, InChIKey VARCHAR, xLogP DOUBLE, database_id VARCHAR, db_ms2_size INTEGER, db_ms2_mz VARCHAR, db_ms2_intensity VARCHAR, db_ms2_formula VARCHAR, db_ms2_smiles VARCHAR, exp_ms2_size INTEGER, exp_ms2_mz VARCHAR, exp_ms2_intensity VARCHAR, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, feature))";
+
+const NTA_TRANSFORMATION_PRODUCTS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_NTA_TRANSFORMATION_PRODUCTS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, feature_group VARCHAR, precursor_feature_group VARCHAR, main_precursor_feature_group VARCHAR, assignment_rank INTEGER, name VARCHAR NOT NULL, formula VARCHAR, mass DOUBLE, SMILES VARCHAR, InChI VARCHAR, InChIKey VARCHAR, xLogP DOUBLE, transformation VARCHAR, precursor_name VARCHAR, precursor_formula VARCHAR, precursor_mass DOUBLE, precursor_SMILES VARCHAR, precursor_InChI VARCHAR, precursor_InChIKey VARCHAR, precursor_xLogP DOUBLE, main_precursor_name VARCHAR, main_precursor_formula VARCHAR, main_precursor_mass DOUBLE, main_precursor_SMILES VARCHAR, main_precursor_InChI VARCHAR, main_precursor_InChIKey VARCHAR, main_precursor_xLogP DOUBLE, cosine_similarity DOUBLE, main_precursor_cosine_similarity DOUBLE, rt_plausibility DOUBLE, main_precursor_rt_plausibility DOUBLE, assignment_score DOUBLE, network_level INTEGER, assignment_status VARCHAR, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis, feature_group, name))";
+
+#[allow(dead_code)]
+pub(crate) fn ensure_nta_schemas(project: &Project) -> Result<()> {
+    project.execute_sql(NTA_FEATURES_SCHEMA)?;
+    project.execute_sql(NTA_SUSPECTS_SCHEMA)?;
+    project.execute_sql(NTA_INTERNAL_STANDARDS_SCHEMA)?;
+    project.execute_sql(NTA_TRANSFORMATION_PRODUCTS_SCHEMA)?;
+    Ok(())
+}
+
+fn row_text(row: &Value, col: &str) -> String {
+    row.get(col)
+        .filter(|v| !v.is_null())
+        .and_then(Value::as_str)
+        .unwrap_or_default()
+        .to_string()
+}
+
+fn row_num(row: &Value, col: &str) -> f64 {
+    row.get(col).and_then(Value::as_f64).unwrap_or(0.0)
+}
+
+fn row_int(row: &Value, col: &str) -> i32 {
+    row.get(col).and_then(Value::as_i64).unwrap_or(0) as i32
+}
+
+fn row_bool(row: &Value, col: &str) -> bool {
+    match row.get(col) {
+        Some(Value::Bool(b)) => *b,
+        Some(Value::String(s)) => s == "true" || s == "TRUE" || s == "1",
+        Some(Value::Number(n)) => n.as_i64() == Some(1),
+        _ => false,
+    }
+}
+
+/// Load every persisted feature for the selected analyses into a columnar
+/// `ProjectNonTargetAnalysis` (mirrors C++ `detail::load_analysis_features`).
+pub(crate) fn load_analysis_features(
+    project: &Project,
+    parameters: &Value,
+) -> Result<crate::nta::ProjectNonTargetAnalysis> {
+    let project_id = project.get_project_id().to_string();
+    let wanted = parameters
+        .get("analysis_names")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    let mut names = Vec::new();
+    let mut paths = Vec::new();
+    let mut indices = Vec::new();
+    let mut blanks = Vec::new();
+    let mut replicates = Vec::new();
+    let rows = project.query_json(&format!(
+        "SELECT analysis,file_path,analysis_index,blank,replicate FROM MASS_SPEC_ANALYSES WHERE project_id={} ORDER BY analysis",
+        sql(&project_id)
+    ))?;
+    for row in rows.as_array().into_iter().flatten() {
+        let name = row_text(row, "analysis");
+        if !wanted.is_empty() && !wanted.iter().any(|x| x.as_str() == Some(name.as_str())) {
+            continue;
+        }
+        names.push(name);
+        paths.push(row_text(row, "file_path"));
+        indices.push(
+            row.get("analysis_index")
+                .and_then(Value::as_i64)
+                .unwrap_or(0) as usize,
+        );
+        blanks.push(row_text(row, "blank"));
+        replicates.push(row_text(row, "replicate"));
+    }
+    let mut data = crate::nta::ProjectNonTargetAnalysis::new(names.clone(), paths, indices);
+    data.set_blank_names(blanks);
+    data.set_replicate_names(replicates);
+    for (i, buffer) in data.feature_buffers.iter_mut().enumerate() {
+        buffer.analysis = names[i].clone();
+    }
+    let features = project.query_json(&format!(
+        "SELECT analysis, feature, feature_component, feature_group, adduct, rt, mz, mass, intensity, noise, sn, area, rtmin, rtmax, width, mzmin, mzmax, ppm, fwhm_rt, fwhm_mz, gaussian_A, gaussian_mu, gaussian_sigma, gaussian_r2, jaggedness, sharpness, asymmetry, modality, plates, polarity, filtered, filter, filled, correction, eic_size, eic_rt, eic_mz, eic_intensity, eic_baseline, eic_smoothed, ms1_size, ms1_mz, ms1_intensity, ms2_size, ms2_mz, ms2_intensity, annotation_category, annotation_type, annotation_parent_feature, annotation_element, annotation_mass_error_da, annotation_mass_error_ppm, annotation_rt_error, annotation_rel_intensity, annotation_expected_rel_intensity_min, annotation_expected_rel_intensity_max, annotation_score, component_size, component_rt_center, component_rt_spread, component_density, component_mean_correlation, component_best_partner, component_max_correlation, component_mean_correlation_to_component, component_membership_score, component_is_core, component_bridge_flag FROM MASS_SPEC_NTA_FEATURES WHERE project_id={} ORDER BY analysis",
+        sql(&project_id)
+    ))?;
+    for row in features.as_array().into_iter().flatten() {
+        let an = row_text(row, "analysis");
+        let Some(pos) = names.iter().position(|n| *n == an) else {
+            continue;
+        };
+        let mut r = crate::nta::NtaFeatureRow::default();
+        r.analysis = an;
+        r.feature = row_text(row, "feature");
+        r.feature_component = row_text(row, "feature_component");
+        r.feature_group = row_text(row, "feature_group");
+        r.adduct = row_text(row, "adduct");
+        r.rt = row_num(row, "rt");
+        r.mz = row_num(row, "mz");
+        r.mass = row_num(row, "mass");
+        r.intensity = row_num(row, "intensity");
+        r.noise = row_num(row, "noise");
+        r.sn = row_num(row, "sn");
+        r.area = row_num(row, "area");
+        r.rtmin = row_num(row, "rtmin");
+        r.rtmax = row_num(row, "rtmax");
+        r.width = row_num(row, "width");
+        r.mzmin = row_num(row, "mzmin");
+        r.mzmax = row_num(row, "mzmax");
+        r.ppm = row_num(row, "ppm");
+        r.fwhm_rt = row_num(row, "fwhm_rt");
+        r.fwhm_mz = row_num(row, "fwhm_mz");
+        r.gaussian_A = row_num(row, "gaussian_A");
+        r.gaussian_mu = row_num(row, "gaussian_mu");
+        r.gaussian_sigma = row_num(row, "gaussian_sigma");
+        r.gaussian_r2 = row_num(row, "gaussian_r2");
+        r.jaggedness = row_num(row, "jaggedness");
+        r.sharpness = row_num(row, "sharpness");
+        r.asymmetry = row_num(row, "asymmetry");
+        r.modality = row_int(row, "modality");
+        r.plates = row_num(row, "plates");
+        r.polarity = row_int(row, "polarity");
+        r.filtered = row_bool(row, "filtered");
+        r.filter = row_text(row, "filter");
+        r.filled = row_bool(row, "filled");
+        r.correction = row_num(row, "correction");
+        r.eic_size = row_int(row, "eic_size");
+        r.eic_rt = row_text(row, "eic_rt");
+        r.eic_mz = row_text(row, "eic_mz");
+        r.eic_intensity = row_text(row, "eic_intensity");
+        r.eic_baseline = row_text(row, "eic_baseline");
+        r.eic_smoothed = row_text(row, "eic_smoothed");
+        r.ms1_size = row_int(row, "ms1_size");
+        r.ms1_mz = row_text(row, "ms1_mz");
+        r.ms1_intensity = row_text(row, "ms1_intensity");
+        r.ms2_size = row_int(row, "ms2_size");
+        r.ms2_mz = row_text(row, "ms2_mz");
+        r.ms2_intensity = row_text(row, "ms2_intensity");
+        r.annotation_category = row_text(row, "annotation_category");
+        r.annotation_type = row_text(row, "annotation_type");
+        r.annotation_parent_feature = row_text(row, "annotation_parent_feature");
+        r.annotation_element = row_text(row, "annotation_element");
+        r.annotation_mass_error_da = row_num(row, "annotation_mass_error_da");
+        r.annotation_mass_error_ppm = row_num(row, "annotation_mass_error_ppm");
+        r.annotation_rt_error = row_num(row, "annotation_rt_error");
+        r.annotation_rel_intensity = row_num(row, "annotation_rel_intensity");
+        r.annotation_expected_rel_intensity_min =
+            row_num(row, "annotation_expected_rel_intensity_min");
+        r.annotation_expected_rel_intensity_max =
+            row_num(row, "annotation_expected_rel_intensity_max");
+        r.annotation_score = row_num(row, "annotation_score");
+        r.component_size = row_int(row, "component_size");
+        r.component_rt_center = row_num(row, "component_rt_center");
+        r.component_rt_spread = row_num(row, "component_rt_spread");
+        r.component_density = row_num(row, "component_density");
+        r.component_mean_correlation = row_num(row, "component_mean_correlation");
+        r.component_best_partner = row_text(row, "component_best_partner");
+        r.component_max_correlation = row_num(row, "component_max_correlation");
+        r.component_mean_correlation_to_component =
+            row_num(row, "component_mean_correlation_to_component");
+        r.component_membership_score = row_num(row, "component_membership_score");
+        r.component_is_core = row_bool(row, "component_is_core");
+        r.component_bridge_flag = row_bool(row, "component_bridge_flag");
+        data.feature_buffers[pos].append_feature(&r);
+    }
+    Ok(data)
+}
+fn num_cell(v: f64) -> String {
+    if v.is_finite() {
+        v.to_string()
+    } else if v.is_nan() {
+        "nan".to_string()
+    } else if v > 0.0 {
+        "inf".to_string()
+    } else {
+        "-inf".to_string()
+    }
+}
+
+fn dnum_cell(v: f64) -> String {
+    if v.is_finite() {
+        v.to_string()
+    } else {
+        "NULL".to_string()
+    }
+}
+
+/// Build one `MASS_SPEC_NTA_FEATURES` value tuple (column order mirrors the
+/// C++ `features_columns()`; `created_at` is left to the DEFAULT).
+fn feature_values(project_id: &str, r: &crate::nta::NtaFeatureRow) -> String {
+    let vals = vec![
+        sql(project_id),
+        sql(&r.analysis),
+        sql(&r.feature),
+        sql(&r.feature_component),
+        sql(&r.feature_group),
+        sql(&r.adduct),
+        num_cell(r.rt),
+        num_cell(r.mz),
+        num_cell(r.mass),
+        num_cell(r.intensity),
+        num_cell(r.noise),
+        num_cell(r.sn),
+        num_cell(r.area),
+        r.eic_size.to_string(),
+        num_cell(r.rtmin),
+        num_cell(r.rtmax),
+        num_cell(r.width),
+        num_cell(r.mzmin),
+        num_cell(r.mzmax),
+        num_cell(r.ppm),
+        num_cell(r.fwhm_rt),
+        num_cell(r.fwhm_mz),
+        num_cell(r.gaussian_A),
+        num_cell(r.gaussian_mu),
+        num_cell(r.gaussian_sigma),
+        num_cell(r.gaussian_r2),
+        num_cell(r.jaggedness),
+        num_cell(r.sharpness),
+        num_cell(r.asymmetry),
+        r.modality.to_string(),
+        num_cell(r.plates),
+        r.polarity.to_string(),
+        if r.filtered { "TRUE" } else { "FALSE" }.to_string(),
+        sql(&r.filter),
+        if r.filled { "TRUE" } else { "FALSE" }.to_string(),
+        num_cell(r.correction),
+        r.eic_size.to_string(),
+        sql(&r.eic_rt),
+        sql(&r.eic_mz),
+        sql(&r.eic_intensity),
+        sql(&r.eic_baseline),
+        sql(&r.eic_smoothed),
+        r.ms1_size.to_string(),
+        sql(&r.ms1_mz),
+        sql(&r.ms1_intensity),
+        r.ms2_size.to_string(),
+        sql(&r.ms2_mz),
+        sql(&r.ms2_intensity),
+        sql(&r.annotation_category),
+        sql(&r.annotation_type),
+        sql(&r.annotation_parent_feature),
+        sql(&r.annotation_element),
+        num_cell(r.annotation_mass_error_da),
+        num_cell(r.annotation_mass_error_ppm),
+        num_cell(r.annotation_rt_error),
+        num_cell(r.annotation_rel_intensity),
+        num_cell(r.annotation_expected_rel_intensity_min),
+        num_cell(r.annotation_expected_rel_intensity_max),
+        num_cell(r.annotation_score),
+        r.component_size.to_string(),
+        num_cell(r.component_rt_center),
+        num_cell(r.component_rt_spread),
+        num_cell(r.component_density),
+        num_cell(r.component_mean_correlation),
+        sql(&r.component_best_partner),
+        num_cell(r.component_max_correlation),
+        num_cell(r.component_mean_correlation_to_component),
+        num_cell(r.component_membership_score),
+        if r.component_is_core { "TRUE" } else { "FALSE" }.to_string(),
+        if r.component_bridge_flag {
+            "TRUE"
+        } else {
+            "FALSE"
+        }
+        .to_string(),
+    ];
+    format!("({})", vals.join(","))
+}
+
+const FEATURES_COLUMNS: &str = "project_id,analysis,feature,feature_component,feature_group,adduct,rt,mz,mass,intensity,noise,sn,area,trace_count,rtmin,rtmax,width,mzmin,mzmax,ppm,fwhm_rt,fwhm_mz,gaussian_A,gaussian_mu,gaussian_sigma,gaussian_r2,jaggedness,sharpness,asymmetry,modality,plates,polarity,filtered,filter,filled,correction,eic_size,eic_rt,eic_mz,eic_intensity,eic_baseline,eic_smoothed,ms1_size,ms1_mz,ms1_intensity,ms2_size,ms2_mz,ms2_intensity,annotation_category,annotation_type,annotation_parent_feature,annotation_element,annotation_mass_error_da,annotation_mass_error_ppm,annotation_rt_error,annotation_rel_intensity,annotation_expected_rel_intensity_min,annotation_expected_rel_intensity_max,annotation_score,component_size,component_rt_center,component_rt_spread,component_density,component_mean_correlation,component_best_partner,component_max_correlation,component_mean_correlation_to_component,component_membership_score,component_is_core,component_bridge_flag";
+
+/// Batched multi-row INSERT (DuckDB accepts many VALUES tuples in one
+/// statement); chunked to keep statement sizes bounded.
+fn insert_rows(
+    project: &Project,
+    table: &str,
+    columns: &str,
+    value_tuples: Vec<String>,
+) -> Result<()> {
+    for chunk in value_tuples.chunks(500) {
+        let sql_text = format!("INSERT INTO {table} ({columns}) VALUES {}", chunk.join(","));
+        project.execute_sql(&sql_text)?;
+    }
+    Ok(())
+}
+
+/// Delete + full re-insert of every feature row (mirrors C++
+/// `detail::persist_features`).
+pub(crate) fn persist_features(
+    project: &Project,
+    data: &crate::nta::ProjectNonTargetAnalysis,
+) -> Result<()> {
+    let project_id = project.get_project_id().to_string();
+    project.execute_sql(&format!(
+        "DELETE FROM MASS_SPEC_NTA_FEATURES WHERE project_id={}",
+        sql(&project_id)
+    ))?;
+    let mut tuples = Vec::new();
+    for buffer in &data.feature_buffers {
+        for i in 0..buffer.size() {
+            tuples.push(feature_values(&project_id, &buffer.get_feature(i)));
+        }
+    }
+    insert_rows(project, "MASS_SPEC_NTA_FEATURES", FEATURES_COLUMNS, tuples)
+}
+
+fn suspect_values(project_id: &str, r: &crate::nta::NtaSuspectRow) -> String {
+    let vals = vec![
+        sql(project_id),
+        sql(&r.analysis),
+        sql(&r.feature),
+        sql(&r.feature_group),
+        r.candidate_rank.to_string(),
+        sql(&r.name),
+        r.polarity.to_string(),
+        dnum_cell(r.db_mass),
+        dnum_cell(r.exp_mass),
+        dnum_cell(r.error_mass),
+        dnum_cell(r.db_rt),
+        dnum_cell(r.exp_rt),
+        dnum_cell(r.error_rt),
+        dnum_cell(r.intensity),
+        dnum_cell(r.area),
+        r.id_level.to_string(),
+        dnum_cell(r.score),
+        r.shared_fragments.to_string(),
+        dnum_cell(r.cosine_similarity),
+        sql(&r.formula),
+        sql(&r.SMILES),
+        sql(&r.InChI),
+        sql(&r.InChIKey),
+        dnum_cell(r.xLogP),
+        sql(&r.database_id),
+        r.db_ms2_size.to_string(),
+        sql(&r.db_ms2_mz),
+        sql(&r.db_ms2_intensity),
+        sql(&r.db_ms2_formula),
+        sql(&r.db_ms2_smiles),
+        r.exp_ms2_size.to_string(),
+        sql(&r.exp_ms2_mz),
+        sql(&r.exp_ms2_intensity),
+    ];
+    format!("({})", vals.join(","))
+}
+
+const SUSPECTS_COLUMNS: &str = "project_id,analysis,feature,feature_group,candidate_rank,name,polarity,db_mass,exp_mass,error_mass,db_rt,exp_rt,error_rt,intensity,area,id_level,score,shared_fragments,cosine_similarity,formula,SMILES,InChI,InChIKey,xLogP,database_id,db_ms2_size,db_ms2_mz,db_ms2_intensity,db_ms2_formula,db_ms2_smiles,exp_ms2_size,exp_ms2_mz,exp_ms2_intensity";
+
+pub(crate) fn persist_suspects(
+    project: &Project,
+    data: &crate::nta::ProjectNonTargetAnalysis,
+) -> Result<()> {
+    let project_id = project.get_project_id().to_string();
+    project.execute_sql(NTA_SUSPECTS_SCHEMA)?;
+    project.execute_sql(&format!(
+        "DELETE FROM MASS_SPEC_NTA_SUSPECTS WHERE project_id={}",
+        sql(&project_id)
+    ))?;
+    let mut tuples = Vec::new();
+    for buffer in &data.suspect_buffers {
+        for i in 0..buffer.size() {
+            tuples.push(suspect_values(&project_id, &buffer.get_suspect(i)));
+        }
+    }
+    insert_rows(project, "MASS_SPEC_NTA_SUSPECTS", SUSPECTS_COLUMNS, tuples)
+}
+
+fn internal_standard_values(project_id: &str, r: &crate::nta::NtaInternalStandardRow) -> String {
+    let vals = vec![
+        sql(project_id),
+        sql(&r.analysis),
+        sql(&r.feature),
+        sql(&r.feature_group),
+        sql(&r.feature_component),
+        sql(&r.adduct),
+        r.candidate_rank.to_string(),
+        sql(&r.name),
+        r.polarity.to_string(),
+        dnum_cell(r.db_mass),
+        dnum_cell(r.exp_mass),
+        dnum_cell(r.error_mass),
+        dnum_cell(r.db_rt),
+        dnum_cell(r.exp_rt),
+        dnum_cell(r.error_rt),
+        dnum_cell(r.intensity),
+        dnum_cell(r.area),
+        r.id_level.to_string(),
+        dnum_cell(r.score),
+        r.shared_fragments.to_string(),
+        dnum_cell(r.cosine_similarity),
+        sql(&r.formula),
+        sql(&r.SMILES),
+        sql(&r.InChI),
+        sql(&r.InChIKey),
+        dnum_cell(r.xLogP),
+        sql(&r.database_id),
+        r.db_ms2_size.to_string(),
+        sql(&r.db_ms2_mz),
+        sql(&r.db_ms2_intensity),
+        sql(&r.db_ms2_formula),
+        sql(&r.db_ms2_smiles),
+        r.exp_ms2_size.to_string(),
+        sql(&r.exp_ms2_mz),
+        sql(&r.exp_ms2_intensity),
+    ];
+    format!("({})", vals.join(","))
+}
+
+const INTERNAL_STANDARDS_COLUMNS: &str = "project_id,analysis,feature,feature_group,feature_component,adduct,candidate_rank,name,polarity,db_mass,exp_mass,error_mass,db_rt,exp_rt,error_rt,intensity,area,id_level,score,shared_fragments,cosine_similarity,formula,SMILES,InChI,InChIKey,xLogP,database_id,db_ms2_size,db_ms2_mz,db_ms2_intensity,db_ms2_formula,db_ms2_smiles,exp_ms2_size,exp_ms2_mz,exp_ms2_intensity";
+
+pub(crate) fn persist_internal_standards(
+    project: &Project,
+    data: &crate::nta::ProjectNonTargetAnalysis,
+) -> Result<()> {
+    let project_id = project.get_project_id().to_string();
+    project.execute_sql(NTA_INTERNAL_STANDARDS_SCHEMA)?;
+    project.execute_sql(&format!(
+        "DELETE FROM MASS_SPEC_NTA_INTERNAL_STANDARDS WHERE project_id={}",
+        sql(&project_id)
+    ))?;
+    let mut tuples = Vec::new();
+    for buffer in &data.internal_standard_buffers {
+        for i in 0..buffer.size() {
+            tuples.push(internal_standard_values(
+                &project_id,
+                &buffer.get_internal_standard(i),
+            ));
+        }
+    }
+    insert_rows(
+        project,
+        "MASS_SPEC_NTA_INTERNAL_STANDARDS",
+        INTERNAL_STANDARDS_COLUMNS,
+        tuples,
+    )
+}
+const TRANSFORMATION_PRODUCTS_COLUMNS: &str = "project_id,analysis,feature_group,precursor_feature_group,main_precursor_feature_group,assignment_rank,name,formula,mass,SMILES,InChI,InChIKey,xLogP,transformation,precursor_name,precursor_formula,precursor_mass,precursor_SMILES,precursor_InChI,precursor_InChIKey,precursor_xLogP,main_precursor_name,main_precursor_formula,main_precursor_mass,main_precursor_SMILES,main_precursor_InChI,main_precursor_InChIKey,main_precursor_xLogP,cosine_similarity,main_precursor_cosine_similarity,rt_plausibility,main_precursor_rt_plausibility,assignment_score,network_level,assignment_status";
+
+fn transformation_product_values(
+    project_id: &str,
+    analysis: &str,
+    r: &crate::nta_transformation_products::TransformationProductRow,
+) -> String {
+    let vals = vec![
+        sql(project_id),
+        sql(analysis),
+        sql(&r.feature_group),
+        sql(&r.precursor_feature_group),
+        sql(&r.main_precursor_feature_group),
+        r.assignment_rank.to_string(),
+        sql(&r.name),
+        sql(&r.formula),
+        dnum_cell(r.mass),
+        sql(&r.SMILES),
+        sql(&r.InChI),
+        sql(&r.InChIKey),
+        dnum_cell(r.xLogP),
+        sql(&r.transformation),
+        sql(&r.precursor_name),
+        sql(&r.precursor_formula),
+        dnum_cell(r.precursor_mass),
+        sql(&r.precursor_SMILES),
+        sql(&r.precursor_InChI),
+        sql(&r.precursor_InChIKey),
+        dnum_cell(r.precursor_xLogP),
+        sql(&r.main_precursor_name),
+        sql(&r.main_precursor_formula),
+        dnum_cell(r.main_precursor_mass),
+        sql(&r.main_precursor_SMILES),
+        sql(&r.main_precursor_InChI),
+        sql(&r.main_precursor_InChIKey),
+        dnum_cell(r.main_precursor_xLogP),
+        dnum_cell(r.cosine_similarity),
+        dnum_cell(r.main_precursor_cosine_similarity),
+        dnum_cell(r.rt_plausibility),
+        dnum_cell(r.main_precursor_rt_plausibility),
+        dnum_cell(r.assignment_score),
+        r.network_level.to_string(),
+        sql(&r.assignment_status),
+    ];
+    format!("({})", vals.join(","))
+}
+
+/// Delete + full re-insert of the transformation-product assignment rows
+/// (mirrors `persist_suspects`); `analysis` is resolved per row by the caller.
+pub(crate) fn persist_transformation_products(
+    project: &Project,
+    rows: &[(
+        String,
+        crate::nta_transformation_products::TransformationProductRow,
+    )],
+) -> Result<()> {
+    let project_id = project.get_project_id().to_string();
+    project.execute_sql(NTA_TRANSFORMATION_PRODUCTS_SCHEMA)?;
+    project.execute_sql(&format!(
+        "DELETE FROM MASS_SPEC_NTA_TRANSFORMATION_PRODUCTS WHERE project_id={}",
+        sql(&project_id)
+    ))?;
+    let tuples: Vec<String> = rows
+        .iter()
+        .map(|(analysis, row)| transformation_product_values(&project_id, analysis, row))
+        .collect();
+    insert_rows(
+        project,
+        "MASS_SPEC_NTA_TRANSFORMATION_PRODUCTS",
+        TRANSFORMATION_PRODUCTS_COLUMNS,
+        tuples,
+    )
+}
+
+/// NULL-tolerant numeric load for suspect/IS tables: SQL NULL (persisted
+/// NaN) maps back to NaN, matching C++ `detail::col_d`.
+fn col_num(row: &Value, col: &str) -> f64 {
+    row.get(col).and_then(Value::as_f64).unwrap_or(f64::NAN)
+}
+
+pub(crate) fn load_suspects(
+    project: &Project,
+    data: &mut crate::nta::ProjectNonTargetAnalysis,
+) -> Result<()> {
+    let project_id = project.get_project_id().to_string();
+    project.execute_sql(NTA_SUSPECTS_SCHEMA)?;
+    for buffer in data.suspect_buffers.iter_mut() {
+        *buffer = crate::nta::NtaSuspects::default();
+    }
+    let names = data.analysis_names().to_vec();
+    let rows = project.query_json(&format!(
+        "SELECT * FROM MASS_SPEC_NTA_SUSPECTS WHERE project_id={} ORDER BY analysis",
+        sql(&project_id)
+    ))?;
+    for row in rows.as_array().into_iter().flatten() {
+        let an = row_text(row, "analysis");
+        let Some(pos) = names.iter().position(|n| *n == an) else {
+            continue;
+        };
+        let mut r = crate::nta::NtaSuspectRow::default();
+        r.analysis = an;
+        r.feature = row_text(row, "feature");
+        r.feature_group = row_text(row, "feature_group");
+        r.candidate_rank = row_int(row, "candidate_rank");
+        r.name = row_text(row, "name");
+        r.polarity = row_int(row, "polarity");
+        r.db_mass = col_num(row, "db_mass");
+        r.exp_mass = col_num(row, "exp_mass");
+        r.error_mass = col_num(row, "error_mass");
+        r.db_rt = col_num(row, "db_rt");
+        r.exp_rt = col_num(row, "exp_rt");
+        r.error_rt = col_num(row, "error_rt");
+        r.intensity = col_num(row, "intensity");
+        r.area = col_num(row, "area");
+        r.id_level = row_int(row, "id_level");
+        r.score = col_num(row, "score");
+        r.shared_fragments = row_int(row, "shared_fragments");
+        r.cosine_similarity = col_num(row, "cosine_similarity");
+        r.formula = row_text(row, "formula");
+        r.SMILES = row_text(row, "SMILES");
+        r.InChI = row_text(row, "InChI");
+        r.InChIKey = row_text(row, "InChIKey");
+        r.xLogP = col_num(row, "xLogP");
+        r.database_id = row_text(row, "database_id");
+        r.db_ms2_size = row_int(row, "db_ms2_size");
+        r.db_ms2_mz = row_text(row, "db_ms2_mz");
+        r.db_ms2_intensity = row_text(row, "db_ms2_intensity");
+        r.db_ms2_formula = row_text(row, "db_ms2_formula");
+        r.db_ms2_smiles = row_text(row, "db_ms2_smiles");
+        r.exp_ms2_size = row_int(row, "exp_ms2_size");
+        r.exp_ms2_mz = row_text(row, "exp_ms2_mz");
+        r.exp_ms2_intensity = row_text(row, "exp_ms2_intensity");
+        data.suspect_buffers[pos].append(&r);
+    }
+    Ok(())
+}
+
+pub(crate) fn load_internal_standards(
+    project: &Project,
+    data: &mut crate::nta::ProjectNonTargetAnalysis,
+) -> Result<()> {
+    let project_id = project.get_project_id().to_string();
+    project.execute_sql(NTA_INTERNAL_STANDARDS_SCHEMA)?;
+    for buffer in data.internal_standard_buffers.iter_mut() {
+        *buffer = crate::nta::NtaInternalStandards::default();
+    }
+    let names = data.analysis_names().to_vec();
+    let rows = project.query_json(&format!(
+        "SELECT * FROM MASS_SPEC_NTA_INTERNAL_STANDARDS WHERE project_id={} ORDER BY analysis",
+        sql(&project_id)
+    ))?;
+    for row in rows.as_array().into_iter().flatten() {
+        let an = row_text(row, "analysis");
+        let Some(pos) = names.iter().position(|n| *n == an) else {
+            continue;
+        };
+        let mut r = crate::nta::NtaInternalStandardRow::default();
+        r.analysis = an;
+        r.feature = row_text(row, "feature");
+        r.feature_group = row_text(row, "feature_group");
+        r.feature_component = row_text(row, "feature_component");
+        r.adduct = row_text(row, "adduct");
+        r.candidate_rank = row_int(row, "candidate_rank");
+        r.name = row_text(row, "name");
+        r.polarity = row_int(row, "polarity");
+        r.db_mass = col_num(row, "db_mass");
+        r.exp_mass = col_num(row, "exp_mass");
+        r.error_mass = col_num(row, "error_mass");
+        r.db_rt = col_num(row, "db_rt");
+        r.exp_rt = col_num(row, "exp_rt");
+        r.error_rt = col_num(row, "error_rt");
+        r.intensity = col_num(row, "intensity");
+        r.area = col_num(row, "area");
+        r.id_level = row_int(row, "id_level");
+        r.score = col_num(row, "score");
+        r.shared_fragments = row_int(row, "shared_fragments");
+        r.cosine_similarity = col_num(row, "cosine_similarity");
+        r.formula = row_text(row, "formula");
+        r.SMILES = row_text(row, "SMILES");
+        r.InChI = row_text(row, "InChI");
+        r.InChIKey = row_text(row, "InChIKey");
+        r.xLogP = col_num(row, "xLogP");
+        r.database_id = row_text(row, "database_id");
+        r.db_ms2_size = row_int(row, "db_ms2_size");
+        r.db_ms2_mz = row_text(row, "db_ms2_mz");
+        r.db_ms2_intensity = row_text(row, "db_ms2_intensity");
+        r.db_ms2_formula = row_text(row, "db_ms2_formula");
+        r.db_ms2_smiles = row_text(row, "db_ms2_smiles");
+        r.exp_ms2_size = row_int(row, "exp_ms2_size");
+        r.exp_ms2_mz = row_text(row, "exp_ms2_mz");
+        r.exp_ms2_intensity = row_text(row, "exp_ms2_intensity");
+        data.internal_standard_buffers[pos].append(&r);
+    }
+    Ok(())
+}
+
+/// Map the JSON `targets` array (suspects/internal standards) into
+/// `SuspectQuery` objects (mirrors C++ `detail::parse_suspect_targets`).
+pub(crate) fn parse_suspect_targets(
+    parameters: &Value,
+) -> Vec<crate::nta_suspect_screening::SuspectQuery> {
+    let mut out = Vec::new();
+    let targets = parameters
+        .get("targets")
+        .and_then(Value::as_array)
+        .cloned()
+        .unwrap_or_default();
+    for t in &targets {
+        let mut q = crate::nta_suspect_screening::SuspectQuery::default();
+        q.name = t
+            .get("id")
+            .or_else(|| t.get("name"))
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        if let Some(m) = t.get("mass").and_then(Value::as_f64) {
+            q.has_mass = true;
+            q.mass = m;
+        } else if let Some(m) = t.get("mz").and_then(Value::as_f64) {
+            q.has_mass = true;
+            q.mass = m;
+        }
+        q.rt = t.get("rt").and_then(Value::as_f64).unwrap_or(0.0);
+        q.formula = row_text(t, "formula");
+        q.SMILES = t
+            .get("SMILES")
+            .or_else(|| t.get("smiles"))
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        q.InChI = t
+            .get("InChI")
+            .or_else(|| t.get("inchi"))
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        q.InChIKey = t
+            .get("InChIKey")
+            .or_else(|| t.get("inchikey"))
+            .and_then(Value::as_str)
+            .unwrap_or_default()
+            .to_string();
+        q.database_id = row_text(t, "database_id");
+        q.score = t.get("score").and_then(Value::as_f64).unwrap_or(0.0);
+        if let Some(x) = t.get("xLogP").and_then(Value::as_f64) {
+            q.has_xLogP = true;
+            q.xLogP = x;
+        }
+        let frag_mz = t
+            .get("fragments_mz")
+            .or_else(|| t.get("fragments_mz_pos"))
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        let frag_int = t
+            .get("fragments_intensity")
+            .or_else(|| t.get("fragments_intensity_pos"))
+            .and_then(Value::as_array)
+            .cloned()
+            .unwrap_or_default();
+        for v in &frag_mz {
+            q.fragments_mz_pos.push(v.as_f64().unwrap_or(0.0));
+        }
+        for v in &frag_int {
+            q.fragments_intensity_pos.push(v.as_f64().unwrap_or(0.0));
+        }
+        out.push(q);
+    }
+    out
+}
+fn opt_real(p: &Value, key: &str) -> f64 {
+    match p.get(key) {
+        Some(v) if !v.is_null() => v.as_f64().unwrap_or(f64::NAN),
+        _ => f64::NAN,
+    }
+}
+
+fn opt_int(p: &Value, key: &str) -> i32 {
+    match p.get(key) {
+        Some(v) if !v.is_null() => v.as_i64().unwrap_or(0) as i32,
+        _ => 0,
+    }
+}
+
+fn has_param(p: &Value, key: &str) -> bool {
+    matches!(p.get(key), Some(v) if !v.is_null())
+}
+
+pub(crate) fn finished(info: &str) -> Value {
+    json!({"status": "finished", "info": info})
+}
+
+pub fn subtract_blank(project: &mut Project, p: &Value) -> Result<Value> {
+    let blank_threshold = p
+        .get("blank_threshold")
+        .and_then(Value::as_f64)
+        .unwrap_or(5.0) as f32;
+    let rt_expand = p.get("rt_expand").and_then(Value::as_f64).unwrap_or(10.0) as f32;
+    let mz_expand = p.get("mz_expand").and_then(Value::as_f64).unwrap_or(0.005) as f32;
+    let min_traces_intensity = p
+        .get("min_traces_intensity")
+        .and_then(Value::as_f64)
+        .unwrap_or(0.0) as f32;
+    if blank_threshold < 0.0 || rt_expand < 0.0 || mz_expand < 0.0 || min_traces_intensity < 0.0 {
+        return Err(invalid("invalid blank subtraction parameters"));
+    }
+    let mut data = load_analysis_features(project, p)?;
+    crate::nta_blank_subtraction::subtract_blank_impl(
+        &mut data,
+        blank_threshold,
+        rt_expand,
+        mz_expand,
+        min_traces_intensity,
+    )?;
+    persist_features(project, &data)?;
+    Ok(finished("Blank subtraction completed."))
+}
+
+pub fn filter_features(project: &mut Project, p: &Value) -> Result<Value> {
+    // Optional numeric filters: null/absent (R NA) disable the filter via NaN.
+    let mut has_only_filled = false;
+    let mut only_filled_value = false;
+    if let Some(v) = p.get("only_filled") {
+        if !v.is_null() {
+            has_only_filled = true;
+            only_filled_value = v.as_bool().unwrap_or(false);
+        }
+    }
+    let mut data = load_analysis_features(project, p)?;
+    crate::nta_filters::filter_features_impl(
+        &mut data,
+        opt_real(p, "min_sn"),
+        opt_real(p, "min_intensity"),
+        opt_real(p, "min_area"),
+        opt_real(p, "min_width"),
+        opt_real(p, "max_width"),
+        opt_real(p, "max_ppm"),
+        opt_real(p, "min_fwhm_rt"),
+        opt_real(p, "max_fwhm_rt"),
+        opt_real(p, "min_fwhm_mz"),
+        opt_real(p, "max_fwhm_mz"),
+        opt_real(p, "min_gaussian_a"),
+        opt_real(p, "min_gaussian_mu"),
+        opt_real(p, "max_gaussian_mu"),
+        opt_real(p, "min_gaussian_sigma"),
+        opt_real(p, "max_gaussian_sigma"),
+        opt_real(p, "min_gaussian_r2"),
+        opt_real(p, "max_jaggedness"),
+        opt_real(p, "min_sharpness"),
+        opt_real(p, "min_asymmetry"),
+        opt_real(p, "max_asymmetry"),
+        opt_int(p, "max_modality"),
+        has_param(p, "max_modality"),
+        opt_real(p, "min_plates"),
+        has_only_filled,
+        only_filled_value,
+        p.get("remove_filled")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+        opt_int(p, "min_size_eic"),
+        has_param(p, "min_size_eic"),
+        opt_int(p, "min_size_ms1"),
+        has_param(p, "min_size_ms1"),
+        opt_int(p, "min_size_ms2"),
+        has_param(p, "min_size_ms2"),
+        opt_real(p, "min_rel_presence_replicate"),
+        p.get("remove_isotopes")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+        p.get("remove_adducts")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+        p.get("remove_losses")
+            .and_then(Value::as_bool)
+            .unwrap_or(false),
+    )?;
+    persist_features(project, &data)?;
+    Ok(finished("Features filtered."))
+}
+
+pub fn filter_features_ms2(project: &mut Project, p: &Value) -> Result<Value> {
+    let top = p.get("top").and_then(Value::as_i64).unwrap_or(0) as i32;
+    let min_intensity_ms2 = p
+        .get("min_intensity_ms2")
+        .and_then(Value::as_f64)
+        .unwrap_or(f64::NAN) as f32;
+    let rel_min_intensity = p
+        .get("rel_min_intensity")
+        .and_then(Value::as_f64)
+        .unwrap_or(f64::NAN) as f32;
+    let blank_clean = p
+        .get("blank_clean")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let mz_clust = p.get("mz_clust").and_then(Value::as_f64).unwrap_or(0.005) as f32;
+    let blank_presence_threshold = p
+        .get("blank_presence_threshold")
+        .and_then(Value::as_f64)
+        .unwrap_or(0.8) as f32;
+    let global_presence_threshold = p
+        .get("global_presence_threshold")
+        .and_then(Value::as_f64)
+        .unwrap_or(0.1) as f32;
+    if top < 0
+        || mz_clust < 0.0
+        || blank_presence_threshold < 0.0
+        || blank_presence_threshold > 1.0
+        || global_presence_threshold < 0.0
+        || global_presence_threshold > 1.0
+    {
+        return Err(invalid("invalid MS2 feature filtering parameters"));
+    }
+    let mut data = load_analysis_features(project, p)?;
+    crate::nta_filters::filter_features_ms2_impl(
+        &mut data,
+        top,
+        min_intensity_ms2,
+        rel_min_intensity,
+        blank_clean,
+        mz_clust,
+        blank_presence_threshold,
+        global_presence_threshold,
+    )?;
+    persist_features(project, &data)?;
+    Ok(finished("MS2 peak lists filtered."))
+}
+
+pub fn group_features(project: &mut Project, p: &Value) -> Result<Value> {
+    let method = p
+        .get("method")
+        .and_then(Value::as_str)
+        .unwrap_or("internal_standards")
+        .to_string();
+    let rt_deviation = p.get("rt_deviation").and_then(Value::as_f64).unwrap_or(5.0) as f32;
+    let ppm = p.get("ppm").and_then(Value::as_f64).unwrap_or(10.0) as f32;
+    let min_samples = p.get("min_samples").and_then(Value::as_i64).unwrap_or(1) as i32;
+    let bin_size = p.get("bin_size").and_then(Value::as_f64).unwrap_or(5.0) as f32;
+    if method.is_empty() || rt_deviation < 0.0 || ppm < 0.0 || min_samples < 1 || bin_size <= 0.0 {
+        return Err(invalid("invalid feature grouping parameters"));
+    }
+    let mut data = load_analysis_features(project, p)?;
+    if method == "internal_standards" {
+        load_internal_standards(project, &mut data)?;
+    }
+    crate::nta_alignment::group_features_impl(
+        &mut data,
+        &method,
+        rt_deviation,
+        ppm,
+        min_samples,
+        bin_size,
+    )?;
+    persist_features(project, &data)?;
+    Ok(finished("Features grouped."))
+}
+pub fn fill_features(project: &mut Project, p: &Value) -> Result<Value> {
+    let within_replicate = p
+        .get("within_replicate")
+        .and_then(Value::as_bool)
+        .unwrap_or(false);
+    let filtered = p.get("filtered").and_then(Value::as_bool).unwrap_or(false);
+    let rt_expand = p.get("rt_expand").and_then(Value::as_f64).unwrap_or(10.0) as f32;
+    let mz_expand = p.get("mz_expand").and_then(Value::as_f64).unwrap_or(0.01) as f32;
+    let max_peak_width = p
+        .get("max_peak_width")
+        .and_then(Value::as_f64)
+        .unwrap_or(30.0) as f32;
+    let min_traces_intensity = p
+        .get("min_traces_intensity")
+        .and_then(Value::as_f64)
+        .unwrap_or(1000.0) as f32;
+    let min_number_traces = p
+        .get("min_number_traces")
+        .and_then(Value::as_i64)
+        .unwrap_or(5) as i32;
+    let min_intensity_ms1 = p
+        .get("min_intensity")
+        .or_else(|| p.get("min_intensity_ms1"))
+        .and_then(Value::as_f64)
+        .unwrap_or(5000.0) as f32;
+    let rt_apex_deviation = p
+        .get("rt_apex_deviation")
+        .and_then(Value::as_f64)
+        .unwrap_or(5.0) as f32;
+    let min_signal_to_noise_ratio = p
+        .get("min_signal_to_noise_ratio")
+        .and_then(Value::as_f64)
+        .unwrap_or(3.0) as f32;
+    let min_gaussian_fit = p
+        .get("min_gaussian_fit")
+        .and_then(Value::as_f64)
+        .unwrap_or(0.2) as f32;
+    if rt_expand < 0.0
+        || mz_expand < 0.0
+        || max_peak_width <= 0.0
+        || min_traces_intensity < 0.0
+        || min_number_traces < 1
+        || min_intensity_ms1 < 0.0
+        || rt_apex_deviation < 0.0
+        || min_signal_to_noise_ratio < 0.0
+        || min_gaussian_fit < 0.0
+        || min_gaussian_fit > 1.0
+    {
+        return Err(invalid("invalid gap filling parameters"));
+    }
+    let mut data = load_analysis_features(project, p)?;
+    crate::nta_gap_filling::fill_features_impl(
+        &mut data,
+        within_replicate,
+        filtered,
+        rt_expand,
+        mz_expand,
+        max_peak_width,
+        min_traces_intensity,
+        min_number_traces,
+        min_intensity_ms1,
+        rt_apex_deviation,
+        min_signal_to_noise_ratio,
+        min_gaussian_fit,
+    )?;
+    persist_features(project, &data)?;
+    Ok(finished("Feature gaps filled."))
+}
+
+pub fn create_components(project: &mut Project, p: &Value) -> Result<Value> {
+    let min_correlation = p
+        .get("min_correlation")
+        .and_then(Value::as_f64)
+        .unwrap_or(0.8) as f32;
+    let mut rt_window: Vec<f32> = p
+        .get("rt_window")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_f64)
+                .map(|x| x as f32)
+                .collect()
+        })
+        .unwrap_or_default();
+    if rt_window.is_empty() {
+        rt_window = vec![0.0, 0.0];
+    }
+    if min_correlation < 0.0 || min_correlation > 1.0 {
+        return Err(invalid("invalid componentization parameters"));
+    }
+    let mut data = load_analysis_features(project, p)?;
+    crate::nta_componentization::create_components_impl(&mut data, &rt_window, min_correlation)?;
+    persist_features(project, &data)?;
+    Ok(finished("Components created."))
+}
+
+pub fn annotate_components(project: &mut Project, p: &Value) -> Result<Value> {
+    let max_isotopes = p.get("max_isotopes").and_then(Value::as_i64).unwrap_or(5) as i32;
+    let max_charge = p.get("max_charge").and_then(Value::as_i64).unwrap_or(1) as i32;
+    let max_gaps = p.get("max_gaps").and_then(Value::as_i64).unwrap_or(1) as i32;
+    let ppm = p.get("ppm").and_then(Value::as_f64).unwrap_or(10.0) as f32;
+    let isotope_elements: Vec<String> = p
+        .get("isotope_elements")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_else(|| {
+            vec![
+                "C:1-60".into(),
+                "N:0-10".into(),
+                "O:0-20".into(),
+                "S:0-4".into(),
+                "Cl:0-6".into(),
+                "Br:0-4".into(),
+            ]
+        });
+    if max_isotopes < 1 || max_charge < 1 || max_gaps < 0 || ppm < 0.0 {
+        return Err(invalid("invalid annotation parameters"));
+    }
+    let mut data = load_analysis_features(project, p)?;
+    crate::nta_annotation::annotate_components_impl(
+        &mut data,
+        max_isotopes,
+        max_charge,
+        max_gaps,
+        ppm,
+        &isotope_elements,
+        "",
+        "",
+    )?;
+    persist_features(project, &data)?;
+    Ok(finished("Components annotated."))
+}
+
+pub fn suspect_screening(project: &mut Project, p: &Value) -> Result<Value> {
+    let ppm = p.get("ppm").and_then(Value::as_f64).unwrap_or(5.0);
+    let sec = p.get("sec").and_then(Value::as_f64).unwrap_or(10.0);
+    let ppm_ms2 = p.get("ppm_ms2").and_then(Value::as_f64).unwrap_or(10.0);
+    let mzr_ms2 = p.get("mzr_ms2").and_then(Value::as_f64).unwrap_or(0.008);
+    let min_cosine_similarity = p
+        .get("min_cosine_similarity")
+        .and_then(Value::as_f64)
+        .unwrap_or(0.7);
+    let min_shared_fragments = p
+        .get("min_shared_fragments")
+        .and_then(Value::as_i64)
+        .unwrap_or(3) as i32;
+    let filtered = p.get("filtered").and_then(Value::as_bool).unwrap_or(true);
+    if ppm < 0.0
+        || sec < 0.0
+        || ppm_ms2 < 0.0
+        || mzr_ms2 < 0.0
+        || min_cosine_similarity < 0.0
+        || min_cosine_similarity > 1.0
+        || min_shared_fragments < 0
+    {
+        return Err(invalid("invalid suspect screening parameters"));
+    }
+    let mut data = load_analysis_features(project, p)?;
+    let suspects = parse_suspect_targets(p);
+    let analyses = data.analysis_names().to_vec();
+    crate::nta_suspect_screening::suspect_screening_impl(
+        &mut data,
+        &analyses,
+        &suspects,
+        ppm,
+        sec,
+        ppm_ms2,
+        mzr_ms2,
+        min_cosine_similarity,
+        min_shared_fragments,
+        filtered,
+    )?;
+    persist_features(project, &data)?;
+    persist_suspects(project, &data)?;
+    Ok(finished("Suspect screening completed."))
+}
+
+pub fn filter_suspects(project: &mut Project, p: &Value) -> Result<Value> {
+    let names: Vec<String> = p
+        .get("names")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default();
+    let min_score = opt_real(p, "min_score");
+    let max_error_rt = opt_real(p, "max_error_rt");
+    let max_error_mass = opt_real(p, "max_error_mass");
+    let id_levels: Vec<i32> = p
+        .get("id_levels")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_i64)
+                .map(|x| x as i32)
+                .collect()
+        })
+        .unwrap_or_default();
+    let min_shared_fragments = p
+        .get("min_shared_fragments")
+        .and_then(Value::as_i64)
+        .unwrap_or(0) as i32;
+    let min_cosine_similarity = opt_real(p, "min_cosine_similarity");
+    if min_shared_fragments < 0 {
+        return Err(invalid("invalid suspect filtering parameters"));
+    }
+    let mut data = load_analysis_features(project, p)?;
+    load_suspects(project, &mut data)?;
+    crate::nta_filters::filter_suspects_impl(
+        &mut data,
+        &names,
+        min_score,
+        max_error_rt,
+        max_error_mass,
+        &id_levels,
+        min_shared_fragments,
+        min_cosine_similarity,
+    )?;
+    persist_suspects(project, &data)?;
+    Ok(finished("Suspects filtered."))
+}
+pub fn find_internal_standards(project: &mut Project, p: &Value) -> Result<Value> {
+    let ppm = p.get("ppm").and_then(Value::as_f64).unwrap_or(5.0);
+    let sec = p.get("sec").and_then(Value::as_f64).unwrap_or(10.0);
+    let ppm_ms2 = p.get("ppm_ms2").and_then(Value::as_f64).unwrap_or(10.0);
+    let mzr_ms2 = p.get("mzr_ms2").and_then(Value::as_f64).unwrap_or(0.008);
+    let min_cosine_similarity = p
+        .get("min_cosine_similarity")
+        .and_then(Value::as_f64)
+        .unwrap_or(0.7);
+    let min_shared_fragments = p
+        .get("min_shared_fragments")
+        .and_then(Value::as_i64)
+        .unwrap_or(3) as i32;
+    let filtered = p.get("filtered").and_then(Value::as_bool).unwrap_or(true);
+    if ppm < 0.0
+        || sec < 0.0
+        || ppm_ms2 < 0.0
+        || mzr_ms2 < 0.0
+        || min_cosine_similarity < 0.0
+        || min_cosine_similarity > 1.0
+        || min_shared_fragments < 0
+    {
+        return Err(invalid("invalid internal standard parameters"));
+    }
+    let mut data = load_analysis_features(project, p)?;
+    let suspects = parse_suspect_targets(p);
+    let analyses = data.analysis_names().to_vec();
+    crate::nta_suspect_screening::find_internal_standards_impl(
+        &mut data,
+        &analyses,
+        &suspects,
+        ppm,
+        sec,
+        ppm_ms2,
+        mzr_ms2,
+        min_cosine_similarity,
+        min_shared_fragments,
+        filtered,
+    )?;
+    persist_features(project, &data)?;
+    persist_internal_standards(project, &data)?;
+    Ok(finished("Internal standards found."))
+}
+
+pub fn filter_internal_standards(project: &mut Project, p: &Value) -> Result<Value> {
+    let names: Vec<String> = p
+        .get("names")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_str)
+                .map(str::to_string)
+                .collect()
+        })
+        .unwrap_or_default();
+    let min_score = opt_real(p, "min_score");
+    let max_error_rt = opt_real(p, "max_error_rt");
+    let max_error_mass = opt_real(p, "max_error_mass");
+    let id_levels: Vec<i32> = p
+        .get("id_levels")
+        .and_then(Value::as_array)
+        .map(|a| {
+            a.iter()
+                .filter_map(Value::as_i64)
+                .map(|x| x as i32)
+                .collect()
+        })
+        .unwrap_or_default();
+    let min_shared_fragments = p
+        .get("min_shared_fragments")
+        .and_then(Value::as_i64)
+        .unwrap_or(0) as i32;
+    let min_cosine_similarity = opt_real(p, "min_cosine_similarity");
+    if min_shared_fragments < 0 {
+        return Err(invalid("invalid internal standard filtering parameters"));
+    }
+    let mut data = load_analysis_features(project, p)?;
+    load_internal_standards(project, &mut data)?;
+    crate::nta_filters::filter_internal_standards_impl(
+        &mut data,
+        &names,
+        min_score,
+        max_error_rt,
+        max_error_mass,
+        &id_levels,
+        min_shared_fragments,
+        min_cosine_similarity,
+    )?;
+    persist_internal_standards(project, &data)?;
+    Ok(finished("Internal standards filtered."))
+}
+
+pub fn correct_matrix_suppression(project: &mut Project, p: &Value) -> Result<Value> {
+    let mp_rt_window = p
+        .get("mp_rt_window")
+        .and_then(Value::as_f64)
+        .unwrap_or(10.0) as f32;
+    let mut ref_blank_replicate = p
+        .get("ref_blank_replicate")
+        .and_then(Value::as_str)
+        .unwrap_or("")
+        .to_string();
+    if ref_blank_replicate == "NA" || ref_blank_replicate == "NA_character_" {
+        ref_blank_replicate.clear();
+    }
+    if mp_rt_window <= 0.0 {
+        return Err(invalid("invalid matrix suppression correction parameters"));
+    }
+    let mut data = load_analysis_features(project, p)?;
+    load_internal_standards(project, &mut data)?;
+    crate::nta_correction_algorithms::correct_matrix_suppression_impl(
+        &mut data,
+        mp_rt_window,
+        &ref_blank_replicate,
+    )?;
+    persist_features(project, &data)?;
+    Ok(finished("Matrix suppression corrected."))
 }

@@ -1,30 +1,81 @@
 use serde_json::json;
 use streamfind_rust_core::{MethodRegistry, OperationRegistry};
+use streamfind_rust_test_support::{advertised_core_tools, catalogue_entries};
 
-fn catalogue_fixture() -> serde_json::Value {
-    serde_json::from_str(include_str!(
-        "../../../../tests/fixtures/mcp/generic_mcp_catalogue.json"
-    ))
-    .unwrap()
+/// Tool names `tools/list` must advertise: core operations plus every
+/// exposed domain operation. This is derived from the committed semantic
+/// catalogue so it remains stable and adapts automatically to new domains.
+fn advertised_tool_names() -> Vec<String> {
+    let mut names = advertised_core_tools()
+        .into_iter()
+        .map(|entry| entry["mcp"]["name"].as_str().unwrap().to_owned())
+        .collect::<Vec<_>>();
+    names.extend(
+        catalogue_entries()
+            .into_iter()
+            .filter(|entry| {
+                entry["kind"] == "operation"
+                    && entry["domain"] != "streamfind"
+                    && entry["exposed"] == true
+            })
+            .map(|entry| entry["canonical_id"].as_str().unwrap().to_owned()),
+    );
+    names
+}
+
+/// Assert a `tools/list` payload advertises exactly the expected tool names.
+fn assert_advertises(tools: &serde_json::Value, expected: &[String]) {
+    let actual_names: Vec<String> = tools
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|tool| tool["name"].as_str().unwrap().to_owned())
+        .collect();
+    let mut expected = expected.to_vec();
+    expected.sort();
+    let mut actual = actual_names.clone();
+    actual.sort();
+    assert_eq!(
+        actual, expected,
+        "advertised tools differ from the catalogue"
+    );
+    assert_eq!(
+        actual_names.len(),
+        expected.len(),
+        "duplicate or missing tool names"
+    );
+    assert!(tools
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|tool| tool["inputSchema"]["type"] == "object"));
 }
 
 #[test]
 fn supports_initialize_and_tool_listing() {
     let registry = MethodRegistry::default();
+    let mut operations = OperationRegistry::default();
+    streamfind_rust_mass_spec::register_operations(&mut operations).unwrap();
+    let mut session = streamfind_rust_mcp::Session::new(&registry, &operations);
     assert_eq!(
-        streamfind_rust_mcp::handle(&json!({"id": 1, "method": "initialize"}), &registry)["result"]
-            ["serverInfo"]["name"],
+        session.handle(&json!({"id": 1, "method": "initialize"}))["result"]["serverInfo"]["name"],
         "streamfind-rust"
     );
-    assert_eq!(
-        streamfind_rust_mcp::handle(&json!({"id": 2, "method": "tools/list"}), &registry)["result"]
-            ["tools"]
-            .as_array()
-            .unwrap()
-            .len(),
-        22
-    );
-    let tools = streamfind_rust_mcp::handle(&json!({"id": 2, "method": "tools/list"}), &registry);
+    let tools = session.handle(&json!({"id": 2, "method": "tools/list"}));
+    assert_advertises(&tools["result"]["tools"], &advertised_tool_names());
+    let initialize = session.handle(&json!({"id": 3, "method": "initialize"}));
+    let instructions = initialize["result"]["instructions"]
+        .as_str()
+        .expect("initialize must provide agent usage instructions");
+    for term in [
+        "create",
+        "describe",
+        "tools/list",
+        "get_available_methods",
+        "connect",
+    ] {
+        assert!(instructions.contains(term), "instructions missing {term}");
+    }
     let metadata = tools["result"]["tools"]
         .as_array()
         .unwrap()
@@ -39,30 +90,80 @@ fn supports_initialize_and_tool_listing() {
 }
 
 #[test]
-fn session_hides_domain_methods_until_connected() {
+fn session_always_advertises_domain_operations() {
     let registry = MethodRegistry::default();
-    let operations = OperationRegistry::default();
+    let mut operations = OperationRegistry::default();
+    streamfind_rust_mass_spec::register_operations(&mut operations).unwrap();
     let mut session = streamfind_rust_mcp::Session::new(&registry, &operations);
     let tools = session.handle(&json!({"id": 1, "method": "tools/list"}));
-    assert_eq!(tools["result"]["tools"].as_array().unwrap().len(), 22);
+    // Operations are stateless and discoverable before connect; only methods
+    // depend on the connected project/domain context.
+    assert_advertises(&tools["result"]["tools"], &advertised_tool_names());
+    assert!(tools["result"]["tools"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .any(|tool| tool["name"] == "mass_spec.get_raw_spectra_eic"));
 }
 
 #[test]
-fn advertised_tools_match_shared_fixture() {
+fn method_discovery_returns_complete_input_schemas() {
+    let mut registry = MethodRegistry::default();
+    streamfind_rust_mass_spec::register_methods(&mut registry).unwrap();
+    let operations = OperationRegistry::default();
+    let mut session = streamfind_rust_mcp::Session::new(&registry, &operations);
+    let response = session.handle(&json!({
+        "id": 1,
+        "method": "tools/call",
+        "params": {
+            "name": "get_available_methods",
+            "arguments": {"domain": "mass_spec"}
+        }
+    }));
+    assert_ne!(response["result"]["isError"], true, "{response}");
+    let methods: serde_json::Value =
+        serde_json::from_str(response["result"]["content"][0]["text"].as_str().unwrap()).unwrap();
+    let find_features = methods
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|method| method["id"] == "mass_spec.find_features")
+        .expect("find_features must be discoverable as a workflow method");
+    assert_eq!(find_features["inputSchema"]["type"], "object");
+    assert!(find_features["inputSchema"]["properties"].is_object());
+    assert!(find_features["parameters"].is_array());
+}
+
+#[test]
+fn advertised_tools_carry_catalogue_required_parameters() {
     let registry = MethodRegistry::default();
     let actual = streamfind_rust_mcp::handle(&json!({"id": 1, "method": "tools/list"}), &registry);
     let actual = actual["result"]["tools"].as_array().unwrap();
-    for expected in catalogue_fixture()["generic_tools"].as_array().unwrap() {
+    // Every advertised core tool must expose the required parameters the
+    // catalogue declares for it (derived, so this tracks catalogue changes).
+    for entry in advertised_core_tools() {
         let tool = actual
             .iter()
-            .find(|tool| tool["name"] == expected["name"])
+            .find(|tool| tool["name"] == entry["mcp"]["name"])
             .unwrap();
-        for required in expected["required"].as_array().unwrap() {
-            assert!(tool["inputSchema"]["required"]
-                .as_array()
-                .unwrap()
-                .contains(required));
-        }
+        let expected_required: std::collections::BTreeSet<String> = entry["parameters"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|parameter| parameter["required"] == true)
+            .map(|parameter| parameter["name"].as_str().unwrap().to_owned())
+            .collect();
+        let actual_required: std::collections::BTreeSet<String> = tool["inputSchema"]["required"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|value| value.as_str().unwrap().to_owned())
+            .collect();
+        assert_eq!(
+            actual_required, expected_required,
+            "required parameters differ from the catalogue for {}",
+            entry["mcp"]["name"]
+        );
     }
 }
 
@@ -72,7 +173,8 @@ fn session_lifecycle_rebinds_catalogue() {
     let mut operations = OperationRegistry::default();
     streamfind_rust_mass_spec::register_operations(&mut operations).unwrap();
     let mut session = streamfind_rust_mcp::Session::new(&registry, &operations);
-    let path = std::env::temp_dir().join("streamfind-rust-mcp-lifecycle.duckdb");
+    let path = streamfind_rust_test_support::tmp_projects_dir()
+        .join("streamfind-rust-mcp-lifecycle.duckdb");
     let _ = std::fs::remove_file(&path);
     let call = |session: &mut streamfind_rust_mcp::Session<'_>, id, name, arguments| {
         session.handle(&json!({"id": id, "method": "tools/call", "params": {"name": name, "arguments": arguments}}))
@@ -86,11 +188,13 @@ fn session_lifecycle_rebinds_catalogue() {
         )["result"]["isError"]
             != true
     );
+    // Operations are always advertised; connect changes only the method
+    // execution context and does not require a tools/list refresh.
     let tools = session.handle(&json!({"id": 3, "method": "tools/list"}))["result"]["tools"]
         .as_array()
         .unwrap()
         .clone();
-    assert_eq!(tools.len(), 42);
+    assert_advertises(&json!(tools), &advertised_tool_names());
     let eic = tools
         .iter()
         .find(|tool| tool["name"] == "mass_spec.get_raw_spectra_eic")
@@ -108,9 +212,30 @@ fn session_lifecycle_rebinds_catalogue() {
         eic["inputSchema"]["properties"]["targets"]["examples"][0][0]["id"],
         "caffeine"
     );
-    let info = call(
+    // The nested target object is part of the advertised JSON Schema, not an
+    // opaque generic object. This is what lets clients construct EIC inputs
+    // without consulting get_available_methods (which lists methods only).
+    for field in ["id", "mass", "mz", "rt", "formula", "SMILES", "InChI"] {
+        assert!(
+            eic["inputSchema"]["properties"]["targets"]["items"]["properties"]
+                .get(field)
+                .is_some(),
+            "targets schema is missing field {field}"
+        );
+    }
+    let pre_connect_info = call(
         &mut session,
         4,
+        "mass_spec.get_analyses_info",
+        json!({"database_path": path, "project_id": "mcp"}),
+    );
+    assert_ne!(
+        pre_connect_info["result"]["isError"], true,
+        "{pre_connect_info}"
+    );
+    let info = call(
+        &mut session,
+        5,
         "mass_spec.get_analyses_info",
         json!({"database_path": path, "project_id": "mcp"}),
     );
@@ -142,12 +267,10 @@ fn session_lifecycle_rebinds_catalogue() {
         )["result"]["isError"]
             != true
     );
-    assert_eq!(
-        session.handle(&json!({"id": 5, "method": "tools/list"}))["result"]["tools"]
-            .as_array()
-            .unwrap()
-            .len(),
-        42
-    );
+    // After close, operations remain advertised because they are stateless;
+    // only the connected method context is cleared.
+    let closed =
+        session.handle(&json!({"id": 5, "method": "tools/list"}))["result"]["tools"].clone();
+    assert_advertises(&closed, &advertised_tool_names());
     let _ = std::fs::remove_file(path);
 }

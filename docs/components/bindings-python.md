@@ -1,23 +1,11 @@
-# Python binding (future)
+# Python package
 
-`bindings/python` is reserved for the future public Python package. It is not
-available as an installable public package yet.
+A public Python package is not currently released by streamfind.
 
-!!! warning "Not available yet"
-    Do not use this directory as an installation or runtime entry point. The
-    public Python boundary starts after the semantic, registry, and MCP
-    contracts have stabilised.
+!!! warning "Not currently available"
+    The C++ and Rust native packages do not provide a public Python import
+    package. Use their CLI or MCP interfaces instead.
 
-## Planned design
-
-- Built on the C++ backend with pybind11; `streamfind._core` stays private
-  and minimal.
-- `streamfind.core` as the typed public Python API.
-- `streamfind.cli` for generic project and workflow operations.
-- `streamfind.server` with Pydantic schemas, a service layer, and
-  project/workflow/job/result endpoints.
-- A packaged React/TypeScript frontend under `bindings/python/frontend/`.
-
-Work starts only after the semantic, registry, and MCP contracts are stable,
-so the Python distribution can reuse the generated catalogue instead of
-maintaining a second method catalogue.
+This page is retained so that future Python assets have a clear place in the
+No Python API, installation command, service endpoint, or compatibility promise is
+available at this time.

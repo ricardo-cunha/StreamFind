@@ -1,60 +1,34 @@
-# Testing
+# Compatibility and support
 
-Tests are organized per component against the shared backend-neutral fixtures
-in `tests/`.
+The native C++ and Rust packages are preview releases for Windows x64 and
+Linux x86_64. The existing R package is a separate preserved interface.
 
-## Shared fixtures
+## Native package scope
 
-- `tests/data/` — analytical sample data (mass spectrometry, Raman, sensors)
-  plus project conformance fixtures such as
-  `tests/data/project/project_conformance.json`.
-- `tests/fixtures/` — semantic and MCP JSON fixtures.
+The native packages provide:
 
-Both backends run the same conformance fixtures to prove shared behaviour
-without sharing native code.
+- project creation and inspection;
+- metadata, workflow, cache, and audit operations;
+- catalogue-backed MCP Operations and workflow Method schemas;
+- mass-spectrometry analysis, spectrum, and chromatogram access;
+- native readers for supported mzML and vendor-container formats.
 
-## Semantic
+Support varies by backend, domain, file format, and platform. Vendor-reader
+availability should be confirmed for the specific format and dataset.
 
-```powershell
-& .\semantic\validate.ps1
-```
+## Runtime requirements
 
-Validates the Turtle catalogue with SHACL. After changing the ontology,
-regenerate the projection and ensure it is committed:
+Keep the package's catalogue files with the executable. Optional scientific
+tools such as Open Babel, Java, and MetFrag are separate dependencies and are
+not automatically installed by the native packages.
 
-```powershell
-& .\.venv\Scripts\python.exe .\semantic\generate_projection.py
-```
+## Interface selection
 
-## C++ core
+- Use the C++ package for native C++ applications or the C++ MCP server.
+- Use the Rust package for native Rust applications, the Rust CLI, or the Rust
+  MCP server.
+- Use the R package for existing R and Shiny workflows.
+- The Python package and Cogniflow integration are not currently released.
 
-```powershell
-cmake --preset default
-cmake --build --preset default --config Debug
-ctest --test-dir build/cmake/default -C Debug --output-on-failure
-```
-
-Conformance tests live in `core/tests/`, including the project conformance
-test in `core/tests/unit/conformance.cpp`.
-
-## Rust backend
-
-From `rust/`:
-
-```powershell
-cargo fmt --all -- --check
-cargo test --workspace
-```
-
-Conformance tests live in `rust/crates/core/tests/`.
-
-## Interoperability
-
-The C++ and Rust implementations are validated against each other through the
-shared fixtures, not through a shared runtime:
-
-```text
-tests/data/project/project_conformance.json
-core/tests/unit/conformance.cpp
-rust/crates/core/tests/conformance.rs
-```
+The native packages do not yet provide stable cross-version C++ ABI or Rust API
+compatibility guarantees.

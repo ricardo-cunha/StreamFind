@@ -6,7 +6,7 @@ sfcore:databasePathParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Database path" ;
-    skos:definition "Filesystem path of the DuckDB project database." ;
+    skos:definition "Filesystem path of the DuckDB project database. Use an existing .duckdb file for describe/connect and a new path for create." ;
     sf:type "string" ;
     sf:required true ;
     sf:example "/data/project.duckdb" .
@@ -15,7 +15,7 @@ sfcore:projectIdParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Project identifier" ;
-    skos:definition "Logical project identifier within the database." ;
+    skos:definition "Logical project identifier within the database. Reuse exactly the same identifier in every later operation call." ;
     sf:type "string" ;
     sf:required true ;
     sf:example "demo" .
@@ -24,16 +24,17 @@ sfcore:domainParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Project domain" ;
-    skos:definition "Immutable domain assigned to a project." ;
+    skos:definition "Immutable domain assigned to a project at creation time. Use the domain value reported by get_domain when selecting workflow methods." ;
     sf:type "string" ;
     sf:required true ;
+    sf:constraints "mass_spec|raman|sensors|streamfind" ;
     sf:example "mass_spec" .
 
 sfcore:metadataParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Project metadata" ;
-    skos:definition "JSON object containing project-owned metadata." ;
+    skos:definition "JSON object containing project-owned metadata. Metadata is user-owned and may contain arbitrary JSON keys." ;
     sf:type "object" ;
     sf:required true ;
     sf:example "{}" .
@@ -42,7 +43,7 @@ sfcore:workflowParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Workflow" ;
-    skos:definition "Versioned ordered workflow definition." ;
+    skos:definition "Ordered array of workflow method objects. Each object must identify a registered method and may contain that method's validated parameters." ;
     sf:type "array" ;
     sf:required true ;
     sf:items sfcore:methodField ;
@@ -52,7 +53,7 @@ sfcore:methodParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Method identifier" ;
-    skos:definition "Stable identifier of a registered workflow method." ;
+    skos:definition "Stable canonical identifier of a registered workflow method, for example mass_spec.find_features. Obtain valid method identifiers and their parameters from get_available_methods(domain)." ;
     sf:type "string" ;
     sf:required true ;
     sf:example "mass_spec.get_raw_spectra" .
@@ -61,7 +62,7 @@ sfcore:parametersParameter
     a sf:Parameter ;
     skos:inScheme sfcore:scheme ;
     skos:prefLabel "Method parameters" ;
-    skos:definition "JSON object containing method-specific parameter values." ;
+    skos:definition "JSON object containing method-specific parameter values. Use the selected method's parameter definitions from get_available_methods; unknown keys are rejected." ;
     sf:type "object" ;
     sf:required false ;
     sf:example "{}" .

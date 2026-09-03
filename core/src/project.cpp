@@ -56,6 +56,19 @@ private:
     Statement statement_;
 };
 
+class AppenderGuard {
+public:
+    explicit AppenderGuard(duckdb_appender *appender) : appender_(appender) {}
+    ~AppenderGuard() {
+        if (appender_ && *appender_) duckdb_appender_destroy(appender_);
+    }
+    AppenderGuard(const AppenderGuard &) = delete;
+    AppenderGuard &operator=(const AppenderGuard &) = delete;
+
+private:
+    duckdb_appender *appender_;
+};
+
 void query(duckdb_connection connection, const std::string &sql,
            const std::string &context) {
     duckdb_result result{};
@@ -149,13 +162,13 @@ bool has_column(duckdb_connection connection, const char *table, const char *col
 void ensure_schema(duckdb_connection connection,
                    const ProjectOptions &options) {
     query(connection,
-          "CREATE TABLE IF NOT EXISTS PROJECT (project_id VARCHAR NOT NULL PRIMARY KEY, domain VARCHAR, metadata JSON, workflow JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, schema_version INTEGER NOT NULL DEFAULT 1, framework_version VARCHAR NOT NULL DEFAULT '0.1.0')",
+          "CREATE TABLE IF NOT EXISTS PROJECT (project_id VARCHAR NOT NULL PRIMARY KEY, domain VARCHAR, metadata JSON, workflow JSON, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, schema_version INTEGER NOT NULL DEFAULT 1, framework_version VARCHAR NOT NULL DEFAULT '" STREAMFIND_FRAMEWORK_VERSION "')",
           "create PROJECT table");
     if (!has_column(connection, "PROJECT", "schema_version")) {
         query(connection, "ALTER TABLE PROJECT ADD COLUMN schema_version INTEGER DEFAULT 1", "upgrade PROJECT schema");
     }
     if (!has_column(connection, "PROJECT", "framework_version")) {
-        query(connection, "ALTER TABLE PROJECT ADD COLUMN framework_version VARCHAR DEFAULT '0.1.0'", "upgrade PROJECT schema");
+        query(connection, "ALTER TABLE PROJECT ADD COLUMN framework_version VARCHAR DEFAULT '" STREAMFIND_FRAMEWORK_VERSION "'", "upgrade PROJECT schema");
     }
     query(connection,
           "CREATE TABLE IF NOT EXISTS CACHE (project_id VARCHAR NOT NULL, name VARCHAR NOT NULL, description VARCHAR NOT NULL, hash VARCHAR NOT NULL, data BLOB NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, hash))",
@@ -955,6 +968,87 @@ void Project::execute_sql(const std::string &sql) const {
     ensure_active(*impl_);
     Connection connection(*impl_);
     query(connection.get(), sql, "execute project SQL");
+}
+
+void Project::append_rows(const std::string &table_name,
+                          const std::vector<std::string> &column_names,
+                          const std::vector<std::vector<std::optional<std::string>>> &rows) const {
+    std::lock_guard lock(impl_->mutex);
+    ensure_active(*impl_);
+    if (impl_->options.read_only) throw Error(ErrorCode::InvalidArgument, "Project is read-only");
+    Connection connection(*impl_);
+
+    duckdb_appender appender = nullptr;
+    if (duckdb_appender_create(connection.get(), nullptr, table_name.c_str(), &appender) == DuckDBError) {
+        const char *message = appender ? duckdb_appender_error(appender) : nullptr;
+        throw Error(ErrorCode::DatabaseError,
+                    message ? message : ("create DuckDB appender failed for " + table_name));
+    }
+    AppenderGuard appender_guard(&appender);
+
+    // Select only the supplied columns as the appender's active column list; every
+    // other table column (e.g. created_at) is filled with its DEFAULT value.
+    for (const auto &name : column_names) {
+        if (duckdb_appender_add_column(appender, name.c_str()) == DuckDBError) {
+            const char *message = duckdb_appender_error(appender);
+            throw Error(ErrorCode::DatabaseError,
+                        message ? message : ("add appender column " + name));
+        }
+    }
+
+    // Reflect each active column's DuckDB type so numeric values are appended as
+    // numbers (not text), matching the R bindings' typed append behaviour.
+    const idx_t active_columns = duckdb_appender_column_count(appender);
+    std::vector<duckdb_type> types(static_cast<std::size_t>(active_columns));
+    for (idx_t col = 0; col < active_columns; ++col) {
+        duckdb_logical_type logical = duckdb_appender_column_type(appender, col);
+        types[static_cast<std::size_t>(col)] = duckdb_get_type_id(logical);
+        duckdb_destroy_logical_type(&logical);
+    }
+
+    for (const auto &row : rows) {
+        if (row.size() != column_names.size()) {
+            throw Error(ErrorCode::InvalidArgument,
+                        "append_rows row/column count mismatch for " + table_name);
+        }
+        if (duckdb_appender_begin_row(appender) == DuckDBError) {
+            const char *message = duckdb_appender_error(appender);
+            throw Error(ErrorCode::DatabaseError, message ? message : "begin appender row");
+        }
+        for (idx_t col = 0; col < active_columns; ++col) {
+            const auto &cell = row[static_cast<std::size_t>(col)];
+            duckdb_state state = DuckDBSuccess;
+            if (!cell) {
+                state = duckdb_append_null(appender);
+            } else {
+                switch (types[static_cast<std::size_t>(col)]) {
+                    case DUCKDB_TYPE_VARCHAR: state = duckdb_append_varchar(appender, cell->c_str()); break;
+                    case DUCKDB_TYPE_DOUBLE: state = duckdb_append_double(appender, std::stod(*cell)); break;
+                    case DUCKDB_TYPE_FLOAT: state = duckdb_append_float(appender, std::stof(*cell)); break;
+                    case DUCKDB_TYPE_INTEGER: state = duckdb_append_int32(appender, static_cast<std::int32_t>(std::stoll(*cell))); break;
+                    case DUCKDB_TYPE_BIGINT: state = duckdb_append_int64(appender, std::stoll(*cell)); break;
+                    case DUCKDB_TYPE_SMALLINT: state = duckdb_append_int16(appender, static_cast<std::int16_t>(std::stoll(*cell))); break;
+                    case DUCKDB_TYPE_TINYINT: state = duckdb_append_int8(appender, static_cast<std::int8_t>(std::stoll(*cell))); break;
+                    case DUCKDB_TYPE_BOOLEAN: state = duckdb_append_bool(appender, *cell == "true" || *cell == "TRUE" || *cell == "1"); break;
+                    default:
+                        throw Error(ErrorCode::DatabaseError,
+                                    "append_rows unsupported column type for " + table_name + " col " + std::to_string(col));
+                }
+            }
+            if (state == DuckDBError) {
+                const char *message = duckdb_appender_error(appender);
+                throw Error(ErrorCode::DatabaseError, message ? message : "append appender value");
+            }
+        }
+        if (duckdb_appender_end_row(appender) == DuckDBError) {
+            const char *message = duckdb_appender_error(appender);
+            throw Error(ErrorCode::DatabaseError, message ? message : "end appender row");
+        }
+    }
+    if (duckdb_appender_close(appender) == DuckDBError) {
+        const char *message = duckdb_appender_error(appender);
+        throw Error(ErrorCode::DatabaseError, message ? message : "close appender");
+    }
 }
 
 Json Project::query_json(const std::string &sql) const {

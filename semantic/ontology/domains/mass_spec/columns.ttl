@@ -12,6 +12,33 @@ sfms:analysisNameColumn
     sf:type "string" ;
     sf:storageType "VARCHAR" .
 
+sfms:analysisIndexColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Analysis index" ;
+    skos:definition "Zero-based logical analysis index within the physical source file." ;
+    sf:columnName "analysis_index" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:sourceAnalysisNumberColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Source analysis number" ;
+    skos:definition "Vendor-provided analysis number within the physical source file." ;
+    sf:columnName "source_analysis_number" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:analysisCountColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Analysis count" ;
+    skos:definition "Number of logical analyses contained in the physical source file." ;
+    sf:columnName "analysis_count" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
 sfms:replicateNameColumn
     a sf:Column ;
     skos:inScheme sfcore:scheme ;
@@ -1207,3 +1234,597 @@ sfms:ntaComponentIsCoreColumn
 sfms:ntaComponentBridgeFlagColumn
     skos:prefLabel "Component bridge";
     skos:definition "Whether the feature is a component bridge." .
+
+sfms:suspectsAnalysisColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Analysis" ;
+    skos:definition "NTA suspect or internal-standard table column analysis." ;
+    sf:columnName "analysis" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:suspectsFeatureColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Feature" ;
+    skos:definition "NTA suspect or internal-standard table column feature." ;
+    sf:columnName "feature" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:suspectsFeatureGroupColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Feature Group" ;
+    skos:definition "NTA suspect or internal-standard table column feature_group." ;
+    sf:columnName "feature_group" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:suspectsCandidateRankColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Candidate Rank" ;
+    skos:definition "NTA suspect or internal-standard table column candidate_rank." ;
+    sf:columnName "candidate_rank" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:suspectsNameColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Name" ;
+    skos:definition "NTA suspect or internal-standard table column name." ;
+    sf:columnName "name" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:suspectsPolarityColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Polarity" ;
+    skos:definition "NTA suspect or internal-standard table column polarity." ;
+    sf:columnName "polarity" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:suspectsDbMassColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Db Mass" ;
+    skos:definition "NTA suspect or internal-standard table column db_mass." ;
+    sf:columnName "db_mass" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:suspectsExpMassColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Exp Mass" ;
+    skos:definition "NTA suspect or internal-standard table column exp_mass." ;
+    sf:columnName "exp_mass" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:suspectsErrorMassColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Error Mass" ;
+    skos:definition "NTA suspect or internal-standard table column error_mass." ;
+    sf:columnName "error_mass" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:suspectsDbRtColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Db Rt" ;
+    skos:definition "NTA suspect or internal-standard table column db_rt." ;
+    sf:columnName "db_rt" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:suspectsExpRtColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Exp Rt" ;
+    skos:definition "NTA suspect or internal-standard table column exp_rt." ;
+    sf:columnName "exp_rt" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:suspectsErrorRtColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Error Rt" ;
+    skos:definition "NTA suspect or internal-standard table column error_rt." ;
+    sf:columnName "error_rt" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:suspectsIntensityColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Intensity" ;
+    skos:definition "NTA suspect or internal-standard table column intensity." ;
+    sf:columnName "intensity" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:suspectsAreaColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Area" ;
+    skos:definition "NTA suspect or internal-standard table column area." ;
+    sf:columnName "area" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:suspectsIdLevelColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Id Level" ;
+    skos:definition "NTA suspect or internal-standard table column id_level." ;
+    sf:columnName "id_level" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:suspectsScoreColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Score" ;
+    skos:definition "NTA suspect or internal-standard table column score." ;
+    sf:columnName "score" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:suspectsSharedFragmentsColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Shared Fragments" ;
+    skos:definition "NTA suspect or internal-standard table column shared_fragments." ;
+    sf:columnName "shared_fragments" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:suspectsCosineSimilarityColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Cosine Similarity" ;
+    skos:definition "NTA suspect or internal-standard table column cosine_similarity." ;
+    sf:columnName "cosine_similarity" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:suspectsFormulaColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Formula" ;
+    skos:definition "NTA suspect or internal-standard table column formula." ;
+    sf:columnName "formula" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:suspectsSmilesColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Smiles" ;
+    skos:definition "NTA suspect or internal-standard table column SMILES." ;
+    sf:columnName "SMILES" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:suspectsInChIColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Inchi" ;
+    skos:definition "NTA suspect or internal-standard table column InChI." ;
+    sf:columnName "InChI" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:suspectsInChIKeyColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Inchikey" ;
+    skos:definition "NTA suspect or internal-standard table column InChIKey." ;
+    sf:columnName "InChIKey" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:suspectsXLogPColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Xlogp" ;
+    skos:definition "NTA suspect or internal-standard table column xLogP." ;
+    sf:columnName "xLogP" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:suspectsDatabaseIdColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Database Id" ;
+    skos:definition "NTA suspect or internal-standard table column database_id." ;
+    sf:columnName "database_id" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:suspectsDbMs2SizeColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Db Ms2 Size" ;
+    skos:definition "NTA suspect or internal-standard table column db_ms2_size." ;
+    sf:columnName "db_ms2_size" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:suspectsDbMs2MzColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Db Ms2 Mz" ;
+    skos:definition "NTA suspect or internal-standard table column db_ms2_mz." ;
+    sf:columnName "db_ms2_mz" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:suspectsDbMs2IntensityColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Db Ms2 Intensity" ;
+    skos:definition "NTA suspect or internal-standard table column db_ms2_intensity." ;
+    sf:columnName "db_ms2_intensity" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:suspectsDbMs2FormulaColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Db Ms2 Formula" ;
+    skos:definition "NTA suspect or internal-standard table column db_ms2_formula." ;
+    sf:columnName "db_ms2_formula" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:suspectsDbMs2SmilesColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Db Ms2 Smiles" ;
+    skos:definition "NTA suspect or internal-standard table column db_ms2_smiles." ;
+    sf:columnName "db_ms2_smiles" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:suspectsExpMs2SizeColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Exp Ms2 Size" ;
+    skos:definition "NTA suspect or internal-standard table column exp_ms2_size." ;
+    sf:columnName "exp_ms2_size" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:suspectsExpMs2MzColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Exp Ms2 Mz" ;
+    skos:definition "NTA suspect or internal-standard table column exp_ms2_mz." ;
+    sf:columnName "exp_ms2_mz" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:suspectsExpMs2IntensityColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Exp Ms2 Intensity" ;
+    skos:definition "NTA suspect or internal-standard table column exp_ms2_intensity." ;
+    sf:columnName "exp_ms2_intensity" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isAnalysisColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Analysis" ;
+    skos:definition "NTA suspect or internal-standard table column analysis." ;
+    sf:columnName "analysis" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isFeatureColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Feature" ;
+    skos:definition "NTA suspect or internal-standard table column feature." ;
+    sf:columnName "feature" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isFeatureGroupColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Feature Group" ;
+    skos:definition "NTA suspect or internal-standard table column feature_group." ;
+    sf:columnName "feature_group" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isFeatureComponentColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Feature Component" ;
+    skos:definition "NTA suspect or internal-standard table column feature_component." ;
+    sf:columnName "feature_component" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isAdductColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Adduct" ;
+    skos:definition "NTA suspect or internal-standard table column adduct." ;
+    sf:columnName "adduct" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isCandidateRankColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Candidate Rank" ;
+    skos:definition "NTA suspect or internal-standard table column candidate_rank." ;
+    sf:columnName "candidate_rank" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:isNameColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Name" ;
+    skos:definition "NTA suspect or internal-standard table column name." ;
+    sf:columnName "name" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isPolarityColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Polarity" ;
+    skos:definition "NTA suspect or internal-standard table column polarity." ;
+    sf:columnName "polarity" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:isDbMassColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Db Mass" ;
+    skos:definition "NTA suspect or internal-standard table column db_mass." ;
+    sf:columnName "db_mass" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:isExpMassColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Exp Mass" ;
+    skos:definition "NTA suspect or internal-standard table column exp_mass." ;
+    sf:columnName "exp_mass" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:isErrorMassColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Error Mass" ;
+    skos:definition "NTA suspect or internal-standard table column error_mass." ;
+    sf:columnName "error_mass" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:isDbRtColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Db Rt" ;
+    skos:definition "NTA suspect or internal-standard table column db_rt." ;
+    sf:columnName "db_rt" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:isExpRtColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Exp Rt" ;
+    skos:definition "NTA suspect or internal-standard table column exp_rt." ;
+    sf:columnName "exp_rt" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:isErrorRtColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Error Rt" ;
+    skos:definition "NTA suspect or internal-standard table column error_rt." ;
+    sf:columnName "error_rt" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:isIntensityColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Intensity" ;
+    skos:definition "NTA suspect or internal-standard table column intensity." ;
+    sf:columnName "intensity" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:isAreaColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Area" ;
+    skos:definition "NTA suspect or internal-standard table column area." ;
+    sf:columnName "area" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:isIdLevelColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Id Level" ;
+    skos:definition "NTA suspect or internal-standard table column id_level." ;
+    sf:columnName "id_level" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:isScoreColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Score" ;
+    skos:definition "NTA suspect or internal-standard table column score." ;
+    sf:columnName "score" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:isSharedFragmentsColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Shared Fragments" ;
+    skos:definition "NTA suspect or internal-standard table column shared_fragments." ;
+    sf:columnName "shared_fragments" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:isCosineSimilarityColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Cosine Similarity" ;
+    skos:definition "NTA suspect or internal-standard table column cosine_similarity." ;
+    sf:columnName "cosine_similarity" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:isFormulaColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Formula" ;
+    skos:definition "NTA suspect or internal-standard table column formula." ;
+    sf:columnName "formula" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isSmilesColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Smiles" ;
+    skos:definition "NTA suspect or internal-standard table column SMILES." ;
+    sf:columnName "SMILES" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isInChIColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Inchi" ;
+    skos:definition "NTA suspect or internal-standard table column InChI." ;
+    sf:columnName "InChI" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isInChIKeyColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Inchikey" ;
+    skos:definition "NTA suspect or internal-standard table column InChIKey." ;
+    sf:columnName "InChIKey" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isXLogPColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Xlogp" ;
+    skos:definition "NTA suspect or internal-standard table column xLogP." ;
+    sf:columnName "xLogP" ;
+    sf:type "real" ;
+    sf:storageType "DOUBLE" .
+
+sfms:isDatabaseIdColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Database Id" ;
+    skos:definition "NTA suspect or internal-standard table column database_id." ;
+    sf:columnName "database_id" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isDbMs2SizeColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Db Ms2 Size" ;
+    skos:definition "NTA suspect or internal-standard table column db_ms2_size." ;
+    sf:columnName "db_ms2_size" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:isDbMs2MzColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Db Ms2 Mz" ;
+    skos:definition "NTA suspect or internal-standard table column db_ms2_mz." ;
+    sf:columnName "db_ms2_mz" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isDbMs2IntensityColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Db Ms2 Intensity" ;
+    skos:definition "NTA suspect or internal-standard table column db_ms2_intensity." ;
+    sf:columnName "db_ms2_intensity" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isDbMs2FormulaColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Db Ms2 Formula" ;
+    skos:definition "NTA suspect or internal-standard table column db_ms2_formula." ;
+    sf:columnName "db_ms2_formula" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isDbMs2SmilesColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Db Ms2 Smiles" ;
+    skos:definition "NTA suspect or internal-standard table column db_ms2_smiles." ;
+    sf:columnName "db_ms2_smiles" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isExpMs2SizeColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Exp Ms2 Size" ;
+    skos:definition "NTA suspect or internal-standard table column exp_ms2_size." ;
+    sf:columnName "exp_ms2_size" ;
+    sf:type "integer" ;
+    sf:storageType "INTEGER" .
+
+sfms:isExpMs2MzColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Exp Ms2 Mz" ;
+    skos:definition "NTA suspect or internal-standard table column exp_ms2_mz." ;
+    sf:columnName "exp_ms2_mz" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .
+
+sfms:isExpMs2IntensityColumn
+    a sf:Column ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "Exp Ms2 Intensity" ;
+    skos:definition "NTA suspect or internal-standard table column exp_ms2_intensity." ;
+    sf:columnName "exp_ms2_intensity" ;
+    sf:type "string" ;
+    sf:storageType "VARCHAR" .

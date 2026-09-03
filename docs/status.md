@@ -1,99 +1,89 @@
-# Development status
+# Availability and compatibility
 
-streamfind is in an **active architecture migration**. The repository is
-building the long-term semantic, C++, and Rust foundations while preserving
-the existing R package. It is not yet a single, stable release across all
-languages.
+streamfind currently offers native C++ and Rust preview releases alongside
+the preserved R package. Choose the interface that matches your application.
 
-## What users can use today
+## Available interfaces
 
-| Path | Maturity | Best use today |
+| Interface | Current availability | Recommended use |
 | --- | --- | --- |
-| **R package** | Preserved and functional | Production-oriented R workflows, non-target screening, and the Shiny application |
-| **C++ backend** | Developer preview / active foundation | Native development, project persistence, workflow execution, and MCP integration |
-| **Rust backend** | Developer preview / active foundation | Independent backend development, interoperability testing, CLI, and MCP integration |
-| **MCP servers** | Working foundation | Experimenting with generic project tools and the currently registered domain capabilities |
-| **Python package** | Not available yet | No public installation path yet; the package boundary is reserved |
-| **Cogniflow integration** | Deferred | Not part of the current supported path |
+| C++ backend | Version {{ streamfind_version }} project version; latest package is v0.1.0 for Windows x64 and Linux x86_64 | Native C++ applications and MCP clients |
+| Rust backend | Version {{ streamfind_version }} project version; latest package is v0.1.0 for Windows x64 and Linux x86_64 | Native Rust applications, CLI use, and MCP clients |
+| C++ MCP server | Included in the C++ packages | Applications or agents using the C++ implementation |
+| Rust MCP server | Included in the Rust packages | Applications or agents using the Rust implementation |
+| R package | Preserved and functional | Existing R and Shiny workflows |
+| Python package | Not released | No public installation path currently |
+| Cogniflow integration | Separate future path | Not part of the native packages |
 
-For an existing analytical workflow, use the [R package](components/bindings-r.md).
-For backend or MCP development, use the [C++](components/core-cpp.md) or
-[Rust](components/rust.md) documentation and the matching quickstart.
+See [Releases](releases.md) for package downloads and checksums.
 
-## Implemented foundation
+## Native capabilities
 
-The active refactoring branch currently provides:
+The current native packages include:
 
-- a Turtle/SKOS/SHACL semantic catalogue with a deterministic generated
-  projection;
-- independent C++ and Rust project backends using the shared DuckDB schema and
-  JSON contracts;
-- project lifecycle, metadata, workflow, cache, audit, validation, and
-  cancellation/progress foundations;
-- generic, registry-driven C++ and Rust MCP servers;
-- MassSpec analysis management, metadata/query operations, raw and persisted
-  spectra/chromatogram access, and the first migrated feature-processing
-  methods;
-- initial Raman registration boundaries and shared conformance fixtures.
+- DuckDB-backed project creation, inspection, metadata, workflow, cache, and
+  audit operations;
+- catalogue-backed MCP Operations and workflow Method schemas;
+- mass-spectrometry analysis management and metadata/query operations;
+- raw and persisted spectrum and chromatogram access;
+- native mzML and vendor-container reader implementations;
+- feature-processing and non-target-analysis operations at different stages of
+  validation across domains and file formats.
 
-The [architecture](architecture.md) page explains how semantic declarations,
-backend registries, and MCP tool exposure fit together.
+Vendor-specific behavior depends on the file format and the available fixture
+or data source. A package should not be interpreted as support for every vendor
+format merely because a reader exists in the catalogue.
 
-## Current limitations
+## MCP usage model
 
-The following are intentionally unfinished or not yet supported as part of the
-new public backend path:
+Both native servers use JSON-RPC over standard input/output.
 
-- the complete non-target-analysis processing graph, including feature loading,
-  grouping, filling, filtering, annotation, suspect screening, and
-  transformation-product assignment;
-- a public Python distribution, service layer, or frontend;
-- a release and compatibility guarantee for the new C++/Rust APIs;
-- a production-ready Cogniflow integration on top of the new public Python
-  boundary;
-- automatic installation or discovery of all external analytical tools.
+- `initialize` provides usage instructions.
+- `tools/list` exposes callable Operations, including domain Operations, without
+  requiring a connected project.
+- Domain Operations require `database_path` and `project_id` in each request.
+- `get_available_methods` returns workflow Methods and their complete input
+  schemas.
+- `connect` opens an existing project for workflow execution; it does not
+  create a project.
+- `close` ends the connected workflow session.
 
-The R package remains the functional reference for capabilities that have not
-yet crossed the migration boundary. New work should be implemented directly in
-`semantic/`, `core/`, and `rust/`; the R implementation should not be wrapped as
-a compatibility layer for the new backends.
+The [C++ MCP quickstart](quickstart/cpp-mcp.md) and
+[Rust MCP quickstart](quickstart/rust-mcp.md) provide complete request flows.
 
-## How the migration progresses
+## Compatibility scope
 
-A capability is considered migrated when it has all of the following:
+The native packages are preview releases. They do not currently promise:
 
-1. a semantic declaration with parameters, results, errors, and mutation/cache
-   contracts;
-2. backend-neutral fixtures where appropriate;
-3. an independent C++ implementation and registry entry;
-4. an independent Rust implementation and registry entry; and
-5. conformance and component tests.
+- a stable cross-version C++ ABI;
+- a stable cross-version Rust API;
+- identical support for every vendor format on every platform;
+- automatic installation of Java, MetFrag, or other optional scientific tools;
+- the public Python package or a production Cogniflow adapter.
 
-The [living roadmap](https://github.com/odea-project/StreamFind/blob/master/.plans/streamfind_migration_plan.md)
-tracks the detailed inventory and ordering. Status labels on this site describe
-the current development stage, not a promise of API stability.
+The R package is a separate interface and installation path. Native C++/Rust
+packages should not be installed as replacements for the R package.
 
-## Development commands
+## Vendor compatibility and trademarks
 
-Validate the semantic contract and generated projection:
+streamfind is an independent open-source project and is not affiliated
+with, sponsored by, or endorsed by Agilent, SCIEX, Bruker, Shimadzu,
+Waters, or any other vendor referenced in the compatibility documentation.
 
-```powershell
-& .\.venv\Scripts\python.exe semantic\validate_semantic.py
-& .\.venv\Scripts\python.exe semantic\generate_projection.py --check
-```
+Vendor names, product names, trademarks, and file-format names identify
+compatibility only. streamfind does not redistribute vendor software, vendor
+SDKs, vendor DLLs, or vendor proprietary runtime components.
 
-Build and test the C++ backend:
+Compatibility is based on native file structures and datasets validated by the
+project. Support for a vendor format, instrument family, acquisition mode, or
+calibration variant is not implied merely because a reader exists.
 
-```powershell
-# Run these commands from core/
-cmake --preset default
-cmake --build --preset default --config Debug
-ctest --test-dir build/cmake/default -C Debug --output-on-failure
-```
+See the root [`NOTICE.md`](https://github.com/ricardo-cunha/streamfind/blob/dev_refactoring/NOTICE.md)
+for the distribution notice and compatibility boundaries.
 
-Test the Rust workspace:
+## Future interfaces
 
-```powershell
-cargo fmt --manifest-path rust/Cargo.toml --all -- --check
-cargo test --manifest-path rust/Cargo.toml --workspace
-```
+The [Python package](components/bindings-python.md) and
+[Cogniflow integration](components/cf-streamfind.md) pages describe the current
+availability of those future-facing assets without implying that they are part
+of the native release.

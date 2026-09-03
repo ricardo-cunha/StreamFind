@@ -51,7 +51,7 @@ create_streamfind_app <- function() {
   )
 
   remote_packages <- c(
-    "odea-project/streamfind@dev_s3_check"
+    "ricardo-cunha/streamfind@dev_s3_check"
   )
 
   # Temporarily increase timeout for large package downloads

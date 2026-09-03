@@ -4,68 +4,59 @@
   <img src="assets/streamfind.png" width="70%" />
 </p>
 
-streamfind is a DuckDB-backed workflow framework for analytical data
-processing. The repository hosts a shared **semantic catalogue**, two
-independent backend implementations (**C++** and **Rust**), and the language
-and integration bindings built on top of them.
+streamfind is a DuckDB-backed framework for analytical data processing. It
+provides native C++ and Rust backends, mass-spectrometry data access, a shared
+semantic catalogue, and MCP servers for applications and AI agents.
 
-!!! warning "Current development stage"
-    streamfind is in an active architecture migration. The R package is the
-    preserved functional user path, while the C++ and Rust backends and MCP
-    servers are active developer-preview foundations. The public Python package
-    and the complete non-target-analysis migration are not available yet.
+## Start here
 
-See the [development status](status.md) for the current capabilities,
-limitations, and recommended path for each type of user.
+- [Download the current native packages](releases.md).
+- [Use the C++ MCP server](quickstart/cpp-mcp.md).
+- [Use the Rust MCP server](quickstart/rust-mcp.md).
+- [Check supported interfaces and limitations](status.md).
+- [Use the existing R package](components/bindings-r.md).
 
-The central contract is the semantic catalogue: a backend-neutral declaration
-of domains, operations, workflow methods, parameters, results, errors, and
-interface mappings. Each backend implements that contract independently and
-shares behaviour through conformance fixtures, never by wrapping the other
-backend.
+!!! note "Version {{ streamfind_version }}"
+    The native C++ and Rust project version is now **{{ streamfind_version }}**. The latest
+    downloadable archives are currently the `v0.1.0` Windows and Linux preview
+    packages; the [Releases](releases.md) page will be updated when the `v{{ streamfind_version }}`
+    archives are published. Cross-version API and ABI stability is not yet
+    guaranteed.
 
-## Components
+## Interfaces
 
-| Component | What it is | Status |
+| Interface | Provides | Availability |
 | --- | --- | --- |
-| [Semantic catalogue](components/semantic.md) | Backend-neutral contract (Turtle + generated projection) | Foundation |
-| [C++ core](components/core-cpp.md) | Independent C++20 backend with DuckDB persistence and MCP server | Active foundation |
-| [Rust backend](components/rust.md) | Independent Rust backend with CLI and MCP server | Active foundation |
-| [R package](components/bindings-r.md) | Formal StreamFind R package, BMFTR-funded project | Preserved and functional |
-| [Python binding](components/bindings-python.md) | Public Python package | Future |
-| [Cogniflow integration](components/cf-streamfind.md) | Cogniflow step package | Deferred |
+| C++ core | Native project API, mass-spectrometry operations, and MCP server | Available as a native package |
+| Rust backend | Native project API, CLI, mass-spectrometry operations, and MCP server | Available as a native package |
+| MCP | JSON-RPC over stdio for applications and AI agents | Available through both native backends |
+| R package | Existing R workflows, non-target screening, and Shiny application | Preserved and functional |
+| Python package | Public Python API | Not released |
+| Cogniflow integration | Cogniflow adapter | Separate future integration path |
 
-## Where to start
+## MCP at a glance
 
-- **Understand what is supported today** → [Development status](status.md).
-- **Use the R package** for non-target screening workflows and the Shiny app →
-  [R package](components/bindings-r.md).
-- **Run the MCP servers** to operate projects from an MCP client →
-  [C++ MCP](quickstart/cpp-mcp.md) / [Rust MCP](quickstart/rust-mcp.md).
-- **Understand the design** behind the independent backends →
-  [Architecture](architecture.md).
-- **Develop against the contract** →
-  [Semantic catalogue](components/semantic.md) and [Testing](testing.md).
+The C++ and Rust MCP servers expose the same catalogue-backed interface.
 
-## Capability boundaries
+1. Call `initialize` to receive the server capabilities and usage guidance.
+2. Call `tools/list` to discover callable Operations.
+3. Use `create`, then `describe`, `get_domain`, or `get_metadata` for a new
+   project.
+4. Use domain Operations with explicit `database_path` and `project_id`.
+5. Use `connect` only when running workflow Methods.
+6. Call `get_available_methods` to discover workflow Methods and their schemas.
+7. Build and validate a workflow, then run it with `run_workflow` or
+   `run_method`.
 
-The current refactoring deliberately separates maturity levels:
+Operations are stateless. Workflow Methods are session-bound and are not
+advertised as MCP tools. See the [MCP quickstarts](quickstart/cpp-mcp.md) for
+request examples.
 
-| Capability | Current stage |
-| --- | --- |
-| R package and Shiny application | Preserved and functional |
-| Semantic catalogue and generated projection | Active foundation |
-| C++ and Rust project backends | Active developer-preview foundations |
-| Generic MCP servers | Working foundation with registered capabilities |
-| Public Python package and frontend | Not available yet |
-| Cogniflow integration on the new backend path | Deferred |
+## Shared contract
 
-## Principles
+The semantic catalogue defines operation names, parameters, nested input
+schemas, results, units, constraints, and agent-facing guidance. C++ and Rust
+implement the contract independently but expose the same public concepts.
 
-- The semantic catalogue is the authoritative source of public metadata; no
-  backend keeps a duplicate method catalogue.
-- C++ and Rust are independent implementations of the same contract. Rust
-  never links to, wraps, or calls the C++ backend.
-- The generic core and generic MCP code stay domain-neutral. Adding a method
-  means a semantic declaration plus a registry registration per backend, with
-  no MCP dispatch edits.
+The [architecture](architecture.md) page explains the relationship between
+the catalogue, native APIs, and MCP.

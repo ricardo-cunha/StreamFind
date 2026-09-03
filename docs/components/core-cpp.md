@@ -1,22 +1,23 @@
-# C++ core
+# C++ API
 
-`core/` is the standalone C++20 backend (`streamfind-core`) for project
-persistence and generic workflow execution. It does not depend on R, Python,
-FastAPI, or React. Domain libraries depend on the generic core; the generic
-core never depends on domains.
+The C++ backend provides a native project API and a C++ MCP server. The current
+Windows x64 and Linux x86_64 packages are listed on [Releases](../releases.md).
 
-!!! note "Maturity"
-    The C++ backend is an active developer-preview foundation, not yet a
-    released compatibility-stable library. It is the native backend planned
-    for the future public Python distribution.
+!!! note "Compatibility"
+    The native C++ package is a versioned preview release. It is suitable
+    for applications and integration testing, but does not yet promise a stable
+    cross-version ABI.
 
-## Build and test
+## Package contents
 
-```powershell
-cmake --preset default
-cmake --build --preset default --config Debug
-ctest --test-dir build/cmake/default -C Debug --output-on-failure
-```
+The C++ package includes:
+
+- `streamfind_mcp` / `streamfind_mcp.exe`;
+- the C++ libraries and public headers;
+- DuckDB and other native runtime dependencies;
+- `share/streamfind/catalogue.duckdb`.
+
+The catalogue is required by the MCP server and must remain with the package.
 
 ## Project API
 
@@ -30,28 +31,7 @@ streamfind::ProjectOptions options{
 auto project = streamfind::Project::create(options);
 ```
 
-Canonical methods use these prefixes:
-
-- `get_*` — read project state, metadata, workflow, cache, audit, identity,
-  or database path.
-- `set_*` — mutate metadata, workflow, or cache entries.
-- `run_*` — execute one method or the persisted workflow.
-- `delete_*` — remove project-owned cache data.
-
-`Project` is move-only and owns its native DuckDB state. `close()` marks the
-handle closed; later operations fail. Domains are assigned at creation and
-cannot be changed afterward.
-
-## JSON API
-
-`streamfind::api::run()` exposes the same operations through
-`streamfind::api::ProjectCommand`. Requests select a project with:
-
-```json
-{"database_path": "project.duckdb", "project_id": "demo"}
-```
-
-Canonical commands:
+Common project operations include:
 
 ```text
 create, describe, validate
@@ -59,24 +39,17 @@ get_metadata, set_metadata
 get_domain
 get_workflow, set_workflow, validate_workflow, run_workflow
 get_methods, run_method
-copy
 get_cache, get_cache_size, delete_cache
 get_audit_trail
-close
+copy, close
 ```
 
-Mutating commands require a writable project; `get_*`, `describe`, and
-validation commands are read-only.
+Domains are assigned when a project is created and are immutable afterward.
 
-## Execution and persistence contracts
+## MCP
 
-Workflow execution returns an `ExecutionResult` envelope; long-running
-callers may provide a `CancellationToken` and `ProgressCallback`. Errors use
-the stable `ErrorCode` enum. The core uses the shared `PROJECT`, `CACHE`, and
-`AUDIT_TRAIL` DuckDB tables and is tested against the Rust implementation
-using the shared fixtures in `tests/data`.
+The [C++ MCP quickstart](../quickstart/cpp-mcp.md) documents the stdio server
+and the stateless Operation/workflow Method distinction.
 
-See `core/README.md` for the full contracts.
-
-The [development status](../status.md) lists the currently migrated domain
-capabilities and the remaining migration boundary.
+The C++ and Rust MCP servers use the same semantic operation names and input
+schemas. They remain separate native implementations.

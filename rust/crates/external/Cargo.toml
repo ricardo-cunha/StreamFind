@@ -1,7 +1,10 @@
 [package]
 name = "streamfind-rust-external"
-version = "0.1.0"
+version.workspace = true
 edition = "2021"
 
 [lib]
 name = "streamfind_external"
+
+[dev-dependencies]
+streamfind-rust-test-support = { path = "../test-support" }

@@ -1,0 +1,80 @@
+# streamfind distribution notice
+
+This notice accompanies streamfind source and native binary distributions. It
+summarizes project licensing, third-party components, and the independent
+vendor-format compatibility position. It is not legal advice or a legal
+certification of format analysis, reverse-engineering rights, or redistribution
+clearance.
+
+## streamfind
+
+streamfind is distributed under the GNU General Public License, version 3, as
+set out in [`LICENSE.md`](LICENSE.md).
+
+## Vendor compatibility and trademarks
+
+streamfind is an independent open-source project and is not affiliated
+with, sponsored by, or endorsed by Agilent, SCIEX, Bruker, Shimadzu,
+Waters, or any other vendor referenced in the compatibility documentation.
+
+Vendor names, product names, trademarks, and file-format names are used
+solely to identify compatibility with files produced by those systems.
+streamfind does not redistribute vendor software, vendor SDKs, vendor DLLs,
+or vendor proprietary runtime components.
+
+Compatibility is based on the native file structures and datasets validated
+by the project. Support for a particular vendor format, instrument family,
+acquisition mode, or calibration variant is not implied merely because a
+reader exists.
+
+This notice is an engineering and trademark clarification, not a legal
+certification of reverse-engineering rights or compatibility with every
+vendor format. Review applicable agreements, laws, and licence obligations
+before redistributing vendor-format data or software.
+
+## Third-party components
+
+The exact C++/vendored-library licence texts are kept alongside their owning
+vendor directories under `core/vendor/`. The Rust dependency inventory is provided under
+`rust/LICENSES.md`. Component versions and inclusion can vary by backend and
+platform; the release manifest is authoritative for a particular archive.
+
+| Component | Version in the current native source/package | Licence | Source or retained notice |
+| --- | --- | --- | --- |
+| DuckDB C++ static package | v1.5.2 | MIT | `core/vendor/duckdb/LICENSE` |
+| DuckDB Rust crate/bundled backend | `duckdb` crate 1.10505.0; bundled backend requires separate verification | MIT metadata plus bundled upstream components | C++: `core/vendor/duckdb/LICENSE`; Rust: `rust/LICENSES.md` |
+| Open Babel | 3.2.0 | GPLv2 | `core/vendor/openbabel/openbabel-3-2-0/COPYING` |
+| Zstandard | 1.5.7 | BSD or GPLv2 | `core/vendor/zstd/LICENSE`, `core/vendor/zstd/COPYING` |
+| zlib | 1.3.2.1-motley | zlib licence | `core/vendor/zlib/zlib-develop/LICENSE` |
+| pugixml | 1.14 | MIT | `core/vendor/pugixml-1.14/LICENSE` |
+| simdutf | 7.3.4 | MIT | `core/vendor/simdutf/LICENSE` |
+| nlohmann JSON | 3.12.0 | MIT | `core/vendor/nlohmann/LICENSE` |
+| JSON Schema Validator | vendored version; see source README | MIT | `core/vendor/json-schema-validator/LICENSE` |
+| Rust dependencies | see `rust/Cargo.lock` and release manifest | package-specific MIT/Apache-2.0 and other declared terms | `rust/LICENSES.md` |
+
+The project must keep the original copyright and licence terms for every
+component when redistributing source or binaries. The presence of a component
+in this table does not by itself resolve the obligations of static linking,
+combined works, source-code offers, or downstream redistribution.
+
+## Native-reader development material
+
+Native readers are independently implemented in C++ and Rust. Vendor SDKs,
+DLLs, debugger traces, paired conversion outputs, proprietary documentation,
+confidential traces, and restricted vendor sample files are development-only
+material and are not runtime dependencies or release contents.
+
+## Release review
+
+Before distributing a native archive, verify that it contains:
+
+- `NOTICE.md` and `LICENSE.md` at the package root;
+- the C++ attribution payload assembled from the vendor-specific licence files
+  kept beside their owning libraries under `core/vendor/`, or the Rust
+  `LICENSES.md` dependency inventory;
+- only the runtime files and dependencies intended for that backend and platform.
+
+Verify the notice and attribution payload against the exact build inputs for
+that archive. Legal review is required for GPL/static-linking obligations,
+bundled DuckDB extension components, vendor asset rights, contractual
+restrictions, and the intended redistribution model.

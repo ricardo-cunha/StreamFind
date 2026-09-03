@@ -1,21 +1,12 @@
-# Cogniflow integration (deferred)
+# Cogniflow integration
 
-`integrations/cf-streamfind` is the relocated Cogniflow integration boundary.
-It is intentionally not expected to build during the current phase: the
-Cogniflow dependencies are not available and its native implementation will be
-refactored in this location.
+The Cogniflow integration is a separate future-facing asset. It is not included
+in the current C++ or Rust native packages and is not an alternative MCP server.
 
-!!! warning "Deferred integration"
-    This integration is not part of the supported current development path.
-    It should not be treated as evidence that the public Python distribution is
-    available.
+!!! note "Separate availability"
+    Use the native packages on [Releases](../releases.md) for current C++ and
+    Rust API or MCP usage. A Cogniflow installation should not be inferred from
+    the presence of this repository component.
 
-The package builds the Cogniflow native step library from the shared streamfind
-C++ core and the Cogniflow adapter under
-`integrations/cf-streamfind/src/cf_streamfind/cpp/`. It is exposed to
-Cogniflow through the `cogniflow.steps` entry-point mechanism rather than as a
-standalone end-user Python API.
-
-Work is deferred until the public C++/Python path is complete, after which
-Cogniflow will consume the installed public `streamfind` Python package and
-the canonical semantic catalogue.
+When a supported Cogniflow package becomes available, its installation and
+usage instructions will be documented here.

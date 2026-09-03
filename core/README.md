@@ -3,13 +3,18 @@
 Standalone C++20 core for project persistence and generic workflow execution.
 The core does not depend on R, Python, FastAPI, or React.
 
-## Build And Test
+## Vendor compatibility and trademarks
 
-```powershell
-cmake --preset default
-cmake --build --preset default --config Debug
-ctest --test-dir build/cmake/default -C Debug --output-on-failure
-```
+streamfind is independent of the instrument vendors named in its compatibility
+documentation. Vendor and product names identify file-format compatibility only;
+they do not indicate endorsement or affiliation. streamfind does not redistribute
+vendor software, SDKs, DLLs, or proprietary runtime components.
+
+See the root [`NOTICE.md`](../NOTICE.md) for distribution and support
+boundaries.
+
+Native C++ preview packages are available from the
+[release documentation](../docs/releases.md).
 
 ## Project API
 
@@ -103,4 +108,6 @@ execution, closed projects, and cancellation.
 
 The C++ core uses the shared `PROJECT`, `CACHE`, and `AUDIT_TRAIL` DuckDB tables.
 Workflow, metadata, cache, audit, and result JSON are backend-neutral and are
-tested against the Rust implementation using the shared fixtures in `tests/data`.
+tested against the Rust implementation using the project fixture in
+`tests/fixtures/project/project_conformance.json`. Large example datasets are
+provided separately through the streamfind.data repository/data directory.

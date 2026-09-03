@@ -4,6 +4,7 @@
 #include <limits>
 #include <vector>
 #include <string>
+#include <unordered_set>
 
 namespace mass_spec::spectra {
 struct MASS_SPEC_TARGETS {
@@ -22,6 +23,14 @@ struct MASS_SPEC_TARGETS {
     std::vector<float> mobility;
     std::vector<float> mobilitymin;
     std::vector<float> mobilitymax;
+
+    void resize_all(int n)
+    {
+      id.resize(n); index.resize(n); level.resize(n); polarity.resize(n);
+      precursor.resize(n); mzmin.resize(n); mzmax.resize(n); rtmin.resize(n);
+      rtmax.resize(n); mz.resize(n); mass.resize(n); rt.resize(n);
+      mobility.resize(n); mobilitymin.resize(n); mobilitymax.resize(n);
+    }
 };
 
 struct MASS_SPEC_TARGETS_SPECTRA {
@@ -36,7 +45,52 @@ struct MASS_SPEC_TARGETS_SPECTRA {
     std::vector<float> mobility;
     std::vector<float> mz;
     std::vector<float> intensity;
+
+    void resize_all(int n)
+    {
+      id.resize(n); polarity.resize(n); level.resize(n); pre_mz.resize(n);
+      pre_mzlow.resize(n); pre_mzhigh.resize(n); pre_ce.resize(n); rt.resize(n);
+      mobility.resize(n); mz.resize(n); intensity.resize(n);
+    }
+
+    size_t size() const { return id.size(); }
+
+    int number_ids() const
+    {
+      std::unordered_set<std::string> unique_ids(id.begin(), id.end());
+      return static_cast<int>(unique_ids.size());
+    }
+
+    // R-compatible accessor: return the slice of this spectra belonging to one
+    // target id (used by NTA gap filling and blank subtraction).
+    MASS_SPEC_TARGETS_SPECTRA operator[](const std::string &unique_id) const
+    {
+      MASS_SPEC_TARGETS_SPECTRA target;
+      for (size_t i = 0; i < id.size(); ++i)
+      {
+        if (id[i] == unique_id)
+        {
+          target.id.push_back(id[i]);
+          target.polarity.push_back(i < polarity.size() ? polarity[i] : 0);
+          target.level.push_back(i < level.size() ? level[i] : 0);
+          if (i < pre_mz.size()) target.pre_mz.push_back(pre_mz[i]);
+          if (i < pre_mzlow.size()) target.pre_mzlow.push_back(pre_mzlow[i]);
+          if (i < pre_mzhigh.size()) target.pre_mzhigh.push_back(pre_mzhigh[i]);
+          if (i < pre_ce.size()) target.pre_ce.push_back(pre_ce[i]);
+          if (i < rt.size()) target.rt.push_back(rt[i]);
+          if (i < mobility.size()) target.mobility.push_back(mobility[i]);
+          if (i < mz.size()) target.mz.push_back(mz[i]);
+          if (i < intensity.size()) target.intensity.push_back(intensity[i]);
+        }
+      }
+      return target;
+    }
 };
+
+// R-package-compatible aliases so NTA algorithms written against the former
+// reader API keep their original operations unchanged.
+using MS_TARGETS = MASS_SPEC_TARGETS;
+using MS_TARGETS_SPECTRA = MASS_SPEC_TARGETS_SPECTRA;
 }
 
 #include <algorithm>
@@ -188,6 +242,14 @@ namespace mass_spec
       bool has_ion_mobility;
     };
 
+    struct MASS_SPEC_ANALYSIS
+    {
+      int analysis_index = 0;
+      int source_analysis_number = 0;
+      std::string name;
+      int analysis_count = 1;
+    };
+
     struct MASS_SPEC_CHROMATOGRAMS_HEADERS
     {
       std::vector<int> index;
@@ -295,6 +357,10 @@ namespace mass_spec
     public:
       explicit MASS_SPEC_FILE(const std::string &file);
 
+      const std::vector<MASS_SPEC_ANALYSIS> &get_analysis_catalog() const { return analysis_catalog; }
+      void select_analysis(int index);
+      int selected_analysis_index() const { return selected_analysis; }
+
       int get_number_spectra() { return ms->get_number_spectra(); }
       int get_number_chromatograms() { return ms->get_number_chromatograms(); }
       int get_number_spectra_binary_arrays() { return ms->get_number_spectra_binary_arrays(); }
@@ -347,10 +413,17 @@ namespace mass_spec
       std::string file_extension;
       std::string format;
       int format_case = -1;
+      std::vector<MASS_SPEC_ANALYSIS> analysis_catalog;
+      int selected_analysis = 0;
 
     private:
       const std::vector<std::string> possible_formats = {"mzML", "mzXML", "ShimadzuTXT", "ASC", "ShimadzuLCD"};
     };
+
+    // R-package-compatible aliases so NTA algorithms written against the former
+    // reader API keep their original operations unchanged.
+    using MS_FILE = MASS_SPEC_FILE;
+    using MS_SPECTRA_HEADERS = MASS_SPEC_SPECTRA_HEADERS;
 
     namespace mzxml
     {

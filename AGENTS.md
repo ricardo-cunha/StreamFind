@@ -1,4 +1,4 @@
-# StreamFind Agent Instructions
+# streamfind Agent Instructions
 
 ## General Guidance
 
@@ -20,7 +20,7 @@
 
 ## Legacy-Free Development
 
-During the active StreamFind refactor, the codebase must move toward the target architecture without accumulating legacy scaffolding.
+During the active streamfind refactor, the codebase must move toward the target architecture without accumulating legacy scaffolding.
 
 ### Required Rules
 
@@ -60,6 +60,98 @@ Use the repository-local `.venv` for every Python script, test, formatter, or pa
   - Windows: `.venv\Scripts\python.exe -c "import sys; print(sys.executable)"`
   - POSIX: `.venv/bin/python -c 'import sys; print(sys.executable)'`
 - Do not use `python`, `python3`, or a system `pip` directly for repository work.
+
+## Repository Scratch, Build, and Log Locations (`tmp/`)
+
+All transient artifacts — development temp scripts, scratch files, custom
+build trees, test outputs, temp projects created during tests, logs, and any
+other disposable asset — belong in the repository-local `tmp/` folder at the
+checkout root (`<repo-root>/tmp/`). `tmp/` is gitignored
+(`.gitignore` → `/tmp/`), removed by `scripts/clean-build-temp.cmd`, and
+disposable by design: treat it as managed scratch, never as a place for
+anything that must be committed.
+
+- **Never** write repository-work temp files outside the repository (system
+  `%TEMP%` / `TMP`, `AppData`, user home, `<tmp>`, `/tmp`, etc.).
+- **Never** drop temp files, scratch, or ad-hoc build outputs in the
+  repository root or in source directories (`core/`, `rust/`, `semantic/`,
+  `docs/`, `bindings/`, `tests/`, ...). Root-level `log/` and `cache/` are
+  legacy locations that are being folded into `tmp/`; do not create new
+  content there.
+
+### Layout
+
+- `tmp/scripts/` — development helper scripts (`.bat`/`.sh`/`.py` wrappers for builds, tests, and tooling)
+- `tmp/build/` — custom/experimental build trees, ad-hoc binaries, staging areas
+- `tmp/projects/` — DuckDB project files and fixtures created by tests or ad-hoc runs
+- `tmp/logs/` — build, test, server, and session logs
+- `tmp/scratch/` — anything else transient
+
+### Rules
+
+- Development temp scripts and wrapper `.bat`/`.sh` files must be created
+  under `tmp/scripts/`, never in the system temp directory.
+- Test code and ad-hoc runs that create temporary DuckDB projects or fixtures
+  must place them under `tmp/projects/` (or another `tmp/`-anchored
+  directory), never in `std::filesystem::temp_directory_path()` / system temp.
+- Logs of builds, tests, servers, interactive sessions, and agent runs go to
+  `tmp/logs/` with one file per run (or a run-specific subdirectory).
+- Custom build trees created outside the canonical build presets go to
+  `tmp/build/`.
+- Housekeeping before committing on `dev_refactoring`:
+  `scripts\clean-build-temp.cmd` removes build/test artifacts and disposable
+  scratch (`tmp/build/`, `tmp/projects/`, `tmp/scratch/`, plus the legacy
+  `core/build/`, `rust/target/`, `log/`, `cache/` dirs). It **preserves**
+  `tmp/scripts/` and `tmp/logs/` by default so development-support wrappers and
+  diagnostics survive a routine clean. Run `scripts\clean-build-temp.cmd --all`
+  to also wipe `tmp/scripts/` and `tmp/logs/` — the intended final step once a
+  feature and its development-support scripts are implemented, leaving only the
+  committed convenience scripts under the root `scripts/` folder.
+
+## GitHub Releases
+
+Release archives are not committed under a repository `releases/` directory.
+The release builder writes temporary packages and checksums to
+`tmp/release-output/`; the GitHub Release is the authoritative distribution
+location.
+
+When a version is ready:
+
+1. Update and commit the C++/Rust version metadata and any release notes.
+2. Run `scripts/release.ps1 -Version <version>` (add `-Linux` when Linux
+   packages are required). This builds, tests, packages, and hashes the
+   archives under `tmp/release-output/`.
+3. Create and push the annotated tag to the official repository:
+
+   ```powershell
+   git tag -a v<version> -m "streamfind <version>"
+   git push upstream dev_refactoring
+   git push upstream v<version>
+   ```
+
+4. Publish the generated assets with the guarded helper:
+
+   ```powershell
+   scripts/publish-release.ps1 -Version <version>
+   ```
+
+   The helper requires authenticated `gh`, verifies every archive against
+   `sha256sums.txt`, and refuses to overwrite an existing release by default.
+
+To replace assets in an existing release intentionally, rebuild the same
+version and pass the explicit replacement switch:
+
+```powershell
+scripts/publish-release.ps1 -Version <version> -Replace
+```
+
+This uses `gh release upload --clobber`. Do not move an already-published tag
+for a materially different code revision; create a new version instead.
+
+The current official repository is `ricardo-cunha/streamfind`. Use
+`-Repository <owner>/<repo>` only when publishing to a deliberately different
+repository. GitHub Release assets are separate from commits and do not update
+automatically when `scripts/release.ps1` is run.
 
 ## Turtle Ontology Formatting
 

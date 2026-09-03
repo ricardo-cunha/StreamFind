@@ -4,6 +4,19 @@ Independent Rust implementation of the generic Streamfind project backend.
 It uses the same DuckDB project schema and JSON contract as `streamfind-core`
 (C++), but does not link to or wrap the C++ implementation.
 
+## Vendor compatibility and trademarks
+
+streamfind is independent of the instrument vendors named in its compatibility
+documentation. Vendor and product names identify file-format compatibility only;
+they do not indicate endorsement or affiliation. streamfind does not redistribute
+vendor software, SDKs, DLLs, or proprietary runtime components.
+
+See the root [`NOTICE.md`](../NOTICE.md) and the Rust
+[`LICENSES.md`](LICENSES.md) inventory for distribution and support boundaries.
+
+Native Rust preview packages are available from the
+[release documentation](../docs/releases.md).
+
 ## Crates
 
 - `streamfind-rust-core`: Project, workflow, typed parameters, methods, cache,
@@ -11,16 +24,6 @@ It uses the same DuckDB project schema and JSON contract as `streamfind-core`
 - `streamfind-rust-cli`: Minimal project `create` and `describe` CLI.
 - `streamfind-rust-external`: Resolves user-installed tools from `PATH`.
 - `streamfind-rust-mcp`: Line-delimited JSON-RPC MCP stdio adapter.
-
-## Build And Test
-
-From `rust/`:
-
-```powershell
-cargo fmt --all -- --check
-cargo test --workspace
-cargo doc --workspace --no-deps --open
-```
 
 ## Project API
 
@@ -112,7 +115,7 @@ The Rust and C++ implementations share the `PROJECT`, `CACHE`, and
 audit representation. Shared fixtures and interoperability tests live in:
 
 ```text
-tests/data/project/project_conformance.json
+tests/fixtures/project/project_conformance.json
 core/tests/unit/conformance.cpp
 rust/crates/core/tests/conformance.rs
 ```

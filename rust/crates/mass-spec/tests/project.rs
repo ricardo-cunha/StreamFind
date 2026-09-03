@@ -4,7 +4,8 @@ use streamfind_rust_core::{OperationRegistry, Project, ProjectOptions};
 
 #[test]
 fn mass_spec_operations_persist_lcd_summary_and_ontology_tables() {
-    let database = std::env::temp_dir().join("streamfind-rust-mass-spec-project.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir()
+        .join("streamfind-rust-mass-spec-project.duckdb");
     let _ = fs::remove_file(&database);
     let mut project = Project::create(ProjectOptions {
         database_path: database.clone(),
@@ -16,9 +17,13 @@ fn mass_spec_operations_persist_lcd_summary_and_ontology_tables() {
     .unwrap();
     let mut operations = OperationRegistry::default();
     streamfind_rust_mass_spec::register_operations(&mut operations).unwrap();
-    let source = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../..")
-        .join("tests/data/mass_spec/shimadzu/adc.lcd");
+    let Some(source) =
+        streamfind_rust_test_support::shimadzu_data_dir().map(|path| path.join("adc.lcd"))
+    else {
+        eprintln!("Shimadzu fixtures unavailable; skipping LCD project test");
+        fs::remove_file(database).unwrap();
+        return;
+    };
 
     let added = project
         .run_operation(
@@ -53,7 +58,8 @@ fn mass_spec_operations_persist_lcd_summary_and_ontology_tables() {
 
 #[test]
 fn domain_smoke_matches_cpp_mass_spec_operations() {
-    let database = std::env::temp_dir().join("streamfind-rust-mass-spec-domain-smoke.duckdb");
+    let database = streamfind_rust_test_support::tmp_projects_dir()
+        .join("streamfind-rust-mass-spec-domain-smoke.duckdb");
     let _ = fs::remove_file(&database);
     let mut project = Project::create(ProjectOptions {
         database_path: database.clone(),
@@ -65,8 +71,16 @@ fn domain_smoke_matches_cpp_mass_spec_operations() {
     .unwrap();
     let mut operations = OperationRegistry::default();
     streamfind_rust_mass_spec::register_operations(&mut operations).unwrap();
-    assert_eq!(operations.list("mass_spec").len(), 20);
-    let parameter_count = |id: &str| {
+    // Expectations are derived from the committed semantic catalogue (the same
+    // contract the registries are generated from), so counts adapt automatically
+    // when operations are added or removed.
+    let entries = streamfind_rust_test_support::catalogue_entries();
+    let expected_operations = entries
+        .iter()
+        .filter(|entry| entry["kind"] == "operation" && entry["domain"] == "mass_spec")
+        .count();
+    assert_eq!(operations.list("mass_spec").len(), expected_operations);
+    let parameter_names = |id: &str| -> std::collections::BTreeSet<String> {
         operations
             .list("mass_spec")
             .into_iter()
@@ -74,25 +88,35 @@ fn domain_smoke_matches_cpp_mass_spec_operations() {
             .unwrap()["parameters"]
             .as_array()
             .unwrap()
-            .len()
+            .iter()
+            .map(|parameter| parameter["name"].as_str().unwrap().to_owned())
+            .collect()
     };
-    assert_eq!(parameter_count("mass_spec.get_spectra_headers"), 3);
-    assert_eq!(parameter_count("mass_spec.get_chromatograms_headers"), 3);
-    assert_eq!(parameter_count("mass_spec.get_spectra_tic"), 6);
-    assert_eq!(parameter_count("mass_spec.get_chromatograms"), 4);
-    assert_eq!(parameter_count("mass_spec.get_raw_chromatograms"), 4);
-    assert_eq!(parameter_count("mass_spec.get_raw_spectra"), 9);
-    assert_eq!(parameter_count("mass_spec.get_raw_spectra_eic"), 8);
-    assert_eq!(parameter_count("mass_spec.get_raw_spectra_ms1"), 11);
-    assert_eq!(parameter_count("mass_spec.get_raw_spectra_ms2"), 12);
+    for entry in entries
+        .iter()
+        .filter(|entry| entry["kind"] == "operation" && entry["domain"] == "mass_spec")
+    {
+        let id = entry["canonical_id"].as_str().unwrap();
+        let expected: std::collections::BTreeSet<String> = entry["parameters"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|parameter| parameter["name"].as_str().unwrap().to_owned())
+            .collect();
+        assert_eq!(
+            parameter_names(id),
+            expected,
+            "parameter mismatch for registered operation {id}"
+        );
+    }
     assert!(operations
         .list("mass_spec")
         .iter()
         .any(|operation| operation["id"] == "mass_spec.add_analyses"));
 
-    let data = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../..")
-        .join("tests/data/mass_spec/wastewater");
+    let data = streamfind_rust_test_support::example_data_dir()
+        .expect("streamfind.data unavailable; set STREAMFIND_EXAMPLE_DATA_ROOT")
+        .join("mass_spec/wastewater");
     let paths = [
         data.join("01_tof_ww_is_pos_blank-r001.mzML"),
         data.join("01_tof_ww_is_pos_blank-r002.mzML"),
@@ -182,9 +206,22 @@ fn domain_smoke_matches_cpp_mass_spec_operations() {
             .unwrap()
             > 0
     );
-    let targets =
-        include_str!("../../../../tests/data/mass_spec/wastewater/internal_standards.csv")
-            .lines()
+    let indexed = project
+        .run_operation(
+            "mass_spec.get_raw_spectra",
+            &json!({"analysis_names": ["01_tof_ww_is_pos_blank-r001"], "indices": [0]}),
+            &operations,
+        )
+        .unwrap();
+    assert!(indexed["row_count"].as_u64().unwrap() > 0);
+    assert!(indexed["columns"]["id"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .all(|value| value == "01_tof_ww_is_pos_blank-r001:0"));
+    let targets = fs::read_to_string(data.join("internal_standards.csv"))
+        .unwrap()
+        .lines()
             .skip(1)
             .filter_map(|line| {
                 let fields = line.splitn(5, ',').collect::<Vec<_>>();

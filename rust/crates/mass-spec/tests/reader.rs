@@ -1,3 +1,5 @@
+#![cfg(feature = "reader-interface-tests")]
+
 use std::{
     fs,
     time::{SystemTime, UNIX_EPOCH},
@@ -6,7 +8,7 @@ use streamfind_rust_mass_spec::reader::{Format, Reader};
 
 #[test]
 fn reads_mzxml_peak_arrays_and_summary() {
-    let path = std::env::temp_dir().join(format!(
+    let path = streamfind_rust_test_support::tmp_projects_dir().join(format!(
         "streamfind-mass-spec-{}.mzXML",
         SystemTime::now()
             .duration_since(UNIX_EPOCH)
@@ -28,11 +30,17 @@ fn reads_mzxml_peak_arrays_and_summary() {
 
 #[test]
 fn reads_shimadzu_lcd_chromatograms() {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../..")
-        .join("tests/data/mass_spec/shimadzu/adc.lcd");
-    let reader = Reader::open(path).unwrap();
+    let path = streamfind_rust_test_support::shimadzu_data_dir()
+        .expect("Shimadzu fixtures unavailable; set STREAMFIND_SHIMADZU_DATA_ROOT")
+        .join("adc.lcd");
+    let mut reader = Reader::open(path).unwrap();
     assert_eq!(reader.format(), Format::ShimadzuLcd);
+    assert_eq!(reader.analysis_catalog().len(), 1);
+    assert_eq!(reader.analysis_catalog()[0].analysis_index, 0);
+    assert_eq!(reader.analysis_catalog()[0].analysis_count, 1);
+    reader.select_analysis(0).unwrap();
+    assert_eq!(reader.selected_analysis_index(), 0);
+    assert!(reader.select_analysis(1).is_err());
     assert_eq!(reader.summary().number_spectra, 0);
     assert!(reader.summary().number_chromatograms >= 2);
     assert!(reader.chromatograms().iter().any(|c| c.id == "AD1"));
@@ -41,9 +49,9 @@ fn reads_shimadzu_lcd_chromatograms() {
 
 #[test]
 fn reads_shimadzu_lcd_tlm_spectra() {
-    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("../../..")
-        .join("tests/data/mass_spec/shimadzu/karl.lcd");
+    let path = streamfind_rust_test_support::shimadzu_data_dir()
+        .expect("Shimadzu fixtures unavailable; set STREAMFIND_SHIMADZU_DATA_ROOT")
+        .join("karl.lcd");
     let reader = Reader::open(path).unwrap();
     assert_eq!(reader.format(), Format::ShimadzuLcd);
     assert!(reader.summary().number_spectra > 0);
@@ -51,4 +59,124 @@ fn reads_shimadzu_lcd_tlm_spectra() {
     assert_eq!(spectrum.level, 2);
     assert!(!spectrum.mz.is_empty());
     assert_eq!(spectrum.mz.len(), spectrum.intensity.len());
+}
+
+#[test]
+fn opens_pac_wiff_with_native_chromatograms() {
+    let path = std::path::Path::new("E:/example_files/raw_vendor_files/sciex/201023_Pac.wiff");
+    if !path.exists() {
+        return;
+    }
+    let reader = Reader::open(path).unwrap();
+    assert_eq!(reader.format(), Format::SciexWiff);
+    assert_eq!(reader.chromatograms().len(), 4);
+    assert_eq!(reader.chromatograms()[0].id, "TIC");
+    assert_eq!(reader.chromatograms()[1].id, "BPC");
+    assert_eq!(reader.chromatograms()[2].id, "Pac 569");
+    assert_eq!(reader.chromatograms()[3].id, "Pac 286");
+    assert_eq!(reader.chromatograms()[2].precursor_mz, Some(854.233));
+    assert_eq!(reader.chromatograms()[2].product_mz, Some(569.1));
+    assert_eq!(reader.chromatograms()[2].time.len(), 1091);
+}
+
+#[test]
+fn opens_multi_experiment_sciex_wiff_with_native_chromatograms() {
+    let path = std::path::Path::new("E:/example_files/raw_vendor_files/sciex/201209_MM_2.wiff");
+    if !path.exists() {
+        return;
+    }
+    let reader = Reader::open(path).unwrap();
+    assert_eq!(reader.format(), Format::SciexWiff);
+    assert_eq!(reader.chromatograms().len(), 16);
+    assert_eq!(reader.chromatograms()[0].id, "TIC");
+    assert_eq!(reader.chromatograms()[1].id, "BPC");
+    assert_eq!(reader.chromatograms()[2].time.len(), 800);
+    assert_eq!(reader.chromatograms()[12].time.len(), 900);
+    assert!((reader.chromatograms()[2].time[1] - 0.15).abs() < 0.00001);
+    assert!(reader.chromatograms()[12].time[0] > 2.0);
+}
+
+#[test]
+fn opens_tagged_sciex_mrm_with_native_chromatograms() {
+    let path = std::path::Path::new("E:/example_files/raw_vendor_files/sciex/250414_Mix1.wiff");
+    if !path.exists() {
+        return;
+    }
+    let mut reader = Reader::open(path).unwrap();
+    reader.select_analysis(3).unwrap();
+    assert_eq!(reader.format(), Format::SciexWiff);
+    assert_eq!(reader.chromatograms().len(), 61);
+    assert_eq!(reader.chromatograms()[0].id, "TIC");
+    assert_eq!(reader.chromatograms()[1].id, "BPC");
+    assert!(reader.chromatograms()[0].time.is_empty());
+    assert!(reader.chromatograms()[40].time.is_empty());
+    let chromatograms = reader.chromatograms_data(&[]).unwrap();
+    assert_eq!(chromatograms[0].intensity[9], 4822.0);
+    assert_eq!(chromatograms[1].intensity[9], 4574.0);
+    assert_eq!(chromatograms[40].intensity.len(), 392);
+    assert_eq!(chromatograms[41].intensity.len(), 392);
+    assert!((chromatograms[40].time[0] - 42.509).abs() < 0.00001);
+    assert_eq!(chromatograms[40].intensity[0], 3943.0);
+    assert_eq!(chromatograms[41].intensity[0], 203.0);
+    assert!(reader.summary().start_rt > 0.0);
+    assert!(reader.summary().end_rt > reader.summary().start_rt);
+}
+
+#[test]
+fn opens_mix1_holdout_with_schedule_constrained_chromatograms() {
+    let path = std::path::Path::new("E:/example_files/raw_vendor_files/sciex/250312_Mix1.wiff");
+    if !path.exists() {
+        return;
+    }
+    let mut reader = Reader::open(path).unwrap();
+    reader.select_analysis(3).unwrap();
+    assert_eq!(reader.chromatograms().len(), 61);
+    assert!(reader.chromatograms()[40].intensity.is_empty());
+    let chromatograms = reader.chromatograms_data(&[]).unwrap();
+    assert_eq!(chromatograms[40].intensity.len(), 392);
+    assert_eq!(chromatograms[41].intensity.len(), 392);
+    assert!((chromatograms[40].time[0] - 42.514002).abs() < 0.00001);
+    assert_eq!(chromatograms[40].intensity[0], 10074.0);
+    assert_eq!(chromatograms[41].intensity[0], 699.0);
+}
+
+#[test]
+fn opens_sparse_tagged_sciex_mrm_with_native_chromatograms() {
+    let path = std::path::Path::new("E:/example_files/raw_vendor_files/sciex/220511_Nitrosamine_M220426_M220503_Vierlinden.wiff");
+    if !path.exists() {
+        return;
+    }
+    let mut reader = Reader::open(path).unwrap();
+    reader.select_analysis(8).unwrap();
+    assert_eq!(reader.format(), Format::SciexWiff);
+    assert_eq!(reader.chromatograms().len(), 35);
+    assert_eq!(reader.chromatograms()[0].id, "TIC");
+    assert_eq!(reader.chromatograms()[1].id, "BPC");
+    assert!(reader.chromatograms()[2].time.is_empty());
+    let chromatograms = reader.chromatograms_data(&[2]).unwrap();
+    assert_eq!(chromatograms[0].time.len(), 3366);
+}
+
+#[test]
+fn opens_sciex_tof_with_native_spectra() {
+    let path = std::path::Path::new("E:/example_files/raw_vendor_files/sciex/tof/220104_1_1.wiff");
+    if !path.exists() {
+        return;
+    }
+    let reader = Reader::open(path).unwrap();
+    assert_eq!(reader.format(), Format::SciexWiff);
+    assert_eq!(reader.spectra().len(), 8964);
+    let header = reader.spectrum(0).unwrap();
+    assert!(header.mz.is_empty());
+    assert!(header.intensity.is_empty());
+    let spectrum = reader.spectrum_data(0).unwrap();
+    assert_eq!(spectrum.mz.len(), spectrum.intensity.len());
+    assert!(!spectrum.mz.is_empty());
+    assert!(spectrum.mz.iter().all(|mz| mz.is_finite()));
+    assert!(spectrum.mz.iter().any(|mz| *mz > 0.0));
+    assert!(spectrum.intensity.iter().all(|intensity| *intensity >= 0.0));
+    assert!(reader
+        .spectra()
+        .iter()
+        .any(|candidate| candidate.level == 2));
 }

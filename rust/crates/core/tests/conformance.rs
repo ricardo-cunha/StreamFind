@@ -5,13 +5,13 @@ use streamfind_rust_core::{Project, ProjectOptions};
 
 fn fixture() -> Value {
     serde_json::from_str(include_str!(
-        "../../../../tests/data/project/project_conformance.json"
+        "../../../../tests/fixtures/project/project_conformance.json"
     ))
     .unwrap()
 }
 
 fn database(name: &str) -> PathBuf {
-    let path = std::env::temp_dir().join(name);
+    let path = streamfind_rust_test_support::tmp_projects_dir().join(name);
     let _ = fs::remove_file(&path);
     path
 }

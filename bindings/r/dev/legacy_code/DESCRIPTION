@@ -9,8 +9,8 @@ Authors@R: c(
     )
 Description: The package streamfind is a flexible R package designed to support the assembly and execution of standardized workflows for advanced data analysis. Originally developed within the project “Flexible Data Analysis and Workflow Designer to Identify Chemicals in the Water Cycle”, funded by the German Federal Ministry of Education and Research (BMBF), streamfind offers a modular platform capable of handling diverse data types, including mass spectrometry, spectroscopy, and other structured datasets. The package promotes the use of advanced analysis techniques — such as non-target screening (NTS), statistical modeling, and retrospective data evaluation — in both research and routine quality control workflows. With its standardized approach to data processing, comprehensive documentation, and an integrated graphical user interface, streamfind is designed to support scientists and technical staff across a wide range of disciplines, from environmental monitoring to pharmaceutical quality assurance.
 License: MIT + file LICENSE
-URL: https://github.com/odea-project/streamfind, https://odea-project.github.io/streamfind/
-BugReports: https://github.com/odea-project/streamfind/issues
+URL: https://github.com/ricardo-cunha/streamfind, https://odea-project.github.io/streamfind/
+BugReports: https://github.com/ricardo-cunha/streamfind/issues
 Depends: R (>= 4.3.0)
 Imports:
     R6,

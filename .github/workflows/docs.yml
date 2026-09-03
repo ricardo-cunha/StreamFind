@@ -26,13 +26,15 @@ jobs:
           python-version: "3.x"
       - run: pip install mkdocs-material
       - run: mkdocs build
+      - name: Verify custom domain
+        run: test "$(cat site/CNAME)" = "streamfind.odea-project.org"
       - uses: actions/upload-pages-artifact@v3
         with:
           path: site
 
   deploy:
     needs: build
-    if: github.repository == 'odea-project/streamfind' && github.event_name != 'pull_request'
+    if: github.repository == 'ricardo-cunha/streamfind' && github.event_name != 'pull_request'
     runs-on: ubuntu-latest
     environment:
       name: github-pages

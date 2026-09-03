@@ -29,6 +29,10 @@ enum class ProjectCommand {
     get_cache_size,
     get_audit_trail,
     close,
+    tools_status,
+    tools_install,
+    tools_install_java,
+    tools_install_metfrag,
 };
 
 /** @brief Convert a command name to a ProjectCommand. */
@@ -48,6 +52,6 @@ STREAMFIND_CORE_API ProjectCommand command_from_string(std::string_view name);
  * @throws Error if the request or Project operation is invalid.
  */
 STREAMFIND_CORE_API Json run(ProjectCommand command, const Json &request,
-                              const MethodRegistry &registry = methods());
+                             const MethodRegistry &registry = methods());
 
 }

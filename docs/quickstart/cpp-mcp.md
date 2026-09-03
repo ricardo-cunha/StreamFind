@@ -1,68 +1,63 @@
-# Quickstart: C++ MCP server
+# C++ MCP server
 
-The C++ MCP server (`streamfind_mcp`) is a line-delimited JSON-RPC stdio
-server that exposes the generic project operations plus the domain
-capabilities registered by the composition root in
-`core/tools/streamfind-mcp.cpp`.
+The C++ MCP server is included in the
+[Windows x64 and Linux x86_64 C++ packages](../releases.md). It communicates
+with MCP clients using JSON-RPC messages over standard input/output.
 
-## 1. Build
+## Package paths
 
-```powershell
-cmake --preset default
-cmake --build --preset default --config Debug
-```
-
-The server binary is built at:
+After extracting a release package, launch:
 
 ```text
-build/cmake/default/core/Debug/streamfind_mcp.exe
+Windows: <package>\bin\streamfind_mcp.exe
+Linux:   <package>/bin/streamfind_mcp
 ```
 
-## 2. Run a stateless Operation
+Keep the package's `share/streamfind/catalogue.duckdb` available. It is required
+runtime data for the server.
 
-The server reads one JSON-RPC request per line on stdin and writes one
-response per line on stdout. This example invokes a direct domain Operation:
+## Project and Operation flow
 
-```powershell
-@(
-  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}',
-  '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"create","arguments":{"database_path":"demo.duckdb","project_id":"demo","domain":"mass_spec"}}}',
-  '{"jsonrpc":"2.0","id":3,"method":"tools/list","params":{}}',
-  '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"mass_spec.get_analyses_info","arguments":{"database_path":"demo.duckdb","project_id":"demo"}}}'
-) | & .\build\cmake\default\core\Debug\streamfind_mcp.exe
+A typical client or AI agent uses this sequence:
+
+1. call `initialize`;
+2. call `tools/list` to discover callable Operations;
+3. call `create` for a new project;
+4. call `describe`, `get_domain`, or `get_metadata`;
+5. call a domain Operation with `database_path` and `project_id`.
+
+Example requests, one JSON object per line:
+
+```json
+{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}
+{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}
+{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"create","arguments":{"database_path":"demo.duckdb","project_id":"demo","domain":"mass_spec"}}}
+{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"mass_spec.get_analyses_info","arguments":{"database_path":"demo.duckdb","project_id":"demo"}}}
 ```
 
-Session flow for this example:
+Direct domain Operations are stateless. Include both `database_path` and
+`project_id` on every applicable request. `connect` is not required for this
+path.
 
-| Step | Method | Purpose |
-| --- | --- | --- |
-| 1 | `initialize` | MCP handshake |
-| 2 | `tools/call` `create` | Create a `mass_spec` project |
-| 3 | `tools/list` | List generic tools |
-| 4 | `tools/call` `<domain Operation>` | Invoke a stateless domain operation with `database_path` and `project_id` |
+## Workflow Methods
 
-Direct domain **Operations** are stateless. The server opens the selected
-project for the request and closes it before returning, so `connect` and
-`close` are not needed for this path.
+Workflow Methods are processing steps, not MCP tools. To use them:
 
-For workflow **Methods**, use a connected session instead:
+1. call `connect` with an existing `database_path` and `project_id`;
+2. call `get_available_methods` to discover Methods and their complete input
+   schemas;
+3. use `add_method` or `set_workflow` to create the ordered workflow;
+4. call `validate_workflow`;
+5. call `run_workflow` or `run_method`;
+6. call `close` when finished.
 
-1. Call `connect` with `database_path` and `project_id`.
-2. Call `tools/list` to advertise the connected domain's registered Methods.
-3. Call a Method such as `mass_spec.find_features`; the session supplies the
-   connected project context.
-4. Call `close` when the session is finished.
+Do not look for Methods in `tools/list`.
 
-## 3. Use from an MCP client
+## MCP client configuration
 
-Configure your MCP client (Claude Desktop, VS Code, Cursor, etc.) to launch
-the server over stdio with the command from step 1. Generic Operations can be
-called with their explicit project arguments. Connect a session when using
-workflow Methods.
+Configure an MCP client to launch the extracted executable over stdio. The
+C++ package is appropriate when the client should use the C++ implementation;
+the Rust package provides the equivalent Rust implementation.
 
-## Notes
-
-- Domain Operations require `database_path` and `project_id` in every request.
-- The domain Methods advertised after `connect` are the intersection of the
-  semantic catalogue and the registered executables.
-- Create the project before using it; `connect` only opens an existing project.
+If the catalogue is stored separately, set `STREAMFIND_CATALOGUE` to the path
+of `catalogue.duckdb`. Otherwise keep the packaged catalogue in place.

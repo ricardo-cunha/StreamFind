@@ -1,7 +1,13 @@
 use std::io::{self, BufRead, Write};
-use streamfind_rust_core::{MethodRegistry, OperationRegistry};
+use streamfind_rust_core::{catalogue, MethodRegistry, OperationRegistry};
 
 fn main() {
+    // The runtime knowledge base is a required installation artifact; refuse
+    // to start when it cannot be located via the search chain.
+    if let Some(error) = catalogue::load_error() {
+        eprintln!("streamfind-rust-mcp: fatal: {error}");
+        std::process::exit(2);
+    }
     let mut registry = MethodRegistry::default();
     let mut operations = OperationRegistry::default();
     streamfind_rust_mass_spec::register_operations(&mut operations).unwrap();

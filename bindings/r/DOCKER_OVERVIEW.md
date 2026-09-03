@@ -8,7 +8,7 @@ This repository contains a Docker image for `streamfind` with these main service
 
 Main repository:
 
-- https://github.com/odea-project/streamfind
+- https://github.com/ricardo-cunha/streamfind
 
 ## Build
 

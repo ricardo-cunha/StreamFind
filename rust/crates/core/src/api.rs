@@ -55,14 +55,29 @@ fn workflow_table(workflow: &crate::Workflow) -> Json {
 
 fn workflow_execution_table(rows: &Json) -> Json {
     let names = [
-        "project_id", "workflow_revision", "step_index", "method", "parameter_hash",
-        "status", "started_at", "completed_at", "error", "cache_key",
+        "project_id",
+        "workflow_revision",
+        "step_index",
+        "method",
+        "parameter_hash",
+        "status",
+        "started_at",
+        "completed_at",
+        "error",
+        "cache_key",
     ];
     let mut columns = serde_json::Map::new();
-    for name in names { columns.insert(name.into(), Json::Array(Vec::new())); }
+    for name in names {
+        columns.insert(name.into(), Json::Array(Vec::new()));
+    }
     for row in rows.as_array().into_iter().flatten() {
         for name in names {
-            columns.get_mut(name).unwrap().as_array_mut().unwrap().push(row.get(name).cloned().unwrap_or(Json::Null));
+            columns
+                .get_mut(name)
+                .unwrap()
+                .as_array_mut()
+                .unwrap()
+                .push(row.get(name).cloned().unwrap_or(Json::Null));
         }
     }
     json!({"row_count": rows.as_array().map_or(0, Vec::len), "columns": columns})
@@ -265,6 +280,35 @@ pub fn get_audit_trail(request: &Json) -> Result<Json> {
     Ok(json!(
         Project::open(options(request, true)?)?.get_audit_trail()?
     ))
+}
+
+pub fn tools_status(_request: &Json) -> Result<Json> {
+    let home = streamfind_external::tools::streamfind_home();
+    let java = streamfind_external::tools::resolve_java();
+    let metfrag = streamfind_external::tools::resolve_metfrag_jar();
+    Ok(json!({
+        "home": home.to_string_lossy().into_owned(),
+        "java": java.map(|p| p.to_string_lossy().into_owned()),
+        "metfrag": metfrag.map(|p| p.to_string_lossy().into_owned()),
+    }))
+}
+
+pub fn tools_install(_request: &Json) -> Result<Json> {
+    let (java, metfrag) = streamfind_external::tools::install_metfrag_stack()?;
+    Ok(json!({
+        "java": java.to_string_lossy().into_owned(),
+        "metfrag": metfrag.to_string_lossy().into_owned(),
+    }))
+}
+
+pub fn tools_install_java(_request: &Json) -> Result<Json> {
+    let java = streamfind_external::tools::install_java()?;
+    Ok(json!({"java": java.to_string_lossy().into_owned()}))
+}
+
+pub fn tools_install_metfrag(_request: &Json) -> Result<Json> {
+    let metfrag = streamfind_external::tools::install_metfrag()?;
+    Ok(json!({"metfrag": metfrag.to_string_lossy().into_owned()}))
 }
 
 use serde_json::json;

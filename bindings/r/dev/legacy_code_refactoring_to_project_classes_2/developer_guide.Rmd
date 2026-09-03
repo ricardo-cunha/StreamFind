@@ -99,14 +99,14 @@ additional processing algorithms for new or existing processing methods in strea
 
 ## Setup
 
-The R package is in the [streamfind GitHub repository](https://github.com/odea-project/streamfind) of the 
+The R package is in the [streamfind GitHub repository](https://github.com/ricardo-cunha/streamfind) of the
 [ODEA Project](https://github.com/odea-project). For development, the recommendation is to download the repository 
 locally using [git](https://git-scm.com/) tracking for version control. The [GitHub desktop](https://desktop.github.com/) 
 tool can be used for more easily install and configure git with your GitHub account, which is recommended for authoring 
 contributions. Since it is an R package, the [RStudio](https://posit.co/products/open-source/rstudio/) IDE is 
 recommended for development. Yet, others (e.g., [VS Code](https://code.visualstudio.com/download)) will also work. When 
 using RStudio, the repository can be downloaded via new project, selecting version control, then git and finally adding 
-the GitHub *url* https://github.com/odea-project/streamfind. This should create a local image of the streamfind repository 
+the GitHub *url* https://github.com/ricardo-cunha/streamfind. This should create a local image of the streamfind repository
 directly with git tracking, if git or GitHub desktop were properly installed and configured. When using RStudio, the 
 project should directly be identified as package development where all tools are available to support development. We 
 recommend setting the *Use devtools package functions if available* and *generate documentation via Roxygen* (in the 

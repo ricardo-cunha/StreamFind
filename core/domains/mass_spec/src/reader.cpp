@@ -2,6 +2,10 @@
 #include <pugixml.hpp>
 
 #include "streamfind/mass_spec/reader.hpp"
+#include "streamfind/mass_spec/reader_agilent.hpp"
+#include "streamfind/mass_spec/reader_agilent_chemstation.hpp"
+#include "streamfind/mass_spec/reader_bruker.hpp"
+#include "streamfind/mass_spec/reader_sciex.hpp"
 #include <simdutf.h>
 
 #include <algorithm>
@@ -708,6 +712,13 @@ namespace mass_spec
         std::vector<float> time;
         std::vector<float> intensity;
       };
+
+      void convert_minutes_to_seconds(Block &block)
+      {
+        for (auto &value : block.time) value *= 60.0f;
+        if (!std::isnan(block.start_time)) block.start_time *= 60.0f;
+        if (!std::isnan(block.end_time)) block.end_time *= 60.0f;
+      }
 
       std::string trim(const std::string &value)
       {
@@ -1708,8 +1719,9 @@ namespace mass_spec
           auto precursor = prec_list.child("precursor");
           if (precursor)
           {
-            for (auto cv : precursor.children("cvParam"))
+            for (auto match : precursor.select_nodes(".//cvParam"))
             {
+              auto cv = match.node();
               const std::string_view accession = cv.attribute("accession").as_string();
               if ((!accession.empty() && accession == accession_collision_energy) ||
                   (accession.empty() &&
@@ -1794,8 +1806,9 @@ namespace mass_spec
                   out.precursor_mz[i] = cv.attribute("value").as_float(0.0f);
               }
             }
-            for (auto cv : prec.children("cvParam"))
+            for (auto match : prec.select_nodes(".//cvParam"))
             {
+              auto cv = match.node();
               const std::string_view accession = cv.attribute("accession").as_string();
               if ((!accession.empty() && accession == accession_collision_energy) ||
                   (accession.empty() &&
@@ -2490,6 +2503,7 @@ namespace mass_spec
             blocks.push_back(std::move(block));
           }
         }
+        for (auto &block : blocks) convert_minutes_to_seconds(block);
         return blocks;
       }
 
@@ -3034,6 +3048,7 @@ namespace mass_spec
             }
           }
         }
+        for (auto &block : blocks) convert_minutes_to_seconds(block);
         return blocks;
       }
 
@@ -3281,7 +3296,7 @@ namespace mass_spec
             spectrum.lowmz = std::min(spectrum.lowmz, mz);
             spectrum.highmz = std::max(spectrum.highmz, mz);
             spectrum.tic += intensity;
-            if (intensity > spectrum.bpint)
+            if (intensity >= spectrum.bpint)
             {
               spectrum.bpint = intensity;
               spectrum.bpmz = mz;
@@ -3750,6 +3765,12 @@ namespace mass_spec
 
     std::string detect_format(const std::string &file_path)
     {
+      if (agilent::is_agilent_mass_hunter_directory(file_path))
+        return "AgilentMassHunterD";
+      if (agilent_chemstation::is_chemstation_directory(file_path))
+        return "AgilentChemStationD";
+      if (bruker::detect_family(file_path) == bruker::Family::Tsf)
+        return "BrukerTSF";
       std::string lower = file_path;
       std::transform(lower.begin(), lower.end(), lower.begin(), [](unsigned char c)
                      { return static_cast<char>(std::tolower(c)); });
@@ -3758,6 +3779,21 @@ namespace mass_spec
         return "mzML";
       if (lower.size() >= 6 && lower.substr(lower.size() - 6) == ".mzxml")
         return "mzXML";
+
+      if (lower.size() >= 5 && lower.substr(lower.size() - 5) == ".wiff")
+      {
+        if (ole::is_compound_file(file_path))
+          return "SciexWIFF";
+      }
+
+      if (std::filesystem::is_directory(file_path))
+      {
+        const auto family = mass_spec::reader::bruker::detect_family(file_path);
+        if (family == mass_spec::reader::bruker::Family::Baf)
+          return "BrukerBAF";
+        if (family == mass_spec::reader::bruker::Family::Tsf)
+          return "BrukerTSF";
+      }
 
       if (lower.size() >= 4 && lower.substr(lower.size() - 4) == ".lcd")
       {
@@ -3815,6 +3851,16 @@ namespace mass_spec
         return std::make_unique<asc::Reader>(file_path);
       if (format == "ShimadzuLCD")
         return std::make_unique<shimadzu_lcd::Reader>(file_path);
+      if (format == "SciexWIFF")
+        return sciex::create_reader(file_path);
+      if (format == "BrukerBAF")
+        return mass_spec::reader::bruker::create_baf_reader(file_path);
+      if (format == "BrukerTSF")
+        return mass_spec::reader::bruker::create_tsf_reader(file_path);
+      if (format == "AgilentMassHunterD")
+        return agilent::create_reader(file_path);
+      if (format == "AgilentChemStationD")
+        return agilent_chemstation::create_reader(file_path);
       throw std::runtime_error("Unsupported file format: " + format);
     }
 
@@ -3836,7 +3882,22 @@ namespace mass_spec
         format_case = 3;
       else if (format == "ShimadzuLCD")
         format_case = 4;
+      if (format == "SciexWIFF")
+        analysis_catalog = sciex::read_analysis_catalog(file);
+      else
+        analysis_catalog.push_back({0, 0, file_name, 1});
       ms = create_reader(file);
+    }
+
+    void MASS_SPEC_FILE::select_analysis(int index)
+    {
+      if (index < 0 || static_cast<std::size_t>(index) >= analysis_catalog.size())
+        throw std::out_of_range("Mass spectrometry analysis index is out of range: " + std::to_string(index));
+      if (format == "SciexWIFF")
+        ms = sciex::create_reader(file_path, analysis_catalog[static_cast<std::size_t>(index)].source_analysis_number);
+      else if (index != 0)
+        throw std::runtime_error("Selected analysis is not yet supported by this reader.");
+      selected_analysis = index;
     }
 
     mass_spec::spectra::MASS_SPEC_TARGETS_SPECTRA MASS_SPEC_FILE::get_spectra_targets(const mass_spec::spectra::MASS_SPEC_TARGETS &targets, const MASS_SPEC_SPECTRA_HEADERS &hd, const float &minIntLv1, const float &minIntLv2)

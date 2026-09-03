@@ -108,7 +108,18 @@ sfcore:methodsResult
 sfcore:methodDefinitionResult
     a sf:Result ; skos:inScheme sfcore:scheme ;
     skos:prefLabel "Method definition" ;
-    skos:definition "One workflow method definition available to a domain." ; sf:type "object" .
+    skos:definition "One workflow method definition available to a domain, including its complete method-specific input schema and execution metadata." ;
+    sf:type "object" ;
+    sf:hasProperty
+        sfcore:methodIdField,
+        sfcore:methodNameField,
+        sfcore:methodDescriptionField,
+        sfcore:methodDomainField,
+        sfcore:methodInputSchemaField,
+        sfcore:methodCacheableField,
+        sfcore:methodSingleOccurrenceField,
+        sfcore:methodRequiredField,
+        sfcore:methodWritesField .
 
 sfcore:workflowExecutionResult
     a sf:Result ; skos:inScheme sfcore:scheme ;
@@ -132,3 +143,13 @@ sfcore:workflowExecutionEntriesResult
         sfcore:completedAtColumn,
         sfcore:executionErrorColumn,
         sfcore:cacheKeyColumn .
+
+sfcore:toolsStatusResult
+    a sf:Result ;
+    skos:inScheme sfcore:scheme ;
+    skos:prefLabel "External tools status" ;
+    skos:definition "Resolution state of the user-scoped external tools (~/.streamfind): home directory, Java, and MetFrag paths or not-found markers." ;
+    sf:type "object" ;
+    sf:hasProperty
+        sfcore:statusField,
+        sfcore:infoField .

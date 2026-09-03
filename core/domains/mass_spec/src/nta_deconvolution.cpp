@@ -2040,6 +2040,7 @@ void nta::deconvolution::find_features_impl(
     }
 
     mass_spec::reader::MASS_SPEC_FILE ana(file_paths[a]);
+    ana.select_analysis(nta_data.analysis_index_at(a));
 
     // Separate data by polarity
     std::vector<float> spec_pos_rt, spec_pos_mz, spec_pos_intensity, spec_pos_noise;

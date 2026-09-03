@@ -12,9 +12,9 @@ devtools::document()
 
 # Installs the package
 devtools::install(upgrade = FALSE, dependencies = TRUE, build_vignettes = FALSE)
-devtools::install_github("odea-project/streamfind", upgrade = FALSE, dependencies = TRUE, build_vignettes = FALSE)
+devtools::install_github("ricardo-cunha/streamfind", upgrade = FALSE, dependencies = TRUE, build_vignettes = FALSE)
 
-pak::pkg_install("odea-project/streamfind@dev_filesystem", upgrade = FALSE, dependencies = TRUE)
+pak::pkg_install("ricardo-cunha/streamfind@dev_filesystem", upgrade = FALSE, dependencies = TRUE)
 
 pak::pkg_install("ricardo-cunha/streamfind@dev_1.0", upgrade = FALSE, dependencies = TRUE)
 

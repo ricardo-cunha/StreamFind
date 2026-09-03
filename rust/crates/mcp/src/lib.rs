@@ -1,19 +1,50 @@
 //! Minimal MCP JSON-RPC adapter for the Rust Streamfind core.
 
 use serde_json::{json, Value};
-use streamfind_rust_core::{api, MethodRegistry, OperationRegistry, Project, ProjectOptions};
+use streamfind_rust_core::{
+    api, catalogue, MethodRegistry, OperationRegistry, Project, ProjectOptions,
+};
 
-mod generated_metadata;
+fn tool_description(entry: &Value) -> String {
+    let mut description = format!(
+        "{}: {}",
+        entry["label"].as_str().unwrap_or("streamfind capability"),
+        entry["definition"].as_str().unwrap_or("")
+    );
+    if let Some(guidance) = entry["interface"]["guidance"].as_str() {
+        if !guidance.is_empty() {
+            description.push_str(" Guidance: ");
+            description.push_str(guidance);
+        }
+    }
+    if let Some(model) = entry["interface"]["invocation_model"].as_str() {
+        description.push_str(" Invocation model: ");
+        description.push_str(model);
+        description.push('.');
+    }
+    description
+}
 
-fn json_schema_type(parameter: &Value) -> Value {
-    let mut schema = parameter["type"].clone();
-    if schema["type"] == "real" {
-        schema["type"] = json!("number");
-    }
-    if !parameter["example"].is_null() {
-        schema["examples"] = json!([parameter["example"].clone()]);
-    }
-    schema
+fn enrich_methods(value: Value) -> Value {
+    let Some(methods) = value.as_array() else {
+        return value;
+    };
+    Value::Array(
+        methods
+            .iter()
+            .map(|method| {
+                let mut method = method.clone();
+                if let Some(entry) = catalogue::entries()
+                    .iter()
+                    .find(|entry| entry["canonical_id"] == method["id"])
+                {
+                    method["inputSchema"] = entry["method_schema"].clone();
+                    method["interface"] = entry["interface"].clone();
+                }
+                method
+            })
+            .collect(),
+    )
 }
 
 pub struct Session<'a> {
@@ -41,55 +72,36 @@ impl<'a> Session<'a> {
             .unwrap_or_default();
         if method == "tools/list" {
             let mut catalogue = tools().as_array().cloned().unwrap_or_default();
-            if !self.domain.is_empty() {
-                for definition in self.registry.list(&self.domain) {
-                    let parameters = definition["parameters"]
-                        .as_array()
-                        .cloned()
-                        .unwrap_or_default();
-                    let properties = parameters.iter().fold(
-                        serde_json::Map::new(),
-                        |mut properties, parameter| {
-                            if let Some(name) = parameter["name"].as_str() {
-                                properties.insert(name.into(), json_schema_type(parameter));
-                            }
-                            properties
-                        },
-                    );
-                    let required = parameters
-                        .iter()
-                        .filter_map(|p| {
-                            (p["required"].as_bool() == Some(true))
-                                .then(|| p["name"].as_str())
-                                .flatten()
-                        })
-                        .collect::<Vec<_>>();
-                    catalogue.push(json!({"name": definition["id"], "description": definition["description"], "inputSchema": {"type": "object", "properties": properties, "required": required}}));
-                }
-            }
+            // All exposed domain operations are advertised from the first
+            // tools/list. Operations are stateless and carry database_path and
+            // project_id, so discovery must not depend on a prior connect.
+            // Methods remain session-scoped and are not tools.
             for definition in self.operations.list("") {
-                let parameters = definition["parameters"]
-                    .as_array()
-                    .cloned()
-                    .unwrap_or_default();
-                let properties =
-                    parameters
-                        .iter()
-                        .fold(serde_json::Map::new(), |mut properties, parameter| {
-                            if let Some(name) = parameter["name"].as_str() {
-                                properties.insert(name.into(), json_schema_type(parameter));
-                            }
-                            properties
-                        });
-                let required = parameters
+                if let Some(entry) = catalogue::entries()
                     .iter()
-                    .filter_map(|parameter| {
-                        (parameter["required"].as_bool() == Some(true))
-                            .then(|| parameter["name"].as_str())
-                            .flatten()
-                    })
-                    .collect::<Vec<_>>();
-                catalogue.push(json!({"name": definition["id"], "description": definition["description"], "inputSchema": {"type": "object", "properties": properties, "required": required}}));
+                    .find(|entry| entry["canonical_id"] == definition["id"])
+                {
+                    let description = entry
+                        .get("definition")
+                        .and_then(Value::as_str)
+                        .filter(|value| !value.is_empty())
+                        .map(|_| tool_description(entry))
+                        .unwrap_or_else(|| {
+                            definition["description"].as_str().unwrap_or("").to_owned()
+                        });
+                    catalogue.push(json!({
+                        "name": entry["canonical_id"],
+                        "description": description,
+                        "inputSchema": entry["mcp"]["input_schema"],
+                        "annotations": {
+                            "title": entry["label"],
+                            "readOnlyHint": entry["effects"]["mutates_project"] == false,
+                            "destructiveHint": entry["effects"]["mutates_project"] != false,
+                        },
+                        "_meta": {"streamfind": entry["interface"]},
+                        "effects": entry["effects"],
+                    }));
+                }
             }
             return json!({"jsonrpc":"2.0","id":id,"result":{"tools":catalogue}});
         }
@@ -181,13 +193,24 @@ impl<'a> Session<'a> {
                 }
                 return result;
             }
+            if name == "get_available_methods" {
+                return match api::get_available_methods(
+                    params.get("arguments").unwrap_or(&json!({})),
+                    self.registry,
+                ) {
+                    Ok(value) => response(id, enrich_methods(value)),
+                    Err(error) => error_response(id, error.to_string()),
+                };
+            }
         }
         handle(request, self.registry)
     }
 }
 
 pub fn tools() -> Value {
-    serde_json::from_str(generated_metadata::TOOLS).expect("generated MCP metadata is valid JSON")
+    // Catalogue-backed tool definitions; on a catalogue miss this degrades to
+    // a minimal toolset (empty array), matching the C++ behaviour.
+    catalogue::tools_json()
 }
 
 pub fn handle(request: &Value, _registry: &MethodRegistry) -> Value {
@@ -197,7 +220,7 @@ pub fn handle(request: &Value, _registry: &MethodRegistry) -> Value {
         .and_then(Value::as_str)
         .unwrap_or_default();
     if method == "initialize" {
-        return json!({"jsonrpc":"2.0","id":id,"result":{"protocolVersion":"2025-03-26","capabilities":{"tools":{}},"serverInfo":{"name":"streamfind-rust","version":"0.1.0"}}});
+        return json!({"jsonrpc":"2.0","id":id,"result":{"protocolVersion":"2025-03-26","capabilities":{"tools":{}},"serverInfo":{"name":"streamfind-rust","version":env!("CARGO_PKG_VERSION")},"instructions":catalogue::interface_guidance()}});
     }
     if method == "tools/list" {
         return json!({"jsonrpc":"2.0","id":id,"result":{"tools":tools()}});
@@ -233,6 +256,10 @@ pub fn handle(request: &Value, _registry: &MethodRegistry) -> Value {
         "run_method" => api::run_method(args, _registry),
         "copy" => api::copy(args),
         "close" => api::close(args),
+        "tools_status" => api::tools_status(args),
+        "tools_install" => api::tools_install(args),
+        "tools_install_java" => api::tools_install_java(args),
+        "tools_install_metfrag" => api::tools_install_metfrag(args),
         _ => {
             return json!({"jsonrpc":"2.0","id":id,"error":{"code":-32602,"message":"Unknown MCP tool"}})
         }

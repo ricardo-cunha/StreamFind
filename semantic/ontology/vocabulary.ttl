@@ -117,6 +117,49 @@ sf:toolName
     skos:prefLabel "tool name" ;
     skos:definition "Name used to expose a capability through a tool interface." .
 
+sf:category
+    a rdf:Property ;
+    rdfs:domain sf:Operation ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "interface category" ;
+    skos:definition "Human- and agent-facing category used to group related capabilities in documentation and tool descriptions." .
+
+sf:invocationModel
+    a rdf:Property ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "invocation model" ;
+    skos:definition "Whether a capability is a stateless operation or a connected workflow method." .
+
+sf:requiresConnection
+    a rdf:Property ;
+    rdfs:range xsd:boolean ;
+    skos:prefLabel "requires connection" ;
+    skos:definition "Whether a capability requires a prior connected MCP project session." .
+
+sf:guidance
+    a rdf:Property ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "usage guidance" ;
+    skos:definition "Action-oriented guidance explaining when and how a capability should be used by a person or an AI agent." .
+
+sf:nextOperation
+    a rdf:Property ;
+    rdfs:range sf:Operation ;
+    skos:prefLabel "next operation" ;
+    skos:definition "Operation normally used next in the guided project workflow." .
+
+sf:units
+    a rdf:Property ;
+    rdfs:range rdfs:Literal ;
+    skos:prefLabel "units" ;
+    skos:definition "Physical or logical units for a numeric parameter or field." .
+
+sf:nullable
+    a rdf:Property ;
+    rdfs:range xsd:boolean ;
+    skos:prefLabel "nullable" ;
+    skos:definition "Whether an explicit JSON null is accepted in addition to the declared value type." .
+
 sf:availableInDomain
     a rdf:Property ;
     rdfs:range sf:Domain ;

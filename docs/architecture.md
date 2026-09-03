@@ -1,85 +1,58 @@
-# Architecture
+# How streamfind works
 
-The centre of the architecture is the **streamfind semantic catalogue**, not
-either backend and not MCP. The catalogue documents the externally visible
-concepts and capabilities that define streamfind interoperability.
+streamfind presents one public contract through several interfaces. The shared
+semantic catalogue describes operations, workflow Methods, parameters, schemas,
+results, and usage guidance. Native backends implement that contract, and MCP
+adapters make it available to applications and AI agents.
 
 ```text
-              semantic/ontology/**/*.ttl
-    concepts • domains • operations • methods • parameters
-       results • errors • documentation • fixtures • mappings
-                        │
-                validate with SHACL
-                        │
-                        ▼
-         generated semantic projection
-     deterministic, backend-neutral catalogue
-                        │
-          ┌─────────────┴─────────────┐
-          ▼                           ▼
- streamfind-core C++           streamfind Rust
- independent backend           independent backend
-          │                           │
-   MethodRegistry / OperationRegistry
-          │                           │
-          └────────────┬──────────────┘
-                       ▼
-              generic MCP adapters
-           catalogue + registry join
+                 Shared semantic catalogue
+       operations • methods • parameters • results
+                         │
+          ┌──────────────┴──────────────┐
+          ▼                             ▼
+       C++ backend                   Rust backend
+          │                             │
+          └──────────────┬──────────────┘
+                         ▼
+                   MCP over stdio
 ```
 
-## Generic project operations vs. domain capabilities
+## Operations and workflow Methods
 
-The ontology distinguishes two kinds of public capability:
+The public contract distinguishes two kinds of capability:
 
-- **`sf:Operation`** — direct project/domain capability, called through
-  `run_operation`, exposed as an MCP tool, never a workflow step. Examples:
-  `create`, `get_metadata`, `mass_spec.get_analyses_info`.
-- **`sf:Method`** — workflow-executable capability owned by one domain, the
-  only unit allowed in a `WorkflowStep`. Examples:
-  `mass_spec.find_features`, `mass_spec.load_chromatograms`, and
-  `mass_spec.filter_chromatograms_retention_time`.
+- **Operations** are callable project or domain actions. Domain Operations are
+  stateless and include their project selection in every request.
+- **Workflow Methods** are ordered processing steps. They are discovered with
+  `get_available_methods` and executed in a connected project session.
 
-Every public capability has one canonical semantic identifier. Transports and
-language interfaces map to it; they do not create another domain contract.
+Methods are not MCP tools. `tools/list` is the discovery endpoint for callable
+Operations; `get_available_methods` is the discovery endpoint for workflow
+Methods.
 
-## Backend independence
+## Project usage model
 
-C++ and Rust implement the same project backend against the same DuckDB schema
-(`PROJECT`, `CACHE`, `AUDIT_TRAIL` tables) and JSON contract. Shared behaviour
-is established by semantic declarations and conformance fixtures in
-`tests/`, not by a shared native implementation.
+A typical application or agent follows this sequence:
 
-## Registry-driven MCP
+1. create or open a project;
+2. inspect its identity, domain, metadata, and available analyses;
+3. invoke stateless domain Operations for direct queries;
+4. connect when a workflow is required;
+5. discover Methods and their schemas;
+6. validate and execute the workflow;
+7. close the connected session.
 
-Both MCP servers follow the same generic algorithm:
+The C++ and Rust MCP servers return the same operation names and catalogue-
+derived schemas. Their implementations are independent and can be selected
+according to the host application.
 
-1. `initialize` — handshake.
-2. Load the embedded semantic projection and compose the method/operation
-   registries for the application.
-3. `tools/list` — advertises generic capabilities before a project is
-   connected. After `connect(project)`, it also advertises the intersection of
-   the connected domain's capabilities and registered executables.
-4. `tools/call` — resolves the tool name to a canonical ID, validates
-   parameters against the projection, and invokes the matching registry.
+## Data and runtime assets
 
-Direct domain **Operations** are stateless: their request includes
-`database_path` and `project_id`, and the server opens and closes the project
-within that request. Workflow **Methods** are session-bound: call
-`connect(project)` first, invoke Methods using the connected context, and call
-`close` when the session ends.
+Native packages include the runtime data needed by the MCP servers, especially
+the semantic catalogue under `share/streamfind/`. Keep the catalogue with the
+server executable. Optional scientific tools remain separate user-installed
+components.
 
-The **intersection rule** is important: a semantic declaration alone must not
-advertise an unavailable executable, and a registered executor without a
-semantic declaration fails validation rather than becoming an undocumented
-tool. Neither MCP server contains per-domain or per-method dispatch branches
-for normal discovery.
-
-## Design consequences
-
-- **Add a method to an existing domain:** one semantic declaration + one
-  registry registration per backend. No MCP edits.
-- **Add a domain:** one semantic domain file + one backend domain module + one
-  composition entry per application.
-- **Change documentation:** edit the semantic catalogue once; both backends
-  follow after regeneration.
+See [Releases](releases.md) for package layouts and
+[Availability](status.md) for compatibility scope.

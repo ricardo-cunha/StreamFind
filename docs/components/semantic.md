@@ -1,60 +1,50 @@
 # Semantic catalogue
 
-`semantic/` is the backend-neutral contract for shared streamfind operations,
-workflow methods, domains, parameters, results, errors, fixtures, and
-interface mappings. Runtime code belongs in `core/` or `rust/`; the catalogue
-is declarative and contains no executable analytical logic.
+The semantic catalogue is the shared public description of streamfind's
+interfaces. It defines operation names, workflow Methods, domains, parameters,
+input constraints, result fields, units, nullability, and agent-facing usage
+guidance.
 
-## Source layout
+## What the catalogue provides
+
+The catalogue allows an application or AI agent to discover:
+
+- which Operations can be called directly;
+- which workflow Methods are available;
+- required and optional parameters;
+- nested object and array schemas;
+- defaults, examples, constraints, and units;
+- result shapes and project effects;
+- suggested next operations and whether a connection is required.
+
+The C++ and Rust MCP servers use the same catalogue so that their tool names,
+descriptions, and input schemas remain equivalent.
+
+## Operations and Methods
+
+- **Operations** are callable project or domain actions. Domain Operations are
+  stateless and require `database_path` and `project_id`.
+- **Methods** are workflow steps. Use `get_available_methods` to discover them
+  and their schemas; Methods are not advertised as MCP tools.
+
+Typical project entry points are:
 
 ```text
-semantic/
-├── ontology/
-│   ├── vocabulary.ttl          # streamfind vocabulary
-│   ├── shapes.ttl              # SHACL completeness constraints
-│   ├── core/                   # generic operations, parameters, results, errors, tables
-│   └── domains/
-│       ├── mass_spec/
-│       ├── raman/
-│       └── sensors/
-├── generated/
-│   └── catalogue.json          # generated projection; never hand-edited
-└── README.md
+create -> describe -> get_domain/get_metadata
+      -> domain Operations
+
+connect -> get_available_methods
+        -> set_workflow/validate_workflow
+        -> run_workflow or run_method
+        -> close
 ```
 
-Turtle (`.ttl`) is the authoritative authoring format, using SKOS for
-concepts and SHACL for consistency checks.
+## Runtime catalogue
 
-## Generated projection
+The native packages include the catalogue under `share/streamfind/`. The MCP
+server needs `catalogue.duckdb` at runtime. An explicit `STREAMFIND_CATALOGUE`
+path can be used when an application manages the catalogue separately.
 
-One repository tool compiles the Turtle catalogue into
-`semantic/generated/catalogue.json`, the deterministic projection consumed by
-the C++ and Rust backends and their MCP servers. Built libraries embed this
-projection; they do not parse RDF at runtime.
-
-## Development
-
-Uses the repository-local `.venv` with `rdflib` and `pyshacl`:
-
-```powershell
-& .\semantic\validate.ps1
-```
-
-Regenerate the projection after changing `semantic/ontology/`:
-
-```powershell
-& .\.venv\Scripts\python.exe .\semantic\generate_projection.py
-```
-
-## Adding a capability
-
-1. Declare the `sf:Method` or `sf:Operation` with label, definition,
-   parameters, results, and errors in the matching domain Turtle.
-2. Add backend-neutral fixtures under `tests/`.
-3. Register an executor under the same canonical qualified ID in the matching
-   backend registry.
-4. Add backend tests. No MCP description or dispatch code is edited.
-
-See the
-[living roadmap](https://github.com/odea-project/StreamFind/blob/master/.plans/streamfind_migration_plan.md)
-for the full rules and the definition of done.
+See [Releases](../releases.md) for the package contents and
+[How streamfind works](../architecture.md) for the relationship between the
+catalogue, native backends, and MCP.

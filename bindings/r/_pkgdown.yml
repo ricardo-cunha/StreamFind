@@ -39,7 +39,7 @@ navbar:
       href: news/index.html
     github:
       icon: fab fa-github
-      href: https://github.com/odea-project/streamfind
+      href: https://github.com/ricardo-cunha/streamfind
 
 reference:
   - title: Project Framework

@@ -1,35 +1,28 @@
-# Rust backend
+# Rust API
 
-`rust/` is an independent Rust implementation of the generic streamfind
-project backend. It uses the same DuckDB project schema and JSON contract as
-`streamfind-core`, but never links to or wraps the C++ implementation.
+The Rust backend provides a native project API, command-line interface, and MCP
+server. The current Windows x64 and Linux x86_64 packages are listed on
+[Releases](../releases.md).
 
-!!! note "Maturity"
-    The Rust backend is an active developer-preview foundation. It is intended
-    to remain interoperable with C++ through the semantic catalogue and shared
-    fixtures, but it is not yet a release-stable replacement for the R package.
+!!! note "Compatibility"
+    The native Rust package is a versioned preview release. It is suitable
+    for applications and integration testing, but does not yet promise a stable
+    cross-version Rust API.
 
-## Crates
+## Package contents
 
-- `streamfind-rust-core` — project, workflow, typed parameters, methods,
-  cache, audit, and execution APIs.
-- `streamfind-rust-cli` — minimal project `create` and `describe` CLI.
-- `streamfind-rust-external` — resolves user-installed tools from `PATH`.
-- `streamfind-rust-mcp` — line-delimited JSON-RPC MCP stdio adapter.
-- `streamfind-rust-mass-spec`, `streamfind-rust-raman`,
-  `streamfind-rust-sensors` — domain crates that register their capabilities.
+The Rust package includes:
 
-## Build and test
+- `streamfind-rust-cli` / `streamfind-rust-cli.exe`;
+- `streamfind-rust-mcp` / `streamfind-rust-mcp.exe`;
+- `share/streamfind/catalogue.duckdb`;
+- `share/streamfind/catalogue.json`.
 
-From `rust/`:
-
-```powershell
-cargo fmt --all -- --check
-cargo test --workspace
-cargo doc --workspace --no-deps --open
-```
+The catalogue files are required runtime data for the MCP server.
 
 ## Project API
+
+Create or open a project with `ProjectOptions`:
 
 ```rust
 let project = Project::create(ProjectOptions {
@@ -41,33 +34,35 @@ let project = Project::create(ProjectOptions {
 })?;
 ```
 
-Canonical methods follow the same `get_*` / `set_*` / `run_*` / `delete_*`
-prefixes as C++. `Project` owns its DuckDB connection; `close(self)` consumes
-the handle. Domains are assigned at creation and are immutable afterward.
+Common project operations include:
+
+```text
+create, describe, validate
+get_metadata, set_metadata
+get_domain
+get_workflow, set_workflow, validate_workflow, run_workflow
+get_methods, run_method
+get_cache, get_cache_size, delete_cache
+get_audit_trail
+copy, close
+```
 
 ## CLI
 
-From the repository root:
+The Rust package includes commands for creating and inspecting projects:
 
-```powershell
-cargo run --manifest-path rust/Cargo.toml -p streamfind-rust-cli -- create `
-  --database-path "$HOME\.streamfind\projects\demo.duckdb" `
-  --project-id demo `
-  --domain mass_spec
-
-cargo run --manifest-path rust/Cargo.toml -p streamfind-rust-cli -- describe `
-  --database-path "$HOME\.streamfind\projects\demo.duckdb" `
-  --project-id demo
+```text
+streamfind-rust-cli create
+streamfind-rust-cli describe
 ```
 
-## Interoperability
+The exact command options are shown by `streamfind-rust-cli --help`.
 
-The Rust and C++ implementations share the `PROJECT`, `CACHE`, and
-`AUDIT_TRAIL` tables and the workflow/metadata/cache/audit JSON. Shared
-fixtures and conformance tests live under `tests/data/` and
-`rust/crates/core/tests/`.
+## MCP and external tools
 
-See `rust/README.md` for the full contracts.
+The [Rust MCP quickstart](../quickstart/rust-mcp.md) documents the stdio server.
+It uses the same catalogue-backed Operation and workflow Method model as the
+C++ server.
 
-The [development status](../status.md) describes which capabilities have
-crossed the migration boundary and which remain in the preserved R package.
+Optional tools such as Open Babel, Java, and MetFrag are separate components.
+They are not downloaded automatically by the native package.
