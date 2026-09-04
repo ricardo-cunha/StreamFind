@@ -57,12 +57,26 @@ component when redistributing source or binaries. The presence of a component
 in this table does not by itself resolve the obligations of static linking,
 combined works, source-code offers, or downstream redistribution.
 
-## Native-reader development material
+## Native-reader process and format boundaries
 
-Native readers are independently implemented in C++ and Rust. Vendor SDKs,
-DLLs, debugger traces, paired conversion outputs, proprietary documentation,
-confidential traces, and restricted vendor sample files are development-only
-material and are not runtime dependencies or release contents.
+The native vendor readers are independently implemented in C++ and Rust from
+analysis of lawfully obtained data files, publicly available information, and
+observable program output. This describes the project's engineering process; it
+is not a legal opinion, warranty, or certification that every use is permitted
+under a particular vendor agreement or jurisdiction.
+
+Vendor SDKs, DLLs, debugger traces, paired conversion outputs, proprietary
+documentation, confidential traces, and restricted vendor sample files are
+development-only material. They are not runtime dependencies or release
+contents, and no vendor source code is incorporated into the native readers.
+
+SCIEX WIFF2 decryption is not implemented.
+
+The project does not claim that a file format, product name, or interoperability
+implementation is free from every contractual, trade-secret, copyright,
+trademark, or technological-protection obligation. Review the applicable
+licences, agreements, sample-data rights, and local law before redistributing
+vendor-format data or software.
 
 ## Release review
 

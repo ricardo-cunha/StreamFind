@@ -31,6 +31,9 @@ rust/.cargo/
 # Nested git repositories (have their own .git file); local developer state.
 .worktrees/
 
+# Machine-local development plans ----------------------------------------------
+.plans/
+
 # Hermes session and workspace metadata ----------------------------------------
 .hermes/
 

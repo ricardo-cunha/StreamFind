@@ -13,6 +13,13 @@ vendor software, SDKs, DLLs, or proprietary runtime components.
 See the root [`NOTICE.md`](../NOTICE.md) for distribution and support
 boundaries.
 
+The native reader process uses independently implemented parsers based on
+lawfully obtained data files, public information, and observable program
+output. The C++ core does not distribute or require vendor SDKs, vendor DLLs,
+ProteoWizard, or vendor software at runtime. It does not decrypt or circumvent
+encrypted SCIEX WIFF2 metadata; classic WIFF/WIFF.SCAN support is not WIFF2
+support.
+
 Native C++ preview packages are available from the
 [release documentation](../docs/releases.md).
 
