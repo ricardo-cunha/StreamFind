@@ -20,14 +20,6 @@ streamfind_configure_dependencies(${CMAKE_CURRENT_SOURCE_DIR}/vendor)
 
 set(STREAMFIND_SEMANTIC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/../semantic/generated")
 
-set(STREAMFIND_TEST_DATA_ROOT "" CACHE PATH "Path to external streamfind example data")
-if(NOT STREAMFIND_TEST_DATA_ROOT)
-    if(WIN32 AND EXISTS "E:/example_files/streamfind.data")
-        set(STREAMFIND_TEST_DATA_ROOT "E:/example_files/streamfind.data")
-    elseif(UNIX AND EXISTS "/mnt/e/example_files/streamfind.data")
-        set(STREAMFIND_TEST_DATA_ROOT "/mnt/e/example_files/streamfind.data")
-    endif()
-endif()
 
 # Version single-source-of-truth: project(VERSION) drives a generated
 # src/version.cpp so the library, the MCP server, and the release archives all

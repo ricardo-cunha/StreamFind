@@ -117,4 +117,5 @@ The C++ core uses the shared `PROJECT`, `CACHE`, and `AUDIT_TRAIL` DuckDB tables
 Workflow, metadata, cache, audit, and result JSON are backend-neutral and are
 tested against the Rust implementation using the project fixture in
 `tests/fixtures/project/project_conformance.json`. Large example datasets are
-provided separately through the streamfind.data repository/data directory.
+provided separately through the streamfind.data repository/data directory and
+are exercised by the development PowerShell scripts under `scripts/dev/`.

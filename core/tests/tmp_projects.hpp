@@ -13,15 +13,10 @@
 namespace streamfind::test {
 
 // Returns <repo-root>/tmp/projects, creating it (and any missing parents) on
-// first use. The repository root is located from this file's expected position
-// (core/tests/) so the helper works regardless of the test executable's
-// working directory, for every core test target that includes it.
+// first use. CMake supplies the absolute repository root so this remains
+// independent of the executable's working directory and __FILE__ spelling.
 inline std::filesystem::path tmp_projects_dir() {
-    std::filesystem::path here = std::filesystem::path(__FILE__);
-    std::filesystem::path repo = here.parent_path()   // core/tests
-                                     .parent_path()   // core
-                                     .parent_path();  // <repo-root>
-    std::filesystem::path dir = repo / "tmp" / "projects";
+    std::filesystem::path dir = std::filesystem::path(STREAMFIND_TEST_REPO_ROOT) / "tmp" / "projects";
     std::error_code error;
     std::filesystem::create_directories(dir, error);
     return dir;

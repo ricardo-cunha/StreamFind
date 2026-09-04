@@ -4,6 +4,7 @@
 #include <iterator>
 
 #include "streamfind/project.hpp"
+#include "../tmp_projects.hpp"
 
 namespace streamfind::conformance {
 
@@ -13,7 +14,7 @@ Json fixture() {
 }
 
 std::filesystem::path temporary_database(const char *name) {
-    auto path = std::filesystem::temp_directory_path() / name;
+    auto path = streamfind::test::tmp_projects_dir() / name;
     std::error_code error;
     std::filesystem::remove(path, error);
     return path;
