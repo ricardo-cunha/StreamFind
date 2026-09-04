@@ -8,32 +8,27 @@ compatibility-stable SDK releases.
 The GitHub Release is the authoritative distribution location.
 
 The project source is maintained at
-<https://github.com/ricardo-cunha/streamfind>. The `v0.1.0` assets listed below
-are historical downloads that remain hosted at their original release location;
-new releases will be published from the current repository.
+<https://github.com/ricardo-cunha/streamfind>. Releases from `v0.2.0` onward
+are published from this repository. The older `v0.1.0` release is historical
+and is not part of the current release line.
 
 ## Project version: {{ streamfind_version }}
 
-The native C++ and Rust project metadata now targets version **{{ streamfind_version }}**. The
-latest downloadable GitHub assets remain version **0.1.0** until the new
-versioned archives are published.
+The native C++ and Rust project metadata targets version
+**{{ streamfind_version }}**, and the latest downloadable GitHub release is
+`v0.2.0`.
 
-The currently listed `v0.1.0` archives predate the expanded attribution
-payload. New archives built from the current source are expected to include
-`NOTICE.md`, `LICENSE.md`, and the backend-specific attribution payload
-(`licenses/` for C++ or `LICENSES.md` for Rust) at the package root.
-
-## Latest downloadable release: 0.1.0
+## Latest downloadable release: 0.2.0
 
 | Backend | Archive | Size | SHA-256 |
 | --- | --- | ---: | --- |
-| C++ core | [Download `streamfind-core-cpp-0.1.0-Windows-x86_64.zip`](https://github.com/odea-project/streamfind/releases/download/v0.1.0/streamfind-core-cpp-0.1.0-Windows-x86_64.zip) | 33,040,640 bytes | `cfcd1b58f26e2e56816dbb353f461a81a862a9cb538db5966fe7e7aa14feb468` |
-| Rust backend | [Download `streamfind-rust-0.1.0-Windows-x86_64.zip`](https://github.com/odea-project/streamfind/releases/download/v0.1.0/streamfind-rust-0.1.0-Windows-x86_64.zip) | 21,228,775 bytes | `89fb929dffa659a7e28f268031cfd20e1e9ef545c034482ea432c2f44bf56ba4` |
-| C++ core | [Download `streamfind-core-cpp-0.1.0-Linux-x86_64.tgz`](https://github.com/odea-project/streamfind/releases/download/v0.1.0/streamfind-core-cpp-0.1.0-Linux-x86_64.tgz) | 85,094,150 bytes | `77b00db14fbf820162e820ca96a9306e3e7becc82303b8f19bd22fa33517f87f` |
-| Rust backend | [Download `streamfind-rust-0.1.0-Linux-x86_64.tgz`](https://github.com/odea-project/streamfind/releases/download/v0.1.0/streamfind-rust-0.1.0-Linux-x86_64.tgz) | 30,863,068 bytes | `e2c04e447a10bac99e0b4e4d7aaa4c8dc1ba85cebf66ac2890c7c17c64357451` |
+| C++ core | [Download `streamfind-core-cpp-0.2.0-Windows-x86_64.zip`](https://github.com/ricardo-cunha/streamfind/releases/download/v0.2.0/streamfind-core-cpp-0.2.0-Windows-x86_64.zip) | 33,246,508 bytes | `178d4ec1ecf6de088dd986df989c1a3c5935d2bc88a3c06a41041f0457bdfb53` |
+| Rust backend | [Download `streamfind-rust-0.2.0-Windows-x86_64.zip`](https://github.com/ricardo-cunha/streamfind/releases/download/v0.2.0/streamfind-rust-0.2.0-Windows-x86_64.zip) | 21,218,964 bytes | `b33adfc34fca168cdf3fb02a034f73393c15e6b015e8587c34de1cfc587561c5` |
+| C++ core | [Download `streamfind-core-cpp-0.2.0-Linux-x86_64.tgz`](https://github.com/ricardo-cunha/streamfind/releases/download/v0.2.0/streamfind-core-cpp-0.2.0-Linux-x86_64.tgz) | 85,115,349 bytes | `2f59df6c8f332e648a1a5e6b406f1737307bb8de3d8b2937a98b05e17f6ba334` |
+| Rust backend | [Download `streamfind-rust-0.2.0-Linux-x86_64.tgz`](https://github.com/ricardo-cunha/streamfind/releases/download/v0.2.0/streamfind-rust-0.2.0-Linux-x86_64.tgz) | 30,813,449 bytes | `be6ef91b87cf37aa61cb9c1aed9da9e135e92b1b780003e6c3bbeb4c2273744a` |
 
 The complete checksum list is available as the
-[`sha256sums.txt`](https://github.com/odea-project/streamfind/releases/download/v0.1.0/sha256sums.txt)
+[`sha256sums.txt`](https://github.com/ricardo-cunha/streamfind/releases/download/v0.2.0/sha256sums.txt)
 asset attached to the GitHub Release.
 
 ## Package contents
@@ -90,7 +85,7 @@ see the [C++ MCP quickstart](quickstart/cpp-mcp.md) or
 Example Rust package layout:
 
 ```text
-streamfind-rust-0.1.0-Windows-x86_64/
+streamfind-rust-0.2.0-Windows-x86_64/
 ├── bin/
 │   ├── streamfind-rust-cli.exe
 │   └── streamfind-rust-mcp.exe
