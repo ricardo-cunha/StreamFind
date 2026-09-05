@@ -156,7 +156,7 @@ namespace nta
         if (should_debug && !debug_triggered) {
           debug_triggered = true;
           const std::string analysis_name = i < analysis_names.size() ? analysis_names[i] : std::to_string(i);
-          std::cout << "Debugging components: Analysis '" << analysis_name
+          std::cerr << "Debugging components: Analysis '" << analysis_name
                       << "' RT=" << debugRT << " (window " << left_offset << " to " << right_offset
                       << ") -> [" << (debugRT + left_offset) << ", " << (debugRT + right_offset) << "]" << std::endl;
           DEBUG_OUT("\nDebugging analysis: " << analysis_name << "\n");

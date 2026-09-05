@@ -1375,9 +1375,9 @@ namespace nta
       isotopes.set_ranges(parsed_specs.ranges);
 
       const int max_number_elements = 5;
-      std::cout << "Building combinatorial isotopic chains with length " << max_number_elements << "...";
+      std::cerr << "Building combinatorial isotopic chains with length " << max_number_elements << "...";
       ISOTOPE_COMBINATIONS combinations(isotopes, max_number_elements);
-      std::cout << "Done!" << std::endl;
+      std::cerr << "Done!" << std::endl;
 
       auto &feature_buffers = nta_data.feature_buffers();
       const auto &analysis_names = nta_data.analysis_names();
@@ -1385,7 +1385,7 @@ namespace nta
 
       if (number_analyses == 0)
       {
-        std::cout << "No analyses found for annotation!" << std::endl;
+        std::cerr << "No analyses found for annotation!" << std::endl;
         return;
       }
 
@@ -1411,7 +1411,7 @@ namespace nta
             component_groups[ft.feature_component].push_back(f);
         }
 
-        std::cout << "Annotating " << component_groups.size() << " components in analysis " << analysis_names[a] << std::endl;
+        std::cerr << "Annotating " << component_groups.size() << " components in analysis " << analysis_names[a] << std::endl;
 
         int total_isotopes_found = 0;
         int total_adducts_found = 0;
@@ -1837,10 +1837,10 @@ namespace nta
           }
         }
 
-        std::cout << "Annotating isotopes... Done! Found " << total_isotopes_found << " isotopes." << std::endl;
-        std::cout << "Annotating fragments... Done! Found " << total_fragments_found << " fragments." << std::endl;
-        std::cout << "Annotating adducts... Done! Found " << total_adducts_found << " adducts." << std::endl;
-        std::cout << "Assigning default adducts to remaining features... Done! Assigned " << default_adducts_assigned << " default adducts." << std::endl;
+        std::cerr << "Annotating isotopes... Done! Found " << total_isotopes_found << " isotopes." << std::endl;
+        std::cerr << "Annotating fragments... Done! Found " << total_fragments_found << " fragments." << std::endl;
+        std::cerr << "Annotating adducts... Done! Found " << total_adducts_found << " adducts." << std::endl;
+        std::cerr << "Assigning default adducts to remaining features... Done! Assigned " << default_adducts_assigned << " default adducts." << std::endl;
       }
     }
 

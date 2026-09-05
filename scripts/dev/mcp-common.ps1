@@ -27,7 +27,22 @@ function Start-StreamfindMcp {
     if (-not $process.Start()) {
         throw "Could not start MCP executable: $Executable"
     }
+    $process | Add-Member -MemberType NoteProperty -Name McpErrorTask -Value $process.StandardError.ReadLineAsync()
     return $process
+}
+
+function Drain-McpDiagnostics {
+    param([Parameter(Mandatory = $true)][System.Diagnostics.Process]$Process)
+    while ($Process.McpErrorTask.IsCompleted) {
+        $line = $Process.McpErrorTask.Result
+        if ($null -eq $line) {
+            return
+        }
+        if (-not [string]::IsNullOrWhiteSpace($line)) {
+            [Console]::WriteLine("[native] $line")
+        }
+        $Process.McpErrorTask = $Process.StandardError.ReadLineAsync()
+    }
 }
 
 function Send-McpRequest {
@@ -38,10 +53,15 @@ function Send-McpRequest {
 
     $json = $Request | ConvertTo-Json -Compress -Depth 50
     $Process.StandardInput.WriteLine($json)
-    $line = $Process.StandardOutput.ReadLine()
+    $responseTask = $Process.StandardOutput.ReadLineAsync()
+    while (-not $responseTask.IsCompleted) {
+        Drain-McpDiagnostics $Process
+        Start-Sleep -Milliseconds 25
+    }
+    Drain-McpDiagnostics $Process
+    $line = $responseTask.Result
     if ([string]::IsNullOrWhiteSpace($line)) {
-        $stderr = $Process.StandardError.ReadToEnd()
-        throw "MCP process returned no response. stderr: $stderr"
+        throw "MCP process returned no response."
     }
     try {
         return $line | ConvertFrom-Json

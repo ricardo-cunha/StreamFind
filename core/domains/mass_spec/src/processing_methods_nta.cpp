@@ -19,6 +19,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <limits>
 #include <map>
 #include <numeric>
@@ -886,9 +887,15 @@ Json load_features_ms1(streamfind::Project &project, const Json &parameters) {
         }
         if (targets.id.empty()) continue;
         if (!std::filesystem::exists(data.file_paths()[i])) continue;
+        std::cerr << "[load_features_ms1] " << i + 1 << "/" << buffers.size()
+                  << " targets=" << targets.id.size() << std::endl;
         ::mass_spec::reader::MASS_SPEC_FILE file(data.file_paths()[i]);
         file.select_analysis(data.analysis_index_at(i));
         auto spectra = file.get_spectra_targets(targets, data.spectra_headers_at(i), min_traces, 0.0f);
+        std::cerr << "[load_features_ms1] extracted " << spectra.id.size()
+                  << " spectrum points" << std::endl;
+        std::string updates;
+        size_t updated_for_analysis = 0;
         for (int j = 0; j < buffers[i].size(); ++j) {
             auto ft = buffers[i].get_feature(j);
             if (detail::excluded_feature(ft, filtered)) continue;
@@ -907,11 +914,15 @@ Json load_features_ms1(streamfind::Project &project, const Json &parameters) {
             ft.ms1_mz = detail::encode_float_array(merged.mz);
             ft.ms1_intensity = detail::encode_float_array(merged.intensity);
             buffers[i].set_feature(j, ft);
-            project.execute_sql("UPDATE MASS_SPEC_NTA_FEATURES SET ms1_size=" + std::to_string(ft.ms1_size) +
+            updates += "UPDATE MASS_SPEC_NTA_FEATURES SET ms1_size=" + std::to_string(ft.ms1_size) +
                 ", ms1_mz=" + detail::sql(ft.ms1_mz) + ", ms1_intensity=" + detail::sql(ft.ms1_intensity) +
                 " WHERE project_id=" + detail::sql(project_id) + " AND analysis=" + detail::sql(ft.analysis) +
-                " AND feature=" + detail::sql(ft.feature));
+                " AND feature=" + detail::sql(ft.feature) + ";";
+            ++updated_for_analysis;
         }
+        if (!updates.empty()) project.execute_sql(updates);
+        std::cerr << "[load_features_ms1] updated " << updated_for_analysis
+                  << " features" << std::endl;
     }
     return Json{{"status","finished"},{"info","MS1 spectra loaded."}};
 }
@@ -954,6 +965,12 @@ Json load_features_ms2(streamfind::Project &project, const Json &parameters) {
         ::mass_spec::reader::MASS_SPEC_FILE file(data.file_paths()[i]);
         file.select_analysis(data.analysis_index_at(i));
         auto spectra = file.get_spectra_targets(targets, data.spectra_headers_at(i), 0.0f, min_traces);
+        std::cerr << "[load_features_ms2] " << i + 1 << "/" << buffers.size()
+                  << " targets=" << targets.id.size() << std::endl;
+        std::cerr << "[load_features_ms2] extracted " << spectra.id.size()
+                  << " spectrum points" << std::endl;
+        std::string updates;
+        size_t updated_for_analysis = 0;
         for (int j = 0; j < buffers[i].size(); ++j) {
             auto ft = buffers[i].get_feature(j);
             if (detail::excluded_feature(ft, filtered)) continue;
@@ -972,11 +989,15 @@ Json load_features_ms2(streamfind::Project &project, const Json &parameters) {
             ft.ms2_mz = detail::encode_float_array(merged.mz);
             ft.ms2_intensity = detail::encode_float_array(merged.intensity);
             buffers[i].set_feature(j, ft);
-            project.execute_sql("UPDATE MASS_SPEC_NTA_FEATURES SET ms2_size=" + std::to_string(ft.ms2_size) +
+            updates += "UPDATE MASS_SPEC_NTA_FEATURES SET ms2_size=" + std::to_string(ft.ms2_size) +
                 ", ms2_mz=" + detail::sql(ft.ms2_mz) + ", ms2_intensity=" + detail::sql(ft.ms2_intensity) +
                 " WHERE project_id=" + detail::sql(project_id) + " AND analysis=" + detail::sql(ft.analysis) +
-                " AND feature=" + detail::sql(ft.feature));
+                " AND feature=" + detail::sql(ft.feature) + ";";
+            ++updated_for_analysis;
         }
+        if (!updates.empty()) project.execute_sql(updates);
+        std::cerr << "[load_features_ms2] updated " << updated_for_analysis
+                  << " features" << std::endl;
     }
     return Json{{"status","finished"},{"info","MS2 spectra loaded."}};
 }

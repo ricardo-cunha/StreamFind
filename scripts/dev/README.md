@@ -15,7 +15,26 @@ scripts/dev/test-nta.ps1 -Backend Rust
 
 Add `-RunPipeline` to `test-nta.ps1` to run the computationally expensive
 NTA method instead of only importing the wastewater analyses and discovering the
-workflow method.
+workflow method. Use `-MaxAnalyses 3` for a fast diagnostic run through all 12
+methods; omit it (or use `0`) for the complete wastewater workflow.
+Use `-StopAfter mass_spec.find_features` to inspect only feature detection and
+its diagnostics without entering the later workflow methods.
+Use `-KeepProject` to preserve the temporary DuckDB project file under
+`tmp/projects` after the run for offline inspection.
+
+The full diagnostic sequence is:
+
+```text
+find_features -> load_features_ms1 -> load_features_ms2 ->
+create_components -> annotate_components -> find_internal_standards ->
+group_features -> fill_features -> correct_matrix_suppression ->
+subtract_blank -> filter_features -> suspect_screening
+```
+
+It uses `bindings/r/dev/dev_duckdb/internal_standards_v3.csv` for internal
+standard targets and `bindings/r/dev/dev_duckdb/suspects_with_ms2_template.csv`
+for suspect-screening targets. Each method prints its elapsed time, returned
+result, and a follow-up result-table row count.
 
 ## External data
 

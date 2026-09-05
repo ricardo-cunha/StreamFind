@@ -162,6 +162,7 @@ pub struct Reader {
     sciex_mrm_metadata: Option<crate::reader_sciex::MrmMetadata>,
     mzml_bytes: Option<Vec<u8>>,
     mzml_spectrum_offsets: Vec<(usize, usize)>,
+    mzml_arrays_loaded: bool,
 }
 
 impl Reader {
@@ -502,6 +503,7 @@ impl Reader {
             sciex_mrm_metadata,
             mzml_bytes,
             mzml_spectrum_offsets,
+            mzml_arrays_loaded: false,
         })
     }
 
@@ -624,7 +626,25 @@ impl Reader {
         self.spectra.get(index)
     }
 
+    pub fn load_mzml_spectrum_data(&mut self) -> Result<()> {
+        if self.format != Format::MzMl || self.mzml_arrays_loaded {
+            return Ok(());
+        }
+        let bytes = self
+            .mzml_bytes
+            .as_deref()
+            .ok_or_else(|| ReaderError::Invalid("mzML bytes are not loaded".into()))?;
+        self.spectra = parse_mzml_with_arrays(bytes, true)?;
+        self.mzml_arrays_loaded = true;
+        Ok(())
+    }
+
     pub fn spectrum_data(&self, index: usize) -> Result<Spectrum> {
+        if self.mzml_arrays_loaded {
+            return self.spectra.get(index).cloned().ok_or_else(|| {
+                ReaderError::Invalid(format!("spectrum index is out of range: {index}"))
+            });
+        }
         if let Some(bytes) = &self.mzml_bytes {
             let (start, end) = self
                 .mzml_spectrum_offsets

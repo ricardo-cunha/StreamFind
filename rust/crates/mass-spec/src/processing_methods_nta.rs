@@ -1,7 +1,9 @@
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 use serde_json::{json, Value};
+use std::time::Instant;
 use streamfind_rust_core::{Error, ErrorCode, Project, Result};
 
+use crate::nta::{get_spectra_targets, TargetSpec};
 use crate::reader::Reader;
 
 fn invalid(s: impl Into<String>) -> Error {
@@ -15,8 +17,8 @@ fn q(v: &[f32], p: f32) -> f32 {
         return 0.0;
     }
     let mut x = v.to_vec();
-    x.sort_by(f32::total_cmp);
-    x[((x.len() - 1) as f32 * p.clamp(0., 1.)) as usize]
+    let index = ((x.len() - 1) as f32 * p.clamp(0., 1.)) as usize;
+    *x.select_nth_unstable_by(index, f32::total_cmp).1
 }
 fn noise_levels(intensities: &[f32], noise_threshold: f32, base_quantile: f32) -> Vec<f32> {
     let nonzero: Vec<_> = intensities.iter().copied().filter(|x| *x > 0.).collect();
@@ -819,7 +821,7 @@ pub fn find_features(project: &mut Project, p: &Value) -> Result<Value> {
         "SELECT analysis,file_path,analysis_index FROM MASS_SPEC_ANALYSES WHERE project_id={} ORDER BY analysis",
         sql(&project_id)
     ))?;
-    for row in rows.as_array().into_iter().flatten() {
+    for (analysis_index, row) in rows.as_array().into_iter().flatten().enumerate() {
         let name = row["analysis"].as_str().unwrap_or_default();
         if !wanted.is_empty() && !wanted.iter().any(|x| x.as_str() == Some(name)) {
             continue;
@@ -828,59 +830,120 @@ pub fn find_features(project: &mut Project, p: &Value) -> Result<Value> {
             .map_err(|e| invalid(e.to_string()))?;
         file.select_analysis(row["analysis_index"].as_i64().unwrap_or(0) as usize)
             .map_err(|e| invalid(e.to_string()))?;
-        for polarity in [-1, 1] {
-            let mut points = Vec::new();
-            for index in 0..file.spectra().len() {
-                let s = file
-                    .spectrum_data(index)
-                    .map_err(|error| invalid(error.to_string()))?;
-                if s.level != 1 || s.polarity != polarity {
-                    continue;
-                }
-                if !mins.is_empty()
-                    && !mins.iter().zip(maxs).any(|(lo, hi)| {
-                        s.retention_time >= lo.as_f64().unwrap_or(f32::NEG_INFINITY as f64) as f32
-                            && s.retention_time
-                                <= hi.as_f64().unwrap_or(f32::INFINITY as f64) as f32
-                    })
-                {
-                    continue;
-                }
-                if s.mz.len() < min_traces {
-                    continue;
-                }
-                let n = noise_levels(&s.intensity, noise, base_quantile);
-                let mut valid =
-                    s.mz.iter()
-                        .zip(&s.intensity)
-                        .zip(&n)
-                        .filter(|((_, i), threshold)| **i > **threshold)
-                        .map(|((mz, intensity), threshold)| (*mz, *intensity, *threshold))
-                        .collect::<Vec<_>>();
-                valid.sort_by(|a, b| a.0.total_cmp(&b.0));
-                let mut merged: Vec<(f32, f32, f32)> = Vec::new();
-                for point in valid {
-                    if let Some(last) = merged.last_mut() {
-                        if point.0 - last.0 <= point.0 * ppm / 1e6 {
-                            if point.1 > last.1 {
-                                *last = point;
-                            }
-                            continue;
+        let load_started = Instant::now();
+        file.load_mzml_spectrum_data()
+            .map_err(|error| invalid(error.to_string()))?;
+        eprintln!(
+            "[find_features] {} mzML arrays loaded in {:.2}s",
+            name,
+            load_started.elapsed().as_secs_f64()
+        );
+        eprintln!(
+            "[find_features] {}/{} denoising {} spectra",
+            analysis_index + 1,
+            rows.as_array().map_or(0, |values| values.len()),
+            file.spectra().len()
+        );
+        let mut negative_points = Vec::new();
+        let mut positive_points = Vec::new();
+        let mut negative_spectra = 0usize;
+        let mut positive_spectra = 0usize;
+        for index in 0..file.spectra().len() {
+            let s = file
+                .spectrum_data(index)
+                .map_err(|error| invalid(error.to_string()))?;
+            if (index + 1) % 100 == 0 || index + 1 == file.spectra().len() {
+                eprintln!(
+                    "[find_features] {}/{} decoded {}/{} spectra",
+                    analysis_index + 1,
+                    rows.as_array().map_or(0, |values| values.len()),
+                    index + 1,
+                    file.spectra().len()
+                );
+            }
+            if s.level != 1 {
+                continue;
+            }
+            if !mins.is_empty()
+                && !mins.iter().zip(maxs).any(|(lo, hi)| {
+                    s.retention_time >= lo.as_f64().unwrap_or(f32::NEG_INFINITY as f64) as f32
+                        && s.retention_time <= hi.as_f64().unwrap_or(f32::INFINITY as f64) as f32
+                })
+            {
+                continue;
+            }
+            if s.mz.len() < min_traces {
+                continue;
+            }
+            let n = noise_levels(&s.intensity, noise, base_quantile);
+            let mut valid =
+                s.mz.iter()
+                    .zip(&s.intensity)
+                    .zip(&n)
+                    .filter(|((_, i), threshold)| **i > **threshold)
+                    .map(|((mz, intensity), threshold)| (*mz, *intensity, *threshold))
+                    .collect::<Vec<_>>();
+            valid.sort_by(|a, b| a.0.total_cmp(&b.0));
+            let mut merged: Vec<(f32, f32, f32)> = Vec::new();
+            for point in valid {
+                if let Some(last) = merged.last_mut() {
+                    if point.0 - last.0 <= point.0 * ppm / 1e6 {
+                        if point.1 > last.1 {
+                            *last = point;
                         }
+                        continue;
                     }
-                    merged.push(point);
                 }
-                for (mz, i, point_noise) in merged {
-                    points.push(Point {
+                merged.push(point);
+            }
+            let points = match s.polarity {
+                polarity if polarity < 0 => {
+                    negative_spectra += 1;
+                    &mut negative_points
+                }
+                polarity if polarity > 0 => {
+                    positive_spectra += 1;
+                    &mut positive_points
+                }
+                _ => continue,
+            };
+            points.extend(
+                merged
+                    .into_iter()
+                    .map(|(mz, intensity, point_noise)| Point {
                         rt: s.retention_time,
                         mz,
-                        intensity: i,
+                        intensity,
                         noise: point_noise,
                         cluster: 0,
-                    })
-                }
+                    }),
+            );
+        }
+        eprintln!(
+            "[find_features] {} denoising completed in {:.2}s",
+            name,
+            load_started.elapsed().as_secs_f64()
+        );
+        eprintln!(
+            "[find_features] {} positive, {} negative spectra; {} positive, {} negative denoised points",
+            positive_spectra,
+            negative_spectra,
+            positive_points.len(),
+            negative_points.len()
+        );
+        for (polarity, label, mut points) in [
+            (-1, "negative", negative_points),
+            (1, "positive", positive_points),
+        ] {
+            if points.is_empty() {
+                continue;
             }
-            for f in detect(
+            eprintln!(
+                "[find_features] clustering/detecting {} {} points",
+                label,
+                points.len()
+            );
+            let features = detect(
                 name,
                 &mut points,
                 min_traces,
@@ -889,13 +952,25 @@ pub fn find_features(project: &mut Project, p: &Value) -> Result<Value> {
                 mw,
                 polarity,
                 ppm,
-            ) {
+            );
+            eprintln!("[find_features] {} {} features", label, features.len());
+            let values = features
+                .iter()
+                .map(|f| {
+                    format!(
+                        "({}, NULL, NULL, CURRENT_TIMESTAMP)",
+                        row_sql(&project_id, f)
+                    )
+                })
+                .collect::<Vec<_>>();
+            if !values.is_empty() {
                 project.execute_sql(&format!(
-                    "INSERT INTO MASS_SPEC_NTA_FEATURES VALUES ({}, NULL, NULL, CURRENT_TIMESTAMP)",
-                    row_sql(&project_id, &f)
-                ))?
+                    "INSERT INTO MASS_SPEC_NTA_FEATURES VALUES {}",
+                    values.join(",")
+                ))?;
             }
         }
+        eprintln!("[find_features] analysis complete: {}", name);
     }
     Ok(json!({"status":"finished","info":"Features detected."}))
 }
@@ -1083,6 +1158,12 @@ pub fn load_features_ms1(project: &mut Project, p: &Value) -> Result<Value> {
         reader
             .select_analysis(analysis_index)
             .map_err(|e| invalid(e.to_string()))?;
+        reader
+            .load_mzml_spectrum_data()
+            .map_err(|e| invalid(e.to_string()))?;
+        let spectra = reader.spectra();
+        eprintln!("[load_features_ms1] {} features={}", analysis, frows.len());
+        let mut updates = Vec::new();
         for row in &frows {
             let feature = row["feature"].as_str().unwrap_or_default().to_string();
             let row_filtered = row["filtered"].as_bool().unwrap_or(false);
@@ -1124,10 +1205,7 @@ pub fn load_features_ms1(project: &mut Project, p: &Value) -> Result<Value> {
             };
 
             let mut points: Vec<(f32, f32, f32, Option<f32>)> = Vec::new();
-            for index in 0..reader.spectra().len() {
-                let s = reader
-                    .spectrum_data(index)
-                    .map_err(|error| invalid(error.to_string()))?;
+            for s in spectra {
                 if s.level != 1 {
                     continue;
                 }
@@ -1162,7 +1240,7 @@ pub fn load_features_ms1(project: &mut Project, p: &Value) -> Result<Value> {
             let mzs: Vec<f32> = clustered.iter().map(|x| x.0).collect();
             let ints: Vec<f32> = clustered.iter().map(|x| x.1).collect();
             let n = mzs.len();
-            project.execute_sql(&format!(
+            updates.push(format!(
                 "UPDATE MASS_SPEC_NTA_FEATURES SET ms1_size={}, ms1_mz={}, ms1_intensity={} WHERE project_id={} AND analysis={} AND feature={}",
                 n,
                 sql(&encode(&mzs)),
@@ -1170,9 +1248,17 @@ pub fn load_features_ms1(project: &mut Project, p: &Value) -> Result<Value> {
                 sql(&project_id),
                 sql(&analysis),
                 sql(&feature)
-            ))?;
+            ));
             updated += 1;
         }
+        if !updates.is_empty() {
+            project.execute_sql(&updates.join(";"))?;
+        }
+        eprintln!(
+            "[load_features_ms1] {} updated {} features",
+            analysis,
+            updates.len()
+        );
     }
     Ok(json!({"status": "finished", "info": format!("MS1 spectra loaded for {updated} features.")}))
 }
@@ -1238,6 +1324,70 @@ pub fn load_features_ms2(project: &mut Project, p: &Value) -> Result<Value> {
         reader
             .select_analysis(analysis_index)
             .map_err(|e| invalid(e.to_string()))?;
+        reader
+            .load_mzml_spectrum_data()
+            .map_err(|e| invalid(e.to_string()))?;
+        let spectra = reader.spectra();
+        let mut targets = Vec::new();
+        for row in &frows {
+            let row_filtered = row["filtered"].as_bool().unwrap_or(false);
+            if row_filtered && !filtered {
+                continue;
+            }
+            if row["ms2_size"].as_i64().unwrap_or(0) > 0
+                && !row["ms2_mz"].as_str().unwrap_or("").is_empty()
+                && !row["ms2_intensity"].as_str().unwrap_or("").is_empty()
+            {
+                continue;
+            }
+            let feature = row["feature"].as_str().unwrap_or_default().to_string();
+            let ft_rtmin = row["rtmin"].as_f64().unwrap_or(0.0) as f32;
+            let ft_rtmax = row["rtmax"].as_f64().unwrap_or(0.0) as f32;
+            let ft_mz = row["mz"].as_f64().unwrap_or(0.0) as f32;
+            let polarity = row["polarity"].as_i64().unwrap_or(0) as i32;
+            targets.push(TargetSpec {
+                id: feature,
+                level: 2,
+                polarity,
+                precursor: true,
+                mzmin: ft_mz - isolation_window / 2.0,
+                mzmax: ft_mz + isolation_window / 2.0,
+                rtmin: ft_rtmin,
+                rtmax: ft_rtmax,
+                mz: ft_mz,
+                rt: row["rt"].as_f64().unwrap_or(0.0) as f32,
+                mobility: 0.0,
+            });
+        }
+        if targets.is_empty() {
+            continue;
+        }
+        eprintln!(
+            "[load_features_ms2] {} targets={} spectra={}",
+            analysis,
+            targets.len(),
+            spectra.len()
+        );
+        let extracted = get_spectra_targets(spectra, &targets, 0.0, min_traces_intensity);
+        let mut points_by_feature: std::collections::BTreeMap<
+            String,
+            Vec<(f32, f32, f32, Option<f32>)>,
+        > = std::collections::BTreeMap::new();
+        for point in extracted {
+            let ce = point.pre_ce.is_finite().then_some(point.pre_ce);
+            points_by_feature.entry(point.id).or_default().push((
+                point.mz,
+                point.intensity,
+                point.rt,
+                ce,
+            ));
+        }
+        eprintln!(
+            "[load_features_ms2] {} extracted {} spectrum points",
+            analysis,
+            points_by_feature.values().map(Vec::len).sum::<usize>()
+        );
+        let mut updates = Vec::new();
         for row in &frows {
             let feature = row["feature"].as_str().unwrap_or_default().to_string();
             let row_filtered = row["filtered"].as_bool().unwrap_or(false);
@@ -1250,65 +1400,17 @@ pub fn load_features_ms2(project: &mut Project, p: &Value) -> Result<Value> {
             {
                 continue;
             }
-            let ft_rtmin = row["rtmin"].as_f64().unwrap_or(0.0) as f32;
-            let ft_rtmax = row["rtmax"].as_f64().unwrap_or(0.0) as f32;
-            let ft_mz = row["mz"].as_f64().unwrap_or(0.0) as f32;
-            let polarity = row["polarity"].as_i64().unwrap_or(0) as i32;
-
-            let rtmin = ft_rtmin;
-            let rtmax = ft_rtmax;
-            let mmin = ft_mz - isolation_window / 2.0;
-            let mmax = ft_mz + isolation_window / 2.0;
-
-            let mut points: Vec<(f32, f32, f32, Option<f32>)> = Vec::new();
-            let ms2_indices: Vec<usize> = reader
-                .spectra()
-                .iter()
-                .enumerate()
-                .filter_map(|(index, spectrum)| (spectrum.level == 2).then_some(index))
-                .collect();
-            for spectrum_index in ms2_indices {
-                let s = reader
-                    .spectrum_data(spectrum_index)
-                    .map_err(|e| invalid(e.to_string()))?;
-                if polarity != 0 && s.polarity != polarity {
-                    continue;
-                }
-                if rtmin != 0.0 && s.retention_time < rtmin {
-                    continue;
-                }
-                if rtmax != 0.0 && s.retention_time > rtmax {
-                    continue;
-                }
-                if (mmin != 0.0 || mmax != 0.0) && (s.precursor_mz < mmin || s.precursor_mz > mmax)
-                {
-                    continue;
-                }
-                if s.mz.len() < 2 {
-                    continue;
-                }
-                for k in 0..s.mz.len() {
-                    let mzv = s.mz[k];
-                    let inv = s.intensity[k];
-                    if inv < min_traces_intensity {
-                        continue;
-                    }
-                    let ce = if s.collision_energy.is_finite() {
-                        Some(s.collision_energy)
-                    } else {
-                        None
-                    };
-                    points.push((mzv, inv, s.retention_time, ce));
-                }
-            }
-            let clustered = merge_feature_spectra(&points, mz_clust, presence);
+            let Some(points) = points_by_feature.get(&feature) else {
+                continue;
+            };
+            let clustered = merge_feature_spectra(points, mz_clust, presence);
             if clustered.is_empty() {
                 continue;
             }
             let mzs: Vec<f32> = clustered.iter().map(|x| x.0).collect();
             let ints: Vec<f32> = clustered.iter().map(|x| x.1).collect();
             let n = mzs.len();
-            project.execute_sql(&format!(
+            updates.push(format!(
                 "UPDATE MASS_SPEC_NTA_FEATURES SET ms2_size={}, ms2_mz={}, ms2_intensity={} WHERE project_id={} AND analysis={} AND feature={}",
                 n,
                 sql(&encode(&mzs)),
@@ -1316,9 +1418,17 @@ pub fn load_features_ms2(project: &mut Project, p: &Value) -> Result<Value> {
                 sql(&project_id),
                 sql(&analysis),
                 sql(&feature)
-            ))?;
+            ));
             updated += 1;
         }
+        if !updates.is_empty() {
+            project.execute_sql(&updates.join(";"))?;
+        }
+        eprintln!(
+            "[load_features_ms2] {} updated {} features",
+            analysis,
+            updates.len()
+        );
     }
     Ok(json!({"status": "finished", "info": format!("MS2 spectra loaded for {updated} features.")}))
 }

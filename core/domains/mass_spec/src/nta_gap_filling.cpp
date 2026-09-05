@@ -620,7 +620,7 @@ void nta::gap_filling::fill_features_impl(
     DEBUG_LOG("  withinReplicate: " << (withinReplicate ? "true" : "false") << std::endl);
   }
 
-  std::cout << "Starting feature gap filling..." << std::endl;
+  std::cerr << "Starting feature gap filling..." << std::endl;
 
     auto &feature_buffers = nta_data.feature_buffers();
     const auto &analysis_names = nta_data.analysis_names();
@@ -637,11 +637,11 @@ void nta::gap_filling::fill_features_impl(
 
   if (group_infos.empty())
   {
-    std::cout << "No feature groups with gaps found." << std::endl;
+    std::cerr << "No feature groups with gaps found." << std::endl;
     return;
   }
 
-  std::cout << "Found " << group_infos.size() << " feature groups with gaps." << std::endl;
+  std::cerr << "Found " << group_infos.size() << " feature groups with gaps." << std::endl;
 
   // Track filled features
   int total_gaps = 0;
@@ -747,13 +747,13 @@ void nta::gap_filling::fill_features_impl(
     }
   }
 
-  std::cout << "Processing " << gaps_by_file.size() << " analyses with gaps..." << std::endl;
+  std::cerr << "Processing " << gaps_by_file.size() << " analyses with gaps..." << std::endl;
 
   // Process each analysis/file
   for (const auto &[file_path, gaps] : gaps_by_file)
   {
     const std::string &analysis_name = gaps.empty() ? std::string() : gaps.front().analysis;
-    std::cout << "  Processing " << gaps.size() << " gaps in analysis: " << analysis_name << std::endl;
+    std::cerr << "  Processing " << gaps.size() << " gaps in analysis: " << analysis_name << std::endl;
 
     // Open MS file once per analysis
     mass_spec::reader::MS_FILE ana(file_path);
@@ -1038,7 +1038,7 @@ void nta::gap_filling::fill_features_impl(
     }
   }
 
-  std::cout << "Gap filling complete. Filled " << filled_gaps
+  std::cerr << "Gap filling complete. Filled " << filled_gaps
               << " out of " << total_gaps << " gaps." << std::endl;
 
   // Close debug log if it was opened

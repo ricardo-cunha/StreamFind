@@ -1055,7 +1055,7 @@ namespace nta::metfrag_runner
     {
       std::cerr << "[metfrag_runner] Failed to create run_dir '" << run_dir << "': " << e.what() << "\n";
     }
-    std::cout << "[metfrag_runner] run_dir: " << run_dir << std::endl;
+    std::cerr << "[metfrag_runner] run_dir: " << run_dir << std::endl;
 
     // Normalise LocalCSV column names once before the feature loop.
     std::string effective_db_path = params.database_path;
@@ -1085,7 +1085,7 @@ namespace nta::metfrag_runner
       nta::api::NTA_FEATURES &feats = feature_buffers[ai];
       const int n_feat = feats.size();
 
-      std::cout << ai + 1 << "/" << n_ana
+      std::cerr << ai + 1 << "/" << n_ana
                 << " MetFrag screening: " << ana
                 << " (" << n_feat << " features)" << std::endl;
       int n_suspects_found = 0;
@@ -1254,7 +1254,7 @@ namespace nta::metfrag_runner
           fs::remove(log_path);
       } // features
 
-      std::cout << "  Found " << n_suspects_found << " suspect(s) in " << ana << std::endl;
+      std::cerr << "  Found " << n_suspects_found << " suspect(s) in " << ana << std::endl;
     } // analyses
   }
 

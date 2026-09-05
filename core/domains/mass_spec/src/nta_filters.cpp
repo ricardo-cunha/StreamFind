@@ -230,7 +230,7 @@ namespace nta::filter_features
       }
       if (updated > 0)
       {
-        std::cout << "[ok] Filtered " << updated << " features by " << name << std::endl;
+        std::cerr << "[ok] Filtered " << updated << " features by " << name << std::endl;
       }
     };
 
@@ -1030,7 +1030,7 @@ namespace nta::filter_features_ms2
               background_mz.push_back(bm);
           }
         }
-        std::cout << "[ok] Identified " << background_mz.size()
+        std::cerr << "[ok] Identified " << background_mz.size()
                   << " background MS2 traces for removal." << std::endl;
       }
     }
