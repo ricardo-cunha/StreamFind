@@ -58,6 +58,7 @@ pub enum Format {
     AgilentChemStationD,
     BrukerTsf,
     BrukerBaf,
+    ThermoRaw,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -121,6 +122,7 @@ pub struct Summary {
     pub start_rt: f32,
     pub end_rt: f32,
     pub has_ion_mobility: bool,
+    pub time_stamp: String,
 }
 
 fn convert_chromatogram_minutes_to_seconds(chromatograms: &mut [Chromatogram]) {
@@ -163,6 +165,7 @@ pub struct Reader {
     mzml_bytes: Option<Vec<u8>>,
     mzml_spectrum_offsets: Vec<(usize, usize)>,
     mzml_arrays_loaded: bool,
+    thermo_metadata: Option<crate::reader_thermo::ThermoMetadata>,
 }
 
 impl Reader {
@@ -189,6 +192,8 @@ impl Reader {
             Format::BrukerTsf
         } else if bruker_baf {
             Format::BrukerBaf
+        } else if crate::reader_thermo::is_thermo_raw(&path, &bytes) {
+            Format::ThermoRaw
         } else {
             detect_format(&path, &bytes)?
         };
@@ -205,6 +210,7 @@ impl Reader {
             Format::AgilentChemStationD => (Vec::new(), Vec::new()),
             Format::BrukerTsf => (Vec::new(), Vec::new()),
             Format::BrukerBaf => (Vec::new(), Vec::new()),
+            Format::ThermoRaw => (Vec::new(), Vec::new()),
         };
         let analysis_name = path
             .file_stem()
@@ -480,6 +486,52 @@ impl Reader {
         } else {
             None
         };
+        let thermo_metadata = if format == Format::ThermoRaw {
+            let metadata =
+                crate::reader_thermo::read_metadata(&path, &bytes).map_err(ReaderError::Invalid)?;
+            spectra = metadata
+                .scans
+                .iter()
+                .enumerate()
+                .map(|(index, scan)| Spectrum {
+                    index: index as i32,
+                    scan: scan.scan,
+                    array_length: scan.centroid_count as i32,
+                    level: scan.level,
+                    mode: scan.mode,
+                    polarity: scan.polarity,
+                    window_mz: if scan.level >= 2 {
+                        scan.precursor_mz as f32
+                    } else {
+                        0.0
+                    },
+                    window_mzlow: if scan.level >= 2 && scan.precursor_mz > 0.0 {
+                        (scan.precursor_mz - scan.isolation_width as f64 / 2.0) as f32
+                    } else {
+                        0.0
+                    },
+                    window_mzhigh: if scan.level >= 2 && scan.precursor_mz > 0.0 {
+                        (scan.precursor_mz + scan.isolation_width as f64 / 2.0) as f32
+                    } else {
+                        0.0
+                    },
+                    precursor_mz: scan.precursor_mz as f32,
+                    precursor_charge: scan.precursor_charge,
+                    collision_energy: scan.collision_energy,
+                    low_mz: scan.low_mz,
+                    high_mz: scan.high_mz,
+                    base_peak_mz: scan.base_peak_mz,
+                    base_peak_intensity: scan.base_peak_intensity,
+                    tic: scan.tic,
+                    retention_time: scan.retention_time,
+                    ..Default::default()
+                })
+                .collect();
+            chromatograms = metadata.chromatograms.clone();
+            Some(metadata)
+        } else {
+            None
+        };
         let mzml_spectrum_offsets = if format == Format::MzMl {
             mzml_spectrum_offsets(&bytes)?
         } else {
@@ -504,11 +556,18 @@ impl Reader {
             mzml_bytes,
             mzml_spectrum_offsets,
             mzml_arrays_loaded: false,
+            thermo_metadata,
         })
     }
 
     pub fn format(&self) -> Format {
         self.format
+    }
+    /// Return the acquisition timestamp in the same RFC3339 representation as
+    /// the C++ reader. For Thermo RAW this is the audit-start FILETIME, which
+    /// records the acquisition instant in UTC.
+    pub fn get_time_stamp(&self) -> String {
+        self.summary().time_stamp
     }
     pub fn analysis_catalog(&self) -> &[Analysis] {
         &self.analysis_catalog
@@ -847,6 +906,17 @@ impl Reader {
             }
             return Ok(spectrum);
         }
+        if let Some(metadata) = &self.thermo_metadata {
+            let scan = metadata.scans.get(index).ok_or_else(|| {
+                ReaderError::Invalid(format!("spectrum index is out of range: {index}"))
+            })?;
+            let spectrum = if scan.centroid_count > 0 {
+                crate::reader_thermo::read_spectrum(&self.path, scan, index)
+            } else {
+                crate::reader_thermo::read_profile_spectrum(&self.path, scan, index)
+            };
+            return spectrum.map_err(ReaderError::Invalid);
+        }
         if self.format != Format::AgilentMassHunterD {
             return self.spectra.get(index).cloned().ok_or_else(|| {
                 ReaderError::Invalid(format!("spectrum index is out of range: {index}"))
@@ -906,7 +976,7 @@ impl Reader {
             .spectra
             .iter()
             .flat_map(|s| {
-                if self.format == Format::AgilentMassHunterD {
+                if self.format == Format::AgilentMassHunterD || self.format == Format::ThermoRaw {
                     vec![s.low_mz, s.high_mz]
                 } else {
                     s.mz.clone()
@@ -956,6 +1026,11 @@ impl Reader {
             start_rt: if start_rt.is_finite() { start_rt } else { 0.0 },
             end_rt,
             has_ion_mobility: self.spectra.iter().any(|s| s.mobility != 0.0),
+            time_stamp: self
+                .thermo_metadata
+                .as_ref()
+                .map(|metadata| metadata.time_stamp.clone())
+                .unwrap_or_default(),
         }
     }
 }

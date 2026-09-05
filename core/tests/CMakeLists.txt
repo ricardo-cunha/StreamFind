@@ -23,6 +23,7 @@ target_compile_definitions(streamfind_mass_spec_interface_tests PRIVATE
 add_test(NAME streamfind_mass_spec_interface_tests COMMAND streamfind_mass_spec_interface_tests)
 set_tests_properties(streamfind_mass_spec_interface_tests PROPERTIES LABELS "mass-spec-interface")
 
+
 add_executable(streamfind_nta_interface_tests unit/nta_interface_smoke.cpp)
 target_link_libraries(streamfind_nta_interface_tests PRIVATE streamfind::core streamfind_mass_spec)
 target_compile_definitions(streamfind_nta_interface_tests PRIVATE
@@ -64,6 +65,7 @@ foreach(_test_target IN ITEMS
     streamfind_project_tests
     streamfind_mcp_tests
     streamfind_mass_spec_interface_tests
+
     streamfind_nta_interface_tests
     streamfind_conformance_tests
     streamfind_vendor_tests

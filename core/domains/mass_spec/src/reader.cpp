@@ -2,6 +2,7 @@
 #include <pugixml.hpp>
 
 #include "streamfind/mass_spec/reader.hpp"
+#include "streamfind/mass_spec/reader_thermo.hpp"
 #include "streamfind/mass_spec/reader_agilent.hpp"
 #include "streamfind/mass_spec/reader_agilent_chemstation.hpp"
 #include "streamfind/mass_spec/reader_bruker.hpp"
@@ -3769,6 +3770,8 @@ namespace mass_spec
         return "AgilentMassHunterD";
       if (agilent_chemstation::is_chemstation_directory(file_path))
         return "AgilentChemStationD";
+      if (thermo::is_thermo_raw(file_path))
+        return "ThermoRAW";
       if (bruker::detect_family(file_path) == bruker::Family::Tsf)
         return "BrukerTSF";
       std::string lower = file_path;
@@ -3861,6 +3864,8 @@ namespace mass_spec
         return agilent::create_reader(file_path);
       if (format == "AgilentChemStationD")
         return agilent_chemstation::create_reader(file_path);
+      if (format == "ThermoRAW")
+        return thermo::create_reader(file_path);
       throw std::runtime_error("Unsupported file format: " + format);
     }
 

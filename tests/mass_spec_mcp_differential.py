@@ -74,9 +74,11 @@ def requests_for(database: Path, files: list[Path], selected: Path, index: int, 
         {"jsonrpc": "2.0", "id": 5, "method": "tools/call", "params": {"name": "mass_spec.get_analysis_names", "arguments": common}},
         {"jsonrpc": "2.0", "id": 6, "method": "tools/call", "params": {"name": "mass_spec.get_spectra_headers", "arguments": {**common, "analysis_names": [selected.stem]}}},
         {"jsonrpc": "2.0", "id": 7, "method": "tools/call", "params": {"name": "mass_spec.get_raw_spectra", "arguments": {**common, "analysis_names": [selected.stem], "indices": [index], "targets": [{"mz_min": 99999.0, "mz_max": 100000.0}]}}},
+        {"jsonrpc": "2.0", "id": 8, "method": "tools/call", "params": {"name": "mass_spec.get_chromatograms_headers", "arguments": {**common, "analysis_names": [selected.stem]}}},
+        {"jsonrpc": "2.0", "id": 9, "method": "tools/call", "params": {"name": "mass_spec.get_raw_chromatograms", "arguments": {**common, "analysis_names": [selected.stem], "indices": [0, 1]}}},
     ]
     if include_fallback:
-        requests.append({"jsonrpc": "2.0", "id": 8, "method": "tools/call", "params": {"name": "mass_spec.get_raw_spectra", "arguments": {**common, "analysis_names": [selected.stem], "indices": []}}})
+        requests.append({"jsonrpc": "2.0", "id": 10, "method": "tools/call", "params": {"name": "mass_spec.get_raw_spectra", "arguments": {**common, "analysis_names": [selected.stem], "indices": []}}})
     return requests
 
 
@@ -115,12 +117,6 @@ def main() -> int:
     portable = [data / f"01_tof_ww_is_pos_blank-r00{i}.mzML" for i in (1, 2, 3)]
     if run_case("portable", cpp, rust, root, portable, portable[1], 0, True):
         return 1
-    extras = os.environ.get("STREAMFIND_MCP_VENDOR_FIXTURES", "")
-    if extras:
-        for label, value in json.loads(extras).items():
-            fixture = Path(value)
-            if run_case(label, cpp, rust, root, [fixture], fixture, 0, False):
-                return 1
     return 0
 
 

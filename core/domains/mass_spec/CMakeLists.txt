@@ -6,6 +6,7 @@ add_library(streamfind_mass_spec STATIC
     src/reader_agilent_chemstation.cpp
     src/reader_bruker.cpp
     src/reader_sciex.cpp
+    src/reader_thermo.cpp
     src/mass_spec.cpp
     src/processing_methods_chromatograms.cpp
     src/processing_methods_nta.cpp
