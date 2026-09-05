@@ -28,6 +28,7 @@ pub mod reader_agilent_chemstation;
 pub mod reader_agilent_ims;
 pub mod reader_bruker;
 pub mod reader_sciex;
+pub mod reader_thermo;
 
 const ANALYSES_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_ANALYSES (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, analysis_index INTEGER NOT NULL DEFAULT 0, source_analysis_number INTEGER, analysis_count INTEGER NOT NULL DEFAULT 1, replicate VARCHAR, blank VARCHAR, file_name VARCHAR, file_path VARCHAR NOT NULL, file_dir VARCHAR, file_extension VARCHAR, format VARCHAR, type VARCHAR, time_stamp VARCHAR, number_spectra INTEGER, number_chromatograms INTEGER, number_spectra_binary_arrays INTEGER, min_mz DOUBLE, max_mz DOUBLE, start_rt DOUBLE, end_rt DOUBLE, has_ion_mobility BOOLEAN, concentration DOUBLE, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, PRIMARY KEY(project_id, analysis))";
 const SPECTRA_HEADERS_SCHEMA: &str = "CREATE TABLE IF NOT EXISTS MASS_SPEC_SPECTRA_HEADERS (project_id VARCHAR NOT NULL, analysis VARCHAR NOT NULL, index INTEGER NOT NULL, scan INTEGER, array_length INTEGER, level INTEGER, mode INTEGER, polarity INTEGER, configuration INTEGER, lowmz DOUBLE, highmz DOUBLE, bpmz DOUBLE, bpint DOUBLE, tic DOUBLE, rt DOUBLE, mobility DOUBLE, window_mz DOUBLE, window_mzlow DOUBLE, window_mzhigh DOUBLE, precursor_mz DOUBLE, precursor_intensity DOUBLE, precursor_charge INTEGER, activation_ce DOUBLE, PRIMARY KEY(project_id, analysis, index))";
@@ -88,6 +89,7 @@ fn format_name(format: reader::Format) -> &'static str {
         reader::Format::AgilentChemStationD => "AgilentChemStationD",
         reader::Format::BrukerTsf => "BrukerTSF",
         reader::Format::BrukerBaf => "BrukerBAF",
+        reader::Format::ThermoRaw => "ThermoRAW",
     }
 }
 
@@ -157,7 +159,7 @@ fn add_analyses(project: &mut Project, parameters: &Value) -> Result<Value> {
             let source_number = descriptor
                 .source_analysis_number
                 .map_or("NULL".to_owned(), |value| value.to_string());
-            let query = format!("INSERT INTO MASS_SPEC_ANALYSES (project_id, analysis, analysis_index, source_analysis_number, analysis_count, replicate, blank, file_name, file_path, file_dir, file_extension, format, type, time_stamp, number_spectra, number_chromatograms, number_spectra_binary_arrays, min_mz, max_mz, start_rt, end_rt, has_ion_mobility, concentration) VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, NULL)", sql(project.get_project_id()), sql(&analysis), descriptor.analysis_index, source_number, descriptor.analysis_count, sql(replicate), sql(blank), sql(file_name), sql(path_string), sql(file_dir.as_ref()), sql(extension), sql(format_name(summary.format)), sql("MS"), sql(""), summary.number_spectra, summary.number_chromatograms, summary.number_spectra_binary_arrays, summary.min_mz, summary.max_mz, summary.start_rt, summary.end_rt, summary.has_ion_mobility);
+            let query = format!("INSERT INTO MASS_SPEC_ANALYSES (project_id, analysis, analysis_index, source_analysis_number, analysis_count, replicate, blank, file_name, file_path, file_dir, file_extension, format, type, time_stamp, number_spectra, number_chromatograms, number_spectra_binary_arrays, min_mz, max_mz, start_rt, end_rt, has_ion_mobility, concentration) VALUES ({}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, {}, NULL)", sql(project.get_project_id()), sql(&analysis), descriptor.analysis_index, source_number, descriptor.analysis_count, sql(replicate), sql(blank), sql(file_name), sql(path_string), sql(file_dir.as_ref()), sql(extension), sql(format_name(summary.format)), sql("MS"), sql(&summary.time_stamp), summary.number_spectra, summary.number_chromatograms, summary.number_spectra_binary_arrays, summary.min_mz, summary.max_mz, summary.start_rt, summary.end_rt, summary.has_ion_mobility);
             project.execute_sql(&query)?;
             added.push(json!({"analysis": analysis, "file_path": path_string, "analysis_index": descriptor.analysis_index, "source_analysis_number": descriptor.source_analysis_number, "analysis_count": descriptor.analysis_count, "replicate": replicate, "blank": blank}));
         }
@@ -513,6 +515,7 @@ fn get_spectra_headers_impl(project: &mut Project, parameters: &Value) -> Result
                     | reader::Format::BrukerTsf
                     | reader::Format::SciexWiff
                     | reader::Format::AgilentMassHunterD
+                    | reader::Format::ThermoRaw
             ) {
                 reader
                     .spectrum(index)

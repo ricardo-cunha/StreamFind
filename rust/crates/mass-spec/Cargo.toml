@@ -23,6 +23,7 @@ streamfind-rust-test-support = { path = "../test-support" }
 name = "mass_spec_interface_smoke"
 path = "tests/mass_spec_interface_smoke.rs"
 
+
 [[test]]
 name = "nta_interface_smoke"
 path = "tests/nta_interface_smoke.rs"
