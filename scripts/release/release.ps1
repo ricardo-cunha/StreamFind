@@ -52,6 +52,8 @@ function Assert-DistributionPayload([string]$root, [string]$licensePayload = 'li
 }
 
 . (Join-Path $PSScriptRoot '..\build\build-common.ps1')
+Start-ScriptLog 'release'
+Invoke-SemanticChecks
 
 if ($Core) {
     Log "=== C++ core release (Windows, $Config) ==="

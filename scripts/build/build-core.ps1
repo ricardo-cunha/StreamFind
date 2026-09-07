@@ -25,6 +25,7 @@ param(
 
 . "$PSScriptRoot\build-common.ps1"
 Start-ScriptLog 'build-core'
+Invoke-SemanticChecks
 
 $cmake   = Get-CMake
 $ninja   = Get-Ninja

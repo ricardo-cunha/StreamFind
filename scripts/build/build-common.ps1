@@ -121,6 +121,35 @@ function Get-Cargo {
     return $path
 }
 
+function Invoke-SemanticChecks {
+    $python = Join-Path $Script:REPO_ROOT '.venv\Scripts\python.exe'
+    if (-not (Test-Path $python)) {
+        throw "Repository Python environment not found at $python"
+    }
+
+    $validate = Join-Path $Script:REPO_ROOT 'semantic\validate_semantic.py'
+    $check = Join-Path $Script:REPO_ROOT 'semantic\generate_projection.py'
+    foreach ($script in @($validate, $check)) {
+        if (-not (Test-Path $script)) {
+            throw "Semantic script not found: $script"
+        }
+    }
+
+    Push-Location $Script:REPO_ROOT
+    try {
+        Write-Log 'Validating semantic catalogue...'
+        & $python $validate
+        if ($LASTEXITCODE -ne 0) { throw "Semantic validation failed ($LASTEXITCODE)" }
+
+        Write-Log 'Checking generated semantic projection...'
+        & $python $check '--check'
+        if ($LASTEXITCODE -ne 0) { throw "Semantic projection check failed ($LASTEXITCODE)" }
+    } finally {
+        Pop-Location
+    }
+    Write-Log 'Semantic checks passed.'
+}
+
 function Get-VisualStudioPath {
     if ($env:VSINSTALLDIR) {
         if (Test-Path $env:VSINSTALLDIR) { return $env:VSINSTALLDIR }

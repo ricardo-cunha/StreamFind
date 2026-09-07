@@ -24,6 +24,7 @@ param(
 
 . "$PSScriptRoot\build-common.ps1"
 Start-ScriptLog 'build-rust'
+Invoke-SemanticChecks
 
 $cargo     = Get-Cargo
 $targetDir = Join-Path $Script:TMP_BUILD 'rust-target'
