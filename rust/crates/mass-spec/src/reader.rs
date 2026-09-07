@@ -1954,12 +1954,21 @@ fn read_sciex_analysis_catalog(path: &Path) -> Result<Vec<Analysis>> {
     }
     let count = source_numbers.len();
     let mut catalog = Vec::with_capacity(count);
+    let mut names = BTreeSet::new();
     for (index, source_number) in source_numbers.into_iter().enumerate() {
         let wanted = format!("SampleSubtree/Sample{source_number}/SampleDABE/DATA");
-        let name = read_lcd_stream(path, &wanted)?
+        let mut name = read_lcd_stream(path, &wanted)?
             .map(|bytes| first_utf16_string(&bytes))
             .filter(|name| !name.is_empty() && name != "none")
             .unwrap_or_else(|| format!("sample_{source_number}"));
+        if !names.insert(name.clone()) {
+            let base_name = name.clone();
+            name = format!("{base_name}_sample_{source_number}");
+            if !names.insert(name.clone()) {
+                name = format!("{base_name}_analysis_{index}");
+                names.insert(name.clone());
+            }
+        }
         catalog.push(Analysis {
             analysis_index: index,
             source_analysis_number: Some(source_number),

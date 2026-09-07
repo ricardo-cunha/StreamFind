@@ -152,6 +152,13 @@ pub fn read_tof_metadata(path: &Path, source_analysis_number: usize) -> Result<T
             "SCIEX TOF calibration stream is incomplete".into(),
         ));
     }
+    let slope = read_f64(&calibration, 32)?;
+    let intercept = read_f64(&calibration, 40)?;
+    if !slope.is_finite() || !intercept.is_finite() || slope == 0.0 {
+        return Err(ReaderError::Invalid(
+            "SCIEX TOF calibration contains an invalid slope or intercept".into(),
+        ));
+    }
     let index_bytes = read_stream(
         path,
         &format!("SampleSubtree/Sample{source_analysis_number}/Idx"),
@@ -193,8 +200,8 @@ pub fn read_tof_metadata(path: &Path, source_analysis_number: usize) -> Result<T
         records,
         public_indices,
         sample_base: sample_block_offset(path, source_analysis_number as u32)?,
-        slope: read_f64(&calibration, 32)?,
-        intercept: read_f64(&calibration, 40)?,
+        slope,
+        intercept,
         dde_precursors,
         dde_precursor_intensities,
         experiment_count,
@@ -235,7 +242,7 @@ pub fn read_tof_spectrum(
         let mut payload = vec![0u8; end - payload_start];
         scan_file.seek(SeekFrom::Start(payload_start as u64))?;
         scan_file.read_exact(&mut payload)?;
-        decode_scan_payload(&payload)
+        decode_scan_payload(&payload)?
     } else {
         Vec::new()
     };
@@ -287,8 +294,13 @@ pub fn read_tof_spectra(
             "SCIEX TOF calibration stream is incomplete".into(),
         ));
     }
-    let slope = f64::from_le_bytes(calibration[32..40].try_into().unwrap());
-    let intercept = f64::from_le_bytes(calibration[40..48].try_into().unwrap());
+    let slope = read_f64(&calibration, 32)?;
+    let intercept = read_f64(&calibration, 40)?;
+    if !slope.is_finite() || !intercept.is_finite() || slope == 0.0 {
+        return Err(ReaderError::Invalid(
+            "SCIEX TOF calibration contains an invalid slope or intercept".into(),
+        ));
+    }
     let scan_bytes = fs::read(scan_path_for_wiff(path))?;
     let sample_base = sample_block_offset(path, source_analysis_number as u32)?;
     let index_bytes = read_stream(
@@ -330,7 +342,7 @@ pub fn read_tof_spectra(
         let own_end = sample_base + record.scan_offset as usize + record.scan_size as usize + 64;
         let end = next_end.min(own_end).min(scan_bytes.len());
         let points = if end > payload_start {
-            decode_scan_payload(&scan_bytes[payload_start..end])
+            decode_scan_payload(&scan_bytes[payload_start..end])?
         } else {
             Vec::new()
         };
@@ -520,7 +532,7 @@ pub fn read_idx_records(path: &Path, source_analysis_number: usize) -> Result<Ve
     Ok(records)
 }
 
-pub fn decode_scan_payload(payload: &[u8]) -> Vec<ScanPoint> {
+pub fn decode_scan_payload(payload: &[u8]) -> Result<Vec<ScanPoint>> {
     let mut points = Vec::new();
     let mut mz_bin = 0u32;
     let mut offset = 0usize;
@@ -530,36 +542,88 @@ pub fn decode_scan_payload(payload: &[u8]) -> Vec<ScanPoint> {
             break;
         }
         if token <= 0x7f {
-            mz_bin = mz_bin.wrapping_add(token as u32);
+            mz_bin = mz_bin.checked_add(token as u32).ok_or_else(|| {
+                ReaderError::Invalid("Sciex WIFF payload m/z bin overflows uint32".into())
+            })?;
             offset += 1;
             continue;
         }
         let (width, intensity) = match token {
             0x80..=0xfb => (1, (token & 0x7f) as u32),
-            0xfc => (2, payload.get(offset + 1).copied().unwrap_or(0) as u32),
+            0xfc => (
+                2,
+                payload.get(offset + 1).copied().ok_or_else(|| {
+                    ReaderError::Invalid(
+                        "Sciex WIFF payload has a truncated intensity token".into(),
+                    )
+                })? as u32,
+            ),
             0xfd => (
                 3,
                 u16::from_le_bytes([
-                    payload.get(offset + 1).copied().unwrap_or(0),
-                    payload.get(offset + 2).copied().unwrap_or(0),
+                    payload.get(offset + 1).copied().ok_or_else(|| {
+                        ReaderError::Invalid(
+                            "Sciex WIFF payload has a truncated intensity token".into(),
+                        )
+                    })?,
+                    payload.get(offset + 2).copied().ok_or_else(|| {
+                        ReaderError::Invalid(
+                            "Sciex WIFF payload has a truncated intensity token".into(),
+                        )
+                    })?,
                 ]) as u32,
             ),
             0xfe => (
                 4,
-                payload.get(offset + 1).copied().unwrap_or(0) as u32
-                    | ((payload.get(offset + 2).copied().unwrap_or(0) as u32) << 8)
-                    | ((payload.get(offset + 3).copied().unwrap_or(0) as u32) << 16),
+                payload.get(offset + 1).copied().ok_or_else(|| {
+                    ReaderError::Invalid(
+                        "Sciex WIFF payload has a truncated intensity token".into(),
+                    )
+                })? as u32
+                    | ((payload.get(offset + 2).copied().ok_or_else(|| {
+                        ReaderError::Invalid(
+                            "Sciex WIFF payload has a truncated intensity token".into(),
+                        )
+                    })? as u32)
+                        << 8)
+                    | ((payload.get(offset + 3).copied().ok_or_else(|| {
+                        ReaderError::Invalid(
+                            "Sciex WIFF payload has a truncated intensity token".into(),
+                        )
+                    })? as u32)
+                        << 16),
             ),
             _ => (
                 5,
-                payload.get(offset + 1).copied().unwrap_or(0) as u32
-                    | ((payload.get(offset + 2).copied().unwrap_or(0) as u32) << 8)
-                    | ((payload.get(offset + 3).copied().unwrap_or(0) as u32) << 16)
-                    | ((payload.get(offset + 4).copied().unwrap_or(0) as u32) << 24),
+                payload.get(offset + 1).copied().ok_or_else(|| {
+                    ReaderError::Invalid(
+                        "Sciex WIFF payload has a truncated intensity token".into(),
+                    )
+                })? as u32
+                    | ((payload.get(offset + 2).copied().ok_or_else(|| {
+                        ReaderError::Invalid(
+                            "Sciex WIFF payload has a truncated intensity token".into(),
+                        )
+                    })? as u32)
+                        << 8)
+                    | ((payload.get(offset + 3).copied().ok_or_else(|| {
+                        ReaderError::Invalid(
+                            "Sciex WIFF payload has a truncated intensity token".into(),
+                        )
+                    })? as u32)
+                        << 16)
+                    | ((payload.get(offset + 4).copied().ok_or_else(|| {
+                        ReaderError::Invalid(
+                            "Sciex WIFF payload has a truncated intensity token".into(),
+                        )
+                    })? as u32)
+                        << 24),
             ),
         };
-        if offset + width > payload.len() {
-            break;
+        if width > payload.len() - offset {
+            return Err(ReaderError::Invalid(
+                "Sciex WIFF payload has a truncated intensity token".into(),
+            ));
         }
         points.push(ScanPoint {
             raw_mz_bin: mz_bin,
@@ -567,7 +631,7 @@ pub fn decode_scan_payload(payload: &[u8]) -> Vec<ScanPoint> {
         });
         offset += width;
     }
-    points
+    Ok(points)
 }
 
 pub fn read_scan_points(
@@ -577,14 +641,26 @@ pub fn read_scan_points(
 ) -> Result<Vec<ScanPoint>> {
     let bytes = fs::read(scan_path_for_wiff(path))?;
     let sample_base = sample_block_offset(path, record.sample_number)?;
-    let payload_start = sample_base + record.scan_offset as usize + 56;
-    let next_end = next.map_or(bytes.len(), |r| sample_base + r.scan_offset as usize + 64);
-    let own_end = sample_base + record.scan_offset as usize + record.scan_size as usize + 64;
+    let payload_start = sample_base
+        .checked_add(record.scan_offset as usize)
+        .and_then(|value| value.checked_add(56))
+        .ok_or_else(|| ReaderError::Invalid("Sciex WIFF payload offset overflows".into()))?;
+    let next_end = next.map_or(Ok(bytes.len()), |r| {
+        sample_base
+            .checked_add(r.scan_offset as usize)
+            .and_then(|value| value.checked_add(64))
+            .ok_or_else(|| ReaderError::Invalid("Sciex WIFF next-scan offset overflows".into()))
+    })?;
+    let own_end = sample_base
+        .checked_add(record.scan_offset as usize)
+        .and_then(|value| value.checked_add(record.scan_size as usize))
+        .and_then(|value| value.checked_add(64))
+        .ok_or_else(|| ReaderError::Invalid("Sciex WIFF scan extent overflows".into()))?;
     let end = next_end.min(own_end).min(bytes.len());
     if end <= payload_start {
         return Ok(Vec::new());
     }
-    Ok(decode_scan_payload(&bytes[payload_start..end]))
+    decode_scan_payload(&bytes[payload_start..end])
 }
 
 pub fn read_idx_float_records(
@@ -1142,6 +1218,7 @@ pub fn read_analysis_catalog(path: &Path) -> Result<Vec<crate::reader::Analysis>
         ));
     }
     let count = source_numbers.len();
+    let mut names = BTreeSet::new();
     source_numbers
         .into_iter()
         .enumerate()
@@ -1153,6 +1230,14 @@ pub fn read_analysis_catalog(path: &Path) -> Result<Vec<crate::reader::Analysis>
             let mut name = first_utf16_string(&stream);
             if name.is_empty() || name == "none" {
                 name = format!("sample_{source_number}");
+            }
+            if !names.insert(name.clone()) {
+                let base_name = name.clone();
+                name = format!("{base_name}_sample_{source_number}");
+                if !names.insert(name.clone()) {
+                    name = format!("{base_name}_analysis_{analysis_index}");
+                    names.insert(name.clone());
+                }
             }
             Ok(crate::reader::Analysis {
                 analysis_index,

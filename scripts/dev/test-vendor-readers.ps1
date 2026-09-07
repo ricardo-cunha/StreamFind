@@ -70,15 +70,16 @@ try {
         project_id = $projectId
         analyses = @(@{ path = $InputPath })
     }
-    if ([int]$added.row_count -ne 1) {
-        throw "Expected one parsed $Vendor analysis, received $($added.row_count)"
+    $expectedCount = [int]$added.row_count
+    if ($expectedCount -lt 1) {
+        throw "Expected at least one parsed $Vendor analysis, received $expectedCount"
     }
     $info = Invoke-McpTool $process 4 'mass_spec.get_analyses_info' @{
         database_path = $database
         project_id = $projectId
     }
-    if ([int]$info.row_count -ne 1) {
-        throw "Expected one persisted $Vendor analysis, received $($info.row_count)"
+    if ([int]$info.row_count -ne $expectedCount) {
+        throw "Expected $expectedCount persisted $Vendor analyses, received $($info.row_count)"
     }
     Write-Host "$Backend $Vendor reader test passed: $InputPath"
 } finally {

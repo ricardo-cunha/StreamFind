@@ -10,6 +10,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <limits>
 #include <map>
 #include <optional>
 #include <set>
@@ -44,8 +45,8 @@ bool approximately(float value, float expected)
 
 float read_f32_unaligned(const std::vector<std::uint8_t> &bytes, std::size_t offset)
 {
-  if (offset + sizeof(float) > bytes.size())
-    return 0.0f;
+  if (offset > bytes.size() || bytes.size() - offset < sizeof(float))
+    throw std::runtime_error("Sciex WIFF payload contains a truncated float.");
   float value = 0.0f;
   std::memcpy(&value, bytes.data() + offset, sizeof(value));
   return value;
@@ -234,6 +235,8 @@ std::vector<ScanPoint> decode_scan_payload(const std::vector<std::uint8_t> &payl
       break;
     if (token <= 0x7f)
     {
+      if (mz_bin > std::numeric_limits<std::uint32_t>::max() - token)
+        throw std::runtime_error("Sciex WIFF payload m/z bin overflows uint32.");
       mz_bin += token;
       ++offset;
       continue;
@@ -241,10 +244,16 @@ std::vector<ScanPoint> decode_scan_payload(const std::vector<std::uint8_t> &payl
     std::uint32_t intensity = 0;
     std::size_t width = 0;
     if (token <= 0xfb) { intensity = token & 0x7f; width = 1; }
-    else if (token == 0xfc) { width = 2; if (offset + width > payload.size()) break; intensity = payload[offset + 1]; }
-    else if (token == 0xfd) { width = 3; if (offset + width > payload.size()) break; intensity = static_cast<std::uint32_t>(payload[offset + 1]) | (static_cast<std::uint32_t>(payload[offset + 2]) << 8); }
-    else if (token == 0xfe) { width = 4; if (offset + width > payload.size()) break; intensity = static_cast<std::uint32_t>(payload[offset + 1]) | (static_cast<std::uint32_t>(payload[offset + 2]) << 8) | (static_cast<std::uint32_t>(payload[offset + 3]) << 16); }
-    else { width = 5; if (offset + width > payload.size()) break; intensity = static_cast<std::uint32_t>(payload[offset + 1]) | (static_cast<std::uint32_t>(payload[offset + 2]) << 8) | (static_cast<std::uint32_t>(payload[offset + 3]) << 16) | (static_cast<std::uint32_t>(payload[offset + 4]) << 24); }
+    else if (token == 0xfc) { width = 2; }
+    else if (token == 0xfd) { width = 3; }
+    else if (token == 0xfe) { width = 4; }
+    else { width = 5; }
+    if (width > payload.size() - offset)
+      throw std::runtime_error("Sciex WIFF payload contains a truncated intensity token.");
+    if (token == 0xfc) intensity = payload[offset + 1];
+    else if (token == 0xfd) intensity = static_cast<std::uint32_t>(payload[offset + 1]) | (static_cast<std::uint32_t>(payload[offset + 2]) << 8);
+    else if (token == 0xfe) intensity = static_cast<std::uint32_t>(payload[offset + 1]) | (static_cast<std::uint32_t>(payload[offset + 2]) << 8) | (static_cast<std::uint32_t>(payload[offset + 3]) << 16);
+    else if (token == 0xff) intensity = static_cast<std::uint32_t>(payload[offset + 1]) | (static_cast<std::uint32_t>(payload[offset + 2]) << 8) | (static_cast<std::uint32_t>(payload[offset + 3]) << 16) | (static_cast<std::uint32_t>(payload[offset + 4]) << 24);
     points.push_back({mz_bin, intensity});
     offset += width;
   }
@@ -261,9 +270,16 @@ std::vector<ScanPoint> read_scan_points(const std::string &wiff_path, const IdxR
   const auto file_size = input.tellg();
   if (file_size < 0)
     throw std::runtime_error("Unable to determine SCIEX WIFF scan file size.");
-  const std::size_t payload_start = sample_base + static_cast<std::size_t>(record.scan_offset) + 56;
-  const std::size_t next_end = next_record == nullptr ? static_cast<std::size_t>(file_size) : sample_base + static_cast<std::size_t>(next_record->scan_offset) + 64;
-  const std::size_t own_end = sample_base + static_cast<std::size_t>(record.scan_offset) + record.scan_size + 64;
+  const auto checked_add = [](const std::size_t left, const std::size_t right, const char *field) {
+    if (left > std::numeric_limits<std::size_t>::max() - right)
+      throw std::runtime_error(std::string("SCIEX WIFF scan offset overflows while reading ") + field + ".");
+    return left + right;
+  };
+  const std::size_t payload_start = checked_add(checked_add(sample_base, record.scan_offset, "payload"), 56, "payload");
+  const std::size_t next_end = next_record == nullptr
+                                   ? static_cast<std::size_t>(file_size)
+                                   : checked_add(checked_add(sample_base, next_record->scan_offset, "next scan"), 64, "next scan");
+  const std::size_t own_end = checked_add(checked_add(checked_add(sample_base, record.scan_offset, "scan"), record.scan_size, "scan"), 64, "scan");
   const std::size_t end = std::min({next_end, own_end, static_cast<std::size_t>(file_size)});
   if (end <= payload_start)
     return {};
@@ -367,6 +383,8 @@ TofMetadata read_tof_metadata(const std::string &wiff_path, int source_analysis_
   TofMetadata metadata;
   std::memcpy(&metadata.slope, calibration.data() + 32, sizeof(double));
   std::memcpy(&metadata.intercept, calibration.data() + 40, sizeof(double));
+  if (!std::isfinite(metadata.slope) || !std::isfinite(metadata.intercept) || metadata.slope == 0.0)
+    throw std::runtime_error("SCIEX TOF calibration contains invalid slope or intercept.");
   metadata.records = read_idx_records(wiff_path, source_analysis_number);
   metadata.sample_base = detail::sample_block_offset(detail::read_file(scan_path_for_wiff(wiff_path)), static_cast<std::uint32_t>(source_analysis_number));
   if (metadata.records.size() >= 2)
@@ -467,6 +485,7 @@ std::vector<MASS_SPEC_ANALYSIS> read_analysis_catalog(const std::string &wiff_pa
   std::vector<MASS_SPEC_ANALYSIS> out;
   out.reserve(blocks.size());
   const int count = static_cast<int>(blocks.size());
+  std::set<std::string> names;
   for (std::size_t i = 0; i < blocks.size(); ++i)
   {
     const int source_number = static_cast<int>(blocks[i].sample_number);
@@ -500,6 +519,14 @@ std::vector<MASS_SPEC_ANALYSIS> read_analysis_catalog(const std::string &wiff_pa
     }
     catch (const std::exception &)
     {
+    }
+    if (!names.insert(name).second)
+    {
+      const auto base_name = name;
+      name = base_name + "_sample_" + std::to_string(source_number);
+      if (!names.insert(name).second)
+        name = base_name + "_analysis_" + std::to_string(i);
+      names.insert(name);
     }
     out.push_back({static_cast<int>(i), source_number, name, count});
   }
@@ -923,6 +950,8 @@ std::vector<MASS_SPEC_SPECTRUM> read_tof_spectra(const std::string &wiff_path, i
   double slope = 0.0, intercept = 0.0;
   std::memcpy(&slope, calibration.data() + 32, sizeof(double));
   std::memcpy(&intercept, calibration.data() + 40, sizeof(double));
+  if (!std::isfinite(slope) || !std::isfinite(intercept) || slope == 0.0)
+    throw std::runtime_error("SCIEX TOF calibration contains invalid slope or intercept.");
   struct RawRecord { std::uint32_t offset, size; float rt; std::uint8_t ms_level_flag; };
   std::vector<RawRecord> records;
   for (std::size_t offset = 32; offset + 54 <= index_bytes.size(); offset += 54)
